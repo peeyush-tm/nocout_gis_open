@@ -6444,6 +6444,396 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
         logger.exception(e.message)
 
 
+@task()
+def delete_gis_inventory(gis_ob_id, workbook_type, sheet_type):
+    # gis object
+    gis_obj = None
+    try:
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_ob_id)
+    except Exception as e:
+        logger.info("No GIS object exist. Exception: ", e)
+    # workbook type i.e. valid/invalid
+    workbook_type = workbook_type
+
+    # sheet type i.e. PTP/PTP BH/PMP BS/PMP SM/Wimax BS/Wimax SS/Backhaul
+    sheet_type = sheet_type
+
+    # timestamp
+    timestamp = time.time()
+    full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%d-%b-%Y at %H:%M:%S')
+
+    # get valid or invalid workbook based upon workbook type
+    file_path = ""
+    if workbook_type == 'valid':
+        file_path = gis_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    elif workbook_type == 'invalid':
+        file_path = gis_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    else:
+        book = ""
+
+    sheet = book.sheet_by_index(0)
+
+    keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    keys_list = [x.encode('utf-8').strip() for x in keys]
+    complete_d = list()
+
+    # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
+    # and values are form other remaining rows
+    for row_index in xrange(1, sheet.nrows):
+        d = dict()
+        for col_index in xrange(len(keys)):
+            if keys[col_index] in ["Date Of Acceptance", "SS Date Of Acceptance"]:
+                if isinstance(sheet.cell(row_index, col_index).value, float):
+                    try:
+                        d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                            *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    except Exception as e:
+                        logger.info("Date of Exception Error. Exception: {}".format(e.message))
+            else:
+                if isinstance(sheet.cell(row_index, col_index).value, str):
+                    d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+                elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+                else:
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+
+        complete_d.append(d)
+
+    # delta
+    deleted_list = []
+
+    try:
+        for row in complete_d:
+            # current delta
+            deleted_rows = list()
+
+            # ************************************ CIRCUIT DELETION ***********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # circuit name
+                circuit_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    circuit_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                elif sheet_type in ['PMP BS', 'Wimax BS']:
+                    circuit_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                else:
+                    pass
+
+                if circuit_name:
+                    # circuit
+                    circuit = Circuit.objects.filter(name=circuit_name)
+
+                    if circuit:
+                        # delete circuit
+                        circuit.delete()
+                        deleted_rows.insert(0, "Circuit: Deleted \n")
+                    else:
+                        deleted_rows.insert(0, "Circuit: Not Exist \n")
+
+            # ************************************ CUSTOMER DELETION ***********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # customer name
+                customer_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    customer_name = "{0}_{1}_{1}".format(
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
+                elif sheet_type in ['PMP BS', 'Wimax BS']:
+                    customer_name = "{}_{}".format(
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['Customer Name'] if 'Customer Name' in row.keys() else ""),
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['Circuit ID'] if 'Circuit ID' in row.keys() else ""))
+                else:
+                    pass
+
+                if customer_name:
+                    # customer
+                    customer = Customer.objects.filter(name=customer_name)
+
+                    if customer:
+                        # delete customer
+                        customer.delete()
+                        deleted_rows.insert(0, "Customer: Deleted \n")
+                    else:
+                        deleted_rows.insert(0, "Customer: Not Exist \n")
+
+            # ************************************ SUBSTATION DELETION **********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # substation name
+                substation_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    substation_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                elif sheet_type in ['PMP BS', 'Wimax BS']:
+                    substation_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                else:
+                    pass
+
+                if substation_name:
+                    substation = SubStation.objects.filter(name=substation_name)
+
+                    if substation:
+                        # delete substation
+                        substation.delete()
+                        deleted_rows.insert(0, "Sub Station: Deleted \n")
+                    else:
+                        deleted_rows.insert(0, "Sub Station: Not Exist \n")
+
+            # ************************************* SECTOR DELETION ***********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+                # ss antenna name
+                sector_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    sector_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                elif sheet_type in ['PMP BS']:
+                    sector_name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                        row['Sector Name'] if 'Sector Name' in row.keys() else "")
+                elif sheet_type in ['Wimax BS']:
+                    # pmp name
+                    pmp = ""
+                    try:
+                        if 'PMP' in row.keys():
+                            pmp = row['PMP']
+                            if isinstance(pmp, basestring) or isinstance(pmp, float):
+                                pmp = int(pmp)
+                    except Exception as e:
+                        pass
+
+                    # sector name
+                    sector_name = '{}_{}_{}'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                        row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
+                else:
+                    pass
+
+                # base station
+                if sector_name:
+                    sector = Sector.objects.filter(name=sector_name)
+
+                    if sector:
+                        # delete sector
+                        sector.delete()
+                        deleted_rows.insert(0, "Sector: Deleted \n")
+                    else:
+                        deleted_rows.insert(0, "Sector: Not Exist \n")
+
+            # # ********************************* BS DEVICE DELETION ********************************
+            # if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+            #     if 'IP' in row:
+            #         if row['IP']:
+            #             bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IP']))
+            #             if bs_device:
+            #                 # delete bs device
+            #                 bs_device.delete()
+            #                 deleted_rows.insert(0, "BS Device: Deleted \n")
+            #             else:
+            #                 deleted_rows.insert(0, "BS Device: Not Exist \n")
+            #         else:
+            #             deleted_rows.insert(0, "BS Device: NA \n")
+            #     if sheet_type in ['PMP BS']:
+            #         if 'ODU IP' in row:
+            #             if row['ODU IP']:
+            #                 bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['ODU IP']))
+            #                 if bs_device:
+            #                     # delete bs device
+            #                     bs_device.delete()
+            #                     deleted_rows.insert(0, "BS Device: Deleted \n")
+            #                 else:
+            #                     deleted_rows.insert(0, "BS Device: Not Exist \n")
+            #             else:
+            #                 deleted_rows.insert(0, "BS Device: NA \n")
+            #     if sheet_type in ['PMP BS']:
+            #         if 'IDU IP' in row:
+            #             if row['IDU IP']:
+            #                 bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IDU IP']))
+            #                 if bs_device:
+            #                     # delete bs device
+            #                     bs_device.delete()
+            #                     deleted_rows.insert(0, "BS Device: Deleted \n")
+            #                 else:
+            #                     deleted_rows.insert(0, "BS Device: Not Exist \n")
+            #             else:
+            #                 deleted_rows.insert(0, "BS Device: NA \n")
+
+            # ********************************* SS DEVICE DELETION ********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                if 'SS IP' in row:
+                    if row['SS IP']:
+                        ss_device = Device.objects.filter(ip_address=ip_sanitizer(row['SS IP']))
+                        if ss_device:
+                            # delete ss
+                            ss_device.delete()
+                            deleted_rows.insert(0, "SS Device: Deleted \n")
+                        else:
+                            deleted_rows.insert(0, "SS Device: Not Exist \n")
+                    else:
+                        deleted_rows.insert(0, "SS Device: NA \n")
+
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+                # ********************************** BS SWITCH DELETION **********************************
+                if 'BS Switch IP' in row:
+                    if row['BS Switch IP']:
+                        bs_switch_device = Device.objects.filter(ip_address=ip_sanitizer(row['BS Switch IP']))
+                        if bs_switch_device:
+                            # bs switch device
+                            bs_switch_device.delete()
+                            deleted_rows.insert(0, "BS Switch Device: Deleted \n")
+                        else:
+                            deleted_rows.insert(0, "BS Switch Device: Not Exist \n")
+                    else:
+                        deleted_rows.insert(0, "BS Switch Device: NA \n")
+
+                # ********************************* AGGREGATOR DELETION ***********************************
+                if 'Aggregation Switch' in row:
+                    if row['Aggregation Switch']:
+                        aggregator_device = Device.objects.filter(ip_address=ip_sanitizer(row['Aggregation Switch']))
+                        if aggregator_device:
+                            # delete aggregator device
+                            aggregator_device.delete()
+                            deleted_rows.insert(0, "Aggregation Switch Device: Deleted \n")
+                        else:
+                            deleted_rows.insert(0, "Aggregation Switch Device: Not Exist \n")
+                    else:
+                        deleted_rows.insert(0, "Aggregation Switch Device: NA \n")
+
+                # ********************************* BS CONVERTER DELETION *********************************
+                if 'BS Converter IP' in row:
+                    if row['BS Converter IP']:
+                        bs_converter = Device.objects.filter(ip_address=ip_sanitizer(row['BS Converter IP']))
+                        if bs_converter:
+                            # delete bs converter
+                            bs_converter.delete()
+                            deleted_rows.insert(0, "BS Converter Device: Deleted \n")
+                        else:
+                            deleted_rows.insert(0, "BS Converter Device: Not Exist \n")
+                    else:
+                        deleted_rows.insert(0, "BS Converter Device: NA \n")
+
+                # ********************************* POP CONVERTER DELETION ********************************
+                if 'POP Converter IP' in row:
+                    if row['POP Converter IP']:
+                        pop_converter = Device.objects.filter(ip_address=ip_sanitizer(row['POP Converter IP']))
+                        if pop_converter:
+                            # delete pop converter
+                            pop_converter.delete()
+                            deleted_rows.insert(0, "POP Converter Device: Deleted \n")
+                        else:
+                            deleted_rows.insert(0, "POP Converter Device: Not Exist \n")
+                    else:
+                        deleted_rows.insert(0, "POP Converter Device: NA \n")
+
+            # *********************************** SECTOR ANTENNA DELETION *********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+                # sector antenna name
+                sector_antenna_name = ""
+
+                if sheet_type in ['PTP']:
+                    sector_antenna_name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else ""))
+                elif sheet_type in ['PTP BH']:
+                    sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row else "")
+                elif sheet_type in ['PMP BS']:
+                    sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID'] if 'Sector ID' in row else "")
+                elif sheet_type in ['Wimax BS']:
+                    sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID'] if 'Sector ID' in row else "")
+                else:
+                    pass
+
+                if sector_antenna_name:
+                    # sector antenna
+                    sector_antenna = Antenna.objects.filter(name=sector_antenna_name)
+
+                    if sector_antenna:
+                        # delete setor antenna
+                        sector_antenna.delete()
+                        deleted_rows.insert(0, "Sector Antenna: Deleted \n")
+                    else:
+                        deleted_rows.insert(0, "Sector Antenna: Not Exist \n")
+
+            # ************************************* SS ANTENNA DELETION **********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # ss antenna name
+                ss_antenna_name = ""
+
+                if sheet_type in ['PTP']:
+                    ss_antenna_name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else ""))
+                elif sheet_type in ['PTP BH']:
+                    ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else "")
+                elif sheet_type in ['PMP BS']:
+                    ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else "")
+                elif sheet_type in ['Wimax BS']:
+                    ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row else "")
+                else:
+                    pass
+
+                if ss_antenna_name:
+                    # ss antenna
+                    ss_antenna = Antenna.objects.filter(name=ss_antenna_name)
+
+                    if ss_antenna:
+                        # delete ss antenna
+                        ss_antenna.delete()
+                        deleted_rows.insert(0, "SS Antenna: Deleted \n")
+                    else:
+                        deleted_rows.insert(0, "SS Antenna: Not Exist \n")
+
+            # ************************************* BACKHAUL DELETION **********************************
+            if sheet_type in ['Backhaul']:
+                backhaul_name = ip_sanitizer(
+                    row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row else "")
+
+                # backhaul
+                if backhaul_name:
+                    backhaul = Backhaul.objects.filter(name=backhaul_name)
+
+                    if backhaul:
+                        # delete backhaul
+                        backhaul.delete()
+                        deleted_rows.insert(0, "Backhaul: Deleted \n")
+                    else:
+                        deleted_rows.insert(0, "Backhaul: Not Exist \n")
+
+            # adding delta key in current row
+            row['Deleted'] = "".join(deleted_rows)
+
+            deleted_list.append(row)
+
+        # create delta workbook
+        excel_generator_for_new_column('Deleted',
+                                       'deleted_inventory',
+                                       keys_list,
+                                       deleted_list,
+                                       sheet_type,
+                                       file_path,
+                                       workbook_type,
+                                       1)
+
+    except Exception as e:
+        logger.exception(e.message)
+
+
 def bulk_upload_delta_file_generator(keys_list, delta_rows, sheettype, file_path, workbook):
     """ Generate excel workbook containing per row errors during bulk upload
 
@@ -6875,6 +7265,102 @@ def bulk_upload_error_file_generator(keys_list, error_rows, sheettype, file_path
     # saving bulk upload errors excel sheet
     try:
         wb_bulk_upload_errors.save(MEDIA_ROOT + bulk_upload_file_path)
+    except Exception as e:
+        logger.info(e.message)
+
+
+def excel_generator_for_new_column(col_name,
+                                   directory,
+                                   keys_list,
+                                   rows,
+                                   sheettype,
+                                   file_path,
+                                   workbook,
+                                   rep_count=None):
+    """ Generate excel workbook with new column added in sheet
+
+    Args:
+        col_name (str): name of new column i.e. 'Bulk Upload Errors'
+        directory (str): name of directory for workbook i.e. 'bulk_upload_errors'
+        keys_list (list): list containing names of excel columns
+        rows (list) : list of dictionaries containing excel rows
+        sheettype (unicode): type of sheet i.e. valid/invalid
+        filepath (unicode): path of file i.e. inventory_files/invalid/2014-12-29-02-18-32_invalid_WiMAX Few Rows.xls
+        workbook (str): sheet name i.e. 'PMP BS'
+        rep_count (int): number of occurences of string needs to be replaced i.e. 1
+
+    Returns:
+
+    """
+
+    # rows list
+    rows_list = []
+
+    # column name
+    column_name = col_name
+
+    # headers for excel sheet
+    headers = keys_list
+
+    # append errors key in keys_list
+    keys_list.append(column_name)
+
+    for row in rows:
+        temp_list = list()
+        for key in keys_list:
+            try:
+                temp_list.append(row[key])
+            except Exception as e:
+                temp_list.append("")
+                logger.info(e.message)
+        rows_list.append(temp_list)
+
+    new_workbook = xlwt.Workbook()
+    new_worksheet = new_workbook.add_sheet(workbook)
+
+    style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+    style_new_row = xlwt.easyxf('pattern: pattern solid, fore_colour red;' 'font: colour white, bold True;')
+
+    try:
+        for i, col in enumerate(headers):
+            if col != column_name:
+                new_worksheet.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+            else:
+                new_worksheet.write(0, i, col.decode('utf-8', 'ignore').strip(), style_new_row)
+    except Exception as e:
+        pass
+
+    try:
+        for i, l in enumerate(rows_list):
+            i += 1
+            for j, col in enumerate(l):
+                new_worksheet.write(i, j, col)
+    except Exception as e:
+        pass
+
+    # file path
+    if rep_count:
+        if workbook == 'valid':
+            upload_file_path = file_path.replace('valid', directory, rep_count)
+        elif workbook == 'invalid':
+            upload_file_path = file_path.replace('invalid', directory, rep_count)
+        else:
+            upload_file_path = None
+    else:
+        if sheettype == 'valid':
+            upload_file_path = file_path.replace('valid', directory)
+        elif sheettype == 'invalid':
+            upload_file_path = file_path.replace('invalid', directory)
+        else:
+            upload_file_path = None
+
+    # if directory didn't exist than create one
+    if not os.path.exists(MEDIA_ROOT + 'inventory_files/{}'.format(directory)):
+        os.makedirs(MEDIA_ROOT + 'inventory_files/{}'.format(directory))
+
+    # saving excel sheet
+    try:
+        new_workbook.save(MEDIA_ROOT + upload_file_path)
     except Exception as e:
         logger.info(e.message)
 

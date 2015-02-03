@@ -60,7 +60,7 @@ from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorF
 from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory,
         bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
         bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel,
-        bulk_upload_delta_generator)
+        bulk_upload_delta_generator, delete_gis_inventory)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -2802,6 +2802,8 @@ class GISInventoryBulkImportList(ListView):
             {'mData': 'error_filename', 'sTitle': 'Error Sheet', 'sWidth': 'auto', },
             {'mData': 'valid_delta_filename', 'sTitle': 'Valid Delta Sheet', 'sWidth': 'auto', },
             {'mData': 'invalid_delta_filename', 'sTitle': 'Invalid Delta Sheet', 'sWidth': 'auto', },
+            {'mData': 'valid_deleted_filename', 'sTitle': 'Valid Deleted Sheet', 'sWidth': 'auto', },
+            {'mData': 'invalid_deleted_filename', 'sTitle': 'Invalid Deleted Sheet', 'sWidth': 'auto', },
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
             {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto', },
             {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', },
@@ -2815,7 +2817,7 @@ class GISInventoryBulkImportList(ListView):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         if self.request.user.is_superuser:
             datatable_headers.append(
-                {'mData': 'bulk_upload_actions', 'sTitle': 'Inventory Upload', 'sWidth': '5%', 'bSortable': False})
+                {'mData': 'bulk_upload_actions', 'sTitle': 'Inventory Upload', 'sWidth': '7%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2852,12 +2854,18 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
             # add invalid delta filename in dct
             dct['invalid_delta_filename'] = ""
 
+            # add valid deleted inventory filename in dct
+            dct['valid_deleted_filename'] = ""
+
+            # add invalid deleted inventory filename in dct
+            dct['invalid_deleted_filename'] = ""
+
             try:
                 excel_green = static("img/ms-office-icons/excel_2013_green.png")
                 excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
                 excel_red = static("img/ms-office-icons/excel_2013_red.png")
                 excel_light_green = static("img/ms-office-icons/excel_2013_light_green.png")
-                excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
+                # excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
 
                 # show 'Success', 'Pending' and 'Failed' in upload status
                 try:
@@ -2948,6 +2956,28 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 except Exception as e:
                     logger.info(e.message)
 
+                # get valid deleted inventory file path
+                valid_deleted_filename = ""
+
+                try:
+                    valid_deleted_file = dct['valid_filename'].replace('valid', 'deleted_inventory', 1)
+                    # if directory for bulk upload excel sheets didn't exist than create one
+                    if os.path.exists(MEDIA_ROOT + valid_deleted_file):
+                        valid_deleted_filename = valid_deleted_file
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get invalid deleted inventory file path
+                invalid_deleted_filename = ""
+
+                try:
+                    invalid_deleted_file = dct['invalid_filename'].replace('invalid', 'deleted_inventory', 1)
+                    # if directory for bulk upload excel sheets didn't exist than create one
+                    if os.path.exists(MEDIA_ROOT + invalid_deleted_file):
+                        invalid_deleted_filename = invalid_deleted_file
+                except Exception as e:
+                    logger.info(e.message)
+
                 # show icon instead of url in data tables view
                 try:
                     dct.update(
@@ -2988,6 +3018,30 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                     else:
                         dct.update(
                             invalid_delta_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if valid_deleted_filename:
+                        dct.update(
+                            valid_deleted_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, valid_deleted_filename, excel_green))
+                    else:
+                        dct.update(
+                            valid_deleted_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if invalid_deleted_filename:
+                        dct.update(
+                            invalid_deleted_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, invalid_deleted_filename, excel_red))
+                    else:
+                        dct.update(
+                            invalid_deleted_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
                                 excel_grey))
                 except Exception as e:
                     logger.info(e.message)
@@ -3047,6 +3101,8 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
                                                         <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>\
+                                                        <a href="/bulk_import/delete_inventory/valid/{0}/{1}" class="bulk_import_link" title="Delete Valid Inventory"><i class="fa fa-minus-square-o text-success"></i></a>\
+                                                        <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" class="bulk_import_link" title="Delete Invalid Inventory Delta"><i class="fa fa-minus-square-o text-danger"></i></a>\
                                                         <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" class="bulk_import_link" title="Generate Valid Inventory Delta"><i class="fa fa-check-circle-o text-success"></i></a>\
                                                         <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" class="bulk_import_link" title="Generate Invalid Inventory Delta"><i class="fa fa-check-circle-o text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
                     else:
@@ -3586,7 +3642,32 @@ class BulkUploadDeltaGenerator(View):
         except Exception as e:
             logger.info("Delta sheet not generated. Exception: ", e.message)
 
-        print "############################# result - ", result
+        # return HttpResponse(json.dumps(result))
+        return HttpResponseRedirect('/bulk_import/')
+
+
+class DeleteBulkUploadGISInventory(View):
+    def get(self, request, *args, **kwargs):
+        # result
+        result = {
+            "success": 0,
+            "message": "Inventory not deleted..",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        # get id of inventory bulk upload
+        try:
+            delete_gis_inventory.delay(kwargs['id'], kwargs['sheettype'], kwargs['sheetname'])
+            result['success'] = 1
+            result['message'] = "Deleted inventory sheet in progress."
+            result['data']['objects']['id'] = kwargs['id']
+            result['data']['objects']['sheetname'] = kwargs['sheetname']
+            result['data']['objects']['sheettype'] = kwargs['sheettype']
+        except Exception as e:
+            logger.info("Deleted inventory sheet not generated. Exception: ", e.message)
 
         # return HttpResponse(json.dumps(result))
         return HttpResponseRedirect('/bulk_import/')
