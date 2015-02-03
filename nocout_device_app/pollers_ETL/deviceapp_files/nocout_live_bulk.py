@@ -50,11 +50,16 @@ def main():
 
 def poll_device():
 	response = []
-	logger.info('[Polling Iteration Start]')
-	device_list = literal_eval(html.var('device_list'))
-	service_list = literal_eval(html.var('service_list'))
-	logger.info('device_list : %s and service_list : %s' % (device_list, service_list))
-	# If in case no `ds` supplied in req obj, [''] would be supplied as default
+	try:
+		logger.info('[Polling Iteration Start]')
+		device_list = literal_eval(html.var('device_list'))
+		service_list = literal_eval(html.var('service_list'))
+		bs_name_ss_mac_mapping = literal_eval(html.var('bs_name_ss_mac_mapping'))
+		ss_name_mac_mapping = literal_eval(html.var('ss_name_mac_mapping'))
+	except Exception as e:
+		logger.info('excep: ' + pformat(e))
+	logger.info('device_list: ' + pformat(device_list))
+	logger.info('service_list: ' + pformat(service_list))
 	try:
 		data_source_list = literal_eval(html.var('ds'))
 	except Exception:
@@ -62,9 +67,6 @@ def poll_device():
 		#logger.error('No ds provided in request object', exc_info=True)
 	if not data_source_list:
 		data_source_list = ['']
-	#logger.debug('data_source_list : %s' % data_source_list)
-
-	#current_values = get_current_value(device, service, data_source_list)
 
 		#t = threading.Thread(
 		#		target=get_current_value,
@@ -88,7 +90,9 @@ def poll_device():
 				{
 					'device': device,
 					'service_list': service_list,
-					'data_source_list': data_source_list
+					'data_source_list': data_source_list,
+					'bs_name_ss_mac_mapping': bs_name_ss_mac_mapping,
+					'ss_name_mac_mapping': ss_name_mac_mapping
 					}
 				) for device in device_list
 			]

@@ -257,8 +257,16 @@ $("#resetFilters").click(function(e) {
             whiteMapClass.clearStateCounters_wmaps();
 
             isApiResponse = 0;
-
-            ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+            ccpl_map.setCenter(
+                new OpenLayers.LonLat(
+                    whiteMapSettings.mapCenter[0],
+                    whiteMapSettings.mapCenter[1]
+                ),
+                1,
+                true,
+                true
+            );
+            ccpl_map.zoomTo(1);
             // Load all counters
             networkMapInstance.updateStateCounter_gmaps();
         } else {
@@ -1513,15 +1521,23 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                 }
 
                 if (result.success == 1) {
-                    var contentHtml = "";
-                    contentHtml += "<div style='max-height:600px;overflow:auto;position:relative;z-index:9999;'>";
-                    if (result.data.objects.table_data_header) {
+                    
+                    var contentHtml = "",
+                        table_headers = result.data.objects.table_data_header ? result.data.objects.table_data_header : false;
 
-                        contentHtml += createDataTableHtml_map(
+                    contentHtml += "<div style='max-height:600px;overflow:auto;position:relative;z-index:9999;'>";
+
+                    if(table_headers) {
+
+                        var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
+                        
+                        contentHtml += createTableHtml_nocout(
                             'other_perf_table',
-                            result.data.objects.table_data_header,
-                            result.data.objects.table_data
+                            table_headers,
+                            table_data,
+                            false
                         );
+
                         contentHtml += "</div>";
                         /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
@@ -1540,13 +1556,17 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         });
 
                     } else {
+
                         contentHtml += "<div id='perf_chart' style='width:83%;'></div>";
                         contentHtml += "<div class='divide-20'></div>";
                         contentHtml += "<div id='perf_chart_table'></div>";
-                        contentHtml += createDataTableForChart_map(
+                        var chartConfig = result.data.objects.chart_data;
+
+                        contentHtml += createChartDataTableHtml_nocout(
                             "perf_data_table",
-                            result.data.objects.chart_data
+                            chartConfig
                         );
+
                         contentHtml += "</div>";
                         contentHtml += "</div>";
 
@@ -1565,8 +1585,10 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             aaSorting : [[0,'desc']],
                             sPaginationType: "full_numbers"
                         });
-                        // Create Chart
-                        createHighChart_map('perf_chart',result.data.objects);
+                        if(chartConfig.length > 0) {
+                            // Create Chart
+                            createHighChart_nocout(result.data.objects,'perf');
+                        }
                     }
                 }
             },
@@ -1584,173 +1606,7 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
     }
 });
 
-/**
- * This function creates highchart as per given params
- * @method createHighChart_map
- * @param dom_id {String}, It contains the dom element id on which highchart is to be created
- * @param config {Object}, It contains highchart configuration object
- */
-function createHighChart_map(dom_id,config) {
 
-    // Is the y axis should be reversed or not
-    var is_y_inverted = config["is_inverted"] ? config["is_inverted"] : false;
-
-    var chart_instance = $('#' + dom_id).highcharts({
-        chart: {
-            events: {
-                load : function() {
-                    // Hide highcharts.com link from chart when chart is loaded
-                    var highcharts_link = $("#"+dom_id+" svg text:last-child");
-                    $.grep(highcharts_link,function(val) {
-                        if($.trim(val.innerHTML) == 'Highcharts.com') {
-                            val.innerHTML = "";
-                        }
-                    });
-                }
-            },
-            zoomType: 'x',
-            type: config.type
-        },
-        title: {
-            // text: config.name
-            text: ""
-        },
-        legend: {
-            align: 'right',
-            verticalAlign: 'top',
-            x: 0,
-            y: 0,
-            floating: true,
-            borderWidth: 1,
-            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-        },
-        tooltip: {
-            pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
-            shared: true,
-            crosshairs: true,
-            useHTML: true,
-            valueSuffix: config.valuesuffix
-        },
-        xAxis: {
-            title: {
-                text: "time"
-            },
-            type: 'datetime',
-            minRange: 3600000,
-            dateTimeLabelFormats: {
-                millisecond: '%H:%M:%S.%L',
-                second: '%H:%M:%S',
-                minute: '%H:%M',
-                hour: '%H:%M',
-                day: '%e. %b',
-                week: '%e. %b',
-                month: '%b \'%y',
-                year: '%Y'
-            }
-        },
-        yAxis: {
-            title: {
-                text: config.valuetext
-            },
-            reversed : is_y_inverted
-        },
-        series: config.chart_data
-    });
-}
-
-/**
- * This function adds data to created highchart
- * @method createHighChart_map
- * @param pointArray {Array}, It contains points data for highchart
- */
-function addPointsToHighChart_map(pointArray) {
-    var highChartSeries = $('#' + service_id + '_chart').highcharts().series;
-    for (var i = 0; i < highChartSeries.length; i++) {
-        for (var j = 0; j < pointArray[i].data.length; j++) {
-            $('#' + service_id + '_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
-        }
-    }
-}
-
-/**
- * This function creates datatable with chart data as per given params
- * @method createDataTableForChart_map
- * @param table_id {String}, It contains dom element id on which table is to be created
- * @param data_obj {Object}, It contains chart data object array.
- */
-function createDataTableForChart_map(table_id, data_obj) {
-
-    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
-    /*Make table headers*/
-    for (var i = 0; i < data_obj.length; i++) {
-        data_in_table += '<td colspan="2" align="center"><b>' + data_obj[i].name + '</b></td>';
-    }
-    data_in_table += '</tr><tr>';
-
-    for (var i = 0; i < data_obj.length; i++) {
-        data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
-    }
-
-    data_in_table += '</tr></thead><tbody>';
-    /*Table header creation end*/
-
-    var data = data_obj[0].data;
-
-    for (var j = 0; j < data.length; j++) {
-        data_in_table += '<tr>';
-        for (var i = 0; i < data_obj.length; i++) {
-            var inner_data = data_obj[i].data[j],
-                time_val = "",
-                val = "";
-            if (inner_data instanceof Array) {
-                time_val = new Date(inner_data[0]).toLocaleString();
-                val = inner_data[1];
-            } else {
-                time_val = new Date(inner_data.x).toLocaleString();
-                val = inner_data.y;
-            }
-            data_in_table += '<td>'+time_val+'</td><td>'+val+'</td>';
-        }
-        data_in_table += '</tr>';
-    }
-
-    data_in_table += '</tbody>';
-    data_in_table += '</table>';
-
-    return data_in_table;
-}
-
-/**
- * This function creates datatable as per given params
- * @method createDataTableHtml_map
- * @param table_id {String}, It contains dom element id on which table is to be created
- * @param table_headers {Array}, It is the grid headers array.
- * @param table_data {Array}, It is the grid data array.
- */
-function createDataTableHtml_map(table_id, table_headers,table_data) {
-
-    var table_string = "";
-    var grid_headers = table_headers;
-
-    table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
-    /*Table header creation start*/
-    for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
-    }
-    table_string += '</thead><tbody>';
-    /*Table header creation end*/
-
-    for (var j = 0; j < table_data.length; j++) {
-        table_string += '<tr>';
-        for (var i = 0; i < grid_headers.length; i++) {
-            table_string += '<td>'+table_data[j][grid_headers[i]]+'</td>';
-        }
-        table_string += '</tr>';
-    }
-    table_string += '</tbody></table>';
-
-    return table_string;
-}
 
 /**
  * This event trigger when export data button is clicked
@@ -1900,9 +1756,15 @@ function updateGoogleEarthPlacemark(placemark, newIcon) {
     // Define a custom icon.next_polling_btn
     var icon = ge.createIcon('');
     icon.setHref(newIcon);
+
     var style = ge.createStyle('');
     style.getIconStyle().setIcon(icon);
-    // style.getIconStyle().setScale(5.0);
+
+    var place_mark_type = placemark["pointType"] ? placemark["pointType"] : 'other';
+
+    var current_scale = earth_self.getPlacemarkScale_earth(place_mark_type);    
+    style.getIconStyle().setScale(current_scale);
+
     placemark.setStyleSelector(style);
 }
 

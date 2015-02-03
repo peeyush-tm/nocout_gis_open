@@ -32,8 +32,6 @@
     <script type="text/javascript" src={% static "js/bootstrap-inputmask/bootstrap-inputmask.min.js" %}></script>
     <!-- FILE UPLOAD -->
     <script type="text/javascript" src={% static "js/bootstrap-fileupload/bootstrap-fileupload.min.js" %}></script>
-    <!-- SELECT2 -->
-    <script type="text/javascript" src={% static "js/select2/select2.min.js" %}></script>
     <!-- UNIFORM -->
     <script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
     <!-- BOOTBOX -->
@@ -46,6 +44,8 @@
     <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablecloth.js" %}></script>
     <!-- Table Cloth -->
     <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablesorter.min.js" %}></script>
+    <!-- SELECT2 -->
+    <script type="text/javascript" src={% static "js/select2/select2.min.js" %}></script>
     <!-- SELECTED SIDE MENU-->
     <script type="text/javascript" src={% static "js/nocout/selected_side_menu.js" %}></script>
     <!-- Library for page spinner-->
@@ -63,19 +63,21 @@
     <script type="text/javascript" src={% static "js/spectrum/spectrum.js" %}></script>
     <!-- User Logs -->
     <script src={% static "js/actions_create.js" %}></script>
+    <!-- Custom library for Global Search -->
+    <script type="text/javascript" src={% static "js/nocout/globalSearchLib.js" %}></script>
 
     <!-- CUSTOM SCRIPT -->
     {% block jquery %}{% endblock %}
     <!-- CUSTOM JAVASCRIPTS IMPORT BLOCK -->
     {% block load_js %}
-        <script>
+        <script type="text/javascript">
             $(document).ready(function () {
                 App.setPage("");  //Set current page
                 App.init(); //Initialise plugins and elements
             });
         </script>
     {% endblock %}
-    <script>
+    <script type="text/javascript">
 
         $(document).ready(function() {
 
@@ -138,6 +140,8 @@
 
             session_in_check = setInterval(function(){session_check(do_session_check)}, checkInterval);
 
+            // Initialize Global Search
+            initGlobalSearch();
         });
     </script>
 

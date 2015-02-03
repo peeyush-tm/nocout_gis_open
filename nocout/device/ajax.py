@@ -2,13 +2,15 @@
 
 import ast
 import json
+from datetime import datetime
+import time
 import requests
 import logging
 import urllib
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    DeviceTypeFieldsValue, Country, State
+    DeviceTypeFieldsValue, Country, State, DeviceSyncHistory
 from service.models import Service, ServiceParameters, DeviceServiceConfiguration, DevicePingConfiguration
 from inventory.models import SubStation
 from performance.models import Topology
@@ -1274,37 +1276,122 @@ def sync_device_with_nms_core(request):
                          }
 
     """
+
     result = dict()
     result['data'] = {}
     result['success'] = 0
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
-    device_data = {'mode': 'sync'}
-    # get device
-    # device = Device.objects.get(pk=device_id)
-    # site to which configuration needs to be pushed
-    master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
-    # url for nocout.py
-    # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-    # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
-    url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
-                                                            master_site.password,
-                                                            master_site.machine.machine_ip,
-                                                            master_site.web_service_port,
-                                                            master_site.name)
-    # sending post request to device app for syncing configuration to associated sites
-    r = requests.post(url, data=device_data)
+    timestamp = time.time()
+    fulltime = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+
+    # get last id of 'DeviceSyncHistory'
+    last_sync_id = None
+    last_syn_status = None
     try:
-        # converting string in 'r' to dictionary
-        response_dict = ast.literal_eval(r.text)
-        if r:
-            result['data'] = device_data
-            result['success'] = 1
-            result['message'] = response_dict['message'].capitalize()
+        last_sync_obj = DeviceSyncHistory.objects.latest('id')
+        # last sync id
+        last_sync_id = last_sync_obj.id
+        # last sync status
+        last_syn_status = last_sync_obj.status
     except Exception as e:
-        result['message'] = "Failed to sync device and services."
-        logger.info(r.text)
+        logger.error("DeviceSyncHistory table has no entry.")
+
+    if last_sync_id and last_syn_status in [1, 2, 3]:
+        # current user's username
+        username = request.user.username
+
+        # create 'device sync history' entry
+        device_sync_history = DeviceSyncHistory()
+        device_sync_history.status = 0
+        device_sync_history.description = "Sync run at {}.".format(fulltime)
+        device_sync_history.sync_by = username
+        device_sync_history.save()
+
+        # get 'device sync history' object
+        sync_obj_id = device_sync_history.id
+
+        device_data = {
+            'mode': 'sync',
+            'sync_obj_id': sync_obj_id
+        }
+
+        # get device
+        # device = Device.objects.get(pk=device_id)
+        # site to which configuration needs to be pushed
+        master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+        # sending post request to device app for syncing configuration to associated sites
+        r = requests.post(url, data=device_data)
+
+        try:
+            # converting string in 'r' to dictionary
+            response_dict = ast.literal_eval(r.text)
+            if r:
+                result['data'] = device_data
+                result['success'] = 1
+                result['message'] = response_dict['message'].capitalize()
+        except Exception as e:
+            device_sync_history.status = 2
+            device_sync_history.description = "Sync failed to run at {}.".format(fulltime)
+            device_sync_history.completed_on = datetime.now()
+            device_sync_history.save()
+            result['message'] = "Failed to sync device and services."
+            logger.info(r.text)
+    else:
+        result['message'] = "Someone is already running sync."
     return json.dumps({'result': result})
+
+@dajaxice_register(method='GET')
+def remove_sync_deadlock(request):
+    """Remov sync deadlock
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+
+    Returns:
+        result (dict): dict of device info
+                   i.e. {
+                            "result": {
+                                "message": "Successfully removed sync deadlock.",
+                                "data": {
+                                    "meta": ""
+                                },
+                                "success": 1
+                            }
+                        }
+
+    """
+
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Deadlock removal for sync failed."
+    result['data']['meta'] = ''
+
+    # get last id of 'DeviceSyncHistory'
+    try:
+        last_sync_obj = DeviceSyncHistory.objects.latest('id')
+        # modify status of last 'sync' to 3 i.e. 'Deadlock'
+        last_sync_obj.status = 3
+        timestamp = time.time()
+        fulltime = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+        last_sync_obj.description = "Deadlock created during this sync removed at {}.".format(fulltime)
+        last_sync_obj.save()
+        result['success'] = 1
+        result['message'] = "Successfully removed sync deadlock."
+    except Exception as e:
+        logger.error("DeviceSyncHistory table has no entry. Exception: ", e.message)
+
+    return json.dumps({'result': result})
+
 
 
 @dajaxice_register(method='GET')

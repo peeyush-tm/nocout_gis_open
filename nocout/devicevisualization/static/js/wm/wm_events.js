@@ -157,18 +157,18 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						for(key in polylines) {
 							var current_line = polylines[key];
 							// If shown
-							if(current_line.map) {
+							// if(current_line.map) {
 								hideOpenLayerFeature(current_line);
-							}
+							// }
 						}
 						// alert();
 						// Hide polygons if shown
 						for(key in polygons) {
 							var current_polygons = polygons[key];
 							// If shown
-							if(current_polygons.map) {
+							// if(current_polygons.map) {
 								hideOpenLayerFeature(current_polygons);
-							}
+							// }
 						}
 					} else {
 						if(ccpl_map.getZoom() > 7) {
@@ -285,12 +285,14 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 				// Hide perf info label
 			    for (var x = 0; x < labelsArray.length; x++) {
-			        labelsArray[x].destroy();
+			        // labelsArray[x].destroy();
+			        ccpl_map.removePopup(labelsArray[x]);
 			    }
 
 			    // Hide tooltip info label
 			    for (key in tooltipInfoLabel) {
-			        tooltipInfoLabel[key].destroy();
+			        // tooltipInfoLabel[key].destroy();
+			    	ccpl_map.removePopup(tooltipInfoLabel[key]);
 			    }
 
 	            // Reset labels array 

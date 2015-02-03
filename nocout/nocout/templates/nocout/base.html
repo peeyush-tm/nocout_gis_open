@@ -15,6 +15,36 @@
             <div class="container">
                 <div class="row">
                     <div id="page_content_div">
+
+                        <!-- Global Search Panel Start -->
+                        <div class="global_search_container">
+                            <ul class="list-unstyled list-inline">
+                                <li>
+                                    <select  id="searchBy" style="min-width:130px;max-width:150px;">
+                                        <option value="">Search Criteria</option>
+                                        <option value="ip_address">IP Address</option>
+                                        <option value="circuit_id">Circuit ID</option>
+                                        <option value="mac_address">MAC Address</option>
+                                        <option value="sector_id">Sector ID</option>
+                                    </select>
+                                </li>
+                                <li>
+                                    <input type="hidden" id="global_search_txt"  style="min-width:130px;max-width:150px;">
+                                </li>
+                                <li>
+                                    <button class="btn btn-info btn-sm" id="global_search_btn" title="Search">
+                                        <i class='fa fa-search'> </i>
+                                    </button>
+                                </li>
+                                <li>
+                                    <div id="redirect_link_container"></div>
+                                </li>
+                            </ul>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <!-- Global Search Panel End -->
+
                         <div id="content" class="col-lg-12">
                             <!-- PAGE HEADER-->
                             <div class="row" id="page_header_container" style="display:none;">
@@ -45,8 +75,8 @@
                                 </div>
                             </div>
                             <!-- /PAGE HEADER -->
-
-                        <!-- PAGE CONTENT -->
+                            
+                            <!-- PAGE CONTENT -->
                             <!-- Widget Full Screen Button-->
                             <button type="button" class="btn btn-sm btn-info pull-right" id="goFullScreen">
                                 <i class="fa fa-arrows-alt"></i> View Full Screen
