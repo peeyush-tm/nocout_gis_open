@@ -3112,16 +3112,20 @@ class GISPerfData(View):
         # performance value
         performance_value = None
 
+        end_time = int(freeze_time) / 1000
+        start_time = end_time - 300
+
         try:
             if ts_type == "normal":
                 if "_invent" in device_service_name:
                     if int(freeze_time):
+
                         performance_value = PerformanceInventory.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name).order_by('-sys_timestamp')[:1]
 
                     else:
                         performance_value = InventoryStatus.objects.filter(device_name=device_name,
@@ -3135,9 +3139,9 @@ class GISPerfData(View):
                         performance_value = PerformanceStatus.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name).order_by('-sys_timestamp')[:1]
 
                     else:
                         performance_value = Status.objects.filter(device_name=device_name,
@@ -3151,9 +3155,9 @@ class GISPerfData(View):
                         performance_value = Utilization.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name).order_by('-sys_timestamp')[:1]
 
                     else:
                         performance_value = UtilizationStatus.objects.filter(device_name=device_name,
@@ -3166,9 +3170,9 @@ class GISPerfData(View):
                         performance_value = PerformanceService.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name).order_by('-sys_timestamp')[:1]
 
                     else:
                         performance_value = ServiceStatus.objects.filter(device_name=device_name,
@@ -3180,11 +3184,11 @@ class GISPerfData(View):
             elif ts_type == "ping":
                 if int(freeze_time):
                     performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                                          service_name=device_service_name,
-                                                                  data_source=device_service_data_source,
-                                                                  sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                  .using(alias=machine_name)\
-                                                                  .order_by('-sys_timestamp')[:1]
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name).order_by('-sys_timestamp')[:1]
 
                 else:
                     performance_value = NetworkStatus.objects.filter(device_name=device_name,
