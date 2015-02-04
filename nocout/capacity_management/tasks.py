@@ -388,7 +388,15 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
     severity = 'unknown'
     age = 0
 
+    processed_sectors = {}
+
     for sector in sectors:
+        #deduplication of the sector on the basis of sector ID
+        if sector.sector_id in processed_sectors:
+            continue
+        else:
+            processed_sectors[sector.sector_id] = sector.sector_id
+
         #start with single sector
         #get the sector --> device
         #stitch together values
@@ -396,7 +404,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         if technology.lower() == 'wimax':
             scs = None
             try:
-                scs, created = SectorCapacityStatus.objects.get_or_create(
+                scs = SectorCapacityStatus.objects.get(
                     sector=sector,
                     sector_sector_id=sector.sector_id
                 )
@@ -654,8 +662,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 scs.organization = sector.organization
                 scs.severity = severity
                 scs.age = float(age)
-                scs.save()
-                # bulk_update_scs.append(scs)
+                # scs.save()
+                bulk_update_scs.append(scs)
 
             else:
                 logger.debug(bulk_create_scs)
@@ -694,7 +702,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         elif technology.lower() == 'pmp':
             scs = None
             try:
-                scs = SectorCapacityStatus.objects.get_or_create(
+                scs = SectorCapacityStatus.objects.get(
                     sector=sector,
                     sector_sector_id=sector.sector_id
                 )
@@ -828,8 +836,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 scs.organization = sector.organization
                 scs.severity = severity
                 scs.age = float(age)
-                scs.save()
-                # bulk_update_scs.append(scs)
+                # scs.save()
+                bulk_update_scs.append(scs)
 
             else:
                 logger.debug(bulk_create_scs)
