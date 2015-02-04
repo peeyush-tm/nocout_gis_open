@@ -103,7 +103,7 @@ def gather_sector_status(technology):
 
     if technology.lower() == 'wimax':
         sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
-                                        sector_configured_on__is_added_to_nms__in=[1,2],
+                                        sector_configured_on__is_added_to_nms=1,
                                         sector_id__isnull=False,
                                         sector_configured_on_port__isnull=False
                                         ).prefetch_related('sector_configured_on',
@@ -132,7 +132,7 @@ def gather_sector_status(technology):
 
     elif technology.lower() == 'pmp':
         sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
-                                        sector_configured_on__is_added_to_nms__in=[1,2],
+                                        sector_configured_on__is_added_to_nms=1,
                                         sector_id__isnull=False,
                                         sector_configured_on_port__isnull=True
                                         ).prefetch_related('sector_configured_on',
@@ -348,13 +348,13 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
             ).using(alias=device_object.machine.name).values('current_value', 'sys_timestamp')
 
     else:
-        return 0
+        return 0, 0
 
     if perf and len(perf):
         return float(perf[0]['current_value']), float(perf[0]['sys_timestamp'])
 
     else:
-        return 0
+        return 0, 0
 
 
 def update_sector_status(sectors, cbw, kpi, val, technology):
@@ -396,7 +396,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         if technology.lower() == 'wimax':
             scs = None
             try:
-                scs = SectorCapacityStatus.objects.get(sector_sector_id=sector.sector_id)
+                scs, created = SectorCapacityStatus.objects.get_or_create(
+                    sector=sector,
+                    sector_sector_id=sector.sector_id
+                )
             except Exception as e:
                 logger.exception(e)
 
@@ -630,8 +633,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
 
             if scs:
                 #update the scs
-                scs.sector = sector
-                scs.sector_sector_id = sector.sector_id
+                # scs.sector = sector
+                # scs.sector_sector_id = sector.sector_id
                 scs.sector_capacity = float(sector_capacity)
                 scs.current_in_per = float(current_in_per)
                 scs.current_in_val = float(current_in_val)
@@ -651,7 +654,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 scs.organization = sector.organization
                 scs.severity = severity
                 scs.age = float(age)
-                bulk_update_scs.append(scs)
+                scs.save()
+                # bulk_update_scs.append(scs)
 
             else:
                 logger.debug(bulk_create_scs)
@@ -690,7 +694,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         elif technology.lower() == 'pmp':
             scs = None
             try:
-                scs = SectorCapacityStatus.objects.get(sector_sector_id=sector.sector_id)
+                scs = SectorCapacityStatus.objects.get_or_create(
+                    sector=sector,
+                    sector_sector_id=sector.sector_id
+                )
             except Exception as e:
                 logger.exception(e)
 
@@ -800,8 +807,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
             )
             if scs:
                 #update the scs
-                scs.sector = sector
-                scs.sector_sector_id = sector.sector_id
+                # scs.sector = sector
+                # scs.sector_sector_id = sector.sector_id
                 scs.sector_capacity = float(sector_capacity)
                 scs.current_in_per = float(current_in_per)
                 scs.current_in_val = float(current_in_val)
@@ -821,7 +828,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 scs.organization = sector.organization
                 scs.severity = severity
                 scs.age = float(age)
-                bulk_update_scs.append(scs)
+                scs.save()
+                # bulk_update_scs.append(scs)
 
             else:
                 logger.debug(bulk_create_scs)
