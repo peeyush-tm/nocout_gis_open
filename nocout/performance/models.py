@@ -1248,8 +1248,8 @@ class EventNetworkStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
-    class Meta:
-        ordering = ['-sys_timestamp']
+    #class Meta:
+    #    ordering = ['-sys_timestamp']
 
 
 class EventServiceStatus(models.Model):
@@ -1276,8 +1276,8 @@ class EventServiceStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
-    class Meta:
-        ordering = ['-sys_timestamp']
+    #class Meta:
+    #    ordering = ['-sys_timestamp']
 
 
 class EventStatusStatus(models.Model):
@@ -1304,8 +1304,8 @@ class EventStatusStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
-    class Meta:
-        ordering = ['-sys_timestamp']
+    #class Meta:
+    #    ordering = ['-sys_timestamp']
 
 
 class EventMachineStatus(models.Model):
@@ -1332,8 +1332,8 @@ class EventMachineStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
-    class Meta:
-        ordering = ['-sys_timestamp']
+    #class Meta:
+    #    ordering = ['-sys_timestamp']
 
 
 class EventInventoryStatus(models.Model):
@@ -1360,8 +1360,8 @@ class EventInventoryStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
-    class Meta:
-        ordering = ['-sys_timestamp']
+    #class Meta:
+    #    ordering = ['-sys_timestamp']
 
 
 ########################HIGH PRIORITY#############################
@@ -1402,7 +1402,7 @@ class NetworkStatus(models.Model):
         return self.device_name
 
     class Meta:
-        ordering = ['-sys_timestamp']
+        #ordering = ['-sys_timestamp']
         index_together = [
             ["device_name", "service_name", "data_source"],
         ]
@@ -1434,7 +1434,7 @@ class ServiceStatus(models.Model):
         return self.device_name
 
     class Meta:
-        ordering = ['-sys_timestamp']
+        #ordering = ['-sys_timestamp']
         index_together = [
             ["device_name", "service_name", "data_source"],
         ]
@@ -1466,7 +1466,7 @@ class MachineStatus(models.Model):
         return self.device_name
 
     class Meta:
-        ordering = ['-sys_timestamp']
+        #ordering = ['-sys_timestamp']
         unique_together = (
             ("device_name", "service_name", "data_source")
         )
@@ -1498,7 +1498,7 @@ class InventoryStatus(models.Model):
         return self.device_name
 
     class Meta:
-        ordering = ['-sys_timestamp']
+        #ordering = ['-sys_timestamp']
         index_together = [
             ["device_name", "service_name", "data_source"],
         ]
@@ -1530,7 +1530,7 @@ class Status(models.Model):
         return self.device_name
 
     class Meta:
-        ordering = ['-sys_timestamp']
+        #ordering = ['-sys_timestamp']
         index_together = [
             ["device_name", "service_name", "data_source"],
         ]
