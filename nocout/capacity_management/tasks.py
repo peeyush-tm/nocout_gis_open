@@ -900,7 +900,10 @@ def bulk_update(bulky, action='update'):
     if bulky and len(bulky):
         if action == 'update':
             for update_this in bulky:
-                update_this.save()
+                try:
+                    update_this.save()
+                except Exception as e:
+                    logger.exception(e)
             return True
 
         elif action == 'create':
@@ -922,7 +925,10 @@ def bulk_create(bulky, action='create'):
     if bulky and len(bulky):
         if action == 'update':
             for update_this in bulky:
-                update_this.save()
+                try:
+                    update_this.save()
+                except Exception as e:
+                    logger.exception(e)
             return True
 
         elif action == 'create':
@@ -944,7 +950,10 @@ def bulk_update_create(bulky, action='update', model=None):
     if bulky and len(bulky):
         if action == 'update':
             for update_this in bulky:
-                update_this.save()
+                try:
+                    update_this.save()
+                except Exception as e:
+                    logger.exception(e)
             return True
 
         elif action == 'create':
