@@ -316,12 +316,13 @@ def get_highchart_response(dictionary={}):
             'valuesuffix': dictionary['valuesuffix'],
             'data': dictionary['chart_series']
         }
-    elif dictionary['type'] == 'chart':
+    elif dictionary['type'] == 'column':
         chart_data = {
-            'type': 'chart',
-            'name': dictionary['name'],
+            'type': 'column',
             'valuesuffix': dictionary['valuesuffix'],
-            'data': dictionary['chart_series']
+            'data': dictionary['chart_series'],
+            'name': dictionary['name'],
+            'valuetext' : dictionary['valuetext']
         }
     return json.dumps({
         "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
