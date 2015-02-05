@@ -513,11 +513,11 @@ function googleEarthClass() {
 		var db = new loki('loki.json');
 
 		// Create a collection:
-		bs_loki_db = db.addCollection('base_station')
-		ss_loki_db = db.addCollection('sub_station')
-		sector_loki_db = db.addCollection('sector_device')
-		polygon_loki_db = db.addCollection('sector_polygon')
-		line_loki_db = db.addCollection('path')
+		// bs_loki_db = db.addCollection('base_station')
+		// ss_loki_db = db.addCollection('sub_station')
+		// sector_loki_db = db.addCollection('sector_device')
+		// polygon_loki_db = db.addCollection('sector_polygon')
+		// line_loki_db = db.addCollection('path')
 		all_devices_loki_db = db.addCollection('allDevices');
 
 		state_lat_lon_db = db.addCollection('state_lat_lon');
@@ -556,6 +556,7 @@ function googleEarthClass() {
 		state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
 		state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
 		state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
+
 
 		/*Search text box object*/
 		var searchTxt = document.getElementById('google_loc_search');

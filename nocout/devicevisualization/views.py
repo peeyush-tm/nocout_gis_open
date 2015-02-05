@@ -215,7 +215,7 @@ class Gis_Map_Performance_Data(View):
                         device_frequency= InventoryStatus.objects.filter(device_name=device_name,
                                                                          data_source='frequency').\
                                                                          using(alias=device_machine_name)\
-                                                                        .order_by('-sys_timestamp')[:1]
+                                                                        [:1]
                         if len(device_frequency):
                             device_frequency = device_frequency[0].current_value
                         else:
@@ -334,7 +334,7 @@ class Gis_Map_Performance_Data(View):
                                                                                service_name= device_service_name,
                                                                                data_source= device_service_data_source)\
                                                                                .using(alias=device_machine_name)\
-                                                                               .order_by('-sys_timestamp')[:1]
+                                                                               [:1]
                         if len(device_performance_value):
                             device_performance_value = device_performance_value[0].current_value
                         else:
@@ -1394,7 +1394,10 @@ class GISPerfData(View):
     """
 
     def get(self, request):
-        logger.info("#################### START FETCHING BASE STATION DATA ###################")
+
+        device_list = list()
+        machine_dict = dict()
+        device_value_list = ['id','machine__name','device_name','ip_address']
 
         # get base stations id's list
         bs_ids = eval(str(self.request.GET.get('base_stations', None)))
@@ -1417,9 +1420,22 @@ class GISPerfData(View):
                 # base station
                 bs = ""
                 try:
-                    bs = BaseStation.objects.get(pk=bs_id)
-
-                    logger.info("Base Station {}: '{}' data fetching start.".format(bs_counter, bs.alias))
+                    bs_objects = BaseStation.objects.filter(
+                        id=bs_id
+                    ).select_related(
+                        'state',
+                        'city',
+                        'backhaul',
+                        'sector',
+                        'sector__circuit_set',
+                        'organization',
+                        'sector__sector_configured_on',
+                        'sector__circuit_set__sub_station',
+                        'sector__circuit_set__sub_station__device',
+                        'sector__circuit_set__customer',
+                        'backhaul__bh_configured_on'
+                    )
+                    bs = bs_objects.get()
 
                     bs_dict['bs_name'] = bs.name
                     bs_dict['bs_alias'] = bs.alias
@@ -1428,26 +1444,31 @@ class GISPerfData(View):
                     bs_dict['param'] = dict()
                     bs_dict['param']['sector'] = list()
                 except Exception as e:
-                    logger.error("Base Station not exist. Exception: ", e.message)
+                    continue #if no bs. continue. not a possible condition
 
                 # if base station exist
                 if bs:
-                    logger.info("########################## START FETCHING SECTORS DATA ##########################")
 
                     # get all sectors associated with base station (bs)
                     sectors = bs.sector.all()
 
+                    #preparing for devices
+                    # device_list += Device.objects.filter(
+                    #         id__in=sectors.filter(sector_configured_on__is_added_to_nms=1
+                    #         ).values_list('sector_configured_on', flat=True)
+                    #     ).values(*device_value_list)
+
+
+
                     # backhaul device
-                    backhaul_device = ""
+                    backhaul_device = None
                     try:
                         backhaul_device = bs.backhaul.bh_configured_on
                     except Exception as e:
-                        logger.error("No backhaul device found. Exception: ", e.message)
+                        pass #no backhaul. dont care.
 
                     # backhaul data
                     if backhaul_device and backhaul_device.is_added_to_nms == 1:
-                        logger.info("Call to 'get_backhaul_info' for backhaul device '{}'.".format(
-                            backhaul_device.device_alias))
                         backhaul_data = self.get_backhaul_info(backhaul_device)
                         bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
                         bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
@@ -1457,22 +1478,16 @@ class GISPerfData(View):
 
                     # loop through all sectors
                     for sector_obj in sectors:
-                        # increment sectors counter by 1
-                        sectors_counter += 1
 
                         # sector
                         sector = sector_obj
 
-                        logger.info("Sector {}: '{}' data fetching start.".format(sectors_counter, sector.alias))
+                        # logger.info("Sector {}: '{}' data fetching start.".format(sectors_counter, sector.alias))
 
                         # sector configured on device
                         sector_device = sector.sector_configured_on
 
-                        if sector_device.is_added_to_nms == 1:
-                            logger.info("Sector {}: '{}' data fetching start.".format(sectors_counter, sector.alias))
-                            logger.info("Call to 'get_sector_performance_info' for sector device '{}'.".format(
-                                sector_device.device_alias))
-
+                        if sector_device and sector_device.is_added_to_nms == 1:
                             # get performance data
                             sector_performance_data = self.get_sector_performance_info(sector_device, sector_obj)
 
@@ -1496,47 +1511,33 @@ class GISPerfData(View):
                             # replaceing topology code
                             # as the topology is auto-updated
                             # using celery beat
-                            logger.info("###################### START FETCHING SUB STATION DATA ######################")
-                            subs = SubStation.objects.filter(id__in=sector.circuit_set.values_list('sub_station',
-                                                                                                   flat=True))
-                            # topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
 
-                            # list of all associated substations ip's
-                            # substations_ips_list = list()
-                            # for topology in topolopies_for_ss:
-                            #     substations_ips_list.append(topology.connected_device_ip)
+                            subs = SubStation.objects.filter(
+                                id__in=sector.circuit_set.values_list('sub_station',flat=True)
+                            ).select_related('device',
+                                             'city',
+                                             'state',
+                                             'circuit',
+                                             'circuit__sector_set',
+                                             'circuit__sector_set__base_station'
+                            )
 
-                            # substations counter
-                            substation_counter = 0
+                            #preparing for devices
+                            # device_list += Device.objects.filter(
+                            #     id__in=subs.filter(device__is_added_to_nms=1).values_list('id', flat=True)
+                            # ).values(*device_value_list)
 
                             # loop through all substations using ips in 'substations_ips_list'
                             for ss in subs:
-                                # increment substation counter by 1
-                                substation_counter += 1
 
                                 # substation
                                 substation = ss
 
-                                # try:
-                                #     substation = SubStation.objects.get(device__ip_address=ss_ip)
-                                # except Exception as e:
-                                #     logger.error("Sub Station not exist. Exception: ", e.message)
-
-                                # substation device
-                                substation_device = None
-                                try:
-                                    substation_device = ss.device
-                                    # Device.objects.get(ip_address=ss_ip)
-                                except Exception as e:
-                                    logger.error("Sub Station device not exist. Exception: ", e.message)
+                                substation_device = ss.device
 
                                 ss_dict = dict()
                                 if substation and (substation_device.is_added_to_nms == 1):
-                                    logger.info("Sub Station {}: '{}' data fetching start.".format(substation_counter,
-                                                                                                   substation.alias))
-                                    logger.info("Call to 'get_substation_info' for substation device '{}'.".format(
-                                        substation_device.device_alias))
-                                    # substation default line color
+
                                     ss_default_link_color = sector_performance_data['color']
                                     ss_dict['device_name'] = substation_device.device_name
                                     ss_dict['id'] = substation_device.id
@@ -1548,21 +1549,18 @@ class GISPerfData(View):
                                     # append substation dictionary to 'sub_station' list
                                     sector_dict['sub_station'].append(ss_dict)
                                 else:
-                                    logger.info("Sub Station {}: '{}' data not fetched because ss device is not \
-                                    added to nms.".format(substation_counter, substation.alias))
+                                    continue
 
                             # append 'sector_dict' to 'sector' list
                             bs_dict['param']['sector'].append(sector_dict)
                         else:
-                            logger.info("Sector {}: '{}' data not fetched because sector device is not added to nms."
-                                        .format(sectors_counter, sector.alias))
+                            continue
 
                 if bs_dict:
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
         except Exception as e:
-            logger.error("Last Exception :")
-            logger.error(e)
+            logger.exception(e)
             performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
@@ -1620,8 +1618,8 @@ class GISPerfData(View):
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
             pl_dict['value'] = "NA"
-            logger.error("PL not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-                                                                                    e.message))
+            # logger.error("PL not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+            #                                                                         e.message))
 
         # rta
         try:
@@ -1630,16 +1628,20 @@ class GISPerfData(View):
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
             rta_dict['value'] = "NA"
-            logger.error("RTA not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-                                                                                     e.message))
+            # logger.error("RTA not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+            #                                                                          e.message))
 
         # bh severity
         try:
-            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device.device_name).using(
-                                                                       alias=bh_device.machine.name)[0].severity
+
+            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device,
+                                                            data_source='pl').using(
+                                                            alias=bh_device.machine.name)[0].severity
+
         except Exception as e:
-            logger.error("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-                                                                                             e.message))
+            backhaul_data['bhSeverity'] = 'unknown'
+            # logger.error("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+            #                                                                                  e.message))
 
         # append 'pl_dict' to 'bh_info' list
         backhaul_data['bh_info'].append(pl_dict)
@@ -1701,29 +1703,6 @@ class GISPerfData(View):
         # type of thematic settings needs to be fetched
         ts_type = self.request.GET.get('ts', 'normal')
 
-        # device technology
-        try:
-            device_technology = DeviceTechnology.objects.get(id=device.device_technology)
-        except Exception as e:
-            device_technology = ""
-            logger.error("Device technology not exist. Exception: ", e.message)
-
-        # thematic settings for current user
-        user_thematics = self.get_thematic_settings(device_technology)
-
-        # service & data source
-        service = ""
-        data_source = ""
-        try:
-            if ts_type == "normal":
-                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
-                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
-            elif ts_type == "ping":
-                service = user_thematics.thematic_template.service
-                data_source = user_thematics.thematic_template.data_source
-        except Exception as e:
-            logger.error("No thematic setting for device {}. Exception: ".format(device_name, e.message))
-
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time, sector)
 
@@ -1743,34 +1722,48 @@ class GISPerfData(View):
         performance_data['color'] = device_link_color
 
         # antenna polarization, azimuth angle, beam width and radius
-        polarization = ""
-        azimuth_angle = ""
-        beam_width = ""
-        radius = ""
-        try:
-            # if device is a 'sector configured on' device; than fetch antenna info too
-            if device.sector_configured_on.exists():
-                # sector to which device is associated
-                device_sector_objects = device.sector_configured_on.filter()
-
-                if len(device_sector_objects):
-                    # sector = device_sector_objects[0]
-                    # sector antenna
-                    antenna = sector.antenna
-                    # azimuth angle
-                    azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
-                    # beam width
-                    beam_width = sector.antenna.beam_width if antenna else 'N/A'
-                    # radius
-                    radius = self.get_frequency_color_and_radius(device_frequency, device_pl)[1]
-        except Exception as e:
-            logger.error(logger.error("Device is not sector configured on or not exist. Exception: ", e.message))
+        # sector to which device is associated
+        # sector antenna
+        antenna = sector.antenna
+        # azimuth angle
+        azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
+        # beam width
+        beam_width = sector.antenna.beam_width if antenna else 'N/A'
+        # radius
+        radius = self.get_frequency_color_and_radius(device_frequency, device_pl)[1]
 
         # update azimuth_angle, beam_width, radius
         performance_data['azimuth_angle'] = azimuth_angle
         performance_data['beam_width'] = beam_width
         performance_data['radius'] = radius
-        performance_value = ""
+
+        # device technology
+        try:
+            device_technology = DeviceTechnology.objects.get(id=device.device_technology)
+        except Exception as e:
+            device_technology = None
+
+        if not device_technology:
+            return performance_data
+
+        # thematic settings for current user
+        user_thematics = self.get_thematic_settings(device_technology)
+
+        if not user_thematics:
+            return performance_data
+
+        # service & data source
+        service = ""
+        data_source = ""
+        try:
+            if ts_type == "normal":
+                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
+                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
+            elif ts_type == "ping":
+                service = user_thematics.thematic_template.service
+                data_source = user_thematics.thematic_template.data_source
+        except Exception as e:
+            return performance_data
 
         # performance value
         perf_payload = {
@@ -1779,8 +1772,8 @@ class GISPerfData(View):
             'freeze_time': freeze_time,
             'device_service_name': service,
             'device_service_data_source': data_source
-
         }
+
         performance_value = self.get_performance_value(perf_payload, ts_type)
 
         if user_thematics:
@@ -1793,7 +1786,8 @@ class GISPerfData(View):
             try:
                 icon = "media/" + str(device_type.device_icon)
             except Exception as e:
-                logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
+                pass
+                # logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             if device_pl != "100":
                 # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
@@ -1801,7 +1795,8 @@ class GISPerfData(View):
                 try:
                     th_icon_settings = user_thematics.thematic_template.icon_settings
                 except Exception as e:
-                    logger.error("No icon settings for thematic settings. Exception: ", e.message)
+                    pass
+                    #logger.error("No icon settings for thematic settings. Exception: ", e.message)
 
                 # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
                 th_ranges = ""
@@ -1813,7 +1808,8 @@ class GISPerfData(View):
                     else:
                         pass
                 except Exception as e:
-                    logger.error("No ranges for thematic settings. Exception: ", e.message)
+                    pass
+                    #logger.error("No ranges for thematic settings. Exception: ", e.message)
 
                 # fetch service type if 'ts_type' is "normal"
                 service_type = ""
@@ -1821,11 +1817,12 @@ class GISPerfData(View):
                     if ts_type == "normal":
                         service_type = user_thematics.thematic_template.threshold_template.service_type
                 except Exception as e:
-                    logger.error("Service Type not exist. Exception: ", e.message)
+                    pass
+                    #logger.error("Service Type not exist. Exception: ", e.message)
 
                 # comparing threshold values to get icon
                 try:
-                    if len(performance_value):
+                    if performance_value and len(performance_value):
                         # live polled value of device service
                         #value = ast.literal_eval(str(performance_value))
 
@@ -1845,7 +1842,8 @@ class GISPerfData(View):
                         else:
                             pass
                 except Exception as e:
-                    logger.error("Icon not exist. Exception: ", e.message)
+                    return performance_data
+                    #logger.error("Icon not exist. Exception: ", e.message)
 
             # update performance value
             if device_pl != "100":
@@ -1962,7 +1960,7 @@ class GISPerfData(View):
 
         return icon
 
-    def get_device_info(self, device_obj, machine_name, device_pl="", ss=False, is_static=False):
+    def get_device_info(self, device_obj, machine_name, device_pl="", ss=None, is_static=False):
         """ Get Sector/Sub Station device information
 
             Parameters:
@@ -2007,120 +2005,100 @@ class GISPerfData(View):
 
         # connected bs ip
         connected_bs_ip = ""
-        #try:
-        #    # if bs_connected_ip not exist in topology than get it from gis inventory
-        #    connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)
-        #    if connected_bs_ip:
-        #        connected_bs_ip = connected_bs_ip[0].ip_address
-        #    elif not connected_bs_ip:
-        #        substation = SubStation.objects.filter(device=device_obj)[0]
-        #        connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
-        #    else:
-        #        pass
-        #except Exception as e:
-        #    logger.error(e)
-        #    logger.error("Sub station is not connected to any Base Station.")
 
         # is device is a substation device than add static inventory parameters in list
         if is_static:
             if ss:
                 # substation
-                substation = ""
-                try:
-                    substation = SubStation.objects.get(device=device_obj)
-                except Exception as e:
-                    logger.error("Sub Station not exist. Exception: ", e.message)
-
+                substation = ss
                 # substation device
-                substation_device = ""
-                try:
-                    substation_device = device_obj
-                except Exception as e:
-                    logger.error("Sub Station device not exist. Exception: ", e.message)
+                substation_device = device_obj
 
-                # connected bs ip
-                connected_bs_ip = ""
+                try:
+                    circuit = ss.circuit_set.get()
+                except:
+                    return device_info
+
                 try:
                     # if bs_connected_ip not exist in topology than get it from gis inventory
                     connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)
                     if connected_bs_ip:
                         connected_bs_ip = connected_bs_ip[0].ip_address
                     elif not connected_bs_ip:
-                        connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
+                        connected_bs_ip = circuit.sector.sector_configured_on.ip_address
                     else:
                         pass
                 except Exception as e:
-                    logger.error("Sub station is not connected to any Base Station.", e.message)
+                    pass
 
                 # pe ip
                 pe_ip = ""
                 try:
-                    pe_ip = Circuit.objects.get(sub_station=substation).sector.base_station.backhaul.pe_ip
+                    pe_ip = circuit.sector.base_station.backhaul.pe_ip
                 except Exception as e:
-                    logger.error("PE not exist in backhaul. Exception: ", e.message)
+                    pass
 
                 # substation technology
                 substation_technology = ""
                 try:
                     substation_technology = DeviceTechnology.objects.get(id=substation_device.device_technology).name
                 except Exception as e:
-                    logger.error("Sub Station has no technology. Exception: ", e.message)
+                    pass
 
                 # circuit id
                 circuit_id = ""
                 try:
-                    circuit_id = substation.circuit_set.all()[0].circuit_id
+                    circuit_id = circuit.circuit_id
                 except Exception as e:
-                    logger.error("Circuit ID not exist. Exception: ", e.message)
+                    pass
 
                 # qos bandwidth
                 qos = ""
                 try:
-                    qos = substation.circuit_set.all()[0].qos_bandwidth
+                    qos = circuit.qos_bandwidth
                 except Exception as e:
-                    logger.error("QOS not exist. Exception: ", e.message)
+                    pass
 
                 # customer alias
                 customer_alias = ""
                 try:
-                    customer_alias = substation.circuit_set.all()[0].customer.alias
+                    customer_alias = circuit.customer.alias
                 except Exception as e:
-                    logger.error("Customer Alias not exist. Exception: ", e.message)
+                    pass
 
                 # customer address
                 customer_address = ""
                 try:
-                    customer_address = substation.circuit_set.all()[0].customer.address
+                    customer_address = circuit.customer.address
                 except Exception as e:
-                    logger.error("Customer Address not exist. Exception: ", e.message)
+                    pass
 
                 # date of acceptance
                 date_of_acceptance = ""
                 try:
-                    date_of_acceptance = str(substation.circuit_set.all()[0].date_of_acceptance)
+                    date_of_acceptance = str(circuit.date_of_acceptance)
                 except Exception as e:
-                    logger.error("Date Of Acceptance not exist. Exception: ", e.message)
+                    pass
 
                 # dl rssi during acceptance
                 dl_rssi_during_acceptance = ""
                 try:
-                    dl_rssi_during_acceptance = substation.circuit_set.all()[0].dl_rssi_during_acceptance
+                    dl_rssi_during_acceptance = circuit.dl_rssi_during_acceptance
                 except Exception as e:
-                    logger.error("DL RSSI During Acceptance not exist. Exception: ", e.message)
+                    pass
 
                 # dl cinr during acceptance
                 dl_cinr_during_acceptance = ""
                 try:
-                    dl_cinr_during_acceptance = substation.circuit_set.all()[0].dl_cinr_during_acceptance
+                    dl_cinr_during_acceptance = circuit.dl_cinr_during_acceptance
                 except Exception as e:
-                    logger.error("DL CINR During Acceptance not exist. Exception: ", e.message)
+                    pass
 
                 # ss sector frequency
                 ss_sector_frequency = ""
                 try:
-                    ss_sector_frequency = substation.circuit_set.all()[0].sector.frequency.value
+                    ss_sector_frequency = circuit.sector.frequency.value
                 except Exception as e:
-                    logger.error("SS Sector Frequency not exist. Exception:")
                     pass
 
                 # antenna height
@@ -2128,14 +2106,14 @@ class GISPerfData(View):
                 try:
                     antenna_height = substation.antenna.height
                 except Exception as e:
-                    logger.error("Antenna Height not exist. Exception: ", e.message)
+                    pass
 
                 # antenna polarization
                 antenna_polarization = ""
                 try:
                     antenna_polarization = substation.antenna.polarization
                 except Exception as e:
-                    logger.error("Antenna Polarization not exist. Exception: ", e.message)
+                    pass
 
                 # antenna mount type
                 antenna_mount_type = ""
@@ -2143,7 +2121,7 @@ class GISPerfData(View):
                     antenna_mount_type = substation.antenna.mount_type
 
                 except Exception as e:
-                    logger.error("Antenna Type not exist. Exception: ", e.message)
+                    pass
 
                 # antenna type
                 antenna_type = ""
@@ -2151,7 +2129,7 @@ class GISPerfData(View):
                     antenna_type = substation.antenna.antenna_type
 
                 except Exception as e:
-                    logger.error("Antenna Type not exist. Exception: ", e.message)
+                    pass
 
                 # adding gis inventory static parameters to device info
                 device_info = [
@@ -2352,15 +2330,20 @@ class GISPerfData(View):
                 )
 
                 # get session uptime
+                format_session = None
                 session_uptime = device_last_down_time(device_obj)
 
+                if session_uptime:
+                    format_session = datetime.datetime.fromtimestamp(
+                        float(session_uptime)
+                    ).strftime('%Y-%m-%d %H:%M:%S')
                 # session uptime tool tip dictionary
                 session_uptime_info = {
                     "name": 'session_uptime',
                     "title": 'Session Uptime',
                     "show": 1,
                     "url": None,
-                    "value": datetime.datetime.fromtimestamp(session_uptime).strftime('%Y-%m-%d %H:%M:%S')
+                    "value": format_session
                 }
 
                 device_info.append(session_uptime_info)
@@ -2424,20 +2407,34 @@ class GISPerfData(View):
                 if sds_name in SERVICE_DATA_SOURCE \
                 else None
             try:
-                perf_info = {
-                    "name": name,
-                    "title": title,
-                    "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + perf[
-                        'data_source'].strip() + "/device/" + str(
-                        device_id) + "?start_date=&end_date=",
-                    "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
-                    else perf['current_value'],
-                }
+                cur_val = None
+                if perf['current_value']:
+                    cur_val = perf['current_value']
+                try:
+                    perf_info = {
+                        "name": name,
+                        "title": title,
+                        "show": show_gis,
+                        "url": "performance/service/" + service_name + "/service_data_source/" + perf[
+                            'data_source'].strip() + "/device/" + str(
+                            device_id) + "?start_date=&end_date=",
+                        "value": eval(str(formula) + "(" + str(cur_val) + ")") if formula
+                        else cur_val,
+                    }
+                except Exception as e:
+                    perf_info = {
+                        "name": name,
+                        "title": title,
+                        "show": show_gis,
+                        "url": "performance/service/" + service_name + "/service_data_source/" + perf[
+                            'data_source'].strip() + "/device/" + str(
+                            device_id) + "?start_date=&end_date=",
+                        "value": cur_val,
+                    }
 
                 device_info.append(perf_info)
             except Exception as e:
-                logger.info("Something wrong with formula. Exception: ", e.message)
+                logger.exception(e)
         return device_info
 
     def sanatize_datasource(self, data_source, service_name):
@@ -2666,6 +2663,9 @@ class GISPerfData(View):
                                                     }
         """
 
+        # sector info dict
+        substation_info = dict()
+
         # device name
         device_name = substation_device.device_name
         
@@ -2685,30 +2685,17 @@ class GISPerfData(View):
         try:
             device_type = DeviceType.objects.get(id=substation_device.device_type)
         except Exception as e:
-            logger.exception(e.message)
+            logger.exception(e)
 
         # device technology
-        device_technology = ""
+        device_technology = None
         try:
             device_technology = DeviceTechnology.objects.get(id=substation_device.device_technology)
         except Exception as e:
-            logger.error("Device technology not exist. Exception: ", e.message)
+            pass
 
-        # thematic settings for current user
-        user_thematics = self.get_thematic_settings(device_technology)
-
-        # service & data source
-        service = ""
-        data_source = ""
-        try:
-            if ts_type == "normal":
-                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
-                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
-            elif ts_type == "ping":
-                service = user_thematics.thematic_template.service
-                data_source = user_thematics.thematic_template.data_source
-        except Exception as e:
-            logger.error("No user thematics for device {}. Exception: ".format(device_name, e.message))
+        if not device_technology:
+            return substation_info
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time,
@@ -2725,19 +2712,6 @@ class GISPerfData(View):
         if not device_link_color:
             device_link_color = ss_default_link_color
 
-        # performance value
-        perf_payload = {
-            'device_name': device_name,
-            'machine_name': machine_name,
-            'freeze_time': freeze_time,
-            'device_service_name': service,
-            'device_service_data_source': data_source
-
-        }
-        performance_value = self.get_performance_value(perf_payload, ts_type)
-
-        # sector info dict
-        substation_info = dict()
 
         far_end_perf_url = ""
         far_end_inventory_url = ""
@@ -2769,18 +2743,56 @@ class GISPerfData(View):
         substation_info['param'] = dict()
 
         # Fetch sub station static info
-        substation_info['param']['sub_station'] = self.get_device_info(substation_device,
-                                                                       machine_name,
-                                                                       device_pl,
-                                                                       substation,
-                                                                       True)
+        #get_device_info(self, device_obj, machine_name, device_pl="", ss=False, is_static=False, ss_object=None)
+        substation_info['param']['sub_station'] = self.get_device_info(device_obj=substation_device,
+                                                                       machine_name=machine_name,
+                                                                       device_pl=device_pl,
+                                                                       ss=substation,
+                                                                       is_static=True
+        )
         # Fetch sub station polled info
-        substation_info['param']['polled_info'] = self.get_device_info(substation_device,
-                                                                       machine_name,
-                                                                       device_pl,
-                                                                       substation)
+        #get_device_info(self, device_obj, machine_name, device_pl="", ss=False, is_static=False, ss_object=None)
+        substation_info['param']['polled_info'] = self.get_device_info(device_obj=substation_device,
+                                                                       machine_name=machine_name,
+                                                                       device_pl=device_pl,
+                                                                       ss=substation,
+                                                                       is_static=False
+        )
+
+
+        # thematic settings for current user
+        user_thematics = self.get_thematic_settings(device_technology)
+
+        if not user_thematics:
+            return substation_info
+
+        # service & data source
+        service = ""
+        data_source = ""
+        try:
+            if ts_type == "normal":
+                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
+                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
+            elif ts_type == "ping":
+                service = user_thematics.thematic_template.service
+                data_source = user_thematics.thematic_template.data_source
+        except Exception as e:
+            return substation_info
+
+        # performance value
+        perf_payload = {
+            'device_name': device_name,
+            'machine_name': machine_name,
+            'freeze_time': freeze_time,
+            'device_service_name': service,
+            'device_service_data_source': data_source
+
+        }
+
+        performance_value = None
 
         if device_pl != "100":
+            performance_value = self.get_performance_value(perf_payload, ts_type)
             substation_info['perf_value'] = performance_value
         else:
             substation_info['perf_value'] = ""
@@ -2789,13 +2801,11 @@ class GISPerfData(View):
             # icon
             icon = ""
 
-            # device type
-            device_type = DeviceType.objects.get(pk=substation_device.device_type)
-
             try:
                 icon = "media/" + str(device_type.device_icon)
             except Exception as e:
-                logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
+                pass
+                #logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             if device_pl != "100":
                 # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
@@ -2803,7 +2813,7 @@ class GISPerfData(View):
                 try:
                     th_icon_settings = user_thematics.thematic_template.icon_settings
                 except Exception as e:
-                    logger.error("No icon settings for thematic settings. Exception: ", e.message)
+                    logger.exception(e)
 
                 # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
                 th_ranges = ""
@@ -2815,7 +2825,7 @@ class GISPerfData(View):
                     else:
                         pass
                 except Exception as e:
-                    logger.error("No ranges for thematic settings. Exception: ", e.message)
+                    logger.exception(e)
 
                 # fetch service type if 'ts_type' is "normal"
                 service_type = ""
@@ -2823,11 +2833,11 @@ class GISPerfData(View):
                     if ts_type == "normal":
                         service_type = user_thematics.thematic_template.threshold_template.service_type
                 except Exception as e:
-                    logger.error("Service Type not exist. Exception: ", e.message)
+                    logger.exception(e)
 
                 # comparing threshold values to get icon
                 try:
-                    if len(performance_value):
+                    if performance_value and len(performance_value):
                         # live polled value of device service
                         #value = ast.literal_eval(str(performance_value))
 
@@ -2847,7 +2857,7 @@ class GISPerfData(View):
                         else:
                             pass
                 except Exception as e:
-                    logger.error("Icon not exist. Exception: ", e.message)
+                    logger.exception(e)
 
             substation_info['markerUrl'] = icon
 
@@ -2874,7 +2884,7 @@ class GISPerfData(View):
             #     device_frequency = PerformanceInventory.objects.filter(device_name=device_name, data_source='frequency',
             #                                                            sys_timestamp__lte=int(freeze_time) / 1000)\
             #                                                            .using(alias=machine_name)\
-            #                                                            .order_by('-sys_timestamp')[:1]
+            #                                                            [:1]
             #     if len(device_frequency):
             #         device_frequency = device_frequency[0].current_value
             #     else:
@@ -2903,33 +2913,32 @@ class GISPerfData(View):
                                                                   service_name=service_name,
                                                                   data_source='frequency')\
                                                               .using(alias=machine_name)\
-                                                              .order_by('-sys_timestamp')[:1]
+                                                              [:1]
             elif frequency_service:
-                service_name = frequency_service[0]
+                service_name = frequency_service[0].name
                 if "_invent" in service_name:
                     device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
                                                               .using(alias=machine_name)\
-                                                              .order_by('-sys_timestamp')[:1]
+                                                              [:1]
                 else:
                     device_frequency = PerformanceStatus.objects.filter(device_name=device_name,
                                                                         service_name=service_name,
                                                                         data_source='frequency')\
                                                               .using(alias=machine_name)\
-                                                              .order_by('-sys_timestamp')[:1]
+                                                              [:1]
             else:
                 device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
                                                               .using(alias=machine_name)\
-                                                              .order_by('-sys_timestamp')[:1]
+                                                              [:1]
             if device_frequency:
                 try:
                     device_frequency = device_frequency[0].current_value
                 except Exception as e:
-                    logger.error("Device frequecy inner exception. Exception: ", e.message)
+                    logger.exception(e)
             else:
                 device_frequency = ""
         except Exception as e:
-            logger.error("Device frequency not exist.")
-            pass
+            logger.exception(e)
 
         return device_frequency
 
@@ -2948,13 +2957,17 @@ class GISPerfData(View):
         # device packet loss
         device_pl = ""
 
+        end_time = int(freeze_time) / 1000
+        start_time = end_time - 300
+
         try:
             if int(freeze_time):
                 device_pl = PerformanceNetwork.objects.filter(device_name=device_name, service_name='ping',
                                                               data_source='pl',
-                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                              sys_timestamp__gte=start_time,
+                                                              sys_timestamp__lte=end_time)\
                                                               .using(alias=machine_name)\
-                                                              .order_by('-sys_timestamp')[:1]
+                                                              [:1]
                 if len(device_pl):
                     device_pl = device_pl[0].current_value
                 else:
@@ -2963,7 +2976,7 @@ class GISPerfData(View):
                 device_pl = NetworkStatus.objects.filter(device_name=device_name,
                                                          service_name='ping',
                                                          data_source='pl')\
-                                                         .using(alias=machine_name).order_by('-sys_timestamp')[:1]
+                                                         .using(alias=machine_name)[:1]
                 if len(device_pl):
                     device_pl = device_pl[0].current_value
                 else:
@@ -3035,6 +3048,8 @@ class GISPerfData(View):
                - user_thematics (<class 'inventory.models.UserPingThematicSettings'>) - thematic settings object
         """
 
+        user_thematics = None
+
         # thematic settings type i.e. 'ping' or 'normal'
         ts_type = self.request.GET.get('ts', 'normal')
 
@@ -3042,26 +3057,26 @@ class GISPerfData(View):
         try:
             current_user = UserProfile.objects.get(id=self.request.user.id)
         except Exception as e:
-            current_user = ""
-            logger.error("User Profile not exist. Exception: ", e.message)
+            return None
 
         # device technology
         device_technology = device_technology
 
         # fetch thematic settings for current user
-        user_thematics = ""
+
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
                                                                   thematic_technology=device_technology)
             except Exception as e:
-                logger.error("User thematic settings not exist. Exception: ", e.message)
+                return user_thematics
+
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
                                                                       thematic_technology=device_technology)
             except Exception as e:
-                logger.error("User thematic settings not exist. Exception: ", e.message)
+                return user_thematics
 
         return user_thematics
 
@@ -3099,122 +3114,100 @@ class GISPerfData(View):
         device_service_data_source = perf_payload['device_service_data_source']
 
         # performance value
-        performance_value = ""
+        performance_value = None
+
+        end_time = int(freeze_time) / 1000
+        start_time = end_time - 300
+
         try:
             if ts_type == "normal":
                 if "_invent" in device_service_name:
                     if int(freeze_time):
+
                         performance_value = PerformanceInventory.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+
+                        ).using(alias=machine_name)[:1]
+
                     else:
                         performance_value = InventoryStatus.objects.filter(device_name=device_name,
                                                                          service_name=device_service_name,
                                                                          data_source=device_service_data_source)\
                                                                          .using(alias=machine_name)\
-                                                                         .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                         [:1]
 
                 elif "_status" in device_service_name:
                     if int(freeze_time):
                         performance_value = PerformanceStatus.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name)[:1]
+
                     else:
                         performance_value = Status.objects.filter(device_name=device_name,
                                                                          service_name=device_service_name,
                                                                          data_source=device_service_data_source)\
                                                                          .using(alias=machine_name)\
-                                                                         .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                         [:1]
+
                 elif "_kpi" in device_service_name:
                     if int(freeze_time):
                         performance_value = Utilization.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name)[:1]
+
+
                     else:
                         performance_value = UtilizationStatus.objects.filter(device_name=device_name,
                                                                          service_name=device_service_name,
                                                                          data_source=device_service_data_source)\
                                                                          .using(alias=machine_name)\
-                                                                         .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                         [:1]
                 else:
                     if int(freeze_time):
                         performance_value = PerformanceService.objects.filter(device_name=device_name,
                                                                               service_name=device_service_name,
                                                                               data_source=device_service_data_source,
-                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                              .using(alias=machine_name)\
-                                                                              .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name)[:1]
+
                     else:
                         performance_value = ServiceStatus.objects.filter(device_name=device_name,
                                                                          service_name=device_service_name,
                                                                          data_source=device_service_data_source)\
                                                                          .using(alias=machine_name)\
-                                                                         .order_by('-sys_timestamp')[:1]
-                        if len(performance_value):
-                            performance_value = performance_value[0].current_value
-                        else:
-                            performance_value = ""
+                                                                         [:1]
+
             elif ts_type == "ping":
                 if int(freeze_time):
                     performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                                          service_name=device_service_name,
-                                                                  data_source=device_service_data_source,
-                                                                  sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                  .using(alias=machine_name)\
-                                                                  .order_by('-sys_timestamp')[:1]
-                    if len(performance_value):
-                        performance_value = performance_value[0].current_value
-                    else:
-                        performance_value = ""
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__gte=start_time,
+                                                                              sys_timestamp__lte=end_time
+                        ).using(alias=machine_name)[:1]
+
                 else:
                     performance_value = NetworkStatus.objects.filter(device_name=device_name,
                                                          service_name=device_service_name,
                                                          data_source=device_service_data_source)\
-                                                         .using(alias=machine_name).order_by('-sys_timestamp')[:1]
-                    if len(performance_value):
-                        performance_value = performance_value[0].current_value
-                    else:
-                        performance_value = ""
+                                                         .using(alias=machine_name)[:1]
+
+            if performance_value and len(performance_value):
+                # logger.info(performance_value.query)
+                performance_value = performance_value[0].current_value
+
         except Exception as e:
-            performance_value = ""
-            logger.error("Performance value not exist. Exception: ", e.message)
+            return performance_value
 
         return performance_value
 

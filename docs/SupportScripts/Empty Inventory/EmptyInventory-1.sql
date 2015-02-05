@@ -1,15 +1,27 @@
-SET FOREIGN_KEY_CHECKS=0;
+-- MySQL dump 10.13  Distrib 5.6.19, for linux-glibc2.5 (x86_64)
+--
+-- Host: 121.244.255.107    Database: nocout_m5
+-- ------------------------------------------------------
+-- Server version	5.6.19-enterprise-commercial-advanced-log
 
-drop table inventory_substation;
-drop table inventory_sector;
-drop table inventory_customer;
-drop table inventory_circuit;
-drop table inventory_basestation;
-drop table inventory_backhaul;
-drop table inventory_antenna;
-drop table device_device;
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+--
+-- Table structure for table `inventory_substation`
+--
 
+DROP TABLE IF EXISTS `inventory_substation`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `inventory_substation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
@@ -46,8 +58,15 @@ CREATE TABLE `inventory_substation` (
   CONSTRAINT `organization_id_refs_id_d968c5c7` FOREIGN KEY (`organization_id`) REFERENCES `organization_organization` (`id`),
   CONSTRAINT `state_id_refs_id_80496304` FOREIGN KEY (`state_id`) REFERENCES `device_state` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `inventory_sector`
+--
 
+DROP TABLE IF EXISTS `inventory_sector`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `inventory_sector` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
@@ -90,8 +109,15 @@ CREATE TABLE `inventory_sector` (
   CONSTRAINT `sector_configured_on_id_refs_id_589ca1cf` FOREIGN KEY (`sector_configured_on_id`) REFERENCES `device_device` (`id`),
   CONSTRAINT `sector_configured_on_port_id_refs_id_52f2e9fd` FOREIGN KEY (`sector_configured_on_port_id`) REFERENCES `device_deviceport` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `inventory_customer`
+--
 
+DROP TABLE IF EXISTS `inventory_customer`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `inventory_customer` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
@@ -104,8 +130,15 @@ CREATE TABLE `inventory_customer` (
   KEY `inventory_customer_de772da3` (`organization_id`),
   CONSTRAINT `organization_id_refs_id_cfbc7962` FOREIGN KEY (`organization_id`) REFERENCES `organization_organization` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `inventory_circuit`
+--
 
+DROP TABLE IF EXISTS `inventory_circuit`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `inventory_circuit` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
@@ -134,8 +167,15 @@ CREATE TABLE `inventory_circuit` (
   CONSTRAINT `sector_id_refs_id_1b7c0cea` FOREIGN KEY (`sector_id`) REFERENCES `inventory_sector` (`id`),
   CONSTRAINT `sub_station_id_refs_id_eedc5892` FOREIGN KEY (`sub_station_id`) REFERENCES `inventory_substation` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `inventory_basestation`
+--
 
+DROP TABLE IF EXISTS `inventory_basestation`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `inventory_basestation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
@@ -181,8 +221,15 @@ CREATE TABLE `inventory_basestation` (
   CONSTRAINT `organization_id_refs_id_75df2c48` FOREIGN KEY (`organization_id`) REFERENCES `organization_organization` (`id`),
   CONSTRAINT `state_id_refs_id_4a3e1918` FOREIGN KEY (`state_id`) REFERENCES `device_state` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `inventory_backhaul`
+--
 
+DROP TABLE IF EXISTS `inventory_backhaul`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `inventory_backhaul` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
@@ -222,8 +269,15 @@ CREATE TABLE `inventory_backhaul` (
   CONSTRAINT `organization_id_refs_id_82871406` FOREIGN KEY (`organization_id`) REFERENCES `organization_organization` (`id`),
   CONSTRAINT `pop_id_refs_id_1a6887f3` FOREIGN KEY (`pop_id`) REFERENCES `device_device` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `inventory_antenna`
+--
 
+DROP TABLE IF EXISTS `inventory_antenna`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `inventory_antenna` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
@@ -247,8 +301,15 @@ CREATE TABLE `inventory_antenna` (
   KEY `inventory_antenna_de772da3` (`organization_id`),
   CONSTRAINT `organization_id_refs_id_677e2570` FOREIGN KEY (`organization_id`) REFERENCES `organization_organization` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `device_device`
+--
 
+DROP TABLE IF EXISTS `device_device`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `device_device` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `device_name` varchar(200) NOT NULL,
@@ -305,7 +366,15 @@ CREATE TABLE `device_device` (
   CONSTRAINT `site_instance_id_refs_id_7810d5e5` FOREIGN KEY (`site_instance_id`) REFERENCES `site_instance_siteinstance` (`id`),
   CONSTRAINT `state_id_refs_id_8499bec1` FOREIGN KEY (`state_id`) REFERENCES `device_state` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
-
-SET FOREIGN_KEY_CHECKS=1;
+-- Dump completed on 2015-01-30 10:40:26

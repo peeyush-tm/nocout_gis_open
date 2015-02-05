@@ -386,6 +386,11 @@ function resetAdvanceSearch() {
 
 $("#resetSearchForm").click(function(e) {
     
+    if(isDebug) {
+        console.log("Advance Search Function")
+        var start_date_reset_search = new Date();
+    }
+
     $("#search_name").select2("val","");
     $("#search_sector_configured_on").select2("val","");
     $("#search_circuit_ids").select2("val","");
@@ -419,6 +424,14 @@ $("#resetSearchForm").click(function(e) {
     // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
     // mapInstance.setZoom(5);
     advJustSearch.hideNotification();
+
+    if(isDebug) {
+        var time_diff = (new Date().getTime() - start_date_reset_search.getTime())/1000;
+        // console.log("Update State Counters Function End Time :- "+ new Date().toLocaleString());
+        console.log("Reset Advance Search Function(Return Data Case) End Time :- "+ time_diff +" Seconds");
+        console.log("*******************************************");
+        start_date_update_counter = "";
+    }
 
 });
 
