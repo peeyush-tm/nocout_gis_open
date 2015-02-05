@@ -214,7 +214,7 @@ class Gis_Map_Performance_Data(View):
                         device_frequency= InventoryStatus.objects.filter(device_name=device_name,
                                                                          data_source='frequency').\
                                                                          using(alias=device_machine_name)\
-                                                                        .order_by('-sys_timestamp')[:1]
+                                                                        [:1]
                         if len(device_frequency):
                             device_frequency = device_frequency[0].current_value
                         else:
@@ -321,7 +321,7 @@ class Gis_Map_Performance_Data(View):
                                                                                service_name= device_service_name,
                                                                                data_source= device_service_data_source,
                                                                                sys_timestamp__lte= int(freeze_time)/1000).\
-                                                                               using(alias=device_machine_name).\
+                                                                               using(alias=device_machine_name)\
                                                                                [:1]
                         if len(device_performance_value):
                             device_performance_value = device_performance_value[0].current_value
