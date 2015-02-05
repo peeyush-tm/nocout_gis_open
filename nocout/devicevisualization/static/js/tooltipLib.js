@@ -9,7 +9,7 @@ var bs_toolTip_static = [
     {
         'name'  : 'name',
         'title' : 'BS Name',
-        'show'  : 1,
+        'show'  : 0,
         'value' : '',
         'url'   : ''
     },
