@@ -296,10 +296,15 @@ CELERYBEAT_SCHEDULE = {
         'task': 'alarm_escalation.tasks.check_device_status',
         'schedule': timedelta(seconds=300),
     },
-    'gather_sector_status': {
+    'gather_sector_status-wimax': {
         'task': 'capacity_management.tasks.gather_sector_status',
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
+    },
+    'gather_sector_status-pmp': {
+        'task': 'capacity_management.tasks.gather_sector_status',
+        'schedule': timedelta(seconds=300),
+        'args': ['PMP']
     },
     'timely-main-dashboard': {
         'task': 'dashboard.tasks.calculate_timely_main_dashboard',

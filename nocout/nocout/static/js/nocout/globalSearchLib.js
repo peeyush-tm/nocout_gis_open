@@ -144,7 +144,7 @@ $("#global_search_btn").click(function(e) {
 		$.cookie("global_search_val", search_txt_data, {path: '/'});
 
 		// Search API url
-		var search_api_url = "/global_search/get_search_data/"+search_by+"/"+String(search_id);
+		var search_api_url = "/global_search/get_search_data/"+search_by+"/"+String(search_id) + "/";
 		
 		// Call function to make ajax call to get the search result. 
 		makeSearchCall_nocout(search_api_url,search_by,search_id,function(search_data) {
