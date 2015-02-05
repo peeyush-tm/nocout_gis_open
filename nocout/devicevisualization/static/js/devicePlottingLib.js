@@ -2146,9 +2146,10 @@ function devicePlottingClass_gmap() {
 				for(var k=sector_child.length;k--;) {
 
 					var ss_marker_obj = sector_child[k],
+						ss_info_list = ss_marker_obj.data.param && ss_marker_obj.data.param.sub_station ? ss_marker_obj.data.param.sub_station : [],
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
-						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"antenna_height",true),
-						ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true),
+						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_info_list,"antenna_height",true),
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_info_list,"cktid",true),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
@@ -2171,7 +2172,7 @@ function devicePlottingClass_gmap() {
 				    	oldIcon 		 : 	ss_icon_obj,
 				    	clusterIcon 	 : 	ss_icon_obj,
 				    	pointType	     : 	"sub_station",
-				    	dataset 	     : 	ss_marker_obj.data.param.sub_station,
+				    	dataset 	     : 	ss_info_list,
 				    	bhInfo 			 : 	[],
 				    	poll_info 		 :  [],
 				    	pl 				 :  "",
@@ -2282,7 +2283,7 @@ function devicePlottingClass_gmap() {
 					ssLonArray.push(ss_marker_obj.data.lon);
 
 					var ss_info = {
-							"info" : ss_marker_obj.data.param.sub_station,
+							"info" : ss_info_list,
 							"antenna_height" : ss_antenna_height
 						},
 						base_info = {
