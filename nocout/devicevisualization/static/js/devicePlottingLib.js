@@ -5076,6 +5076,7 @@ function devicePlottingClass_gmap() {
 
 			    		for(var j=0;j<sectors.length;j++) {
 			    			var sub_stations = sectors[j].sub_station ? sectors[j].sub_station : [],
+			    				ss_infoWindow_content = sectors[j].ss_info_list ? sectors[j].ss_info_list : [],
 			    				sector_ip = sectors[j].sector_configured_on ? sectors[j].sector_configured_on.toLowerCase() : "";
 							
 							// If any IP address is searched	    				
@@ -5107,7 +5108,7 @@ function devicePlottingClass_gmap() {
 
 			    			for(var k=0;k<sub_stations.length;k++) {
 			    				var ss_ip = sub_stations[k].data.substation_device_ip_address ? sub_stations[k].data.substation_device_ip_address : "",
-			    					ckt_id = gisPerformanceClass.getKeyValue(sub_stations[k].data.param.sub_station,"cktid",true),
+			    					ckt_id = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,k),
 			    					ss_circuit_id = ckt_id ? $.trim(ckt_id.toLowerCase()) : "";
 
 			    				// If any IP address or Circuit ID is searched
