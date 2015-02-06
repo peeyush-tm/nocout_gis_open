@@ -76,80 +76,80 @@ def prepare_raw_basestation(base_station=None):
                 'name': 'alias',
                 'title': 'Base-Station Name',
                 'show': 1,
-                'value': str(format_value(base_station['BSALIAS']))+"|"
+                'value': unicode(format_value(base_station['BSALIAS']))+"|"
             },
             {
                 'name': 'bs_site_id',
                 'title': 'BS Site Name',
                 'show': 1,
-                'value': str(format_value(base_station['BSSITEID']))+"|"
+                'value': unicode(format_value(base_station['BSSITEID']))+"|"
             },
             {
                 'name': 'building_height',
                 'title': 'Building Height',
                 'show': 1,
-                'value': str(format_value(base_station['BSBUILDINGHGT']))+"|"
+                'value': unicode(format_value(base_station['BSBUILDINGHGT']))+"|"
                 
             },
             {
                 'name': 'tower_height',
                 'title': 'Tower Height',
                 'show': 1,
-                'value': str(format_value(base_station['BSTOWERHEIGHT']))+"|"
+                'value': unicode(format_value(base_station['BSTOWERHEIGHT']))+"|"
             },
             {
                 'name':'bs_type',
                 'title':'BS Type',
                 'show':1,
-                'value': str(format_value(base_station['BSSITETYPE']))+"|"
+                'value': unicode(format_value(base_station['BSSITETYPE']))+"|"
             },
             {
                 'name': 'bs_gps_type',
                 'title': 'GPS Type',
                 'show': 1,
-                'value': str(format_value(base_station['BSGPSTYPE']))+"|"
+                'value': unicode(format_value(base_station['BSGPSTYPE']))+"|"
             },
             {
                 'name': 'bs_address',
                 'title': 'Address',
                 'show': 1,
-                'value': str(format_value(base_station['BSADDRESS']))+"|"
+                'value': unicode(format_value(base_station['BSADDRESS']))+"|"
             },
             {
                 'name': 'bs_city',
                 'title': 'City',
                 'show': 1,
-                'value': str(format_value(base_station['BSCITY']))+"|"
+                'value': unicode(format_value(base_station['BSCITY']))+"|"
             },
             {
                 'name': 'bs_state',
                 'title': 'State',
                 'show': 1,
-                'value': str(format_value(base_station['BSSTATE']))+"|"
+                'value': unicode(format_value(base_station['BSSTATE']))+"|"
             },
             {
                 'name': 'lat_lon',
                 'title': 'Lat, Long',
                 'show':1,
-                'value': str(format_value(base_station['BSLAT']))+","+str(format_value(base_station['BSLONG']))+"|"
+                'value': unicode(format_value(base_station['BSLAT']))+","+unicode(format_value(base_station['BSLONG']))+"|"
             },
             {
                 'name': 'bs_infra_provider',
                 'title': 'Infra Provider',
                 'show': 1,
-                'value': str(format_value(base_station['BSINFRAPROVIDER']))+"|"
+                'value': unicode(format_value(base_station['BSINFRAPROVIDER']))+"|"
             },
             {
                 'name':'tag1',
                 'title':'Tag1',
                 'show':1,
-                'value': str(format_value(base_station['BSTAG1']))+"|"
+                'value': unicode(format_value(base_station['BSTAG1']))+"|"
             },
             {
                 'name':'tag2',
                 'title':'Tag2',
                 'show':1,
-                'value': str(format_value(base_station['BSTAG2']))+"|"
+                'value': unicode(format_value(base_station['BSTAG2']))+"|"
             }
         ]
         return base_station_info
@@ -174,91 +174,91 @@ def prepare_raw_backhaul(backhaul):
                     'name': 'bh_capacity',
                     'title': 'BH Capacity',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_CAPACITY']))+"|"
+                    'value': unicode(format_value(backhaul['BH_CAPACITY']))+"|"
                 },
                 {
                     'name': 'bh_connectivity',
                     'title': 'BH Connectivity',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_CONNECTIVITY']))+"|"
+                    'value': unicode(format_value(backhaul['BH_CONNECTIVITY']))+"|"
                 },
                 {
                     'name': 'bh_type',
                     'title': 'BH Type',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_TYPE']))+"|"
+                    'value': unicode(format_value(backhaul['BH_TYPE']))+"|"
                 },
                 {
                     'name': 'bh_circuit_id',
                     'title': 'BH Circuit ID',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_CIRCUIT_ID']))+"|"
+                    'value': unicode(format_value(backhaul['BH_CIRCUIT_ID']))+"|"
                 },
                 {
                     'name': 'bh_ttsl_circuit_id',
                     'title': 'BSO Circuit ID',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_TTSL_CIRCUIT_ID']))+"|"
+                    'value': unicode(format_value(backhaul['BH_TTSL_CIRCUIT_ID']))+"|"
                 },
                 {
                     'name': 'bh_pe_hostname',
                     'title': 'PE Hostname',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_PE_HOSTNAME']))+"|"
+                    'value': unicode(format_value(backhaul['BH_PE_HOSTNAME']))+"|"
                 },
                 {
                     'name': 'pe_ip',
                     'title': 'PE IP',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_PE_IP']))+"|"
+                    'value': unicode(format_value(backhaul['BH_PE_IP']))+"|"
                 },
                 {
                     'name':'bs_switch_ip',
                     'title':'BS Switch IP',
                     'show':1,
-                    'value': str(format_value(backhaul['BSSWITCH']))+"|"
+                    'value': unicode(format_value(backhaul['BSSWITCH']))+"|"
                 },
                 {
                     'name': 'aggregation_switch',
                     'title': 'Aggregation Switch',
                     'show': 1,
-                    'value': str(format_value(backhaul['AGGR_IP']))+"|"
+                    'value': unicode(format_value(backhaul['AGGR_IP']))+"|"
                 },
                 {
                     'name': 'aggregation_switch_port',
                     'title': 'Aggregation Switch Port',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_AGGR_PORT']))+"|"
+                    'value': unicode(format_value(backhaul['BH_AGGR_PORT']))+"|"
                 },
                 {
                     'name': 'bs_converter_ip',
                     'title': 'BS Converter IP',
                     'show': 1,
-                    'value': str(format_value(backhaul['BSCONV_IP']))+"|"
+                    'value': unicode(format_value(backhaul['BSCONV_IP']))+"|"
                 },
                 {
                     'name': 'pop',
                     'title': 'POP IP',
                     'show': 1,
-                    'value': str(format_value(backhaul['POP_IP']))+"|"
+                    'value': unicode(format_value(backhaul['POP_IP']))+"|"
                 },
                 {
                     'name':'bh_device_type',
                     'title':'Converter Type',
                     'show':1,
-                    'value': str(format_value(backhaul['BHTYPE']))+"|"
+                    'value': unicode(format_value(backhaul['BHTYPE']))+"|"
                 },
                 {
                     'name': 'bh_configured_on',
                     'title': 'BH Configured On',
                     'show': 1,
-                    'value': str(format_value(backhaul['BHCONF_IP']))+"|"
+                    'value': unicode(format_value(backhaul['BHCONF_IP']))+"|"
                 },
                 {
                     'name': 'bh_device_port',
                     'title': 'SW/Con Port',
                     'show': 1,
-                    'value': str(format_value(backhaul['BH_DEVICE_PORT']))+"|"
+                    'value': unicode(format_value(backhaul['BH_DEVICE_PORT']))+"|"
                 }
             ]
 
@@ -388,40 +388,40 @@ def prepare_raw_sector(sectors):
                 sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
 
                 ### Append Sector Infowindow Content
-                all_sector_cktid += str(format_value(format_this=sector['CCID']))+"|"
-                all_sector_customer_alias += str(format_value(format_this=sector['CUST']))+"|"
-                all_sector_idu_ip += str(format_value(format_this=sector['SECTOR_CONF_ON_IP']))+"|"
-                all_sector_pe_ip += str(format_value(format_this=sector['BH_PE_IP']))+"|"
-                all_sector_qos_bandwidth += str(format_value(format_this=sector['QOS']))+"|"
-                all_sector_hssu_used += str(format_value(format_this=sector['BSHSSUUSED']))+"|"
-                all_sector_bh_bso += str(format_value(format_this=sector['BSBHBSO']))+"|"
-                all_sector_antenna_height += str(format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT']))+"|"
-                all_sector_antenna_polarization += str(format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION']))+"|"
-                all_sector_mount_type += str(format_value(format_this=sector['SSANTENNAMOUNTTYPE']))+"|"
-                all_sector_cable_length += str(format_value(format_this=sector['SS_CABLE_LENGTH']))+"|"
-                all_sector_ethernet_extender += str(format_value(format_this=sector['SS_ETH_EXT']))+"|"
-                all_sector_building_height += str(format_value(format_this=sector['BSBUILDINGHGT']))+"|"
-                all_sector_tower_height += str(format_value(format_this=sector['BSTOWERHEIGHT']))+"|"
-                all_sector_technology += str(techno_to_append)+"|"
-                all_sector_lat_lon += str(str(format_value(format_this=sector['BSLAT']))+","+str(format_value(sector['BSLONG'])))+"|"
-                all_sector_customer_address += str(format_value(format_this=sector['SS_CUST_ADDR']))+"|"
-                all_sector_sector_alias += str(format_value(format_this=sector['SECTOR_ALIAS']))+"|"
-                all_sector_dl_rssi_during_acceptance += str(format_value(format_this=sector['RSSI']))+"|"
-                all_sector_date_of_acceptance += str(format_value(format_this=sector['DATE_OF_ACCEPT']))+"|"
-                all_sector_sector_id += str(format_value(format_this=sector['SECTOR_SECTOR_ID']))+"|"
-                all_sector_frequency += str(format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']))+"|"
-                all_sector_ugps_installed += str(format_value(format_this=sector['BSGPSTYPE']))+"|"
-                all_sector_tx_power_planned += str(format_value(format_this=sector['SECTOR_TX']))+"|"
-                all_sector_rx_power_planned += str(format_value(format_this=sector['SECTOR_RX']))+"|"
-                all_sector_antenna_azimuth += str(format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE']))+"|"
-                all_sector_antenna_make += str(format_value(format_this=sector['SECTOR_ANTENNA_MAKE']))+"|"
-                all_sector_sync_splitter += str(format_value(format_this=sector['SECTOR_ANTENNA_SYNC_SPLITTER']))+"|"
-                all_sector_pmp_port += str(sector['SECTOR_PORT'])+"|"
-                all_sector_dr_status += str(format_value(format_this=sector['SECTOR_DR']))+"|"
-                all_sector_mrc_status += str(format_value(format_this=sector['SECTOR_MRC']))+"|"
-                all_sector_antenna_tilt += str(format_value(format_this=sector['SECTOR_ANTENNA_TILT']))+"|"
-                all_sector_antenna_splitter_installed += str(format_value(format_this=sector['SECTOR_ANTENNA_SPLITTER']))+"|"
-                all_sector_frame_length += str(format_value(format_this=sector['SECTOR_FRAME_LENGTH']))+"|"
+                all_sector_cktid += unicode(format_value(format_this=sector['CCID']))+"|"
+                all_sector_customer_alias += unicode(format_value(format_this=sector['CUST']))+"|"
+                all_sector_idu_ip += unicode(format_value(format_this=sector['SECTOR_CONF_ON_IP']))+"|"
+                all_sector_pe_ip += unicode(format_value(format_this=sector['BH_PE_IP']))+"|"
+                all_sector_qos_bandwidth += unicode(format_value(format_this=sector['QOS']))+"|"
+                all_sector_hssu_used += unicode(format_value(format_this=sector['BSHSSUUSED']))+"|"
+                all_sector_bh_bso += unicode(format_value(format_this=sector['BSBHBSO']))+"|"
+                all_sector_antenna_height += unicode(format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT']))+"|"
+                all_sector_antenna_polarization += unicode(format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION']))+"|"
+                all_sector_mount_type += unicode(format_value(format_this=sector['SSANTENNAMOUNTTYPE']))+"|"
+                all_sector_cable_length += unicode(format_value(format_this=sector['SS_CABLE_LENGTH']))+"|"
+                all_sector_ethernet_extender += unicode(format_value(format_this=sector['SS_ETH_EXT']))+"|"
+                all_sector_building_height += unicode(format_value(format_this=sector['BSBUILDINGHGT']))+"|"
+                all_sector_tower_height += unicode(format_value(format_this=sector['BSTOWERHEIGHT']))+"|"
+                all_sector_technology += unicode(techno_to_append)+"|"
+                all_sector_lat_lon += unicode(unicode(format_value(format_this=sector['BSLAT']))+","+unicode(format_value(sector['BSLONG'])))+"|"
+                all_sector_customer_address += unicode(format_value(format_this=sector['SS_CUST_ADDR']))+"|"
+                all_sector_sector_alias += unicode(format_value(format_this=sector['SECTOR_ALIAS']))+"|"
+                all_sector_dl_rssi_during_acceptance += unicode(format_value(format_this=sector['RSSI']))+"|"
+                all_sector_date_of_acceptance += unicode(format_value(format_this=sector['DATE_OF_ACCEPT']))+"|"
+                all_sector_sector_id += unicode(format_value(format_this=sector['SECTOR_SECTOR_ID']))+"|"
+                all_sector_frequency += unicode(format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']))+"|"
+                all_sector_ugps_installed += unicode(format_value(format_this=sector['BSGPSTYPE']))+"|"
+                all_sector_tx_power_planned += unicode(format_value(format_this=sector['SECTOR_TX']))+"|"
+                all_sector_rx_power_planned += unicode(format_value(format_this=sector['SECTOR_RX']))+"|"
+                all_sector_antenna_azimuth += unicode(format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE']))+"|"
+                all_sector_antenna_make += unicode(format_value(format_this=sector['SECTOR_ANTENNA_MAKE']))+"|"
+                all_sector_sync_splitter += unicode(format_value(format_this=sector['SECTOR_ANTENNA_SYNC_SPLITTER']))+"|"
+                all_sector_pmp_port += unicode(sector['SECTOR_PORT'])+"|"
+                all_sector_dr_status += unicode(format_value(format_this=sector['SECTOR_DR']))+"|"
+                all_sector_mrc_status += unicode(format_value(format_this=sector['SECTOR_MRC']))+"|"
+                all_sector_antenna_tilt += unicode(format_value(format_this=sector['SECTOR_ANTENNA_TILT']))+"|"
+                all_sector_antenna_splitter_installed += unicode(format_value(format_this=sector['SECTOR_ANTENNA_SPLITTER']))+"|"
+                all_sector_frame_length += unicode(format_value(format_this=sector['SECTOR_FRAME_LENGTH']))+"|"
 
                 sector_info.append(
                     {
@@ -759,25 +759,25 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                         substation_ip.append(circuit['SSIP'])
 
                     # Appending SS Infowindow Content
-                    all_ckt_ids += str(format_value(circuit['CCID']))+"|"
-                    all_customer_alias += str(format_value(circuit['CUST']))+"|"
-                    all_ss_ip +=  str(format_value(circuit['SSIP']))+"|"
-                    all_pe_ip +=  str(format_value(circuit['BH_PE_IP']))+"|"
-                    all_qos_bandwidth +=  str(format_value(circuit['QOS']))+"|"
-                    all_antenna_height +=  str(format_value(circuit['SSHGT']))+"|"
-                    all_polarisation +=  str(format_value(circuit['SS_ANTENNA_POLARIZATION'],type_of='antenna'))+"|"
-                    all_mount_type +=  str(format_value(circuit['SSANTENNAMOUNTTYPE']))+"|"
-                    all_antenna_type +=  str(format_value(circuit['SS_ANTENNA_TYPE']))+"|"
-                    all_cable_length +=  str(format_value(circuit['SS_CABLE_LENGTH']))+"|"
-                    all_ethernet_extender +=  str(format_value(circuit['SS_ETH_EXT']))+"|"
-                    all_building_height +=  str(format_value(circuit['SS_BUILDING_HGT']))+"|"
-                    all_tower_height +=  str(format_value(circuit['SS_TOWER_HGT']))+"|"
-                    all_ss_technology +=  str(format_value(techno_to_append))+"|"
-                    all_lat_lon +=  str(str(format_value(circuit['SS_LATITUDE']))+","+str(format_value(circuit['SS_LONGITUDE'])))+"|"
-                    all_customer_address +=  str(format_value(circuit['SS_CUST_ADDR']))+"|"
-                    all_alias +=  str(format_value(circuit['SS_ALIAS']))+"|"
-                    all_dl_rssi_during_acceptance +=  str(format_value(circuit['RSSI']))+"|"
-                    all_date_of_acceptance +=  str(str(format_value(circuit['DATE_OF_ACCEPT'])))+"|"
+                    all_ckt_ids += unicode(format_value(circuit['CCID']))+"|"
+                    all_customer_alias += unicode(format_value(circuit['CUST']))+"|"
+                    all_ss_ip +=  unicode(format_value(circuit['SSIP']))+"|"
+                    all_pe_ip +=  unicode(format_value(circuit['BH_PE_IP']))+"|"
+                    all_qos_bandwidth +=  unicode(format_value(circuit['QOS']))+"|"
+                    all_antenna_height +=  unicode(format_value(circuit['SSHGT']))+"|"
+                    all_polarisation +=  unicode(format_value(circuit['SS_ANTENNA_POLARIZATION'],type_of='antenna'))+"|"
+                    all_mount_type +=  unicode(format_value(circuit['SSANTENNAMOUNTTYPE']))+"|"
+                    all_antenna_type +=  unicode(format_value(circuit['SS_ANTENNA_TYPE']))+"|"
+                    all_cable_length +=  unicode(format_value(circuit['SS_CABLE_LENGTH']))+"|"
+                    all_ethernet_extender +=  unicode(format_value(circuit['SS_ETH_EXT']))+"|"
+                    all_building_height +=  unicode(format_value(circuit['SS_BUILDING_HGT']))+"|"
+                    all_tower_height +=  unicode(format_value(circuit['SS_TOWER_HGT']))+"|"
+                    all_ss_technology +=  unicode(format_value(techno_to_append))+"|"
+                    all_lat_lon +=  unicode(unicode(format_value(circuit['SS_LATITUDE']))+","+unicode(format_value(circuit['SS_LONGITUDE'])))+"|"
+                    all_customer_address +=  unicode(format_value(circuit['SS_CUST_ADDR']))+"|"
+                    all_alias +=  unicode(format_value(circuit['SS_ALIAS']))+"|"
+                    all_dl_rssi_during_acceptance +=  unicode(format_value(circuit['RSSI']))+"|"
+                    all_date_of_acceptance +=  unicode(unicode(format_value(circuit['DATE_OF_ACCEPT'])))+"|"
 
                     substation_info.append(
                         {
