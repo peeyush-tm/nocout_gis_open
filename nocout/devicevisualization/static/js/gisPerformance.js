@@ -1217,16 +1217,17 @@ function GisPerformance() {
     this.getKeyValue = function(objItemList,key,returnOnlyVal,item_index) {
         
         var val = "",
-            objArray = gmap_self.objDeepCopy_nocout(objItemList);
+            objArray = gmap_self.objDeepCopy_nocout(objItemList),
+            list_index = item_index > -1 ? item_index : 0;
 
         for(var y=objArray.length;y--;) {
             if(objArray[y]) {
                 if($.trim(objArray[y].name) == key) {
                     if(returnOnlyVal) {
-                        val = objArray[y].value.split("|")[item_index];
+                        val = String(objArray[y].value).split("|")[list_index];
                     } else {
                         // Fetch Actual Value
-                        var actual_val = objArray[y].value.split("|")[item_index];
+                        var actual_val = String(objArray[y].value).split("|")[list_index];
                         // Update dict with actual value
                         objArray[y].value = actual_val;
                         val = objArray[y];
