@@ -1343,24 +1343,32 @@ function GisPerformance() {
     /**
      * This function returns the value of given key from given object array
      * @method getKeyValue
-     * @param objArray {Array}, It is the array object from which the key value is to be fetched
+     * @param objItemList {Array}, It is the array object from which the key value is to be fetched
      * @param key {String}, It contains the name of key whose value is to be fetched
      * @param returnOnlyVal {boolean}, It contains the flag which means that return only value to for corresponding key or whole object
      */
-    this.getKeyValue = function(objArray,key,returnOnlyVal) {
-        var val = "";
+    this.getKeyValue = function(objItemList,key,returnOnlyVal,item_index) {
+        
+        var val = "",
+            objArray = gmap_self.objDeepCopy_nocout(objItemList);
+
         for(var y=objArray.length;y--;) {
             if(objArray[y]) {
                 if($.trim(objArray[y].name) == key) {
                     if(returnOnlyVal) {
-                        val = objArray[y].value;
+                        val = objArray[y].value.split("|")[item_index];
                     } else {
+                        // Fetch Actual Value
+                        var actual_val = objArray[y].value.split("|")[item_index];
+                        // Update dict with actual value
+                        objArray[y].value = actual_val;
                         val = objArray[y];
                     }
                     break;
                 }
             }
         }
+
         return val;
     };
 
