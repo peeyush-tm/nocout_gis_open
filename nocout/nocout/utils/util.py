@@ -703,11 +703,11 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None)
     added_device += tech
 
     if type_rf == 'sector':
-        rf_tech = " where SECTOR_TECH = '{0}'".format(technology)
+        rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
     elif type_rf == 'ss':
-        rf_tech = " where SS_TECH = '{0}'".format(technology)
+        rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
     elif type_rf == 'bh':
-        rf_tech = " where BHTECH = '{0}'".format(technology)
+        rf_tech = " where BHTECH = '{0}' ".format(technology)
     else:
         rf_tech = ""
 
@@ -832,7 +832,7 @@ left join (
         on (
             dport.id = sector.sector_configured_on_port_id
         )
-    where device.is_added_to_nms = 1
+{0}
     ) as sector_info
     left join (
         select circuit.id as CID,
@@ -915,7 +915,7 @@ left join (
         and
             devicetype.id = device.device_type
         )
-    where device.is_added_to_nms = 1
+{0}
     ) as ckt_info
     on (
         ckt_info.SID = sector_info.SECTOR_ID
