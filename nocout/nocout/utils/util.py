@@ -349,11 +349,12 @@ def cache_for(time):
 
 ## TODO: remove the duplicate code for GIS inventory data
 @cache_for(300)  #caching GIS inventory
-def cached_all_gis_inventory(query):
+def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None):
     """
 
     :return:
     """
+    query = query_all_gis_inventory(monitored_only, technology, type_rf)
     return fetch_raw_result(query)
 
 
@@ -671,10 +672,44 @@ on
         '''.format(added_device)
     return gis    
 
-def query_all_gis_inventory(monitored_only=False):
+def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None):
+    """
+
+    :param monitored_only: True or False
+    :param technology: Technology Name
+    :param type_rf: sector or ss or backhaul
+    :return: query for gis
+    """
     added_device = " "
+
+    tech = " "
+
+    rf_tech = " "
+
     if monitored_only:
         added_device = "where device.is_added_to_nms = 1 "
+
+        if technology:
+            tech = " and technology.name = '{0}'".format(technology)
+
+    elif not monitored_only:
+        if technology:
+            tech = " where technology.name = '{0}'".format(technology)
+
+    else:
+        added_device = ""
+        tech = ""
+
+    added_device += tech
+
+    if type_rf == 'sector':
+        rf_tech = " where SECTOR_TECH = '{0}'".format(technology)
+    elif type_rf == 'ss':
+        rf_tech = " where SS_TECH = '{0}'".format(technology)
+    elif type_rf == 'bh':
+        rf_tech = " where BHTECH = '{0}'".format(technology)
+    else:
+        rf_tech = ""
 
     gis = '''
         select * from (
@@ -797,7 +832,7 @@ left join (
         on (
             dport.id = sector.sector_configured_on_port_id
         )
-{0}
+    where device.is_added_to_nms = 1
     ) as sector_info
     left join (
         select circuit.id as CID,
@@ -880,7 +915,7 @@ left join (
         and
             devicetype.id = device.device_type
         )
-{0}
+    where device.is_added_to_nms = 1
     ) as ckt_info
     on (
         ckt_info.SID = sector_info.SECTOR_ID
@@ -978,10 +1013,10 @@ left join
     ) as bh
 on
     (bh.BHID = bs_info.BHID)
-
+{1}
  group by BSID,SECTOR_ID,CID 
         ;
-        '''.format(added_device)
+        '''.format(added_device, rf_tech)
     return gis
 
 

@@ -187,8 +187,26 @@ class GetCustomerAlertDetail(BaseDatatableView):
         :param device_list:
         :return:
         """
-        page_type = self.request.GET.get('page_type')
-        return perf_utils.prepare_gis_devices(qs, page_type)
+        page_type = "customer"
+        device_tab_technology = self.request.GET.get('data_tab')
+        type_rf = None
+
+        if device_tab_technology not in DeviceTechnology.objects.all().values_list('name', flat=True):
+            device_tab_technology = None
+
+            if page_type == 'network':
+                type_rf = 'sector'
+            elif page_type == 'customer':
+                type_rf = 'ss'
+            else:
+                type_rf = None
+
+        return perf_utils.prepare_gis_devices(qs,
+                                              page_type,
+                                              monitored_only=True,
+                                              technology=device_tab_technology,
+                                              type_rf=type_rf
+        )
 
     def prepare_machines(self, qs):
         """
@@ -865,8 +883,27 @@ class AlertListingTable(BaseDatatableView):
         :param device_list:
         :return:
         """
-        page_type = self.request.GET['page_type']
-        return perf_utils.prepare_gis_devices(qs, page_type)
+        page_type = self.request.GET.get('page_type')
+        device_tab_technology = self.request.GET.get('data_tab')
+        type_rf = None
+
+        if device_tab_technology not in DeviceTechnology.objects.all().values_list('name', flat=True):
+            device_tab_technology = None
+
+            if page_type == 'network':
+                type_rf = 'sector'
+            elif page_type == 'customer':
+                type_rf = 'ss'
+            else:
+                type_rf = None
+
+        return perf_utils.prepare_gis_devices(qs,
+                                              page_type,
+                                              monitored_only=True,
+                                              technology=device_tab_technology,
+                                              type_rf=type_rf
+        )
+
 
     def prepare_machines(self, qs):
         """
