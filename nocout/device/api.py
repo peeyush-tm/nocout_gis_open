@@ -17,7 +17,7 @@ from device.models import Device, DeviceType, DeviceVendor, \
 import requests
 from nocout.utils import logged_in_user_organizations
 from nocout.utils.util import time_it, \
-    query_all_gis_inventory, cached_all_gis_inventory, cache_for
+    cached_all_gis_inventory, cache_for
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
@@ -52,7 +52,7 @@ def prepare_raw_result(bs_dict = []):
 
 class DeviceStatsApi(View):
 
-    raw_result = prepare_raw_result(cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True)))
+    raw_result = prepare_raw_result(cached_all_gis_inventory(monitored_only=True))
 
     # @time_it()
     def get(self, request):

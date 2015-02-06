@@ -515,8 +515,8 @@ except ImportError:
 PASSWORD_MIN_LENGTH = 6 # Defaults to 6
 PASSWORD_MAX_LENGTH = 120 # Defaults to None
 
-# PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
-PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
+PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
+# PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
 
 PASSWORD_MATCH_THRESHOLD = 0.9 # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
 PASSWORD_COMMON_SEQUENCES = [] # Should be a list of strings, see passwords/validators.py for default
