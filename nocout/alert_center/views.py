@@ -2,6 +2,7 @@
 import json, datetime, xlwt, csv
 from django.db.models import Count
 from django.db.models.query import ValuesQuerySet
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
 from django.views.generic import ListView, View
@@ -1287,6 +1288,9 @@ class SingleDeviceAlertDetails(View):
                            device_id=device_id,
                            device_alias=device_alias,
                            page_type=page_type,
+                           inventory_page_url=reverse('device_edit',kwargs={'pk': device_id},current_app='device'),
+                           # perf_page_url=reverse('SingleDevicePerf',kwargs={'page_type': page_type, 'device_id' : device_id},current_app='performance'),
+                           perf_page_url="",
                            table_data=data_list,
                            table_header=required_columns,
                            service_name=service_name,

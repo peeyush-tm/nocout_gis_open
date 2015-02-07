@@ -448,28 +448,28 @@ var ptp_ss_toolTip_polled = [
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'radwin_link_distance_invent_link_distance',
+	},
+	{
+		'name'  : 'radwin_link_distance_invent_link_distance',
         'title' : 'Link Distance (mtr)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'radwin_ul_utilization_Management_Port_on_Odu',
+	},
+	{
+		'name'  : 'radwin_ul_utilization_Management_Port_on_Odu',
         'title' : 'Uplink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'radwin_dl_utilization_Management_Port_on_Odu',
+	},
+	{
+		'name'  : 'radwin_dl_utilization_Management_Port_on_Odu',
         'title' : 'Downlink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
+	},
     {
         'name'  : 'session_uptime',
         'title' : 'Last Down',
@@ -477,8 +477,8 @@ var ptp_ss_toolTip_polled = [
         'value' : '',
         'url'   : ''
     },
-    {
-        'name'  : 'radwin_uptime_uptime',
+	{
+		'name'  : 'radwin_uptime_uptime',
         'title' : 'Device Uptime',
         'show'  : 1,
         'value' : '',
@@ -764,23 +764,23 @@ var ptp_sector_toolTip_polled = [
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'radwin_link_distance_invent_link_distance',
+	},
+	{
+		'name'  : 'radwin_link_distance_invent_link_distance',
         'title' : 'Link Distance (mtr)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'radwin_ul_utilization_Management_Port_on_Odu',
+	},
+	{
+		'name'  : 'radwin_ul_utilization_Management_Port_on_Odu',
         'title' : 'Uplink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'radwin_dl_utilization_Management_Port_on_Odu',
+	},
+	{
+		'name'  : 'radwin_dl_utilization_Management_Port_on_Odu',
         'title' : 'Downlink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
@@ -884,15 +884,15 @@ var pmp_ss_toolTip_static = [];
 
 // PMP SS Tooltip polled info object
 var pmp_ss_toolTip_polled = [
-    {
-        'name'  : 'cambium_ul_utilization_ul_utilization',
+	{
+		'name'  : 'cambium_ul_utilization_ul_utilization',
         'title' : 'Uplink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'cambium_dl_utilization_dl_utilization',
+	},
+	{
+		'name'  : 'cambium_dl_utilization_dl_utilization',
         'title' : 'Downlink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
@@ -1009,21 +1009,23 @@ var pmp_ss_toolTip_polled = [
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'cambium_ss_sector_id_invent_ss_sector_id',
+	},
+	{
+		'name'  : 'cambium_ss_sector_id_invent_ss_sector_id',
         'title' : 'Sector ID',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'cambium_ss_connected_bs_ip_invent_bs_ip',
+	},
+	{
+		'name'  : 'cambium_ss_connected_bs_ip_invent_bs_ip',
         'title' : 'Connected BS IP',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
+
+	},
+
     // {
     //     'name'  : '',
     //     'title' : 'If Out Errors',
@@ -1038,8 +1040,8 @@ var pmp_ss_toolTip_polled = [
     //     'value' : '',
     //     'url'   : ''
     // },
-    {
-        'name'  : 'cambium_ss_frequency_invent_frequency',
+	{
+		'name'  : 'cambium_ss_frequency_invent_frequency',
         'title' : 'Frequency',
         'show'  : 1,
         'value' : '',
@@ -1172,9 +1174,9 @@ var pmp_sector_toolTip_polled = [
         'value' : '',
         'url'   : ''
     },
-    {
-        'name'  : 'cambium_ul_utilization_ul_utilization',
-        'title' : 'Sector UL Utilization (Mbps)',
+	{
+		'name'  : 'cambium_ul_utilization_ul_utilization',
+		'title' : 'Sector UL Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -1270,15 +1272,14 @@ var wimax_ss_toolTip_polled = [
         'value' : '',
         'url'   : ''
     },
-    {
-        'name'  : 'wimax_ss_ul_utilization_ul_utilization',
+	{
+		'name'  : 'wimax_ss_ul_utilization_ul_utilization',
         'title' : 'Uplink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-    },
-    {
-        'name'  : 'wimax_ss_dl_utilization_dl_utilization',
+	},
+	{
         'title' : 'Downlink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
@@ -1616,8 +1617,8 @@ var wimax_sector_toolTip_polled = [
         'url'   : ''
     },
     {
-        'name'  : 'wimax_pmp1_utilization_pmp1_utilization',
-        'title' : 'Sector Utilization [PMP1] (Mbps)',
+		'name'  : 'wimax_pmp1_utilization_pmp1_utilization',
+		'title' : 'Sector Utilization [PMP1] (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''

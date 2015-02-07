@@ -1402,10 +1402,13 @@ class NetworkStatus(models.Model):
         return self.device_name
 
     class Meta:
-        #ordering = ['-sys_timestamp']
-        index_together = [
-            ["device_name", "service_name", "data_source"],
-        ]
+        # ordering = ['-sys_timestamp']
+        # index_together = [
+        #     ["device_name", "service_name", "data_source"],
+        # ]
+        unique_together = (
+            ("device_name", "service_name", "data_source")
+        )
 
 
 class ServiceStatus(models.Model):
@@ -1434,10 +1437,10 @@ class ServiceStatus(models.Model):
         return self.device_name
 
     class Meta:
-        #ordering = ['-sys_timestamp']
-        index_together = [
-            ["device_name", "service_name", "data_source"],
-        ]
+        # ordering = ['-sys_timestamp']
+        unique_together = (
+            ("device_name", "service_name", "data_source")
+        )
 
 
 class MachineStatus(models.Model):
@@ -1498,10 +1501,10 @@ class InventoryStatus(models.Model):
         return self.device_name
 
     class Meta:
-        #ordering = ['-sys_timestamp']
-        index_together = [
-            ["device_name", "service_name", "data_source"],
-        ]
+        # ordering = ['-sys_timestamp']
+        unique_together = (
+            ("device_name", "service_name", "data_source")
+        )
 
 
 class Status(models.Model):
@@ -1530,10 +1533,10 @@ class Status(models.Model):
         return self.device_name
 
     class Meta:
-        #ordering = ['-sys_timestamp']
-        index_together = [
-            ["device_name", "service_name", "data_source"],
-        ]
+        # ordering = ['-sys_timestamp']
+        unique_together = (
+            ("device_name", "service_name", "data_source")
+        )
 
 ##################################################################
 ############PERFORMANCE STATUS TABLES#############################
@@ -1982,6 +1985,6 @@ class UtilizationStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
-        index_together = [
-            ["device_name", "service_name", "data_source"],
-        ]
+        unique_together = (
+            ("device_name", "service_name", "data_source")
+        )

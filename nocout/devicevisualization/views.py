@@ -3176,6 +3176,7 @@ class GISPerfData(View):
                                                                               data_source=device_service_data_source,
                                                                               sys_timestamp__gte=start_time,
                                                                               sys_timestamp__lte=end_time
+
                         ).using(alias=machine_name)[:1]
 
                     else:
@@ -3209,6 +3210,7 @@ class GISPerfData(View):
                                                                               sys_timestamp__gte=start_time,
                                                                               sys_timestamp__lte=end_time
                         ).using(alias=machine_name)[:1]
+
 
                     else:
                         performance_value = UtilizationStatus.objects.filter(device_name=device_name,

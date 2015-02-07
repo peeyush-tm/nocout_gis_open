@@ -31,49 +31,36 @@
     <div class='box-title'>
         <h4 class="hide"><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
 
-        <div class="">
-            <ul class="list-unstyled list-inline">
-                <li style="max-width: 320px;">
-                    <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text"
-                                                                                                    name="reservation"
-                                                                                                    id="reservationtime"
-                                                                                                    class="form-control input-large search-query"
-                                                                                                    value=""/>
-                    </div>
-                </li>
-                <li>
-                    <div class="btn-group dropdown col-xs-1">
-                        <button id="apply_filter" class="btn  btn-default btn-sm">
-                            Apply Filter
-                        </button>
-                    </div>
-                </li>
-                <li>
-                    <div class="btn-group dropdown col-xs-1">
-                        <button id="reset_filter" class="btn  btn-warning btn-sm">
-                            Reset Filter
-                        </button>
-                    </div>
-                </li>
-                <!-- <li>
-                    <div class="btn-group dropdown col-xs-1">
-                        <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-                            Download Report
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu context">
-                            <li>
-                                <a id="download_excel">Excel</a>
-                            </li>
-                            <li>
-                                <a id="download_csv">CSV</a>
-                            </li>
-                        </ul>
-                    </div>
-                </li> -->
-            </ul>
-        </div>
+        <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+            <li class="date_range_filter_container">
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fa fa-calendar"></i>
+                    </span>
+                    <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
+                </div>
+            </li>
+            <li>
+                <button id="apply_filter" class="btn  btn-default btn-sm">
+                    <i class="fa fa-filter"></i> Apply Filter
+                </button>
+            </li>
+            <li>
+                <button id="reset_filter" class="btn  btn-warning btn-sm">
+                    <i class="fa fa-times"></i> Reset Filter
+                </button>
+            </li>
+            <li>
+                <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
+                    <i class="fa fa-dropbox text-primary"></i>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="btn btn-default btn-sm hide" id="perf_link_tag" title="Performance" target="_blank">
+                    <i class="fa fa-bar-chart-o text-primary"></i>
+                </a>
+            </li>
+        </ul>
         <div class="clearfix"></div>
     </div>
     <div class='box-body'>
@@ -82,7 +69,7 @@
             <div id="latestStatusContainer">
                 
             </div>
-            <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
+            <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -224,18 +211,14 @@
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
     <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
+    <!--Our Common Utilities Script-->
+    <script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
 
     <script type="text/javascript">
 
         var startDate = "",
             endDate = "",
             base_url = "",
-            green_color = "#468847",
-            red_color = "#b94a48",
-            green_status_array = ['ok','success','up'],
-            red_status_array = ['warning','critical','down'],
-            left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;",
-            right_block_style = "border:1px solid #CCC;padding: 3px 5px;",
             device_technology = "",
             excel_columns = [];
 
@@ -272,7 +255,22 @@
             var current_device = "{{ current_device_name }}",
                 current_device_id = "{{ device_id }}",
                 statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
-                service_status_url = "";
+                service_status_url = "",
+                inventory_url = "{{ inventory_page_url }}",
+                perf_page_url = "{{ perf_page_url }}";
+
+            inventory_url = inventory_url ? base_url+""+inventory_url : "";
+
+            if(inventory_url) {
+                $("#inventory_link_tag").attr("href",inventory_url);
+                $("#inventory_link_tag").removeClass("hide");
+            }
+
+            if(perf_page_url) {
+                $("#perf_link_tag").attr("href",perf_page_url);
+                $("#perf_link_tag").removeClass("hide");
+            }
+
             // Technology of current device
             device_technology = "{{ device_technology_name }}";
 
@@ -536,20 +534,12 @@
          * @param url {String}, It contains the API url to fetch the service status.
          */
         function getPlServiceStatus(url) {
-            if (url) {
+            if(url) {
                 $.ajax({
                     url: base_url + "" + url,
                     type: "GET",
                     success: function (response) {
-                        var result = "",
-                            lastDownTime = "",
-                            age = "",
-                            last_updated = "",
-                            perf = "",
-                            status = "",
-                            status_class = "",
-                            txt_color = "",
-                            status_html = "";
+                        var result = "";
 
                         if (typeof response == 'string') {
                             result = JSON.parse(response);
@@ -558,28 +548,9 @@
                         }
 
                         if (result.data && result.data.objects) {
-                            age = result.data.objects.age ? result.data.objects.age : "Unknown";
-                            lastDownTime = result.data.objects.last_down_time ? result.data.objects.last_down_time : "Unknown";
-                            status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";
-
-                            if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                                txt_color = green_color;
-                            } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                                txt_color = red_color;
-                            } else {
-                                txt_color = "";
-                            }
-
-                            status_html = "";
                             
-                            status_html += '<table id="final_status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;"><tr>';
-                            status_html += '<td style="color:'+txt_color+';"><i class="fa fa-circle" style="vertical-align: middle;"> </i> <b>Current Status</b> : '+status+'</td>';
-                            status_html += '<td style="color:'+txt_color+';"><b>Current Status Since</b> : '+age+'</td>';
-                            status_html += '<td style="color:'+txt_color+';"><b>Last Down Time</b> : '+lastDownTime+'</td>';
-                            status_html += '</tr></table>';
-
-                            // Update Status Block HTML as per the device status
-                            $("#latestStatusContainer").html(status_html);
+                            // Call function to populate latest status info
+                            populateDeviceStatus_nocout("latestStatusContainer",result.data.objects);
                         }
                     },
                     error: function (err) {

@@ -376,6 +376,7 @@ def query_all_gis_inventory_improved(monitored_only=False):
                         basestation.bs_type as BSTYPE,
                         basestation.bh_bso as BSBHBSO,
                         basestation.hssu_used as BSHSSUUSED,
+                        basestation.hssu_port as BSHSSUPORT,
                         basestation.latitude as BSLAT,
                         basestation.longitude as BSLONG,
 
@@ -595,9 +596,18 @@ left join
                 bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
                 bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
 
+				POP,
                 POP_IP,
+				POP_TECH,
+				POP_TYPE,
+				AGGR,
                 AGGR_IP,
-                BSCONV_IP
+				AGGR_TECH,
+                AGGR_TYPE,
+				BSCONV,
+                BSCONV_IP,
+				BSCONV_TECH,
+                BSCONV_TYPE
 
         from (
         select backhaul.id as BHID,
@@ -611,7 +621,7 @@ left join
                 backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
                 backhaul.aggregator_port as BH_AGGR_PORT,
                 backhaul.switch_port as BH_DEVICE_PORT,
-                
+
                 device.id as BH_DEVICE_ID,
                 device.device_name as BHCONF,
                 device.ip_address as BHCONF_IP,
@@ -633,32 +643,66 @@ left join
         )
 
         ) as bh_info left join (
-                select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
+                select backhaul.id as BHID,
+						device.device_name as POP,
+						device.ip_address as POP_IP,
+						devicetype.name as POP_TYPE,
+						tech.name as POP_TECH
+				from inventory_backhaul
+				as backhaul
                 left join (
-                    device_device as device
+                    device_device as device,
+					device_devicetype as devicetype,
+					device_devicetechnology as tech
                 )
                 on (
                     device.id = backhaul.pop_id
+					and
+					tech.id = device.device_technology
+					and
+					devicetype.id = device.device_type
                 )
         ) as pop_info
         on (bh_info.BHID = pop_info.BHID)
         left join ((
-                select backhaul.id as BHID, device.device_name as BSCONV, device.ip_address as BSCONV_IP from inventory_backhaul as backhaul
+                select backhaul.id as BHID,
+						device.device_name as BSCONV,
+						device.ip_address as BSCONV_IP,
+						devicetype.name as BSCONV_TYPE,
+						tech.name as BSCONV_TECH
+				from inventory_backhaul as backhaul
                 left join (
-                    device_device as device
+                    device_device as device,
+					device_devicetype as devicetype,
+					device_devicetechnology as tech
                 )
                 on (
                     device.id = backhaul.bh_switch_id
+					and
+					tech.id = device.device_technology
+					and
+					devicetype.id = device.device_type
                 )
         ) as bscon_info
         ) on (bh_info.BHID = bscon_info.BHID)
         left join ((
-                select backhaul.id as BHID, device.device_name as AGGR, device.ip_address as AGGR_IP from inventory_backhaul as backhaul
+                select backhaul.id as BHID,
+					device.device_name as AGGR,
+					device.ip_address as AGGR_IP,
+					devicetype.name as AGGR_TYPE,
+					tech.name as AGGR_TECH
+				from inventory_backhaul as backhaul
                 left join (
-                    device_device as device
+                    device_device as device,
+					device_devicetype as devicetype,
+					device_devicetechnology as tech
                 )
                 on (
-                    device.id = backhaul.aggregator_id
+                    device.id = backhaul.bh_switch_id
+					and
+					tech.id = device.device_technology
+					and
+					devicetype.id = device.device_type
                 )
         ) as aggr_info
         ) on (bh_info.BHID = aggr_info.BHID)
@@ -724,6 +768,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None)
                         basestation.bs_type as BSTYPE,
                         basestation.bh_bso as BSBHBSO,
                         basestation.hssu_used as BSHSSUUSED,
+                        basestation.hssu_port as BSHSSUPORT,
                         basestation.latitude as BSLAT,
                         basestation.longitude as BSLONG,
 
@@ -933,7 +978,7 @@ left join
                 bh_info.BH_CIRCUIT_ID as BH_CIRCUIT_ID,
                 bh_info.BH_CAPACITY as BH_CAPACITY,
                 bh_info.BH_TTSL_CIRCUIT_ID as BH_TTSL_CIRCUIT_ID,
-                
+
                 bh_info.BH_DEVICE_ID as BH_DEVICE_ID,
                 bh_info.BHCONF as BHCONF,
                 bh_info.BHCONF_IP as BHCONF_IP,
@@ -941,10 +986,19 @@ left join
                 bh_info.BHTYPE as BHTYPE,
                 bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
                 bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
-                
+
+				POP,
                 POP_IP,
+				POP_TECH,
+				POP_TYPE,
+				AGGR,
                 AGGR_IP,
-                BSCONV_IP
+				AGGR_TECH,
+                AGGR_TYPE,
+				BSCONV,
+                BSCONV_IP,
+				BSCONV_TECH,
+                BSCONV_TYPE
 
         from (
         select backhaul.id as BHID,
@@ -958,7 +1012,7 @@ left join
                 backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
                 backhaul.aggregator_port as BH_AGGR_PORT,
                 backhaul.switch_port as BH_DEVICE_PORT,
-                
+
                 device.id as BH_DEVICE_ID,
                 device.device_name as BHCONF,
                 device.ip_address as BHCONF_IP,
@@ -980,32 +1034,66 @@ left join
         )
 
         ) as bh_info left join (
-                select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
+                select backhaul.id as BHID,
+						device.device_name as POP,
+						device.ip_address as POP_IP,
+						devicetype.name as POP_TYPE,
+						tech.name as POP_TECH
+				from inventory_backhaul
+				as backhaul
                 left join (
-                    device_device as device
+                    device_device as device,
+					device_devicetype as devicetype,
+					device_devicetechnology as tech
                 )
                 on (
                     device.id = backhaul.pop_id
+					and
+					tech.id = device.device_technology
+					and
+					devicetype.id = device.device_type
                 )
         ) as pop_info
         on (bh_info.BHID = pop_info.BHID)
         left join ((
-                select backhaul.id as BHID, device.device_name as BSCONV, device.ip_address as BSCONV_IP from inventory_backhaul as backhaul
+                select backhaul.id as BHID,
+						device.device_name as BSCONV,
+						device.ip_address as BSCONV_IP,
+						devicetype.name as BSCONV_TYPE,
+						tech.name as BSCONV_TECH
+				from inventory_backhaul as backhaul
                 left join (
-                    device_device as device
+                    device_device as device,
+					device_devicetype as devicetype,
+					device_devicetechnology as tech
                 )
                 on (
                     device.id = backhaul.bh_switch_id
+					and
+					tech.id = device.device_technology
+					and
+					devicetype.id = device.device_type
                 )
         ) as bscon_info
         ) on (bh_info.BHID = bscon_info.BHID)
         left join ((
-                select backhaul.id as BHID, device.device_name as AGGR, device.ip_address as AGGR_IP from inventory_backhaul as backhaul
+                select backhaul.id as BHID,
+					device.device_name as AGGR,
+					device.ip_address as AGGR_IP,
+					devicetype.name as AGGR_TYPE,
+					tech.name as AGGR_TECH
+				from inventory_backhaul as backhaul
                 left join (
-                    device_device as device
+                    device_device as device,
+					device_devicetype as devicetype,
+					device_devicetechnology as tech
                 )
                 on (
-                    device.id = backhaul.aggregator_id
+                    device.id = backhaul.bh_switch_id
+					and
+					tech.id = device.device_technology
+					and
+					devicetype.id = device.device_type
                 )
         ) as aggr_info
         ) on (bh_info.BHID = aggr_info.BHID)
@@ -1013,8 +1101,10 @@ left join
     ) as bh
 on
     (bh.BHID = bs_info.BHID)
+
 {1}
  group by BSID,SECTOR_ID,CID 
+
         ;
         '''.format(added_device, rf_tech)
     return gis

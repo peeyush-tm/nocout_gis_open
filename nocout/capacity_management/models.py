@@ -11,7 +11,7 @@ class SectorCapacityStatus(models.Model):
     """
     sector = models.ForeignKey(Sector)
     #static information so as to save another db call
-    sector_sector_id = models.CharField('Sector ID', max_length=64, db_index=True, null=True, blank=True)
+    sector_sector_id = models.CharField('Sector ID', max_length=64, unique=True, null=True, blank=True)
     # bs_alias = models.CharField('BaseStation Alias', max_length=64, db_index=True, null=True, blank=True)
     # city = models.CharField('City Name', max_length=64, db_index=True, null=True, blank=True)
     # state = models.CharField('State Name', max_length=64, db_index=True, null=True, blank=True)
@@ -56,3 +56,18 @@ class SectorCapacityStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
+#
+# class SectorCapacityAlerts(models.Model):
+#     """
+#     Class for handling the daily sector Alerts
+#     """
+#     pass
+
+#
+# class SectorSpotStatus(models.Model):
+#     """
+#     Class for handling the daily sector Alerts for Sector Spot Dashboard
+#     """
+#     pass
+

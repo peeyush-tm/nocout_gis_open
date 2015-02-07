@@ -521,6 +521,33 @@ function devicePlottingClass_gmap() {
             // Google maps mousemove event, triggers when map mouse move on google maps
             google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
                 displayCoordinates(event.latLng);
+
+                if(is_ruler_active === 1) {
+					if(ruler_pt_count == 1) {
+						if(!temp_line) {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								event.latLng,
+							];
+							temp_line = new google.maps.Polyline({
+								path 			: 	line_path,
+								clickable 		: 	false,
+								strokeColor 	: 	ruler_line_color,
+								strokeOpacity	: 	1.0,
+								strokeWeight	: 	3,
+								pointType 		: 	"path",
+								geodesic		: 	true,
+								map 			: 	mapInstance
+							});
+						} else {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								event.latLng,
+							];
+							temp_line.setPath(line_path);
+						}	
+					}
+	        	}
             });
 
             // Google maps dragend event, triggers when map drags
@@ -812,36 +839,6 @@ function devicePlottingClass_gmap() {
 				}
             });
 
-	        google.maps.event.addListener(mapInstance,'mousemove',function(e) {
-
-	        	if(is_ruler_active === 1) {
-					if(ruler_pt_count == 1) {
-						if(!temp_line) {
-							var line_path = [
-								ruler_array[0].getPosition(),
-								e.latLng,
-							];
-							temp_line = new google.maps.Polyline({
-								path 			: 	line_path,
-								clickable 		: 	false,
-								strokeColor 	: 	ruler_line_color,
-								strokeOpacity	: 	1.0,
-								strokeWeight	: 	3,
-								pointType 		: 	"path",
-								geodesic		: 	true,
-								map 			: 	mapInstance
-							});
-						} else {
-							var line_path = [
-								ruler_array[0].getPosition(),
-								e.latLng,
-							];
-							temp_line.setPath(line_path);
-						}	
-					}
-	        	}
-	    	});
-
 			/*Search text box object*/
 			var searchTxt = document.getElementById('google_loc_search');
 
@@ -916,9 +913,6 @@ function devicePlottingClass_gmap() {
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
             oms_ss = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
-            prepare_oms_object(oms);
-            prepare_oms_object(oms_ss);
-
             // Update The usual n highlihted colors of OverlappingMarkerSpiderfier
             var oms_legends = oms.legColors,
             	oms_ss_legends = oms_ss.legColors;
@@ -937,6 +931,9 @@ function devicePlottingClass_gmap() {
             		MapTypes[key2] = "";
             	}
             }
+            
+            prepare_oms_object(oms);
+            prepare_oms_object(oms_ss);
 
 			/*Create a instance of google map info window*/
 			infowindow = new google.maps.InfoWindow({zIndex:800});
@@ -2289,8 +2286,10 @@ function devicePlottingClass_gmap() {
 		    		startEndObj["endTitle"] = "SS Info";
 
 		    		/*Link color object*/
+
 		    		var link_color = ss_marker_obj.data.link_color;
 		    		linkColor = link_color && link_color != 'NA' ? link_color : 'rgba(74,72,94,0.58)';
+
 
 	    			if(ss_marker_obj.data.show_link == 1) {
 	    				/*Create the link between BS & SS or Sector & SS*/
@@ -3575,17 +3574,34 @@ function devicePlottingClass_gmap() {
 			}
 
 			if(clickedType == "base_station" && contentObject.bhInfo) {
-				var severity_symbol = "";
-				if(contentObject.bhSeverity) {
-					var bhSeverity = contentObject.bhSeverity ? $.trim(contentObject.bhSeverity.toLowerCase()) : "";
-					if(red_status_array.indexOf(bhSeverity)  > -1) {
-						severity_symbol = "<i class='fa fa-circle text-danger' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(green_status_array.indexOf(bhSeverity)  > -1) {
-						severity_symbol = "<i class='fa fa-circle text-success' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(orange_status_array.indexOf(bhSeverity)  > -1) {
-						severity_symbol = "<i class='fa fa-circle text-warning' style='margin-left:10px;'>&nbsp;</i>";
-					}
+				var severity_symbol = "",
+					bhSeverity = contentObject.bhSeverity ? $.trim(contentObject.bhSeverity.toLowerCase()) : "",
+					severity_title = bhSeverity ? bhSeverity.toUpperCase() : "",
+					txt_color = "",
+					fa_icon_class = "fa-circle";
+
+				if(bhSeverity) {
+					if(green_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = green_color ? green_color : "#468847";
+				        fa_icon_class = "fa-check-circle";
+				    } else if(red_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = red_color ? red_color : "#b94a48";
+				        fa_icon_class = "fa-times-circle";
+				    } else if(orange_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = orange_color ? orange_color : "#f0ad4e";
+				        fa_icon_class = "fa-warning";
+				    } else if(down_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = red_color ? red_color : "#b94a48";
+				        fa_icon_class = "fa-warning";
+				    } else {
+				        // pass
+				    }
 				}
+				
+				severity_symbol = '';
+			    severity_symbol += '<i title = "'+severity_title+'" class="fa '+fa_icon_class+'" ';
+			    severity_symbol += 'style="color:'+txt_color+';vertical-align: middle;margin-left:5px;">&nbsp;</i>';
+
 				infoTable += "<tr><td colspan='2'><b>Backhaul Info "+severity_symbol+"</b></td></tr>";
 
 				// Rearrange BH tootip info as per actual sequence
@@ -3982,7 +3998,7 @@ function devicePlottingClass_gmap() {
 			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;z-index:9999;position:relative;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
 
 			// if(window.location.pathname.indexOf("googleEarth")> -1) {
-			// 	fresnelTemplate = '<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>'+fresnelTemplate; 
+			// 	fresnelTemplate = '<iframe allowTransparency="true" style="position:absolute; top:35px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-4 col-md-offset-8"></iframe>'+fresnelTemplate; 
 			// }
 
 			/*Call the bootbox to show the popup with Fresnel Zone Graph*/
@@ -4536,7 +4552,17 @@ function devicePlottingClass_gmap() {
 			isApiResponse = 0;
 
     	} else if (window.location.pathname.indexOf('white_background') > -1) {
-			ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);    		
+			// ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+			ccpl_map.setCenter(
+				new OpenLayers.LonLat(
+					whiteMapSettings.mapCenter[0],
+					whiteMapSettings.mapCenter[1]
+				),
+				1,
+				true,
+				true
+			);
+			ccpl_map.zoomTo(1);
     	} else {
             /*Clear Existing Labels & Reset Counters*/
             gmap_self.clearStateCounters();
@@ -5264,7 +5290,17 @@ function devicePlottingClass_gmap() {
 		    	whiteMapClass.clearStateCounters_wmaps();
 		    	isCallCompleted = 1;
 		    	if(ccpl_map.getZoom() != 1) {
-		    		ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+		    		// ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+		    		ccpl_map.setCenter(
+						new OpenLayers.LonLat(
+							whiteMapSettings.mapCenter[0],
+							whiteMapSettings.mapCenter[1]
+						),
+						1,
+						true,
+						true
+					);
+					ccpl_map.zoomTo(1);
 	    		}
 		    	data_for_filter_wmap = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 		    	isApiResponse= 0;
@@ -5412,9 +5448,10 @@ function devicePlottingClass_gmap() {
     		}
 
 			if(data_to_plot_1.length > 0) {
+				isCallCompleted = 1;
+				isApiResponse = 0;
 				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					data_for_filters_earth = data_to_plot_1;
-					isCallCompleted = 1;
 					/*Set current position of google earth to india*/
 					var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 					lookAt.setLatitude(21.0000);
@@ -5422,16 +5459,21 @@ function devicePlottingClass_gmap() {
 					lookAt.setRange(5492875.865539902);
 					// Update the view in Google Earth 
 					ge.getView().setAbstractView(lookAt); 
-
-					isApiResponse = 0;
 					earth_self.showStateWiseData_earth(data_to_plot_1);
 				} else if (window.location.pathname.indexOf("white_background") > -1) {
 					data_for_filter_wmap = data_to_plot_1;
-					isCallCompleted = 1;
 					if(ccpl_map.getZoom() != 1) {
-						ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+						ccpl_map.setCenter(
+							new OpenLayers.LonLat(
+								whiteMapSettings.mapCenter[0],
+								whiteMapSettings.mapCenter[1]
+							),
+							1,
+							true,
+							true
+						);
+						ccpl_map.zoomTo(1);
 					}
-					isApiResponse = 0;
 					whiteMapClass.showStateWiseData_wmap(data_to_plot_1);
 				} else {
 					data_for_filters = data_to_plot_1;
@@ -5451,10 +5493,8 @@ function devicePlottingClass_gmap() {
 				    }
 
 
-					isCallCompleted = 1;
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 					mapInstance.setZoom(5);
-					isApiResponse = 0;
 					gmap_self.showStateWiseData_gmap(data_to_plot_1);
 				}
 			} else {
@@ -8717,11 +8757,14 @@ function devicePlottingClass_gmap() {
         	    	);
         	    	
 					ccpl_map.addPopup(toolTip_infobox);
-					// Shift label to left side of marker
-                    var current_left = $("#"+key).position().left;
-                    current_left = current_left - 125;
-                    $("#"+key).css("left",current_left+"px");
-        	    	// toolTip_infobox.updateSize();
+
+					if($("#"+key).length > 0) {
+						// Shift label to left side of marker
+	                    var current_left = $("#"+key).position().left;
+	                    current_left = current_left - 125;
+	                    $("#"+key).css("left",current_left+"px");
+	        	    	// toolTip_infobox.updateSize();
+					}
 	            } else {
 	            	toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
                         labelHtml,
@@ -8765,13 +8808,16 @@ function devicePlottingClass_gmap() {
 	            	    	false
 	        	    	);
 
-						ccpl_map.addPopup(toolTip_infobox);
-						// Shift label to left side of marker
-                        var current_left = $("#"+key).position().left;
-                        current_left = current_left - 125;
-                        $("#"+key).css("left",current_left+"px");
-	        	    	// toolTip_infobox.updateSize();
 						tooltipInfoLabel[key] = toolTip_infobox;
+
+						ccpl_map.addPopup(toolTip_infobox);
+						if($("#"+key).length > 0) {
+							// Shift label to left side of marker
+	                        var current_left = $("#"+key).position().left;
+	                        current_left = current_left - 125;
+	                        $("#"+key).css("left",current_left+"px");
+                        }
+	                        
 					}
 	            } else {
 	                // If label exist for current ss

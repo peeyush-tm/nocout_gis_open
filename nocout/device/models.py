@@ -6,11 +6,12 @@ from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service, ServiceParameters, ServiceDataSource
 from mptt.models import MPTTModel
+from datetime import datetime
 
 from device import signals as device_signals
 
 
-#************************************ Device Inventory**************************************
+# ************************************ Device Inventory**************************************
 # table for countries
 class Country(models.Model):
     country_name = models.CharField('Name', max_length=200)
@@ -231,6 +232,26 @@ class DeviceTypeFieldsValue(models.Model):
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
 
+
+
+class DeviceSyncHistory(models.Model):
+    status = models.IntegerField('Status', null=True, blank=True)
+    message = models.TextField('NMS Message', null=True, blank=True)
+    description = models.TextField('Description', null=True, blank=True)
+    sync_by = models.CharField('Sync By', max_length=100, null=True, blank=True)
+    added_on = models.DateTimeField('Applied On', null=True, blank=True)
+    completed_on = models.DateTimeField('Completed On', null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        """ On save, update timestamps """
+        if not self.id:
+            self.added_on = datetime.now()
+        return super(DeviceSyncHistory, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return self.status
+
 #********************* Connect Device Signals *******************
 
 post_save.connect(device_signals.update_device_type_service, sender=DeviceTypeService)
+

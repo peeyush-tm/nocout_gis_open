@@ -32,4 +32,29 @@ urlpatterns = patterns('',
     url(r'^mfr-reports/$', views.MFRReportsListView.as_view(), name='mfr-reports-list'),
     url(r'^mfr-reports/table/$', views.MFRReportsListingTable.as_view(), name='mfr-reports-table'),
     url(r'^mfr-reports/(?P<pk>\d+)/delete/$', views.MFRReportsDeleteView.as_view(), name='mfr-reports-delete'),
+
+    url(r'^latency/wimax/$', views.DashboardDeviceStatus.as_view(), name='latency-wimax'),
+    url(r'^latency/pmp/$', views.DashboardDeviceStatus.as_view(), name='latency-pmp'),
+    url(r'^latency/all/$', views.DashboardDeviceStatus.as_view(), name='latency-all'),
+
+    url(r'^packet_loss/wimax/$', views.DashboardDeviceStatus.as_view(), name='packet-loss-wimax'),
+    url(r'^packet_loss/pmp/$', views.DashboardDeviceStatus.as_view(), name='packet-loss-pmp'),
+    url(r'^packet_loss/all/$', views.DashboardDeviceStatus.as_view(), name='packet-loss-all'),
+
+    url(r'^down/wimax/$', views.DashboardDeviceStatus.as_view(), name='down-wimax'),
+    url(r'^down/pmp/$', views.DashboardDeviceStatus.as_view(), name='down-pmp'),
+    url(r'^down/all/$', views.DashboardDeviceStatus.as_view(), name='down-all'),
+
+    url(r'^temperature-idu/wimax/$', views.DashboardDeviceStatus.as_view(), name='temperatue-idu-wimax'),
+    url(r'^temperature-acb/wimax/$', views.DashboardDeviceStatus.as_view(), name='temperatue-acb-wimax'),
+    url(r'^temperature-fan/wimax/$', views.DashboardDeviceStatus.as_view(), name='temperatue-fan-wimax'),
+
+    url(r'^cause-code/mfr/$', views.MFRCauseCodeView.as_view(), name='cause-code-mfr'),
+    url(r'^processed/mfr/$', views.MFRProcesedView.as_view(), name='processed-mfr'),
+
+    url(r'^sector-capacity/pmp/$', views.PMPSectorCapacity.as_view(), name='sector-capacity-pmp'),
+    url(r'^sector-capacity/wimax/$', views.WiMAXSectorCapacity.as_view(), name='sector-capacity-wimax'),
+
+    url(r'^sales-opportunity/pmp/$', views.PMPSalesOpportunity.as_view(), name='sales-opportunity-pmp'),
+    url(r'^sales-opportunity/wimax/$', views.WiMAXSalesOpportunity.as_view(), name='sales-opportunity-wimax'),
 )

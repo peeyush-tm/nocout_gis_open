@@ -1110,6 +1110,7 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
+
         # fetch value from list
         if type(value) is list:
             value = value[0]
@@ -1121,6 +1122,7 @@ class BulkFetchLPDataApi(View):
 
         #just to be safe of % unit in value for PL polling
         value = "".join(str(value).split('%'))
+
 
         if th_ranges and th_icon_settings and len(str(value)):
             compare_this = float(value)
@@ -1176,6 +1178,7 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
+
         # fetch value from list
         if type(value) is list:
             value = value[0]
@@ -1184,7 +1187,7 @@ class BulkFetchLPDataApi(View):
             value = value
         else:
             pass
-        
+
         if th_ranges and th_icon_settings and value:
             compare_this = ''.join(e for e in value if e.isalnum())
             for i in range(1, 11):
