@@ -155,7 +155,17 @@ $("#global_search_btn").click(function(e) {
 
 			if(search_data["inventory_page_url"]) {
 				var inventory_url = base_url+""+search_data["inventory_page_url"];
-				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-xs" title="Inventory" target="_blank"><i class="fa fa-dropbox text-primary"></i></a>';
+				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-xs" title="Device Inventory" target="_blank"><i class="fa fa-dropbox text-primary"></i></a>';
+			}
+
+			if(search_data["circuit_inventory_url"]) {
+				var inventory_url = base_url+""+search_data["circuit_inventory_url"];
+				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-xs" title="Circuit Inventory" target="_blank"><i class="fa fa-arrow-circle-o-right text-primary"></i></a>';
+			}
+
+			if(search_data["sector_inventory_url"]) {
+				var inventory_url = base_url+""+search_data["sector_inventory_url"];
+				link_html += '<a href="'+inventory_url+'" class="btn btn-default btn-xs" title="Sector Inventory" target="_blank"><i class="fa fa-arrow-circle-o-right text-primary"></i></a>';
 			}
 
 			if(search_data["perf_page_url"]) {
