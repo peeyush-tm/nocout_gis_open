@@ -382,6 +382,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None)
     elif not monitored_only:
         if technology:
             tech = " where technology.name = '{0}'".format(technology)
+            rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
 
     else:
         added_device = ""
