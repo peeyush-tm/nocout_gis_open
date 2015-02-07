@@ -361,7 +361,9 @@ def prepare_raw_sector(sectors):
                 circuit_dict = pivot_element(sectors[sector_id], 'CCID')
 
                 #circuit id prepare ?
-                substation, circuit_id, substation_ip, subStationsInfo = prepare_raw_ss_result(circuits=circuit_dict,
+
+                substation, circuit_id, substation_ip, subStationsInfo  = prepare_raw_ss_result(circuits=circuit_dict,
+
                                                              sector_id=sector_id,
                                                              frequency_color=format_value(
                                                                  format_this=sector['SECTOR_FREQUENCY_COLOR'],
@@ -777,7 +779,8 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                     all_customer_address +=  unicode(format_value(circuit['SS_CUST_ADDR']))+"|"
                     all_alias +=  unicode(format_value(circuit['SS_ALIAS']))+"|"
                     all_dl_rssi_during_acceptance +=  unicode(format_value(circuit['RSSI']))+"|"
-                    all_date_of_acceptance +=  unicode(unicode(format_value(circuit['DATE_OF_ACCEPT'])))+"|"
+                    all_date_of_acceptance +=  unicode(format_value(circuit['DATE_OF_ACCEPT']))+"|"
+
 
                     substation_info.append(
                         {
@@ -796,6 +799,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                 "markerUrl": format_value(format_this=circuit['SS_GMAP_ICON'], type_of='icon'),
                                 "show_link": 1,
                                 "link_color": frequency_color,
+
                             }
                         }
                     )

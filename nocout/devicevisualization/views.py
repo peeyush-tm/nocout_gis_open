@@ -1394,12 +1394,15 @@ class GISPerfData(View):
 
     def get(self, request):
 
-        device_list = list()
-        machine_dict = dict()
-        device_value_list = ['id','machine__name','device_name','ip_address']
+        # device_list = list()
+        # machine_dict = dict()
+        # device_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
         # get base stations id's list
         bs_ids = eval(str(self.request.GET.get('base_stations', None)))
+
+        # type of thematic settings needs to be fetched
+        ts_type = self.request.GET.get('ts', 'normal')
 
         # performance data dictionary
         performance_data = list()
@@ -1417,7 +1420,6 @@ class GISPerfData(View):
                 bs_dict = dict()
 
                 # base station
-                bs = ""
                 try:
                     bs_objects = BaseStation.objects.filter(
                         id=bs_id
@@ -1471,19 +1473,36 @@ class GISPerfData(View):
                         bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
                         bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
-                    # sectors counter
-                    sectors_counter = 0
-
                     # loop through all sectors
                     for sector_obj in sectors:
 
                         # sector
                         sector = sector_obj
 
-                        # logger.info("Sector {}: '{}' data fetching start.".format(sectors_counter, sector.alias))
-
                         # sector configured on device
                         sector_device = sector.sector_configured_on
+
+                        # device technology
+                        try:
+                            device_technology = DeviceTechnology.objects.get(id=sector_device.device_technology)
+                        except Exception as e:
+                            device_technology = None
+
+                        # thematic settings for current user
+                        user_thematics = self.get_thematic_settings(device_technology)
+
+                        # service & data source
+                        service = ""
+                        data_source = ""
+                        try:
+                            if ts_type == "normal":
+                                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
+                                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
+                            elif ts_type == "ping":
+                                service = user_thematics.thematic_template.service
+                                data_source = user_thematics.thematic_template.data_source
+                        except Exception as e:
+                            pass
 
                         if sector_device and sector_device.is_added_to_nms == 1:
 
@@ -1533,7 +1552,16 @@ class GISPerfData(View):
                                 other_perf_data.extend(device_status_info)
 
                             # get performance data
-                            sector_performance_data = self.get_sector_performance_info(sector_device, network_perf_data, other_perf_data, sector_obj)
+
+                            sector_performance_data = self.get_sector_performance_info(sector_device,
+                                                                                       network_perf_data,
+                                                                                       other_perf_data,
+                                                                                       sector_obj,
+                                                                                       user_thematics,
+                                                                                       device_technology,
+                                                                                       service,
+                                                                                       data_source)
+
 
                             # sector dictionary
                             sector_dict = dict()
@@ -1580,7 +1608,11 @@ class GISPerfData(View):
                                                                                substation_device,
                                                                                ss_default_link_color,
                                                                                network_perf_data,
-                                                                               other_perf_data)
+                                                                               other_perf_data,
+                                                                               user_thematics,
+                                                                               device_technology,
+                                                                               service,
+                                                                               data_source)
 
                                     # append substation dictionary to 'sub_station' list
                                     sector_dict['sub_station'].append(ss_dict)
@@ -1637,19 +1669,17 @@ class GISPerfData(View):
         pl_dict = dict()
         pl_dict['name'] = "pl"
         pl_dict['show'] = 1
-        pl_dict['url'] = "performance/service/ping/service_data_source/pl/device/" + str(bh_device.id) + "?start_date=&end_date=",
         pl_dict['title'] = "Packet Drop"
 
         # backhaul rta dictionary
         rta_dict = dict()
         rta_dict['name'] = "rta"
         rta_dict['show'] = 1
-        rta_dict['url'] = "performance/service/ping/service_data_source/rta/device/" + str(bh_device.id) + "?start_date=&end_date=",
         rta_dict['title'] = "Latency"
 
         # pl
         try:
-            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
+            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
                                                             data_source='pl').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
@@ -1659,7 +1689,7 @@ class GISPerfData(View):
 
         # rta
         try:
-            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
+            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
                                                             data_source='rta').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
@@ -1669,11 +1699,9 @@ class GISPerfData(View):
 
         # bh severity
         try:
-
             backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device,
                                                             data_source='pl').using(
                                                             alias=bh_device.machine.name)[0].severity
-
         except Exception as e:
             backhaul_data['bhSeverity'] = 'unknown'
             # logger.error("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
@@ -1687,7 +1715,17 @@ class GISPerfData(View):
 
         return backhaul_data
 
-    def get_sector_performance_info(self, device, network_perf_data, other_perf_data, sector=None):
+
+    def get_sector_performance_info(self,
+                                    device,
+                                    network_perf_data,
+                                    other_perf_data,
+                                    sector=None,
+                                    user_thematics=None,
+                                    device_technology=None,
+                                    service=None,
+                                    data_source=None):
+
         """ Get Sector performance info
 
             Parameters:
@@ -1773,42 +1811,23 @@ class GISPerfData(View):
         performance_data['beam_width'] = beam_width
         performance_data['radius'] = radius
 
-        # device technology
-        try:
-            device_technology = DeviceTechnology.objects.get(id=device.device_technology)
-        except Exception as e:
-            device_technology = None
-
         if not device_technology:
             return performance_data
-
-        # thematic settings for current user
-        user_thematics = self.get_thematic_settings(device_technology)
 
         if not user_thematics:
             return performance_data
 
-        # service & data source
-        service = ""
-        data_source = ""
-        try:
-            if ts_type == "normal":
-                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
-                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
-            elif ts_type == "ping":
-                service = user_thematics.thematic_template.service
-                data_source = user_thematics.thematic_template.data_source
-        except Exception as e:
+        if service and data_source:
+            # performance value
+            perf_payload = {
+                'device_name': device_name,
+                'machine_name': machine_name,
+                'freeze_time': freeze_time,
+                'device_service_name': service,
+                'device_service_data_source': data_source
+            }
+        else:
             return performance_data
-
-        # performance value
-        perf_payload = {
-            'device_name': device_name,
-            'machine_name': machine_name,
-            'freeze_time': freeze_time,
-            'device_service_name': service,
-            'device_service_data_source': data_source
-        }
 
         performance_value = self.get_performance_value(perf_payload, ts_type)
 
@@ -1845,7 +1864,6 @@ class GISPerfData(View):
                         pass
                 except Exception as e:
                     pass
-                    #logger.error("No ranges for thematic settings. Exception: ", e.message)
 
                 # fetch service type if 'ts_type' is "normal"
                 service_type = ""
@@ -1854,14 +1872,10 @@ class GISPerfData(View):
                         service_type = user_thematics.thematic_template.threshold_template.service_type
                 except Exception as e:
                     pass
-                    #logger.error("Service Type not exist. Exception: ", e.message)
 
                 # comparing threshold values to get icon
                 try:
                     if performance_value and len(performance_value):
-                        # live polled value of device service
-                        #value = ast.literal_eval(str(performance_value))
-
                         # get appropriate icon
                         if ts_type == "normal":
                             if service_type == "INT":
@@ -1879,7 +1893,6 @@ class GISPerfData(View):
                             pass
                 except Exception as e:
                     return performance_data
-                    #logger.error("Icon not exist. Exception: ", e.message)
 
             # update performance value
             if device_pl != "100":
@@ -2533,7 +2546,11 @@ class GISPerfData(View):
                             substation_device,
                             ss_default_link_color,
                             network_perf_data,
-                            other_perf_data):
+                            other_perf_data,
+                            user_thematics=None,
+                            device_technology=None,
+                            service=None,
+                            data_source=None):
         """ Get Sub Station information
 
             Parameters:
@@ -2720,7 +2737,7 @@ class GISPerfData(View):
         # device name
         device_name = substation_device.device_name
         
-        #device ID
+        # device id
         ss_device_id = substation_device.id
 
         # machine name
@@ -2735,13 +2752,6 @@ class GISPerfData(View):
         device_type = None
         try:
             device_type = DeviceType.objects.get(id=substation_device.device_type)
-        except Exception as e:
-            logger.exception(e)
-
-        # device technology
-        device_technology = None
-        try:
-            device_technology = DeviceTechnology.objects.get(id=substation_device.device_technology)
         except Exception as e:
             pass
 
@@ -2794,7 +2804,6 @@ class GISPerfData(View):
         substation_info['param'] = dict()
 
         # Fetch sub station static info
-        #get_device_info(self, device_obj, machine_name, device_pl="", ss=False, is_static=False, ss_object=None)
         substation_info['param']['sub_station'] = self.get_device_info(device_obj=substation_device,
                                                                        machine_name=machine_name,
                                                                        network_perf_data=network_perf_data,
@@ -2803,7 +2812,6 @@ class GISPerfData(View):
                                                                        ss=substation,
                                                                        is_static=True,)
         # Fetch sub station polled info
-        #get_device_info(self, device_obj, machine_name, device_pl="", ss=False, is_static=False, ss_object=None)
         substation_info['param']['polled_info'] = self.get_device_info(device_obj=substation_device,
                                                                        machine_name=machine_name,
                                                                        network_perf_data=network_perf_data,
@@ -2812,35 +2820,23 @@ class GISPerfData(View):
                                                                        ss=substation,
                                                                        is_static=False)
 
-
         # thematic settings for current user
         user_thematics = self.get_thematic_settings(device_technology)
 
         if not user_thematics:
             return substation_info
 
-        # service & data source
-        service = ""
-        data_source = ""
-        try:
-            if ts_type == "normal":
-                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
-                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
-            elif ts_type == "ping":
-                service = user_thematics.thematic_template.service
-                data_source = user_thematics.thematic_template.data_source
-        except Exception as e:
+        if service and data_source:
+            # performance value
+            perf_payload = {
+                'device_name': device_name,
+                'machine_name': machine_name,
+                'freeze_time': freeze_time,
+                'device_service_name': service,
+                'device_service_data_source': data_source
+            }
+        else:
             return substation_info
-
-        # performance value
-        perf_payload = {
-            'device_name': device_name,
-            'machine_name': machine_name,
-            'freeze_time': freeze_time,
-            'device_service_name': service,
-            'device_service_data_source': data_source
-
-        }
 
         performance_value = None
 
@@ -2858,7 +2854,6 @@ class GISPerfData(View):
                 icon = "media/" + str(device_type.device_icon)
             except Exception as e:
                 pass
-                #logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             if device_pl != "100":
                 # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
@@ -2866,7 +2861,7 @@ class GISPerfData(View):
                 try:
                     th_icon_settings = user_thematics.thematic_template.icon_settings
                 except Exception as e:
-                    logger.exception(e)
+                    pass
 
                 # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
                 th_ranges = ""
@@ -2878,7 +2873,7 @@ class GISPerfData(View):
                     else:
                         pass
                 except Exception as e:
-                    logger.exception(e)
+                    pass
 
                 # fetch service type if 'ts_type' is "normal"
                 service_type = ""
@@ -2886,14 +2881,11 @@ class GISPerfData(View):
                     if ts_type == "normal":
                         service_type = user_thematics.thematic_template.threshold_template.service_type
                 except Exception as e:
-                    logger.exception(e)
+                    pass
 
                 # comparing threshold values to get icon
                 try:
                     if performance_value and len(performance_value):
-                        # live polled value of device service
-                        #value = ast.literal_eval(str(performance_value))
-
                         # get appropriate icon
                         if ts_type == "normal":
                             if service_type == "INT":
@@ -3176,7 +3168,6 @@ class GISPerfData(View):
                                                                               data_source=device_service_data_source,
                                                                               sys_timestamp__gte=start_time,
                                                                               sys_timestamp__lte=end_time
-
                         ).using(alias=machine_name)[:1]
 
                     else:
@@ -3210,7 +3201,6 @@ class GISPerfData(View):
                                                                               sys_timestamp__gte=start_time,
                                                                               sys_timestamp__lte=end_time
                         ).using(alias=machine_name)[:1]
-
 
                     else:
                         performance_value = UtilizationStatus.objects.filter(device_name=device_name,

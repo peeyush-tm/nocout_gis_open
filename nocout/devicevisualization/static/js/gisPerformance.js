@@ -1369,6 +1369,7 @@ function GisPerformance() {
                 }
             }
         }
+
         return val;
     };
 

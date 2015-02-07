@@ -1886,29 +1886,29 @@ function devicePlottingClass_gmap() {
 				ptLat 		       : 	bs_ss_devices[i].data.lat,
 				ptLon 		       : 	bs_ss_devices[i].data.lon,
 				// map       	       : 	mapInstance,
-				icon 	  	       : 	bs_marker_icon_obj,
-				oldIcon 	       : 	bs_marker_icon_obj,
-				clusterIcon 	   : 	bs_marker_icon_obj,
+				icon 	  	       	 : 	bs_marker_icon_obj,
+				oldIcon 	       	 : 	bs_marker_icon_obj,
+				clusterIcon 	    : 	bs_marker_icon_obj,
 				pointType	       : 	stationType,
 				// dataset 	       : 	bs_ss_devices[i].data.param.base_station,
-				item_index		   : 	0,
-				device_name 	   : 	bs_ss_devices[i].data.device_name,
-				bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
-				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
-				bhInfo_polled 	   :    [],
-				bhSeverity 		   :    "",
+				item_index		    : 	0,
+				device_name 	    : 	bs_ss_devices[i].data.device_name,
+				bsInfo 			    : 	bs_ss_devices[i].data.param.base_station,
+				bhInfo 			    : 	bs_ss_devices[i].data.param.backhual,
+				bhInfo_polled 	    :    [],
+				bhSeverity 		    :    "",
 				// bhInfo 			   : 	[],
-				bs_name 		   : 	bs_ss_devices[i].name,
-				bs_alias 		   :    bs_ss_devices[i].alias,
-				name 		 	   : 	bs_ss_devices[i].name,
-				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
+				bs_name 		   	 : 	bs_ss_devices[i].name,
+				bs_alias 		    :    bs_ss_devices[i].alias,
+				name 		 	   	 : 	bs_ss_devices[i].name,
+				filter_data 	    : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
 				antenna_height     : 	bs_ss_devices[i].data.antenna_height,
-				zIndex 			   : 	250,
-				optimized 		   : 	false,
-				markerType 		   : 	'BS',
+				zIndex 			    : 	250,
+				optimized 		    : 	false,
+				markerType 		    : 	'BS',
 				isMarkerSpiderfied : 	false,
-				isActive 		   : 	1,
-				windowTitle 	   : 	"Base Station"
+				isActive 		    : 	1,
+				windowTitle 	    : 	"Base Station"
 			};
 
 			/*Create BS Marker*/
@@ -1975,7 +1975,7 @@ function devicePlottingClass_gmap() {
 					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
 					sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
 					sectorInfo = {
-						"info" : sector_info_list,
+						"info" : sector_infoWindow_content,
 						"bs_name" : bs_ss_devices[i].name,
 						"sector_name" : sector_array[j].sector_configured_on,
 						"sector_id" : sector_array[j].sector_id,
@@ -1984,7 +1984,7 @@ function devicePlottingClass_gmap() {
 						"vendor" : sector_array[j].vendor,
 						"sector_perf_url" : sector_perf_url,
 						"inventory_url" : sector_inventory_url,
-						"item_info_index" : j
+						"item_index" : j
 					},
 					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sector_array[j].orientation),
@@ -1993,7 +1993,7 @@ function devicePlottingClass_gmap() {
 					rad = sectorRadius && (sectorRadius > 0) ? sectorRadius : 0.5,
 					startLon = "",
 					startLat = "",
-					sect_height = gisPerformanceClass.getKeyValue(sector_info_list,"antenna_height",true,j);
+					sect_height = gisPerformanceClass.getKeyValue(sector_array[j].info,"antenna_height",true);
 
 				var startEndObj = {};
 				// if(sector_tech != "ptp" && sector_tech != "p2p") {
@@ -2191,8 +2191,7 @@ function devicePlottingClass_gmap() {
 
 				    if($.trim(last_selected_label)) {
 				    	var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-				    		item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-							labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false,item_index),
+				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false),
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
@@ -2242,6 +2241,16 @@ function devicePlottingClass_gmap() {
 						}
 					});
 
+					// Mouseout event on sub-station marker
+					// google.maps.event.addListener(ss_marker, 'mouseout', function() {
+					// 	var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+					// 		condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+					// 	if(condition1 || condition2) {
+					//     	infowindow.close();
+					//     }
+					// });
+
 				    /*Add BS Marker To Cluster*/
 					masterClusterInstance.addMarker(ss_marker);
 
@@ -2285,33 +2294,44 @@ function devicePlottingClass_gmap() {
 		    		startEndObj["startTitle"] = "BS Info";
 		    		startEndObj["endTitle"] = "SS Info";
 
-		    		/*Link color object*/
+		    		/*Sub station info Object*/
+		    		// ss_info["info"] = ss_marker_obj.data.param.sub_station;
+		    		// ss_info["antenna_height"] = ss_marker_obj.data.antenna_height;
 
+		    		/*Link color object*/
+//<<<<<<< HEAD @yogender-tm
 		    		var link_color = ss_marker_obj.data.link_color;
 		    		linkColor = link_color && link_color != 'NA' ? link_color : 'rgba(74,72,94,0.58)';
+//=======
+//		    		linkColor = ss_marker_obj.data.link_color;
+//			    	linkColor = linkColor && linkColor != 'NA' ? linkColor : 'rgba(74,72,94,0.58)';
+//>>>>>>> dev_master
 
+	    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
+	    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
+	    			// if(zoom_level > 9) {
+		    			if(ss_marker_obj.data.show_link == 1) {
+		    				/*Create the link between BS & SS or Sector & SS*/
+					    	var ss_link_line = gmap_self.createLink_gmaps(
+					    		startEndObj,
+					    		linkColor,
+					    		base_info,
+					    		ss_info,
+					    		sect_height,
+					    		sector_array[j].sector_configured_on,
+					    		ss_marker_obj.name,
+					    		bs_ss_devices[i].name,
+					    		bs_ss_devices[i].originalId,
+					    		sector_array[j].sector_id
+				    		);
+					    	ssLinkArray.push(ss_link_line);
+					    	ssLinkArray_filtered = ssLinkArray;
 
-	    			if(ss_marker_obj.data.show_link == 1) {
-	    				/*Create the link between BS & SS or Sector & SS*/
-				    	var ss_link_line = gmap_self.createLink_gmaps(
-				    		startEndObj,
-				    		linkColor,
-				    		base_info,
-				    		ss_info,
-				    		sect_height,
-				    		sector_array[j].sector_configured_on,
-				    		ss_marker_obj.name,
-				    		bs_ss_devices[i].name,
-				    		bs_ss_devices[i].originalId,
-				    		sector_array[j].sector_id
-			    		);
-				    	ssLinkArray.push(ss_link_line);
-				    	ssLinkArray_filtered = ssLinkArray;
+					    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
 
-				    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
-
-				    	// allMarkersArray_gmap.push(ss_link_line);
-	    			}
+					    	// allMarkersArray_gmap.push(ss_link_line);
+		    			}
+	    			// }
 				}
     		}
 
@@ -3019,10 +3039,12 @@ function devicePlottingClass_gmap() {
 		}
 
 		var polyPathArray = [],
-			halfPt = Math.floor(pointsArray.length / (+2)),
-			startLat = pointsArray[halfPt].lat,
-			startLon = pointsArray[halfPt].lon,
-			item_info_index = sectorInfo.item_info_index > -1 ? sectorInfo.item_info_index : 0;
+			sector_info_index = sectorInfo.item_index > -1 ? sectorInfo.item_index : 0;
+		
+		var halfPt = Math.floor(pointsArray.length / (+2));
+		
+		var startLat = pointsArray[halfPt].lat;
+		var startLon = pointsArray[halfPt].lon;
 
 		for(var i=pointsArray.length;i--;) {
 			var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
@@ -3048,7 +3070,7 @@ function devicePlottingClass_gmap() {
 			fillOpacity 	 : 0.5,
 			strokeWeight     : sWidth,
 			poll_info 		 : [],
-			item_index 		 : item_info_index,
+			item_index 		 : sector_info_index,
 			radius 			 : rad,
 			azimuth 		 : azimuth,
 			beam_width 		 : beam_width,
@@ -3175,7 +3197,6 @@ function devicePlottingClass_gmap() {
 				}
 				/*Loop for BS or Sector info object array*/
 				for(var i=0;i<bs_info.length;i++) {
-
 					if(bs_info[i].show == 1) {
 						var val = bs_info[i]['value'] || bs_info[i]['value'] == 0 ? bs_info[i]['value'] : "",
 							actual_val = String(val).split("|")[bs_item_index] ? String(val).split("|")[bs_item_index] : "";
@@ -3184,7 +3205,6 @@ function devicePlottingClass_gmap() {
 					}
 				}
 
-				// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
 				infoTable += "</tbody></table>";
 				/*BS-Sector Info End*/
 
@@ -3237,11 +3257,8 @@ function devicePlottingClass_gmap() {
 					}
 				}
 
-				// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
 				var report_download_btn = "";
 				if(path_circuit_id) {
-					// infoTable += "<tr><td>POSLink1</td><td><a href='"+posLink1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
-					// infoTable += "<tr><td>POSLink2</td><td><a href='"+posLink2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
 					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
 				}
 				infoTable += "</tbody></table>";
@@ -3314,7 +3331,7 @@ function devicePlottingClass_gmap() {
 
 			// infoTable += "<table class='table table-bordered table-hover'><tbody>";
 			var sector_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
-			
+
 			if(ptp_tech_list.indexOf(sector_tech) > -1) {
 				static_info = rearrangeTooltipArray(ptp_sector_toolTip_static,nearEndInfo);
 			} else if(sector_tech == 'wimax') {
@@ -3335,7 +3352,7 @@ function devicePlottingClass_gmap() {
 				pos2 = "";
 
 			if(ptp_tech_list.indexOf(sector_tech) > -1) {
-				circuit_id = gisPerformanceClass.getKeyValue(static_info,"cktid",true,item_index);
+				circuit_id = gisPerformanceClass.getKeyValue(static_info,"cktid",true, item_index);	
 				if(circuit_id) {
 					pos1 = "<a href='"+posLink1+"="+circuit_id+"' class='text-warning' target='_blank'>"+circuit_id+"</a>";
 					pos2 = "<a href='"+posLink2+"="+circuit_id+"' class='text-warning' target='_blank'>"+circuit_id+"</a>";
@@ -3363,7 +3380,7 @@ function devicePlottingClass_gmap() {
 					var val = static_info[i]['value'] || static_info[i]['value'] == 0 ? static_info[i]['value'] : "",
 						actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
 
-					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td class='"+highlight_class+"'>"+actual_val+"</td></tr>";
+					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td class='"+highlight_class+"'>"+actual_val+"</td></tr>";		
 				}
 			}
 			infoTable += "</tbody></table>";
@@ -3397,6 +3414,7 @@ function devicePlottingClass_gmap() {
 					var url = "",
 						text_class = "";
 					if(actual_polled_info[i]["show"]) {
+
 						// Url
 						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
 						text_class = "text-primary";
@@ -3438,7 +3456,7 @@ function devicePlottingClass_gmap() {
 				startPtInfo = contentObject.dataset;
 			}
 			
-			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true,item_index);
+			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);	
 
 			var pos1 = "",
 				pos2 = "";
@@ -3487,7 +3505,8 @@ function devicePlottingClass_gmap() {
 					if(startPtInfo[i].show == 1) {
 						var val = startPtInfo[i]['value'] || startPtInfo[i]['value'] == 0 ? startPtInfo[i]['value'] : "",
 							actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
-						infoTable += "<tr><td>"+startPtInfo[i]['title']+"</td><td>"+actual_val+"</td></tr>";
+
+						infoTable += "<tr><td class='polled_param_td'>"+startPtInfo[i]['title']+"</td><td>"+actual_val+"</td></tr>";
 					}
 				}
 			}
@@ -3498,7 +3517,7 @@ function devicePlottingClass_gmap() {
 			infoTable += '</div>';
 			/*Static Tab Content End*/
 
-			if(contentObject['poll_info']) {
+			if(contentObject['poll_info'] != undefined) {
 
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;
@@ -3568,6 +3587,7 @@ function devicePlottingClass_gmap() {
 					if(startPtInfo[i].show) {
 						var val = startPtInfo[i]['value'] || startPtInfo[i]['value'] == 0 ? startPtInfo[i]['value'] : "",
 							actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
+
 						infoTable += "<tr><td class='polled_param_td'>"+startPtInfo[i]['title']+"</td><td>"+actual_val+"</td></tr>";
 					}
 				}
@@ -3604,13 +3624,14 @@ function devicePlottingClass_gmap() {
 
 				infoTable += "<tr><td colspan='2'><b>Backhaul Info "+severity_symbol+"</b></td></tr>";
 
-				// Rearrange BH tootip info as per actual sequence
+				// Rearrange BS tootip info as per actual sequence
 				var bh_actual_data = rearrangeTooltipArray(bh_toolTip_static,contentObject.bhInfo);
 
 				for(var i=0;i<bh_actual_data.length;i++) {
 					if(bh_actual_data[i].show == 1) {
 						var val = bh_actual_data[i]['value'] || bh_actual_data[i]['value'] == 0 ? bh_actual_data[i]['value'] : "",
 							actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
+
 						infoTable += "<tr><td>"+bh_actual_data[i].title+"</td><td>"+actual_val+"</td></tr>";
 					}
 				}
@@ -5055,7 +5076,7 @@ function devicePlottingClass_gmap() {
 
 			    		for(var j=0;j<sectors.length;j++) {
 			    			var sub_stations = sectors[j].sub_station ? sectors[j].sub_station : [],
-			    				sub_stations_info = sectors[j].ss_info_list ? sectors[j].ss_info_list : [],
+			    				ss_infoWindow_content = sectors[j].ss_info_list ? sectors[j].ss_info_list : [],
 			    				sector_ip = sectors[j].sector_configured_on ? sectors[j].sector_configured_on.toLowerCase() : "";
 							
 							// If any IP address is searched	    				
@@ -5087,7 +5108,7 @@ function devicePlottingClass_gmap() {
 
 			    			for(var k=0;k<sub_stations.length;k++) {
 			    				var ss_ip = sub_stations[k].data.substation_device_ip_address ? sub_stations[k].data.substation_device_ip_address : "",
-			    					ckt_id = gisPerformanceClass.getKeyValue(sub_stations_info,"cktid",true, k),
+			    					ckt_id = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,k),
 			    					ss_circuit_id = ckt_id ? $.trim(ckt_id.toLowerCase()) : "";
 
 			    				// If any IP address or Circuit ID is searched
@@ -5410,6 +5431,7 @@ function devicePlottingClass_gmap() {
 
 		if(isAdvanceFilterApplied || isBasicFilterApplied) {
 			// filtered_data_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredData_gmap()));
+			// filtered_data_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredData_gmap());
 			filtered_data_1 = gmap_self.getFilteredData_gmap();
 		} else {
 			// filtered_data_1 = JSON.parse(JSON.stringify(all_devices_loki_db.data));
@@ -5418,6 +5440,7 @@ function devicePlottingClass_gmap() {
 
 		if(advance_filter_condition || basic_filter_condition) {
         	// data_to_plot_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(filtered_data_1)));
+        	// data_to_plot_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredBySectors(filtered_data_1));
         	data_to_plot_1 = gmap_self.getFilteredBySectors(filtered_data_1);
     	} else {
     		data_to_plot_1 = filtered_data_1;
@@ -8736,8 +8759,7 @@ function devicePlottingClass_gmap() {
 				var ss_marker = ss_list[key],
 					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
-					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false,item_index);
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false);
 
             	if(labelInfoObject) {
             		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
@@ -8786,8 +8808,7 @@ function devicePlottingClass_gmap() {
 				var ss_marker = ss_list[key],
 					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
-					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false,item_index);
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false);
 
             	if(labelInfoObject) {
             		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
