@@ -301,10 +301,6 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
     },
-    'device_last_down_time': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-    },
     'cache_clear_task': {
         'task': 'nocout.tasks.cache_clear_task',
         'schedule': timedelta(seconds=21600), #per 6 hours delete all cache
@@ -338,6 +334,47 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
         'schedule': crontab(minute=0, hour=0, day_of_month=1)
     },
+    'device_last_down_time_CanopyPM100AP': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopyPM100AP']
+    },
+    'device_last_down_time_CanopyPM100SS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopyPM100SS']
+    },
+    'device_last_down_time_CanopySM100AP': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopySM100AP']
+    },
+    'device_last_down_time_CanopySM100SS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopySM100SS']
+    },
+    'device_last_down_time_Radwin2KBS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['Radwin2KBS']
+    },
+    'device_last_down_time_Radwin2KSS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['Radwin2KSS']
+    },
+    'device_last_down_time_StarmaxIDU': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['StarmaxIDU']
+    },
+    'device_last_down_time_StarmaxSS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['StarmaxSS']
+    },
+
 }
 
 
