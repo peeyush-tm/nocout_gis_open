@@ -214,11 +214,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			context: {
 				//Return label according to cluster length or empty
 				label: function(feature) {
-					return feature.cluster.length > 1 ? feature.cluster.length : "";
+					var cluster_size = feature.cluster && feature.cluster.length > 1 ? feature.cluster.length : "";
+					return cluster_size;
 				},
 				//Return cursor according to cluster length > 1
 				cursor: function(feature) {
-					return feature.cluster.length > 1 ? "pointer" : "default";
+					var cluster_cursor = feature.cluster && feature.cluster.length > 1 ? "pointer" : "default";
+					return cluster_cursor;
 				},
 				//Return Cluster Image or Original graphic of Feature
 				externalGraphic: function(feature){
@@ -241,10 +243,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 						return clusterImg;
 					}
 
-					return feature.cluster.length > 1 ? clusterImg(feature.cluster.length) : feature.cluster[0].icon;
+					var isCluster = feature.cluster ? true : false,
+						cluster_icon = isCluster && feature.cluster.length > 1 ? clusterImg(feature.cluster.length) : "";
+
+					return cluster_icon;
 				},
 				graphicWidth: function(feature) {
-					if(feature.cluster.length > 1) {
+					var isCluster = feature.cluster ? true : false;
+					if(isCluster && feature.cluster.length > 1) {
 						return 55;
 					} else {
 						var currentSize = getIconSize();
@@ -256,7 +262,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 					}
 				},
 				graphicHeight: function(feature) {
-					if(feature.cluster.length > 1) {
+					var isCluster = feature.cluster ? true : false;
+					if(isCluster && feature.cluster.length > 1) {
 						return 55;
 					} else {
 						var currentSize = getIconSize();
@@ -550,11 +557,14 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		link_path_color = linkColor;
 
 	var ss_info_obj = "",
-		ss_height = 40;
+		ss_height = 40,
+		bs_index = 0,
+		ss_index = 0;
 
 	if(ss_info != undefined || ss_info == "") {
 		ss_info_obj = ss_info.info;
-		ss_height = ss_info.antenna_height;
+		ss_index = ss_info.ss_item_index > -1 ? ss_info.ss_item_index : 0;
+		ss_height = ss_info.antenna_height && ss_info.antenna_height != 'NA' ? ss_info.antenna_height : 40;
 	} else {
 		ss_info_obj = "";
 		ss_height = 40;
@@ -564,7 +574,8 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		bs_height = 40;
 	if(bs_info != undefined || bs_info == "") {
 		bs_info_obj = bs_info.info;
-		bs_height = bs_info.antenna_height;
+		bs_index = bs_info.bs_item_index > -1 ? bs_info.bs_item_index : 0;
+		bs_height = bs_info.antenna_height && bs_info.antenna_height != 'NA' ? bs_info.antenna_height : 40;
 	} else {
 		bs_info_obj = "";
 		bs_height = 40;
@@ -581,6 +592,8 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		strokeWeight	: 3,
 		pointType 		: "path",
 		geodesic		: true,
+		bs_item_index   : bs_index,
+		ss_item_index   : ss_index,
 		ss_info			: ss_info_obj,
 		ss_lat 			: startEndObj.endLat,
 		ss_lon 			: startEndObj.endLon,
