@@ -307,12 +307,12 @@ CELERYBEAT_SCHEDULE = {
     },
     'wimax-ss-topology': {
         'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': timedelta(seconds=300),
+        'schedule': crontab(minute=15, hour='*/12'),
         'args': ['WiMAX']
     },
     'pmp-ss-topology': {
         'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=0, hour=0),
+        'schedule': crontab(minute=30, hour='*/12'),
         'args': ['PMP']
     },
     #updating the polled sector frequency
