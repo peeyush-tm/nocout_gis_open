@@ -304,6 +304,10 @@ CELERYBEAT_SCHEDULE = {
     'device_last_down_time': {
         'task': 'performance.tasks.device_last_down_time_task',
         'schedule': timedelta(seconds=300),
+    },
+    'cache_clear_task': {
+        'task': 'nocout.tasks.cache_clear_task',
+        'schedule': timedelta(seconds=3600),
     }
 }
 
