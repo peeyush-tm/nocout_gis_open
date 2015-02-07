@@ -4796,7 +4796,9 @@ def getSearchData(request, search_by="default", pk=0):
         "data" : {
             "inventory_page_url" : '',
             "perf_page_url" : '',
-            "alert_page_url" : ''
+            "alert_page_url" : '',
+            "circuit_inventory_url" : '',
+            "sector_inventory_url" : ''
         }
     }
 
@@ -4816,6 +4818,8 @@ def getSearchData(request, search_by="default", pk=0):
                 inventory_page_url = ''
                 perf_page_url = ''
                 alert_page_url = ''
+                circuit_inventory_url = ''
+                sector_inventory_url = ''
 
                 # Get the single device inventory page, alert page & perf page url
                 if search_by in ['ip_address','mac_address']:
@@ -4838,16 +4842,37 @@ def getSearchData(request, search_by="default", pk=0):
                         current_app='alert_center'
                     )
                 elif search_by in ['circuit_id']:
-                    # Circuit Inventory page url
+
+                    ss_device_obj = SubStation.objects.filter(pk=query_result[0].sub_station_id).values('device_id')
+                    ss_device_id = ss_device_obj[0]["device_id"]
+
+                    # SS Device Inventory page url
                     inventory_page_url = reverse(
+                        'device_edit',
+                        kwargs={'pk': ss_device_id},
+                        current_app='device'
+                    )
+
+                    # Circuit Inventory URL
+                    circuit_inventory_url = reverse(
                         'circuit_edit',
                         kwargs={'pk': query_result[0].id},
                         current_app='inventory'
                     )
+
                     # Single Device perf page url
-                    perf_page_url = ''
+                    perf_page_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': 'customer', 'device_id' : ss_device_id},
+                        current_app='performance'
+                    )
+
                     # Single Device alert page url
-                    alert_page_url = ''
+                    alert_page_url = reverse(
+                        'SingleDeviceDetails',
+                        kwargs={'page_type': 'customer', 'device_id' : ss_device_id, 'service_name' : 'ping'},
+                        current_app='alert_center'
+                    )
 
                 elif search_by in ['sector_id']:
 
@@ -4863,8 +4888,15 @@ def getSearchData(request, search_by="default", pk=0):
                     # Get page type as per the technology
                     page_type = 'customer' if current_technology in ['ptp','p2p'] else 'network'
 
-                    # Sector Inventory page url
+                    # Sector Conf. On Device Inventory page url
                     inventory_page_url = reverse(
+                        'device_edit',
+                        kwargs={'pk': query_result[0].sector_configured_on_id},
+                        current_app='device'
+                    )
+
+                    # Sector Inventory URL
+                    sector_inventory_url = reverse(
                         'sector_edit',
                         kwargs={'pk': query_result[0].id},
                         current_app='inventory'
@@ -4895,6 +4927,9 @@ def getSearchData(request, search_by="default", pk=0):
                 result["data"]["inventory_page_url"] = inventory_page_url
                 result["data"]["perf_page_url"] = perf_page_url
                 result["data"]["alert_page_url"] = alert_page_url
+                result["data"]["circuit_inventory_url"] = circuit_inventory_url
+                result["data"]["sector_inventory_url"] = sector_inventory_url
+
 
             except Exception, e:
                 result["message"] = "Exception occurs."

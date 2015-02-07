@@ -343,12 +343,8 @@ function nocoutPerfLib() {
 
                         /*Bind click event on tabs*/
                         $('.inner_tab_container .nav-tabs li a').click(function (e) {
-<<<<<<< HEAD
                             // show loading spinner
                             showSpinner();
-=======
-
->>>>>>> dev_master
                             var serviceId = e.currentTarget.id.slice(0, -4),
                                 splitted_local_id = e.currentTarget.attributes.href.value.split("#"),
                                 tab_content_dom_id = splitted_local_id.length > 1 ? splitted_local_id[1] : splitted_local_id[0];
