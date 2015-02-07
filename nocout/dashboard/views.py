@@ -26,7 +26,7 @@ from inventory.utils.util import organization_customer_devices, organization_net
 
 from performance.utils.util import color_picker
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
     get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response,\
@@ -849,7 +849,6 @@ def get_severity_status_dict(dashboard_name, sector_devices_list):
                                     Stop_Provisioning=Sum('critical'),
                                     Unknown=Sum('unknown')
                                 )
-
     return dashboard_status_dict
 
 
@@ -933,3 +932,97 @@ class DashboardDeviceStatus(View):
         response = get_highchart_response(chart_data_dict)
 
         return HttpResponse(response)
+
+#*************************************************Dashboard Monthly Data ***********************************************************************
+def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
+    '''
+    '''
+    
+    # Start Calculations for Monthly Trend Sector
+    # Last 30 Days
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+    # Data captured from model for last 30 days, summation of diffrent state of hosts on same day
+    dashboard_status_dict = DashboardSeverityStatusDaily.objects.values('processed_for').filter(
+        processed_for__gte=month_before,
+        dashboard_name=dashboard_name,
+        device_name__in=sector_devices_list
+    ).annotate(
+        Normal=Sum('ok'),
+        Needs_Augmentation=Sum('warning'),
+        Stop_Provisioning=Sum('critical'),
+        Unknown=Sum('unknown')
+    )
+
+    # Datetime object converted into only date
+    for element in dashboard_status_dict:
+        element['processed_for'] = element['processed_for'].strftime('%Y-%m-%d')
+        
+    final_dict = [] 
+    # random color picker for sending different colors
+    processed_key_color = {result['processed_for']: color_picker() for result in dashboard_status_dict}
+    # Loop for sending complete 30 days Data
+    while month_before <= datetime.date.today(): 
+        var = dict()
+        # values for state of host if no data available at some date
+        y = ['0','0','0','0']
+        # Accessing every element(dictionary) of list 
+        for var in dashboard_status_dict:
+            # Equality condition for sending data whose entries are available at certain date within the month
+            if var['processed_for'] == month_before.isoformat():
+                y= [] 
+                y.append(var['Normal'])
+                y.append(var['Needs_Augmentation'])
+                y.append(var['Stop_Provisioning'])
+                y.append(var['Unknown'])
+        # Preparation of final dict for sending to main function        
+        final_dict.append({
+            "color": processed_key_color[var['processed_for']],
+            "y" : y,
+            "name": "sector capacity",
+            "x" : str(month_before)
+        })
+
+        # Increment of date by one  
+        month_before += relativedelta.relativedelta(days=1)          
+                 
+    return final_dict
+
+
+#************************************************* Monthly Trend Pie chart ***********************************************************************
+# Mixin which can work for both Technologies
+class MonthlyTrendSectorMixin(object): 
+    '''
+    '''
+    def get(self, request):
+
+        tech_name = self.tech_name
+        organization = logged_in_user_organizations(self)    
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+
+        user_sector = organization_sectors(organization, technology=technology)  #Sector for that user corresponding to organization and technology
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
+        
+        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
+        # Function call for calculating no. of hosts in different states on different days  
+        processed_key_dict = get_severity_status_dict_monthly(dashboard_name, sector_devices_list)
+       
+        chart_series = []
+        chart_series = processed_key_dict
+
+        response = get_highchart_response(dictionary={'type': 'column','valuesuffix': '', 'chart_series': chart_series,
+            'name': '%s Sector Capacity' % tech_name.upper(), 'valuetext' : '' })
+
+        return HttpResponse(response)
+
+
+class MonthlyTrendSectorPMP(MonthlyTrendSectorMixin, View):
+    """
+    """
+    tech_name = 'PMP'    
+
+class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
+    """
+    """
+    tech_name = 'WIMAX'    
+
