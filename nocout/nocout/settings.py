@@ -300,6 +300,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'capacity_management.tasks.gather_sector_status',
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
+    },
+    'device_last_down_time': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
     }
 }
 

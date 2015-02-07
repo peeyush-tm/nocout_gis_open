@@ -2691,6 +2691,7 @@ def device_current_status(device_object):
     return get_higher_severity(severity_dict=severity)
 
 
+@nocout_utils.cache_for(300)
 def device_last_down_time(device_object):
     """
 
@@ -2709,6 +2710,7 @@ def device_last_down_time(device_object):
     #if the current status id down, return down
 
     device_last_down_query_set = PerformanceNetwork.objects.filter(
+                sys_timestamp__lt=float(format(datetime.datetime.now(), 'U')),
                 device_name=inventory_device_name,
                 service_name='ping',
                 data_source='pl',
