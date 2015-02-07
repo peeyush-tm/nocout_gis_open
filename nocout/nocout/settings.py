@@ -289,6 +289,25 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 }
 BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
 
+# REDIS
+# CELERY_RESULT_BACKEND = "redis"
+# CELERY_RESULT_BACKEND = 'redis://localhost/0'
+# REDIS_HOST = "localhost"
+# REDIS_PORT = 6379
+# REDIS_DB = 0
+# REDIS_CONNECT_RETRY = True
+# BROKER_HOST = "localhost"  # Maps to redis host.
+# BROKER_PORT = 6379         # Maps to redis port.
+# BROKER_VHOST = "0"         # Maps to database number.
+
+# MEMCACHED
+# CELERY_CACHE_BACKEND = 'memory'
+# CELERY_RESULT_BACKEND = 'cache+memcached://127.0.0.1:11211/'
+
+# USE WITH PYLIB MC
+# CELERY_CACHE_BACKEND_OPTIONS = {'binary': True,
+#                                 'behaviors': {'tcp_nodelay': True}}
+
 from celery import crontab
 
 #=time zone for celery periodic tasks
