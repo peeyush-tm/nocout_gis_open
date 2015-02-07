@@ -361,7 +361,9 @@ def prepare_raw_sector(sectors):
                 circuit_dict = pivot_element(sectors[sector_id], 'CCID')
 
                 #circuit id prepare ?
+
                 substation, circuit_id, substation_ip, subStationsInfo  = prepare_raw_ss_result(circuits=circuit_dict,
+
                                                              sector_id=sector_id,
                                                              frequency_color=format_value(
                                                                  format_this=sector['SECTOR_FREQUENCY_COLOR'],
@@ -471,6 +473,7 @@ def prepare_raw_sector(sectors):
                         'sub_station': substation
                     }
                 )
+
     # Sector Infowindow content
     sectors_info_list = [
         {
@@ -736,10 +739,12 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                     far_end_perf_url = ""
                     far_end_inventory_url = ""
 
+                    #unique circuit id condition
                     if circuit_id not in circuit_ids:
                         circuit_ids.append(circuit_id)
 
                     techno_to_append = circuit['SS_TECH']
+
                     if circuit['CIRCUIT_TYPE'] and circuit['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
                         techno_to_append = 'PTP BH'
 
@@ -776,6 +781,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                     all_dl_rssi_during_acceptance +=  unicode(format_value(circuit['RSSI']))+"|"
                     all_date_of_acceptance +=  unicode(format_value(circuit['DATE_OF_ACCEPT']))+"|"
 
+
                     substation_info.append(
                         {
                             'id': circuit['SSID'],
@@ -787,12 +793,13 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                 "lon": circuit['SS_LONGITUDE'],
                                 "perf_page_url" : far_end_perf_url,
                                 "inventory_url" : far_end_inventory_url,
-                                "antenna_height": format_value(circuit['SSHGT'], type_of='random'),
+                                # "antenna_height": format_value(circuit['SSHGT'], type_of='random'),
                                 "substation_device_ip_address": circuit['SSIP'],
                                 "technology": techno_to_append,
                                 "markerUrl": format_value(format_this=circuit['SS_GMAP_ICON'], type_of='icon'),
                                 "show_link": 1,
-                                "link_color": frequency_color
+                                "link_color": frequency_color,
+
                             }
                         }
                     )

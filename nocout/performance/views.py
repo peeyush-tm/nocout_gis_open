@@ -378,8 +378,23 @@ class LivePerformanceListing(BaseDatatableView):
         :param device_list:
         :return:
         """
-        page_type = self.request.GET['page_type']
-        return perf_utils.prepare_gis_devices(qs, page_type)
+        page_type = self.request.GET.get('page_type')
+        device_tab_technology = self.request.GET.get('data_tab')
+
+        print(page_type, device_tab_technology)
+
+        if page_type == 'network':
+            type_rf = 'sector'
+        elif page_type == 'customer':
+            type_rf = 'ss'
+        else:
+            type_rf = None
+
+        return perf_utils.prepare_gis_devices(qs, page_type,
+                                              monitored_only=True,
+                                              technology=device_tab_technology,
+                                              type_rf=type_rf
+        )
 
     def prepare_machines(self, qs):
         """
@@ -2946,6 +2961,7 @@ def device_current_status(device_object):
     return get_higher_severity(severity_dict=severity)
 
 
+@nocout_utils.cache_for(300)
 def device_last_down_time(device_object):
     """
 
@@ -2964,6 +2980,7 @@ def device_last_down_time(device_object):
     #if the current status id down, return down
 
     device_last_down_query_set = PerformanceNetwork.objects.filter(
+                sys_timestamp__lt=float(format(datetime.datetime.now(), 'U')),
                 device_name=inventory_device_name,
                 service_name='ping',
                 data_source='pl',

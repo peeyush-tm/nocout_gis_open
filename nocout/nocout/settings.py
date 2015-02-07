@@ -301,6 +301,14 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
     },
+    'device_last_down_time': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+    },
+    'cache_clear_task': {
+        'task': 'nocout.tasks.cache_clear_task',
+        'schedule': timedelta(seconds=21600), #per 6 hours delete all cache
+    },
     'gather_sector_status-pmp': {
         'task': 'capacity_management.tasks.gather_sector_status',
         'schedule': timedelta(seconds=300),

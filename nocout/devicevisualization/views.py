@@ -1552,6 +1552,7 @@ class GISPerfData(View):
                                 other_perf_data.extend(device_status_info)
 
                             # get performance data
+
                             sector_performance_data = self.get_sector_performance_info(sector_device,
                                                                                        network_perf_data,
                                                                                        other_perf_data,
@@ -1560,6 +1561,7 @@ class GISPerfData(View):
                                                                                        device_technology,
                                                                                        service,
                                                                                        data_source)
+
 
                             # sector dictionary
                             sector_dict = dict()
@@ -1712,6 +1714,7 @@ class GISPerfData(View):
 
         return backhaul_data
 
+
     def get_sector_performance_info(self,
                                     device,
                                     network_perf_data,
@@ -1721,6 +1724,7 @@ class GISPerfData(View):
                                     device_technology=None,
                                     service=None,
                                     data_source=None):
+
         """ Get Sector performance info
 
             Parameters:

@@ -63,53 +63,53 @@ function nocoutPerfLib() {
     this.getAllDevices = function (get_device_url, device_id) {
         /*Ajax call to Get Devices API*/
         var get_url = get_device_url;
-        $.ajax({
-            url: get_url,
-            type: "GET",
-            dataType: "json",
-            success: function (response) {
+        // $.ajax({
+        //     url: get_url,
+        //     type: "GET",
+        //     dataType: "json",
+        //     success: function (response) {
 
-                var result = "";
-                // Type check of response
-                if(typeof response == 'string') {
-                    result = JSON.parse(response);
-                } else {
-                    result = response;
-                }
+        //         var result = "";
+        //         // Type check of response
+        //         if(typeof response == 'string') {
+        //             result = JSON.parse(response);
+        //         } else {
+        //             result = response;
+        //         }
 
-                if (result.success == 1) {
-                    allDevices = result.data.objects;
-                    var devices_options = '<option value="">Select Device</option>';
-                    $.each(allDevices, function (key, value) {
-                        if (value.id == device_id) {
-                            devices_options += '<option value="' + value.id + '" selected>' + value.technology + ':' + value.alias + '</option>';
-                        } else {
-                            devices_options += '<option value="' + value.id + '">' + value.technology + ':' + value.alias + '</option>';
-                        }
-                    });
-                    $("#device_name").html(devices_options);
-                } else {
-                    $.gritter.add({
-                        // (string | mandatory) the heading of the notification
-                        title: 'Performance',
-                        // (string | mandatory) the text inside the notification
-                        text: result.message,
-                        // (bool | optional) if you want it to fade out on its own or just sit there
-                        sticky: false
-                    });
-                }
-            },
-            error: function (err) {
-                $.gritter.add({
-                    // (string | mandatory) the heading of the notification
-                    title: 'Performance',
-                    // (string | mandatory) the text inside the notification
-                    text: err.statusText,
-                    // (bool | optional) if you want it to fade out on its own or just sit there
-                    sticky: false
-                });
-            }
-        });
+        //         if (result.success == 1) {
+        //             allDevices = result.data.objects;
+        //             var devices_options = '<option value="">Select Device</option>';
+        //             $.each(allDevices, function (key, value) {
+        //                 if (value.id == device_id) {
+        //                     devices_options += '<option value="' + value.id + '" selected>' + value.technology + ':' + value.alias + '</option>';
+        //                 } else {
+        //                     devices_options += '<option value="' + value.id + '">' + value.technology + ':' + value.alias + '</option>';
+        //                 }
+        //             });
+        //             $("#device_name").html(devices_options);
+        //         } else {
+        //             $.gritter.add({
+        //                 // (string | mandatory) the heading of the notification
+        //                 title: 'Performance',
+        //                 // (string | mandatory) the text inside the notification
+        //                 text: result.message,
+        //                 // (bool | optional) if you want it to fade out on its own or just sit there
+        //                 sticky: false
+        //             });
+        //         }
+        //     },
+        //     error: function (err) {
+        //         $.gritter.add({
+        //             // (string | mandatory) the heading of the notification
+        //             title: 'Performance',
+        //             // (string | mandatory) the text inside the notification
+        //             text: err.statusText,
+        //             // (bool | optional) if you want it to fade out on its own or just sit there
+        //             sticky: false
+        //         });
+        //     }
+        // });
     };
 
     /**
@@ -343,7 +343,12 @@ function nocoutPerfLib() {
 
                         /*Bind click event on tabs*/
                         $('.inner_tab_container .nav-tabs li a').click(function (e) {
+<<<<<<< HEAD
+                            // show loading spinner
+                            showSpinner();
+=======
 
+>>>>>>> dev_master
                             var serviceId = e.currentTarget.id.slice(0, -4),
                                 splitted_local_id = e.currentTarget.attributes.href.value.split("#"),
                                 tab_content_dom_id = splitted_local_id.length > 1 ? splitted_local_id[1] : splitted_local_id[0];
@@ -432,6 +437,8 @@ function nocoutPerfLib() {
                     if(parent_tab_id && $('#'+parent_tab_id).length) {
                         $('#'+parent_tab_id).trigger('click');
                     } else {
+                        // show loading spinner
+                        showSpinner();
                         perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
                             if(response_type == 'success') {
                                 // Call function to populate latest status for this service
