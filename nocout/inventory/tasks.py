@@ -12769,11 +12769,12 @@ def get_topology(technology):
         'connected_device_ip', flat=True)
     ).select_related('circuit_set', 'device')
 
-    polled_devices = Device.objects.filter(
-        Q(ip_address__in=sector_ips)
-        |
-        Q(substation__in=polled_substations)
-    )
+    polled_devices = Device.objects.filter(ip_address__in=sector_ips) #just work with sector devices here
+    #because the ss devices can be get directly with SS only
+        # Q(ip_address__in=sector_ips)  #because that can be a DR as well. hence the IP address
+        # |
+        # Q(substation__in=polled_substations)  #substatoin can have at max one device associated to it
+    # )
 
     save_circuit_list = []
     save_device_list = []
@@ -12794,7 +12795,7 @@ def get_topology(technology):
                     #first resolve for ss
                     save_ss_list.append(ss_obj)
                     #first resolve for ss device
-                    ss_device_obj = polled_devices.filter(ip_address=ss_ip)[0]
+                    ss_device_obj = ss_obj.device
                     ss_device_obj.mac_address = topos['connected_device_mac']
                     save_device_list.append(ss_device_obj)
 
