@@ -1626,7 +1626,6 @@ class GISPerfData(View):
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
         except Exception as e:
-            logger.exception(e)
             performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
@@ -1838,7 +1837,6 @@ class GISPerfData(View):
                 icon = "media/" + str(device_type.device_icon)
             except Exception as e:
                 pass
-                # logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             if device_pl != "100":
                 # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
@@ -1847,7 +1845,6 @@ class GISPerfData(View):
                     th_icon_settings = user_thematics.thematic_template.icon_settings
                 except Exception as e:
                     pass
-                    #logger.error("No icon settings for thematic settings. Exception: ", e.message)
 
                 # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
                 th_ranges = ""
@@ -3020,7 +3017,7 @@ class GISPerfData(View):
                     device_pl = ""
 
         except Exception as e:
-            logger.error("Device PL not exist. Exception: ", e.message)
+            pass
 
         return device_pl
 
