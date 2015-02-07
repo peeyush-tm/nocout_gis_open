@@ -2907,7 +2907,7 @@ def get_higher_severity(severity_dict):
 
     return s, a
 
-
+@nocout_utils.cache_for(120) #just for 2 minutes cache this. short running query
 def device_current_status(device_object):
     """
     Device UP Status
@@ -2961,7 +2961,7 @@ def device_current_status(device_object):
     return get_higher_severity(severity_dict=severity)
 
 
-@nocout_utils.cache_for(300)
+@nocout_utils.cache_for(300) #for 5 minutes cache this. long running query
 def device_last_down_time(device_object):
     """
 

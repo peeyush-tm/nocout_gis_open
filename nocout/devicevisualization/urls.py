@@ -2,6 +2,9 @@ from django.conf import settings
 from django.conf.urls import patterns, url, include
 from devicevisualization import views
 
+from django.views.decorators.cache import cache_page
+#in case same base station is called twice in less than
+#3 minutes
 
 urlpatterns = patterns('',
                        url(r'^$', views.locate_devices),
@@ -22,6 +25,11 @@ urlpatterns = patterns('',
                            name='gis_map_performance_data'),
                        url(r'^tools/point/$', views.PointToolClass.as_view(), name='point_tool_class'),
                        url(r'^get_tools_data/$', views.GetToolsData.as_view(), name='get_tools_data'),
-                       url(r'^perf_data/$', views.GISPerfData.as_view(), name='gis_perf_data'),
+                       #in case the base station call returns before 3 minutes
+                       #send out the cached response
+                       url(r'^perf_data/$',
+                           cache_page(60 * 3)(views.GISPerfData.as_view()),
+                           name='gis_perf_data'),
+
                        url(r'^l2_report/(?P<ckt_id>\w+)/$', views.getL2Report, name='get_l2_report')
                )
