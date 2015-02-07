@@ -57,4 +57,7 @@ urlpatterns = patterns('',
 
     url(r'^sales-opportunity/pmp/$', views.PMPSalesOpportunity.as_view(), name='sales-opportunity-pmp'),
     url(r'^sales-opportunity/wimax/$', views.WiMAXSalesOpportunity.as_view(), name='sales-opportunity-wimax'),
+
+    url(r'^trend-monthly-sector/pmp/$', views.MonthlyTrendSectorPMP.as_view(), name = 'trend-monthly-sector-pmp' ),
+    url(r'^trend-monthly-sector/wimax/$', views.MonthlyTrendSectorWIMAX.as_view(), name = 'trend-monthly-sector-wimax' ),
 )

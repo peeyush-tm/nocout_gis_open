@@ -44,7 +44,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     	/* When zoom level is greater than 8 show lines */
     	if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
 
-    		if(ccpl_map.getZoom() > 8) {
+    		if(ccpl_map.getZoom() > 10) {
         		// Reset Perf calling Flag
     			isPerfCallStopped = 0;
 			} else {
@@ -53,7 +53,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     			isPerfCallStarted = 0;
 			}
 
-    		if(ccpl_map.getZoom() < 9 || searchResultData.length > 0) {
+    		if(ccpl_map.getZoom() < 11 || searchResultData.length > 0) {
 
     			var states_with_bounds = state_lat_lon_db.where(function(obj) {
     				return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
@@ -99,7 +99,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					 * If anything searched n user is on zoom level 8 then reset 
 					   currentlyPlottedDevices array for removing duplicacy.
         			 */
-        			if(ccpl_map.getZoom() == 8 && searchResultData.length > 0) {
+        			if(ccpl_map.getZoom() == 10 && searchResultData.length > 0) {
         				// Reset currentlyPlottedDevices array
         				currentlyPlottedDevices = [];
     				}
@@ -111,7 +111,9 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						$.grep(allMarkersArray_wmap,function(marker) {
 							var markerLayer = marker.layer ? marker.layer : marker.layerReference;
 							marker.isActive = 0;
-							marker.style.display = 'none';
+							if(marker.style) {
+								marker.style.display = 'none';
+							}
 							markerLayer.redraw();
 						});
 						ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
@@ -149,36 +151,26 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					// ccpl_map.getLayersByName('Markers')[0].refresh({forces:true});
 					// ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 
-					if(ccpl_map.getZoom() <= 8) {
+					if(ccpl_map.getZoom() <= 10) {
 						var polylines = allMarkersObject_wmap['path'],
 							polygons = allMarkersObject_wmap['sector_polygon'];
 
 						// Hide polylines if shown
 						for(key in polylines) {
-							var current_line = polylines[key];
-							// If shown
-							// if(current_line.map) {
-								hideOpenLayerFeature(current_line);
-							// }
+							hideOpenLayerFeature(polylines[key]);
 						}
 						// alert();
 						// Hide polygons if shown
 						for(key in polygons) {
-							var current_polygons = polygons[key];
-							// If shown
-							// if(current_polygons.map) {
-								hideOpenLayerFeature(current_polygons);
-							// }
+							hideOpenLayerFeature(polygons[key]);
 						}
 					} else {
-						if(ccpl_map.getZoom() > 7) {
-							whiteMapClass.showSubStaionsInBounds();
-							whiteMapClass.showBaseStaionsInBounds();
-							whiteMapClass.showSectorDevicesInBounds();
-							whiteMapClass.showLinesInBounds();
-							whiteMapClass.showSectorPolygonInBounds();
-							// whiteMapClass.showBackhaulDevicesInBounds();
-						}
+						whiteMapClass.showSubStaionsInBounds();
+						whiteMapClass.showBaseStaionsInBounds();
+						whiteMapClass.showSectorDevicesInBounds();
+						whiteMapClass.showLinesInBounds();
+						whiteMapClass.showSectorPolygonInBounds();
+						// whiteMapClass.showBackhaulDevicesInBounds();
 					}
 
         		}
