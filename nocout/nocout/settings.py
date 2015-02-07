@@ -246,6 +246,22 @@ CACHES = {
     }
 }
 
+#if pylibmc is isntalled
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+#         'LOCATION': 'localhost:11211',
+#         'TIMEOUT': 500,
+#         'BINARY': True,
+#         'OPTIONS': {  # Maps to pylibmc "behaviors"
+#             'tcp_nodelay': True,
+#             #'ketama': True
+#         }
+#     }
+# }
+
+
 # CACHES = {
 #     'default': {
 #         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
