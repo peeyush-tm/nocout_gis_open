@@ -2446,7 +2446,7 @@ class GISPerfData(View):
                 device_info.append(connected_bs_ip_info)
 
             # remove duplicate dictionaries in list
-        device_info = remove_duplicate_dict_from_list(device_info)
+        # device_info = remove_duplicate_dict_from_list(device_info)
 
         return device_info
 
