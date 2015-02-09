@@ -4728,8 +4728,8 @@ class GisWizardSubStationListingTable(SubStationListingTable):
             dct.update(actions=detail_action+edit_action)
         return json_data
 
-# This function returns model name as per the given param
-def getModelForSearch(search_by='default'):
+# This function returns model name & organization list as per the given param
+def getModelForSearch(request,search_by='default'):
 
     search_model = ''
 
@@ -4742,7 +4742,17 @@ def getModelForSearch(search_by='default'):
     else:
         search_model = ''
 
-    return search_model
+    # This class returns self object which is used to get current users organizations
+    class GetSelfObject(object):
+        def __init__(self, r):
+            self.request = r
+
+    # Get self for custom class for "logged_in_user_organizations" function
+    self = GetSelfObject(request)
+    # Get the list of organization for logged in user
+    current_user_organizations = list(logged_in_user_organizations(self))
+
+    return (search_model , current_user_organizations)
 
 # This function returns the auto suggestions data as per the given params
 def getAutoSuggestion(request, search_by="default", search_txt=""):
@@ -4753,14 +4763,18 @@ def getAutoSuggestion(request, search_by="default", search_txt=""):
         "data" : []
     }
 
-    # Get model as per the search criteria
-    search_model = getModelForSearch(search_by)
+    # Get model & organization as per the search criteria
+    search_model, \
+    current_user_organizations = getModelForSearch(request,search_by)
 
     if search_model and search_by:
         # Condition to fetch data
         condition = '%s__istartswith'% search_by
         # fetch queryset as per the condition
-        query_result = search_model.objects.filter(**{condition : str(search_txt)})[:30]
+        query_result = search_model.objects.filter(
+            Q(**{condition : str(search_txt)}),
+            Q(organization__in=current_user_organizations)
+        )[:30]
 
         # If any records found in queryset
         if len(query_result) > 0:
@@ -4802,12 +4816,16 @@ def getSearchData(request, search_by="default", pk=0):
         }
     }
 
-    # Get model as per the search criteria
-    search_model = getModelForSearch(search_by)
+    # Get model & organization as per the search criteria
+    search_model, \
+    current_user_organizations = getModelForSearch(request,search_by)
 
     if search_model and search_by:
         # fetch queryset as per the condition
-        query_result = search_model.objects.filter(pk=pk)
+        query_result = search_model.objects.filter(
+            Q(pk=pk),
+            Q(organization__in=current_user_organizations)
+        )
 
         # If any records found in queryset
         if len(query_result) > 0:
