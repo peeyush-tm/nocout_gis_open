@@ -1421,7 +1421,7 @@ var state_wise_device_label_text= {};
 				}
 
 				var subStationData = sectorsArray[j].sub_station ? sectorsArray[j].sub_station : [],
-					ss_infoWindow_content = sectorsArray[j].ss_info_list ? sectorsArray[j].ss_info_list : [],;
+					ss_infoWindow_content = sectorsArray[j].ss_info_list ? sectorsArray[j].ss_info_list : [];
 
 				for(var k=0;k<subStationData.length;k++) {
 					
