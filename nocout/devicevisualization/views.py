@@ -1628,7 +1628,6 @@ class GISPerfData(View):
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
         except Exception as e:
-            logger.exception(e)
             performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
@@ -1680,7 +1679,7 @@ class GISPerfData(View):
         # pl
         try:
             pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
-                                                            data_source='pl').using(
+                                                            data_source='pl').values('current_value').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
             pl_dict['value'] = "NA"
@@ -1690,7 +1689,7 @@ class GISPerfData(View):
         # rta
         try:
             rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
-                                                            data_source='rta').using(
+                                                            data_source='rta').values('current_value').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
             rta_dict['value'] = "NA"
@@ -1700,7 +1699,7 @@ class GISPerfData(View):
         # bh severity
         try:
             backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device,
-                                                            data_source='pl').using(
+                                                            data_source='pl').values('severity').using(
                                                             alias=bh_device.machine.name)[0].severity
         except Exception as e:
             backhaul_data['bhSeverity'] = 'unknown'
@@ -1730,25 +1729,48 @@ class GISPerfData(View):
 
             Parameters:
                 - device (<class 'device.models.Device'>) - device name
+                - network_perf_data (list) - list of dicts containing performance data
+                                             from network status table
+                - other_perf_data (list) - list of dicts containing performance data from
+                                           status, service, inventory status tables
+                - sector (<class 'inventory.models.Sector'>) - sector object
+                - user_thematics (<class 'inventory.models.UserThematicSettings'>) - thematic settings object for
+                                                                                     current user
+                - device_technology (<class 'device.models.DeviceTechnology'>) - sector technology object
+                - service (unicode) - service name corresponding to user_thematics e.g. 'radwin_uas'
+                - data_source (unicode) - data source name corresponding to user_thematics for e.g. 'uas'
 
             Returns:
-               - performance_data (dictionary) - dictionary containing sector performance data
-                                                    {
-                                                        'perf_info': [
+               - performance_data (dictionary) - dictionary containing sector performance data for e.g.
+                                                {
+                                                    'perf_info': [
+                                                        {
+                                                            'url': None,
+                                                            'show': 1,
+                                                            'name': 'session_uptime',
+                                                            'value': None,
+                                                            'title': 'SessionUptime'
+                                                        },
+                                                        {
+                                                            'show': 1,
+                                                            'name': 'connected_bs_ip',
+                                                            'value': 'NA',
+                                                            'title': 'ConnectedBSIP'
+                                                        }
+                                                    ],
+                                                    'color': '',
+                                                    'polled_frequency': '',
+                                                    'radius': '',
+                                                    'beam_width': None,
+                                                    'icon': 'media/uploaded/icons/2015/01/19/P2P-Gray.png',
+                                                    'azimuth_angle': 0.0,
+                                                    'pl': '',
+                                                    'perf_value': [
 
-                                                        ],
-                                                        'color': '',
-                                                        'polled_frequency': '',
-                                                        'radius': '',
-                                                        'beam_width': None,
-                                                        'icon': 'static/img/icons/mobilephonetower10.png',
-                                                        'azimuth_angle': 0.0,
-                                                        'pl': '',
-                                                        'perf_value': [
-
-                                                        ]
-                                                    }
+                                                    ]
+                                                }
         """
+
         # device name
         device_name = device.device_name
 
@@ -1767,9 +1789,12 @@ class GISPerfData(View):
         performance_data['icon'] = ""
         performance_data['perf_info'] = ''
         try:
-            performance_data['perf_info'] = self.get_device_info(device, machine_name, network_perf_data, other_perf_data)
+            performance_data['perf_info'] = self.get_device_info(device,
+                                                                 machine_name,
+                                                                 network_perf_data,
+                                                                 other_perf_data)
         except Exception as e:
-            logger.error(e)
+            pass
 
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
@@ -1842,7 +1867,6 @@ class GISPerfData(View):
                 icon = "media/" + str(device_type.device_icon)
             except Exception as e:
                 pass
-                # logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             if device_pl != "100":
                 # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
@@ -1851,7 +1875,6 @@ class GISPerfData(View):
                     th_icon_settings = user_thematics.thematic_template.icon_settings
                 except Exception as e:
                     pass
-                    #logger.error("No icon settings for thematic settings. Exception: ", e.message)
 
                 # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
                 th_ranges = ""
@@ -1928,6 +1951,7 @@ class GISPerfData(View):
             Returns:
                 - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
         """
+
         # default image to be loaded
         image_partial = "icons/mobilephonetower10.png"
 
@@ -1935,8 +1959,8 @@ class GISPerfData(View):
             compare_this = float(value)
             for i in range(1, 11):
                 try:
-                    compare_to_start = float(eval("th_ranges.range%d_start" %i))
-                    compare_to_end = float(eval("th_ranges.range%d_end" %i))
+                    compare_to_start = float(eval("th_ranges.range%d_start" % i))
+                    compare_to_end = float(eval("th_ranges.range%d_end" % i))
                     icon_settings = eval(th_icon_settings)
                     if compare_to_start <= compare_this <= compare_to_end:
                         icon_key = "icon_settings{0}".format(i)
@@ -1945,7 +1969,6 @@ class GISPerfData(View):
                                 image_partial = str(icon_setting[icon_key])
                                 break
                 except Exception as e:
-                    #logger.exception(e.message)
                     continue
 
         # image url
@@ -1987,7 +2010,7 @@ class GISPerfData(View):
             compare_this = ''.join(e for e in value if e.isalnum())
             for i in range(1, 11):
                 try:
-                    eval_this = eval("th_ranges.range%d_start" %i)
+                    eval_this = eval("th_ranges.range%d_start" % i)
                     compare_to = ''.join(e for e in eval_this if e.isalnum())
                     icon_settings = eval(th_icon_settings)
                     if compare_this.strip().lower() == compare_to.strip().lower():
@@ -1997,7 +2020,6 @@ class GISPerfData(View):
                                 image_partial = str(icon_setting[icon_key])
                                 break
                 except Exception as e:
-                    #logger.exception(e.message)
                     continue
 
         # image url
@@ -2020,9 +2042,15 @@ class GISPerfData(View):
         """ Get Sector/Sub Station device information
 
             Parameters:
-                - device_name (unicode) - device name
+                - device_obj (<class 'device.models.Device'>) - device name
                 - machine_name (unicode) - machine name
-                - substation (bool) - tell whether device is substation device or not
+                - network_perf_data (list) - list of dicts containing performance data
+                                                                       from network status table
+                - other_perf_data (list) - list of dicts containing performance data from
+                                                                     status, service, inventory status tables
+                - device_pl (unicode) - device pl value for e.g. "100"
+                - ss (<class 'inventory.models.SubStation'>) - substation object
+                - is_static (bool) - static parameter needed or not identifier
 
             Returns:
                 - device_info (list) - list of dictionaries containing device static or polled data
@@ -2072,7 +2100,7 @@ class GISPerfData(View):
 
                 try:
                     circuit = ss.circuit_set.get()
-                except:
+                except Exception as e:
                     return device_info
 
                 try:
@@ -2423,28 +2451,51 @@ class GISPerfData(View):
         return device_info
 
     def collect_performance(self, performance, device_id, processed):
-        """
+        """ Get Sector/Sub Station device information
 
-        :param performance:
-        :param device_id:
-        :param processed:
-        :return:
+            Parameters:
+                - performance (list) - list of dictionaries containing performance data
+                - device_id (long) - device id for e.g. 34925
+                - processed (dict) - list of dicts containing processed/filtered performance data
+
+            Returns:
+                - device_info (list) - list of dictionaries containing device static or polled data
+                                                    [
+                                                        {
+                                                            'show': 1,
+                                                            'name': u'uptime',
+                                                            'value': u'6.0082333333',
+                                                            'title': u'Uptime'
+                                                        },
+                                                        {
+                                                            'show': 1,
+                                                            'name': u'frequency',
+                                                            'value': u'5830',
+                                                            'title': u'Frequency'
+                                                        },
+                                                        {
+                                                            'show': 1,
+                                                            'name': u'pl',
+                                                            'value': u'4',
+                                                            'title': 'PacketLoss'
+                                                        }
+                                                    ]
         """
 
         SERVICE_DATA_SOURCE = service_data_sources()
 
         device_info = list()
-
-        # device object
-        device_obj = Device.objects.filter(pk=device_id)[0]
-
-        perf_info = {
-            "name": None,
-            "title": None,
-            "show": 0,
-            "url": None,
-            "value": None,
-        }
+        #
+        # # device object
+        # device_obj = Device.objects.filter(pk=device_id)[0]
+        #
+        # perf_info = {
+        #     "name": None,
+        #     "title": None,
+        #     "show": 0,
+        #     "url": None,
+        #     "value": None,
+        # }
 
         for perf in performance:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
@@ -2493,7 +2544,8 @@ class GISPerfData(View):
 
                 device_info.append(perf_info)
             except Exception as e:
-                logger.exception(e)
+                pass
+
         return device_info
 
     def sanatize_datasource(self, data_source, service_name):
@@ -2501,6 +2553,7 @@ class GISPerfData(View):
 
             Parameters:
                 - data_source (unicode) - data source name for e.g. 'rta'
+                - service_name (unicode) - service name
 
             Returns:
                 - name (unicode) - data source name for e.g. 'rta'
@@ -2534,8 +2587,6 @@ class GISPerfData(View):
 
                 show_gis = SERVICE_DATA_SOURCE[key_name]['show_gis']
             except Exception as e:
-                #logger.info("Something wrong with fetching data sources information. Exception")
-                #logger.info(e)
                 pass
 
             return True, name, title, show_gis
@@ -2556,6 +2607,14 @@ class GISPerfData(View):
             Parameters:
                 - substation (<class 'inventory.models.SubStation'>) - substation object
                 - substation_device (<class 'device.models.Device'>) - substation device object
+                - ss_default_link_color (str) - substation device object
+                - network_perf_data (list) - list of dicts containing performance data from network status table
+                - other_perf_data (list) - list of dicts containing performance data from status, service,
+                                           inventory status tables
+                - user_thematics (<class 'inventory.models.UserThematicSettings'>) - thematics for current user
+                - device_technology (<class 'device.models.DeviceTechnology'>) - device technology object
+                - service (unicode) - service name for e.g. radwin_uas
+                - data_source (unicode) - data source name for e.g. uas
 
             Returns:
                - substation_info (dict) - dictionary containing substation data
@@ -2916,6 +2975,8 @@ class GISPerfData(View):
                 - device_name (unicode) - device name
                 - machine_name (unicode) - machine name
                 - freeze_time (str) - freeze time i.e. '0'
+                - sector (<class 'inventory.models.Sector'>) - sector object
+                - device_type (<class 'device.models.DeviceType'>) - device type object
             Returns:
                - device_frequency (str) - device frequency, e.g. "34525"
         """
@@ -3024,7 +3085,7 @@ class GISPerfData(View):
                     device_pl = ""
 
         except Exception as e:
-            logger.error("Device PL not exist. Exception: ", e.message)
+            pass
 
         return device_pl
 
