@@ -12741,6 +12741,9 @@ def get_topology(technology):
     for device in network_devices:
         device_list.append(device['device_name'])
 
+    #rather than looping ourselves
+    #lets do .values('', flat=True)
+    #device_list = network_devices.values
 
     #topology is now synced at the central database only. no need to creating topology
     topology = Topology.objects.filter(device_name__in=device_list, data_source='topology')
@@ -12763,11 +12766,16 @@ def get_topology(technology):
     sector_ips = topology.values_list('ip_address', flat=True)
 
     polled_sectors = Sector.objects.filter(sector_id__in=topology.values_list('sector_id', flat=True)
-    ).select_related('sector_configured_on')
+    )
 
-    polled_substations = SubStation.objects.filter(device__ip_address__in=topology.values_list(
-        'connected_device_ip', flat=True)
-    ).select_related('circuit_set', 'device')
+    polled_circuits = Circuit.objects.filter(sub_station__in=SubStation.objects.filter(
+        device__ip_address__in=topology.values_list('connected_device_ip', flat=True)
+        )
+    )
+
+    # polled_substations = SubStation.objects.filter(device__ip_address__in=topology.values_list(
+    #     'connected_device_ip', flat=True)
+    # ).select_related('circuit_set', 'device')
 
     polled_devices = Device.objects.filter(ip_address__in=sector_ips) #just work with sector devices here
     #because the ss devices can be get directly with SS only
@@ -12780,39 +12788,48 @@ def get_topology(technology):
     save_device_list = []
     save_ss_list = []
 
-    processed_mac = []
+    processed_mac = {}
     for topos in required_topology:
         if topos['connected_device_mac'] not in processed_mac:
-            processed_mac.append(topos['connected_device_mac'])
+            processed_mac[topos['connected_device_mac']] = topos['connected_device_mac']
             ss_ip = topos['connected_device_ip']
             sector_id = topos['sector_id']
             sector_ip = topos['ip_address']
             try:
-                ss_obj = polled_substations.filter(device__ip_address=ss_ip)[0]
+                circuit_obj = polled_circuits.select_related('sub_station','sub_station__device', 'sector').get(
+                    sub_station__device__ip_address=ss_ip
+                )
+                ss_obj = circuit_obj.sub_station
 
-                if topos['connected_device_mac']:
+                if topos['connected_device_mac'] and ss_obj.mac_address != topos['connected_device_mac']:
                     ss_obj.mac_address = topos['connected_device_mac']
                     #first resolve for ss
                     save_ss_list.append(ss_obj)
                     #first resolve for ss device
-                    ss_device_obj = ss_obj.device
+                    ss_device_obj = circuit_obj.sub_station.device
                     ss_device_obj.mac_address = topos['connected_device_mac']
                     save_device_list.append(ss_device_obj)
 
-                sector_object = polled_sectors.filter(sector_id=sector_id)[0]
+                sector_object = polled_sectors.get(sector_id=sector_id)
 
                 if topos['mac_address']:
-                    sector_device_obj = polled_devices.filter(ip_address=sector_ip)[0]
+                    sector_device_obj = polled_devices.get(ip_address=sector_ip)
                     sector_device_obj.mac_address = topos['mac_address']
                     save_device_list.append(sector_device_obj)
 
                 #resolve for circuit
-                circuit_obj = ss_obj.circuit_set.get()
-                circuit_obj.sector = sector_object
-                save_circuit_list.append(circuit_obj)
+                #circuit_obj = ss_obj.circuit_set.get()
+                if circuit_obj.sector.sector_id != sector_id:
+                    circuit_obj.sector = sector_object
+                    save_circuit_list.append(circuit_obj)
 
             except Exception as e:
-                logger.exception(e)
+                #ss object is not found
+                #the issue might be that SS does not exists in the database
+                #if there is no SS then do no care and continue for existing SS
+                #or there are multiple SS on a single device
+                #which is wrong in any case
+                #or lastly there are multiple circuit on the SS which is again an inventory mistake
                 continue
     g_jobs = list()
 
