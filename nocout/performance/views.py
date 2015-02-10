@@ -694,7 +694,7 @@ class SectorDashboardListing(BaseDatatableView):
                                 d.ip_address as ip_address,\
                                 t.alias as technology\
                             FROM\
-                                nocout_dev.inventory_sector s \
+                                inventory_sector s \
                             left join\
                                 (\
                                     device_device d,\
