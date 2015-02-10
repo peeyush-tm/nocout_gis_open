@@ -314,25 +314,35 @@ from celery import crontab
 CELERY_TIMEZONE = 'Asia/Calcutta'
 
 CELERYBEAT_SCHEDULE = {
-    'wimax-topology': {
-        'task': 'inventory.tasks.get_topology',
+    # 'wimax-topology': {
+    #     'task': 'inventory.tasks.get_topology',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['WiMAX']
+    #     #'kwargs': {'technology':'WiMAX', 'type':None, 'site_name':'ospf1_slave_1'}
+    # },
+    # 'pmp-topology': {
+    #     'task': 'inventory.tasks.get_topology',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['PMP']
+    # },
+    'wimax-topology-site-wise': {
+        'task': 'inventory.tasks.topology_site_wise',
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
-        #'kwargs': {'technology':'WiMAX', 'type':None, 'site_name':'ospf1_slave_1'}
     },
-    'pmp-topology': {
-        'task': 'inventory.tasks.get_topology',
+    'pmp-topology-site-wise': {
+        'task': 'inventory.tasks.topology_site_wise',
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
     'wimax-ss-topology': {
         'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=15, hour='*/12'),
+        'schedule': crontab(minute=13, hour='*/12'),
         'args': ['WiMAX']
     },
     'pmp-ss-topology': {
         'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=30, hour='*/12'),
+        'schedule': crontab(minute=33, hour='*/12'),
         'args': ['PMP']
     },
     #updating the polled sector frequency

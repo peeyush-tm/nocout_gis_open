@@ -12858,6 +12858,28 @@ def get_topology(technology, type=None, site_name=None):
 
 
 @task()
+def topology_site_wise(technology):
+    """
+
+    :return:
+    """
+    sites = SiteInstance.objects.all().values_list('name', flat=True)
+    g_jobs = list()
+
+    for site in sites:
+        g_jobs.append(get_topology.s(technology=technology, type=None, site_name=site))
+
+    job = group(g_jobs)
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
+
+
+@task()
 def get_topology_with_substations(technology):
     """
     the update topology is not working, needs to be debugged, but we have our
