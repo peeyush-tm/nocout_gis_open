@@ -147,8 +147,19 @@ def get_service_status_results(user_devices, model, service_name, data_source):
 
 
 def get_range_status(dashboard_setting, result):
+    '''
+    Method return the range name in which the result's current value falls.
+
+    :param:
+    dashboard_setting: dashboard_setting object.
+    result: dictionary (must contain 'current_value' as key)
+
+    return: dictionary containing 'range_count' as key and range as value.
+                    i.e: { 'range_count': 'range_name' }
+    '''
     range_count = 'unknown'
     for i in range(1, 11):
+        # Get the start_range and end_range attribute of dashboard_setting.
         start_range = getattr(dashboard_setting, 'range%d_start' %i)
         end_range = getattr(dashboard_setting, 'range%d_end' %i)
 
@@ -172,13 +183,26 @@ def get_range_status(dashboard_setting, result):
 
 
 def get_dashboard_status_range_counter(dashboard_setting, service_status_results):
+    '''
+    Method return the count of ranges according to dashboard_setting.
+
+    :param:
+    dashboard_setting: dashboard_setting object.
+    service_status_results: list of dictionary.
+
+    return: dictionary
+                    i.e: { 'unknown': 0, 'range1': 1, 'range2': 2,... }
+    '''
     range_counter = dict()
+    # initialize the ranges of range_counter to 0(zero)
     for i in range(1, 11):
         range_counter.update({'range%d' %i: 0})
     range_counter.update({'unknown': 0})
 
     range_status_dct = dict()
+    # update the ranges of range_counter.
     for result in service_status_results:
+        # Get the name of range in which result's current_value falls.
         range_status_dct = get_range_status(dashboard_setting, result)
         range_counter[range_status_dct['range_count']] += 1
 
@@ -186,18 +210,31 @@ def get_dashboard_status_range_counter(dashboard_setting, service_status_results
 
 
 def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter):
+    '''
+    Method return the chart data used for the dashboard.
 
+    :param:
+    dashboard_setting: dashboard_setting object.
+    data_source: data source name.
+    range_counter: dictionary containing range name as key and value.
+
+    return: dictionary in specific format.
+    '''
     display_name = data_source.replace('_', ' ')
 
     chart_data = []
     colors = []
     for count in range(1, 11):
+        # get the start_range, end_range attribute of dashboard_setting.
         start_range = getattr(dashboard_setting, 'range%d_start' %count)
         end_range = getattr(dashboard_setting, 'range%d_end' %count)
+        # get the color attribute of dashboard_setting.
         color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
+        # creating list using (start_range, end_range) and range_counter value.
         if start_range or end_range:
             if len(str(start_range).strip()) or len(str(end_range).strip()):
                 chart_data.append(['(%s, %s)' % (start_range, end_range), range_counter['range%d' %count]])
+                # append color if exists else append default color.
                 if color:
                     colors.append(color)
                 else:
@@ -228,15 +265,33 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
 
 #**************************** Sector Capacity *********************#
 def get_dashboard_status_sector_range_counter(service_status_results):
+    '''
+    Method return the dictionay for the severity status.
+
+    :param:
+    service_status_results: list of dictionary.
+
+    return: dictionary.
+                    i.e: {  'Normal':0,
+                            'Unknown':3,
+                            'Stop Provisioning': 1,
+                            'Needs Augmentation': 0,
+                        }
+    '''
     range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0, 'Unknown':0}
     date_format = '%Y-%m-%d %H:%M:%S'
     # now = datetime.today() - timedelta(minutes=10)
 
     for result in service_status_results:
+        # Convert the integer age and sys_timestamp into string as date_format.
         age_str_since_the_epoch = datetime.fromtimestamp(float(result['age'])).strftime(date_format)
         sys_timestamp_str_since_the_epoch = datetime.fromtimestamp(float(result['sys_timestamp'])).strftime(date_format)
+
+        # get the age and sys_timestamp as datetime object.
         age_time_since_the_epoch = datetime.strptime(age_str_since_the_epoch, date_format)
         sys_timestamp_str_since_the_epoch = datetime.strptime(sys_timestamp_str_since_the_epoch, date_format)
+
+        # update the range_counter values.
         result_status =  age_time_since_the_epoch - sys_timestamp_str_since_the_epoch
         if result['severity'] == 'warning' and result_status > timedelta(minutes=10):
             range_counter['Needs Augmentation'] += 1
@@ -252,7 +307,24 @@ def get_dashboard_status_sector_range_counter(service_status_results):
 
 #**************************** Sales Opportunity *********************#
 def get_topology_status_results(user_devices, model, service_name, data_source, user_sector):
+    '''
+    Method return the total ss connected to the sector.
 
+    :param:
+    user_devices: device list.
+    model: model name.
+    service_name: service name.
+    data_source: data source name.
+    user_sector: sector list.
+
+    return: list of dictionary.
+                    i.e: [
+                        {'id': sector_id1, 'name': sector_name1, 'device_name':  device_name1, 'current_value': 1},
+                        {'id': sector_id2, 'name': sector_name2, 'device_name':  device_name2, 'current_value': 2},
+                        {'id': sector_id3, ...},
+                        ]
+    '''
+    # list containing no duplicate name of machine.
     unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
 
     machine_dict = {}
@@ -261,7 +333,9 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
         machine_dict[machine] = [device.device_name for device in user_devices if device.machine.name == machine]
 
     status_results = []
+    # initialize the queryset as empty.
     topology_status_results = model.objects.none()
+    # Creating a single queryset using all machnies.
     for machine, machine_device_list in machine_dict.items():
         topology_status_results |= model.objects.filter(
                                         device_name__in=machine_device_list,
@@ -269,15 +343,33 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
                                         data_source = 'topology',
                                     ).using(machine)
 
+    # Count the total ss connected to the sector.
     for sector in user_sector:
         ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
                         annotate(Count('connected_device_ip'))
-        # current value define the total ss connected to the sector
+        # current value define the total ss connected to the sector.
         status_results.append({'id': sector.id, 'name': sector.name, 'device_name':  sector.sector_configured_on.device_name, 'current_value': ss_qs.count()})
     return status_results
 
 
+#**************************** Highchart Response *********************#
 def get_highchart_response(dictionary={}):
+    '''
+    Method return the chart data used for the dashboard.
+
+    :param:
+    dictionary: containing the attributes which vary according to chart type:
+        - type: type of chart.
+        - name: dashboard name.
+        - title: title for chart.
+        - chart_series: list of data.
+        - color: list of color.
+        - count: integer.
+        - max: integer.
+        - stops: list containing range
+
+    return: dictionay in specific format.
+    '''
     if 'type' not in dictionary:
         return json.dumps({
             "message": "No Data To Display.",
@@ -338,11 +430,26 @@ def get_highchart_response(dictionary={}):
 
 
 def get_guege_chart_max_n_stops(dashboard_setting):
+    '''
+    Method retunrs the max_range value and stops range calculated from the dashboard_setting:
+
+    dashboard_setting: dashboard_setting object.
+
+    return: tuple of (integer, list of list)
+                    i.e: (7, [  [2, u'rgb(76, 17, 48)'],
+                                [4, u'rgb(0, 255, 255)'],
+                                [7, u'rgb(204, 0, 0)'],...
+                            ]
+                        )
+    '''
     max_range = 0
     stops = []
     for count in range(1, 11):
+        # Get the end_range and color attribute of dashboard_setting.
         end_range = getattr(dashboard_setting, 'range%d_end' %count)
         color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
+
+        # update max_range and stops.
         if end_range and color:
             end_range = int(end_range)
             stops.append([end_range, color])
