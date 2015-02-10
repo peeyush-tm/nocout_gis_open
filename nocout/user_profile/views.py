@@ -91,6 +91,7 @@ class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixi
         """
 
 
+        # get json_data from qs which is returned from get_initial_queryset.
         json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
         OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
@@ -119,12 +120,16 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
     Class Based View for the Archived User data table rendering.
     """
     model = UserProfile
+    # columns are used for list of fields which should be displayed on data table.
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
+    #order_columns is used for list of fields which is used for sorting the data table.
     order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                      'parent__last_name', 'organization__name','phone_number', 'last_login']
+    #search_columns is used for list of fields which is used for searching the data table.
     search_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                      'parent__last_name', 'organization__name','phone_number']
+    # extra_qs_kwargs is used for filter the users using some extra fields in Mixin DatatableOrganizationFilterMixin.
     extra_qs_kwargs = {
         'is_deleted':1
     }
@@ -163,6 +168,9 @@ class UserDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'user_profile/user_detail.html'
 
     def get_queryset(self):
+        """
+        Method used for user can see the detail of self organization or it's descendant organization.
+        """
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
 
