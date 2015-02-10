@@ -318,6 +318,7 @@ CELERYBEAT_SCHEDULE = {
         'task': 'inventory.tasks.get_topology',
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
+        #'kwargs': {'technology':'WiMAX', 'type':None, 'site_name':'ospf1_slave_1'}
     },
     'pmp-topology': {
         'task': 'inventory.tasks.get_topology',
