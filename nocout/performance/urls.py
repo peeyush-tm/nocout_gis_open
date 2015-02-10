@@ -19,7 +19,12 @@ urlpatterns = patterns('',
                            views.Performance_Dashboard.as_view()
                        ),
                        url(r'^sector_dashboard/$',
-                           views.Sector_Dashboard.as_view()
+                           views.SectorDashboard.as_view(),
+                          name='spotDashboard'
+                       ),
+                       url(r'^sector_dashboard/listing/$',
+                          views.SectorDashboardListing.as_view(),
+                          name='spotDashboardListing'
                        ),
                        url(r'^get_inventory_devices/(?P<page_type>\w+)$',
                            cache_page(60 * 60)(views.Fetch_Inventory_Devices.as_view()),

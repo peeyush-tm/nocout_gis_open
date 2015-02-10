@@ -1,12 +1,95 @@
 {% extends "nocout/base.html" %}
 
-{% block content_title %}Sector Dashboard{% endblock %}
+{% block content_title %}Sector Spot Dashboard{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 
 {% block content %}
+	
+	<div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-table"></i> Sector Spot Dashboard</h4>
+        </div>
+        <div class="box-body" style="overflow:auto;">
+        	<table id="sector_spot_dashboard_listing" class="datatable table table-striped table-bordered table-hover">
+                <thead>
+                	<tr>
+	                    <th colspan="3" aria-label=""></th>
+	                    <th colspan="6" style="text-align: center;">UL Issues (Last 6 Months)</th>
+	                    <th colspan="6" style="text-align: center;">SIA (Last 6 Months)</th>
+	                    <th colspan="6" style="text-align: center;">Augmentation (Last 6 Months)</th>
+	                </tr>
+	                <tr></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+    	</div>
+
+    </div>
 
 
+{% endblock %}
+
+{% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<script type="text/javascript">
+    $(document).ready(function (e) {
+    	/*Make a instance of ourDataTableWidget class */
+        var table_id = 'sector_spot_dashboard_listing',
+        	dataTableInstance = new ourDataTableWidget(),
+        	gridHeadersObj = $.parseJSON('{{ table_headers|safe }}'),
+        	months_index_list = $.parseJSON('{{ months_index|safe }}'),
+        	ajax_url_spot_dashboard_listing = "{% url 'spotDashboardListing' %}",
+        	second_row_of_headers = $("#"+table_id+" thead tr")[1],
+        	headers_html_row = '';
+
+    	// All month name,alias list
+    	var all_months_list = [
+            {"name" : "jan","alias" : "Jan"},
+            {"name" : "feb","alias" : "Feb"},
+            {"name" : "march","alias" : "March"},
+            {"name" : "april","alias" : "April"},
+            {"name" : "may","alias" : "May"},
+            {"name" : "june","alias" : "June"},
+            {"name" : "july","alias" : "July"},
+            {"name" : "aug","alias" : "Aug"},
+            {"name" : "sept","alias" : "Sept"},
+            {"name" : "oct","alias" : "Oct"},
+            {"name" : "nov","alias" : "Nov"},
+            {"name" : "dec","alias" : "Dec"}
+        ];
+
+    	headers_html_row += '<th style="width:auto;" aria-label="Sector ID">Sector ID</th>';
+    	headers_html_row += '<th style="width:auto;" aria-label="Sector Configured On">Sector Configured On</th>';
+    	headers_html_row += '<th style="width:auto;" aria-label="Technology">Technology</th>';
+
+    	var month_headers = "";
+    	// Loop for UL issues, SIA & Augmentation header
+    	for(var i=0;i<months_index_list.length;i++) {
+    		var month_index = months_index_list[i],
+    			month_name = all_months_list[month_index]['name'],
+    			month_alias = all_months_list[month_index]['alias'];
+
+    		month_headers += '<th style="width:auto;" aria-label="'+month_alias+'">'+month_alias+'</th>';
+    	}
+
+    	headers_html_row += month_headers;
+    	headers_html_row += month_headers;
+    	headers_html_row += month_headers;
+
+    	// Append Second row of headers
+    	$(second_row_of_headers).html(headers_html_row);
+
+    	// Initialize jQuery Datatable
+        dataTableInstance.createDataTable(
+        	table_id,
+        	gridHeadersObj,
+        	ajax_url_spot_dashboard_listing,
+        	false
+    	);
+	});
+</script>
 
 {% endblock %}
 
