@@ -642,15 +642,15 @@ class SectorDashboard(ListView):
 
             # Last Six Month UL Issues Headers
             ul_last_six_month_headers.append(
-                {'mData': month_name+'_ul', 'sTitle': month_alias, 'sWidth': 'auto', }
+                {'mData': month_name+'_ul', 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
             # Last Six Month SIA Headers
             sia_last_six_month_headers.append(
-                {'mData': month_name+'_sia', 'sTitle': month_alias, 'sWidth': 'auto', }
+                {'mData': month_name+'_sia', 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
             # Last Six Month Augmentation Headers
             augt_last_six_month_headers.append(
-                {'mData': month_name+'_augt', 'sTitle': month_alias, 'sWidth': 'auto', }
+                {'mData': month_name+'_augt', 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
 
         table_headers = []
@@ -678,24 +678,52 @@ class SectorDashboardListing(BaseDatatableView):
         "technology"
     ]
 
+    # Number of months whose data is to be fetched
+    month_count = 6
+
     # Get Last Six Month List
     last_six_months_list, \
-    months_list = getLastXMonths(6);
+    months_list = getLastXMonths(month_count);
 
-    for i in range(6):
-        month_index = last_six_months_list[i][1] - 1
-        month_name = months_list[month_index]['name']
-        columns.append(month_name+'_ul')
-
-    for i in range(6):
-        month_index = last_six_months_list[i][1] - 1
-        month_name = months_list[month_index]['name']
-        columns.append(month_name+'_sia')
-
-    for i in range(6):
-        month_index = last_six_months_list[i][1] - 1
-        month_name = months_list[month_index]['name']
-        columns.append(month_name+'_augt')
+    # Raw query to get the spot dashboard data.
+    spot_dashboard_raw_query = "SELECT \
+                                s.id as id,\
+                                s.sector_id as sector_id,\
+                                FROM_UNIXTIME(pu.sys_timestamp,'%c') as ul_month_index,\
+                                FROM_UNIXTIME(c.sys_timestamp,'%c') as augment_month_index,\
+                                d.ip_address as ip_address,\
+                                t.alias as technology\
+                            FROM\
+                                nocout_dev.inventory_sector s \
+                            left join\
+                                (\
+                                    device_device d,\
+                                    device_devicetechnology as t\
+                                )\
+                            on\
+                                (\
+                                    s.sector_configured_on_id = d.id\
+                                    and\
+                                    d.device_technology = t.id\
+                                )\
+                            left join\
+                                capacity_management_sectorcapacitystatus c \
+                            on\
+                                s.id = c.sector_id\
+                                and\
+                                    c.sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL {0} MONTH)\
+                            left join\
+                                performance_utilization pu\
+                            on\
+                                pu.ip_address = d.ip_address\
+                                and\
+                                pu.data_source in ('bs_ul_issue')\
+                                and\
+                                pu.sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL {0} MONTH)\
+                            where \
+                                not isnull(s.sector_id)\
+                                and\
+                                not isnull(s.sector_configured_on_id)".format(month_count)
 
 
     def get_initial_queryset(self):
@@ -704,54 +732,17 @@ class SectorDashboardListing(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        # Raw query to get the spot dashboard data.
-        spot_dashboard_raw_query = "SELECT \
-                                    s.id as id,\
-                                    s.sector_id as sector_id,\
-                                    FROM_UNIXTIME(pu.sys_timestamp,'%c') as ul_month_index,\
-                                    FROM_UNIXTIME(c.sys_timestamp,'%c') as augment_month_index,\
-                                    d.ip_address as ip_address,\
-                                    t.alias as technology\
-                                FROM\
-                                    nocout_dev.inventory_sector s \
-                                left join\
-                                    (\
-                                        device_device d,\
-                                        device_devicetechnology as t\
-                                    )\
-                                on\
-                                    (\
-                                        s.sector_configured_on_id = d.id\
-                                        and\
-                                        d.device_technology = t.id\
-                                    )\
-                                left join\
-                                    capacity_management_sectorcapacitystatus c \
-                                on\
-                                    s.id = c.sector_id\
-                                    and\
-                                        c.sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL 6 MONTH)\
-                                left join\
-                                    performance_utilization pu\
-                                on\
-                                    pu.ip_address = d.ip_address\
-                                    and\
-                                    pu.data_source in ('bs_ul_issue')\
-                                    and\
-                                    pu.sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL 6 MONTH)\
-                                where \
-                                    not isnull(s.sector_id)\
-                                    and\
-                                    not isnull(s.sector_configured_on_id)\
-                                order by \
-                                    c.sys_timestamp desc,pu.sys_timestamp desc;"
 
         # Execute query to get required data
-        sectorsResult = fetch_raw_result(spot_dashboard_raw_query)
+        sectorsResult = fetch_raw_result(self.spot_dashboard_raw_query)
+
+        return sectorsResult
+
+    def prepare_results(self,qs):
 
         report_resultset = []
 
-        for data in sectorsResult:
+        for data in qs:
             report_object = {}
             report_object['sector_id'] = data['sector_id']
             report_object['ip_address'] = data['ip_address']
@@ -798,32 +789,26 @@ class SectorDashboardListing(BaseDatatableView):
 
         return report_resultset
 
-    def prepare_results(self, qs):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-
-        return qs
-
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                # avoid search on 'added_on'
-                if column == 'added_on':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+            # Create Search where condition
+            search_condition = ''
+            for i in range(len(self.columns)):
+                if len(self.columns) - 1 == i:
+                    search_condition += " tmp."+self.columns[i]+" LIKE '"+str(sSearch)+"%'"
+                else:
+                    search_condition += " tmp."+self.columns[i]+" LIKE '"+str(sSearch)+"%' or "
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
+            # Create Search Query from default query n search condition
+            search_query = 'select * from ({0}) as tmp where {1}'.format(self.spot_dashboard_raw_query,search_condition)
+
+            # Execute query to get required data
+            qs = fetch_raw_result(search_query)
+
         return qs
 
     def ordering(self, qs):
@@ -886,8 +871,7 @@ class SectorDashboardListing(BaseDatatableView):
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
 
-        # aaData = self.prepare_results(qs)
-        aaData = qs
+        aaData = self.prepare_results(qs)
 
         ret = {
             'sEcho': int(request.REQUEST.get('sEcho', 0)),
