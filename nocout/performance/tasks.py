@@ -45,7 +45,10 @@ def device_last_down_time_task(device_type=None):
 
     for site in sites:
         site_devices = devices.filter(site_instance__name=site)
-        g_jobs.append(device_last_down_time_site_wise.s(devices=site_devices))
+        if site_devices and site_devices.count():
+            g_jobs.append(device_last_down_time_site_wise.s(devices=site_devices))
+        else:
+            continue
 
     if len(g_jobs):
         job = group(g_jobs)
@@ -62,7 +65,7 @@ def device_last_down_time_site_wise(devices):
     collect device information per site wise
     :return: True
     """
-    if devices:
+    if devices and devices.count():
         for device_object in devices:
             x = device_last_down_time(device_object=device_object)
         return True
