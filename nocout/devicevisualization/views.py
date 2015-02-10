@@ -1396,6 +1396,11 @@ class GISPerfData(View):
 
     def get(self, request):
 
+        #TODO : use only() and defer() for this data
+        # defer_bs_list = []
+        # defer_sector_list = []
+        # defer_Ss_list = []
+
         # device_list = list()
         # machine_dict = dict()
         # device_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
