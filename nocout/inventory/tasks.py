@@ -12676,7 +12676,7 @@ from inventory.utils.util import organization_network_devices, \
     organization_customer_devices\
     , prepare_machines
 from organization.models import Organization
-from device.models import DeviceTechnology
+from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
 
 #The Django !!
@@ -12696,7 +12696,7 @@ def get_organizations():
     return orgs
 
 
-def get_devices(technology='WiMAX', type=None):
+def get_devices(technology='WiMAX', type=None, site_name=None):
     """
 
     :param technology:
@@ -12721,11 +12721,14 @@ def get_devices(technology='WiMAX', type=None):
                                                        technology=technology
         )
 
+    if site_name and SiteInstance.objects.filter(name=site_name).exists():
+        return network_devices.filter(site_instance__name=site_name).values(*required_columns)
+
     return network_devices.values(*required_columns)
 
 
 @task()
-def get_topology(technology):
+def get_topology(technology, type=None, site_name=None):
     """
     Get the current topology per technology WiMAX/PMP
     :param technology:
@@ -12734,7 +12737,7 @@ def get_topology(technology):
 
     count = False
 
-    network_devices = get_devices(technology)
+    network_devices = get_devices(technology, type=type, site_name=site_name)
     device_list = []
 
 
