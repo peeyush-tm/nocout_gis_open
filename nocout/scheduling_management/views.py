@@ -71,8 +71,11 @@ class EventListingTable(PermissionsRequiredMixin,
     Class based View to render Event Data table.
     """
     model = Event
+    # columns are used for list of fields which should be displayed on data table.
     columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device__device_alias']
+    #search_columns is used for list of fields which is used for searching the data table.
     search_columns = ['name', 'repeat', 'created_by__username', 'scheduling_type', 'device__device_alias']
+    #order_columns is used for list of fields which is used for sorting the data table.
     order_columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device__device_alias']
     required_permissions = ('scheduling_management.view_event',)
 
@@ -105,6 +108,7 @@ class EventListingTable(PermissionsRequiredMixin,
             scheduling_type = scheduling_type_choice["%s"%(obj.scheduling_type)]
             dct.update(scheduling_type=scheduling_type)
             # display the device with ip address upto 5 devices.
+            # when there are more than 5 devices than limit it to 5 devices and show with their ip_address.
             dev_list = ["{}-{}".format(dev.device_alias,dev.ip_address) for i,dev in enumerate(obj.device.all()) if i < 5 ]
             dct.update(device__device_alias=', '.join(dev_list))
             dct.update(no_of_devices=obj.device.count())
@@ -141,9 +145,15 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
 
+        # querydict contain the device id as a comma seperated single string
+        # i.e: device = ['1,2,3,4,5,6...'] and should be ['1','2','3','4',..]
+        # get the device id from the querydict.
         device = self.request.POST['device']
+        # split device id from comma(,) to get in proper format and assing to querydict.
+        # in order to check the validity of form.
         self.request.POST['device'] = device.split(',')
         if not form.is_valid():
+            # for invalid form again assing the previous format of device id to querydict.
             self.request.POST['device'] = device
 
         if form.is_valid():
@@ -176,6 +186,8 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
         """
         self.object = self.get_object()
         form_class = self.get_form_class()
+        # device id need to in format ['1,2,3,...'] when rendering the templates so,
+        # set initial of device in the required format.
         device_initial = ','.join([str(device_id) for device_id in self.object.device.values_list('id', flat=True)])
         form = EventForm(instance=self.object, initial={'device': device_initial})
         return self.render_to_response(
@@ -343,6 +355,7 @@ def event_today_status(dic):
 def get_today_event_list():
     """
     To check status of event whether active for time now or not.
+    Used in check_device_status method of alarm_escalation.tasks
 
     :return dictionary containing list of events and their corresponding devices ids.
                     i.e: {  'event_list': [eve_obj1, eve_obj2, eve_obj3,...],
@@ -351,6 +364,7 @@ def get_today_event_list():
     """
     event_list = []
     time = datetime.today().time()
+    # Check for every event whether any event will execute today or not.
     for event in Event.objects.all():
         result = event_today_status({'event': event})
         # Update event list if event is active for today.
