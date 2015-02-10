@@ -390,6 +390,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None)
     else:
         added_device = ""
         tech = ""
+        rf_tech = " "
 
     added_device += tech
 
