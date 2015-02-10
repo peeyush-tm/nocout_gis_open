@@ -74,12 +74,14 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sectors count: ", sectors.count())
     data_list = list()
     for item in sectors:
+        # Create the range_counter dictionay containg the model's field name as key
         range_counter = dict(
             dashboard_name=dashboard_name,
             device_name=item['sector__sector_configured_on__device_name'],
             reference_name=item['sector__name'],
             processed_for=processed_for,
         )
+        # Update the range_counter on the basis of severity.
         if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
             range_counter.update({item['severity'].strip().lower() : 1})
         elif item['severity'].strip().lower() == 'ok':
@@ -87,12 +89,14 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
         else:
             range_counter.update({'unknown' : 1})
 
+        # Create the list of model object.
         try:
             data_list.append(model(**range_counter))
         except Exception as e:
             pass
 
     logger.info("CELERYBEAT: Timely: ", dashboard_name, "Data List Count", len(data_list))
+    # call the method to bulk create the onjects.
     bulk_update_create.delay(data_list, action='create', model=model)
 
 
@@ -114,17 +118,23 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
         logger.info("DashboardSetting for %s is not available." % dashboard_name)
         return
 
+    # get the sector of User's Organization [and Sub Organization]
     user_sector = organization_sectors(organizations, technology_id)
+    # get the device of the user sector.
     sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
     logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sector's Device Count: ", sector_devices.count())
 
+    # get the list of dictionary on the basis of parameters.
     service_status_results = get_topology_status_results(
         sector_devices, model=Topology, service_name='topology', data_source='topology', user_sector=user_sector
     )
 
     data_list = list()
     for result in service_status_results:
+        # get the dictionary containing the model's field name as key.
+        # range_counter in format {'range1': 1, 'range2': 2,...}
         range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
+        # update the range_counter to add further details
         range_counter.update(
             {'dashboard_name': dashboard_name,
                 'device_name': result['device_name'],
@@ -133,19 +143,24 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
             }
         )
 
+        # prepare a list of model object.
         data_list.append(model(**range_counter))
 
     logger.info("CELERYBEAT: Timely: ", dashboard_name, "Data List Count", len(data_list))
+    # call method to bulk create the model object.
     bulk_update_create.delay(data_list, action='create', model=model)
 
 
 def calculate_timely_latency(organizations, dashboard_name, processed_for ,technology=None):
     processed_for = processed_for
     technology_id = technology.ID if technology else None
+    # get the sector of usr' organization [and sub organization]
     sector_devices = organization_network_devices(organizations, technology_id)
+    # get the device of the user's sectors.
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
     logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sector's Device Count: ", sector_devices.count())
 
+    # get the dictionary of machine_name as key and device_name as a list for that machine.
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
     for machine_name, device_list in machine_dict.items():
