@@ -400,7 +400,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None)
     elif type_rf == 'bh':
         rf_tech = " where BHTECH = '{0}' ".format(technology)
     else:
-        rf_tech = ""
+        pass
 
     gis = '''
         select * from (
