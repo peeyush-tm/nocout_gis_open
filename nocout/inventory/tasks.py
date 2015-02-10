@@ -12822,9 +12822,9 @@ def get_topology(technology, rf_type=None, site_name=None):
 
                 #resolve for circuit
                 #circuit_obj = ss_obj.circuit_set.get()
-                if circuit_obj.sector.sector_id != sector_id:
-                    circuit_obj.sector = sector_object
-                    save_circuit_list.append(circuit_obj)
+                #if circuit_obj.sector.sector_id != sector_id:
+                circuit_obj.sector = sector_object
+                save_circuit_list.append(circuit_obj)
 
             except Exception as e:
                 #ss object is not found
