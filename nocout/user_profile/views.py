@@ -335,12 +335,31 @@ def change_password(request):
     """
     The Action of the Dialog box appears on the screen.
     If the action is continue then the user get prompt to set new password.
+    :param auth_token
+           action
+           url
+           user_id
+           pwd
+           confirm_pwd
+    : return json
+            {
+                "success": 1,  # 0 - fail, 1 - success, 2 - exception
+                "message": message,
+                "data": {
+                    "meta": {},
+                    "objects": {'url': '', 'reason': ''},
+                }
+            }
     """
+    # Get the url from request.POST
     url = request.POST.get('url', '/home/')
+    # Authenticate the user using auth_token present in request.POST
     user = auth.authenticate(token=request.POST.get('auth_token', None))
+    # if user clicks on continue button of password change form. and the form is valid, then login the user.
     if request.POST.get('action') == 'continue' and user:
         form = UserPasswordForm(request.POST)
         if form.is_valid():
+            # if user is visitor. Delete the session of user and removes the user from visitor.
             if hasattr(user, 'visitor'):
                 Session.objects.filter(session_key=user.visitor.session_key).delete()
                 # If Session object is modified as session key is changed.
@@ -348,12 +367,18 @@ def change_password(request):
                 Visitor.objects.filter(user=user).delete()
 
             auth.login(request, user)   # Login the request user.
+            # create new Visitor table with new session_key for the user.
             Visitor.objects.create(session_key=request.session.session_key, user=request.user)
 
+            # update the field password_changed_at.
             user.userprofile.password_changed_at = timezone.now()
+            # update the user_invalid_attempt to zero.
             user.userprofile.user_invalid_attempt = 0
+            # Save the userprofile of user.
             user.userprofile.save()
+            # Update the password of user.
             user.set_password(form.data['confirm_pwd'])
+            # Save the user.
             user.save()
             UserPasswordRecord.objects.create(user_id=user.id, password_used=user.password)
 
