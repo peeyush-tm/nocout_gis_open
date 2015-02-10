@@ -33,20 +33,23 @@ def device_last_down_time_task(device_type=None):
     g_jobs = list()
     ret = False
 
-    devices = Device.objects.filter(is_added_to_nms=1)
+    #devices = Device.objects.filter(is_added_to_nms=1)
+    #logger.debug(devices)
+    devices = None
     try:
         if device_type:
             dtype = DeviceType.objects.filter(name=device_type).get().id
-            devices = devices.filter(device_type=dtype)
-    except:
-        pass
+            devices = Device.objects.filter(is_added_to_nms=1, device_type=dtype)
+    except Exception as e:
+        return ret
 
     sites = SiteInstance.objects.all().values_list('name', flat=True)
 
     for site in sites:
-        site_devices = devices.filter(site_instance__name=site)
-        if site_devices and site_devices.count():
-            g_jobs.append(device_last_down_time_site_wise.s(devices=site_devices))
+        if devices:
+            site_devices = devices.filter(site_instance__name=site)
+            if site_devices and site_devices.count():
+                g_jobs.append(device_last_down_time_site_wise.s(devices=site_devices))
         else:
             continue
 
