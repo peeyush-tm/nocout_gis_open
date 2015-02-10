@@ -1,7 +1,9 @@
-from celery import task
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+from celery import task, group
 from device.models import Device
 from performance.views import device_last_down_time
-from device.models import DeviceType
+from device.models import DeviceType, SiteInstance
 
 @task()
 def device_last_down_time_task(device_type=None):
@@ -28,6 +30,9 @@ def device_last_down_time_task(device_type=None):
                             +---------------+----+
     :return: True
     """
+    g_jobs = list()
+    ret = False
+
     devices = Device.objects.filter(is_added_to_nms=1)
     try:
         if device_type:
@@ -36,6 +41,30 @@ def device_last_down_time_task(device_type=None):
     except:
         pass
 
-    for device_object in devices:
-        x = device_last_down_time(device_object=device_object)
-    return True
+    sites = SiteInstance.objects.all().values_list('name', flat=True)
+
+    for site in sites:
+        site_devices = devices.filter(site_instance__name=site)
+        g_jobs.append(device_last_down_time_site_wise.s(devices=site_devices))
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
+
+
+@task()
+def device_last_down_time_site_wise(devices):
+    """
+    collect device information per site wise
+    :return: True
+    """
+    if devices:
+        for device_object in devices:
+            x = device_last_down_time(device_object=device_object)
+        return True
+    else:
+        return False
