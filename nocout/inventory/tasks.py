@@ -12860,8 +12860,11 @@ def get_topology(technology, type=None, site_name=None):
 @task()
 def topology_site_wise(technology):
     """
+    this would create jobs per site wise. per technology wise. for WiMAX it would have nearly 1000 to 1500
+    devices at a time
+    which would reduce the CPU load, but will open up a lot of parallel processes
 
-    :return:
+    :return: True if any of the task gets positive results else False
     """
     sites = SiteInstance.objects.all().values_list('name', flat=True)
     g_jobs = list()
