@@ -37,6 +37,8 @@ from performance.formulae import rta_null, display_time
 from service.utils.util import service_data_sources
 from nocout.utils.util import format_value
 
+from inventory.utils import util as inventory_utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -1421,23 +1423,18 @@ class GISPerfData(View):
 
                 # base station
                 try:
-                    bs_objects = BaseStation.objects.filter(
-                        id=bs_id
-                    ).select_related(
+                    #4 query state, city, backhaul, backhaul configure on
+                    bs_objects = BaseStation.objects.prefetch_related(
                         'state',
                         'city',
                         'backhaul',
-                        'sector',
-                        'sector__circuit_set',
-                        'organization',
-                        'sector__sector_configured_on',
-                        'sector__circuit_set__sub_station',
-                        'sector__circuit_set__sub_station__device',
-                        'sector__circuit_set__customer',
-                        'backhaul__bh_configured_on'
+                        'backhaul__bh_configured_on',
+                        'sector'
+                    ).get(
+                        id=bs_id
                     )
 
-                    bs = bs_objects.get()
+                    bs = bs_objects
 
                     bs_dict['bs_name'] = bs.name
                     bs_dict['bs_alias'] = bs.alias
@@ -1451,15 +1448,6 @@ class GISPerfData(View):
                 # if base station exist
                 if bs:
 
-                    # get all sectors associated with base station (bs)
-                    sectors = bs.sector.all()
-
-                    #preparing for devices
-                    # device_list += Device.objects.filter(
-                    #         id__in=sectors.filter(sector_configured_on__is_added_to_nms=1
-                    #         ).values_list('sector_configured_on', flat=True)
-                    #     ).values(*device_value_list)
-
                     # backhaul device
                     backhaul_device = None
                     try:
@@ -1472,6 +1460,69 @@ class GISPerfData(View):
                         backhaul_data = self.get_backhaul_info(backhaul_device)
                         bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
                         bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+
+
+                    # get all sectors associated with base station (bs)
+                    #query for sectors and sector configured on
+                    sectors = bs.sector.prefetch_related('sector_configured_on', 'circuit_set').all()
+
+                    #first gather all the devices
+                    device_list = Device.objects.filter(
+                        Q(id__in=sectors.values_list('sector_configured_on', flat=True)) #query saved
+                        |
+                        Q(id__in=[bs.backhaul.bh_configured_on_id]) #query saved
+                        |
+                        Q(id__in=SubStation.objects.filter( # 1 query
+                            id__in=Circuit.objects.filter( # 1 query
+                                sector__in=sectors
+                            ).values_list('sub_station_id',flat=True)
+                        ).values_list('device', flat=True)),
+                        is_added_to_nms=1
+                    ).values('device_name', 'machine__name')
+
+                    bs_devices = [
+                        {
+                            'device_name': device['device_name'],
+                            'machine_name': device['machine__name'],
+                        }
+                        for device in device_list
+                    ]
+
+                    machine_dict = inventory_utils.prepare_machines(bs_devices)
+
+                    network_perf_data = list()
+                    other_perf_data = list()
+
+                    for machine_name in machine_dict:
+                        devices_list = machine_dict[machine_name]
+                        # device network info
+                        device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).values(
+                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                        ).using(alias=machine_name)
+
+                        network_perf_data.extend(device_network_info)
+
+                        # device performance info
+                        device_performance_info = ServiceStatus.objects.filter(device_name__in=devices_list).values(
+                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                        ).using(alias=machine_name)
+
+                        other_perf_data.extend(device_performance_info)
+
+                        # device inventory info
+                        device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).values(
+                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                        ).using(alias=machine_name)
+
+                        other_perf_data.extend(device_inventory_info)
+
+                        # device status info
+                        device_status_info = Status.objects.filter(device_name__in=devices_list).values(
+                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                        ).using(alias=machine_name)
+
+                        other_perf_data.extend(device_status_info)
+
 
                     # loop through all sectors
                     for sector_obj in sectors:
@@ -1506,50 +1557,16 @@ class GISPerfData(View):
 
                         if sector_device and sector_device.is_added_to_nms == 1:
 
-                            subs = SubStation.objects.filter(
+                            subs = SubStation.objects.prefetch_related(
+                                'device',
+                                'city',
+                                'state',
+                                'circuit_set',
+                                # 'circuit_set__sector',
+                                # 'circuit_set__sector__base_station'
+                            ).filter(
                                 id__in=sector.circuit_set.values_list('sub_station',flat=True)
-                            ).select_related('device',
-                                             'city',
-                                             'state',
-                                             'circuit',
-                                             'circuit__sector_set',
-                                             'circuit__sector_set__base_station'
                             )
-
-                            devices_list = list(subs.values_list('device__device_name', flat=True)) + [sector_device.device_name]
-                            machines_list = set(subs.values_list('device__machine__name', flat=True))
-
-                            network_perf_data = list()
-                            other_perf_data = list()
-
-                            for machine_name in machines_list:
-                                # device network info
-                                device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).values(
-                                    'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                                ).using(alias=machine_name)
-
-                                network_perf_data.extend(device_network_info)
-
-                                # device performance info
-                                device_performance_info = ServiceStatus.objects.filter(device_name__in=devices_list).values(
-                                    'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                                ).using(alias=machine_name)
-
-                                other_perf_data.extend(device_performance_info)
-
-                                # device inventory info
-                                device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).values(
-                                    'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                                ).using(alias=machine_name)
-
-                                other_perf_data.extend(device_inventory_info)
-
-                                # device status info
-                                device_status_info = Status.objects.filter(device_name__in=devices_list).values(
-                                    'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                                ).using(alias=machine_name)
-
-                                other_perf_data.extend(device_status_info)
 
                             # get performance data
 
@@ -1583,11 +1600,6 @@ class GISPerfData(View):
                             # replaceing topology code
                             # as the topology is auto-updated
                             # using celery beat
-
-                            #preparing for devices
-                            # device_list += Device.objects.filter(
-                            #     id__in=subs.filter(device__is_added_to_nms=1).values_list('id', flat=True)
-                            # ).values(*device_value_list)
 
                             # loop through all substations using ips in 'substations_ips_list'
                             for ss in subs:
