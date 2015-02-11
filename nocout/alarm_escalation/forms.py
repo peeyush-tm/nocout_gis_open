@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class EscalationLevelForm(forms.ModelForm):
     """
-    Class Based View Level Model form to update and create.
+    Class Based Escalation Level Model form to update and create.
     """
 
     def __init__(self, *args, **kwargs):

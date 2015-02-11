@@ -650,15 +650,23 @@ class MainDashboard(View):
 
 class MFRCauseCodeView(View):
     """
+    Class Based View for the MFR-Cause-Code Dashboard.
     """
 
     def get(self, request):
+        '''
+        Handles the get request
+
+        :param request:
+        :retun dictionary containing data used for main dashboard charts.
+        '''
         mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
 
         chart_series = []
         if mfr_reports.exists():
             last_mfr_report = mfr_reports[0]
         else:
+            # get the chart_data for the pie chart.
             response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
                 'title': 'MFR Cause Code', 'name': ''})
             return HttpResponse(response)
@@ -670,6 +678,7 @@ class MFRCauseCodeView(View):
                 int(result['processed_value'])
             ])
 
+        # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': 'MFR Cause Code', 'name': ''})
 
@@ -678,8 +687,15 @@ class MFRCauseCodeView(View):
 
 class MFRProcesedView(View):
     """
+    Class Based View for the MFR-Cause-Code Dashboard.
     """
     def get(self, request):
+        '''
+        Handles the get request
+
+        :param request:
+        :retun dictionary containing data used for main dashboard charts.
+        '''
         # Start Calculations for MFR Processed.
         # Last 12 Months
         year_before = datetime.date.today() - datetime.timedelta(days=365)
@@ -722,6 +738,7 @@ class MFRProcesedView(View):
         for key, value in processed_key_dict.items():
             area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
 
+        # get the chart_data for the area chart.
         response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
             'title': 'MFR Processed', 'valuesuffix': 'seconds'})
 
@@ -730,40 +747,57 @@ class MFRProcesedView(View):
 #********************************************** main dashboard sector capacity ************************************************
 class SectorCapacityMixin(object):
     '''
+    Provide common method get for Sector Capacity Dashboard.
+
+    To use this Mixin provide following attributes:
+
+        - tech_name: name of the technology.
     '''
     def get(self, request):
+        '''
+        Handles the get request
 
+        :param request:
+        :retun dictionary containing data used for main dashboard charts.
+        '''
         tech_name = self.tech_name
         organization = logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
+        # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology=technology)
+        # Get Device of User's Sector.
         sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        # Get Device name list of User's Sector.
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
+        # Get the status of the dashboard.
         dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
 
         chart_series = []
         if len(dashboard_status_dict):
             for key,value in dashboard_status_dict.items():
+                # create a list of "Key: value".
                 chart_series.append(['%s: %s' % (key.replace('_', ' '), value), dashboard_status_dict[key]])
 
+        # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': '%s Sector Capacity' % tech_name.upper(), 'name': ''})
 
         return HttpResponse(response)
 
 
-
 class PMPSectorCapacity(SectorCapacityMixin, View):
     """
+    Class Based View for the PMP Sector Capacity Dashboard.
     """
     tech_name = 'PMP'
 
 
 class WiMAXSectorCapacity(SectorCapacityMixin, View):
     """
+    Class Based View for the WiMAX Sector Capacity Dashboard.
     """
     tech_name = 'WiMAX'
 
@@ -772,9 +806,18 @@ class WiMAXSectorCapacity(SectorCapacityMixin, View):
 
 class SalesOpportunityMixin(object):
     """
+    Provide common method get for Sales Opportunity Dashboard.
+
+    To use this Mixin provide following attributes:
+
+        - tech_name: name of the technology.
     """
     def get(self, request):
         '''
+        Handles the get request
+
+        :param request:
+        :retun dictionary containing data used for main dashboard charts.
         '''
         is_bh = False
         tech_name = self.tech_name
@@ -786,11 +829,12 @@ class SalesOpportunityMixin(object):
         data_source = data_source_config.keys()[0]
         # Get Service Name from queried data_source
         service_name = data_source_config[data_source]['service_name']
+        # Get Model Name from queried data_source
         model = data_source_config[data_source]['model']
 
         organization = logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name).id
-        # convert the data source in format topology_pmp/topology_wimax
+        # convert the data source in format topology-pmp/topology-wimax
         data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
@@ -802,19 +846,25 @@ class SalesOpportunityMixin(object):
 
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
+        # Get Device of User's Sector.
         sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        # Get Device Name List of User's Sector.
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
+        # Get the status of the dashbaord.
         dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices_list)
 
         chart_series = []
         colors = []
         if len(dashboard_status_dict):
+            # Get the dictionay of chart data for the dashbaord.
             response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, dashboard_status_dict)
+            # Fetch the chart series and color from the response dictionary.
             chart_series = response_dict['data']['objects']['chart_data'][0]['data']
             colors = response_dict['data']['objects']['colors']
 
+        # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
 
@@ -823,12 +873,14 @@ class SalesOpportunityMixin(object):
 
 class PMPSalesOpportunity(SalesOpportunityMixin, View):
     """
+    Class Based View for the PMP Sales Opportunity Dashboard.
     """
     tech_name = 'PMP'
 
 
 class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
     """
+    Class Based View for the WiMAX Sales Opportunity Dashboard.
     """
     tech_name = 'WiMAX'
 
@@ -836,13 +888,22 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
 # *************************** Dashboard Timely Data ***********************
 def get_severity_status_dict(dashboard_name, sector_devices_list):
     '''
+    Method based view to get latest data from central database table.
+    retun data for the severity based dashboard.
+
+    dashboard_name: name of the dashboard.
+    sector_devices_list: list of device.
+
+    return: dictionary
     '''
     dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
         device_name__in=sector_devices_list
     )
     if dashboard_status_dict.exists():
+        # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
+        # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
                                     Normal=Sum('ok'),
                                     Needs_Augmentation=Sum('warning'),
@@ -854,13 +915,22 @@ def get_severity_status_dict(dashboard_name, sector_devices_list):
 
 def get_range_status_dict(dashboard_name, sector_devices_list):
     '''
+    Method based view to get latest data from central database table.
+    retun data for the range based dashboard.
+
+    dashboard_name: name of the dashboard.
+    sector_devices_list: list of device.
+
+    return: dictionary
     '''
     dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
         device_name__in=sector_devices_list
     )
     if dashboard_status_dict.exists():
+        # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
+        # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
                                     range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
                                     range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
@@ -874,11 +944,19 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
 # *************************** Dashboard Gauge Status ***********************
 class DashboardDeviceStatus(View):
     '''
+    Class Based View for the Guage Chart of main Dashboard.
     '''
     def get(self, request):
         """
+        Handles the get request
+
+        :param:
+            - dashboard_name: name of the dashboard.
+
+        :retun dictionary containing data used for main dashboard charts.
         """
         dashboard_name = self.request.GET['dashboard_name']
+        # remove '#' from the dashboard_name.
         dashboard_name = dashboard_name.replace('#','')
 
         count = 0
@@ -892,17 +970,21 @@ class DashboardDeviceStatus(View):
             technology = WiMAX.ID
 
         if '-all' in dashboard_name:
+            # replace the '-all' with '-network'. (e.g: 'dash-all' => 'dash-network')
             dashboard_name = dashboard_name.replace('-all','-network')
 
         dashboard_status_name = dashboard_name
         if 'temperature' in dashboard_name:
             dashboard_name = 'temperature'
+            # replace the '-wimax' with ''. (e.g: 'dash-wimax' => 'dash')
             dashboard_status_name = dashboard_status_name.replace('-wimax','')
 
         organizations = logged_in_user_organizations(self)
 
+        # Get Device of User's Organizations. [and are Sub Station]
         user_devices = organization_network_devices(organizations, technology)
         sector_devices = user_devices.filter(sector_configured_on__isnull=False)
+        # Get Device Name list.
         sector_devices = sector_devices.values_list('device_name',flat=True)
 
         try:
@@ -913,22 +995,28 @@ class DashboardDeviceStatus(View):
                 "success":0
             }))
 
+        # Get the dictionary of dashboard status.
         dashboard_status_dict = get_range_status_dict(dashboard_status_name, sector_devices)
         if len(dashboard_status_dict):
+            # Sum all the values of the dashboard status dict.
             count = sum(dashboard_status_dict.values())
 
-        # print 'count...',count
+        # Get the range from the dashbaord setting in which the count falls.
         range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
+        # Get the name of the range.
         count_range = range_status_dct['range_count']
 
         # get color of range in which count exists.
         if count_range and count_range != 'unknown':
             count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
 
+        # Get the maximun range value and the range from the dashboard_setting.
         max_range, chart_stops = get_guege_chart_max_n_stops(dashboard_setting)
 
         chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count,
                 'max': max_range, 'stops': chart_stops}
+
+        # get the chart_data for the gauge chart.
         response = get_highchart_response(chart_data_dict)
 
         return HttpResponse(response)
@@ -937,7 +1025,7 @@ class DashboardDeviceStatus(View):
 def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
     '''
     '''
-    
+
     # Start Calculations for Monthly Trend Sector
     # Last 30 Days
     month_before = datetime.date.today() - datetime.timedelta(days=30)
@@ -956,25 +1044,25 @@ def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
     # Datetime object converted into only date
     for element in dashboard_status_dict:
         element['processed_for'] = element['processed_for'].strftime('%Y-%m-%d')
-        
-    final_dict = [] 
+
+    final_dict = []
     # random color picker for sending different colors
     processed_key_color = {result['processed_for']: color_picker() for result in dashboard_status_dict}
     # Loop for sending complete 30 days Data
-    while month_before <= datetime.date.today(): 
+    while month_before <= datetime.date.today():
         var = dict()
         # values for state of host if no data available at some date
         y = ['0','0','0','0']
-        # Accessing every element(dictionary) of list 
+        # Accessing every element(dictionary) of list
         for var in dashboard_status_dict:
             # Equality condition for sending data whose entries are available at certain date within the month
             if var['processed_for'] == month_before.isoformat():
-                y= [] 
+                y= []
                 y.append(var['Normal'])
                 y.append(var['Needs_Augmentation'])
                 y.append(var['Stop_Provisioning'])
                 y.append(var['Unknown'])
-        # Preparation of final dict for sending to main function        
+        # Preparation of final dict for sending to main function
         final_dict.append({
             "color": processed_key_color[var['processed_for']],
             "y" : y,
@@ -982,31 +1070,31 @@ def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
             "x" : str(month_before)
         })
 
-        # Increment of date by one  
-        month_before += relativedelta.relativedelta(days=1)          
-                 
+        # Increment of date by one
+        month_before += relativedelta.relativedelta(days=1)
+
     return final_dict
 
 
 #************************************************* Monthly Trend Pie chart ***********************************************************************
 # Mixin which can work for both Technologies
-class MonthlyTrendSectorMixin(object): 
+class MonthlyTrendSectorMixin(object):
     '''
     '''
     def get(self, request):
 
         tech_name = self.tech_name
-        organization = logged_in_user_organizations(self)    
+        organization = logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         user_sector = organization_sectors(organization, technology=technology)  #Sector for that user corresponding to organization and technology
         sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
-        
+
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
-        # Function call for calculating no. of hosts in different states on different days  
+        # Function call for calculating no. of hosts in different states on different days
         processed_key_dict = get_severity_status_dict_monthly(dashboard_name, sector_devices_list)
-       
+
         chart_series = []
         chart_series = processed_key_dict
 
@@ -1019,10 +1107,10 @@ class MonthlyTrendSectorMixin(object):
 class MonthlyTrendSectorPMP(MonthlyTrendSectorMixin, View):
     """
     """
-    tech_name = 'PMP'    
+    tech_name = 'PMP'
 
 class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
     """
     """
-    tech_name = 'WIMAX'    
+    tech_name = 'WIMAX'
 

@@ -91,6 +91,7 @@ class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixi
         """
 
 
+        # get json_data from qs which is returned from get_initial_queryset.
         json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
         OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
@@ -119,12 +120,16 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
     Class Based View for the Archived User data table rendering.
     """
     model = UserProfile
+    # columns are used for list of fields which should be displayed on data table.
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
+    #order_columns is used for list of fields which is used for sorting the data table.
     order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                      'parent__last_name', 'organization__name','phone_number', 'last_login']
+    #search_columns is used for list of fields which is used for searching the data table.
     search_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                      'parent__last_name', 'organization__name','phone_number']
+    # extra_qs_kwargs is used for filter the users using some extra fields in Mixin DatatableOrganizationFilterMixin.
     extra_qs_kwargs = {
         'is_deleted':1
     }
@@ -163,6 +168,9 @@ class UserDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'user_profile/user_detail.html'
 
     def get_queryset(self):
+        """
+        Method used for user can see the detail of self organization or it's descendant organization.
+        """
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
 
@@ -327,12 +335,31 @@ def change_password(request):
     """
     The Action of the Dialog box appears on the screen.
     If the action is continue then the user get prompt to set new password.
+    :param auth_token
+           action
+           url
+           user_id
+           pwd
+           confirm_pwd
+    : return json
+            {
+                "success": 1,  # 0 - fail, 1 - success, 2 - exception
+                "message": message,
+                "data": {
+                    "meta": {},
+                    "objects": {'url': '', 'reason': ''},
+                }
+            }
     """
+    # Get the url from request.POST
     url = request.POST.get('url', '/home/')
+    # Authenticate the user using auth_token present in request.POST
     user = auth.authenticate(token=request.POST.get('auth_token', None))
+    # if user clicks on continue button of password change form. and the form is valid, then login the user.
     if request.POST.get('action') == 'continue' and user:
         form = UserPasswordForm(request.POST)
         if form.is_valid():
+            # if user is visitor. Delete the session of user and removes the user from visitor.
             if hasattr(user, 'visitor'):
                 Session.objects.filter(session_key=user.visitor.session_key).delete()
                 # If Session object is modified as session key is changed.
@@ -340,12 +367,18 @@ def change_password(request):
                 Visitor.objects.filter(user=user).delete()
 
             auth.login(request, user)   # Login the request user.
+            # create new Visitor table with new session_key for the user.
             Visitor.objects.create(session_key=request.session.session_key, user=request.user)
 
+            # update the field password_changed_at.
             user.userprofile.password_changed_at = timezone.now()
+            # update the user_invalid_attempt to zero.
             user.userprofile.user_invalid_attempt = 0
+            # Save the userprofile of user.
             user.userprofile.save()
+            # Update the password of user.
             user.set_password(form.data['confirm_pwd'])
+            # Save the user.
             user.save()
             UserPasswordRecord.objects.create(user_id=user.id, password_used=user.password)
 
