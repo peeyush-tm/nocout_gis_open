@@ -344,5 +344,5 @@ left join
 on
     (bh.BHID = bs_info.BHID)
 
-  group by BSID,SECTOR_ID,CID
-        ;
+
+ group by BSID,SECTOR_ID,CID 

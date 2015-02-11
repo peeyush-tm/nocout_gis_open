@@ -12676,11 +12676,11 @@ from inventory.utils.util import organization_network_devices, \
     organization_customer_devices\
     , prepare_machines
 from organization.models import Organization
-from device.models import DeviceTechnology
+from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
 
 #The Django !!
-from django.db.models import Count
+from django.db.models import Count, Q
 
 #http://timsaylor.com/index.php/2012/05/21/convert-django-model-instances-to-dictionaries/
 from django.forms.models import model_to_dict
@@ -12696,7 +12696,7 @@ def get_organizations():
     return orgs
 
 
-def get_devices(technology='WiMAX', type=None):
+def get_devices(technology='WiMAX', rf_type=None, site_name=None):
     """
 
     :param technology:
@@ -12711,7 +12711,7 @@ def get_devices(technology='WiMAX', type=None):
                     'machine__name'
     ]
 
-    if type and type == 'customer':
+    if rf_type and rf_type == 'customer':
         network_devices = organization_customer_devices(organizations=organizations,
                                                        technology=technology
         )
@@ -12721,124 +12721,14 @@ def get_devices(technology='WiMAX', type=None):
                                                        technology=technology
         )
 
+    if site_name and SiteInstance.objects.filter(name=site_name).exists():
+        return network_devices.filter(site_instance__name=site_name).values(*required_columns)
+
     return network_devices.values(*required_columns)
 
 
-def get_sectors(sectors=None):
-    """
-
-    :return:
-    """
-    bulk_update_sector_conf_on = []
-    count = 0
-    sector_id_list = []
-    for sector in sectors:
-        sector_id_list.append(sector)
-    #query?
-
-    logger.debug(sector_id_list)
-
-    polled_sectors = Sector.objects.filter(sector_id__in=sector_id_list
-                            ).prefetch_related('circuit_set','sector_configured_on')
-
-    logger.debug(polled_sectors.values())
-
-    update_sector_devices.delay(sectors,polled_sectors)
-
-    return polled_sectors
-
-
-def get_substations(sectors=None):
-    """
-
-    :return:
-    """
-    #format connected_ip['ip_address'] = 'mac'
-    connected_ip = {}
-    #list of polled ips
-    connected_ip_list = []
-    for sector in sectors:
-        for sector_devices in sectors[sector]:
-            for topology in sectors[sector][sector_devices]:
-                #wow triple loop
-                #wow you suck
-                if topology.connected_device_ip not in connected_ip:
-                    connected_ip_list.append(topology.connected_device_ip)
-                    connected_ip[topology.connected_device_ip] = topology.connected_device_mac
-
-    logger.debug(connected_ip_list)
-
-    polled_ss = SubStation.objects.filter(device__ip_address__in=connected_ip_list
-                                ).prefetch_related('device','circuit_set')
-
-    update_substation_devices.delay(polled_ss, connected_ip)
-
-    return polled_ss
-
-
-def get_circuits(substations=None):
-    """
-
-    :param substations:
-    :return:
-    """
-    polled_circuits = Circuit.objects.filter(id__in=substations.values_list('circuit',flat=True))
-
-    return polled_circuits
-
-
-def update_topology(polled_sectors=None, polled_circuits=None, topo_sectors=None):
-    """
-    Topology Object Fields
-    # device_name
-    # service_name
-    # data_source
-    # machine_name
-    # site_name
-    # ip_address
-    # mac_address
-    # sector_id
-    # connected_device_ip
-    # connected_device_mac
-    # sys_timestamp
-    # check_timestamp
-
-    Rules for topology creation:
-    1.1. Sector ID should exist in Sectors
-    1.1. If Sector ID exists: update (mac)
-    1.3. If Sector ID does not exist (skip)
-    (wrong)    2.1. Circuit might exists might not
-    (wrong)    2.2. Circuit must have SubStation associated to it
-    2. Substation must exist, the circuit for SubStation Must Circuit Exist
-    2.1. SubStation IP should match with the Connected IP Address (MAC may update)
-    2.2. If SubStation IP does not match with Connected IP Address (skip)
-
-    :return: True if update count > 1 # for count > 1 clear cache (WOW) sucks
-    """
-    count = 0
-    for sector_id in topo_sectors:
-        try:
-            poll_sector = polled_sectors.get(sector_id__icontains=sector_id)
-            for sector_device in topo_sectors[sector_id]:
-                for topo in topo_sectors[sector_id][sector_device]:
-                    connected_circuit = polled_circuits.get(
-                        sub_station__device__ip_address=topo.connected_device_ip
-                    )
-                    try:  ##previously some sector exists
-                        if connected_circuit.sector.id != poll_sector.id:
-                            connected_circuit.sector=poll_sector
-                            connected_circuit.save()
-                            count += 1
-                    except:  #no sector exists
-                        connected_circuit.sector=poll_sector
-                        count += 1
-        except Exception as e:
-            logger.exception(e)
-            continue
-    return bool(count)
-
 @task()
-def get_topology(technology):
+def get_topology(technology, rf_type=None, site_name=None):
     """
     Get the current topology per technology WiMAX/PMP
     :param technology:
@@ -12847,13 +12737,16 @@ def get_topology(technology):
 
     count = False
 
-    network_devices = get_devices(technology)
+    network_devices = get_devices(technology, rf_type=rf_type, site_name=site_name)
     device_list = []
 
 
     for device in network_devices:
         device_list.append(device['device_name'])
 
+    #rather than looping ourselves
+    #lets do .values('', flat=True)
+    #device_list = network_devices.values
 
     #topology is now synced at the central database only. no need to creating topology
     topology = Topology.objects.filter(device_name__in=device_list, data_source='topology')
@@ -12872,91 +12765,121 @@ def get_topology(technology):
         # sys_timestamp
         # check_timestamp
 
+    required_topology = topology.values('connected_device_ip', 'sector_id', 'connected_device_mac', 'mac_address', 'ip_address')
+    sector_ips = topology.values_list('ip_address', flat=True)
 
-    sectors = {}
-    for topo_data in topology:
-        try:
-            device_name = None
-            if topo_data.sector_id not in sectors:
-                device_name = topo_data.device_name
-                sectors[topo_data.sector_id] = {device_name: []}
-            if device_name:
-                sectors[topo_data.sector_id][device_name].append(topo_data)
-            else:
-                continue
-        except Exception as e:
-            logger.exception(e)
-            continue
-    polled_sectors = get_sectors(sectors)
-    polled_substations = get_substations(sectors)
-    polled_circuits = get_circuits(polled_substations)
-    count = bool(update_topology(
-                                 polled_sectors=polled_sectors,
-                                 polled_circuits=polled_circuits,
-                                 topo_sectors=sectors
-                                )
+    polled_sectors = Sector.objects.filter(sector_id__in=topology.values_list('sector_id', flat=True)
+    )
+
+    polled_circuits = Circuit.objects.filter(sub_station__in=SubStation.objects.filter(
+        device__ip_address__in=topology.values_list('connected_device_ip', flat=True)
+        )
+    )
+
+    # polled_substations = SubStation.objects.filter(device__ip_address__in=topology.values_list(
+    #     'connected_device_ip', flat=True)
+    # ).select_related('circuit_set', 'device')
+
+    polled_devices = Device.objects.filter(ip_address__in=sector_ips) #just work with sector devices here
+    #because the ss devices can be get directly with SS only
+        # Q(ip_address__in=sector_ips)  #because that can be a DR as well. hence the IP address
+        # |
+        # Q(substation__in=polled_substations)  #substatoin can have at max one device associated to it
+    # )
+
+    save_circuit_list = []
+    save_device_list = []
+    save_ss_list = []
+
+    processed_mac = {}
+    for topos in required_topology:
+        if topos['connected_device_mac'] not in processed_mac:
+            processed_mac[topos['connected_device_mac']] = topos['connected_device_mac']
+            ss_ip = topos['connected_device_ip']
+            sector_id = topos['sector_id']
+            sector_ip = topos['ip_address']
+            try:
+                circuit_obj = polled_circuits.select_related('sub_station','sub_station__device', 'sector').get(
+                    sub_station__device__ip_address=ss_ip
                 )
+                ss_obj = circuit_obj.sub_station
 
-    if count:
-        #reset cache
-        #SOB
-        from django.core.cache import cache
-        cache.clear()
-        pass
+                if topos['connected_device_mac'] and ss_obj.mac_address != topos['connected_device_mac']:
+                    ss_obj.mac_address = topos['connected_device_mac']
+                    #first resolve for ss
+                    save_ss_list.append(ss_obj)
+                    #first resolve for ss device
+                    ss_device_obj = circuit_obj.sub_station.device
+                    ss_device_obj.mac_address = topos['connected_device_mac']
+                    save_device_list.append(ss_device_obj)
 
-    return True
+                sector_object = polled_sectors.get(sector_id=sector_id)
+
+                if topos['mac_address']:
+                    sector_device_obj = polled_devices.get(ip_address=sector_ip)
+                    sector_device_obj.mac_address = topos['mac_address']
+                    save_device_list.append(sector_device_obj)
+
+                #resolve for circuit
+                #circuit_obj = ss_obj.circuit_set.get()
+                #if circuit_obj.sector.sector_id != sector_id:
+                circuit_obj.sector = sector_object
+                save_circuit_list.append(circuit_obj)
+
+            except Exception as e:
+                #ss object is not found
+                #the issue might be that SS does not exists in the database
+                #if there is no SS then do no care and continue for existing SS
+                #or there are multiple SS on a single device
+                #which is wrong in any case
+                #or lastly there are multiple circuit on the SS which is again an inventory mistake
+                continue
+    g_jobs = list()
+
+    if len(save_circuit_list):
+        # SectorCapacityStatus.objects.bulk_create(bulk_create_scs)
+        g_jobs.append(bulk_update_create.s(bulky=save_circuit_list, action='update'))
+
+    if len(save_device_list):
+        g_jobs.append(bulk_update_create.s(bulky=save_device_list, action='update'))
+
+    if len(save_ss_list):
+        g_jobs.append(bulk_update_create.s(bulky=save_ss_list, action='update'))
+
+    job = group(g_jobs)
+
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
 
 
 @task()
-def update_sector_devices(sectors=None,polled_sectors=None):
+def topology_site_wise(technology):
     """
+    this would create jobs per site wise. per technology wise. for WiMAX it would have nearly 1000 to 1500
+    devices at a time
+    which would reduce the CPU load, but will open up a lot of parallel processes
 
-    :return:
+    :return: True if any of the task gets positive results else False
     """
-    count = 0
-    for sector in polled_sectors:
-        sector_id = sector.sector_id
-        ##updating the sector device mac address
-        try:
-            device_name = sectors[sector_id.lower()].keys()[0]
-            sector_id = sector_id.lower()
-        except:
-            device_name = sectors[sector_id.upper()].keys()[0]
-            sector_id = sector_id.upper()
-        try:
-            sector_device = sector.sector_configured_on
-            mac = sectors[sector_id][device_name][0].mac_address
-            if sector_device.ip_address == sectors[sector_id][device_name][0].ip_address\
-                    and sector_device.mac_address != mac and len(mac):
-                sector_device.mac_address = mac
-                sector_device.save()
-                count += 1
-        except Exception as e:
-            logger.exception(e)
-            continue
-    return bool(count)
+    sites = SiteInstance.objects.all().values_list('name', flat=True)
+    g_jobs = list()
 
+    for site in sites:
+        g_jobs.append(get_topology.s(technology=technology, rf_type=None, site_name=site))
 
-@task()
-def update_substation_devices(polled_ss=None, connected_ip=None):
-    """
+    job = group(g_jobs)
+    result = job.apply_async()
+    ret = False
 
-    :return:
-    """
-    count = 0
-    for ss in polled_ss:
-        try:
-            ss_device = ss.device
-            mac = connected_ip[ss_device.ip_address]
-            if len(mac) and ss_device.mac_address != mac:
-                ss_device.mac_address = mac
-                ss_device.save()
-                count += 1
-        except Exception as e:
-            logger.exception(e)
-            continue
+    for r in result.get():
+        ret |= r
 
-    return bool(count)
+    return ret
 
 
 @task()
@@ -12971,7 +12894,7 @@ def get_topology_with_substations(technology):
 
     g_jobs = list()
 
-    customer_devices = get_devices(technology=technology, type='customer')
+    customer_devices = get_devices(technology=technology, rf_type='customer')
     device_list = []
     for device in customer_devices:
         device_list.append(
@@ -13129,7 +13052,11 @@ def bulk_update_create(bulky, action='update', model=None):
     if bulky and len(bulky):
         if action == 'update':
             for update_this in bulky:
-                update_this.save()
+                try:
+                    update_this.save()
+                except Exception as e:
+                    logger.exception(e)
+                    continue
             return True
 
         elif action == 'create':

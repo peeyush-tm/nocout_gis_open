@@ -237,13 +237,40 @@ AUTHENTICATION_BACKENDS = (
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'nocout-gis-rf-critical',
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+        'TIMEOUT': 300,
         'OPTIONS': {
             'MAX_ENTRIES': 1000
         }
     }
 }
+
+#if pylibmc is isntalled
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+#         'LOCATION': 'localhost:11211',
+#         'TIMEOUT': 500,
+#         'BINARY': True,
+#         'OPTIONS': {  # Maps to pylibmc "behaviors"
+#             'tcp_nodelay': True,
+#             #'ketama': True
+#         }
+#     }
+# }
+
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#         'LOCATION': 'nocout-gis-rf-critical',
+#         'OPTIONS': {
+#             'MAX_ENTRIES': 1000
+#         }
+#     }
+# }
 
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
@@ -262,40 +289,73 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 }
 BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
 
+# REDIS
+# CELERY_RESULT_BACKEND = "redis"
+# CELERY_RESULT_BACKEND = 'redis://localhost/0'
+# REDIS_HOST = "localhost"
+# REDIS_PORT = 6379
+# REDIS_DB = 0
+# REDIS_CONNECT_RETRY = True
+# BROKER_HOST = "localhost"  # Maps to redis host.
+# BROKER_PORT = 6379         # Maps to redis port.
+# BROKER_VHOST = "0"         # Maps to database number.
+
+# MEMCACHED
+# CELERY_CACHE_BACKEND = 'memory'
+# CELERY_RESULT_BACKEND = 'cache+memcached://127.0.0.1:11211/'
+
+# USE WITH PYLIB MC
+# CELERY_CACHE_BACKEND_OPTIONS = {'binary': True,
+#                                 'behaviors': {'tcp_nodelay': True}}
+
 from celery import crontab
 
 #=time zone for celery periodic tasks
 CELERY_TIMEZONE = 'Asia/Calcutta'
 
 CELERYBEAT_SCHEDULE = {
-    'wimax-topology': {
-        'task': 'inventory.tasks.get_topology',
+    # 'wimax-topology': {
+    #     'task': 'inventory.tasks.get_topology',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['WiMAX']
+    #     #'kwargs': {'technology':'WiMAX', 'type':None, 'site_name':'ospf1_slave_1'}
+    # },
+    # 'pmp-topology': {
+    #     'task': 'inventory.tasks.get_topology',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['PMP']
+    # },
+    'wimax-topology-site-wise': {
+        'task': 'inventory.tasks.topology_site_wise',
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
     },
-    'pmp-topology': {
-        'task': 'inventory.tasks.get_topology',
+    'pmp-topology-site-wise': {
+        'task': 'inventory.tasks.topology_site_wise',
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
     'wimax-ss-topology': {
         'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': timedelta(seconds=300),
+        'schedule': crontab(minute=13, hour='*/12'),
         'args': ['WiMAX']
     },
     'pmp-ss-topology': {
         'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=0, hour=0),
+        'schedule': crontab(minute=33, hour='*/12'),
         'args': ['PMP']
     },
+    #updating the polled sector frequency
     'update-sector-frequency': {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
         'schedule': crontab(minute=0, hour=0)
     },
+    #Escalation Status for the configured services
     'check-device-status': {
         'task': 'alarm_escalation.tasks.check_device_status',
         'schedule': timedelta(seconds=300),
     },
+    #Sector Capacity Caclucations
     'gather_sector_status-wimax': {
         'task': 'capacity_management.tasks.gather_sector_status',
         'schedule': timedelta(seconds=300),
@@ -306,6 +366,7 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
+    #Dashboads Calculations
     'timely-main-dashboard': {
         'task': 'dashboard.tasks.calculate_timely_main_dashboard',
         'schedule': timedelta(seconds=300),
@@ -330,6 +391,53 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
         'schedule': crontab(minute=0, hour=0, day_of_month=1)
     },
+    ## Far caching the Data for Last down time : per 5 minutes
+    'device_last_down_time_CanopyPM100AP': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopyPM100AP']
+    },
+    'device_last_down_time_CanopyPM100SS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopyPM100SS']
+    },
+    'device_last_down_time_CanopySM100AP': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopySM100AP']
+    },
+    'device_last_down_time_CanopySM100SS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['CanopySM100SS']
+    },
+    'device_last_down_time_Radwin2KBS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['Radwin2KBS']
+    },
+    'device_last_down_time_Radwin2KSS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['Radwin2KSS']
+    },
+    'device_last_down_time_StarmaxIDU': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['StarmaxIDU']
+    },
+    'device_last_down_time_StarmaxSS': {
+        'task': 'performance.tasks.device_last_down_time_task',
+        'schedule': timedelta(seconds=300),
+        'args': ['StarmaxSS']
+    },
+    #Remove all caching per 6 hours
+    'cache_clear_task': {
+        'task': 'nocout.tasks.cache_clear_task',
+        'schedule': crontab(minute=0, hour='*/6'), #per 6 hours delete all cache
+    },
+
 }
 
 
@@ -357,7 +465,7 @@ LOGGING = {
             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
         },
         'console': {
-            'level': 'WARNING',
+            'level': 'ERROR',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
@@ -374,12 +482,12 @@ LOGGING = {
     'loggers': {
         'django.db.backends': {
             'level': 'ERROR',
-            'handlers': ['console'],
+            'handlers': ['sentry'],
             'propagate': False,
         },
         'raven': {
             'level': 'ERROR',
-            'handlers': ['console', 'sentry'],
+            'handlers': ['sentry'],
             'propagate': False,
         },
         'sentry.errors': {
@@ -389,7 +497,7 @@ LOGGING = {
         },
         '':{
             'handlers': ['logfile'],
-            'level': 'DEBUG',
+            'level': 'INFO',
         },
     },
 }

@@ -1926,52 +1926,16 @@ function devicePlottingClass_gmap() {
 				sector_infoWindow_content = sector_info_list ? sector_info_list : [],
 				deviceIDArray= [];
 
-			// Loop to create backhual markers
-			// for(var x=0;x<backhaul_array.length;x++) {
-			// 	var backhaul = backhaul_array[x];
-
-			// 	var backhaul_markers_Obj = {
-			// 		position 		 	: new google.maps.LatLng(lat, lon),
-			// 		// map 				: mapInstance,
-			// 		ptLat 			 	: lat,
-			// 		ptLon 			 	: lon,
-			// 		icon 			 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,new google.maps.Size(1,1)),
-			// 		oldIcon 		 	: new google.maps.MarkerImage(base_url+"/"+backhaul.markerUrl,null,null,null,new google.maps.Size(32,37)),
-			// 		clusterIcon 	 	: new google.maps.MarkerImage(base_url+"/static/img/icons/1x1.png",null,null,null,new google.maps.Size(1,1)),
-			// 		pointType 		 	: 'backhaul',
-			// 		dataset 			: backhaul.info,
-			// 		name 				: backhaul.name,
-			// 		filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId, "bh_id" : backhaul.id},
-			// 		zIndex 				: 200,
-			// 		optimized 			: false,
-   //                  isActive 			: 1,
-				// windowTitle 	   : 	"Backhaul"
-   //              };
-   //              // create backhaul marker
-   //              var backhaul_Marker = new google.maps.Marker(backhaul_markers_Obj);
-
-   //              // Push backhaul marker to all marker global array
-   //              allMarkersArray_gmap.push(backhaul_Marker);
-
-   //              // Push backhaul marker to all marker global object
-   //              allMarkersObject_gmap['backhaul']['bh_'+backhaul.id] = backhaul_Marker;
-
-   //              if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
-			// 		sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
-			// 	} else {
-			// 		sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
-			// 		sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
-			// 	}
-			// }
 			/*Plot Sector*/
 			for(var j=sector_array.length;j--;) {
 
 				var fetched_azimuth = sector_array[j].azimuth_angle,
 					fetched_beamWidth = sector_array[j].beam_width,
+					fetched_color = sector_array[j].color && sector_array[j].color != 'NA' ? sector_array[j].color : 'rgba(74,72,94,0.58)',
 					ss_infoWindow_content = sector_array[j].ss_info_list ? sector_array[j].ss_info_list : [],
 					azimuth = fetched_azimuth && fetched_azimuth != 'NA' ? fetched_azimuth : 10,
 					beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
-					sector_color = sector_array[j].color,
+					sector_color = fetched_color,
 					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
 					sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
 					sectorInfo = {
@@ -1993,7 +1957,7 @@ function devicePlottingClass_gmap() {
 					rad = sectorRadius && (sectorRadius > 0) ? sectorRadius : 0.5,
 					startLon = "",
 					startLat = "",
-					sect_height = gisPerformanceClass.getKeyValue(sector_array[j].info,"antenna_height",true);
+					sect_height = gisPerformanceClass.getKeyValue(sector_infoWindow_content,"antenna_height",true,j);
 
 				var startEndObj = {};
 				// if(sector_tech != "ptp" && sector_tech != "p2p") {
@@ -2191,7 +2155,8 @@ function devicePlottingClass_gmap() {
 
 				    if($.trim(last_selected_label)) {
 				    	var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false),
+			    			item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
+				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false, item_index),
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
@@ -2294,21 +2259,10 @@ function devicePlottingClass_gmap() {
 		    		startEndObj["startTitle"] = "BS Info";
 		    		startEndObj["endTitle"] = "SS Info";
 
-		    		/*Sub station info Object*/
-		    		// ss_info["info"] = ss_marker_obj.data.param.sub_station;
-		    		// ss_info["antenna_height"] = ss_marker_obj.data.antenna_height;
-
 		    		/*Link color object*/
-//<<<<<<< HEAD @yogender-tm
 		    		var link_color = ss_marker_obj.data.link_color;
 		    		linkColor = link_color && link_color != 'NA' ? link_color : 'rgba(74,72,94,0.58)';
-//=======
-//		    		linkColor = ss_marker_obj.data.link_color;
-//			    	linkColor = linkColor && linkColor != 'NA' ? linkColor : 'rgba(74,72,94,0.58)';
-//>>>>>>> dev_master
 
-	    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
-	    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
 	    			// if(zoom_level > 9) {
 		    			if(ss_marker_obj.data.show_link == 1) {
 		    				/*Create the link between BS & SS or Sector & SS*/
@@ -3282,7 +3236,6 @@ function devicePlottingClass_gmap() {
 					ss_custName = gisPerformanceClass.getKeyValue(contentObject.ss_info,"customer_alias",true,ss_item_index),
 					ss_ip = gisPerformanceClass.getKeyValue(contentObject.ss_info,"ss_ip",true,ss_item_index),
 					sector_ip = contentObject.sectorName,
-					// circuit_id = gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true),
 					sector_ss_name_obj = {
 						sector_title : sector_title,
 						sector_Alias : sect_alias ? sect_alias : "",
@@ -3456,7 +3409,7 @@ function devicePlottingClass_gmap() {
 				startPtInfo = contentObject.dataset;
 			}
 			
-			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);	
+			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true,item_index);
 
 			var pos1 = "",
 				pos2 = "";
@@ -8759,7 +8712,8 @@ function devicePlottingClass_gmap() {
 				var ss_marker = ss_list[key],
 					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false);
+					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false,item_index);
 
             	if(labelInfoObject) {
             		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
@@ -8808,7 +8762,8 @@ function devicePlottingClass_gmap() {
 				var ss_marker = ss_list[key],
 					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false);
+					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false, item_index);
 
             	if(labelInfoObject) {
             		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
