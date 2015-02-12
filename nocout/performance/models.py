@@ -2002,8 +2002,8 @@ class SpotDashboard(models.Model):
     device = models.ForeignKey(Device)
     #static information so as to save another db
     sector_sector_id = models.CharField('Sector ID', max_length=64, unique=True, null=True, blank=True)
-    sector_sector_configured_on = models.CharField('IP Address', max_length=64, unique=True, null=True, blank=True)
-    sector_device_technology = models.CharField('Technology', max_length=64, unique=True, null=True, blank=True)
+    sector_sector_configured_on = models.CharField('IP Address', max_length=64,  null=True, blank=True)
+    sector_device_technology = models.CharField('Technology', max_length=64,  null=True, blank=True)
     #Calculated information
     # Last 6 monthns calculation for UL issues
     ul_issue_1 = models.BooleanField('UL Issue 1', default=False)

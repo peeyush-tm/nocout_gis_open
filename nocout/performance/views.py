@@ -20,7 +20,9 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, \
-    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus
+    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus, SpotDashboard
+
+from nocout.utils import logged_in_user_organizations
 
 from django.utils.dateformat import format
 
@@ -384,8 +386,6 @@ class LivePerformanceListing(BaseDatatableView):
         page_type = self.request.GET.get('page_type')
         device_tab_technology = self.request.GET.get('data_tab')
 
-        print(page_type, device_tab_technology)
-
         if page_type == 'network':
             type_rf = 'sector'
         elif page_type == 'customer':
@@ -600,6 +600,9 @@ def getLastXMonths(months_count):
         )[:2] for n in range(months_count)
     ]
 
+    # Reverse months list
+    last_six_months_list.reverse()
+
     return (last_six_months_list, all_months_list)
 
 # Sector Spot Dashboard ListView
@@ -609,7 +612,7 @@ class SectorDashboard(ListView):
 
     """
 
-    model = Sector
+    model = SpotDashboard
     template_name = 'performance/sector_dashboard.html'
 
     def get_context_data(self, **kwargs):
@@ -618,18 +621,19 @@ class SectorDashboard(ListView):
         # Sector Info Headers
         sector_headers = [
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', },
-            {'mData': 'ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
-            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', }
+            {'mData': 'sector_sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', }
         ]
 
-        # Get Last Six Month List
-        last_six_months_list, \
-        months_list = getLastXMonths(6);
 
         ul_last_six_month_headers = list()
         sia_last_six_month_headers = list()
         augt_last_six_month_headers = list()
         months_index_list = list()
+
+        # Get Last Six Month List
+        last_six_months_list, \
+        months_list = getLastXMonths(6);
 
         for i in range(6):
             # Get month index from year,month tuple
@@ -642,15 +646,15 @@ class SectorDashboard(ListView):
 
             # Last Six Month UL Issues Headers
             ul_last_six_month_headers.append(
-                {'mData': month_name+'_ul', 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+                {'mData': 'ul_issue_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
             # Last Six Month SIA Headers
             sia_last_six_month_headers.append(
-                {'mData': month_name+'_sia', 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+                {'mData': 'sia_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
             # Last Six Month Augmentation Headers
             augt_last_six_month_headers.append(
-                {'mData': month_name+'_augt', 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+                {'mData': 'augment_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
 
         table_headers = []
@@ -666,65 +670,38 @@ class SectorDashboard(ListView):
 class SectorDashboardListing(BaseDatatableView):
     """ This class show sector spot dashboard listing """
 
-    model = Sector
-    # Useful data sources for UL issues
-    ds_list = [
-        'bs_ul_issue'
-    ]
-    # Columns from Sector Model
-    columns = [
-        "sector_id",
-        "ip_address",
-        "technology"
+    model = SpotDashboard
+
+    # Static info Colums
+    static_columns = [
+        "sector_sector_id",
+        "sector_sector_configured_on",
+        "sector_device_technology"
     ]
 
-    # Number of months whose data is to be fetched
-    month_count = 6
+    # Calculated or polled info columns
+    polled_columns = [
+        "ul_issue_1",
+        "ul_issue_2",
+        "ul_issue_3",
+        "ul_issue_4",
+        "ul_issue_5",
+        "ul_issue_6",
+        "augment_1",
+        "augment_2",
+        "augment_3",
+        "augment_4",
+        "augment_5",
+        "augment_6",
+        "sia_1",
+        "sia_2",
+        "sia_3",
+        "sia_4",
+        "sia_5",
+        "sia_6"
+    ]
 
-    # Get Last Six Month List
-    last_six_months_list, \
-    months_list = getLastXMonths(month_count);
-
-    # Raw query to get the spot dashboard data.
-    spot_dashboard_raw_query = "SELECT \
-                                s.id as id,\
-                                s.sector_id as sector_id,\
-                                FROM_UNIXTIME(pu.sys_timestamp,'%c') as ul_month_index,\
-                                FROM_UNIXTIME(c.sys_timestamp,'%c') as augment_month_index,\
-                                d.ip_address as ip_address,\
-                                t.alias as technology\
-                            FROM\
-                                inventory_sector s \
-                            left join\
-                                (\
-                                    device_device d,\
-                                    device_devicetechnology as t\
-                                )\
-                            on\
-                                (\
-                                    s.sector_configured_on_id = d.id\
-                                    and\
-                                    d.device_technology = t.id\
-                                )\
-                            left join\
-                                capacity_management_sectorcapacitystatus c \
-                            on\
-                                s.id = c.sector_id\
-                                and\
-                                    c.sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL {0} MONTH)\
-                            left join\
-                                performance_utilization pu\
-                            on\
-                                pu.ip_address = d.ip_address\
-                                and\
-                                pu.data_source in ('bs_ul_issue')\
-                                and\
-                                pu.sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL {0} MONTH)\
-                            where \
-                                not isnull(s.sector_id)\
-                                and\
-                                not isnull(s.sector_configured_on_id)".format(month_count)
-
+    columns = static_columns + polled_columns
 
     def get_initial_queryset(self):
         """
@@ -733,10 +710,7 @@ class SectorDashboardListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        # Execute query to get required data
-        sectorsResult = fetch_raw_result(self.spot_dashboard_raw_query)
-
-        return sectorsResult
+        return self.model.objects.values(*self.columns)
 
     def prepare_results(self,qs):
 
@@ -744,45 +718,32 @@ class SectorDashboardListing(BaseDatatableView):
 
         for data in qs:
             report_object = {}
-            report_object['sector_id'] = data['sector_id']
-            report_object['ip_address'] = data['ip_address']
-            report_object['technology'] = data['technology']
-
-            # Month index for augmentation & ul issues
-            augment_month_index = data['augment_month_index']
-            if augment_month_index:
-                augment_month_index = int(augment_month_index)
-
-            ul_month_index = data['ul_month_index']
-            if ul_month_index:
-                ul_month_index = int(ul_month_index)
-
-            sia_month_index = ''
+            report_object['sector_id'] = data['sector_sector_id']
+            report_object['sector_sector_configured_on'] = data['sector_sector_configured_on']
+            report_object['sector_device_technology'] = data['sector_device_technology']
 
             #  Last 6 months loop
             for i in range(6):
-
-                month_index = self.last_six_months_list[i][1] - 1
-                month_name = self.months_list[month_index]['name']
+                columns_concat_counter = str(i+1)
                 # Condition for ul Issue
-                if (int(self.last_six_months_list[i][1]) == ul_month_index):
-                    report_object[month_name+'_ul'] = '<i class="fa fa-circle text-danger"> </i>'
+                if data['ul_issue_'+columns_concat_counter]:
+                    report_object['ul_issue_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
                 else:
-                    report_object[month_name+'_ul'] = '-'
+                    report_object['ul_issue_'+columns_concat_counter] = '-'
 
 
                 # Condition for Augmentation
-                if (int(self.last_six_months_list[i][1]) == augment_month_index):
-                    report_object[month_name+'_augt'] = '<i class="fa fa-circle text-danger"> </i>'
+                if data['augment_'+columns_concat_counter]:
+                    report_object['augment_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
                 else:
-                    report_object[month_name+'_augt'] = '-'
+                    report_object['augment_'+columns_concat_counter] = '-'
 
 
                 # Condition for SIA
-                if (int(self.last_six_months_list[i][1]) == sia_month_index):
-                    report_object[month_name+'_sia'] = '<i class="fa fa-circle text-danger"> </i>'
+                if data['sia_'+columns_concat_counter]:
+                    report_object['sia_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
                 else:
-                    report_object[month_name+'_sia'] = '-'
+                    report_object['sia_'+columns_concat_counter] = '-'
 
             #add data to report_resultset list
             report_resultset.append(report_object)
@@ -795,19 +756,17 @@ class SectorDashboardListing(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            # Create Search where condition
-            search_condition = ''
-            for i in range(len(self.columns)):
-                if len(self.columns) - 1 == i:
-                    search_condition += " tmp."+self.columns[i]+" LIKE '"+str(sSearch)+"%'"
-                else:
-                    search_condition += " tmp."+self.columns[i]+" LIKE '"+str(sSearch)+"%' or "
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            # Create Search Query from default query n search condition
-            search_query = 'select * from ({0}) as tmp where {1}'.format(self.spot_dashboard_raw_query,search_condition)
-
-            # Execute query to get required data
-            qs = fetch_raw_result(search_query)
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
 
         return qs
 
@@ -822,8 +781,8 @@ class SectorDashboardListing(BaseDatatableView):
             i_sorting_cols = 0
 
         order = []
-        # order_columns = self.get_order_columns()
-        order_columns = self.columns
+
+        order_columns = self.static_columns
         for i in range(i_sorting_cols):
             # sorting column
             try:
