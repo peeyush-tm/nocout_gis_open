@@ -26,7 +26,7 @@ from inventory.utils.util import organization_customer_devices, organization_net
 
 from performance.utils.util import color_picker
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily, DashboardRangeStatusDaily
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
     get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response,\
@@ -941,8 +941,8 @@ def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
     # Start Calculations for Monthly Trend Sector
     # Last 30 Days
     month_before = datetime.date.today() - datetime.timedelta(days=30)
-    # Data captured from model for last 30 days, summation of diffrent state of hosts on same day
-    dashboard_status_dict = DashboardSeverityStatusDaily.objects.values('processed_for').filter(
+    # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+    dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(select={'processed_month':"date(processed_for)"}).values('processed_month').filter(
         processed_for__gte=month_before,
         dashboard_name=dashboard_name,
         device_name__in=sector_devices_list
@@ -951,15 +951,15 @@ def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
         Needs_Augmentation=Sum('warning'),
         Stop_Provisioning=Sum('critical'),
         Unknown=Sum('unknown')
-    )
-
-    # Datetime object converted into only date
-    for element in dashboard_status_dict:
-        element['processed_for'] = element['processed_for'].strftime('%Y-%m-%d')
-        
+    ).order_by('processed_month')    
+     
+    month_var = month_before    
     final_dict = [] 
+    processed_key_color = {}
     # random color picker for sending different colors
-    processed_key_color = {result['processed_for']: color_picker() for result in dashboard_status_dict}
+    while month_var <= datetime.date.today():
+    	processed_key_color[month_var] = color_picker()
+    	month_var += relativedelta.relativedelta(days=1) 
     # Loop for sending complete 30 days Data
     while month_before <= datetime.date.today(): 
         var = dict()
@@ -968,7 +968,7 @@ def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
         # Accessing every element(dictionary) of list 
         for var in dashboard_status_dict:
             # Equality condition for sending data whose entries are available at certain date within the month
-            if var['processed_for'] == month_before.isoformat():
+            if var['processed_month'] == month_before:
                 y= [] 
                 y.append(var['Normal'])
                 y.append(var['Needs_Augmentation'])
@@ -976,10 +976,10 @@ def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
                 y.append(var['Unknown'])
         # Preparation of final dict for sending to main function        
         final_dict.append({
-            "color": processed_key_color[var['processed_for']],
+            "color": processed_key_color[month_before],
             "y" : y,
             "name": "sector capacity",
-            "x" : str(month_before)
+            "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
         })
 
         # Increment of date by one  
@@ -987,8 +987,85 @@ def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
                  
     return final_dict
 
+def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard_setting):
+    '''
+    '''
+    # Start Calculations for Monthly Trend Sector
+    # Last 30 Days
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+    # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+    dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(select={'processed_month':"date(processed_for)"}).values('processed_month').filter(
+        processed_for__gte=month_before,
+        dashboard_name=dashboard_name,
+        device_name__in=sector_devices_list
+    ).annotate(
+        range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
+        range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
+        range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
+        range10=Sum('range10'), unknown=Sum('unknown')
+    ).order_by('processed_month')
 
-#************************************************* Monthly Trend Pie chart ***********************************************************************
+    final_dict = [] 
+
+    # Loop for sending complete 30 days Data    
+    while month_before <= datetime.date.today():
+                                      
+        y= [0,0,0,0,0,0,0,0,0,0,0]
+        color = [0,0,0,0,0,0,0,0,0,0,0]
+        # Loop for every element in list
+        for var in dashboard_status_dict:
+            # Condition for further processing
+            if var['processed_month'] == month_before:
+                response_dict = get_dashboardsettings_attributes(dashboard_setting, var)
+                y = []
+                color = []
+                y.append(response_dict['chart_data'])
+                color.append(response_dict['color'])
+        # Preparation of final dict for sending to main function
+        final_dict.append({
+            "color": color,
+            "y" : y,
+            "name": "Sales Opportunity",
+            "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+        })
+
+        # Increment of date by one  
+        month_before += relativedelta.relativedelta(days=1)          
+                 
+    return final_dict
+
+    
+
+def get_dashboardsettings_attributes(dashboard_setting, range_counter):
+
+    chart_data = []
+    colors = []
+     
+    for count in range(1, 11):
+        # Getting value of dashboard setting corresponding to count variable
+        start_range = getattr(dashboard_setting, 'range%d_start' %count)
+        end_range = getattr(dashboard_setting, 'range%d_end' %count)
+        color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
+        if start_range or end_range:
+            if len(str(start_range).strip()) or len(str(end_range).strip()):
+                chart_data.append(['(%s, %s)' % (start_range, end_range), range_counter['range%d' %count]])
+                if color:
+                    colors.append(color)
+                else:
+                    colors.append("#000000")
+        else:
+            chart_data.append(['(0,0)', 0])
+            colors.append("#000000")
+    # Preparation of Final List                    
+    chart_data.append(['Unknown', range_counter['unknown']])
+    colors.append("#d3d3d3")
+    return {'chart_data' : chart_data, 'color' : colors}
+
+
+
+
+
+#************************************************* Monthly Trend Sector chart ***********************************************************************
 # Mixin which can work for both Technologies
 class MonthlyTrendSectorMixin(object): 
     '''
@@ -1026,3 +1103,64 @@ class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
     """
     tech_name = 'WIMAX'    
 
+
+#************************************************* Monthly Trend Sales chart ***********************************************************************
+# Sales MIXIN for both technologies
+class MonthlyTrendSalesMixin(object):
+    """
+    """
+    def get(self, request):
+        '''
+        '''
+        is_bh = False
+        tech_name = self.tech_name
+
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+
+        data_source = data_source_config.keys()[0]
+
+        # Get Service Name from queried data_source
+        service_name = data_source_config[data_source]['service_name']
+        model = data_source_config[data_source]['model']
+
+        organization = logged_in_user_organizations(self)
+        technology = DeviceTechnology.objects.get(name=tech_name).id
+        # convert the data source in format topology_pmp/topology_wimax
+        data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
+        # Getting Dashboard settings
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success": 0
+            }))
+        
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector = organization_sectors(organization, technology)
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
+        
+        dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
+        dashboard_status_dict = get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard_setting)
+           
+        chart_series = []
+        chart_series = dashboard_status_dict
+        # Sending Final response
+        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
+            'name': '%s Sales Opportunity' % tech_name.upper(), 'valuetext' : '' })
+
+        return HttpResponse(response)
+
+
+class MonthlyTrendSalesPMP(MonthlyTrendSalesMixin, View):
+	"""
+	"""
+	tech_name = 'PMP'
+
+class MonthlyTrendSalesWIMAX(MonthlyTrendSalesMixin, View):
+	"""
+	"""
+	tech_name = 'WIMAX'	
