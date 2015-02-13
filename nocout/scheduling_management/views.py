@@ -2,9 +2,9 @@ import json
 
 from datetime import datetime, timedelta
 
-from django.views.generic.base import View
+
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, ListView, DetailView
 
 from django.http.response import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
@@ -13,13 +13,16 @@ from django.core.urlresolvers import reverse_lazy, reverse
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from datetime import datetime
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, YEARLY
+from nocout.mixins.generics import FormRequestMixin
+from nocout.mixins.select2 import Select2Mixin
+from nocout.utils import logged_in_user_organizations
 
-from scheduling_management.models import Event, Weekdays
-from scheduling_management.forms import EventForm
+from scheduling_management.models import Event, Weekdays, SNMPTrapSettings
+from scheduling_management.forms import EventForm, SNMPTrapSettingsForm
 
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from device.models import Device
 
@@ -427,3 +430,132 @@ def get_month_event_list(request):
     return HttpResponse ( json.dumps({
             'month_schedule_list': month_schedule_list
             }) )
+
+
+# **************************************** SNMP Trap Settings *********************************************
+class SelectSNMPTrapSettingsListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    :param Select2Mixin:
+            ListView:
+    :return qs:
+    """
+    model = SNMPTrapSettings
+
+
+class SNMPTrapSettingsList(PermissionsRequiredMixin, TemplateView):
+    """
+    Class Based View for the SNMPTrapSettings data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
+    """
+
+    template_name = 'snmp_trap_settings/snmp_trap_settings_list.html'
+    required_permissions = ('inventory.view_snmp_trap_settings',)
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(SNMPTrapSettingsList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Trap Name', 'sWidth': '10%', },
+            {'mData': 'device_technology__alias', 'sTitle': 'Device Technology', 'sWidth': 'auto', },
+            {'mData': 'device_vendor__alias', 'sTitle': 'Device Vendor', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device_model__alias', 'sTitle': 'Device Model', 'sWidth': 'auto', },
+            {'mData': 'device_type__alias', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'trap_oid', 'sTitle': 'Trap OID', 'sWidth': '10%', },
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '10%', }]
+
+        #if the user role is Admin or operator or superuser then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role or self.request.user.is_superuser:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class SNMPTrapSettingsListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
+    """
+    Class based View to render SNMPTrapSettings Data table. Returns json data for data table.
+    :param Mixins- PermissionsRequiredMixin
+                   DatatableOrganizationFilterMixin
+                   DatatableSearchMixin
+                   BaseDatatableView
+    :return json_data
+    """
+    model = SNMPTrapSettings
+    columns = ['device_technology__alias', 'device_vendor__alias', 'device_model__alias', 'device_type__alias',
+               'alias', 'trap_oid', 'severity']
+    order_columns = columns
+    required_permissions = ('inventory.view_antenna',)
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        for dct in json_data:
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_snmp_trap_settings'):
+                edit_action = '<a href="/snmp_trap_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_snmp_trap_settings'):
+                delete_action = '<a href="/snmp_trap_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
+        return json_data
+
+
+class SNMPTrapSettingsDetail(PermissionsRequiredMixin, DetailView):
+    """
+    Class based view to render the snmp_trap_settings detail.
+    """
+    model = SNMPTrapSettings
+    template_name = 'snmp_trap_settings/snmp_trap_settings_detail.html'
+    required_permissions = ('inventory.view_antenna',)
+
+
+class SNMPTrapSettingsCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
+    """
+    Class based view to create new SNMPTrapSettings.
+    """
+    template_name = 'snmp_trap_settings/snmp_trap_settings_new.html'
+    model = SNMPTrapSettings
+    form_class = SNMPTrapSettingsForm
+    success_url = reverse_lazy('snmp_trap_settings_list')
+    required_permissions = ('inventory.add_antenna')
+
+
+class SNMPTrapSettingsUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
+    """
+    Class based view to update SNMPTrapSettings .
+    """
+    template_name = 'snmp_trap_settings/snmp_trap_settings_update.html'
+    model = SNMPTrapSettings
+    form_class = SNMPTrapSettingsForm
+    success_url = reverse_lazy('snmp_trap_settings_list')
+    required_permissions = ('inventory.change_antenna',)
+
+
+class SNMPTrapSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
+    """
+    Class based View to delete the SNMPTrapSettings.
+    """
+    model = SNMPTrapSettings
+    template_name = 'snmp_trap_settings/snmp_trap_settings_delete.html'
+    success_url = reverse_lazy('snmp_trap_settings_list')
+    required_permissions = ('inventory.delete_antenna',)

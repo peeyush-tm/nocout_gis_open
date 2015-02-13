@@ -2,7 +2,7 @@ from django.db import models
 
 from user_profile.models import UserProfile
 from organization.models import Organization
-from device.models import Device, DeviceType
+from device.models import Device, DeviceType, DeviceModel, DeviceVendor, DeviceTechnology
 from service.models import Service, ServiceDataSource
 
 
@@ -71,3 +71,18 @@ class Event(models.Model):
     organization = models.ForeignKey(Organization)
     scheduling_type = models.CharField('Scheduling type', max_length=10, choices=SCHEDULING_TYPE, default='')
     device = models.ManyToManyField(Device)
+
+
+class SNMPTrapSettings(models.Model):
+    device_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True, on_delete=models.SET_NULL,
+                                          related_name='device_technology')
+    device_vendor = models.ForeignKey(DeviceVendor, null=True, blank=True, on_delete=models.SET_NULL,
+                                      related_name='device_vendor')
+    device_model = models.ForeignKey(DeviceModel, null=True, blank=True, on_delete=models.SET_NULL,
+                                     related_name='device_model')
+    device_type = models.ForeignKey(DeviceType, null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name='device_type')
+    name = models.CharField('Trap Name', max_length=150)
+    alias = models.CharField('Trap Alias', max_length=150, null=True, blank=True)
+    trap_oid = models.CharField('Trap OID', max_length=255, null=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
