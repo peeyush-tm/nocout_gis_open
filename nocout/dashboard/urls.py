@@ -60,4 +60,8 @@ urlpatterns = patterns('',
 
     url(r'^trend-monthly-sector/pmp/$', views.MonthlyTrendSectorPMP.as_view(), name = 'trend-monthly-sector-pmp' ),
     url(r'^trend-monthly-sector/wimax/$', views.MonthlyTrendSectorWIMAX.as_view(), name = 'trend-monthly-sector-wimax' ),
+
+    url(r'^trend-monthly-sales/pmp/$', views.MonthlyTrendSalesPMP.as_view(), name = 'trend-monthly-sales-pmp' ),
+    url(r'^trend-monthly-sales/wimax/$', views.MonthlyTrendSalesWIMAX.as_view(), name = 'trend-monthly-sales-wimax' ),
+
 )

@@ -12676,7 +12676,7 @@ from inventory.utils.util import organization_network_devices, \
     organization_customer_devices\
     , prepare_machines
 from organization.models import Organization
-from device.models import DeviceTechnology
+from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
 
 #The Django !!
@@ -12696,7 +12696,7 @@ def get_organizations():
     return orgs
 
 
-def get_devices(technology='WiMAX', type=None):
+def get_devices(technology='WiMAX', rf_type=None, site_name=None):
     """
 
     :param technology:
@@ -12711,7 +12711,7 @@ def get_devices(technology='WiMAX', type=None):
                     'machine__name'
     ]
 
-    if type and type == 'customer':
+    if rf_type and rf_type == 'customer':
         network_devices = organization_customer_devices(organizations=organizations,
                                                        technology=technology
         )
@@ -12721,11 +12721,14 @@ def get_devices(technology='WiMAX', type=None):
                                                        technology=technology
         )
 
+    if site_name and SiteInstance.objects.filter(name=site_name).exists():
+        return network_devices.filter(site_instance__name=site_name).values(*required_columns)
+
     return network_devices.values(*required_columns)
 
 
 @task()
-def get_topology(technology):
+def get_topology(technology, rf_type=None, site_name=None):
     """
     Get the current topology per technology WiMAX/PMP
     :param technology:
@@ -12734,13 +12737,16 @@ def get_topology(technology):
 
     count = False
 
-    network_devices = get_devices(technology)
+    network_devices = get_devices(technology, rf_type=rf_type, site_name=site_name)
     device_list = []
 
 
     for device in network_devices:
         device_list.append(device['device_name'])
 
+    #rather than looping ourselves
+    #lets do .values('', flat=True)
+    #device_list = network_devices.values
 
     #topology is now synced at the central database only. no need to creating topology
     topology = Topology.objects.filter(device_name__in=device_list, data_source='topology')
@@ -12763,11 +12769,16 @@ def get_topology(technology):
     sector_ips = topology.values_list('ip_address', flat=True)
 
     polled_sectors = Sector.objects.filter(sector_id__in=topology.values_list('sector_id', flat=True)
-    ).select_related('sector_configured_on')
+    )
 
-    polled_substations = SubStation.objects.filter(device__ip_address__in=topology.values_list(
-        'connected_device_ip', flat=True)
-    ).select_related('circuit_set', 'device')
+    polled_circuits = Circuit.objects.filter(sub_station__in=SubStation.objects.filter(
+        device__ip_address__in=topology.values_list('connected_device_ip', flat=True)
+        )
+    )
+
+    # polled_substations = SubStation.objects.filter(device__ip_address__in=topology.values_list(
+    #     'connected_device_ip', flat=True)
+    # ).select_related('circuit_set', 'device')
 
     polled_devices = Device.objects.filter(ip_address__in=sector_ips) #just work with sector devices here
     #because the ss devices can be get directly with SS only
@@ -12780,39 +12791,48 @@ def get_topology(technology):
     save_device_list = []
     save_ss_list = []
 
-    processed_mac = []
+    processed_mac = {}
     for topos in required_topology:
         if topos['connected_device_mac'] not in processed_mac:
-            processed_mac.append(topos['connected_device_mac'])
+            processed_mac[topos['connected_device_mac']] = topos['connected_device_mac']
             ss_ip = topos['connected_device_ip']
             sector_id = topos['sector_id']
             sector_ip = topos['ip_address']
             try:
-                ss_obj = polled_substations.filter(device__ip_address=ss_ip)[0]
+                circuit_obj = polled_circuits.select_related('sub_station','sub_station__device', 'sector').get(
+                    sub_station__device__ip_address=ss_ip
+                )
+                ss_obj = circuit_obj.sub_station
 
-                if topos['connected_device_mac']:
+                if topos['connected_device_mac'] and ss_obj.mac_address != topos['connected_device_mac']:
                     ss_obj.mac_address = topos['connected_device_mac']
                     #first resolve for ss
                     save_ss_list.append(ss_obj)
                     #first resolve for ss device
-                    ss_device_obj = ss_obj.device
+                    ss_device_obj = circuit_obj.sub_station.device
                     ss_device_obj.mac_address = topos['connected_device_mac']
                     save_device_list.append(ss_device_obj)
 
-                sector_object = polled_sectors.filter(sector_id=sector_id)[0]
+                sector_object = polled_sectors.get(sector_id=sector_id)
 
                 if topos['mac_address']:
-                    sector_device_obj = polled_devices.filter(ip_address=sector_ip)[0]
+                    sector_device_obj = polled_devices.get(ip_address=sector_ip)
                     sector_device_obj.mac_address = topos['mac_address']
                     save_device_list.append(sector_device_obj)
 
                 #resolve for circuit
-                circuit_obj = ss_obj.circuit_set.get()
+                #circuit_obj = ss_obj.circuit_set.get()
+                #if circuit_obj.sector.sector_id != sector_id:
                 circuit_obj.sector = sector_object
                 save_circuit_list.append(circuit_obj)
 
             except Exception as e:
-                logger.exception(e)
+                #ss object is not found
+                #the issue might be that SS does not exists in the database
+                #if there is no SS then do no care and continue for existing SS
+                #or there are multiple SS on a single device
+                #which is wrong in any case
+                #or lastly there are multiple circuit on the SS which is again an inventory mistake
                 continue
     g_jobs = list()
 
@@ -12838,6 +12858,31 @@ def get_topology(technology):
 
 
 @task()
+def topology_site_wise(technology):
+    """
+    this would create jobs per site wise. per technology wise. for WiMAX it would have nearly 1000 to 1500
+    devices at a time
+    which would reduce the CPU load, but will open up a lot of parallel processes
+
+    :return: True if any of the task gets positive results else False
+    """
+    sites = SiteInstance.objects.all().values_list('name', flat=True)
+    g_jobs = list()
+
+    for site in sites:
+        g_jobs.append(get_topology.s(technology=technology, rf_type=None, site_name=site))
+
+    job = group(g_jobs)
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
+
+
+@task()
 def get_topology_with_substations(technology):
     """
     the update topology is not working, needs to be debugged, but we have our
@@ -12849,7 +12894,7 @@ def get_topology_with_substations(technology):
 
     g_jobs = list()
 
-    customer_devices = get_devices(technology=technology, type='customer')
+    customer_devices = get_devices(technology=technology, rf_type='customer')
     device_list = []
     for device in customer_devices:
         device_list.append(
