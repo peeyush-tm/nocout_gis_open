@@ -5,9 +5,9 @@ from django.db.models import Count, Max, Avg #F, Max, Min, Q, Sum, Avg
 #task for updating the sector capacity per 5 minutes
 #need to run for PMP, WiMAX technology
 
-from capacity_management.models import SectorCapacityStatus
-from inventory.models import get_default_org, Sector
-from device.models import DeviceTechnology, Device
+from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
+from inventory.models import get_default_org, Sector, Backhaul, BaseStation
+from device.models import DeviceTechnology, Device, DevicePort, DeviceType
 
 from inventory.utils.util import prepare_machines
 
@@ -70,6 +70,70 @@ tech_model_service = {
         }
     },
 }
+
+
+@task()
+def gather_backhaul_status():
+    """
+
+    :return:
+    """
+    # we need devices
+    # we need the values
+    # we need the machines
+
+    # fetch all backhaul device
+    bh_devices = Backhaul.objects.filter(bh_configured_on__isnull=False).values_list('bh_configured_on', flat=True)
+
+    # fetch all base stations
+    base_stations = BaseStation.objects.filter(backhaul__bh_configured_on__isnull=False,
+                                               bh_port_name__isnull=False).select_related(
+        'backhaul__bh_configured_on',
+        'backhaul__bh_configured_on__machine__name',
+        'backhaul__bh_configured_on__device_type',
+        'backhaul__bh_capacity')
+
+    # get machines associated to all base station devices
+    machines = set([bs.backhaul.bh_configured_on.machine.name for bs in base_stations])
+
+    # get data sources
+    ports = set([bs.bh_port_name for bs in base_stations])
+
+    data_sources = set(DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True))
+
+    kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
+                    'switch_dl_util_kpi', 'switch_ul_util_kpi']
+    val_services = ['rici_dl_utilization', 'rici_ul_utilization', 'mrotek_dl_utilization', 'mrotek_ul_utilization',
+                    'switch_dl_utilization', 'switch_ul_utilization']
+
+    kpi = None
+    val = None
+
+    for machine in machines:
+        if val:
+            val |= ServiceStatus.objects.filter(
+                    device_name__in=bh_devices,
+                    service_name__in=val_services,
+                    data_source__in=data_sources).using(alias=machine)
+        else:
+            val = ServiceStatus.objects.filter(
+                    device_name__in=bh_devices,
+                    service_name__in=val_services,
+                    data_source__in=data_sources).using(alias=machine)
+
+        if kpi:
+            kpi |= UtilizationStatus.objects.filter(
+                    device_name__in=bh_devices,
+                    service_name__in=kpi_services,
+                    data_source__in=data_sources).using(alias=machine)
+        else:
+            kpi = UtilizationStatus.objects.filter(
+                    device_name__in=bh_devices,
+                    service_name__in=kpi_services,
+                    data_source__in=data_sources).using(alias=machine)
+
+    return update_backhaul_status(base_stations, kpi, val)
+
 
 @task()
 def gather_sector_status(technology):
@@ -357,6 +421,279 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
         return 0, 0
 
 
+def update_backhaul_status(basestations, kpi, val):
+    """
+    update the backhaul status per sector id wise
+    :return:
+    """
+
+    bulk_update_bhs = []
+    bulk_create_bhs = []
+    backhaul_capacity = None
+    current_in_per = None
+    current_in_val = None
+
+    avg_in_per = None
+    avg_in_val = None
+    peak_in_per = None
+    peak_in_val = None
+    peak_in_timestamp = None
+
+    current_out_per = None
+    current_out_val = None
+
+    avg_out_per = None
+    avg_out_val = None
+    peak_out_per = None
+    peak_out_val = None
+    peak_out_timestamp = None
+
+    sys_timestamp = 0
+    organization = get_default_org()
+    severity = 'unknown'
+    age = 0
+
+    for bs in basestations:
+        # base station device
+        bh_device = bs.backhaul.bh_configured_on
+
+        # base station device type
+        bs_device_type = bh_device.device_type
+
+        # device type mapping
+        # <device type: id>
+        # switch: 12
+        # pine: 13
+        # rici: 14
+        # define service names as per device type
+        val_ul_service = ''
+        val_dl_service = ''
+        kpi_ul_service = ''
+        kpi_dl_service = ''
+        # if device type is 'switch'
+        if bs_device_type == 12:
+            val_ul_service = 'switch_ul_utilization'
+            val_dl_service = 'switch_dl_utilization'
+            kpi_ul_service = 'switch_ul_util_kpi'
+            kpi_dl_service = 'switch_dl_util_kpi'
+        # if device type is 'pine converter'
+        elif bs_device_type == 13:
+            val_ul_service = 'switch_ul_utilization'
+            val_dl_service = 'switch_dl_utilization'
+            kpi_ul_service = 'switch_ul_util_kpi'
+            kpi_dl_service = 'switch_dl_util_kpi'
+        # if device type is 'rici converter'
+        elif bs_device_type == 14:
+            val_ul_service = 'rici_ul_utilization'
+            val_dl_service = 'rici_dl_utilization'
+            kpi_ul_service = 'rici_ul_util_kpi'
+            kpi_dl_service = 'rici_dl_util_kpi'
+        else:
+            pass
+
+        # get data source name
+        data_source = ""
+        try:
+            data_source = DevicePort.objects.get(alias=bs.backhaul.bh_port_name).name
+        except Exception as e:
+            pass
+
+        if data_source:
+            bhs = None
+            try:
+                bhs = BackhaulCapacityStatus.objects.get(
+                    backhaul=bs.backhaul,
+                    basestation=bs,
+                    bh_port_name=bs.backhaul.bh_port_name
+                )
+            except Exception as e:
+                pass
+
+            # backhaul capacity
+            backhaul_capacity = bs.backhaul.bh_capacity
+
+            # current in/out values
+            current_in_val_s = val.filter(
+                device_name=bh_device.device_name,
+                service_name=val_dl_service,
+                data_source=data_source
+            ).values_list('current_value', flat=True)
+
+            if current_in_val_s and len(current_in_val_s):
+                current_in_val = current_in_val_s[0]
+
+            current_out_val_s = val.filter(
+                device_name=bh_device.device_name,
+                service_name=val_ul_service,
+                data_source=data_source
+            ).values_list('current_value', flat=True)
+
+            if current_out_val_s and len(current_out_val_s):
+                current_out_val = current_out_val_s[0]
+
+            severity_s = {}
+
+            # current in/out percentage
+            current_in_per_s = kpi.filter(
+                device_name=bh_device.device_name,
+                service_name=kpi_ul_service,
+                data_source=data_source
+            ).values('current_value', 'age', 'severity', 'sys_timestamp')
+
+            if current_in_per_s and len(current_in_per_s):
+                current_in_per = current_in_per_s[0]['current_value']
+                severity_s[current_in_per_s[0]['severity']] = current_in_per_s[0]['age']
+                sys_timestamp = current_in_per_s[0]['sys_timestamp']
+
+            current_out_per_s = kpi.filter(
+                device_name=bh_device.device_name,
+                service_name=kpi_ul_service,
+                data_source=data_source
+            ).values('current_value', 'age', 'severity', 'sys_timestamp')
+
+            if current_out_per_s and len(current_out_per_s):
+                current_out_per = current_out_per_s[0]['current_value']
+                severity_s[current_out_per_s[0]['severity']] = current_out_per_s[0]['age']
+                sys_timestamp = current_out_per_s[0]['sys_timestamp']
+
+            severity, age = get_higher_severity(severity_s)
+
+            # now that we have severity and age all we need to do now is gather the average and peak values
+            avg_in_val = get_average_sector_util(device_object=bh_device,
+                                                 service=val_dl_service,
+                                                 data_source=data_source,
+                                                 getit='val'
+            )
+
+            avg_out_val = get_average_sector_util(device_object=bh_device,
+                                                 service=val_ul_service,
+                                                 data_source=data_source,
+                                                 getit='val'
+            )
+
+            avg_in_per = get_average_sector_util(device_object=bh_device,
+                                                 service=kpi_dl_service,
+                                                 data_source=data_source,
+                                                 getit='per'
+            )
+
+            avg_out_per = get_average_sector_util(device_object=bh_device,
+                                                 service=kpi_ul_service,
+                                                 data_source=data_source,
+                                                 getit='per'
+            )
+
+            peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                service=val_dl_service,
+                                                data_source=data_source,
+                                                getit='val'
+            )
+
+            peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                service=val_ul_service,
+                                                data_source=data_source,
+                                                getit='val'
+            )
+
+            peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                service=kpi_dl_service,
+                                                data_source=data_source,
+                                                getit='per'
+            )
+
+            peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                service=kpi_ul_service,
+                                                data_source=data_source,
+                                                getit='per'
+            )
+
+            if bhs:
+                # update the bhs
+                try:
+                    bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else ""
+                    bhs.current_in_per = float(current_in_per) if current_in_per else ""
+                    bhs.current_in_val = float(current_in_val) if current_in_val else ""
+                    bhs.avg_in_per = float(avg_in_per) if avg_in_per else ""
+                    bhs.avg_in_val = float(avg_in_val) if avg_in_val else ""
+                    bhs.peak_in_per = float(peak_in_per) if peak_in_per else ""
+                    bhs.peak_in_val = float(peak_in_val) if peak_in_val else ""
+                    bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else ""
+                    bhs.current_out_per = float(current_out_per) if current_out_per else ""
+                    bhs.current_out_val = float(current_out_val) if current_out_val else ""
+                    bhs.avg_out_per = float(avg_out_per) if avg_out_per else ""
+                    bhs.avg_out_val = float(avg_out_val) if avg_out_val else ""
+                    bhs.peak_out_per = float(peak_out_per) if peak_out_per else ""
+                    bhs.peak_out_val = float(peak_out_val) if peak_out_val else ""
+                    bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else ""
+                    bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else ""
+                    bhs.organization = bs.backhaul.organization if bs.backhaul.organization else ""
+                    bhs.severity = severity if severity else ""
+                    bhs.age = float(age) if age else ""
+                    # bhs.save()
+                    bulk_update_bhs.append(bhs)
+                except Exception as e:
+                    logger.info("Something wrong with backhaul status update. Exception: ", e.message)
+
+            else:
+                logger.debug(bulk_create_bhs)
+                try:
+                    bulk_create_bhs.append(
+                        BackhaulCapacityStatus
+                        (
+                            backhaul=bs.backhaul,
+                            basestation=bs,
+                            bh_port_name=bs.backhaul.bh_port_name,
+                            backhaul_capacity=float(backhaul_capacity),
+
+                            current_in_per=float(current_in_per),
+                            current_in_val=float(current_in_val),
+
+                            avg_in_per=float(avg_in_per),
+                            avg_in_val=float(avg_in_val),
+                            peak_in_per=float(peak_in_per),
+                            peak_in_val=float(peak_in_val),
+                            peak_in_timestamp=float(peak_in_timestamp),
+
+                            current_out_per=float(current_out_per),
+                            current_out_val=float(current_out_val),
+
+                            avg_out_per=float(avg_out_per),
+                            avg_out_val=float(avg_out_val),
+                            peak_out_per=float(peak_out_per),
+                            peak_out_val=float(peak_out_val),
+                            peak_out_timestamp=float(peak_out_timestamp),
+
+                            sys_timestamp=float(sys_timestamp),
+                            organization=bs.backhaul.organization,
+                            severity=severity,
+                            age=float(age)
+                        )
+                    )
+                except Exception as e:
+                    logger.info("Something wrong with backhaul status create. Exception: ", e.message)
+
+    if bulk_update_bhs or bulk_create_bhs:
+        g_jobs = list()
+
+        if len(bulk_create_bhs):
+            g_jobs.append(bulk_create.s(bulky=bulk_create_bhs, action='create', entity='backhaul'))
+
+        if len(bulk_update_bhs):
+            g_jobs.append(bulk_update.s(bulky=bulk_update_bhs, action='update', entity='backhaul'))
+
+        job = group(g_jobs)
+
+        result = job.apply_async()
+        ret = False
+
+        for r in result.get():
+            ret |= r
+
+        return ret
+    else:
+        return False
+
+
 def update_sector_status(sectors, cbw, kpi, val, technology):
     """
     update the sector status per sector id wise
@@ -409,7 +746,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     sector_sector_id=sector.sector_id
                 )
             except Exception as e:
-                logger.exception(e)
+                pass
 
             if 'pmp1' in sector.sector_configured_on_port.name.lower():
                 sector_capacity_s = cbw.filter(
@@ -897,7 +1234,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
 
 
 @task()
-def bulk_update(bulky, action='update'):
+def bulk_update(bulky, action='update', entity='sector'):
     """
 
     :param bulky: bulk object list
@@ -915,14 +1252,17 @@ def bulk_update(bulky, action='update'):
             return True
 
         elif action == 'create':
-            SectorCapacityStatus.objects.bulk_create(bulky)
+            if entity == 'backhaul':
+                BackhaulCapacityStatus.objects.bulk_create(bulky)
+            else:
+                SectorCapacityStatus.objects.bulk_create(bulky)
             return True
 
     return False
 
 
 @task()
-def bulk_create(bulky, action='create'):
+def bulk_create(bulky, action='create', entity='sector'):
     """
 
     :param bulky: bulk object list
@@ -940,7 +1280,10 @@ def bulk_create(bulky, action='create'):
             return True
 
         elif action == 'create':
-            SectorCapacityStatus.objects.bulk_create(bulky)
+            if entity == 'backhaul':
+                BackhaulCapacityStatus.objects.bulk_create(bulky)
+            else:
+                SectorCapacityStatus.objects.bulk_create(bulky)
             return True
 
     return False

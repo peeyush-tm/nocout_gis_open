@@ -432,6 +432,10 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['StarmaxSS']
     },
+    'gather_backhaul_status': {
+        'task': 'capacity_management.tasks.gather_backhaul_status',
+        'schedule': timedelta(seconds=300)
+    },
     #Remove all caching per 6 hours
     'cache_clear_task': {
         'task': 'nocout.tasks.cache_clear_task',
@@ -447,7 +451,6 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=900),
         'kwargs': {'technology':'WiMAX'}
     }
-
 }
 
 
