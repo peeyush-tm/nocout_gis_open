@@ -12696,7 +12696,7 @@ def get_organizations():
     return orgs
 
 
-def get_devices(technology='WiMAX', type=None, site_name=None):
+def get_devices(technology='WiMAX', rf_type=None, site_name=None):
     """
 
     :param technology:
@@ -12711,7 +12711,7 @@ def get_devices(technology='WiMAX', type=None, site_name=None):
                     'machine__name'
     ]
 
-    if type and type == 'customer':
+    if rf_type and rf_type == 'customer':
         network_devices = organization_customer_devices(organizations=organizations,
                                                        technology=technology
         )
@@ -12728,7 +12728,7 @@ def get_devices(technology='WiMAX', type=None, site_name=None):
 
 
 @task()
-def get_topology(technology, type=None, site_name=None):
+def get_topology(technology, rf_type=None, site_name=None):
     """
     Get the current topology per technology WiMAX/PMP
     :param technology:
@@ -12737,7 +12737,7 @@ def get_topology(technology, type=None, site_name=None):
 
     count = False
 
-    network_devices = get_devices(technology, type=type, site_name=site_name)
+    network_devices = get_devices(technology, rf_type=rf_type, site_name=site_name)
     device_list = []
 
 
@@ -12822,9 +12822,9 @@ def get_topology(technology, type=None, site_name=None):
 
                 #resolve for circuit
                 #circuit_obj = ss_obj.circuit_set.get()
-                if circuit_obj.sector.sector_id != sector_id:
-                    circuit_obj.sector = sector_object
-                    save_circuit_list.append(circuit_obj)
+                #if circuit_obj.sector.sector_id != sector_id:
+                circuit_obj.sector = sector_object
+                save_circuit_list.append(circuit_obj)
 
             except Exception as e:
                 #ss object is not found
@@ -12870,7 +12870,7 @@ def topology_site_wise(technology):
     g_jobs = list()
 
     for site in sites:
-        g_jobs.append(get_topology.s(technology=technology, type=None, site_name=site))
+        g_jobs.append(get_topology.s(technology=technology, rf_type=None, site_name=site))
 
     job = group(g_jobs)
     result = job.apply_async()
@@ -12894,7 +12894,7 @@ def get_topology_with_substations(technology):
 
     g_jobs = list()
 
-    customer_devices = get_devices(technology=technology, type='customer')
+    customer_devices = get_devices(technology=technology, rf_type='customer')
     device_list = []
     for device in customer_devices:
         device_list.append(

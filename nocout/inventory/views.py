@@ -114,7 +114,10 @@ class InventoryListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
     model = Inventory
     required_permissions = ('inventory.view_inventory',)
+
+    # columns to display Inventory List Datatable columns.
     columns = ['alias', 'user_group__name', 'organization__name', 'description']
+    # order columns is list of columns used for sorting the columns which is in this list.
     order_columns = ['alias', 'user_group__name', 'organization__name', 'description']
 
     def filter_queryset(self, qs):
@@ -257,6 +260,9 @@ def inventory_details_wrt_organization(request):
 class SelectAntennaListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.
+    :param Select2Mixin:
+            ListView:
+    :return qs:
     """
     model = Antenna
 
@@ -299,7 +305,12 @@ class AntennaListingTable(PermissionsRequiredMixin,
         BaseDatatableView,
     ):
     """
-    Class based View to render Antenna Data table.
+    Class based View to render Antenna Data table. Returns json data for data table.
+    :param Mixins- PermissionsRequiredMixin
+                   DatatableOrganizationFilterMixin
+                   DatatableSearchMixin
+                   BaseDatatableView
+    :return json_data
     """
     model = Antenna
     columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
@@ -995,11 +1006,19 @@ class SubStationListingTable(PermissionsRequiredMixin,
                      'tower_height', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
+        """
+        Method used for filter of unused and corrupted sub station.
+        :return qs:
+        """
+        # getting the queryset from get_initial_queryset method of DatatableOrganizationFilterMixin.
         qs = super(SubStationListingTable, self).get_initial_queryset()
 
+        # if tab is in self.request.GET, then tab could be either 'corrupted' or 'unused'.
         if 'tab' in self.request.GET:
+            # if tab is 'corrupted', then return the substation which has no device or more than one circuit.
             if self.request.GET.get('tab') == 'corrupted':
                 qs = qs.annotate(num_circuit=Count('circuit')).filter(Q(device__isnull=True) | Q(num_circuit__gt=1))
+            # if tab is 'unused', then return the substation which has no circuit.
             elif self.request.GET.get('tab') == 'unused':
                 qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
 
@@ -1013,6 +1032,7 @@ class SubStationListingTable(PermissionsRequiredMixin,
         :param qs:
         :return qs
         """
+        # getting key, value pair from qs which is returned from method get_initial_queryset.
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
@@ -1023,15 +1043,20 @@ class SubStationListingTable(PermissionsRequiredMixin,
             except Exception as e:
                 logger.info("Sub Station Device not present. Exception: ", e.message)
 
+            # getting device_id from dct.
             device_id = dct.pop('id')
+
+            # if user has permission to edit the substation then edit option will be showed in data table.
             if self.request.user.has_perm('inventory.change_substation'):
                 edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
+            # if user has permission to delete the substation then edit option will be showed in data table
             if self.request.user.has_perm('inventory.delete_substation'):
                 delete_action = '<a href="/sub_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
+            # if edit_action or delete_action, then action column will be displayed in datatable else not.
             if edit_action or delete_action:
                 dct.update(actions= edit_action+delete_action)
         return json_data
@@ -1068,6 +1093,11 @@ class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_substation',)
 
     def get_queryset(self):
+        """
+        Method to filter the substation on the basis of organization and it's descendants(in case of admin).
+        So as user can update the substation of self organization or it's descendants.
+        :return queryset:
+        """
         return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
 
 
@@ -1135,20 +1165,26 @@ class CircuitListingTable(PermissionsRequiredMixin,
     """
     model = Circuit
     required_permissions = ('inventory.view_circuit',)
+    # columns are used for list of fields which should be displayed on data table.
     columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
                'sector__sector_configured_on__ip_address', 'customer__alias',
                'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
+    #order_columns is used for list of fields which is used for sorting the data table.
     order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
                      'sector__sector_configured_on__ip_address', 'customer__alias',
                      'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
+    #search_columns is used for list of fields which is used for searching the data table.
     search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
                       'sector__sector_configured_on__ip_address', 'customer__alias',
                'sub_station__alias', 'sub_station__device__ip_address']
 
     def get_initial_queryset(self):
+        # getting the queryset from get_initial_queryset method of DatatableOrganizationFilterMixin.
         qs = super(CircuitListingTable, self).get_initial_queryset()
 
+        # if unused tab.
         if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
+            # return the circuit which has no sub_station or no sector or no customer.
             qs = qs.filter( Q(sub_station__isnull=True) | Q(sector__isnull=True) | Q(customer__isnull=True))
 
         return qs
@@ -4941,7 +4977,7 @@ def getSearchData(request, search_by="default", pk=0):
                 #Update response dict
                 result["success"] = 1
                 result["message"] = "Search Successfully."
-                
+
                 result["data"]["inventory_page_url"] = inventory_page_url
                 result["data"]["perf_page_url"] = perf_page_url
                 result["data"]["alert_page_url"] = alert_page_url

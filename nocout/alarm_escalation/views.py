@@ -98,6 +98,9 @@ from nocout.mixins.generics import FormRequestMixin
 
 
 class LevelList(TemplateView):
+    """
+    Class Based View to render Level List Page.
+    """
     model = EscalationLevel
     template_name = "level/level_list.html"
 
@@ -131,7 +134,7 @@ class LevelListingTable(PermissionsRequiredMixin,
         BaseDatatableView,
     ):
     """
-    Class based View to render Escalation Data table.
+    Class based View to render Escalation Level Data table.
     """
     model = EscalationLevel
     columns = [ 'name', 'region_name', 'organization__alias', 'emails', 'phones', 'service__alias', 'device_type__alias', 'service_data_source__alias',

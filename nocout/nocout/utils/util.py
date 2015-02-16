@@ -67,10 +67,12 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
+
 if getattr(settings, 'PROFILE'):
     from line_profiler import LineProfiler as LLP
     from memory_profiler import LineProfiler as MLP
     from memory_profiler import show_results
+
 
 # #profiler
 def time_it(debug=getattr(settings, 'PROFILE')):
@@ -118,6 +120,7 @@ def time_it(debug=getattr(settings, 'PROFILE')):
             return wrapper
         return decorator
 
+
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 #defining utility to exatly choose a database to query from
 #django routers are of no use
@@ -126,6 +129,7 @@ def time_it(debug=getattr(settings, 'PROFILE')):
 #and we will return the results of the database to be used
 
 import random
+
 
 @time_it()
 def nocout_db_router(db='default', levels=0):
@@ -152,6 +156,7 @@ def nocout_db_router(db='default', levels=0):
 
     return random.choice(db_slave_up)
 
+
 @time_it()
 def nocout_query_results(query_set=None, using='default', levels=0):
     """
@@ -169,6 +174,7 @@ def nocout_query_results(query_set=None, using='default', levels=0):
             db = nocout_db_router(db=using, levels=levels)
             return query_set.using(alias=db)
     return None
+
 
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 def test_connection_to_db(database_name):
@@ -188,6 +194,7 @@ def test_connection_to_db(database_name):
         #general exception handelling
         #because connection might not exists in settings file
         return False
+
 
 @time_it()
 def fetch_raw_result(query, machine='default'):
@@ -225,7 +232,6 @@ def dict_fetchall(cursor):
         for row in cursor.fetchall()
     ]
 
-#duplicate code: TODO : remove
 
 def format_value(format_this, type_of=None):
     """
@@ -268,8 +274,10 @@ def format_value(format_this, type_of=None):
 
     return 'NA'
 
+
 ###caching
 from django.core.cache import cache
+
 
 # get the cache key for storage
 def cache_get_key(*args, **kwargs):
@@ -347,6 +355,7 @@ def cache_for(time):
 
     return decorator
 
+
 ## TODO: remove the duplicate code for GIS inventory data
 @cache_for(300)  #caching GIS inventory
 def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None):
@@ -385,22 +394,23 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None)
         if technology:
             tech = " where technology.name = '{0}'".format(technology)
             if type_rf != 'bh':
-                rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
+                rf_tech = " where SECTOR_TECH = '{0}' ".format(technology)
 
     else:
         added_device = ""
         tech = ""
+        rf_tech = " "
 
     added_device += tech
 
     if type_rf == 'sector':
-        rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
+        rf_tech = " where SECTOR_TECH = '{0}' ".format(technology)
     elif type_rf == 'ss':
         rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
     elif type_rf == 'bh':
         rf_tech = " where BHTECH = '{0}' ".format(technology)
     else:
-        rf_tech = ""
+        pass
 
     gis = '''
         select * from (

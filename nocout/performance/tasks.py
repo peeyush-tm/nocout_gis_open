@@ -1,12 +1,12 @@
-from celery import task
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+from celery import task, group
 from pprint import pformat
 from nocout.utils.util import fetch_raw_result
-from device.models import Device
 # from performance.views import device_last_down_time
 import performance.views as perf_views
 # getLastXMonths
 from performance.models import SpotDashboard
-from device.models import DeviceType, DeviceTechnology
+from device.models import DeviceType, DeviceTechnology, SiteInstance, Device
 from inventory.models import Sector
 import inventory.tasks as inventory_tasks
 
@@ -14,7 +14,6 @@ import inventory.utils.util as inventory_utils
 
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
-
 
 @task()
 def device_last_down_time_task(device_type=None):
@@ -41,17 +40,42 @@ def device_last_down_time_task(device_type=None):
                             +---------------+----+
     :return: True
     """
-    devices = Device.objects.filter(is_added_to_nms=1)
+    g_jobs = list()
+    ret = False
+
+    #devices = Device.objects.filter(is_added_to_nms=1)
+    #logger.debug(devices)
+    devices = None
     try:
         if device_type:
             dtype = DeviceType.objects.filter(name=device_type).get().id
-            devices = devices.filter(device_type=dtype)
-    except:
-        pass
+            devices = Device.objects.filter(is_added_to_nms=1, device_type=dtype)
+    except Exception as e:
+        return ret
 
-    for device_object in devices:
-        x = perf_views.device_last_down_time(device_object=device_object)
-    return True
+    sites = SiteInstance.objects.all().values_list('name', flat=True)
+
+    for site in sites:
+        if devices:
+            site_devices = devices.filter(site_instance__name=site)
+            if site_devices and site_devices.count():
+                g_jobs.append(device_last_down_time_site_wise.s(devices=site_devices))
+        else:
+            continue
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
+
+# @peeyush-tm - Please varify
+# <<<<<<< HEAD
+    # for device_object in devices:
+    #     x = perf_views.device_last_down_time(device_object=device_object)
+    # return True
 
 
 ################### Task for Sector Spot Dashboard Calculation - Start ###################
@@ -359,3 +383,20 @@ def updateSpotDashboardData(calculated_data=[],technology=''):
 
 
 ################### Task for Sector Spot Dashboard Calculation - End ###################
+
+# @peeyush-tm - Please varify
+# =======
+
+@task()
+def device_last_down_time_site_wise(devices):
+    """
+    collect device information per site wise
+    :return: True
+    """
+    if devices and devices.count():
+        for device_object in devices:
+            x = device_last_down_time(device_object=device_object)
+        return True
+    else:
+        return False
+# >>>>>>> f4a256dee76126bba1c0b2f5bed8b6242a3ec555
