@@ -659,10 +659,11 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		console.log("Plot Sector Polygon Start Time :- "+ new Date().toLocaleString());
 	}
 
-	var polyPathArray = [],
-		halfPt = Math.floor(pointsArray.length / (+2)),
-		startLat = pointsArray[halfPt].lat,
-		startLon = pointsArray[halfPt].lon;
+	var polyPathArray = [];
+	var halfPt = Math.floor(pointsArray.length / (+2));
+	
+	var startLat = pointsArray[halfPt].lat;
+	var startLon = pointsArray[halfPt].lon;
 
 	for(var i=pointsArray.length;i--;) {
 		var pt = new OpenLayers.Geometry.Point(pointsArray[i].lon, pointsArray[i].lat);
@@ -677,10 +678,11 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		sWidth = 2;
 	}
 
-	var linearRing = new OpenLayers.Geometry.LinearRing(polyPathArray),
-		sector = new OpenLayers.Geometry.Polygon([linearRing]),
-		style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']),
-		item_info_index = sectorInfo.sector_info_index > -1 ? sectorInfo.sector_info_index : 0;
+	var linearRing = new OpenLayers.Geometry.LinearRing(polyPathArray);
+
+	var sector = new OpenLayers.Geometry.Polygon([linearRing]);
+
+	var style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
 
 	style.strokeColor = sColor;
 	style.fillColor = bgColor;
@@ -699,7 +701,6 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		pointType	     : "sector",
 		strokeOpacity    : 1,
 		fillOpacity 	 : 0.5,
-		item_index 		 : item_info_index,
 		strokeWeight     : sWidth,
 		poll_info 		 : [],
 		radius 			 : rad,
