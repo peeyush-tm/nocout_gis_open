@@ -1,5 +1,8 @@
 from django.db import models
 
+from inventory.models import Sector
+from device.models import Device
+
 
 ##################################################################
 ############ One Table To Rule them all Performance##############
@@ -1988,3 +1991,38 @@ class UtilizationStatus(models.Model):
         unique_together = (
             ("device_name", "service_name", "data_source")
         )
+
+
+class SpotDashboard(models.Model):
+    """
+    Sector SpotDashboard model
+    """
+
+    sector = models.ForeignKey(Sector)
+    device = models.ForeignKey(Device)
+    #static information so as to save another db
+    sector_sector_id = models.CharField('Sector ID', max_length=64, unique=True, null=True, blank=True)
+    sector_sector_configured_on = models.CharField('IP Address', max_length=64,  null=True, blank=True)
+    sector_device_technology = models.CharField('Technology', max_length=64,  null=True, blank=True)
+    #Calculated information
+    # Last 6 monthns calculation for UL issues
+    ul_issue_1 = models.BooleanField('UL Issue 1', default=False)
+    ul_issue_2 = models.BooleanField('UL Issue 2', default=False)
+    ul_issue_3 = models.BooleanField('UL Issue 3', default=False)
+    ul_issue_4 = models.BooleanField('UL Issue 4', default=False)
+    ul_issue_5 = models.BooleanField('UL Issue 5', default=False)
+    ul_issue_6 = models.BooleanField('UL Issue 6', default=False)
+    # Last 6 monthns calculation for Augmentation
+    augment_1 = models.BooleanField('Augementation 1', default=False)
+    augment_2 = models.BooleanField('Augementation 2', default=False)
+    augment_3 = models.BooleanField('Augementation 3', default=False)
+    augment_4 = models.BooleanField('Augementation 4', default=False)
+    augment_5 = models.BooleanField('Augementation 5', default=False)
+    augment_6 = models.BooleanField('Augementation 6', default=False)
+    # Last 6 monthns calculation for SIA
+    sia_1 = models.BooleanField('SIA 1', default=False)
+    sia_2 = models.BooleanField('SIA 2', default=False)
+    sia_3 = models.BooleanField('SIA 3', default=False)
+    sia_4 = models.BooleanField('SIA 4', default=False)
+    sia_5 = models.BooleanField('SIA 5', default=False)
+    sia_6 = models.BooleanField('SIA 6', default=False)
