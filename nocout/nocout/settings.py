@@ -437,6 +437,16 @@ CELERYBEAT_SCHEDULE = {
         'task': 'nocout.tasks.cache_clear_task',
         'schedule': crontab(minute=0, hour='*/6'), #per 6 hours delete all cache
     },
+    'get_all_sector_devices-PMP': {
+        'task': 'performance.tasks.get_all_sector_devices',
+        'schedule': timedelta(seconds=600),
+        'kwargs': {'technology':'PMP'}
+    },
+    'get_all_sector_devices-WiMAX': {
+        'task': 'performance.tasks.get_all_sector_devices',
+        'schedule': timedelta(seconds=900),
+        'kwargs': {'technology':'WiMAX'}
+    }
 
 }
 
