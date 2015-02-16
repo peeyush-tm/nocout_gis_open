@@ -1,6 +1,10 @@
+import re
 from django import forms
+from django.core.exceptions import ValidationError
+from django.forms.util import ErrorList
+from organization.models import Organization
 
-from scheduling_management.models import Event, Weekdays
+from scheduling_management.models import Event, Weekdays, SNMPTrapSettings
 from device.models import Device, DeviceTechnology
 import logging
 logger = logging.getLogger(__name__)
@@ -67,3 +71,79 @@ class EventForm(forms.ModelForm):
         """
         model = Event
         exclude = ('created_by', 'organization')
+
+
+# *************************************** Antenna **************************************
+class SNMPTrapSettingsForm(forms.ModelForm):
+    """
+    Class Based View SNMPTrapSettings Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        super(SNMPTrapSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['device_technology'].empty_label = 'Select'
+        self.fields['device_vendor'].empty_label = 'Select'
+        self.fields['device_model'].empty_label = 'Select'
+        self.fields['device_type'].empty_label = 'Select'
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = SNMPTrapSettings
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = SNMPTrapSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This trap name is already in use.')
+        return name
+
+    def clean(self):
+        """
+        Validations for antenna form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Trap name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data

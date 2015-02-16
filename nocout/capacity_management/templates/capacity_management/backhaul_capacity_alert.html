@@ -30,18 +30,8 @@
             <!-- backhaul_capacity_alert_container Start-->
             <div id="backhaul_capacity_alert_container" class="" style="overflow:auto;">
                 
-                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                    <thead>
-                        <th>City</th>
-                        <th>BS IP</th>
-                        <th>BS Name</th>
-                        <th>BS Type</th>
-                        <th>BH Type</th>
-                        <th>Offnet/Onnet</th>
-                        <th>BH Capacity</th>
-                        <th>Status</th>
-                        <th>Aging</th>
-                    </thead>
+                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="backhaulAlertCapacityList">
+                    <thead></thead>
                     <tbody></tbody>
                 </table>
 
@@ -54,9 +44,21 @@
 
 
 {% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 <script type="text/javascript">
-    /*This is a temporary code which is replace when data for data table is provided*/
-    $(".datatable").DataTable();
+    var dataTableInstance = "";
+    $(document).ready(function(e) {
+        /*Show the spinner*/
+        showSpinner();
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
+        /*Grid headers object*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+        var ajax_url = '{% url "BackhaulAugmentationAlertsListing" %}';
+
+        dataTableInstance.createDataTable("backhaulAlertCapacityList", gridHeadersObj, ajax_url, false);
+    });
 
     function nw_alert_showFilters() {
 
