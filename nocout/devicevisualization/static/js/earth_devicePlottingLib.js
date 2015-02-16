@@ -1230,7 +1230,6 @@ var state_wise_device_label_text= {};
 					sector_color = earth_self.makeRgbaObject(fetched_color),
 					sector_perf_url = sectorsArray[j].perf_page_url ? sectorsArray[j].perf_page_url : "",
 					sector_inventory_url = sectorsArray[j].inventory_url ? sectorsArray[j].inventory_url : "",
-					sector_item_index = sectorsArray[j].item_index > -1 ? sectorsArray[j].item_index : j,
 					sectorInfo = {
 						"map": 'current',
 						"info" : sector_infoWindow_content,
@@ -1242,7 +1241,7 @@ var state_wise_device_label_text= {};
 						"vendor" : sectorsArray[j].vendor,
 						"sector_perf_url" : sector_perf_url,
 						"inventory_url" : sector_inventory_url,
-						"sector_info_index" : sector_item_index
+						"sector_info_index" : j
 					},
 					orientation = $.trim(sectorsArray[j].orientation),
 					sector_child = sectorsArray[j].sub_station,
@@ -1252,13 +1251,7 @@ var state_wise_device_label_text= {};
 					sectorRadius = (+sectorsArray[j].radius),
 					startEndObj = {},
 					startLon = "",
-					startLat = "",
-					sect_height = gisPerformanceClass.getKeyValue(
-						sector_infoWindow_content,
-						"antenna_height",
-						true,
-						sector_item_index
-					);
+					startLat = "";
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
 				/*If radius is greater than 4 Kms then set it to 4.*/
@@ -1326,7 +1319,7 @@ var state_wise_device_label_text= {};
 							vendor 			 : sectorsArray[j].vendor,
 							deviceExtraInfo  : sector_infoWindow_content,
 							deviceInfo 		 : sectorsArray[j].device_info,
-							item_index 		 : sector_item_index,
+							item_index 		 : j,
 							poll_info 		 : [],
 							pl 			 	 : "",
 							rta  			 : "",
@@ -1344,6 +1337,7 @@ var state_wise_device_label_text= {};
 							state 		 	 : resultantMarkers[i].data.state
 						};
 
+						var sect_height = sectorsArray[j].antenna_height;
 						// Create Sector placemark.
 						var sector_marker = earth_self.makePlacemark(
 							sectorMarkerIcon,
@@ -1352,7 +1346,6 @@ var state_wise_device_label_text= {};
 							sectorsArray[j].sector_configured_on+"_"+j,
 							sectorInfo
 						);
-
 						updateGoogleEarthPlacemark(sector_marker, sectorMarkerIcon);
 						/*Push Sector placemark to sector placemark array*/
 						plotted_sector_earth.push(sector_marker);
@@ -1428,13 +1421,12 @@ var state_wise_device_label_text= {};
 				}
 
 				var subStationData = sectorsArray[j].sub_station ? sectorsArray[j].sub_station : [],
-					ss_infoWindow_content = sectorsArray[j].ss_info_list ? sectorsArray[j].ss_info_list : [];
+					ss_infoWindow_content = sectorsArray[j].ss_info_list ? sectorsArray[j].ss_info_list : [],;
 
 				for(var k=0;k<subStationData.length;k++) {
 					
 					var ssDataObj = subStationData[k],
-						ss_item_info_index = ssDataObj.data.item_index > -1 ? ssDataObj.data.item_index : k,
-						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,k),
 						ss_perf_url = ssDataObj.data.perf_page_url ? ssDataObj.data.perf_page_url : "",
 						ss_inventory_url = ssDataObj.data.inventory_url ? ssDataObj.data.inventory_url : "";
 					
@@ -1451,7 +1443,7 @@ var state_wise_device_label_text= {};
 						clusterIcon 	 	: ssMarkerIcon,
 						pointType 		 	: "sub_station",
 						dataset 		 	: ss_infoWindow_content,
-						item_index 			: ss_item_info_index,
+						item_index 			: k,
 						bhInfo 			 	: [],
 						poll_info 		 	: [],
 						pl 				 	: "",
@@ -1567,7 +1559,7 @@ var state_wise_device_label_text= {};
 						var ss_info = {
 								"info" : ss_infoWindow_content,
 								"antenna_height" : ssDataObj.data.antenna_height,
-								"ss_item_index" : ss_item_info_index
+								"ss_item_index" : k
 							},
 							base_info = {
 								"info" : resultantMarkers[i].data.param.base_station,
@@ -1615,6 +1607,7 @@ var state_wise_device_label_text= {};
 				    		ssLinkArray_filtered = ssLinkArray;
 
 				    		allMarkersObject_earth['path']['line_'+ssDataObj.name] = linkLinePlacemark;
+
 						}
 					}
 				}

@@ -1938,7 +1938,6 @@ function devicePlottingClass_gmap() {
 					sector_color = fetched_color,
 					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
 					sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
-					sector_item_index = sector_array[j].item_index > -1 ? sector_array[j].item_index : j,
 					sectorInfo = {
 						"info" : sector_infoWindow_content,
 						"bs_name" : bs_ss_devices[i].name,
@@ -1949,7 +1948,7 @@ function devicePlottingClass_gmap() {
 						"vendor" : sector_array[j].vendor,
 						"sector_perf_url" : sector_perf_url,
 						"inventory_url" : sector_inventory_url,
-						"item_index" : sector_item_index
+						"item_index" : j
 					},
 					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sector_array[j].orientation),
@@ -1958,7 +1957,7 @@ function devicePlottingClass_gmap() {
 					rad = sectorRadius && (sectorRadius > 0) ? sectorRadius : 0.5,
 					startLon = "",
 					startLat = "",
-					sect_height = gisPerformanceClass.getKeyValue(sector_infoWindow_content,"antenna_height",true,sector_item_index);
+					sect_height = gisPerformanceClass.getKeyValue(sector_infoWindow_content,"antenna_height",true,j);
 
 				var startEndObj = {};
 				// if(sector_tech != "ptp" && sector_tech != "p2p") {
@@ -2020,7 +2019,7 @@ function devicePlottingClass_gmap() {
 							technology 		 	: sector_array[j].technology,
 							vendor 				: sector_array[j].vendor,
 							deviceExtraInfo 	: sector_infoWindow_content,
-							item_index			: sector_item_index,
+							item_index			: j,
 							deviceInfo 			: sector_array[j].device_info,
 							poll_info 			: [],
 							pl 					: "",
@@ -2103,10 +2102,9 @@ function devicePlottingClass_gmap() {
 				for(var k=sector_child.length;k--;) {
 
 					var ss_marker_obj = sector_child[k],
-						ss_item_info_index = ss_marker_obj.data.item_index > -1 ? ss_marker_obj.data.item_index : k,
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
-						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_infoWindow_content,"antenna_height",true,ss_item_info_index),
-						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
+						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_infoWindow_content,"antenna_height",true,k),
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,k),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
@@ -2130,7 +2128,7 @@ function devicePlottingClass_gmap() {
 				    	clusterIcon 	 : 	ss_icon_obj,
 				    	pointType	     : 	"sub_station",
 				    	dataset 	     : 	ss_infoWindow_content,
-				    	item_index 		 :  ss_item_info_index,
+				    	item_index 		 :  k,
 				    	bhInfo 			 : 	[],
 				    	poll_info 		 :  [],
 				    	pl 				 :  "",
@@ -2244,7 +2242,7 @@ function devicePlottingClass_gmap() {
 					var ss_info = {
 							"info" : ss_infoWindow_content,
 							"antenna_height" : ss_antenna_height,
-							"ss_item_index" : ss_item_info_index
+							"ss_item_index" : k
 						},
 						base_info = {
 							"info" : bs_ss_devices[i].data.param.base_station,
@@ -2265,27 +2263,29 @@ function devicePlottingClass_gmap() {
 		    		var link_color = ss_marker_obj.data.link_color;
 		    		linkColor = link_color && link_color != 'NA' ? link_color : 'rgba(74,72,94,0.58)';
 
-	    			if(ss_marker_obj.data.show_link == 1) {
-	    				/*Create the link between BS & SS or Sector & SS*/
-				    	var ss_link_line = gmap_self.createLink_gmaps(
-				    		startEndObj,
-				    		linkColor,
-				    		base_info,
-				    		ss_info,
-				    		sect_height,
-				    		sector_array[j].sector_configured_on,
-				    		ss_marker_obj.name,
-				    		bs_ss_devices[i].name,
-				    		bs_ss_devices[i].originalId,
-				    		sector_array[j].sector_id
-			    		);
-				    	ssLinkArray.push(ss_link_line);
-				    	ssLinkArray_filtered = ssLinkArray;
+	    			// if(zoom_level > 9) {
+		    			if(ss_marker_obj.data.show_link == 1) {
+		    				/*Create the link between BS & SS or Sector & SS*/
+					    	var ss_link_line = gmap_self.createLink_gmaps(
+					    		startEndObj,
+					    		linkColor,
+					    		base_info,
+					    		ss_info,
+					    		sect_height,
+					    		sector_array[j].sector_configured_on,
+					    		ss_marker_obj.name,
+					    		bs_ss_devices[i].name,
+					    		bs_ss_devices[i].originalId,
+					    		sector_array[j].sector_id
+				    		);
+					    	ssLinkArray.push(ss_link_line);
+					    	ssLinkArray_filtered = ssLinkArray;
 
-				    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
+					    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
 
-				    	// allMarkersArray_gmap.push(ss_link_line);
-	    			}
+					    	// allMarkersArray_gmap.push(ss_link_line);
+		    			}
+	    			// }
 				}
     		}
 
@@ -3098,8 +3098,7 @@ function devicePlottingClass_gmap() {
 		var windowContent = "",
 			infoTable =  "",
 			perfContent = "",
-			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "",
-			direct_val_keys = ['pos_link1','pos_link2'];
+			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "";
 
 
 		// Tabs Structure HTML
@@ -3206,13 +3205,7 @@ function devicePlottingClass_gmap() {
 					}
 					if(ss_actual_data[i].show == 1) {
 						var val = ss_actual_data[i]['value'] || ss_actual_data[i]['value'] == 0 ? ss_actual_data[i]['value'] : "",
-							actual_val = "";
-						
-						if(direct_val_keys.indexOf(ss_actual_data[i].name) > -1) {
-							actual_val = val;
-						} else {
 							actual_val = String(val).split("|")[ss_item_index] ? String(val).split("|")[ss_item_index] : "";
-						}
 
 						infoTable += "<tr><td>"+ss_actual_data[i].title+"</td><td>"+actual_val+"</td></tr>";
 					}
@@ -3338,13 +3331,7 @@ function devicePlottingClass_gmap() {
 				
 				if(static_info[i].show) {
 					var val = static_info[i]['value'] || static_info[i]['value'] == 0 ? static_info[i]['value'] : "",
-						actual_val = "";
-						
-					if(direct_val_keys.indexOf(static_info[i].name) > -1) {
-						actual_val = val;
-					} else {
 						actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
-					}
 
 					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td class='"+highlight_class+"'>"+actual_val+"</td></tr>";		
 				}
@@ -3470,13 +3457,7 @@ function devicePlottingClass_gmap() {
 
 					if(startPtInfo[i].show == 1) {
 						var val = startPtInfo[i]['value'] || startPtInfo[i]['value'] == 0 ? startPtInfo[i]['value'] : "",
-							actual_val = "";
-
-						if(direct_val_keys.indexOf(startPtInfo[i].name) > -1) {
-							actual_val = val;
-						} else {
 							actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
-						}
 
 						infoTable += "<tr><td class='polled_param_td'>"+startPtInfo[i]['title']+"</td><td>"+actual_val+"</td></tr>";
 					}
@@ -4053,7 +4034,7 @@ function devicePlottingClass_gmap() {
 	    	}
 	    });
 
-		$(".modal-dialog").css("width","90%");
+		$(".modal-dialog").css("width","70%");
 
 		/*Plotting chart with points array using jquery.flot.js*/
 		var fresnelChart = $.plot(

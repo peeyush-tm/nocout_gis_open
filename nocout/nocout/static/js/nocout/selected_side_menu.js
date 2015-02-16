@@ -572,7 +572,7 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
 
     if(isFormSubmit === 0) {
         var oldFieldsArray = $("form input").serializeArray(),
-            select_boxes = $("form select");
+            select_boxes = $("select");
 
         setTimeout(function() {
             for(var i=0;i<select_boxes.length;i++) {
@@ -653,7 +653,7 @@ $("form").submit(function(e) {
         if(isFormSubmit === 0) {
 
             var newFieldsArray = $("form input").serializeArray(),
-                select_boxes = $("form select"),
+                select_boxes = $("select"),
                 modifiedFieldsStr = "[";
             /*Get New Fields*/
             for(var i=0;i<select_boxes.length;i++) {
