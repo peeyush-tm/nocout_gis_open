@@ -442,15 +442,17 @@ CELERYBEAT_SCHEDULE = {
         'task': 'nocout.tasks.cache_clear_task',
         'schedule': crontab(minute=0, hour='*/6'), #per 6 hours delete all cache
     },
+    #sector spot dashboard jobs
+    #will run on STATUS tables. must run within 5 minutes
     'get_all_sector_devices-PMP': {
         'task': 'performance.tasks.get_all_sector_devices',
-        'schedule': timedelta(seconds=600),
-        'kwargs': {'technology':'PMP'}
+        'schedule': timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP'}
     },
     'get_all_sector_devices-WiMAX': {
         'task': 'performance.tasks.get_all_sector_devices',
-        'schedule': timedelta(seconds=900),
-        'kwargs': {'technology':'WiMAX'}
+        'schedule': timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX'}
     }
 }
 

@@ -1,8 +1,8 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 from celery import task, group
-from pprint import pformat
+# nocout utils import
 from nocout.utils.util import fetch_raw_result
-# from performance.views import device_last_down_time
+# performance views import
 import performance.views as perf_views
 # getLastXMonths
 from performance.models import SpotDashboard
@@ -13,7 +13,9 @@ import inventory.tasks as inventory_tasks
 import inventory.utils.util as inventory_utils
 
 from celery.utils.log import get_task_logger
+
 logger = get_task_logger(__name__)
+
 
 @task()
 def device_last_down_time_task(device_type=None):
@@ -43,7 +45,7 @@ def device_last_down_time_task(device_type=None):
     g_jobs = list()
     ret = False
 
-    #devices = Device.objects.filter(is_added_to_nms=1)
+    # devices = Device.objects.filter(is_added_to_nms=1)
     #logger.debug(devices)
     devices = None
     try:
@@ -80,7 +82,7 @@ def device_last_down_time_site_wise(devices):
     """
     if devices and devices.count():
         for device_object in devices:
-            x = device_last_down_time(device_object=device_object)
+            x = perf_views.device_last_down_time(device_object=device_object)
         return True
     else:
         return False
@@ -90,28 +92,34 @@ def device_last_down_time_site_wise(devices):
 
 @task()
 def get_all_sector_devices(technology):
+    """
 
+    :param technology:
+    :return:
+    """
     if not technology:
         return False
 
     # Get the list of organization which are user accessible
     organizations = inventory_tasks.get_organizations()
-    
+
     try:
         tech = DeviceTechnology.objects.get(name=technology).id
-    except Exception, e:
+    except Exception as e:
         return False
-    
+
+    sector_values = ['id',
+                     'sector_id',
+                     'sector_configured_on',
+                     'sector_configured_on__machine__name',
+                     'sector_configured_on__device_name',
+                     'sector_configured_on__ip_address'
+    ]
+
     sector_objects = inventory_utils.organization_sectors(organization=organizations, technology=tech)
-    
-    sector_devices_list = sector_objects.select_related('sector_configured_on','sector_configured_on__machine').values(
-        'id',
-        'sector_id',
-        'sector_configured_on',
-        'sector_configured_on__machine__name',
-        'sector_configured_on__device_name',
-        'sector_configured_on__ip_address'
-    )
+
+    sector_devices_list = sector_objects.select_related('sector_configured_on', 'sector_configured_on__machine'
+    ).values(*sector_values)
 
     # Get machine wise seperated devices,sectors list
     machine_wise_data = get_machines_wise_devices(sectorObject=sector_devices_list)
@@ -119,6 +127,9 @@ def get_all_sector_devices(technology):
     # Machine by machine loop
     complete_augmentation_data = list()
     complete_ul_issue_data = list()
+
+    #list of services
+    service_list = list()
 
     # Datasources list
     data_source_list = [
@@ -131,79 +142,95 @@ def get_all_sector_devices(technology):
         sector_ids = current_row['sector_id']
         # List of device_name on current machine
         device_names = current_row['device_name']
-        # Call 'getSectorAugmentationData' to get the sector augmentation data per machine
-        complete_augmentation_data += getSectorAugmentationData(sector_ids)
-        # Call 'getSectorULIssueData' to get the sector UL issue data per machine
-        complete_ul_issue_data += getSectorULIssueData(device_names,data_source_list)
+
+        # Call 'get_sector_augmentation_data' to get the sector augmentation data from default machine
+        # because sector capacity is calculated per 5 minutes and status is stored
+        complete_augmentation_data += get_sector_augmentation_data(sector_ids)
+
+        # Call 'get_sector_ul_issue_data' to get the sector UL issue data per machine
+        complete_ul_issue_data += get_sector_ul_issue_data(device_names,
+                                                           data_source_list,
+                                                           machine=machine_name
+        )
 
     # Format augmentation data
     if len(complete_augmentation_data) > 0:
-        complete_augmentation_data = format_polled_data(data=complete_augmentation_data,key_column_name='sector_id')
+        complete_augmentation_data = format_polled_data(data=complete_augmentation_data, key_column_name='sector_id')
 
     # Format UL issue data
     if len(complete_ul_issue_data) > 0:
-        complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data,key_column_name='device_name')
+        complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='device_name')
 
     # Call function to create resultant data from the calculated data
-    resultant_data = getSpotDashboardResult(
+    resultant_data = get_spot_dashboard_result(
         sectors_list=sector_devices_list,
         augmentation_list=complete_augmentation_data,
         ul_issues_list=complete_ul_issue_data
     )
 
     # This function insert or update resultant data in SpotDashboard model
-    updateSpotDashboardData(
+    update_spot_dashboard_data(
         calculated_data=resultant_data,
         technology=technology
     )
 
     return True
 
-# this function returns dict of devices,sectors list as per machines
-def get_machines_wise_devices(sectorObject=[]):
 
+def get_machines_wise_devices(sectorObject=[]):
+    """
+    # this function returns dict of devices,sectors list as per machines
+    :param sectorObject: Object of Sector from inventory.models
+    :return: dictionary of machines
+    """
     machines_wise_dict = {}
-    machine_names_list = list()
+
     for device in sectorObject:
         machine_name = device['sector_configured_on__machine__name']
         # If any machine is present then proceed
         if machine_name:
             # if new machine then add key else append details of that machine 
-            if machine_name not in machine_names_list:
-                # Append the new machine name in machine list
-                machine_names_list.append(machine_name)
+            if machine_name not in machines_wise_dict:
                 # initialize machine name dict with the device elements
                 machines_wise_dict[machine_name] = {
-                    "device_id" : list(),
-                    "sector_id" : list(),
-                    "sector__sector_id" : list(),
-                    "device_name" : list(),
-                    "ip_address" : list()
+                    "device_id": list(),
+                    "sector_id": list(),
+                    "sector__sector_id": list(),
+                    "device_name": list(),
+                    "ip_address": list()
                 }
-
-            machines_wise_dict[machine_name]["sector_id"].append(device['id'])
-            machines_wise_dict[machine_name]["sector__sector_id"].append(device['sector_id'])
-            machines_wise_dict[machine_name]["device_id"].append(device['sector_configured_on'])
-            machines_wise_dict[machine_name]["device_name"].append(device['sector_configured_on__device_name'])
-            machines_wise_dict[machine_name]["ip_address"].append(device['sector_configured_on__ip_address'])
+            try:
+                machines_wise_dict[machine_name]["sector_id"].append(device['id'])
+                machines_wise_dict[machine_name]["sector__sector_id"].append(device['sector_id'])
+                machines_wise_dict[machine_name]["device_id"].append(device['sector_configured_on'])
+                machines_wise_dict[machine_name]["device_name"].append(device['sector_configured_on__device_name'])
+                machines_wise_dict[machine_name]["ip_address"].append(device['sector_configured_on__ip_address'])
+            except Exception as e:
+                continue
 
     return machines_wise_dict
 
-# This function returns sector augmentation detail of last 6 month from SectorCapacityStatus Model
-def getSectorAugmentationData(sector_ids=[]):
 
+def get_sector_augmentation_data(sector_ids=[]):
+    """
+    # This function returns sector augmentation detail of last 6 month from SectorCapacityStatus Model
+    :param sector_ids:
+    :return:
+    """
     table_name = 'capacity_management_sectorcapacitystatus'
-    
+
     in_string = lambda x: "'" + str(x) + "'"
 
-    augmentation_raw_query = 'SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp,sector_id FROM ' + table_name + '\
-                             WHERE sector_id IN ( {0} ) \
-                             AND \
-                             sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL {1} MONTH) \
-                             ORDER BY sys_timestamp desc'.format(
-                                (",".join(map(in_string, sector_ids))),
-                                6
-                            )
+    augmentation_raw_query = '''
+                            SELECT sys_timestamp, sector_id
+                            FROM {0}
+                            WHERE
+                              sector_id IN ( {1} )
+                              AND
+                              severity IN ( 'warning', 'critical' )
+                              AND
+                              sys_timestamp - age > 600
+                            '''.format(table_name, (",".join(map(in_string, sector_ids))))
 
 
     # Execute Query to get augmentation data
@@ -211,34 +238,48 @@ def getSectorAugmentationData(sector_ids=[]):
 
     return augmentation_data
 
-# This function returns sector UL Issues of last 6 month from Utilization Model
-def getSectorULIssueData(devices_names=[],ds_list=[]):
 
-    table_name = 'performance_utilization'
-    
+def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
+    """
+    # This function returns sector UL Issues Utilization Status performance.models
+    :param devices_names:
+    :param ds_list:
+    :param machine:
+    :return:
+    """
+    table_name = 'performance_utilizationstatus'
+
     in_string = lambda x: "'" + str(x) + "'"
 
-    ul_issue_raw_query = 'SELECT  FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp,device_name FROM ' + table_name + '\
-                         WHERE device_name IN ( {0} ) \
-                         AND \
-                         data_source IN ( {1} )\
-                         AND \
-                         sys_timestamp > UNIX_TIMESTAMP(now()- INTERVAL {2} MONTH)\
-                         ORDER BY sys_timestamp desc'.format(
-                            (",".join(map(in_string, devices_names))),
-                            (",".join(map(in_string, ds_list))),
-                            6
-                        )
+    ul_issue_raw_query = '''
+                         SELECT sys_timestamp, device_name
+                         FROM {0}
+                         WHERE
+                            device_name IN ( {1} )
+                            AND
+                            data_source IN ( {2} )
+                            AND
+                            severity IN ( 'warning', 'critical' )
+                         '''.format(
+                                    table_name
+                                    (",".join(map(in_string, devices_names))),
+                                    (",".join(map(in_string, ds_list)))
+                                )
 
 
     # Execute Query to get augmentation data
-    ul_issue_data = fetch_raw_result(ul_issue_raw_query)
+    ul_issue_data = fetch_raw_result(query=ul_issue_raw_query, machine=machine)
 
     return ul_issue_data
 
-# This function format the fetched polled data as per the given key
-def format_polled_data(data=[],key_column_name=''):
 
+def format_polled_data(data=[], key_column_name=''):
+    """
+    # This function format the fetched polled data as per the given key
+    :param data:
+    :param key_column_name:
+    :return:
+    """
     if not key_column_name:
         return data
 
@@ -256,11 +297,14 @@ def format_polled_data(data=[],key_column_name=''):
     return resultant_dict
 
 
-
-
-# This function creates resultant data from the calculated data & sectors list
-def getSpotDashboardResult(sectors_list=[],augmentation_list={},ul_issues_list={}):
-
+def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_list={}):
+    """
+    # This function creates resultant data from the calculated data & sectors list
+    :param sectors_list:
+    :param augmentation_list:
+    :param ul_issues_list:
+    :return:
+    """
     if len(sectors_list) < 1:
         return []
 
@@ -281,17 +325,17 @@ def getSpotDashboardResult(sectors_list=[],augmentation_list={},ul_issues_list={
 
         if device_name in ul_issues_list:
             ul_issue_data = ul_issues_list[device_name]
-        
+
         for x in range(6):
-            
+
             month_num = int(last_six_months_list[x][1])
 
-            augment_key = 'augment_'+str(x+1)
+            augment_key = 'augment_' + str(x + 1)
             if augment_key not in sectors_list[i]:
                 sectors_list[i][augment_key] = ""
 
             # if '10.193.142.2_25' == str(sectors_list[i]['sector_id']):
-            #     logger.debug("^^^^^^^^^^^^^^^^^^")
+            # logger.debug("^^^^^^^^^^^^^^^^^^")
             #     logger.debug(augment_data)
             #     logger.debug(sector_id)
             #     logger.debug(month_num)
@@ -303,7 +347,7 @@ def getSpotDashboardResult(sectors_list=[],augmentation_list={},ul_issues_list={
             except Exception, e:
                 sectors_list[i][augment_key] = 0
 
-            ul_issue_key = 'ul_issue_'+str(x+1)
+            ul_issue_key = 'ul_issue_' + str(x + 1)
             if ul_issue_key not in sectors_list[i]:
                 sectors_list[i][ul_issue_key] = ""
 
@@ -311,28 +355,32 @@ def getSpotDashboardResult(sectors_list=[],augmentation_list={},ul_issues_list={
                 # if ul_issue_data[x] > 0:
                 if month_num in ul_issue_data:
                     sectors_list[i][ul_issue_key] = 1
-            except Exception, e:
+            except Exception as e:
                 sectors_list[i][ul_issue_key] = 0
 
     return sectors_list
 
-# This function insert or update SpotDashboard data as per the calculated data.
-def updateSpotDashboardData(calculated_data=[],technology=''):
 
+def update_spot_dashboard_data(calculated_data=[], technology=''):
+    """
+    # This function insert or update SpotDashboard data as per the calculated data.
+    :param calculated_data:
+    :param technology:
+    """
     counter_val = len(calculated_data)
 
     for i in range(counter_val):
         current_row = calculated_data[i]
-        
+
         # Foreign Keys
         sector_id = Sector.objects.filter(pk=calculated_data[i]['id'])[0]
         device_id = Device.objects.filter(pk=calculated_data[i]['sector_configured_on'])[0]
-        
+
         # Sector Details
         sector_sector_id = calculated_data[i]['sector_id']
         sector_sector_configured_on = calculated_data[i]['sector_configured_on__ip_address']
         sector_device_technology = technology
-        
+
         # UL Issues
         ul_issue_1 = calculated_data[i]['ul_issue_1']
         ul_issue_2 = calculated_data[i]['ul_issue_2']
@@ -390,4 +438,4 @@ def updateSpotDashboardData(calculated_data=[],technology=''):
             )
 
 
-################### Task for Sector Spot Dashboard Calculation - End ###################
+            ################### Task for Sector Spot Dashboard Calculation - End ###################
