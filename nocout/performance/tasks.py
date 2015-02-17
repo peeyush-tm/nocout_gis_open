@@ -71,11 +71,19 @@ def device_last_down_time_task(device_type=None):
 
     return ret
 
-# @peeyush-tm - Please varify
-# <<<<<<< HEAD
-    # for device_object in devices:
-    #     x = perf_views.device_last_down_time(device_object=device_object)
-    # return True
+
+@task()
+def device_last_down_time_site_wise(devices):
+    """
+    collect device information per site wise
+    :return: True
+    """
+    if devices and devices.count():
+        for device_object in devices:
+            x = device_last_down_time(device_object=device_object)
+        return True
+    else:
+        return False
 
 
 ################### Task for Sector Spot Dashboard Calculation - Start ###################
@@ -383,20 +391,3 @@ def updateSpotDashboardData(calculated_data=[],technology=''):
 
 
 ################### Task for Sector Spot Dashboard Calculation - End ###################
-
-# @peeyush-tm - Please varify
-# =======
-
-@task()
-def device_last_down_time_site_wise(devices):
-    """
-    collect device information per site wise
-    :return: True
-    """
-    if devices and devices.count():
-        for device_object in devices:
-            x = device_last_down_time(device_object=device_object)
-        return True
-    else:
-        return False
-# >>>>>>> f4a256dee76126bba1c0b2f5bed8b6242a3ec555
