@@ -397,45 +397,24 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         augment_5 = calculated_data[i]['augment_5']
         augment_6 = calculated_data[i]['augment_6']
 
-        sectorObject = SpotDashboard.objects.filter(sector_sector_id=sector_sector_id)
-
-        # Sector Exist, Update entry
-        if len(sectorObject) > 0:
-            sectorObject.update(
-                ul_issue_1=ul_issue_1,
-                ul_issue_2=ul_issue_2,
-                ul_issue_3=ul_issue_3,
-                ul_issue_4=ul_issue_4,
-                ul_issue_5=ul_issue_5,
-                ul_issue_6=ul_issue_6,
-                augment_1=augment_1,
-                augment_2=augment_2,
-                augment_3=augment_3,
-                augment_4=augment_4,
-                augment_5=augment_5,
-                augment_6=augment_6
-            )
-        else:
-            # Sector Not Exist, Create new entry
-            SpotDashboard.objects.create(
-                sector=sector_id,
-                device=device_id,
-                sector_sector_id=sector_sector_id,
-                sector_sector_configured_on=sector_sector_configured_on,
-                sector_device_technology=sector_device_technology,
-                ul_issue_1=ul_issue_1,
-                ul_issue_2=ul_issue_2,
-                ul_issue_3=ul_issue_3,
-                ul_issue_4=ul_issue_4,
-                ul_issue_5=ul_issue_5,
-                ul_issue_6=ul_issue_6,
-                augment_1=augment_1,
-                augment_2=augment_2,
-                augment_3=augment_3,
-                augment_4=augment_4,
-                augment_5=augment_5,
-                augment_6=augment_6
-            )
-
-
-            ################### Task for Sector Spot Dashboard Calculation - End ###################
+        sectorObject = SpotDashboard.objects.get_or_create(sector_sector_id=sector_sector_id, sector=sector_id)
+        sectorObject.update(
+            # sector=sector_id, ## this is similar to try except clause.
+            device=device_id,
+            # sector_sector_id=sector_sector_id,  ## we now have a sector dashboard object
+            sector_sector_configured_on=sector_sector_configured_on,
+            sector_device_technology=sector_device_technology,
+            ul_issue_1=ul_issue_1,
+            ul_issue_2=ul_issue_2,
+            ul_issue_3=ul_issue_3,
+            ul_issue_4=ul_issue_4,
+            ul_issue_5=ul_issue_5,
+            ul_issue_6=ul_issue_6,
+            augment_1=augment_1,
+            augment_2=augment_2,
+            augment_3=augment_3,
+            augment_4=augment_4,
+            augment_5=augment_5,
+            augment_6=augment_6
+        )
+        # ################## Task for Sector Spot Dashboard Calculation - End ###################
