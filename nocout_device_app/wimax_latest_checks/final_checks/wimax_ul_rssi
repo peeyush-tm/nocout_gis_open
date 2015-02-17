@@ -24,16 +24,6 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-def extract_host_from_wimax_topology(ss_host_mac):
-        query = """
-        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-        return data
-
 
 
 def live_query_ul_rssi(mac):
@@ -57,7 +47,7 @@ def live_query_ul_rssi(mac):
                         socket_port = _LIVESTATUS[machine_name][site]['port']
 
 
-                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('OK -')[1])
                                 plugin_output = [entry for entry in plugin_output.split(' ')]
@@ -98,21 +88,25 @@ def check_wimax_ul_rssi(item, params, info):
     warn,crit = params
     ul_rssi = None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-                        ul_rssi = live_query_ul_rssi(ss_mac )
-                        if isinstance(ul_rssi,int):
-                                if ul_rssi < crit:
-                                        state  = 2
-                                elif ul_rssi >= crit and ul_rssi <= warn:
-                                        state = 1
-                                else:
-                                        state = 0
-        			infotext = "Device downlink signal strength indication is %s " % ul_rssi
+
+	mac_info = sum(info,[])
+        mac_list=map(lambda x: convert(x),mac_info)
+        if mac_list[1] != '00:00:00:00:00:00':
+                ss_mac= mac_list[1]
+        else:
+                index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+                index =index[0]
+                ss_mac = mac_list[index]
+	if ss_mac:
+		ul_rssi = live_query_ul_rssi(ss_mac )
+		if isinstance(ul_rssi,int):
+			if ul_rssi < crit:
+				state  = 2
+			elif ul_rssi >= crit and ul_rssi <= warn:
+				state = 1
+			else:
+				state = 0
+			infotext = "Device downlink signal strength indication is %s " % ul_rssi
     except ValueError:
         infotext = "type_mismatch_value"
     except:

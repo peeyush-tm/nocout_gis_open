@@ -83,7 +83,7 @@ def check_rici_port_autoneg_status(item, _no_params, info):
 		status_list.append((port_string + str(index + 1), port_autoneg_status))
 		state = 0
 	for index in range(len(info)):
-		infotext += "%s=%s " % (port_string + str(index + 1),status_list[index][1])
+		infotext += "%s=%s " % (port_string + str(index + 1) + "_state",status_list[index][1])
     except ValueError:
         infotext = "type_mismatch_value"
     except:

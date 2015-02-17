@@ -23,6 +23,42 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
+def get_from_socket(socket_ip,socket_port, query,site,machine):
+    """
+    Function_name : get_from_socket (collect the query data from the socket)
+
+    Args: site_name (poller on which monitoring data is to be collected)
+
+    Kwargs: query (query for which data to be collectes from nagios.)
+
+    Return : None
+
+    raise
+         Exception: SyntaxError,socket error
+    """
+
+    my_machine = nagios_user.split('_')[0]
+    if site == nagios_user:
+        s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(livestatus_unix_socket)
+    elif machine == my_machine:
+        socket_path = "/omd/sites/%s/tmp/run/live" % site
+        s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(socket_path)
+    else:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((socket_ip,socket_port))
+    s.settimeout(60.0)
+    s.send(query)
+    s.shutdown(socket.SHUT_WR)
+    try:
+        output = s.recv(100000000)
+        output.strip("\n")
+    except:
+        output=None
+    return output
+
+
 
 
 def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
@@ -38,9 +74,9 @@ def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
 		plugin_message = ""
 		return plugin_message	
         tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
+        tn.write("wireless" + "\r\n")
         tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
+        tn.write("wirelessone" + "\r\n")
         tn.write("show ss\r\n")
         tn.write("show connectivity-table ss\r\n")
         tn.write("exit\r\n")

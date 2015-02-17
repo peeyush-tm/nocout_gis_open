@@ -24,45 +24,29 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def connection_telnet_bs_for_p1_mrc_stc(hostip, port):
+def live_query_p1_mrc_stc(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
-        """
-        try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		pmp1_mrc = None
-		pmp1_stc = None
-		return pmp1_mrc,pmp1_stc
 
-        tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show interface wimax config\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	pmp1_mrc = None
-	pmp1_stc = None
-	if data:
-		params =[row for row in data.split("\n")]
-		try:
-			pmp1_mrc = params[9]
-			pmp1_mrc  = pmp1_mrc.split(':')[1]
-			if pmp1_mrc == "master":
-				pmp1_mrc = "enabled"
-		except:
-			pmp1_mrc = None
-		try:
-			pmp1_stc=params[12]
-                        pmp1_stc  = pmp1_stc.split(':')[1]
-		except:
-			pmp1_stc = None
-	return pmp1_mrc,pmp1_stc
-                                
+        """
+        exit_value = 3
+        pmp1_mrc, pmp1_stc = '', ''
+        try:
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        pmp1_mrc, pmp1_stc = plugin_output[13].split('=')[1], plugin_output[14].split('=')[1]
+
+        except:
+                pass
+        return pmp1_mrc, pmp1_stc
+
 
 def check_wimax_p1_mrc_stc_invent(item, _no_params, info):
     """
@@ -89,17 +73,12 @@ def check_wimax_p1_mrc_stc_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    duplex_value= None
+    pmp1_mrc, pmp1_stc = '', ''
     try:
-	if info[0][0]:
-                bs_ip = info[0][0]
-                if bs_ip:
-                	pmp1_mrc,pmp1_stc =connection_telnet_bs_for_p1_mrc_stc(bs_ip, 23)
-			if pmp1_mrc or pmp1_src:
-				pmp1_mrc = pmp1_mrc.strip(' \r')
-                        	pmp1_stc = pmp1_stc.strip(' \r')
-				infotext = "pmp1_mrc=%s pmp1_stc=%s" % (pmp1_mrc,pmp1_stc)
-				state = 0
+        pmp1_mrc, pmp1_stc = live_query_p1_mrc_stc(g_hostname)
+	if pmp1_mrc or pmp1_stc:
+		infotext = "pmp1_mrc=%s pmp1_stc=%s" % (pmp1_mrc,pmp1_stc)
+		state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:

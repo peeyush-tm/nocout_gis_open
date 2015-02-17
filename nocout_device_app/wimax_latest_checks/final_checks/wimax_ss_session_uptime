@@ -24,51 +24,37 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-def extract_bs_ip_from_wimax_topology(ss_host_mac):
-        query = """
-        select ip_address from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
 
 
-def connection_telnet_for_session_uptime(host_name, port,mac):
+
+def live_query_for_session_uptime(host_name,mac,site):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
+
         """
+        exit_value = 3
+        uptime = None
         try:
-                tn = Telnet(host_name,port,timeout=3)
-        except socket.timeout:
-		uptime = None
-		return uptime
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show ss uptime\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	uptime = None
-        try:
-                for i,row in enumerate(data.split("\n")):
-                        if ":" in row and mac.upper() in row:
-                                params_list = [r for r in row.split()]
-                                year =  int(params_list[2])
-                                day = int(params_list[4])
-                                hour = int(params_list[6])
-                                minutes = int(params_list[8])
-                                seconds = int(params_list[11])
-                                uptime = ((year*365*24*60) + (day*24*60) + (hour*60) + minutes) * 60 + seconds
-                                break
+                machine_name = site.split('_')[0]
+                socket_ip = _LIVESTATUS[machine_name]['host']
+                socket_port = _LIVESTATUS[machine_name][site]['port']
+
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_bs_ss_params",host_name)
+
+                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,nagios_user,machine_name).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK -')[1])
+                        plugin_output = [entry for entry in plugin_output.split(' ')]
+                        plugin_output = filter(lambda x: mac in x,plugin_output)
+                        uptime = plugin_output[0].split('=')[1].split(',')[4]
+
         except:
-		uptime= None
+                uptime = None
         return uptime
+
 
 
 
@@ -99,18 +85,22 @@ def check_wimax_ss_session_uptime(item, _no_params, info):
     infotext = "unknown_value"
     ss_session_uptime =None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-			host_ip = extract_bs_ip_from_wimax_topology(ss_mac)
-			if host_ip[0][0]:
-                		ss_session_uptime = connection_telnet_for_session_uptime(host_ip[0][0], 23,ss_mac)
-				if ss_session_uptime:
-        				infotext = "Device session uptime is %s " % ss_session_uptime
-					state = 0
+	mac_info = sum(info,[])
+        mac_list=map(lambda x: convert(x),mac_info)
+        if mac_list[1] != '00:00:00:00:00:00':
+                ss_mac= mac_list[1]
+                state = 0
+        else:
+                index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+                index =index[0]
+                ss_mac = mac_list[index]
+	if ss_mac:
+		host_name = extract_host_name_from_wimax_topology(ss_mac)
+		if host_name[0][0]:
+			ss_session_uptime = live_query_for_session_uptime(host_name[0][0],ss_mac,host_name[0][1])
+			if ss_session_uptime:
+				infotext = "Device session uptime is %s " % ss_session_uptime
+				state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:
