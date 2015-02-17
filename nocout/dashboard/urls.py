@@ -64,4 +64,8 @@ urlpatterns = patterns('',
     url(r'^trend-monthly-sales/pmp/$', views.MonthlyTrendSalesPMP.as_view(), name = 'trend-monthly-sales-pmp' ),
     url(r'^trend-monthly-sales/wimax/$', views.MonthlyTrendSalesWIMAX.as_view(), name = 'trend-monthly-sales-wimax' ),
 
+    url(r'^trend-monthly-down/all/$', views.MonthlyTrendDashboardDeviceStatus.as_view(), name = 'trend-monthly-down-all' ),
+    url(r'^trend-monthly-latency/all/$', views.MonthlyTrendDashboardDeviceStatus.as_view(), name = 'trend-monthly-latency-all' ),
+    url(r'^trend-monthly-packet_loss/all/$', views.MonthlyTrendDashboardDeviceStatus.as_view(), name = 'trend-monthly-packet-loss-all' ),
+    url(r'^trend-monthly-temperature-idu/wimax/$', views.MonthlyTrendDashboardDeviceStatus.as_view(), name = 'trend-monthly-temperature-idu-wimax' ),
 )

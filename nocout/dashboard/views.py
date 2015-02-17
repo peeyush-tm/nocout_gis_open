@@ -1150,8 +1150,25 @@ def get_dashboardsettings_attributes(dashboard_setting, range_counter):
     colors.append("#d3d3d3")
     return {'chart_data' : chart_data, 'color' : colors}
 
+def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_list):
+    '''
+    '''
+    # Start Calculations for Monthly Trend Sector
+    # Last 30 Days
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+    # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+    dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(select={'processed_month':"date(processed_for)"}).values('processed_month').filter(
+        device_name__in=sector_devices_list,
+        dashboard_name=dashboard_name,
+        processed_for__gte=month_before
+    ).annotate(
+        range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
+        range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
+        range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
+        range10=Sum('range10'), unknown=Sum('unknown')
+    ).order_by('processed_month')
 
-
+    return dashboard_status_dict
 
 
 #************************************************* Monthly Trend Sector chart ***********************************************************************
@@ -1253,3 +1270,95 @@ class MonthlyTrendSalesWIMAX(MonthlyTrendSalesMixin, View):
 	"""
 	"""
 	tech_name = 'WIMAX'	
+
+#************************************************** Dashboard Device Status Monthly Trend ***************************************************************
+
+class MonthlyTrendDashboardDeviceStatus(View):
+    '''
+    Class Based View for the Monthly Trend of device status on Main Dashbaord.
+    '''
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param:
+            - dashboard_name: name of the dashboard.
+
+        :retun dictionary containing data used for main dashboard charts.
+        """
+        # Get Request for getting url name passed in URL
+        dashboard_name = self.request.GET['dashboard_name']
+        # remove '#' from the dashboard_name.
+        if "#" in dashboard_name:
+            dashboard_name = dashboard_name.replace('#','')
+
+        technology = None
+        # Finding technology ID
+        if 'wimax' in dashboard_name:
+            technology = WiMAX.ID
+
+        if '-all' in dashboard_name:
+            # replace the '-all' with '-network'. (e.g: 'dash-all' => 'dash-network')
+            dashboard_name = dashboard_name.replace('-all','-network')
+
+        dashboard_status_name = dashboard_name
+        if 'temperature' in dashboard_name:
+            dashboard_name = 'temperature'
+            # replace the '-wimax' with ''. (e.g: 'dash-wimax' => 'dash')
+            dashboard_status_name = dashboard_status_name.replace('-wimax','')
+        # Finding Organization of user   
+        organizations = logged_in_user_organizations(self)        
+        # Get Device of User's Organizations. [and are Sub Station]
+        user_devices = organization_network_devices(organizations, technology)
+        sector_devices = user_devices.filter(sector_configured_on__isnull=False)
+        # Get Device Name list.
+        sector_devices = sector_devices.values_list('device_name',flat=True)
+        # Getting Dashboard Settings
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success":0
+            }))
+
+
+        # Get the dictionary of dashboard status.
+        dashboard_status_dict = get_range_status_dict_monthly_devicestatus(dashboard_status_name, sector_devices)
+        final_dict = []
+        # If any dictionary will found then processed further
+        if len(dashboard_status_dict):
+            # Getting date of 30days before from Today
+            month_before = datetime.date.today() - datetime.timedelta(days=30)
+            # Loop for getting complete month Data
+            while month_before <= datetime.date.today():
+                count = 0
+                count_color = '#CED5DB' # For Unknown Range and for Zero count
+                for var in dashboard_status_dict:
+                    # Condition for further processing
+                    if var['processed_month'] == month_before:
+                        # Sum all ranges for particular Date
+                        count = sum(value for key, value in var.iteritems() if key != 'processed_month')
+                        # Get the range from the dashbaord setting in which the count falls.
+                        range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
+                        # Get the name of the range.
+                        count_range = range_status_dct['range_count']               
+                        # get color of range in which count exists.                         
+                        if count_range and count_range != 'unknown':
+                            count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)                
+                # Preparation of final Dict for all days in One month 
+                final_dict.append({
+                    "color": count_color,
+                    "y" : count,
+                    "name": dashboard_name,
+                    "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+                })
+                # Increment Date by One
+                month_before += relativedelta.relativedelta(days=1)
+
+        chart_series = final_dict        
+        # Getting Final response pattern
+        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
+            'name': dashboard_name, 'valuetext' : '' })   
+        
+        return HttpResponse(response)
