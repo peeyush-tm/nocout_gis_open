@@ -290,15 +290,16 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
 
 # REDIS
-# CELERY_RESULT_BACKEND = "redis"
-# CELERY_RESULT_BACKEND = 'redis://localhost/0'
 # REDIS_HOST = "localhost"
 # REDIS_PORT = 6379
 # REDIS_DB = 0
+# CELERY_RESULT_BACKEND = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB)
 # REDIS_CONNECT_RETRY = True
-# BROKER_HOST = "localhost"  # Maps to redis host.
-# BROKER_PORT = 6379         # Maps to redis port.
-# BROKER_VHOST = "0"         # Maps to database number.
+# BROKER_HOST = REDIS_HOST  # Maps to redis host.
+# BROKER_PORT = REDIS_PORT  # Maps to redis port.
+# BROKER_VHOST = REDIS_DB   # Maps to database number.
+# BROKER_URL = 'redis://' + str(BROKER_HOST) + ':' + str(BROKER_PORT) + '/' + str(BROKER_VHOST)
+
 
 # MEMCACHED
 # CELERY_CACHE_BACKEND = 'memory'
