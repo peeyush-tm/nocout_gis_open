@@ -11,6 +11,7 @@ from inventory.models import Sector
 import inventory.tasks as inventory_tasks
 
 import inventory.utils.util as inventory_utils
+import inventory.tasks as inventory_tasks
 
 from celery.utils.log import get_task_logger
 
@@ -367,6 +368,10 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
     :param calculated_data:
     :param technology:
     """
+    g_jobs = list()
+    bulky_update = list()
+    bulky_create = list()
+
     counter_val = len(calculated_data)
 
     for i in range(counter_val):
@@ -397,10 +402,12 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         augment_5 = calculated_data[i]['augment_5']
         augment_6 = calculated_data[i]['augment_6']
 
-        sectorObject = SpotDashboard.objects.get_or_create(sector_sector_id=sector_sector_id, sector=sector_id)
-        sectorObject.update(
+        sector_object = SpotDashboard.objects.get_or_create(sector_sector_id=sector_sector_id,
+                                                           sector=sector_id,
+                                                           device=device_id)
+        sector_object.update(
             # sector=sector_id, ## this is similar to try except clause.
-            device=device_id,
+            # device=device_id,
             # sector_sector_id=sector_sector_id,  ## we now have a sector dashboard object
             sector_sector_configured_on=sector_sector_configured_on,
             sector_device_technology=sector_device_technology,
@@ -418,3 +425,65 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
             augment_6=augment_6
         )
         # ################## Task for Sector Spot Dashboard Calculation - End ###################
+    #bulk operations
+    #     sector_object = None
+    #
+    #
+    #     try:
+    #         sector_object = SpotDashboard.objects.get(sector_sector_id=sector_sector_id,
+    #                                                     sector=sector_id,
+    #                                                     device=device_id)
+    #         sector_object.sector_sector_configured_on = sector_sector_configured_on
+    #         sector_object.sector_device_technology=sector_device_technology
+    #         sector_object.ul_issue_1 = ul_issue_1
+    #         sector_object.ul_issue_2 = ul_issue_2
+    #         sector_object.ul_issue_3 = ul_issue_3
+    #         sector_object.ul_issue_4 = ul_issue_4
+    #         sector_object.ul_issue_5 = ul_issue_5
+    #         sector_object.ul_issue_6 = ul_issue_6
+    #         sector_object.augment_1 = augment_1
+    #         sector_object.augment_2 = augment_2
+    #         sector_object.augment_3 = augment_3
+    #         sector_object.augment_4 = augment_4
+    #         sector_object.augment_5 = augment_5
+    #         sector_object.augment_6 = augment_6
+    #
+    #         bulky_update.append(sector_object)
+    #
+    #     except Exception as e:
+    #         sector_object = SpotDashboard(
+    #             sector=sector_id, ## this is similar to try except clause.
+    #             device=device_id,
+    #             sector_sector_id=sector_sector_id,  ## we now have a sector dashboard object
+    #             sector_sector_configured_on=sector_sector_configured_on,
+    #             sector_device_technology=sector_device_technology,
+    #             ul_issue_1=ul_issue_1,
+    #             ul_issue_2=ul_issue_2,
+    #             ul_issue_3=ul_issue_3,
+    #             ul_issue_4=ul_issue_4,
+    #             ul_issue_5=ul_issue_5,
+    #             ul_issue_6=ul_issue_6,
+    #             augment_1=augment_1,
+    #             augment_2=augment_2,
+    #             augment_3=augment_3,
+    #             augment_4=augment_4,
+    #             augment_5=augment_5,
+    #             augment_6=augment_6
+    #         )
+    #         bulky_create.append(sector_object)
+    #
+    # if len(bulky_update):
+    #     g_jobs.append(inventory_tasks.bulk_update_create.s(bulky=bulky_update, action='update', model=SpotDashboard))
+    #
+    # if len(bulky_create):
+    #     g_jobs.append(inventory_tasks.bulk_update_create.s(bulky=bulky_create, action='create', model=SpotDashboard))
+    #
+    # job = group(g_jobs)
+    #
+    # result = job.apply_async()
+    # ret = False
+    #
+    # for r in result.get():
+    #     ret |= r
+    #
+    # return ret
