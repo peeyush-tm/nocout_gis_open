@@ -50,7 +50,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    #db = utility_module.mysql_conn(configs=configs)
+    db = utility_module.mysql_conn(configs=configs)
     # Get the time for latest entry in mysql
     #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
     utc_time = datetime(1970, 1,1,5,30)
@@ -62,9 +62,9 @@ def main(**configs):
     end_epoch = int(time.mktime(end_time.timetuple()))
 
     print start_time,end_time
-    
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
     #for i in range(len(configs.get('mongo_conf'))):
-    docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    docs = read_data(start_epoch, end_epoch, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
     #for doc in docs:
     #   	values_list = build_data(doc)
     #   	data_values.extend(values_list)
@@ -105,8 +105,8 @@ def read_data(start_time, end_time, **kwargs):
         for config, options in configs.items():
                 machine_name = options.get('machine')
         for doc in cur:
-	   	time = doc.get('time')
-            	t = (
+	    time = doc.get('time')
+            t = (
             	doc.get('device_name'),
         	doc.get('service_name'),
         	machine_name,
@@ -122,9 +122,9 @@ def read_data(start_time, end_time, **kwargs):
         	doc.get('check_timestamp'),
         	doc.get('ip_address'),
         	doc.get('severity'),
-           	)
-	   	docs.append(t)
-           	t = ()
+           )
+	   docs.append(t)
+           t = ()
      
     return docs
 
@@ -223,8 +223,7 @@ def insert_data(table, data_values, **kwargs):
 				raise mysql.connector.Error, err
     		db.commit()
     		cursor.close()
-	db.close()
-
+		db.close()
 
 if __name__ == '__main__':
     main()

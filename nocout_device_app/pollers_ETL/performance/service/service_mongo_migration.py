@@ -70,8 +70,9 @@ def main(**configs):
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=5)
     print start_time ,end_time
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
     # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
     print len(docs)
     #print docs[0:5]
     #for doc in docs:
