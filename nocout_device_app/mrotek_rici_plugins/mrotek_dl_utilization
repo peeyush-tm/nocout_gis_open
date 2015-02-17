@@ -61,7 +61,7 @@ def check_mrotek_dl_utilization(item, _no_params, info):
     			state = 0
 		except MKCounterWrapped:
 			wrapped=True
-                status_list.append(("dl_utilization","%.4f" % rate))
+                status_list.append(("fe_1","%.4f" % rate))
                 infotext = "dl_utilization: %s" % (rate)
     except ValueError:
         infotext = "type_mismatch_error"

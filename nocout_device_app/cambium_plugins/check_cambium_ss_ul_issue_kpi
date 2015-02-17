@@ -68,6 +68,7 @@ def extract_cambium_ss_state(hostname,site):
 		
 	if len(service_state_out) == 4:
 		state_string = "ok"
+		state = 0
 		for entry in service_state_out:
 			if str(entry) in service_state_type:
 				continue

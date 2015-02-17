@@ -5,7 +5,7 @@ from telnetlib import Telnet
 import socket
 import json
 import os
-import binascii
+
 import mysql.connector
 """
 operating Frequency of ss device  Poller script.
@@ -24,49 +24,30 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-def extract_hostip_from_wimax_topology(ss_host_mac):
-        query = """
-        select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
-
-
-def connection_telnet_for_link_state(hostip, port):
+def live_query_ss_link(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
-        """
-        try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		link_state = None
-		return link_state
-        tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show interface ethernet phy\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-        link_state= None
 
+        """
+        exit_value = 3
+        ss_link = None
         try:
-		for i,row in enumerate(data.split("\n")):
-			if "Link" in row:
-				link_state = row.split(':')[1]
-                                break
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_ss_port_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK -')[1])
+                        plugin_output = [entry for entry in plugin_output.split(',')]
+                        ss_link = plugin_output[5].split('=')[1]
 
         except:
-                link_state = None
-	return link_state
-                                
+                ss_link = None
+        return ss_link
+
+
 
 def check_wimax_ss_link_status(item, _no_params, info):
     """
@@ -93,27 +74,19 @@ def check_wimax_ss_link_status(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    link_state= None
+    ss_link= None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-			host_ip = extract_hostip_from_wimax_topology(ss_mac)
-			if host_ip[0][0]:
-                		link_state =connection_telnet_for_link_state(host_ip[0][0], 23)
-				if link_state:
-					link_state = link_state.strip('\r')
-					infotext = "SS ethernet link state is %s" % link_state
-					state = 0
+	ss_link =live_query_ss_link(g_hostname)
+	if ss_link:
+		ss_link = ss_link.strip('\r')
+		infotext = "SS ethernet link is %s" % ss_link	
+		state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("link_state", link_state)])
+    return (state, infotext,[("link_state", ss_link)])
 
 
 check_info["wimax_ss_link_status"] = {

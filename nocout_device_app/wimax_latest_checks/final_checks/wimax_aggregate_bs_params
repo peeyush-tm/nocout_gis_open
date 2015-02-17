@@ -1,0 +1,237 @@
+#!/usr/bin/python
+
+import sys
+from telnetlib import Telnet
+import socket
+import json
+import os
+
+"""
+operating Frequency of ss device  Poller script.
+
+This is part of device application. 
+Poller script determines the operating ptx of device. 
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.1.2.0 from snmp agent of device at specific interval.
+Device on which Frequency operating is sent to device application 
+
+"""
+# ######################################################################
+# Function: check_wimax_pmp_cyclic_prefix_invent
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+
+def telnet_connection_for_services(hostip, port):
+    """
+    Connect to BS via Telnet
+    """
+    pmp1_prefix ,pmp2_prefix = '', ''
+    idu_serial_1, idu_serial_2 = '', ''
+    pmp1_fr_len, pmp2_fr_len = '', ''
+    odu_serial_1, odu_serial_2 = '', ''
+    idu_type = ''
+    p1_rx_pwr, p2_rx_pwr = '', ''
+    pmp1_bw, pmp2_bw = '', ''
+    pmp1_mrc, pmp1_stc = '', ''
+    pmp2_mrc, pmp2_stc = '', ''
+
+    try:
+        tn = Telnet(hostip,port,timeout=5)
+    except socket.timeout:
+        return pmp1_prefix , pmp2_prefix, idu_serial_1, idu_serial_2,\
+                pmp1_fr_len, pmp2_fr_len, odu_serial_1, odu_serial_2,\
+            idu_type, p1_rx_pwr, p2_rx_pwr, pmp1_bw, pmp2_bw,\
+            pmp1_mrc, pmp1_stc, pmp2_mrc, pmp2_stc
+
+    tn.read_until("Login:")
+    tn.write("wireless" + "\r\n")
+    tn.read_until("Password:")
+    tn.write("wirelessone" + "\r\n")
+
+    tn.write("show running-config\r\n")
+
+    tn.write("show fru\r\n")
+
+    tn.write("show version\r\n")
+    tn.write('clear screen\r\n')
+
+    data = tn.read_until('clear screen\r\n')
+    data = data.split('\n')
+
+    tn.write("show interface wimax config\r\n")
+
+    tn.write("exit\r\n")
+    data1 = tn.read_all()
+    data1 = data1.split("\n")
+
+
+    # IDU cyclic prefix
+    pmp1_prefix_row = filter(lambda e: '1/1 cyclic-prefix' in e, data)
+    if pmp1_prefix_row:
+        pmp1_prefix_row = pmp1_prefix_row[0]
+        pmp1_prefix = [r for r in pmp1_prefix_row.split()][-1:]
+        pmp1_prefix = pmp1_prefix[0] if pmp1_prefix else ''
+    pmp2_prefix_row = filter(lambda e: '1/2 cyclic-prefix' in e, data)
+    if pmp2_prefix_row:
+        pmp2_prefix_row = pmp2_prefix_row[0]
+        pmp2_prefix = [r for r in pmp2_prefix_row.split()][-1:]
+        pmp2_prefix = pmp2_prefix[0] if pmp2_prefix else ''
+
+    # IDU serial invent
+    idu_serial_1_row = filter(lambda e: 'Chassis' in e, data)[0:1]
+    if idu_serial_1_row:
+        idu_serial_1_row = idu_serial_1_row[0]
+        idu_serial_1 = [r for r in idu_serial_1_row.split()][-1:]
+        idu_serial_1 = idu_serial_1[0] if idu_serial_1 else ''
+    idu_serial_2_row = filter(lambda e: 'Carrier Board' in e, data)[0:1]
+    if idu_serial_2_row:
+        idu_serial_2_row = idu_serial_2_row[0]
+        idu_serial_2 = [r for r in idu_serial_2_row.split()][-1:]
+        idu_serial_2 = idu_serial_2[0] if idu_serial_2 else ''
+
+    # IDU type invent
+    idu_type_row = filter(lambda e: 'Chassis' in e and 'StarMAX' in e, data)
+    if idu_type_row:
+        idu_type_row = idu_type_row[0]
+        idu_type_row = [r for r in idu_type_row.split()]
+        if idu_type_row:
+            idu_type = idu_type_row[0] + '_' + idu_type_row[1]
+
+    # PMP frame length
+    pmp_1_frame_length_row = filter(lambda e: '1/1 frame-duration' in e, data) 
+    if  pmp_1_frame_length_row:
+        pmp_1_frame_length_row = pmp_1_frame_length_row[0]
+        pmp1_fr_len = [r for r in pmp_1_frame_length_row.split()][-1:]
+        pmp1_fr_len = pmp1_fr_len[0] if pmp1_fr_len else ''
+    pmp_2_frame_length_row = filter(lambda e: '1/2 frame-duration' in e, data) 
+    if  pmp_2_frame_length_row:
+        pmp_2_frame_length_row = pmp_2_frame_length_row[0]
+        pmp2_fr_len = [r for r in pmp_2_frame_length_row.split()][-1:]
+        pmp2_fr_len = pmp2_fr_len[0] if pmp2_fr_len else ''
+
+    # ODU serial invent
+    odu_serial_1_row = filter(lambda e: 'ODU1' in e, data)
+    if odu_serial_1_row:
+        odu_serial_1_row = odu_serial_1_row[0]
+        odu_serial_1_row = [r for r in odu_serial_1_row.split()][-1:]
+        odu_serial_1 = odu_serial_1_row[0] if odu_serial_1_row else ''
+    odu_serial_2_row = filter(lambda e: 'ODU2' in e, data)
+    if odu_serial_2_row:
+        odu_serial_2_row = odu_serial_2_row[0]
+        odu_serial_2_row = [r for r in odu_serial_2_row.split()][-1:]
+        odu_serial_2 = odu_serial_2_row[0] if odu_serial_2_row else ''
+
+    # Rx power
+    p1_rx_pwr_row = filter(lambda e: '1/1 uplink commanded-rx-power' in e, data)
+    if p1_rx_pwr_row:
+        p1_rx_pwr_row = p1_rx_pwr_row[0]
+        p1_rx_pwr = [r for r in p1_rx_pwr_row.split()][-1:]
+        p1_rx_pwr = p1_rx_pwr[0] if p1_rx_pwr else ''
+    p2_rx_pwr_row = filter(lambda e: '1/2 uplink commanded-rx-power' in e, data)
+    if p2_rx_pwr_row:
+        p2_rx_pwr_row = p2_rx_pwr_row[0]
+        p2_rx_pwr = [r for r in p2_rx_pwr_row.split()][-1:]
+        p2_rx_pwr = p2_rx_pwr[0] if p2_rx_pwr else ''
+
+    # PMP bandwidth
+    pmp1_bw_row = filter(lambda e: '1/1 bandwidth' in e, data)  
+    if pmp1_bw_row: 
+        pmp1_bw_row = pmp1_bw_row[0]
+        pmp1_bw = [r for r in pmp1_bw_row.split()][-1:]
+        pmp1_bw = pmp1_bw[0] if pmp1_bw else ''
+    pmp2_bw_row = filter(lambda e: '1/2 bandwidth' in e, data)  
+    if pmp2_bw_row: 
+        pmp2_bw_row = pmp2_bw_row[0]
+        pmp2_bw = [r for r in pmp2_bw_row.split()][-1:]
+        pmp2_bw = pmp2_bw[0] if pmp2_bw else ''
+
+    # PMP1 mrc and stc
+    pmp1_mrc_row = data1[8].split(':')[-1:]
+    if pmp1_mrc_row:
+        pmp1_mrc = pmp1_mrc_row[0].strip()
+        if pmp1_mrc == 'master':
+            pmp1_mrc = 'enabled'
+    pmp1_stc_row = data1[11].split(':')[-1:]
+    if pmp1_stc_row:
+        pmp1_stc = pmp1_stc_row[0].strip()
+
+    pmp2_mrc_row = data1[21].split(':')[-1:]
+    if pmp2_mrc_row:
+        pmp2_mrc = pmp2_mrc_row[0].strip()
+        if pmp2_mrc == 'slave':
+            pmp2_mrc = 'enabled'
+    pmp2_stc_row = data1[24].split(':')[-1:]
+    if pmp2_stc_row:
+        pmp2_stc = pmp2_stc_row[0].strip()
+
+    return pmp1_prefix , pmp2_prefix, idu_serial_1, idu_serial_2,\
+            pmp1_fr_len, pmp2_fr_len, odu_serial_1, odu_serial_2,\
+            idu_type, p1_rx_pwr, p2_rx_pwr, pmp1_bw, pmp2_bw,\
+            pmp1_mrc, pmp1_stc, pmp2_mrc, pmp2_stc
+
+
+
+                                
+
+def check_wimax_aggregate_bs_params(item, _no_params, info):
+    """
+            check_wimax_pmp_cyclic_prefix_invent function calcdlates the operating ptx
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter resdlts
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 5835
+
+                    Raises:
+                            ValueError ,Exception
+"""
+    state = 3
+    infotext = "unknown_value"
+    try:
+        if info[0][0]:
+            bs_ip = info[0][0]
+            if bs_ip:
+                pmp1_prefix, pmp2_prefix, idu_serial_1, idu_serial_2, \
+                       pmp1_fr_len, pmp2_fr_len, odu_serial_1, odu_serial_2,\
+                       idu_type, p1_rx_pwr, p2_rx_pwr, pmp1_bw, pmp2_bw,\
+                       pmp1_mrc, pmp1_stc, pmp2_mrc, pmp2_stc = telnet_connection_for_services(bs_ip, 23)
+                infotext = "pmp1_prefix=%s pmp2_prefix=%s " % (pmp1_prefix,pmp2_prefix) +\
+                       "idu_serial_1=%s idu_serial_2=%s " % (idu_serial_1, idu_serial_2) +\
+                        "pmp1_fr_len=%s pmp2_fr_len=%s " % (pmp1_fr_len, pmp2_fr_len) +\
+                       "odu_serial_1=%s odu_serial_2=%s " % (odu_serial_1, odu_serial_2) +\
+                       "idu_type=%s " % idu_type +\
+                        "p1_rx_pwr=%s p2_rx_pwr=%s " % (p1_rx_pwr, p2_rx_pwr) +\
+                        "pmp1_bw=%s pmp2_bw=%s " % (pmp1_bw, pmp2_bw) +\
+                        "pmp1_mrc=%s pmp1_stc=%s " % (pmp1_mrc, pmp1_stc) +\
+                       "pmp2_mrc=%s pmp2_stc=%s " % (pmp2_mrc, pmp2_stc)
+                state = 0
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext)
+
+
+check_info["wimax_aggregate_bs_params"] = {
+        'check_function': check_wimax_aggregate_bs_params,
+        'service_description': 'wimax_aggregate_bs_params',
+}
+
+#########################################################################
+#    SNMP OID for the operating ptx
+#########################################################################
+snmp_info["wimax_aggregate_bs_params"] = ( ".1.3.6.1.4.1.5812.2000.4.1.1", ["1.0"] )
+

@@ -8,6 +8,7 @@ import os
 import binascii
 import mysql.connector
 
+from mysql_connection import db
 try:
     import nocout_settings
     from nocout_settings import _DATABASES, _LIVESTATUS
@@ -51,7 +52,7 @@ def mysql_conn():
 def extract_host_from_wimax_topology(ss_host_mac):
         query = """
         select device_name ,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
+        #db = mysql_conn()
         cur = db.cursor()
         cur.execute(query)
         data = cur.fetchall()
@@ -59,7 +60,7 @@ def extract_host_from_wimax_topology(ss_host_mac):
 
         return data
 
-def get_from_socket(socket_ip,socket_port, query):
+def get_from_socket(socket_ip,socket_port, query,site,machine):
     """
     Function_name : get_from_socket (collect the query data from the socket)
 
@@ -72,12 +73,26 @@ def get_from_socket(socket_ip,socket_port, query):
     raise 
          Exception: SyntaxError,socket error 
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((socket_ip,socket_port))
+
+    my_machine = nagios_user.split('_')[0]
+    if site == nagios_user:
+	s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	s.connect(livestatus_unix_socket)
+    elif machine == my_machine:
+	socket_path = "/omd/sites/%s/tmp/run/live" % site
+	s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	s.connect(socket_path)
+    else:
+    	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    	s.connect((socket_ip,socket_port))
+    s.settimeout(60.0)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
+    try:
+    	output = s.recv(100000000)
+    	output.strip("\n")
+    except:
+	output=None
     return output
 
 
@@ -102,7 +117,7 @@ def live_query_dl_rssi(mac):
                         socket_ip = _LIVESTATUS[machine_name]['host']
                         socket_port = _LIVESTATUS[machine_name][site]['port']
 
-                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('OK -')[1])
                                 plugin_output = [entry for entry in plugin_output.split(' ')]
@@ -143,21 +158,24 @@ def check_wimax_dl_rssi(item, params, info):
     warn,crit = params
     dl_rssi = None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-                        dl_rssi = live_query_dl_rssi(ss_mac )
-			if dl_rssi:
-                                if dl_rssi < crit:
-                                        state  = 2
-                                elif dl_rssi >= crit and dl_rssi <= warn:
-                                        state = 1
-                                else:
-                                        state = 0
-        			infotext = "Device downlink signal strength indication is %s " % dl_rssi
+	mac_info = sum(info,[])
+        mac_list=map(lambda x: convert(x),mac_info)
+        if mac_list[1] != '00:00:00:00:00:00':
+                ss_mac= mac_list[1]
+        else:
+                index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+                index =index[0]
+                ss_mac = mac_list[index]
+	if ss_mac:
+		dl_rssi = live_query_dl_rssi(ss_mac )
+		if dl_rssi:
+			if dl_rssi < crit:
+				state  = 2
+			elif dl_rssi >= crit and dl_rssi <= warn:
+				state = 1
+			else:
+				state = 0
+        		infotext = "Device downlink signal strength indication is %s " % dl_rssi
     except ValueError:
         infotext = "type_mismatch_value"
     except:

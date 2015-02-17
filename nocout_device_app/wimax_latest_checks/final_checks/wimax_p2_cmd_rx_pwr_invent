@@ -24,34 +24,28 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def connection_telnet_bs_for_p2_rx_pwr(hostip, port):
+def live_query_p2_cmd_rx_power(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
+
         """
+        exit_value = 3
+        p2_rx_pwr = ''
         try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		p2_rx_pwr = None
-		return p2_rx_pwr
-	tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show running-config\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	p2_rx_pwr = None
-	try:
-		for i,row in enumerate(data.split("\n")):
-                        if "1/2 uplink commanded-rx-power" in row:
-                                p2_rx_pwr = int([r for r in row.split()][-1])
-                                break
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        p2_rx_pwr = plugin_output[10].split('=')[1]
+
         except:
-		p2_rx_pwr = None
-	return p2_rx_pwr
+                pass
+        return p2_rx_pwr
                                 
 
 def check_wimax_p2_cmd_rx_pwr_invent(item, params, info):
@@ -79,23 +73,19 @@ def check_wimax_p2_cmd_rx_pwr_invent(item, params, info):
 """
     state = 3
     infotext = "unknown_value"
-    duplex_value= None
     warn,crit =params
     p2_rx_pwr = None
     try:
-	if info[0][0]:
-                bs_ip = info[0][0]
-                if bs_ip:
-                	p2_rx_pwr =connection_telnet_bs_for_p2_rx_pwr(bs_ip, 23)
-			if p2_rx_pwr:
-				if p2_rx_pwr  == -75:
-                                        state = 0
-                                elif p2_rx_pwr < crit:
-                                        state = 2
-                                elif (p2_rx_pwr == crit) or (p2_rx_pwr == warn):
-                                        state = 1
-
-				infotext = "%s" % (p2_rx_pwr)
+	p2_rx_pwr = live_query_p2_cmd_rx_power(g_hostname)
+	p2_rx_pwr = int(p2_rx_pwr)
+	if p2_rx_pwr:
+		if p2_rx_pwr  == -75:
+			state = 0	
+		elif p2_rx_pwr < crit:
+			state = 2
+		elif (p2_rx_pwr == crit) or (p2_rx_pwr == warn):
+			state = 1
+		infotext = "%s" % (p2_rx_pwr)
     except ValueError:
         infotext = "type_mismatch_value"
     except:

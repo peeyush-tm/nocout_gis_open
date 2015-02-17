@@ -12,7 +12,7 @@ uplink utilization information is sent to device application
 
 """
 # ##################################################################
-# Function : check_mrotek_pmp1_ul_utilization_kpi
+# Function : check_switch_pmp1_dl_utilization_kpi
 #
 #  Parameters: info(SNMP output) ,params(parameters to check the service state) 
 #
@@ -21,16 +21,17 @@ uplink utilization information is sent to device application
 
 
 
-def extract_mrotek_ul_util_from_live(hostname,site):
+def extract_switch_dl_util_from_live(hostname,site):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
     
         """
-	mro_ul = None
+	mro_dl = None
+	mro_dl_dict =  {}
 	query = "GET services\nColumns: service_perf_data\n" + \
-		"Filter: service_description = mrotek_ul_utilization\n" + \
+		"Filter: service_description = switch_dl_utilization\n" + \
 		"Filter: host_name = %s\nOutputFormat: python\n" % (hostname)
 	try:
         	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -41,50 +42,62 @@ def extract_mrotek_ul_util_from_live(hostname,site):
         	query_output = s.recv(100000000)
         	query_output.strip("\n")
 		query_output = eval(query_output)
-        	if query_output[0][0]:
-			try:
-				mro_ul =query_output[0][0].split(' ')[0].split('=')[1].split(';',1)[0]
-			except:
-				mro_ul = None
+		query_output = query_output[0][0]
+		for param in query_output.split(" "):
+			param = param.strip("['\n', ' ']")
+			if param.partition('=')[2]:
+				mro_dl =param.split("=")[1]
+				port = param.split("=")[0]
+				mro_dl_dict[port] = mro_dl 
 	except Exception ,e:
-		mro_ul=None
+		mro_dl_dict = {}
 
-        return mro_ul
+        return mro_dl_dict
 
 
-def live_query_mrotek_ul_util_kpi(hostname,site,war,crit,qos):
+def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos):
     state = 3
-    ul_kpi = ''
+    dl_kpi = ''
     perf = ''
     plugin_message = ''
     state_string = "unknown"
+    crit_flag = 0
+    warn_flag = 0
+    normal_flag = 0
     try:
-	ul_util= extract_mrotek_ul_util_from_live(hostname,site)
-	ul_util = eval(ul_util)
-	if ul_util:
-		ul_kpi = (ul_util/qos) *100
-	if ul_kpi:
-		if ul_kpi < war:
-			state = 0
-			state_string = "ok"
-		elif ul_kpi >= crit:
-			state = 2
-			state_string = "critical"
-		else:
-			state = 1
-			state_string = "warning"
+	dl_util_dict= extract_switch_dl_util_from_live(hostname,site)
+	
+	for entry in dl_util_dict:
+		dl_kpi =  dl_util_dict[entry]
+		dl_kpi = (float(dl_kpi)/qos) *100
+		if dl_kpi:
+			perf += str(entry) + "=%s;%s;%s;%s " % (dl_kpi,war,crit,qos)
+			if dl_kpi >= crit:
+				crit_flag = 1
+			elif dl_kpi >= war and dl_kpi < crit:
+				warn_flag = 1
+			else:
+				normal_flag = 1
+	if crit_flag:
+		state =2
+		state_string = "critical"
+	elif warn_flag:
+		state =1
+		state_string = "warning"
+	elif normal_flag:
+		state = 0
+		state_string = "ok"
 		
-	perf += 'fe_1' + "=%s;%s;%s;%s " % (ul_kpi,war,crit,qos)
     except Exception ,e:
 	perf = '' 
-    plugin_message += "mrotek_ul_util_kpi %s - %s|%s" % (state_string,ul_kpi,perf)
+    plugin_message += "switch_dl_util_kpi %s - %s|%s" % (state_string,dl_kpi,perf)
     sys.stdout.write(plugin_message)
     sys.exit((state))
 		
 def  main():
 
     state_string = "unknown"
-    ul_util=''
+    dl_util=''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]
@@ -92,11 +105,11 @@ def  main():
         crit = sys.argv[4]
 	qos = sys.argv[5]
     except:
-	perf =';;;%s ' % qos
-	plugin_message += "mrotek_ul_util_kpi %s - %s|%s" % (state_string,ul_util,perf)
-	sys.exit((3))
+        perf =';;;%s ' % qos
+        plugin_message += "switch_dl_util_kpi %s - %s|%s" % (state_string,dl_util,perf)
+        sys.exit((3))
 
-    live_query_mrotek_ul_util_kpi(host_name,site,float(war),float(crit),float(qos))
+    live_query_switch_dl_util_kpi(host_name,site,float(war),float(crit),float(qos))
 	
 
 if __name__ == '__main__':

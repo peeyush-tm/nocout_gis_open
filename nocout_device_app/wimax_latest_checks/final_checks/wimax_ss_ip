@@ -27,45 +27,15 @@ Device on which Frequency operating is sent to device application
 def extract_hostip_from_wimax_topology(ss_host_mac):
         query = """
         select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
+        #db = mysql_conn()
         cur = db.cursor()
         cur.execute(query)
         data = cur.fetchall()
         cur.close()
-
+	#db.close()
         return data
 
 
-def connection_telnet(host_ip, port,mac):
-	"""
-        Connects to a socket, checks for the WELCOME-MSG and closes the
-        connection.
-        Returns nothing.
-    
-        """
-        try:
-                tn = Telnet(host_ip,port,timeout=3)
-        except socket.timeout:
-		ss_ip = None
-		return ss_ip
-        tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show connectivity ss %s\r\n" % mac)
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	ss_ip = None
-        try:
-                for i,row in enumerate(data.split("\n")):
-                        if "IP Address:" in row:
-                                params_list = [r for r in row.split()]
-                                ss_ip = params_list[4]
-                                break
-
-        except:
-		ss_ip = None
-	return ss_ip
 
 def check_wimax_ss_ip(item, _no_params, info):
     """
@@ -94,17 +64,21 @@ def check_wimax_ss_ip(item, _no_params, info):
     infotext = "unknown_value"
     ss_ip = None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-			host_ip = extract_hostip_from_wimax_topology(ss_mac)
-			if host_ip[0][0]:
-				ss_ip = host_ip[0][0]
-				state = 0
-        			infotext = "%s" % ss_ip
+	mac_info = sum(info,[])
+        mac_list=map(lambda x: convert(x),mac_info)
+        if mac_list[1] != '00:00:00:00:00:00':
+                ss_mac= mac_list[1]
+                state = 0
+        else:
+                index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+                index =index[0]
+                ss_mac = mac_list[index]
+	if ss_mac:
+		host_ip = extract_hostip_from_wimax_topology(ss_mac)
+		if host_ip[0][0]:
+			ss_ip = host_ip[0][0]
+			state = 0
+        		infotext = "%s" % ss_ip
     except ValueError:
         infotext = "type_mismatch_value"
     except:

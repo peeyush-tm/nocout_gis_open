@@ -64,7 +64,7 @@ def check_rici_link_ethernet_status(item, _no_params, info):
                 		link_state = link_state_value(str(link_state))
                 		if link_state == None:
                     			link_state = "unknown_link_state"
-                		link_state_list.append((link_string+"%s" % (index+1), link_state))
+                		link_state_list.append((link_string+"%s" % (index+1) + "_state", link_state))
                 		state = 0
                 		if int(info[0][index]) == 2:
                         		state =2

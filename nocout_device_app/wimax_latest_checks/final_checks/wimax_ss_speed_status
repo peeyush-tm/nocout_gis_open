@@ -24,47 +24,30 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-def extract_hostip_from_wimax_topology(ss_host_mac):
-        query = """
-        select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
-
-
-def connection_telnet_for_speed_status(hostip, port):
+def live_query_ss_speed(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
-        """
-        try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		ss_speed = None
-        tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show interface ethernet phy\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-        ss_speed= None
 
+        """
+        exit_value = 3
+        ss_speed = None
         try:
-                for i,row in enumerate(data.split("\n")):
-                        if "Speed" in row:
-                                ss_speed = row.split(':')[1]
-                                break
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_ss_port_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK -')[1])
+                        plugin_output = [entry for entry in plugin_output.split(',')]
+                        ss_speed = plugin_output[0].split('=')[1]
+
         except:
                 ss_speed = None
-	return ss_speed
-                                
+        return ss_speed
+
+
 
 def check_wimax_ss_speed_status(item, _no_params, info):
     """
@@ -93,19 +76,11 @@ def check_wimax_ss_speed_status(item, _no_params, info):
     infotext = "unknown_value"
     ss_speed= None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-			host_ip = extract_hostip_from_wimax_topology(ss_mac)
-			if host_ip[0][0]:
-                		ss_speed =connection_telnet_for_speed_status(host_ip[0][0], 23)
-				if ss_speed:
-					ss_speed = ss_speed.strip('\r')
-					infotext = "SS ethernet speed is %s" % ss_speed
-					state = 0
+	ss_speed =live_query_ss_speed(g_hostname)
+	if ss_speed:
+		ss_speed = ss_speed.strip('\r')
+		infotext = "SS ethernet speed is %s" % ss_speed	
+		state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:

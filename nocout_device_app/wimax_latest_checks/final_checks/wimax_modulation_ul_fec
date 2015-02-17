@@ -25,16 +25,7 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def extract_host_from_wimax_topology(ss_host_mac):
-        query = """
-        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
 
-        return data
 
 
 
@@ -56,7 +47,7 @@ def live_query_modulation_ul_fec(mac):
                         socket_ip = _LIVESTATUS[machine_name]['host']
                         socket_port = _LIVESTATUS[machine_name][site]['port']
 
-                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('OK -')[1])
                                 plugin_output = [entry for entry in plugin_output.split(' ')]
@@ -95,30 +86,34 @@ def check_wimax_modulation_ul_fec(item, params, info):
     state = 3
     infotext = "unknown_value"
     modulation_ul_fec =None
-    ul_fec_normal = ["qam16-1/2", "qam16-3/4", "qam64-2/3","qam64-3/4"]
+    ul_fec_normal = ["qam1612", "qam1634", "qam6423","qam6434"]
     ul_fec_warning = params[0]
     ul_fec_critical = params[1]
 
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+        mac_info = sum(info,[])
+        mac_list=map(lambda x: convert(x),mac_info)
+        if mac_list[1] != '00:00:00:00:00:00':
+                ss_mac= mac_list[1]
+        else:
+                index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+                index =index[0]
+                ss_mac = mac_list[index]
 
-                if ss_mac:
-                        modulation_ul_fec = live_query_modulation_ul_fec(ss_mac )
-			if modulation_ul_fec:
-				if modulation_ul_fec in ul_fec_critical:
-					state  = 2
-				elif modulation_ul_fec in ul_fec_warning:
-					state  = 1
-				elif modulation_ul_fec in ul_fec_normal:
-					state  = 0
-				else:
-					state = 3
-					modulation_ul_fec = None
-				infotext = "Device uplink modulation FEC is %s " % modulation_ul_fec	
+        if ss_mac:
+		modulation_ul_fec = live_query_modulation_ul_fec(ss_mac )
+		mod_ul_fec = "".join(e for e in modulation_ul_fec if e.isalnum())
+		if modulation_ul_fec:
+			if mod_ul_fec in ul_fec_critical:
+				state  = 2
+			elif mod_ul_fec in ul_fec_warning:
+				state  = 1
+			elif mod_ul_fec in ul_fec_normal:
+				state  = 0
+			else:
+				state = 3
+				modulation_ul_fec = None
+			infotext = "Device uplink modulation FEC is %s " % modulation_ul_fec	
     except ValueError:
         infotext = "type_mismatch_value"
     except:
