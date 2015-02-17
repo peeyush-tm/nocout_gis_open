@@ -20,7 +20,9 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, \
-    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus
+    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus, SpotDashboard
+
+from nocout.utils import logged_in_user_organizations
 
 from django.utils.dateformat import format
 
@@ -38,6 +40,9 @@ from service.utils.util import service_data_sources
 from nocout.settings import DATE_TIME_FORMAT
 
 from performance.formulae import display_time, rta_null
+from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.utils.util import fetch_raw_result
 
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
@@ -381,8 +386,6 @@ class LivePerformanceListing(BaseDatatableView):
         page_type = self.request.GET.get('page_type')
         device_tab_technology = self.request.GET.get('data_tab')
 
-        print(page_type, device_tab_technology)
-
         if page_type == 'network':
             type_rf = 'sector'
         elif page_type == 'customer':
@@ -568,22 +571,275 @@ class Performance_Dashboard(View):
         """
         return render_to_response('home/home.html')
 
+# This function returns last x months 'years,month' tuple & all months name, alias list
+def getLastXMonths(months_count):
 
-class Sector_Dashboard(View):
+    # month name list
+    all_months_list = [
+        {"name" : "jan","alias" : "Jan"},
+        {"name" : "feb","alias" : "Feb"},
+        {"name" : "march","alias" : "March"},
+        {"name" : "april","alias" : "April"},
+        {"name" : "may","alias" : "May"},
+        {"name" : "june","alias" : "June"},
+        {"name" : "july","alias" : "July"},
+        {"name" : "aug","alias" : "Aug"},
+        {"name" : "sept","alias" : "Sept"},
+        {"name" : "oct","alias" : "Oct"},
+        {"name" : "nov","alias" : "Nov"},
+        {"name" : "dec","alias" : "Dec"}
+    ]
+
+    now = time.localtime()
+
+    last_six_months_list = [
+        time.localtime(
+            time.mktime(
+                (now.tm_year, now.tm_mon - n, 1, 0, 0, 0, 0, 0, 0)
+            )
+        )[:2] for n in range(months_count)
+    ]
+
+    # Reverse months list
+    last_six_months_list.reverse()
+
+    return (last_six_months_list, all_months_list)
+
+# Sector Spot Dashboard ListView
+class SectorDashboard(ListView):
     """
     The Class based view to get sector dashboard page requested.
 
     """
 
-    def get(self, request):
-        """
-        Handles the get request
+    model = SpotDashboard
+    template_name = 'performance/sector_dashboard.html'
 
-        :param request:
-        :return Http response object:
+    def get_context_data(self, **kwargs):
+
+        context = super(SectorDashboard, self).get_context_data(**kwargs)
+        # Sector Info Headers
+        sector_headers = [
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', },
+            {'mData': 'sector_sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', }
+        ]
+
+
+        ul_last_six_month_headers = list()
+        sia_last_six_month_headers = list()
+        augt_last_six_month_headers = list()
+        months_index_list = list()
+
+        # Get Last Six Month List
+        last_six_months_list, \
+        months_list = getLastXMonths(6);
+
+        for i in range(6):
+            # Get month index from year,month tuple
+            month_index = last_six_months_list[i][1] - 1
+            month_name = months_list[month_index]['name']
+            month_alias = months_list[month_index]['alias']
+
+            # Months index List
+            months_index_list.append(month_index)
+
+            # Last Six Month UL Issues Headers
+            ul_last_six_month_headers.append(
+                {'mData': 'ul_issue_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+            )
+            # Last Six Month SIA Headers
+            sia_last_six_month_headers.append(
+                {'mData': 'sia_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+            )
+            # Last Six Month Augmentation Headers
+            augt_last_six_month_headers.append(
+                {'mData': 'augment_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+            )
+
+        table_headers = []
+        table_headers += sector_headers
+        table_headers += ul_last_six_month_headers
+        table_headers += sia_last_six_month_headers
+        table_headers += augt_last_six_month_headers
+
+        context['table_headers'] = json.dumps(table_headers)
+        context['months_index'] = json.dumps(months_index_list)
+        return context
+
+class SectorDashboardListing(BaseDatatableView):
+    """ This class show sector spot dashboard listing """
+
+    model = SpotDashboard
+
+    # Static info Colums
+    static_columns = [
+        "sector_sector_id",
+        "sector_sector_configured_on",
+        "sector_device_technology"
+    ]
+
+    # Calculated or polled info columns
+    polled_columns = [
+        "ul_issue_1",
+        "ul_issue_2",
+        "ul_issue_3",
+        "ul_issue_4",
+        "ul_issue_5",
+        "ul_issue_6",
+        "augment_1",
+        "augment_2",
+        "augment_3",
+        "augment_4",
+        "augment_5",
+        "augment_6",
+        "sia_1",
+        "sia_2",
+        "sia_3",
+        "sia_4",
+        "sia_5",
+        "sia_6"
+    ]
+
+    columns = static_columns + polled_columns
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        return self.model.objects.values(*self.columns)
+
+    def prepare_results(self,qs):
+
+        report_resultset = []
+
+        for data in qs:
+            report_object = {}
+            report_object['sector_id'] = data['sector_sector_id']
+            report_object['sector_sector_configured_on'] = data['sector_sector_configured_on']
+            report_object['sector_device_technology'] = data['sector_device_technology']
+
+            #  Last 6 months loop
+            for i in range(6):
+                columns_concat_counter = str(i+1)
+                # Condition for ul Issue
+                if data['ul_issue_'+columns_concat_counter]:
+                    report_object['ul_issue_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                else:
+                    report_object['ul_issue_'+columns_concat_counter] = '-'
+
+
+                # Condition for Augmentation
+                if data['augment_'+columns_concat_counter]:
+                    report_object['augment_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                else:
+                    report_object['augment_'+columns_concat_counter] = '-'
+
+
+                # Condition for SIA
+                if data['sia_'+columns_concat_counter]:
+                    report_object['sia_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                else:
+                    report_object['sia_'+columns_concat_counter] = '-'
+
+            #add data to report_resultset list
+            report_resultset.append(report_object)
+
+        return report_resultset
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+
+        order_columns = self.static_columns
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
         """
 
-        return render(request, 'home/home.html')
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+           'iTotalRecords': total_records,
+           'iTotalDisplayRecords': total_display_records,
+           'aaData': aaData
+        }
+
+        return ret
 
 
 class Fetch_Inventory_Devices(View):

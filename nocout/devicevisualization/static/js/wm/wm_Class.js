@@ -1901,6 +1901,7 @@ function WhiteMapClass() {
 						fetched_beamWidth = sector_array[j].beam_width,
 						fetched_color = sector_array[j].color && sector_array[j].color != 'NA' ? sector_array[j].color : 'rgba(74,72,94,0.58)',
 						ss_infoWindow_content = sector_array[j].ss_info_list ? sector_array[j].ss_info_list : [],
+						sector_item_index = sector_array[j].item_index > -1 ? sector_array[j].item_index : j,
 						azimuth = fetched_azimuth && fetched_azimuth != 'NA' ? fetched_azimuth : 10,
 						beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
 						sector_color = fetched_color,
@@ -1915,20 +1916,16 @@ function WhiteMapClass() {
 							"technology" : sector_array[j].technology,
 							"vendor" : sector_array[j].vendor,
 							"sector_perf_url" : sector_perf_url,
-							"inventory_url" : sector_inventory_url
+							"inventory_url" : sector_inventory_url,
+							"sector_info_index" : sector_item_index
 						},
 						orientation = $.trim(sector_array[j].orientation),
 						sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 						sector_child = sector_array[j].sub_station,
-						rad = 4,
-						sectorRadius = (+sector_array[j].radius),
+						sectorRadius = sector_array[j].radius ? +(sector_array[j].radius) : 0,
+						rad = sectorRadius && (sectorRadius > 0) ? sectorRadius : 0.5,
 						startLon = "",
 						startLat = "";
-
-					/*If radius is greater than 4 Kms then set it to 4.*/
-					if(sectorRadius && (sectorRadius > 0)) {
-						rad = sectorRadius;
-					}
 
 					var startEndObj = {};
 
@@ -1988,7 +1985,7 @@ function WhiteMapClass() {
 								vendor 				: sector_array[j].vendor,
 								deviceExtraInfo 	: sector_infoWindow_content,
 								deviceInfo 			: sector_array[j].device_info,
-								item_index 			: j,
+								item_index 			: sector_item_index,
 								poll_info 			: [],
 								pl 					: "",
 								rta					: "",
@@ -2009,10 +2006,22 @@ function WhiteMapClass() {
 		                    }
 		                }
 
-		                var sect_height = sector_array[j].antenna_height;
+		                // var sect_height = sector_array[j].antenna_height;
+		                var sect_height = gisPerformanceClass.getKeyValue(
+		                	sector_infoWindow_content,
+		                	"antenna_height",
+		                	true,
+		                	sector_item_index
+	                	);
 
 						/*Create Sector Marker*/
-						var sector_Marker = global_this.createOpenLayerVectorMarker(devices_size, sectors_Markers_Obj.icon, lon, lat, sectors_Markers_Obj);
+						var sector_Marker = global_this.createOpenLayerVectorMarker(
+							devices_size,
+							sectors_Markers_Obj.icon,
+							lon,
+							lat,
+							sectors_Markers_Obj
+						);
 
 						if(!bsDevicesObj[bs_ss_devices[i].name]) {
 							bsDevicesObj[bs_ss_devices[i].name]= [];
@@ -2045,10 +2054,10 @@ function WhiteMapClass() {
 
 					/*Plot Sub-Station*/
 					for(var k=sector_child.length;k--;) {
-
 					
 						var ss_marker_obj = sector_child[k],
-							ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,k),
+							ss_item_info_index = ss_marker_obj.data.item_index > -1 ? ss_marker_obj.data.item_index : k,
+							ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
 							ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 							ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
@@ -2064,7 +2073,7 @@ function WhiteMapClass() {
 					    	clusterIcon 	 : 	base_url+"/"+ss_marker_obj.data.markerUrl,
 					    	pointType	     : 	"sub_station",
 					    	dataset 	     : 	ss_infoWindow_content,
-					    	item_index 		 :  k,
+					    	item_index 		 :  ss_item_info_index,
 					    	bhInfo 			 : 	[],
 					    	poll_info 		 :  [],
 					    	pl 				 :  "",
@@ -2087,7 +2096,13 @@ function WhiteMapClass() {
 					    };
 
 					    /*Create SS Marker*/
-					    var ss_marker = global_this.createOpenLayerVectorMarker(devices_size, ss_marker_object.icon, ss_marker_object.ptLon, ss_marker_object.ptLat, ss_marker_object);
+					    var ss_marker = global_this.createOpenLayerVectorMarker(
+					    	devices_size,
+					    	ss_marker_object.icon,
+					    	ss_marker_object.ptLon,
+					    	ss_marker_object.ptLat,
+					    	ss_marker_object
+				    	);
 					    bs_ss_markers.push(ss_marker);
 					    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
 					    var show_ss_len = $("#showAllSS:checked").length;
@@ -2145,7 +2160,7 @@ function WhiteMapClass() {
 						var ss_info = {
 								"info" : ss_infoWindow_content,
 								"antenna_height" : ss_marker_obj.data.antenna_height,
-								"ss_item_index" : k
+								"ss_item_index" : ss_item_info_index
 							},
 							base_info = {
 								"info" : bs_ss_devices[i].data.param.base_station,

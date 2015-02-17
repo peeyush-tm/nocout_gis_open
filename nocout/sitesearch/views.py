@@ -337,7 +337,7 @@ def prepare_raw_sector(sectors):
     all_sector_antenna_splitter_installed = ""
     all_sector_frame_length = ""
     ##### Sector Tooltip Variables End
-
+    counter = 0
     if sectors:
         for sector_id in sectors:
             if sector_id not in sector_list:
@@ -361,7 +361,6 @@ def prepare_raw_sector(sectors):
                 circuit_dict = pivot_element(sectors[sector_id], 'CCID')
 
                 #circuit id prepare ?
-
                 substation, circuit_id, substation_ip, subStationsInfo  = prepare_raw_ss_result(circuits=circuit_dict,
 
                                                              sector_id=sector_id,
@@ -469,10 +468,14 @@ def prepare_raw_sector(sectors):
 
                         ],
                         'info': [],
+                        "item_index" : counter,
                         'ss_info_list' : subStationsInfo,
                         'sub_station': substation
                     }
                 )
+
+                # Increment counter as per the loop
+                counter += 1
 
     # Sector Infowindow content
     sectors_info_list = [
@@ -731,6 +734,8 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
     all_date_of_acceptance = ""
     ##### SS Tooltip Variables End
 
+    ss_counter = 0
+
     if circuits and sector_id:
         for circuit_id in circuits:
             if circuit_id:
@@ -781,7 +786,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                     all_dl_rssi_during_acceptance +=  unicode(format_value(circuit['RSSI']))+"|"
                     all_date_of_acceptance +=  unicode(format_value(circuit['DATE_OF_ACCEPT']))+"|"
 
-
                     substation_info.append(
                         {
                             'id': circuit['SSID'],
@@ -799,10 +803,12 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                 "markerUrl": format_value(format_this=circuit['SS_GMAP_ICON'], type_of='icon'),
                                 "show_link": 1,
                                 "link_color": frequency_color,
-
+                                "item_index" : ss_counter
                             }
                         }
                     )
+                    # Increment counter as per SS loop
+                    ss_counter += 1
 
     # Create Sub Station Info List
     subStationsInfo = [
