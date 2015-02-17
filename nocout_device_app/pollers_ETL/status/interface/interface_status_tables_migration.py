@@ -50,7 +50,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = utility_module.mysql_conn(configs=configs)
+    #db = utility_module.mysql_conn(configs=configs)
     # Get the time for latest entry in mysql
     #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
     utc_time = datetime(1970, 1,1,5,30)
