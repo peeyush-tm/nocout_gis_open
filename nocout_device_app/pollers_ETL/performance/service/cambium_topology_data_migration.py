@@ -66,11 +66,14 @@ def main(**configs):
 
     print start_time,end_time
     
-    for i in range(len(configs.get('mongo_conf'))):
-    	docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
+    # Get all the entries from mongodb having timestam0p greater than start_time
+    docs = read_data(start_epoch, end_epoch, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+
+	
+    for doc in docs:
+        values_list = build_data(doc)
+        data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
     	print "Data inserted into my mysql db"
@@ -142,8 +145,6 @@ def build_data(doc):
 	return values_list
 
 
-
-
 def mysql_connection(db=None, **kwargs):
     """
     Function to create connection to mysql database
@@ -167,7 +168,6 @@ def mysql_connection(db=None, **kwargs):
         raise mysql.connector.Error, err
 
     return db
-
 
 
 def insert_data(table, data_values, **kwargs):
@@ -233,7 +233,7 @@ def insert_data(table, data_values, **kwargs):
     		db.commit()
     		cursor.close()
 
-	db.close()
+
 
 if __name__ == '__main__':
     main()

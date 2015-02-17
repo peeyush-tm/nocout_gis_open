@@ -70,8 +70,9 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=5)
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
     # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
     configs1 = config_module.parse_config_obj()
     for conf, options in configs1.items():
 	machine_name = options.get('machine')
@@ -84,31 +85,31 @@ def main(**configs):
 	else:
 		rtmin=rtmax=doc.get('data')[0].get('value')
 	t = (
-		#uuid,
-		doc.get('host'),
-		doc.get('service'),
-		machine_name,
-		doc.get('site'),
-		doc.get('ds'),
-		doc.get('data')[0].get('value'),
-		rtmin,
-		rtmax,
-		doc.get('data')[0].get('value'),
-		doc.get('meta').get('war'),
-		doc.get('meta').get('cric'),
-		local_time_epoch,
-		check_time_epoch,
-		doc.get('ip_address'),
-		doc.get('severity'),
-		doc.get('age')
+            #uuid,
+            doc.get('host'),
+            doc.get('service'),
+            machine_name,
+            doc.get('site'),
+            doc.get('ds'),
+            doc.get('data')[0].get('value'),
+	    rtmin,
+            rtmax,
+            doc.get('data')[0].get('value'),
+            doc.get('meta').get('war'),
+            doc.get('meta').get('cric'),
+            local_time_epoch,
+            check_time_epoch,
+            doc.get('ip_address'),
+            doc.get('severity'),
+            doc.get('age')
 	)
 	data_values.append(t)
 	t=()
     if data_values:
-	insert_data(configs.get('table_name'), data_values,configs=configs)
-	print "Data inserted into my mysql db"
+    	insert_data(configs.get('table_name'), data_values,configs=configs)
+    	print "Data inserted into my mysql db"
     else:
-	print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
+    	print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
 
 def read_data(start_time, end_time, **kwargs):
     """

@@ -82,7 +82,7 @@ def live_query_cam_ul_util_kpi(host_name,site,war,crit):
 	perf += 'cam_ul_util_kpi' + "=%s;%s;%s " %(cam_ul,war,crit)
    
     except:
-        perf = ';%s;%s' %(war,crit)
+        perf = ';%s;%s' % (war,crit)
     plugin_message += "cambium_ul_util_kpi %s - %s|%s" % (state_string,cam_ul,perf)
     sys.stdout.write(plugin_message)
     sys.exit((state))
