@@ -109,21 +109,25 @@ def get_all_sector_devices(technology):
     except Exception as e:
         return False
 
-    sector_values = ['id',
-                     'sector_id',
-                     'sector_configured_on',
-                     'sector_configured_on__machine__name',
-                     'sector_configured_on__device_name',
-                     'sector_configured_on__ip_address'
+    sector_values = [
+        'id',
+        'sector_id',
+        'sector_configured_on',
+        'sector_configured_on__machine__name',
+        'sector_configured_on__device_name',
+        'sector_configured_on__ip_address'
     ]
 
     sector_objects = inventory_utils.organization_sectors(organization=organizations, technology=tech)
 
-    sector_devices_list = sector_objects.select_related('sector_configured_on', 'sector_configured_on__machine'
+    sector_devices_list = sector_objects.select_related(
+        'sector_configured_on',
+        'sector_configured_on__machine'
     ).values(*sector_values)
 
     # Get machine wise seperated devices,sectors list
-    machine_wise_data = get_machines_wise_devices(sectorObject=sector_devices_list)
+    machine_wise_data,\
+    sectors_id_list = get_machines_wise_devices(sectorObject=sector_devices_list)
 
     # Machine by machine loop
     complete_augmentation_data = list()
@@ -137,21 +141,22 @@ def get_all_sector_devices(technology):
         'bs_ul_issue'
     ]
 
+    # Call 'get_sector_augmentation_data' to get the sector augmentation data from default machine
+    # because sector capacity is calculated per 5 minutes and status is stored
+    complete_augmentation_data = get_sector_augmentation_data(sector_ids=sectors_id_list)
+
+    # Machine wise data calculation for performance utilization status
     for machine_name in machine_wise_data.keys():
         current_row = machine_wise_data[machine_name]
         # List of sector_id on current machine
         sector_ids = current_row['sector_id']
         # List of device_name on current machine
         device_names = current_row['device_name']
-
-        # Call 'get_sector_augmentation_data' to get the sector augmentation data from default machine
-        # because sector capacity is calculated per 5 minutes and status is stored
-        complete_augmentation_data += get_sector_augmentation_data(sector_ids)
-
         # Call 'get_sector_ul_issue_data' to get the sector UL issue data per machine
-        complete_ul_issue_data += get_sector_ul_issue_data(device_names,
-                                                           data_source_list,
-                                                           machine=machine_name
+        complete_ul_issue_data += get_sector_ul_issue_data(
+            devices_names=device_names,
+            ds_list=data_source_list,
+            machine=machine_name
         )
 
     # Format augmentation data
@@ -185,6 +190,7 @@ def get_machines_wise_devices(sectorObject=[]):
     :return: dictionary of machines
     """
     machines_wise_dict = {}
+    sector_ids_list = list()
 
     for device in sectorObject:
         machine_name = device['sector_configured_on__machine__name']
@@ -201,6 +207,9 @@ def get_machines_wise_devices(sectorObject=[]):
                     "ip_address": list()
                 }
             try:
+                if device['id'] not in sector_ids_list:
+                    sector_ids_list.append(device['id'])
+
                 machines_wise_dict[machine_name]["sector_id"].append(device['id'])
                 machines_wise_dict[machine_name]["sector__sector_id"].append(device['sector_id'])
                 machines_wise_dict[machine_name]["device_id"].append(device['sector_configured_on'])
@@ -209,7 +218,7 @@ def get_machines_wise_devices(sectorObject=[]):
             except Exception as e:
                 continue
 
-    return machines_wise_dict
+    return (machines_wise_dict, sector_ids_list)
 
 
 def get_sector_augmentation_data(sector_ids=[]):
@@ -223,7 +232,7 @@ def get_sector_augmentation_data(sector_ids=[]):
     in_string = lambda x: "'" + str(x) + "'"
 
     augmentation_raw_query = '''
-                            SELECT sys_timestamp, sector_id
+                            SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_id
                             FROM {0}
                             WHERE
                               sector_id IN ( {1} )
@@ -232,7 +241,6 @@ def get_sector_augmentation_data(sector_ids=[]):
                               AND
                               sys_timestamp - age > 600
                             '''.format(table_name, (",".join(map(in_string, sector_ids))))
-
 
     # Execute Query to get augmentation data
     augmentation_data = fetch_raw_result(augmentation_raw_query)
@@ -253,7 +261,7 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
     in_string = lambda x: "'" + str(x) + "'"
 
     ul_issue_raw_query = '''
-                         SELECT sys_timestamp, device_name
+                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, device_name
                          FROM {0}
                          WHERE
                             device_name IN ( {1} )
@@ -262,11 +270,10 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
                             AND
                             severity IN ( 'warning', 'critical' )
                          '''.format(
-                                    table_name
+                                    table_name,
                                     (",".join(map(in_string, devices_names))),
                                     (",".join(map(in_string, ds_list)))
                                 )
-
 
     # Execute Query to get augmentation data
     ul_issue_data = fetch_raw_result(query=ul_issue_raw_query, machine=machine)
@@ -327,37 +334,32 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
         if device_name in ul_issues_list:
             ul_issue_data = ul_issues_list[device_name]
 
-        for x in range(6):
+        # for x in range(1):
 
-            month_num = int(last_six_months_list[x][1])
+        # Reverse the list to get the current month at first index
+        last_six_months_list.reverse()
+        month_num = int(last_six_months_list[0][1])
 
-            augment_key = 'augment_' + str(x + 1)
-            if augment_key not in sectors_list[i]:
-                sectors_list[i][augment_key] = ""
+        augment_key = 'augment_1'
 
-            # if '10.193.142.2_25' == str(sectors_list[i]['sector_id']):
-            # logger.debug("^^^^^^^^^^^^^^^^^^")
-            #     logger.debug(augment_data)
-            #     logger.debug(sector_id)
-            #     logger.debug(month_num)
-            #     logger.debug("^^^^^^^^^^^^^^^^^^")
-            try:
-                # if augment_data[x] > 0:
-                if month_num in augment_data:
-                    sectors_list[i][augment_key] = 1
-            except Exception, e:
-                sectors_list[i][augment_key] = 0
+        if augment_key not in sectors_list[i]:
+            sectors_list[i][augment_key] = ""
 
-            ul_issue_key = 'ul_issue_' + str(x + 1)
-            if ul_issue_key not in sectors_list[i]:
-                sectors_list[i][ul_issue_key] = ""
+        try:
+            if month_num in augment_data:
+                sectors_list[i][augment_key] = 1
+        except Exception, e:
+            sectors_list[i][augment_key] = 0
 
-            try:
-                # if ul_issue_data[x] > 0:
-                if month_num in ul_issue_data:
-                    sectors_list[i][ul_issue_key] = 1
-            except Exception as e:
-                sectors_list[i][ul_issue_key] = 0
+        ul_issue_key = 'ul_issue_1'
+        if ul_issue_key not in sectors_list[i]:
+            sectors_list[i][ul_issue_key] = ""
+
+        try:
+            if month_num in ul_issue_data:
+                sectors_list[i][ul_issue_key] = 1
+        except Exception as e:
+            sectors_list[i][ul_issue_key] = 0
 
     return sectors_list
 
@@ -368,6 +370,7 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
     :param calculated_data:
     :param technology:
     """
+    
     g_jobs = list()
     bulky_update = list()
     bulky_create = list()
@@ -375,6 +378,7 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
     counter_val = len(calculated_data)
 
     for i in range(counter_val):
+
         current_row = calculated_data[i]
 
         # Foreign Keys
@@ -386,104 +390,166 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         sector_sector_configured_on = calculated_data[i]['sector_configured_on__ip_address']
         sector_device_technology = technology
 
-        # UL Issues
+        # UL Issues for current month
         ul_issue_1 = calculated_data[i]['ul_issue_1']
-        ul_issue_2 = calculated_data[i]['ul_issue_2']
-        ul_issue_3 = calculated_data[i]['ul_issue_3']
-        ul_issue_4 = calculated_data[i]['ul_issue_4']
-        ul_issue_5 = calculated_data[i]['ul_issue_5']
-        ul_issue_6 = calculated_data[i]['ul_issue_6']
 
-        # Augmentation
+        # Augmentation for current month
         augment_1 = calculated_data[i]['augment_1']
-        augment_2 = calculated_data[i]['augment_2']
-        augment_3 = calculated_data[i]['augment_3']
-        augment_4 = calculated_data[i]['augment_4']
-        augment_5 = calculated_data[i]['augment_5']
-        augment_6 = calculated_data[i]['augment_6']
 
-        sector_object = SpotDashboard.objects.get_or_create(sector_sector_id=sector_sector_id,
-                                                           sector=sector_id,
-                                                           device=device_id)
-        sector_object.update(
-            # sector=sector_id, ## this is similar to try except clause.
-            # device=device_id,
-            # sector_sector_id=sector_sector_id,  ## we now have a sector dashboard object
-            sector_sector_configured_on=sector_sector_configured_on,
-            sector_device_technology=sector_device_technology,
-            ul_issue_1=ul_issue_1,
-            ul_issue_2=ul_issue_2,
-            ul_issue_3=ul_issue_3,
-            ul_issue_4=ul_issue_4,
-            ul_issue_5=ul_issue_5,
-            ul_issue_6=ul_issue_6,
-            augment_1=augment_1,
-            augment_2=augment_2,
-            augment_3=augment_3,
-            augment_4=augment_4,
-            augment_5=augment_5,
-            augment_6=augment_6
+        #bulk operations
+        sector_object = None
+    
+    
+        try:
+            sector_object = SpotDashboard.objects.get(
+                sector_sector_id=sector_sector_id,
+                sector=sector_id,
+                device=device_id
+            )
+
+            sector_object.sector_sector_configured_on = sector_sector_configured_on
+            sector_object.sector_device_technology=sector_device_technology
+            sector_object.ul_issue_1 = ul_issue_1
+            sector_object.augment_1 = augment_1
+    
+            bulky_update.append(sector_object)
+    
+        except Exception as e:
+            sector_object = SpotDashboard(
+                sector=sector_id,
+                device=device_id,
+                sector_sector_id=sector_sector_id,
+                sector_sector_configured_on=sector_sector_configured_on,
+                sector_device_technology=sector_device_technology,
+                ul_issue_1=ul_issue_1,
+                augment_1=augment_1
+            )
+            bulky_create.append(sector_object)
+    
+
+    # If any create item exist then start bulk create job
+    if len(bulky_create):
+        g_jobs.append(
+            inventory_tasks.bulk_update_create.s(
+                bulky=bulky_create,
+                action='create',
+                model=SpotDashboard
+            )
         )
-        # ################## Task for Sector Spot Dashboard Calculation - End ###################
-    #bulk operations
-    #     sector_object = None
-    #
-    #
-    #     try:
-    #         sector_object = SpotDashboard.objects.get(sector_sector_id=sector_sector_id,
-    #                                                     sector=sector_id,
-    #                                                     device=device_id)
-    #         sector_object.sector_sector_configured_on = sector_sector_configured_on
-    #         sector_object.sector_device_technology=sector_device_technology
-    #         sector_object.ul_issue_1 = ul_issue_1
-    #         sector_object.ul_issue_2 = ul_issue_2
-    #         sector_object.ul_issue_3 = ul_issue_3
-    #         sector_object.ul_issue_4 = ul_issue_4
-    #         sector_object.ul_issue_5 = ul_issue_5
-    #         sector_object.ul_issue_6 = ul_issue_6
-    #         sector_object.augment_1 = augment_1
-    #         sector_object.augment_2 = augment_2
-    #         sector_object.augment_3 = augment_3
-    #         sector_object.augment_4 = augment_4
-    #         sector_object.augment_5 = augment_5
-    #         sector_object.augment_6 = augment_6
-    #
-    #         bulky_update.append(sector_object)
-    #
-    #     except Exception as e:
-    #         sector_object = SpotDashboard(
-    #             sector=sector_id, ## this is similar to try except clause.
-    #             device=device_id,
-    #             sector_sector_id=sector_sector_id,  ## we now have a sector dashboard object
-    #             sector_sector_configured_on=sector_sector_configured_on,
-    #             sector_device_technology=sector_device_technology,
-    #             ul_issue_1=ul_issue_1,
-    #             ul_issue_2=ul_issue_2,
-    #             ul_issue_3=ul_issue_3,
-    #             ul_issue_4=ul_issue_4,
-    #             ul_issue_5=ul_issue_5,
-    #             ul_issue_6=ul_issue_6,
-    #             augment_1=augment_1,
-    #             augment_2=augment_2,
-    #             augment_3=augment_3,
-    #             augment_4=augment_4,
-    #             augment_5=augment_5,
-    #             augment_6=augment_6
-    #         )
-    #         bulky_create.append(sector_object)
-    #
-    # if len(bulky_update):
-    #     g_jobs.append(inventory_tasks.bulk_update_create.s(bulky=bulky_update, action='update', model=SpotDashboard))
-    #
-    # if len(bulky_create):
-    #     g_jobs.append(inventory_tasks.bulk_update_create.s(bulky=bulky_create, action='create', model=SpotDashboard))
-    #
-    # job = group(g_jobs)
-    #
-    # result = job.apply_async()
-    # ret = False
-    #
-    # for r in result.get():
-    #     ret |= r
-    #
-    # return ret
+    
+    # If any update item exist then start bulk update job
+    if len(bulky_update):
+        g_jobs.append(
+            inventory_tasks.bulk_update_create.s(
+                bulky=bulky_update,
+                action='update',
+                model=SpotDashboard
+            )
+        )
+    # Start create & update jobs parallely
+    job = group(g_jobs)
+    result = job.apply_async()
+    ret = False
+    
+    for r in result.get():
+        ret |= r
+    
+    return ret
+
+
+@task()
+def check_for_monthly_spot():
+    """
+
+    """
+    ret = False
+    g_jobs = list()
+    technology = ['WiMAX', 'PMP']
+    
+    import datetime
+    tdy = datetime.datetime.now()
+    tom = tdy + datetime.timedelta(days = 1)
+
+    if tom.month - tdy.month:
+        for tech in technology:
+            g_jobs.append(
+                update_spot_dashboard_monthly.s(
+                    technology=tech
+                )
+            )
+        if len(g_jobs):
+            job = group(g_jobs)
+            result = job.apply_async()
+            ret = False
+            
+            for r in result.get():
+                ret |= r
+    
+    return ret
+
+
+@task()
+def update_spot_dashboard_monthly(technology=None):
+    """
+    # This task runs once in a month(in the end of month).
+    # It moves the spotdashboard values to 1 next column & set first column(ul_issue_1,augment_1,sia_1) to 0
+    """
+    if technology:
+        # Get all rows with the given technology
+        spot_dashboard_data = SpotDashboard.objects.filter(sector_device_technology=technology)
+
+        total_records = len(spot_dashboard_data)
+
+        bulky_update = list()
+        g_jobs = list()
+
+        for i in range(total_records):
+            
+            current_row = spot_dashboard_data[i]
+
+            # current_row.ul_issue_1 = False
+            current_row.ul_issue_2 = current_row.ul_issue_1
+            current_row.ul_issue_3 = current_row.ul_issue_2
+            current_row.ul_issue_4 = current_row.ul_issue_3
+            current_row.ul_issue_5 = current_row.ul_issue_4
+            current_row.ul_issue_6 = current_row.ul_issue_5
+
+            # current_row.augment_1 = False
+            current_row.augment_2 = current_row.augment_1
+            current_row.augment_3 = current_row.augment_2
+            current_row.augment_4 = current_row.augment_3
+            current_row.augment_5 = current_row.augment_4
+            current_row.augment_6 = current_row.augment_5
+
+            # current_row.sia_1 = False
+            current_row.sia_2 = current_row.sia_1
+            current_row.sia_3 = current_row.sia_2
+            current_row.sia_4 = current_row.sia_3
+            current_row.sia_5 = current_row.sia_4
+            current_row.sia_6 = current_row.sia_5
+
+            bulky_update.append(current_row)
+
+        # If any update item exist then start bulk update job
+        if len(bulky_update):
+            g_jobs.append(
+                inventory_tasks.bulk_update_create.s(
+                    bulky=bulky_update,
+                    action='update',
+                    model=SpotDashboard
+                )
+            )
+        # Start create & update jobs parallely
+        job = group(g_jobs)
+        result = job.apply_async()
+        ret = False
+        
+        for r in result.get():
+            ret |= r
+        
+        return ret
+    else:
+        return True
+
+    ################## Task for Sector Spot Dashboard Calculation - End ###################
+
