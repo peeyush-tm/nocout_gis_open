@@ -18,62 +18,62 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     ],
     solid_gauge_url_obj = {
         "down-all" : {
-            "url" : "/dashboard/down/all/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Down"
         },
         "latency-all" : {
-            "url" : "/dashboard/latency/all/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Latency"
         },
         "packetloss-all" : {
-            "url" : "/dashboard/packet_loss/all/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Packet Drop"
         },
         "temperature-idu-wimax" : {
-            "url" : "/dashboard/temperature-idu/wimax/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Temperature IDU WiMAX"
         },
         "down-wimax" : {
-            "url" : "/dashboard/down/wimax/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Down WiMAX"
         },
         "down-pmp" : {
-            "url" : "/dashboard/down/pmp/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Down PMP"
         },
         "latency-wimax" : {
-            "url" : "/dashboard/latency/wimax/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Latency WiMAX"
         },
         "latency-pmp" : {
-            "url" : "/dashboard/latency/pmp/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Latency PMP"
         },
         "packetloss-wimax" : {
-            "url" : "/dashboard/packet_loss/wimax/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Packet Drop WiMAX"
         },
         "packetloss-pmp" : {
-            "url" : "/dashboard/packet_loss/pmp/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Packet Drop PMP"
         },
         "temperature-fan-wimax" : {
-            "url" : "/dashboard/temperature-fan/wimax/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Temperature Fan Wimax"
         },
         "temperature-acb-wimax" : {
-            "url" : "/dashboard/temperature-acb/wimax/",
+            "url" : "",
             "trends_url" : "",
             "text" : "Temperature ACB WiMAX"
         }
@@ -589,23 +589,96 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
  * @event click
  */
 $("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .box-body h4 strong i").click(function(e) {
+
+    // show the loader
+    showSpinner();
+
     var trends_id = e.currentTarget.id ? e.currentTarget.id : "",
         chart_dom_id = trends_id.split("_trend")[0],
-        trends_url = "";
+        trends_url = "",
+        window_title = "";
 
     if(solid_gauge_chart_ids.indexOf(chart_dom_id) > -1) {
-        trends_url = solid_gauge_url_obj[chart_dom_id]["trends_url"] ? solid_gauge_url_obj[chart_dom_id]["trends_url"] : "";
+        trends_url = solid_gauge_url_obj[chart_dom_id]["trends_url"] ? $.trim(solid_gauge_url_obj[chart_dom_id]["trends_url"]) : "";
+        window_title = solid_gauge_url_obj[chart_dom_id]["text"] ? solid_gauge_url_obj[chart_dom_id]["text"]+" - " : "";
     } else if(area_chart_ids.indexOf(chart_dom_id) > -1) {
-        trends_url = area_chart_url_obj[chart_dom_id]["trends_url"] ? area_chart_url_obj[chart_dom_id]["trends_url"] : "";
+        trends_url = area_chart_url_obj[chart_dom_id]["trends_url"] ? $.trim(area_chart_url_obj[chart_dom_id]["trends_url"]) : "";
+        window_title = area_chart_url_obj[chart_dom_id]["text"] ? solid_gauge_url_obj[chart_dom_id]["text"]+" - " : "";
     } else if(pie_chart_ids.indexOf(chart_dom_id) > -1) {
-        trends_url = pie_chart_url_obj[chart_dom_id]["trends_url"] ? pie_chart_url_obj[chart_dom_id]["trends_url"] : "";
+        trends_url = pie_chart_url_obj[chart_dom_id]["trends_url"] ? $.trim(pie_chart_url_obj[chart_dom_id]["trends_url"]) : "";
+        window_title = pie_chart_url_obj[chart_dom_id]["text"] ? pie_chart_url_obj[chart_dom_id]["text"]+" - " : "";
     } else {
         // pass
     }
 
     if(trends_url) {
-        // $.ajax({
-            
-        // })
+        $.ajax({
+            "url" : base_url+""+trends_url,
+            "type" : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+
+                if(response.success) {
+                    var useful_data = response.data.objects,
+                        condition = useful_data && useful_data.chart_data && useful_data.chart_data.length > 0;
+
+                    if(condition) {
+
+                        var popup_html = "";
+
+                        popup_html += "<div class='trends_chart_container' align='center' style='position:relative;overflow:auto;'>";
+                        popup_html += "<div id='trends_chart' style='position:relative;width:100%;'></div>";
+                        popup_html += "<div class='clearfix'></div>";
+                        popup_html += "</div>";
+
+                        /*Call the bootbox to show the popup with datatable*/
+                        bootbox.dialog({
+                            message: popup_html,
+                            title: '<i class="fa fa-signal">&nbsp;</i> '+window_title+'Trends'
+                        });
+
+
+                        // Update Modal width to 90%;
+                        $(".modal-dialog").css("width","90%");
+                        
+                        // Create Chart
+                        createHighChart_nocout(useful_data,'trends','#333333');
+
+                        try {
+                            setTimeout(function() {
+                                // Resize the window to show highchart in proper bounds
+                                $(window).resize();
+                            },100)
+                        } catch(e) {
+                            // Pass
+                        }
+                    }
+                } else {
+                    $.gritter.add({
+                        title: window_title+'Trends',
+                        text: response.message,
+                        sticky: false,
+                        time : 1000
+                    });
+                }
+
+            },
+            error : function(err) {
+                // console.log(err.statusText);
+            },
+            complete : function() {
+                // hide the loader
+                hideSpinner();
+            }
+
+        });
+    } else {
+        // hide the loader
+        hideSpinner();
     }
 });
