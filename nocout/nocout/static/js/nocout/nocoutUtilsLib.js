@@ -282,10 +282,11 @@ function addPointsToChart_nocout(pointArray, dom_id) {
  * @param chartConfig {Array}, It contains configuration & data to initialize highcharts
  * @param dom_id {String}, It contains the chart dom element ID
  */
-function createHighChart_nocout(chartConfig,dom_id) {
+function createHighChart_nocout(chartConfig,dom_id,text_color) {
 
     // Is the y axis should be reversed or not
-    var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false;
+    var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false,
+        legends_color = text_color ? text_color : "#FFF";
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts({
         chart: {
@@ -302,11 +303,11 @@ function createHighChart_nocout(chartConfig,dom_id) {
         legend:{
             itemDistance : 15,
             itemMarginBottom : 5,
-            borderColor : "#FFF",
+            borderColor : legends_color,
             borderWidth : "1",
             borderRadius : "8",
             itemStyle: {
-                color: '#FFF',
+                color: legends_color,
                 fontSize : '12px'
             }
         },
