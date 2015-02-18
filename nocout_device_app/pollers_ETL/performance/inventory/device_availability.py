@@ -12,6 +12,7 @@ from nocout_site_name import *
 import socket,json
 import time
 import imp
+import sys
 from datetime import datetime, timedelta
 
 
@@ -46,46 +47,39 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 	"""
 
 
-	end_time = datetime.now()
-	start_time = end_time - timedelta(minutes=1440)
-	start_epoch = int(time.mktime(start_time.timetuple()))
-    	end_epoch = int(time.mktime(end_time.timetuple()))
-	
-	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
-	service = "availability"
-	end_time = datetime.now()
-	start_time = end_time - timedelta(hours=24)
-	pipe =  [
-		{"$match": {
-        	"local_timestamp": { "$gt": start_time, "$lt": end_time}, "service": "ping", "ds": "pl"
-        	}},
-		{"$unwind": "$data"},
-    		{"$group": {
-        		"_id": "$host",
-			"count": {"$sum": {"$cond":[{"$eq":["$data.value","100"]},1,0]}},
-			"ip":{"$first":"$ip_address"}
-        	}},
-    		]
+        db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
+        service = "availability"
+        end_time = datetime.now()
+        start_time = end_time - timedelta(hours=24)
+        pipe =  [
+                {"$match": {
+                "local_timestamp": { "$gt": start_time, "$lt": end_time}, "service": "ping", "ds": "pl"
+                }},
+                {"$unwind": "$data"},
+                {"$group": {
+                        "_id": "$host",
+                        "count": {"$sum": {"$cond":[{"$eq":["$data.value","100"]},1,0]}},
+                        "ip":{"$first":"$ip_address"}
+                }},
+                ]
 	try:
-		result = db['network_perf'].aggregate(pipeline=pipe)
+        	result = db['network_perf'].aggregate(pipeline=pipe)
 		result = result.get('result')
 	except:
-		return
+		return		
+        for entry in result:
+                try:
+                        host = entry.get('_id')
+                        host_ip = entry.get('ip')
+                        down_count = entry.get('count')
+                        total_down = ((down_count * 5)/(24*60) *100)
+                        total_up = 100 -total_down
+                        host_state = "ok"
+                except Exception ,e:
+                        print e
+                        continue
+                ds="availability"
 
-
-
-	for entry in result:
-		try:
-			host = entry.get('_id')
-			host_ip = entry.get('ip')
-			down_count = entry.get('count')
-			total_down = ((down_count * 5)/(24*60) *100)
-			total_up = 100 -total_down
-			host_state = "ok"
-		except Exception ,e:
-			print e
-			continue
-		ds="availability"
 		current_time = int(time.time())
 		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
 						service_name=service,current_value=total_up,min_value=0,max_value=0,avg_value=0,

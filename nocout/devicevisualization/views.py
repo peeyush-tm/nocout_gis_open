@@ -1469,26 +1469,41 @@ class GISPerfData(View):
 
                     # get all sectors associated with base station (bs)
                     #query for sectors and sector configured on
-                    sectors = bs.sector.prefetch_related('sector_configured_on', 'circuit_set').all()
+                    sectors = bs.sector.prefetch_related('sector_configured_on', 'circuit_set').filter(
+                        sector_configured_on__isnull=False,
+                        sector_configured_on__is_added_to_nms=1
+                    )
 
-                    #first gather all the devices
-                    device_list = Device.objects.filter(
-                        Q(id__in=sectors.values_list('sector_configured_on', flat=True)) #query saved
-                        |
-                        Q(id__in=[bs.backhaul.bh_configured_on_id]) #query saved
-                        |
-                        Q(id__in=SubStation.objects.filter( # 1 query
-                            id__in=Circuit.objects.filter( # 1 query
-                                sector__in=sectors
-                            ).values_list('sub_station_id',flat=True)
-                        ).values_list('device', flat=True)),
-                        is_added_to_nms=1
-                    ).values('device_name', 'machine__name')
+                    if bs.backhaul and bs.backhaul.bh_configured_on_id:
+                        #first gather all the devices
+                        device_list = Device.objects.filter(
+                            Q(id__in=sectors.values_list('sector_configured_on', flat=True)) #query saved
+                            |
+                            Q(id__in=[bs.backhaul.bh_configured_on_id]) #query saved
+                            |
+                            Q(id__in=SubStation.objects.filter( # 1 query
+                                id__in=Circuit.objects.filter( # 1 query
+                                    sector__in=sectors
+                                ).values_list('sub_station_id',flat=True)
+                            ).values_list('device', flat=True)),
+                            is_added_to_nms=1
+                        ).values('device_name', 'machine__name')
+                    else:
+                        device_list = Device.objects.filter(
+                            Q(id__in=sectors.values_list('sector_configured_on', flat=True)) #query saved
+                            |
+                            Q(id__in=SubStation.objects.filter( # 1 query
+                                id__in=Circuit.objects.filter( # 1 query
+                                    sector__in=sectors
+                                ).values_list('sub_station_id',flat=True)
+                            ).values_list('device', flat=True)),
+                            is_added_to_nms=1
+                        ).values('device_name', 'machine__name')
 
                     bs_devices = [
                         {
                             'device_name': device['device_name'],
-                            'machine_name': device['machine__name'],
+                            'device_machine': device['machine__name'],
                         }
                         for device in device_list
                     ]
@@ -1505,28 +1520,28 @@ class GISPerfData(View):
                             'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
                         ).using(alias=machine_name)
 
-                        network_perf_data.extend(device_network_info)
+                        network_perf_data.extend(list(device_network_info))
 
                         # device performance info
                         device_performance_info = ServiceStatus.objects.filter(device_name__in=devices_list).values(
                             'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
                         ).using(alias=machine_name)
 
-                        other_perf_data.extend(device_performance_info)
+                        other_perf_data.extend(list(device_performance_info))
 
                         # device inventory info
                         device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).values(
                             'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
                         ).using(alias=machine_name)
 
-                        other_perf_data.extend(device_inventory_info)
+                        other_perf_data.extend(list(device_inventory_info))
 
                         # device status info
                         device_status_info = Status.objects.filter(device_name__in=devices_list).values(
                             'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
                         ).using(alias=machine_name)
 
-                        other_perf_data.extend(device_status_info)
+                        other_perf_data.extend(list(device_status_info))
 
 
                     # loop through all sectors

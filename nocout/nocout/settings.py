@@ -453,6 +453,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'performance.tasks.get_all_sector_devices',
         'schedule': timedelta(seconds=300),
         'kwargs': {'technology': 'WiMAX'}
+    },
+    'check_for_monthly_spot-WiMAX-PMP': {
+        'task': 'performance.tasks.check_for_monthly_spot',
+        'schedule': crontab(hour=23, minute=30)
     }
 }
 

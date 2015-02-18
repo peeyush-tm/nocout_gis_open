@@ -43,11 +43,52 @@ function ourDataTableWidget()
             fnInitComplete: function(oSettings) {
                 /*Hide the spinner*/
                 hideSpinner();
+                var search_btn_html = '';
+
+                search_btn_html += '<button id="'+tableId+'_search_btn" class="btn btn-sm btn-default pull-right">';
+                search_btn_html += '<i class="fa fa-search"></i></button>';
+
+                // Add search button near search txt box
+                $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                
+                // Update search txt box & row per pages dropdown style
+                $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
+                $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("input-sm");
+                $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').css("max-width","150px");
             },
             aoColumns:tableheaders,
             sPaginationType: "full_numbers",
             aaSorting:[],
             bStateSave:false
  		});
+
+        
+
+        var dtable = $("#"+tableId).DataTable();
+
+        // Grab the datatables input box and alter how it is bound to events
+        $("#"+tableId+"_wrapper .dataTables_filter input")
+            .unbind() // Unbind previous default bindings
+            .bind("input", function(e) { // Bind our desired behavior
+                // If the length is 3 or more characters, or the user pressed ENTER, search
+                if(this.value.length >= 2 && e.keyCode == 13) {
+                    // Call the API search function
+                    //----------- If you want to start search on key up then uncomment the next line -----------//
+                    // dtable.fnFilter(this.value);
+                }
+                // Ensure we clear the search if they backspace far enough
+                if(this.value == "") {
+                    dtable.fnFilter("");
+                }
+                return;
+            });
+
+        $("#page_content_div").delegate("#"+tableId+"_search_btn",'click',function() {
+            var search_text = $(".dataTables_filter input").val();
+            if(search_text.length >= 2) {
+                dtable.fnFilter(search_text);
+            }
+        });
+
     };
 }

@@ -47,9 +47,9 @@ def main(**configs):
     # Get the time for latest entry in mysql
     #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
 
-    
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]    
     #for i in range(len(configs.get('mongo_conf'))):
-    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
     if docs:
     	insert_data(configs.get('table_name'), docs, configs=configs)
     	print "Data inserted into performance_utilization table"
