@@ -507,21 +507,21 @@ def update_spot_dashboard_monthly(technology=None):
             
             current_row = spot_dashboard_data[i]
 
-            current_row.ul_issue_1 = False
+            # current_row.ul_issue_1 = False
             current_row.ul_issue_2 = current_row.ul_issue_1
             current_row.ul_issue_3 = current_row.ul_issue_2
             current_row.ul_issue_4 = current_row.ul_issue_3
             current_row.ul_issue_5 = current_row.ul_issue_4
             current_row.ul_issue_6 = current_row.ul_issue_5
 
-            current_row.augment_1 = False
+            # current_row.augment_1 = False
             current_row.augment_2 = current_row.augment_1
             current_row.augment_3 = current_row.augment_2
             current_row.augment_4 = current_row.augment_3
             current_row.augment_5 = current_row.augment_4
             current_row.augment_6 = current_row.augment_5
 
-            current_row.sia_1 = False
+            # current_row.sia_1 = False
             current_row.sia_2 = current_row.sia_1
             current_row.sia_3 = current_row.sia_2
             current_row.sia_4 = current_row.sia_3
