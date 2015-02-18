@@ -21,7 +21,7 @@ from performance.models import ServiceStatus, NetworkAvailabilityDaily, Utilizat
 
 #inventory utils
 from inventory.utils.util import organization_customer_devices, organization_network_devices,\
-    organization_sectors, prepare_machines
+    organization_sectors, prepare_machines, organization_backhaul_devices
 #inventory utils
 
 from performance.utils.util import color_picker
@@ -770,7 +770,6 @@ class SectorCapacityMixin(object):
         sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
         # Get Device name list of User's Sector.
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
-
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Get the status of the dashboard.
         dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
@@ -801,8 +800,70 @@ class WiMAXSectorCapacity(SectorCapacityMixin, View):
     """
     tech_name = 'WiMAX'
 
+#********************************************** main dashboard Backhaul Capacity  ************************************************
+class BackhaulCapacityMixin(object):
+    '''
+    Provide common method (Mixin) get for Backhaul Capacity Dashboard.
 
-#********************************************** main dashboard sector capacity ************************************************
+    To use this Mixin provide following attributes:
+
+        - tech_name: name of the technology.
+    '''
+    def get(self, request):
+        '''
+        Handles the get request
+
+        :param request:
+        :retun dictionary containing data used for main dashboard charts.
+        '''
+        tech_name = self.tech_name
+        organization = logged_in_user_organizations(self)
+        # Getting Technology ID
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+
+        # Get Backhauls Devices of User's Organizations.
+        user_backhaul = organization_backhaul_devices(organization, technology=technology)     
+        # Get Device name list of User's Backhaul.
+        backhaul_devices_list = user_backhaul.values_list('device_name',flat=True)
+        # Creating Dashboard Name
+        dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
+        # Get the status of the dashboard.
+        dashboard_status_dict = get_severity_status_dict(dashboard_name, backhaul_devices_list)
+
+        chart_series = []
+        if len(dashboard_status_dict):
+            for key,value in dashboard_status_dict.items():           
+                # Changing key in to warning and critical
+                if key == 'Needs_Augmentation':
+                    change_key = 'warning'
+                elif key == 'Stop_Provisioning':
+                    change_key = 'critical'             
+                else:
+                    change_key = key
+                # create a list of "Key: value".    
+                chart_series.append(['%s: %s' % (change_key, value), dashboard_status_dict[key]])
+
+        # get the chart_data for the pie chart.
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': ''})
+
+        return HttpResponse(response)
+
+
+
+class PMPBackhaulCapacity(BackhaulCapacityMixin, View):
+    """
+    Class Based View for the PMP Backhaul Capacity
+    """
+    tech_name = 'PMP'
+
+class WiMAXBackhaulCapacity(BackhaulCapacityMixin, View):
+    """
+    Class Based View for the WiMAX Backhaul Capacity
+    """
+    tech_name = 'WiMAX'
+
+#********************************************** main dashboard Sales Opportunity ************************************************
 
 class SalesOpportunityMixin(object):
     """
@@ -886,7 +947,7 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
 
 
 # *************************** Dashboard Timely Data ***********************
-def get_severity_status_dict(dashboard_name, sector_devices_list):
+def get_severity_status_dict(dashboard_name, devices_list):
     '''
     Method based view to get latest data from central database table.
     retun data for the severity based dashboard.
@@ -898,7 +959,7 @@ def get_severity_status_dict(dashboard_name, sector_devices_list):
     '''
     dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
-        device_name__in=sector_devices_list
+        device_name__in=devices_list
     )
     if dashboard_status_dict.exists():
         # get the latest processed_for(datetime) from the database.
@@ -1022,59 +1083,124 @@ class DashboardDeviceStatus(View):
         return HttpResponse(response)
 
 #*************************************************Dashboard Monthly Data ***********************************************************************
-def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
+def get_severity_status_dict_monthly(dashboard_name, devices_list):
     '''
     '''
-
     # Start Calculations for Monthly Trend Sector
+    has_data = False
     # Last 30 Days
     month_before = datetime.date.today() - datetime.timedelta(days=30)
-    # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
-    dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(select={'processed_month':"date(processed_for)"}).values('processed_month').filter(
-        processed_for__gte=month_before,
-        dashboard_name=dashboard_name,
-        device_name__in=sector_devices_list
-    ).annotate(
-        Normal=Sum('ok'),
-        Needs_Augmentation=Sum('warning'),
-        Stop_Provisioning=Sum('critical'),
-        Unknown=Sum('unknown')
-    ).order_by('processed_month')    
-     
-    month_var = month_before    
-    final_dict = [] 
-    processed_key_color = {}
+    # Exceptional handling case
+    try:
+        has_data = True
+        # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+        dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(select={'processed_month':"date(processed_for)"}).values('processed_month').filter(
+            processed_for__gte=month_before,
+            dashboard_name=dashboard_name,
+            device_name__in=devices_list
+        ).annotate(
+            Normal=Sum('ok'),
+            Needs_Augmentation=Sum('warning'),
+            Stop_Provisioning=Sum('critical'),
+            Unknown=Sum('unknown')
+        ).order_by('processed_month')    
+    except Exception, e:
+        has_data = False
 
-    # random color picker for sending different colors
-    while month_var <= datetime.date.today():
-    	processed_key_color[month_var] = color_picker()
-    	month_var += relativedelta.relativedelta(days=1) 
-    # Loop for sending complete 30 days Data
-    while month_before <= datetime.date.today():
-        var = dict()
-        # values for state of host if no data available at some date
-        y = ['0','0','0','0']
-        # Accessing every element(dictionary) of list
-        for var in dashboard_status_dict:
-            # Equality condition for sending data whose entries are available at certain date within the month
-            if var['processed_month'] == month_before:
-                y= [] 
-                y.append(var['Normal'])
-                y.append(var['Needs_Augmentation'])
-                y.append(var['Stop_Provisioning'])
-                y.append(var['Unknown'])
-        # Preparation of final dict for sending to main function
-        final_dict.append({
-            "color": processed_key_color[month_before],
-            "y" : y,
-            "name": "sector capacity",
-            "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
-        })
+    final_dict = list()
 
-        # Increment of date by one  
-        month_before += relativedelta.relativedelta(days=1)          
-                 
+    if has_data:
+        if 'sector' in dashboard_name:
+            trends_items = [
+                {
+                    "id" : "Normal",
+                    "title" : "Normal"
+                },
+                {
+                    "id" : "Needs_Augmentation",
+                    "title" : "Needs Augmentation"
+                },
+                {
+                    "id" : "Stop_Provisioning",
+                    "title" : "Stop Provisioning"
+                },
+                {
+                    "id" : "Unknown",
+                    "title" : "Unknown"
+                }
+            ]
+        elif 'backhaul' in dashboard_name:    
+            trends_items = [
+                {
+                    "id" : "Normal",
+                    "title" : "Normal"
+                },
+                {
+                    "id" : "Needs_Augmentation",
+                    "title" : "Warning"
+                },
+                {
+                    "id" : "Stop_Provisioning",
+                    "title" : "Critical"
+                },
+                {
+                    "id" : "Unknown",
+                    "title" : "Unknown"
+                }
+            ]
+
+        # Accessing all elements in sector trend items
+        for i in range(len(trends_items)):
+            data_dict = {
+                "type": "column",
+                "valuesuffix": " ",
+                "name": trends_items[i]['title'],
+                "valuetext": trends_items[i]['title'],
+                "data" : list()
+            }
+            # Reseting month_before for every element of sector_trends_items
+            month_before = datetime.date.today() - datetime.timedelta(days=30)
+            # random color picker for sending different colors
+            item_color = color_picker()
+            # Loop for sending complete 30 days Data
+            while month_before <= datetime.date.today():
+                # Function for getting value for element of sector trend items on every date within month    
+                data_val = getValueByTime(
+                    dashboard_status_dict=dashboard_status_dict,
+                    key=trends_items[i]['id'],
+                    current_date=month_before,
+                    date_column='processed_month'
+                )
+
+                # Preparation of final dict for sending to main function
+                data_dict['data'].append({
+                    "color": item_color,
+                    "y" : data_val,
+                    "name": trends_items[i]['title'],
+                    "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+                })
+
+                # Increment of date by one  
+                month_before += relativedelta.relativedelta(days=1)          
+
+            final_dict.append(data_dict)
+              
     return final_dict
+
+#  This function returns the given key value for given time stamp
+def getValueByTime(dashboard_status_dict=[],key='',current_date='',date_column=''):
+    val = 0
+    # Accessing every element(dictionary) of list
+    for dict_val in dashboard_status_dict:
+        try:
+            if ((date_column in dict_val) & (dict_val[date_column] == current_date)):
+                val = dict_val[key]
+        except Exception, e:
+            # if condition is not matched then send value equal to zero
+            val = 0
+
+
+    return val
 
 def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard_setting):
     '''
@@ -1169,6 +1295,48 @@ def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_li
     ).order_by('processed_month')
 
     return dashboard_status_dict
+
+#************************************************* Monthly Trend Backhaul chart ***********************************************************************
+class MonthlyTrendBackhaulMixin(object):
+    '''
+    '''
+    def get(self, request):
+        '''
+        Handles the get request
+
+        :param request:
+        :retun dictionary containing data used for main dashboard Monthly charts.
+        '''
+        tech_name = self.tech_name
+        organization = logged_in_user_organizations(self)
+        # Getting Technology ID
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        # Get Backhauls Devices of User's Organizations.
+        user_backhaul = organization_backhaul_devices(organization, technology=technology)     
+        # Get Device name list of User's Backhaul.
+        backhaul_devices_list = user_backhaul.values_list('device_name',flat=True)
+        # Creating Dashboard Name
+        dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
+        # Get the status of the dashboard.
+        dashboard_status_dict = get_severity_status_dict_monthly(dashboard_name, backhaul_devices_list)
+        chart_series = []
+        chart_series = dashboard_status_dict
+
+        response = get_highchart_response(dictionary={'type': 'column','valuesuffix': '', 'chart_series': chart_series,
+            'name': '%s Backhaul Capacity' % tech_name.upper(), 'valuetext' : '' })
+
+        return HttpResponse(response)
+
+
+class MonthlyTrendBackhaulPMP(MonthlyTrendBackhaulMixin, View):
+    """
+    """
+    tech_name = 'PMP'
+
+class MonthlyTrendBackhaulWiMAX(MonthlyTrendBackhaulMixin, View):
+    """
+    """
+    tech_name = 'WIMAX'
 
 
 #************************************************* Monthly Trend Sector chart ***********************************************************************

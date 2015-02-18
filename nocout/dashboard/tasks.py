@@ -8,7 +8,7 @@ from nocout.settings import PMP, WiMAX
 
 from organization.models import Organization
 from device.models import DeviceTechnology, Device
-from capacity_management.models import SectorCapacityStatus
+from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
 from performance.models import Topology, NetworkStatus
 from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, DashboardSeverityStatusHourly,
         DashboardSeverityStatusDaily, DashboardSeverityStatusWeekly, DashboardSeverityStatusMonthly,
@@ -35,6 +35,9 @@ def calculate_timely_main_dashboard():
 
     calculate_timely_sector_capacity(user_organizations, technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
     calculate_timely_sector_capacity(user_organizations, technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+
+    calculate_timely_backhaul_capacity(user_organizations, technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+    calculate_timely_backhaul_capacity(user_organizations, technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
 
     calculate_timely_sales_opportunity(user_organizations, technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
     calculate_timely_sales_opportunity(user_organizations, technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
@@ -100,6 +103,48 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     # call the method to bulk create the onjects.
     bulk_update_create.delay(data_list, action='create', model=model)
 
+def calculate_timely_backhaul_capacity(organizations, technology, model, processed_for):
+    '''
+    :param technology: Named Tuple
+    :param model: Dashboard Model to store timely dashboard data.
+    :param processed_for:
+    return
+    '''
+    dashboard_name = '%s_backhaul_capacity' % (technology.NAME.lower())
+
+    backhaul = BackhaulCapacityStatus.objects.filter(
+            Q(organization__in=organizations),
+            Q(backhaul__bh_configured_on__device_technology=technology.ID),
+            Q(severity__in=['warning', 'critical', 'ok']),
+        ).values('id', 'backhaul__name', 'backhaul__bh_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
+
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Backhaul count: ", backhaul.count())
+    data_list = list()
+    for item in backhaul:
+        # Create the range_counter dictionay containg the model's field name as key
+        range_counter = dict(
+            dashboard_name=dashboard_name,
+            device_name=item['backhaul__bh_configured_on__device_name'],
+            reference_name=item['backhaul__name'],
+            processed_for=processed_for,
+        )
+        # Update the range_counter on the basis of severity.
+        if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+            range_counter.update({item['severity'].strip().lower() : 1})
+        elif item['severity'].strip().lower() == 'ok':
+            range_counter.update({'ok' : 1})
+        else:
+            range_counter.update({'unknown' : 1})
+
+        # Create the list of model object.
+        try:
+            data_list.append(model(**range_counter))
+        except Exception as e:
+            pass
+
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Data List Count", len(data_list))
+    # call the method to bulk create the onjects.
+    bulk_update_create.delay(data_list, action='create', model=model)
 
 def calculate_timely_sales_opportunity(organizations, technology, model, processed_for):
     '''
