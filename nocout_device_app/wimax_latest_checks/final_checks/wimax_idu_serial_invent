@@ -23,41 +23,29 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-
-def connection_telnet_bs_for_idu_serial(hostip, port):
+def live_query_idu_serial(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
+
         """
+        exit_value = 3
+        idu_serial_1, idu_serial_2 = '', ''
         try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		idu_type = None
-		return idu_type
-	tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show fru\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	idu_serial_1 = None
-	idu_serial_2 = None
-	try:
-                for i,row in enumerate(data.split("\n")):
-                        if "Chassis" in row:
-                                idu_serial_1 = [r for r in row.split()]
-                                idu_serial_1 = idu_serial_1[1]
-			if "Carrier Board" in row:
-                                idu_serial_2 = [r for r in row.split()]
-                                idu_serial_2 = idu_serial_2[1]
-                                break
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        idu_serial_1, idu_serial_2 = plugin_output[2].split('=')[1], plugin_output[3].split('=')[1]
+
         except:
-		idu_serial_1 = None
-		idu_serial_2 = None
-	return idu_serial_1,idu_serial_2
+                pass
+        return idu_serial_1, idu_serial_2
+
                                 
 
 def check_wimax_idu_serial_invent(item, _no_params, info):
@@ -85,16 +73,14 @@ def check_wimax_idu_serial_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    idu_serial_1= None
-    idu_serial_2= None
+    idu_serial_1= ''
+    idu_serial_2= ''
     try:
-	if info[0][0]:
-                bs_ip = info[0][0]
-                if bs_ip:
-                	idu_serial_1,idu_serial_2 =connection_telnet_bs_for_idu_serial(bs_ip, 23)
-			if idu_serial_1 or idu_serial_2:
-				infotext = "%s=%s %s=%s" % ("Chassis",idu_serial_1,"Carrier_Board",idu_serial_2)
-				state = 0
+        idu_serial_1, idu_serial_2 = live_query_idu_serial(g_hostname)
+        if idu_serial_1 or idu_serial_2:
+                infotext = "Chassis=%s Carrier_Board=%s" % (idu_serial_1, idu_serial_2)
+                state = 0
+
     except ValueError:
         infotext = "type_mismatch_value"
     except:

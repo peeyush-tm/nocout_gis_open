@@ -88,8 +88,8 @@ def check_mrotek_port_speed_status(item, _no_params, info):
 	speed_list =extract_port_speed_status_from_live(g_hostname)
 	if speed_list:
 		for index in range(len(speed_list)):
-			status_list.append((port_string + str(index + 1),speed_list[index]))
-			infotext += "%s=%s " % (port_string + str(index + 1),speed_list[index])
+			status_list.append((port_string + str(index + 1) +"_state",speed_list[index]))
+			infotext += "%s=%s " % (port_string + str(index + 1) +"_state",speed_list[index])
 		state = 0
     except ValueError:
         infotext = "type_mismatch_value"

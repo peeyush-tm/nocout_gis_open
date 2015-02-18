@@ -67,7 +67,7 @@ def check_rici_dl_utilization(item, _no_params, info):
 				except MKCounterWrapped:
 					wrapped=True
                 		status_list.append((port_string+str(index+1),"%.4f" % rate))
-                		infotext += "dl_utilization: %s=%s " % (port_string+str(index+1),link_out_octets)
+                		infotext += "dl_utilization: %s=%s " % (port_string+str(index+1),rate)
     except ValueError:
         infotext = "type_mismatch_error"
     except:

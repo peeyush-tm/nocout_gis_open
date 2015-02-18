@@ -26,72 +26,32 @@ Device on which Frequency operating is sent to device application
 
 
 
-try:
-    import nocout_settings
-    from nocout_settings import _DATABASES, _LIVESTATUS
-except Exception as exp:
-    print exp
 
-
-
-def mysql_conn():
-        db = None
-        try:
-            db = mysql.connector.connect(
-                        user=_DATABASES['user'],
-                        host=_DATABASES['host'],
-                        password=_DATABASES['password'],
-                        database=_DATABASES['database'],
-                        port=_DATABASES['port']
-                        )
-        except Exception as exp:
-            print exp
-        return db
-
-
-def extract_hostip_from_wimax_topology(ss_host_mac):
-        query = """
-        select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
-
-
-def connection_telnet_dl_mod_change(hostip, port):
+def live_query_dl_modulation_change(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
-        """
-        try:
-        	dl_modulation_change= None
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		dl_modulation_change = None
-		return dl_modulation_change
-	tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show cinr-distribution\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	dl_modulation_change = None
 
+        """
+        exit_value = 3
+        dl_modulation_change = None
         try:
-                for i,row in enumerate(data.split("\n")):
-                        if "downlink modulation changed:" in row:
-                                dl_modulation_change = row.split(':')[1]
-                                break
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_ss_port_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK -')[1])
+                        plugin_output = [entry for entry in plugin_output.split(',')]
+                        dl_modulation_change = plugin_output[4].split('=')[1]
+
         except:
-		dl_modulation_change = None
-	return dl_modulation_change
-                                
+                dl_modulation_change = None
+        return dl_modulation_change
+
+
+
 
 def check_wimax_dl_modulation_change_invent(item, params, info):
     """
@@ -121,25 +81,16 @@ def check_wimax_dl_modulation_change_invent(item, params, info):
     dl_modulation_change= None
     warn ,crit =params
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-			host_ip = extract_hostip_from_wimax_topology(ss_mac)
-			if host_ip[0][0]:
-                		dl_modulation_change =connection_telnet_dl_mod_change(host_ip[0][0], 23)
-				dl_modulation_change = dl_modulation_change.strip()
-				if dl_modulation_change:
-                                        if int(dl_modulation_change) > crit:
-                                                state = 2
-                                        elif int(dl_modulation_change) >= warn:
-                                                state =1
-                                        else:
-                                                state =0
+	dl_modulation_change =live_query_dl_modulation_change(g_hostname)
+	if dl_modulation_change:
+		if int(dl_modulation_change) > crit:
+			state = 2
+		elif int(dl_modulation_change) >= warn:
+			state =1
+		else:
+			state =0
 
-					infotext = "%s" % int(dl_modulation_change)
+		infotext = "%s" % int(dl_modulation_change)
     except ValueError:
         infotext = "type_mismatch_value"
     except:

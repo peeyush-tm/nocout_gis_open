@@ -85,8 +85,8 @@ def check_rici_port_duplex_status(item, _no_params, info):
 	duplex_list =extract_port_duplex_status_from_live(g_hostname)
 	if duplex_list:
 		for index in range(len(duplex_list)):
-			status_list.append((port_string + str(index + 1),duplex_list[index]))
-			infotext += "%s=%s " % (port_string + str(index + 1),duplex_list[index])
+			status_list.append((port_string + str(index + 1) + "_state",duplex_list[index]))
+			infotext += "%s=%s " % (port_string + str(index + 1) + "_state",duplex_list[index])
 		state = 0
     except ValueError:
         infotext = "type_mismatch_value"

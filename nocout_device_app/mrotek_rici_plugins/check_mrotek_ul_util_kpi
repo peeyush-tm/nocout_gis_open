@@ -74,7 +74,7 @@ def live_query_mrotek_ul_util_kpi(hostname,site,war,crit,qos):
 			state = 1
 			state_string = "warning"
 		
-	perf += 'mro_ul_util_kpi' + "=%s;%s;%s;%s " % (ul_kpi,war,crit,qos)
+	perf += 'fe_1' + "=%s;%s;%s;%s " % (ul_kpi,war,crit,qos)
     except Exception ,e:
 	perf = '' 
     plugin_message += "mrotek_ul_util_kpi %s - %s|%s" % (state_string,ul_kpi,perf)

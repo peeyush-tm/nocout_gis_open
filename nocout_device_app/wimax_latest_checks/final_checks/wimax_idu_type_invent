@@ -24,35 +24,28 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def connection_telnet_bs_for_idu(hostip, port):
+def live_query_idu_type(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
+
         """
+        exit_value = 3
+        idu_type = ''
         try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		idu_type = None
-		return idu_type
-	tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show version\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	idu_type = None
-	try:
-                for i,row in enumerate(data.split("\n")):
-                        if "Chassis" in row:
-                                idu_type = [r for r in row.split()]
-                                idu_type = idu_type[0] + '_' + idu_type[1]
-                                break
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        idu_type = plugin_output[8].split('=')[1]
+
         except:
-		idu_type = None
-	return idu_type
+                pass
+        return idu_type
                                 
 
 def check_wimax_idu_type_invent(item, _no_params, info):
@@ -80,15 +73,13 @@ def check_wimax_idu_type_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    duplex_value= None
+    idu_type = ''
     try:
-	if info[0][0]:
-                bs_ip = info[0][0]
-                if bs_ip:
-                	idu_type =connection_telnet_bs_for_idu(bs_ip, 23)
-			if idu_type:
-				infotext = "%s" % (idu_type)
-				state = 0
+        idu_type = live_query_idu_type(g_hostname)
+        if idu_type:
+                infotext = "%s" % idu_type
+                state = 0
+
     except ValueError:
         infotext = "type_mismatch_value"
     except:

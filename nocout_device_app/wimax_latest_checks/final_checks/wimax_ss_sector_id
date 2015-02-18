@@ -25,17 +25,6 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def extract_host_from_wimax_topology(ss_host_mac):
-        query = """
-        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
-
 
 
 def live_query_ss_sector_id(mac):
@@ -56,7 +45,7 @@ def live_query_ss_sector_id(mac):
                         socket_ip = _LIVESTATUS[machine_name]['host']
                         socket_port = _LIVESTATUS[machine_name][site]['port']
 
-                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('OK -')[1])
                                 plugin_output = [entry for entry in plugin_output.split(' ')]

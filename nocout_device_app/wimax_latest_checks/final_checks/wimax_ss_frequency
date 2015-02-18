@@ -24,38 +24,16 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
-def get_from_socket(socket_ip,socket_port, query):
-    """
-    Function_name : get_from_socket (collect the query data from the socket)
-
-    Args: site_name (poller on which monitoring data is to be collected)
-
-    Kwargs: query (query for which data to be collectes from nagios.)
-
-    Return : None
-
-    raise
-         Exception: SyntaxError,socket error
-    """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((socket_ip,socket_port))
-    s.send(query)
-    s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
-    return output
-
-
 
 def extract_bsinfo_from_wimax_topology(ss_host_mac):
         query = """
         select device_name,ip_address,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
+        #db = mysql_conn()
         cur = db.cursor()
         cur.execute(query)
         data = cur.fetchall()
         cur.close()
-
+	#db.close()
         return data
 
 
@@ -82,7 +60,7 @@ def live_query_ss_frequency(mac):
                         socket_ip = _LIVESTATUS[machine_name]['host']
                         socket_port = _LIVESTATUS[machine_name][site]['port']
 
-                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
                         pmp1_query_string = "GET services\nColumns: plugin_output\nFilter: " + \
                                 "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_pmp1_frequency_invent",bs_info[0][0])
                         pmp2_query_string = "GET services\nColumns: plugin_output\nFilter: " + \
@@ -93,11 +71,11 @@ def live_query_ss_frequency(mac):
                                 entry=filter(lambda x: mac in x.lower(), plugin_output)
                                 sector_id = entry[0].split('=')[1].split(',')[10]
                                 if int(sector_id) == 1:
-                        		query_output = eval(get_from_socket(socket_ip,socket_port,pmp1_query_string).strip())
+                        		query_output = eval(get_from_socket(socket_ip,socket_port,pmp1_query_string,site,machine_name).strip())
 					if query_output:
 						ss_frequency = str(query_output[0][0]).split('- ',1)[1]
                                 elif int(sector_id)  == 2:
-                        		query_output = eval(get_from_socket(socket_ip,socket_port,pmp2_query_string).strip())
+                        		query_output = eval(get_from_socket(socket_ip,socket_port,pmp2_query_string,site,machine_name).strip())
 					if query_output:
 						ss_frequency = str(query_output[0][0]).split('- ',1)[1]
 	except:
@@ -133,16 +111,21 @@ def check_wimax_ss_frequency(item, _no_params, info):
     infotext = "unknown_value"
     ss_frequency =None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-                if ss_mac:
-                        ss_frequency = live_query_ss_frequency( ss_mac )
-			if ss_frequency:
-                        	state = 0
-        			infotext = "%s" % ss_frequency
+
+	mac_info = sum(info,[])
+        mac_list=map(lambda x: convert(x),mac_info)
+        if mac_list[1] != '00:00:00:00:00:00':
+                ss_mac= mac_list[1]
+                state = 0
+        else:
+                index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+                index =index[0]
+                ss_mac = mac_list[index]
+	if ss_mac:
+		ss_frequency = live_query_ss_frequency( ss_mac )
+		if ss_frequency:
+			state = 0
+        		infotext = "%s" % ss_frequency
     except ValueError:
         infotext = "type_mismatch_value"
     except:

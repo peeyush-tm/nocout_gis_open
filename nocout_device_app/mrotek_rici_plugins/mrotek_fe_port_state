@@ -64,7 +64,7 @@ def check_mrotek_fe_port_state(item, _no_params, info):
 		port_state = port_state_value(str(port_state))
                 if port_state == None:
                     port_state = "unknown_port_state"
-                port_state_list.append((port_string+"%s" % (index+1), port_state))
+                port_state_list.append((port_string+"%s" % (index+1) + "_state", port_state))
 		state = 0
 		if int(info[index][0]) == 2:
 			state =2

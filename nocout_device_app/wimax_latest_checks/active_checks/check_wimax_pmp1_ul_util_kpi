@@ -65,9 +65,9 @@ def extract_pmp1_ul_util_from_live(hostname,site):
 		"Filter: service_description = wimax_pmp1_ul_util_bgp\n" + \
 		"Filter: host_name = %s\nOutputFormat: python\n" % (hostname)
 	try:
-        	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		socket_path = "/omd/sites/%s/tmp/run/live" % site
-        	s.connect(("10.133.19.165",6562))
+        	s.connect(socket_path)
 		s.send(query)
        		s.shutdown(socket.SHUT_WR)
         	query_output = s.recv(100000000)

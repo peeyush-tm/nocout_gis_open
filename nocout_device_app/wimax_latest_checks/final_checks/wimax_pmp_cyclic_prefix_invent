@@ -24,46 +24,29 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def connection_telnet_bs_for_cyclic_prefix(hostip, port):
+def live_query_cyclic_prefix(host_name):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
-    
+
         """
+        exit_value = 3
+        pmp1_prefix, pmp2_prefix = '', ''
         try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		pmp1_prefix = None
-		pmp2_prefix = None
-		return pmp1_prefix,pmp2_prefix
-	tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-        tn.write("show running-config\r\n")
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	pmp1_prefix = None
-	pmp2_prefix = None
-	try:
-		for i,row in enumerate(data.split("\n")):
-			try:
-                        	if "1/1 cyclic-prefix" in row:
-                                	pmp1_prefix = [r for r in row.split()][-1]
-			except:
-				pmp1_prefix = None
-			try:	
-                        	if "1/2 cyclic-prefix" in row:
-                                	pmp2_prefix = [r for r in row.split()][-1]
-                                	break
-			except:
-				pmp2_prefix = None
+                query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_aggregate_bs_params",host_name)
+
+                query_output = eval(get_from_socket(None,None,query_string,nagios_user,None).strip())
+                if query_output[0][0]:
+                        plugin_output = str(query_output[0][0].split('OK - ')[1])
+                        plugin_output = [entry for entry in plugin_output.split()]
+                        pmp1_prefix, pmp2_prefix = plugin_output[0].split('=')[1], plugin_output[1].split('=')[1]
 
         except:
-		pmp1_prefix = None
-		pmp2_prefix = None
-	return pmp1_prefix ,pmp2_prefix
+		pass
+        return pmp1_prefix, pmp2_prefix
+
                                 
 
 def check_wimax_pmp_cyclic_prefix_invent(item, _no_params, info):
@@ -91,14 +74,12 @@ def check_wimax_pmp_cyclic_prefix_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    pmp1_prefix, pmp2_prefix = '', ''
     try:
-	if info[0][0]:
-                bs_ip = info[0][0]
-                if bs_ip:
-                	pmp1_prefix,pmp2_prefix =connection_telnet_bs_for_cyclic_prefix(bs_ip, 23)
-			if pmp1_prefix or pmp2_prefix:
-				infotext = "pmp1_prefix=%s pmp2_prefix=%s" % (pmp1_prefix,pmp2_prefix)
-				state = 0
+        pmp1_prefix, pmp2_prefix = live_query_cyclic_prefix(g_hostname)
+        if pmp1_prefix or pmp2_prefix:
+                infotext = "pmp1_prefix=%s pmp2_prefix=%s" % (pmp1_prefix, pmp2_prefix)
+                state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:

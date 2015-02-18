@@ -88,8 +88,8 @@ def check_mrotek_port_autoneg_status(item, _no_params, info):
 	autoneg_list =extract_port_autoneg_status_from_live(g_hostname)
 	if autoneg_list:
 		for index in range(len(autoneg_list)):
-			status_list.append((port_string + str(index + 1),autoneg_list[index]))
-			infotext += "%s=%s " % (port_string + str(index + 1),autoneg_list[index])
+			status_list.append((port_string + str(index + 1) + "_state",autoneg_list[index]))
+			infotext += "%s=%s " % (port_string + str(index + 1) + "_state",autoneg_list[index])
 		state = 0
     except ValueError:
         infotext = "type_mismatch_value"

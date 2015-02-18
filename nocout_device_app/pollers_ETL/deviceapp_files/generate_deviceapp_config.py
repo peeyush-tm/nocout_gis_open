@@ -184,6 +184,47 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     )
     where device_device.is_deleted=0 and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU');
     """
+    query = """
+    select
+    DISTINCT(device_device.ip_address),
+    device_device.device_name,
+    device_devicetype.name,
+    device_device.mac_address,
+    device_device.ip_address,
+    device_devicetype.agent_tag,
+    inventory_sector.name,
+    site_instance_siteinstance.name,
+    device_device.device_alias,
+    inventory_sector.dr_site,
+    inventory_sector.dr_configured_on_id,
+    device_devicetechnology.name as techno_name,
+    inventory_circuit.qos_bandwidth as QoS_BW
+    from device_device
+
+    inner join
+    (device_devicetechnology, device_devicemodel, device_devicetype, machine_machine, site_instance_siteinstance, inventory_sector)
+    on
+    (
+    device_devicetype.id = device_device.device_type and
+    device_devicetechnology.id = device_device.device_technology and
+    device_devicemodel.id = device_device.device_model and
+    machine_machine.id = device_device.machine_id and
+    site_instance_siteinstance.id = device_device.site_instance_id and
+    inventory_sector.sector_configured_on_id = device_device.id
+    )
+
+    left join (inventory_circuit)
+    on (
+    inventory_sector.id = inventory_circuit.sector_id
+    )
+
+    where device_device.is_deleted=0
+    and
+    device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP')
+    and
+    device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU')
+    ;
+    """
     # host row for devices
         #host name | device type | mac | parent _ name | wan | prod | agent tags | site | wato
     # host row for dr-enabled wimax devices

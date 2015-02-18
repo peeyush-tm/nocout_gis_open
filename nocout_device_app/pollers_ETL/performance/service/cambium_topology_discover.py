@@ -51,6 +51,7 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n" + \
                 "Filter: service_description = cambium_topology_discover\nOutputFormat: json\n"
 	query_output = json.loads(utility_module.get_from_socket(site,query).strip())
+
 	
 	device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
 		"And: 2\nOutputFormat: python\n"
@@ -117,6 +118,7 @@ def topology_discovery_data_main():
                 mongo_db_name = desired_config.get('nosql_db')
 		topology_discovery_data(site,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
+		print e
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:
 		raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))

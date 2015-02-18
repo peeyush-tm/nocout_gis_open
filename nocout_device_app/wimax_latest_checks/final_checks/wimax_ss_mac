@@ -26,16 +26,6 @@ Device on which Frequency operating is sent to device application
 
 
 
-def extract_host_from_wimax_topology(ss_host_mac):
-        query = """
-        select device_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
 
 
 def connection_telnet_ss_mac(host_name, port,mac):
