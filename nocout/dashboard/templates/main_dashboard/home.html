@@ -348,10 +348,12 @@
         /***************** PIE CHART START ************************/
 
         pie_chart_url_obj["pmp_sales_opportunity"]["url"] = "{% url 'sales-opportunity-pmp' %}";
-        pie_chart_url_obj["pmp_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-pmp' %}";
+        // pie_chart_url_obj["pmp_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-pmp' %}";
+        pie_chart_url_obj["pmp_sales_opportunity"]["trends_url"] = "";
         
         pie_chart_url_obj["wimax_sales_opportunity"]["url"] = "{% url 'sales-opportunity-wimax' %}";
-        pie_chart_url_obj["wimax_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-wimax' %}";
+        // pie_chart_url_obj["wimax_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-wimax' %}";
+        pie_chart_url_obj["wimax_sales_opportunity"]["trends_url"] = "";
         
         pie_chart_url_obj["pmp_sector_capacity"]["url"] = "{% url 'sector-capacity-pmp' %}";
         pie_chart_url_obj["pmp_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-pmp' %}";
