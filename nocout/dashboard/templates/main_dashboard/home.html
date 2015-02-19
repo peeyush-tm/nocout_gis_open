@@ -190,7 +190,7 @@
             <h5>
                 <strong>
                     Down Wimax
-                    <i class="fa fa-signal text-success" id="down-wimax_trend" title="Down Wimax Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="down-wimax_trend" title="Down Wimax Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -199,7 +199,7 @@
             <h5>
                 <strong>
                     Down PMP
-                    <i class="fa fa-signal text-success" id="down-pmp_trend" title="Down PMP Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="down-pmp_trend" title="Down PMP Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -208,7 +208,7 @@
             <h5>
                 <strong>
                     Latency Wimax
-                    <i class="fa fa-signal text-success" id="latency-wimax_trend" title="Latency Wimax Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="latency-wimax_trend" title="Latency Wimax Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -217,7 +217,7 @@
             <h5>
                 <strong>
                     Latency PMP
-                    <i class="fa fa-signal text-success" id="latency-pmp_trend" title="Latency PMP Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="latency-pmp_trend" title="Latency PMP Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -234,7 +234,7 @@
             <h5>
                 <strong>
                     Packet Drop Wimax
-                    <i class="fa fa-signal text-success" id="packetloss-wimax_trend" title="Packet Drop Wimax Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="packetloss-wimax_trend" title="Packet Drop Wimax Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -243,7 +243,7 @@
             <h5>
                 <strong>
                     Packet Drop PMP
-                    <i class="fa fa-signal text-success" id="packetloss-pmp_trend" title="Packet Drop PMP Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="packetloss-pmp_trend" title="Packet Drop PMP Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -252,7 +252,7 @@
             <h5>
                 <strong>
                     Temperature Fan Wimax
-                    <i class="fa fa-signal text-success" id="temperature-fan-wimax_trend" title="Temperature Fan Wimax Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="temperature-fan-wimax_trend" title="Temperature Fan Wimax Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -261,7 +261,7 @@
             <h5>
                 <strong>
                     Temperature ACB Wimax
-                    <i class="fa fa-signal text-success" id="temperature-acb-wimax_trend" title="Temperature ACB Wimax Trends"> </i>
+                    <!-- <i class="fa fa-signal text-success" id="temperature-acb-wimax_trend" title="Temperature ACB Wimax Trends"> </i> -->
                 </strong>
             </h5>
         </div>
@@ -277,11 +277,14 @@
 
 <!--Highcharts Library-->
 <script src={% static "js/highcharts.js" %}></script>
+<!-- <script src={% static "js/highcharttheme.js" %}></script> -->
 <script src={% static "js/highcharts-more.js" %}></script>
 <!-- Solid Gauge Chart highcharts -->
 <script src={% static "js/solid-gauge.js" %}></script>
 <!-- no data for highcharts -->
 <script src={% static "js/no-data-to-display.js" %}></script>
+<!--Our Common Utilities Script-->
+<script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
 <!-- Main Dashboard Custom Script-->
 <script type="text/javascript" src={% static "js/nocout/main_dashboard_script.js" %}></script>
 
@@ -291,15 +294,82 @@
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
 
-        // Update the url of some charts in dict
+        // Update the main url & trends url of charts in dict
+
+        /***************** GAUGE CHART START ************************/
+
+        solid_gauge_url_obj["down-all"]["url"] = "{% url 'down-all' %}";
+        solid_gauge_url_obj["down-all"]["trends_url"] = "{% url 'trend-monthly-down-all' %}" + "?dashboard_name=down-all";
+
+        solid_gauge_url_obj["latency-all"]["url"] = "{% url 'latency-all' %}";
+        solid_gauge_url_obj["latency-all"]["trends_url"] = "{% url 'trend-monthly-latency-all' %}" + "?dashboard_name=latency-all";
+
+        solid_gauge_url_obj["packetloss-all"]["url"] = "{% url 'packet-loss-all' %}";
+        solid_gauge_url_obj["packetloss-all"]["trends_url"] = "{% url 'trend-monthly-packet-loss-all' %}" + "?dashboard_name=packetloss-all";
+
+        solid_gauge_url_obj["temperature-idu-wimax"]["url"] = "{% url 'temperatue-idu-wimax' %}";
+        solid_gauge_url_obj["temperature-idu-wimax"]["trends_url"] = "{% url 'trend-monthly-temperature-idu-wimax' %}" + "?dashboard_name=temperature-idu-wimax";
+
+        solid_gauge_url_obj["down-wimax"]["url"] = "{% url 'down-wimax' %}";
+        solid_gauge_url_obj["down-wimax"]["trends_url"] = "";
+
+        solid_gauge_url_obj["down-pmp"]["url"] = "{% url 'down-pmp' %}";
+        solid_gauge_url_obj["down-pmp"]["trends_url"] = "";
+
+        solid_gauge_url_obj["latency-wimax"]["url"] = "{% url 'latency-wimax' %}";
+        solid_gauge_url_obj["latency-wimax"]["trends_url"] = "";
+
+        solid_gauge_url_obj["latency-pmp"]["url"] = "{% url 'latency-pmp' %}";
+        solid_gauge_url_obj["latency-pmp"]["trends_url"] = "";
+
+        solid_gauge_url_obj["packetloss-wimax"]["url"] = "{% url 'packet-loss-wimax' %}";
+        solid_gauge_url_obj["packetloss-wimax"]["trends_url"] = "";
+
+        solid_gauge_url_obj["packetloss-pmp"]["url"] = "{% url 'packet-loss-pmp' %}";
+        solid_gauge_url_obj["packetloss-pmp"]["trends_url"] = "";
+
+        solid_gauge_url_obj["temperature-fan-wimax"]["url"] = "{% url 'temperatue-fan-wimax' %}";
+        solid_gauge_url_obj["temperature-fan-wimax"]["trends_url"] = "";
+
+        solid_gauge_url_obj["temperature-acb-wimax"]["url"] = "{% url 'temperatue-acb-wimax' %}";
+        solid_gauge_url_obj["temperature-acb-wimax"]["trends_url"] = "";
+
+        /***************** GAUGE CHART END ************************/
+
+
+        /***************** AREA CHART START ************************/
+
         area_chart_url_obj["id_mfr_processed"]["url"] = "{% url 'processed-mfr' %}";
-        pie_chart_url_obj["wimax_sales_opportunity"]["url"] = "{% url 'sales-opportunity-wimax' %}";
+        area_chart_url_obj["id_mfr_processed"]["trends_url"] = "";
+
+        /***************** AREA CHART END ************************/
+        
+
+        /***************** PIE CHART START ************************/
+
         pie_chart_url_obj["pmp_sales_opportunity"]["url"] = "{% url 'sales-opportunity-pmp' %}";
-        pie_chart_url_obj["wimax_sector_capacity"]["url"] = "{% url 'sector-capacity-wimax' %}";
+        // pie_chart_url_obj["pmp_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-pmp' %}";
+        pie_chart_url_obj["pmp_sales_opportunity"]["trends_url"] = "";
+        
+        pie_chart_url_obj["wimax_sales_opportunity"]["url"] = "{% url 'sales-opportunity-wimax' %}";
+        // pie_chart_url_obj["wimax_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-wimax' %}";
+        pie_chart_url_obj["wimax_sales_opportunity"]["trends_url"] = "";
+        
         pie_chart_url_obj["pmp_sector_capacity"]["url"] = "{% url 'sector-capacity-pmp' %}";
+        pie_chart_url_obj["pmp_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-pmp' %}";
+
+        pie_chart_url_obj["wimax_sector_capacity"]["url"] = "{% url 'sector-capacity-wimax' %}";
+        pie_chart_url_obj["wimax_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-wimax' %}";
+
         pie_chart_url_obj["wimax_backhaul_capacity"]["url"] = "";
+        pie_chart_url_obj["wimax_backhaul_capacity"]["trends_url"] = "";
+
         pie_chart_url_obj["pmp_backhaul_capacity"]["url"] = "";
+        pie_chart_url_obj["pmp_backhaul_capacity"]["trends_url"] = "";
+
         pie_chart_url_obj["mfr_cause_code"]["url"] = "{% url 'cause-code-mfr' %}";
+
+        /***************** PIE CHART END ************************/
 
 
         // Set Global Option for Highcharts

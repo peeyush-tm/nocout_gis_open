@@ -55,6 +55,9 @@ urlpatterns = patterns('',
     url(r'^sector-capacity/pmp/$', views.PMPSectorCapacity.as_view(), name='sector-capacity-pmp'),
     url(r'^sector-capacity/wimax/$', views.WiMAXSectorCapacity.as_view(), name='sector-capacity-wimax'),
 
+    url(r'^backhaul-capacity/pmp/$', views.PMPBackhaulCapacity.as_view(), name='backhaul-capacity-pmp'),
+    url(r'^backhaul-capacity/wimax/$', views.WiMAXBackhaulCapacity.as_view(), name='backhaul-capacity-wimax'),
+
     url(r'^sales-opportunity/pmp/$', views.PMPSalesOpportunity.as_view(), name='sales-opportunity-pmp'),
     url(r'^sales-opportunity/wimax/$', views.WiMAXSalesOpportunity.as_view(), name='sales-opportunity-wimax'),
 
@@ -68,4 +71,7 @@ urlpatterns = patterns('',
     url(r'^trend-monthly-latency/all/$', views.MonthlyTrendDashboardDeviceStatus.as_view(), name = 'trend-monthly-latency-all' ),
     url(r'^trend-monthly-packet_loss/all/$', views.MonthlyTrendDashboardDeviceStatus.as_view(), name = 'trend-monthly-packet-loss-all' ),
     url(r'^trend-monthly-temperature-idu/wimax/$', views.MonthlyTrendDashboardDeviceStatus.as_view(), name = 'trend-monthly-temperature-idu-wimax' ),
+
+    url(r'^trend-monthly-backhaul/pmp/$', views.MonthlyTrendBackhaulPMP.as_view(), name = 'trend-monthly-backhaul-pmp' ),
+    url(r'^trend-monthly-backhaul/wimax/$', views.MonthlyTrendBackhaulWiMAX.as_view(), name = 'trend-monthly-backhaul-wimax' ),
 )
