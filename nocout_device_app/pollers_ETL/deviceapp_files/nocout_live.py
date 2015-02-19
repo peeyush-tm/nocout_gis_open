@@ -124,6 +124,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      #response = []
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
+     wimax_ss_port_service = ['wimax_ss_speed_status','wimax_ss_autonegotiation_status','wimax_ss_duplex_status','wimax_ss_uptime',
+				'wimax_dl_modulation_change_invent','wimax_ss_link_status']
      wimax_services = ['wimax_dl_rssi','wimax_ul_rssi','wimax_dl_cinr','wimax_ul_cinr','wimax_dl_intrf','wimax_ul_intrf',
         'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
      cambium_services = ['cambium_ul_rssi', 'cambium_ul_jitter',
@@ -150,6 +152,9 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	     if service in interface_services:
                      old_service = service
 	             service = 'cambium_topology_discover'
+	     if service in wimax_ss_port_service:
+		     old_service = service
+		     service = 'wimax_ss_port_params'
 	     # Getting result from compiled checks output
              cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
 	     # For host check [ping service]
@@ -225,6 +230,23 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
+		elif str(old_service) in wimax_ss_port_service:
+			try:
+				data_value =  []
+				check_output =  filter(lambda t: 'wimax_ss_port_params' in t, check_output.split('\n'))
+				check_output = check_output[0].split('- ')[1].split(',')
+				index =  wimax_ss_port_service.index(old_service)
+				value = check_output[index].split['='][1]
+				data_value.append(value)
+				data_dict = {old_device:data_value}
+				data_value = []
+				q.put(data_dict)
+			except Exception,e:
+				logger.error('Empty check_output: ' + pformat(e))
+				data_dict = {old_device_name:[]}
+				data_value = []
+				q.put(data_dict)
+				return	
 		elif old_service.lower() == 'ping':
 			check_output = check_output.split('\n')[-3:]
 			logger.debug('check_output after split: ' + pformat(check_output))
@@ -287,7 +309,6 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 
 
 def alarm_handler(signum, frame):
-        #logger.debug('For loop -----------')
 	raise Alarm
 
 
