@@ -6076,6 +6076,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
                     'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
                     'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
                     'state': row['State'] if 'State' in row.keys() else "",
