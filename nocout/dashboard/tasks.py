@@ -38,6 +38,7 @@ def calculate_timely_main_dashboard():
 
     calculate_timely_backhaul_capacity(user_organizations, technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
     calculate_timely_backhaul_capacity(user_organizations, technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+    calculate_timely_backhaul_capacity(user_organizations, technology=TCLPOP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
 
     calculate_timely_sales_opportunity(user_organizations, technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
     calculate_timely_sales_opportunity(user_organizations, technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
