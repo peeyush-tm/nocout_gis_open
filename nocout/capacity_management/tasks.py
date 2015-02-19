@@ -670,28 +670,29 @@ def update_backhaul_status(basestations, kpi, val):
                         )
                     )
                 except Exception as e:
-                    logger.info("Something wrong with backhaul status create. Exception: ", e.message)
+                    logger.exception(e)
 
-    if bulk_update_bhs or bulk_create_bhs:
-        g_jobs = list()
 
-        if len(bulk_create_bhs):
-            g_jobs.append(bulk_update_create(bulk_create_bhs, action='create', model=BackhaulCapacityStatus))
+    g_jobs = list()
 
-        if len(bulk_update_bhs):
-            g_jobs.append(bulk_update_create(bulk_update_bhs, action='update', model=BackhaulCapacityStatus))
+    if len(bulk_create_bhs):
+        g_jobs.append(bulk_update_create(bulk_create_bhs, action='create', model=BackhaulCapacityStatus))
 
-        job = group(g_jobs)
+    if len(bulk_update_bhs):
+        g_jobs.append(bulk_update_create(bulk_update_bhs, action='update', model=BackhaulCapacityStatus))
 
-        result = job.apply_async()
-        ret = False
-
-        for r in result.get():
-            ret |= r
-
-        return ret
-    else:
+    if not len(g_jobs):
         return False
+
+    job = group(g_jobs)
+
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
 
 
 def update_sector_status(sectors, cbw, kpi, val, technology):
@@ -1220,6 +1221,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
 
     if len(bulk_update_scs):
         g_jobs.append(bulk_update_create(bulk_update_scs, action='update', model=SectorCapacityStatus))
+
+    if not len(g_jobs):
+        return False
 
     job = group(g_jobs)
 
