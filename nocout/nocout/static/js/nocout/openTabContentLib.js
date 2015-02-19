@@ -45,22 +45,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
         ajax_url = e.currentTarget.attributes.data_url.value,
         grid_headers = JSON.parse(e.currentTarget.attributes.data_header.value),
         isTab = $('.nav li.active .hidden-inline-mobile');
-    // isTableExists = $.fn.dataTableSettings;
-
-    /*Check that the table is created before or not*/
-    // for ( var i=0, iLen=isTableExists.length ; i<iLen ; i++ ) {
-
-    // 	if (isTableExists[i] && (isTableExists[i].nTable.id == table_id)) {
-
-    // 		if(last_clicked_tab != e.currentTarget.id || second_condition) {
-
-    // 			/*Clear the data from existing table*/
-    // 			$("#"+table_id).DataTable().fnDestroy();
-    // 			// $("#"+table_id).html("");
-    // 			destroy = true;
-    // 		}
-    // 	}
-    // }
 
     if (last_clicked_tab != e.currentTarget.id || second_condition) {
         var tab_id = table_id ? table_id.toLowerCase() : "";
@@ -121,6 +105,47 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         column["sClass"] = "hide";
                     }
                 }
+            }
+        }
+
+        var con1 = window.location.href.indexOf('alert_center/customer/device/') > -1,
+            con2 = window.location.href.indexOf('alert_center/network/device/') > -1;
+        // If single device alert page
+        if(con1 || con2) {
+
+            if(table_id == 'network_alert_service_table') {
+                service_name = 'service';
+            } else if(table_id == 'network_alert_down_table') {
+                service_name = 'down';
+            } else if(table_id == 'network_alert_packet_table') {
+                service_name = 'packet_drop';
+            } else if(table_id == 'network_alert_latency_table') {
+                service_name = 'latency';
+            } else {
+                service_name = 'ping';
+            }
+
+            ajax_url = ajax_url+'?service_name='+service_name;
+
+
+            try {
+
+                if(isDateFilterApplied) {
+                    ajax_url = ajax_url+'&start_date='+startDate+'&end_date='+endDate;
+                }
+                
+                var service_status_url = "";
+                if(service_name) {
+                    if(current_device_id) {
+                        service_status_url = "/performance/servicestatus/"+service_name+"/service_data_source/pl/device/"+current_device_id+"/";
+                    }
+                }
+                // Call function to get service status
+                if (service_status_url) {
+                    getPlServiceStatus(service_status_url);
+                }
+            } catch(e) {
+                // console.log(e);
             }
         }
 

@@ -546,7 +546,7 @@ class Get_Perfomance(View):
                 current_app='device'
             ),
             'alert_page_url' : reverse(
-                'SingleDeviceDetails',
+                'SingleDeviceAlertsInit',
                 kwargs={'page_type': page_type, 'device_id' : device_id, 'service_name' : 'ping'},
                 current_app='alert_center'
             ),
