@@ -13239,164 +13239,164 @@ def topology_site_wise(technology):
 
     return ret
 
-
-@task()
-def get_topology_with_substations(technology):
-    """
-    the update topology is not working, needs to be debugged, but we have our
-    substations telling the sector id to which it is connected
-    this needs to be done per technology wise
-    :param technology: PMP or WiMAX
-    :return:
-    """
-
-    g_jobs = list()
-
-    customer_devices = get_devices(technology=technology, rf_type='customer')
-    device_list = []
-    for device in customer_devices:
-        device_list.append(
-            {
-                'id': device['id'],
-                'device_name': device['device_name'],
-                'device_machine': device['machine__name']
-            }
-        )
-    machine_dict = {}
-    # prepare_machines(device_list)
-    machine_dict = prepare_machines(device_list)
-
-    connected_sectors = None
-    connected_circuits = None
-
-    if technology and technology.strip().lower() in ['pmp']:
-        for machine in machine_dict:
-            #this is complete topology for the device set
-            data_source = 'ss_sector_id'
-            service_name = 'cambium_ss_sector_id_invent'
-
-            if not connected_sectors:
-                connected_sectors = InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-            else:
-                connected_sectors |= InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-
-            if not connected_circuits:
-                connected_circuits = Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-            else:
-                connected_circuits |= Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-
-        if connected_sectors and connected_circuits:
-            g_jobs.append(update_topology_with_substations.s(
-                    polled_sectors=connected_sectors,
-                    polled_circuits=connected_circuits
-                )
-            )
-
-
-    elif technology and technology.strip().lower() in ['wimax']:
-        for machine in machine_dict:
-            #this is complete topology for the device set
-            data_source = 'wimax_ss_sector_id'
-            service_name = 'ss_sector_id'
-
-            if not connected_sectors:
-                connected_sectors = InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-            else:
-                connected_sectors |= InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-
-            if not connected_circuits:
-                connected_circuits = Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-            else:
-                connected_circuits |= Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-
-        if connected_sectors and connected_circuits:
-            g_jobs.append(update_topology_with_substations.s(
-                    polled_sectors=connected_sectors,
-                    polled_circuits=connected_circuits
-                )
-            )
-
-    else:
-        return False
-
-    job = group(g_jobs)
-
-    result = job.apply_async()
-
-    ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
-
-
-@task()
-def update_topology_with_substations(polled_sectors, polled_circuits):
-    """
-
-    :param polled_sectors:
-    :param technology:
-    :param polled_circuits:
-    :param sub_stations:
-    :return:
-    """
-    update_this = list()
-    g_jobs = list()
-
-    count = 0
-    for circuit in polled_circuits:
-        try:
-            device_name = circuit.sub_station.device.device_name
-            sector = polled_sectors.filter(device_name=device_name)[0]
-            sector_sector_id = sector.current_value
-            sector_object = Sector.objects.filter(sector_id__icontains = sector_sector_id)[0]
-            if circuit.sector_id != sector_object.id:
-                circuit.sector_id = sector_object.id
-                update_this.append(circuit)
-                # circuit.save()
-                count += 1
-            else:
-                continue
-        except Exception as e:
-            logger.exception(e.message)
-            continue
-
-
-    if len(update_this):
-        g_jobs.append(cache_clear_task.s())
-        g_jobs.append(bulk_update_create.s(bulky=update_this, action='update', model=Circuit))
-
-    job = group(g_jobs)
-
-    result = job.apply_async()
-    ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
-
+# OVERKILL : updating topology SS wise
+# @task()
+# def get_topology_with_substations(technology):
+#     """
+#     the update topology is not working, needs to be debugged, but we have our
+#     substations telling the sector id to which it is connected
+#     this needs to be done per technology wise
+#     :param technology: PMP or WiMAX
+#     :return:
+#     """
+#
+#     g_jobs = list()
+#
+#     customer_devices = get_devices(technology=technology, rf_type='customer')
+#     device_list = []
+#     for device in customer_devices:
+#         device_list.append(
+#             {
+#                 'id': device['id'],
+#                 'device_name': device['device_name'],
+#                 'device_machine': device['machine__name']
+#             }
+#         )
+#     machine_dict = {}
+#     # prepare_machines(device_list)
+#     machine_dict = prepare_machines(device_list)
+#
+#     connected_sectors = None
+#     connected_circuits = None
+#
+#     if technology and technology.strip().lower() in ['pmp']:
+#         for machine in machine_dict:
+#             #this is complete topology for the device set
+#             data_source = 'ss_sector_id'
+#             service_name = 'cambium_ss_sector_id_invent'
+#
+#             if not connected_sectors:
+#                 connected_sectors = InventoryStatus.objects.filter(
+#                     device_name__in=machine_dict[machine],
+#                     service_name=service_name,
+#                     data_source=data_source).using(alias=machine)
+#             else:
+#                 connected_sectors |= InventoryStatus.objects.filter(
+#                     device_name__in=machine_dict[machine],
+#                     service_name=service_name,
+#                     data_source=data_source).using(alias=machine)
+#
+#             if not connected_circuits:
+#                 connected_circuits = Circuit.objects.filter(
+#                     sub_station__device__device_name__in=machine_dict[machine]
+#                 )
+#             else:
+#                 connected_circuits |= Circuit.objects.filter(
+#                     sub_station__device__device_name__in=machine_dict[machine]
+#                 )
+#
+#         if connected_sectors and connected_circuits:
+#             g_jobs.append(update_topology_with_substations.s(
+#                     polled_sectors=connected_sectors,
+#                     polled_circuits=connected_circuits
+#                 )
+#             )
+#
+#
+#     elif technology and technology.strip().lower() in ['wimax']:
+#         for machine in machine_dict:
+#             #this is complete topology for the device set
+#             data_source = 'wimax_ss_sector_id'
+#             service_name = 'ss_sector_id'
+#
+#             if not connected_sectors:
+#                 connected_sectors = InventoryStatus.objects.filter(
+#                     device_name__in=machine_dict[machine],
+#                     service_name=service_name,
+#                     data_source=data_source).using(alias=machine)
+#             else:
+#                 connected_sectors |= InventoryStatus.objects.filter(
+#                     device_name__in=machine_dict[machine],
+#                     service_name=service_name,
+#                     data_source=data_source).using(alias=machine)
+#
+#             if not connected_circuits:
+#                 connected_circuits = Circuit.objects.filter(
+#                     sub_station__device__device_name__in=machine_dict[machine]
+#                 )
+#             else:
+#                 connected_circuits |= Circuit.objects.filter(
+#                     sub_station__device__device_name__in=machine_dict[machine]
+#                 )
+#
+#         if connected_sectors and connected_circuits:
+#             g_jobs.append(update_topology_with_substations.s(
+#                     polled_sectors=connected_sectors,
+#                     polled_circuits=connected_circuits
+#                 )
+#             )
+#
+#     else:
+#         return False
+#
+#     job = group(g_jobs)
+#
+#     result = job.apply_async()
+#
+#     ret = False
+#
+#     for r in result.get():
+#         ret |= r
+#
+#     return ret
+#
+#
+# @task()
+# def update_topology_with_substations(polled_sectors, polled_circuits):
+#     """
+#
+#     :param polled_sectors:
+#     :param technology:
+#     :param polled_circuits:
+#     :param sub_stations:
+#     :return:
+#     """
+#     update_this = list()
+#     g_jobs = list()
+#
+#     count = 0
+#     for circuit in polled_circuits:
+#         try:
+#             device_name = circuit.sub_station.device.device_name
+#             sector = polled_sectors.filter(device_name=device_name)[0]
+#             sector_sector_id = sector.current_value
+#             sector_object = Sector.objects.filter(sector_id__icontains = sector_sector_id)[0]
+#             if circuit.sector_id != sector_object.id:
+#                 circuit.sector_id = sector_object.id
+#                 update_this.append(circuit)
+#                 # circuit.save()
+#                 count += 1
+#             else:
+#                 continue
+#         except Exception as e:
+#             logger.exception(e.message)
+#             continue
+#
+#
+#     if len(update_this):
+#         g_jobs.append(cache_clear_task.s())
+#         g_jobs.append(bulk_update_create.s(bulky=update_this, action='update', model=Circuit))
+#
+#     job = group(g_jobs)
+#
+#     result = job.apply_async()
+#     ret = False
+#
+#     for r in result.get():
+#         ret |= r
+#
+#     return ret
+#
 
 @task()
 def bulk_update_create(bulky, action='update', model=None):

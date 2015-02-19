@@ -336,16 +336,17 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
-    'wimax-ss-topology': {
-        'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=13, hour='*/12'),
-        'args': ['WiMAX']
-    },
-    'pmp-ss-topology': {
-        'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=33, hour='*/12'),
-        'args': ['PMP']
-    },
+    # OVERKILL : updating topology SS wise
+    # 'wimax-ss-topology': {
+    #     'task': 'inventory.tasks.get_topology_with_substations',
+    #     'schedule': crontab(minute=13, hour='*/12'),
+    #     'args': ['WiMAX']
+    # },
+    # 'pmp-ss-topology': {
+    #     'task': 'inventory.tasks.get_topology_with_substations',
+    #     'schedule': crontab(minute=33, hour='*/12'),
+    #     'args': ['PMP']
+    # },
     #updating the polled sector frequency
     'update-sector-frequency': {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
