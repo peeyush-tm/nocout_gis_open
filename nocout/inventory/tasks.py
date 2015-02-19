@@ -6070,6 +6070,8 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                     'alias': alias,
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
+                    'bh_port_name': bh_port,
+                    'bh_port': bh_port_number,
                     'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
@@ -6094,7 +6096,6 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
             if errors:
                 error_rows.append(row)
 
-
         # create error log workbook
         excel_generator_for_new_column('Bulk Upload Errors',
                                        'bulk_upload_errors',
@@ -6103,7 +6104,6 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                                        'Backhaul',
                                        file_path,
                                        sheettype)
-
 
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
