@@ -759,14 +759,13 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         :param kwargs:
         :return: list of devices
         """
-        print "##################################### - self.model - ", self.model
-        print "##################################### - kwargs - ", kwargs
+
         backhauls = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
             Q(severity__in=['warning', 'critical']),
             Q(age__lte=F('sys_timestamp') - 600)
         ).prefetch_related(*self.related_columns).values(*self.columns)
-        print "##################################### - backhauls - ", backhauls.query
+
         return backhauls
 
     def prepare_results(self, qs):

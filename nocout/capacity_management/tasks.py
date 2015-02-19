@@ -494,7 +494,7 @@ def update_backhaul_status(basestations, kpi, val):
         # get data source name
         data_source = ""
         try:
-            data_source = DevicePort.objects.get(alias=bs.backhaul.bh_port_name).name
+            data_source = DevicePort.objects.get(alias=bs.bh_port_name).name
         except Exception as e:
             pass
 
@@ -504,13 +504,13 @@ def update_backhaul_status(basestations, kpi, val):
                 bhs = BackhaulCapacityStatus.objects.get(
                     backhaul=bs.backhaul,
                     basestation=bs,
-                    bh_port_name=bs.backhaul.bh_port_name
+                    bh_port_name=bs.bh_port_name
                 )
             except Exception as e:
                 pass
 
             # backhaul capacity
-            backhaul_capacity = bs.backhaul.bh_capacity
+            backhaul_capacity = bs.bh_capacity
 
             # current in/out values
             current_in_val_s = val.filter(
@@ -642,7 +642,7 @@ def update_backhaul_status(basestations, kpi, val):
                         (
                             backhaul=bs.backhaul,
                             basestation=bs,
-                            bh_port_name=bs.backhaul.bh_port_name,
+                            bh_port_name=bs.bh_port_name,
                             backhaul_capacity=float(backhaul_capacity),
 
                             current_in_per=float(current_in_per),
@@ -676,10 +676,10 @@ def update_backhaul_status(basestations, kpi, val):
         g_jobs = list()
 
         if len(bulk_create_bhs):
-            g_jobs.append(bulk_create.s(bulky=bulk_create_bhs, action='create', entity='backhaul'))
+            g_jobs.append(bulk_update_create(bulk_create_bhs, action='create', model=BackhaulCapacityStatus))
 
         if len(bulk_update_bhs):
-            g_jobs.append(bulk_update.s(bulky=bulk_update_bhs, action='update', entity='backhaul'))
+            g_jobs.append(bulk_update_create(bulk_update_bhs, action='update', model=BackhaulCapacityStatus))
 
         job = group(g_jobs)
 
@@ -1216,11 +1216,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
     g_jobs = list()
 
     if len(bulk_create_scs):
-        # SectorCapacityStatus.objects.bulk_create(bulk_create_scs)
-        g_jobs.append(bulk_create.s(bulky=bulk_create_scs, action='create'))
+        g_jobs.append(bulk_update_create(bulk_create_scs, action='create', model=SectorCapacityStatus))
 
     if len(bulk_update_scs):
-        g_jobs.append(bulk_update.s(bulky=bulk_update_scs, action='update'))
+        g_jobs.append(bulk_update_create(bulk_update_scs, action='update', model=SectorCapacityStatus))
 
     job = group(g_jobs)
 
