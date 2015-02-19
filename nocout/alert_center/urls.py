@@ -11,10 +11,20 @@ urlpatterns = patterns('',
                        url(r'^networklistingtable/', views.AlertListingTable.as_view(), name='AlertListingTable'),
                        # common page for both customer and network
 
+                       # url(r'^(?P<page_type>\w+)/device/(?P<device_id>\w+)/service_tab/(?P<service_name>\w+)/$',
+                       #     views.SingleDeviceAlertDetails.as_view(),
+                       #     name='SingleDeviceDetails'
+                       # ),
+
                        url(r'^(?P<page_type>\w+)/device/(?P<device_id>\w+)/service_tab/(?P<service_name>\w+)/$',
-                           views.SingleDeviceAlertDetails.as_view(),
-                           name='SingleDeviceDetails'
+                           views.SingleDeviceAlertsInit.as_view(),
+                           name='SingleDeviceAlertsInit'
                        ),
+                       url(r'^listing/(?P<page_type>\w+)/device/(?P<device_id>\w+)/service_tab/$',
+                           views.SingleDeviceAlertsListing.as_view(),
+                           name='SingleDeviceAlertsListing_clone'
+                       ),
+
 
                        url(r'^detail/network_detail/$', views.getNetworkAlertDetail),
                        url(r'^detail/network_detail_listing_table$', views.GetNetworkAlertDetail.as_view(),

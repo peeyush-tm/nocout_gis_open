@@ -1066,6 +1066,345 @@ class AlertListingTable(BaseDatatableView):
         return ret
 
 
+# This class initialize the single device alert page with appropriate params
+class SingleDeviceAlertsInit(ListView):
+
+  model = EventNetwork
+  template_name = 'alert_center/single_device_alert.html'
+
+  def get_context_data(self, **kwargs):
+
+    service_name = self.kwargs['service_name']
+    page_type = self.kwargs['page_type']
+    device_id = self.kwargs['device_id']
+
+    context = super(SingleDeviceAlertsInit, self).get_context_data(**kwargs)
+
+    table_headers = [
+      {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
+      {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+      {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+      {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+      {"mData": "current_value", "sTitle": "Current Value", "sWidth": "auto"},
+      {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
+      {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
+    ]
+
+    ping_table_headers = [
+      {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
+      {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+      {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+      {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+      {"mData": "latency", "sTitle": "Latency", "sWidth": "auto"},
+      {"mData": "packet_loss", "sTitle": "Packet Loss", "sWidth": "auto"},
+      {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
+      {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
+    ]
+
+    device_obj = Device.objects.get(id=device_id)
+    device_name = device_obj.device_name
+    device_alias = device_obj.device_alias + "(" + device_obj.ip_address + ")"
+    #  GET Technology of current device
+    device_technology_name = DeviceTechnology.objects.get(id=device_obj.device_technology).name
+    # context = {}
+
+    # Create Context Dict
+    context['table_headers'] = json.dumps(table_headers)
+    context['ping_table_headers'] = json.dumps(ping_table_headers)
+    context['current_device_id'] = device_id
+    context['page_type'] = page_type
+    # Device Inventory page url
+    context['inventory_page_url'] = reverse(
+        'device_edit',
+        kwargs={'pk': device_id},
+        current_app='device'
+    )
+    # Single Device perf page url
+    context['perf_page_url'] = reverse(
+        'SingleDevicePerf',
+        kwargs={'page_type': page_type, 'device_id' : device_id},
+        current_app='performance'
+    )
+    context['get_status_url'] = 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id)
+    context['device_technology_name'] = device_technology_name
+    context['device_alias'] = device_alias
+    context['current_device_name'] = device_name
+
+    return context
+
+
+class SingleDeviceAlertsListing(BaseDatatableView):
+
+    model = EventNetwork
+    required_columns = [
+      "ip_address",
+      "service_name",
+      "data_source",
+      "severity",
+      "current_value",
+      "sys_timestamp",
+      "description"
+    ]
+
+    # order_columns = required_columns
+
+    def filter_queryset(self, qs, service_name):
+      """ Filter datatable as per requested value """
+
+      sSearch = self.request.GET.get('sSearch', None)
+
+      if sSearch:
+        if info_dict['service_name'] == 'ping':
+          self.required_columns = [
+              "ip_address",
+              "service_name",
+              "severity",
+              "latency",
+              "packet_loss",
+              "sys_timestamp",
+              "description"
+          ]
+
+        if info_dict['service_name'] == 'ping':
+          # raw query is required here so as to get data
+          query = alert_utils.ping_service_query(info_dict['device_name'], info_dict['start_date'], info_dict['end_date'])
+          condition_str = ''
+          final_query = ''
+          
+          counter = 0
+
+          for column in self.required_columns[:-1]:
+            counter += 1
+            # avoid search on 'sys_timestamp'
+            if column == 'sys_timestamp':
+              continue
+
+            if counter >= len(self.required_columns):
+              condition_str += " data_tab.%s LIKE '"+sSearch+"%' "
+            else:
+              condition_str += " data_tab.%s LIKE '"+sSearch+"%' or "
+
+          if condition_str:
+            final_query += 'select data_tab.* from ('+query+') as data_tab where '+condition_str
+          else:
+            final_query += query
+
+          qs = nocout_utils.fetch_raw_result(final_query, info_dict['machine_name'])
+
+        else:
+          query = []
+          exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+          for column in self.required_columns[:-1]:
+            # avoid search on 'sys_timestamp'
+            if column == 'sys_timestamp':
+                continue
+            query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+          exec_query += " | ".join(query)
+          exec_query += ").values(*" + str(self.required_columns) + ")"
+          exec exec_query
+
+      return qs
+
+    def get_initial_queryset(self,info_dict):
+      """
+      Preparing  Initial Queryset for the for rendering the data table.
+      """
+      if not self.model:
+          raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+      print "$"*50
+      print info_dict['start_date']
+      print info_dict['end_date']
+      if info_dict['service_name'] == 'service':
+
+        report_resultset = EventService.objects.filter(
+          device_name=info_dict['device_name'],
+          sys_timestamp__gte=info_dict['start_date'],
+          sys_timestamp__lte=info_dict['end_date']
+        ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+
+      elif info_dict['service_name'] == 'ping':
+
+        # raw query is required here so as to get data
+        query = alert_utils.ping_service_query(info_dict['device_name'], info_dict['start_date'], info_dict['end_date'])
+        report_resultset = nocout_utils.fetch_raw_result(query, info_dict['machine_name'])
+
+      elif info_dict['service_name'] == 'latency':
+        
+        report_resultset = EventNetwork.objects.filter(
+          device_name=info_dict['device_name'],
+          data_source='rta',
+          sys_timestamp__gte=info_dict['start_date'],
+          sys_timestamp__lte=info_dict['end_date']
+        ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+
+      elif info_dict['service_name'] == 'packet_drop':
+
+        report_resultset = EventNetwork.objects.filter(
+          device_name=info_dict['device_name'],
+          data_source='pl',
+          sys_timestamp__gte=info_dict['start_date'],
+          sys_timestamp__lte=info_dict['end_date']
+        ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+
+      elif info_dict['service_name'] == 'down':
+
+        report_resultset = EventNetwork.objects.filter(
+          device_name=info_dict['device_name'],
+          data_source='pl',
+          current_value=100,  #need to show up and down both
+          severity='DOWN',
+          sys_timestamp__gte=info_dict['start_date'],
+          sys_timestamp__lte=info_dict['end_date']
+        ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+
+      else:
+
+        report_resultset = []
+
+      return report_resultset
+
+    def prepare_results(self, qs,service_name):
+      """
+      Preparing Final dataset for rendering the data table.
+      """
+      final_list = list()
+      if qs:
+        for data in qs:
+          single_dict = {}
+          single_dict = data
+          single_dict['sys_timestamp'] = datetime.datetime.fromtimestamp(float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT)
+          
+          #add data to report_resultset list
+          final_list.append(single_dict)
+        # qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+      else:
+        final_list = qs
+
+      return final_list
+
+    def ordering(self, qs, service_name):
+      """ Get parameters from the request and prepare order by clause
+      """
+      request = self.request
+      # Number of columns that are used in sorting
+      try:
+          i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+      except Exception:
+          i_sorting_cols = 0
+
+      order = []
+
+      if service_name == 'ping':
+        self.required_columns = [
+            "ip_address",
+            "service_name",
+            "severity",
+            "latency",
+            "packet_loss",
+            "sys_timestamp",
+            "description"
+        ]
+
+      order_columns = self.required_columns
+
+      for i in range(i_sorting_cols):
+          # sorting column
+          try:
+              i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+          except Exception:
+              i_sort_col = 0
+          # sorting order
+          s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+          sdir = '-' if s_sort_dir == 'desc' else ''
+
+          sortcol = order_columns[i_sort_col]
+          if isinstance(sortcol, list):
+              for sc in sortcol:
+                  order.append('%s%s' % (sdir, sc))
+          else:
+              order.append('%s%s' % (sdir, sortcol))
+      if order:
+          key_name=order[0][1:] if '-' in order[0] else order[0]
+          sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+          return sorted_device_data
+      return qs
+
+    def get_context_data(self, *args, **kwargs):
+      """
+      The main method call to fetch, search, ordering , prepare and display the data on the data table.
+      """
+
+      request = self.request
+      self.initialize(*args, **kwargs)
+
+      service_name = self.request.GET.get('service_name', 'ping')
+
+      device_id = self.kwargs['device_id']
+      device_obj = Device.objects.get(id=device_id)
+      device_name = device_obj.device_name
+      machine_name = device_obj.machine.name
+
+      start_date = self.request.GET.get('start_date', '')
+      end_date = self.request.GET.get('end_date', '')
+
+      if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+        try:
+          start_date = float(start_date)
+          end_date = float(end_date)
+        except Exception, e:
+          start_date_object = datetime.datetime.strptime(start_date, "%d-%m-%Y %H:%M:%S")
+          end_date_object = datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
+          start_date = format(start_date_object, 'U')
+          end_date = format(end_date_object, 'U')
+      else:
+        # The end date is the end limit we need to make query till.
+        end_date_object = datetime.datetime.now()
+        # The start date is the last monday of the week we need to calculate from.
+        start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+        # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+        start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+        # Converting the date to epoch time or Unix Timestamp
+        end_date = format(end_date_object, 'U')
+        start_date = format(start_date_object, 'U')
+        isSet = True
+
+      params_dict = {
+        'service_name' : service_name,
+        'device_name' : device_name,
+        'page_type' : self.kwargs['page_type'],
+        'machine_name' : machine_name,
+        'start_date' : start_date,
+        'end_date' : end_date
+      }
+
+      qs = self.get_initial_queryset(params_dict)
+
+      # number of records before filtering
+      total_records = len(qs)
+
+      qs = self.filter_queryset(qs,params_dict)
+      # number of records after filtering
+      total_display_records = len(qs)
+
+      qs = self.ordering(qs,service_name)
+      # qs = self.paging(qs)
+      #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+      if not qs and isinstance(qs, ValuesQuerySet):
+          qs = list(qs)
+
+      aaData = self.prepare_results(qs,service_name)
+      ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+             'iTotalRecords': total_records,
+             'iTotalDisplayRecords': total_display_records,
+             'aaData': aaData
+      }
+      return ret
+
+
+
+
 class SingleDeviceAlertDetails(View):
     """
     Generic Class for Network and Customer to render the details page for a single device.
@@ -1097,14 +1436,6 @@ class SingleDeviceAlertDetails(View):
                 end_date_object = datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
                 start_date = format(start_date_object, 'U')
                 end_date = format(end_date_object, 'U')
-                # start_date_object= datetime.datetime.strptime( start_date , "%d-%m-%Y %H:%M:%S" )
-                # end_date_object= datetime.datetime.strptime( end_date , "%d-%m-%Y %H:%M:%S" )
-                # start_date= format( start_date_object, 'U')
-                # end_date= format( end_date_object, 'U')
-                # isSet = True
-                # if start_date == end_date:
-                #     # Converting the end date to the highest time in a day.
-                #     end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
         else:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()
@@ -1212,12 +1543,6 @@ class SingleDeviceAlertDetails(View):
             ]
 
         for data in data_list:
-            # data["alert_date"] = datetime.datetime. \
-            #     fromtimestamp(float(data["sys_timestamp"])). \
-            #     strftime("%d/%B/%Y")
-            # data["alert_time"] = datetime.datetime. \
-            #     fromtimestamp(float(data["sys_timestamp"])). \
-            #     strftime("%I:%M %p")
             data["alert_date_time"] = datetime.datetime. \
                 fromtimestamp(float(data["sys_timestamp"])). \
                 strftime(DATE_TIME_FORMAT)
