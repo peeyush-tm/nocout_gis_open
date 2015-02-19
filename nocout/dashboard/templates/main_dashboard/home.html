@@ -155,7 +155,7 @@
         <hr/>
 
         <!-- ********** FOURTH ROW START **********-->
-        <div class="col-md-12">
+        <div class="col-md-9">
             <h4>
                 <strong>
                     MFR Processed
@@ -163,6 +163,15 @@
                 </strong>
             </h4>
             <div id="id_mfr_processed" class="rf_chart_style"></div>
+        </div>
+        <div class="col-md-3">
+            <div id="tcl_pop_backhaul_capacity" class="rf_chart_style"></div>
+            <h5>
+                <strong>
+                    TCL POP Backhaul Capacity
+                    <i class="fa fa-signal text-success" id="tcl_pop_backhaul_capacity_trend" title="TCL POP Backhaul Capacity"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="clearfix"></div>
         <!-- ********** FOURTH ROW END **********-->
@@ -361,13 +370,17 @@
         pie_chart_url_obj["wimax_sector_capacity"]["url"] = "{% url 'sector-capacity-wimax' %}";
         pie_chart_url_obj["wimax_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-wimax' %}";
 
-        pie_chart_url_obj["wimax_backhaul_capacity"]["url"] = "";
-        pie_chart_url_obj["wimax_backhaul_capacity"]["trends_url"] = "";
+        pie_chart_url_obj["wimax_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-wimax' %}";
+        pie_chart_url_obj["wimax_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-wimax' %}";
 
-        pie_chart_url_obj["pmp_backhaul_capacity"]["url"] = "";
-        pie_chart_url_obj["pmp_backhaul_capacity"]["trends_url"] = "";
+        pie_chart_url_obj["pmp_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-pmp' %}";
+        pie_chart_url_obj["pmp_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-pmp' %}";
 
         pie_chart_url_obj["mfr_cause_code"]["url"] = "{% url 'cause-code-mfr' %}";
+
+        pie_chart_url_obj["tcl_pop_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-tclpop' %}";
+        pie_chart_url_obj["tcl_pop_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-tclpop' %}";
+       
 
         /***************** PIE CHART END ************************/
 

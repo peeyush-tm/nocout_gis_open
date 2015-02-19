@@ -85,7 +85,8 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
         "pmp_sector_capacity",
         "wimax_backhaul_capacity",
         "pmp_backhaul_capacity",
-        "mfr_cause_code"
+        "mfr_cause_code",
+        "tcl_pop_backhaul_capacity"
     ],
     pie_chart_url_obj = {
         "wimax_sales_opportunity" : {
@@ -122,6 +123,11 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
             "url" : "",
             "trends_url" : "",
             "text" : "MFR Caused Code"
+        },
+        "tcl_pop_backhaul_capacity" : {
+            "url" : "",
+            "trends_url" : "",
+            "text" : "TCL POP Backhaul Capacity"
         }
     },
     area_chart_ids = [
