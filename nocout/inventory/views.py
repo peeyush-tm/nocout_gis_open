@@ -415,6 +415,7 @@ class BaseStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
             {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
+            {'mData': 'bh_port_name', 'sTitle': 'BH Port', 'sWidth': 'auto', },
             {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', },
@@ -442,9 +443,9 @@ class BaseStationListingTable(PermissionsRequiredMixin,
     model = BaseStation
     required_permissions = ('inventory.view_basestation',)
     columns = ['alias', 'bs_site_id', 'state__state_name', 'city__city_name', 'bh_capacity', 'tower_height',
-               'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
+               'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description', 'bh_port_name']
     order_columns = ['alias', 'bs_site_id', 'state__state_name', 'city__city_name', 'bh_capacity', 'tower_height',
-                     'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
+                     'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description', 'bh_port_name']
 
 
     def prepare_results(self, qs):

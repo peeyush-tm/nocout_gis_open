@@ -6070,10 +6070,13 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                     'alias': alias,
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
+                    'bh_port_name': bh_port,
+                    'bh_port': bh_port_number,
                     'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
                     'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
                     'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
                     'state': row['State'] if 'State' in row.keys() else "",
@@ -6094,7 +6097,6 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
             if errors:
                 error_rows.append(row)
 
-
         # create error log workbook
         excel_generator_for_new_column('Bulk Upload Errors',
                                        'bulk_upload_errors',
@@ -6103,7 +6105,6 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                                        'Backhaul',
                                        file_path,
                                        sheettype)
-
 
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
@@ -6114,6 +6115,368 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
         gis_obj.upload_status = 3
         gis_obj.save()
 
+
+def bulk_upload_error_logger(row=None, sheet=None):
+    """ Generate excel workbook containing per row errors during bulk upload
+
+    Args:
+        row (dict): dictionary containing excel row data with headers as dictionary keys
+        sheet (str): name of sheet i.e. 'wimax_bs'
+
+    Returns:
+        errors (str): error in row i.e Base Station Device: Device can't be created without IP.
+                                       BS Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.
+                                       POP Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.
+
+    """
+
+    # errors
+    errors = ""
+
+    # ************************************ DEVICES CHECK ***********************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
+        # check for base station device
+        if 'IP' not in row.keys():
+            errors += "Base Station Device: Device can't be created without IP.\n"
+        elif row['IP'] in ['na', 'n/a', 'NA', 'N/A']:
+            errors += "Base Station Device: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+        elif not ip_sanitizer(row['IP']):
+            errors += "Base Station Device: Wrong Base Station Device IP.\n"
+        else:
+            pass
+
+    if sheet in ['ptp', 'ptp_bh', 'pmp_sm', 'wimax_ss']:
+        # check for sub station device
+        if 'SS IP' not in row.keys():
+            errors += "Sub Station Device: Device can't be created without IP.\n"
+        elif row['SS IP'] in ['na', 'n/a', 'NA', 'N/A']:
+            errors += "Sub Station Device: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+        elif not ip_sanitizer(row['SS IP']):
+            errors += "Sub Station Device: Wrong Sub Station Device IP.\n"
+        else:
+            pass
+
+    if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs', 'backhaul']:
+        # check for bs switch
+        if 'BS Switch IP' in row.keys():
+            if not row['BS Switch IP']:
+                errors += "BS Switch: Empty BS Switch IP.\n"
+            elif row['BS Switch IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "BS Switch: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['BS Switch IP']):
+                errors += "BS Switch: Wrong BS Switch IP.\n"
+            else:
+                pass
+
+        # check for aggregation switch
+        if 'Aggregation Switch' in row.keys():
+            if not row['Aggregation Switch']:
+                errors += "Aggregation Switch: Empty Aggregation Switch.\n"
+            elif row['Aggregation Switch'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Aggregation Switch: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['BS Switch IP']):
+                errors += "Aggregation Switch: Wrong Aggregation Switch IP.\n"
+            else:
+                pass
+
+        # check for bs converter
+        if 'BS Converter IP' in row.keys():
+            if not row['BS Converter IP']:
+                errors += "BS Converter: Empty BS Converter IP.\n"
+            elif row['BS Converter IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "BS Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['BS Converter IP']):
+                errors += "BS Converter: Wrong BS Converter IP.\n"
+            else:
+                pass
+
+        # check for pop converter
+        if 'POP Converter IP' in row.keys():
+            if not row['POP Converter IP']:
+                errors += "POP Converter: Empty POP Converter IP.\n"
+            elif row['POP Converter IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "POP Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['POP Converter IP']):
+                errors += "POP Converter: Wrong POP Converter IP.\n"
+            else:
+                pass
+
+    # ************************************ SECTOR ANTENNA CHECK ***********************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
+        # check for sector antenna
+        # sector antenna row key
+        if sheet == 'ptp':
+            sector_antenna_key = 'SS Circuit ID'
+        elif sheet == 'ptp_bh':
+            sector_antenna_key = 'Circuit ID'
+        else:
+            sector_antenna_key = 'Sector ID'
+
+        if sector_antenna_key in row.keys():
+            if not row[sector_antenna_key]:
+                errors += "Sector Antenna: Empty {}.\n".format(sector_antenna_key)
+            elif row[sector_antenna_key] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector Antenna: Antenna can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+
+    # ************************************** SS ANTENNA CHECK *************************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_sm', 'wimax_ss']:
+        # check for sub station antenna
+        # ss antenna row key
+        if sheet in ['ptp', 'ptp_bh']:
+            ss_antenna_key = 'SS Circuit ID'
+        else:
+            ss_antenna_key = 'Sector ID'
+        if ss_antenna_key in row.keys():
+            if not row[ss_antenna_key]:
+                errors += "Sub Station Antenna: Empty {}.\n".format(ss_antenna_key)
+            elif row['SS IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sub Station Antenna: Antenna can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['SS IP']):
+                errors += "Sub Station Antenna: Wrong {}.\n".format(ss_antenna_key)
+            else:
+                pass
+
+    # ************************************** BACKHAUL CHECK *************************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs', 'backhaul']:
+        # check for backhaul
+        if 'BH Configured On Switch/Converter' in row.keys():
+            if not row['BH Configured On Switch/Converter']:
+                errors += "Backhaul: Empty BH Configured On Switch/Converter.\n"
+            elif row['BH Configured On Switch/Converter'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Backhaul: Backhaul can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['BH Configured On Switch/Converter']):
+                errors += "Backhaul: Wrong BH Configured On Switch/Converter.\n"
+            else:
+                pass
+
+    # *********************************** BASE STATION CHECK ************************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs', 'backhaul']:
+        # check for base station
+        if 'BS Name' in row.keys():
+            if not row['BS Name']:
+                errors += "Base Station: Empty BS Name.\n"
+            elif row['BS Name'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Base Station: Base Station can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+
+        # check for city
+        if 'City' in row.keys():
+            if not row['City']:
+                errors += "Base Station: Corrupted Base Station created with no city.\n"
+            elif row['City'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Base Station: Corrupted Base Station created with city name as 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+
+        # check for state
+        if 'State' in row.keys():
+            if not row['State']:
+                errors += "Base Station: Corrupted Base Station created with no state.\n"
+            elif row['State'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Base Station: Corrupted Base Station created with state name as 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+
+    # *********************************** SECTOR CHECK ************************************
+    if sheet in ['ptp', 'ptp_bh']:
+        # check for sector
+        if 'SS Circuit ID' in row.keys():
+            if not row['SS Circuit ID']:
+                errors += "Sector: Empty SS Circuit ID.\n"
+            elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector: Sector can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['SS Circuit ID']):
+                errors += "Sector: Wrong SS Circuit ID.\n"
+            else:
+                pass
+    if sheet in ['pmp_bs']:
+        # check for sector id
+        if 'Sector ID' in row.keys():
+            if not row['Sector ID']:
+                errors += "Sector: Empty Sector ID.\n"
+            elif row['Sector ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector: Sector can't be created with sector id as 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+        # check for sector name
+        if 'Sector Name' in row.keys():
+            if not row['Sector Name']:
+                errors += "Sector: Corrupted sector created without sector name.\n"
+            elif row['Sector Name'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector: Sector can't be created with sector name as 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+    if sheet in ['wimax_bs']:
+        # check for sector id
+        if 'Sector ID' in row.keys():
+            if not row['Sector ID']:
+                errors += "Sector: Empty Sector ID.\n"
+            elif row['Sector ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector: Sector can't be created with sector id as 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+        # check for sector name
+        if 'Sector Name' in row.keys():
+            if not row['Sector Name']:
+                errors += "Sector: Corrupted sector created without sector name.\n"
+            elif row['Sector Name'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector: Sector can't be created with sector name as 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+        # check for pmp port
+        if 'PMP Port' in row.keys():
+            if not row['PMP Port']:
+                errors += "Sector: Corrupted sector created without pmp port.\n"
+            elif row['PMP Port'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector: Sector can't be created with pmp port as 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+
+    # *********************************** SUB STATION CHECK ***********************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_sm', 'wimax_ss']:
+        # sub station name
+        if sheet in ['ptp', 'ptp_bh']:
+            substation_name = 'SS Circuit ID'
+        else:
+            substation_name = 'Circuit ID'
+
+        # check for sub station
+        if substation_name in row.keys():
+            if not row[substation_name]:
+                errors += "Sub Station: Empty SS Circuit ID.\n"
+            elif row[substation_name] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sub Station: Sub Station can't be created with {} as 'na', 'n/a', 'NA', 'N/A'.\n".format(
+                    substation_name)
+            else:
+                pass
+
+    # *********************************** CUSTOMER CHECK **************************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_sm', 'wimax_ss']:
+        # customer name and circuit id keys
+        if sheet in ['ptp', 'ptp_bh']:
+            customer_name_key = 'SS Customer Name'
+            circuit_id_key = 'SS Circuit ID'
+        else:
+            customer_name_key = 'Customer Name'
+            circuit_id_key = 'Circuit ID'
+
+        # check for customer name
+        if customer_name_key in row.keys():
+            if not row[customer_name_key]:
+                errors += "Customer: Empty {}.\n".format(customer_name_key)
+            elif row[customer_name_key] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Customer: Customer can't be created with {} as 'na', 'n/a', 'NA', 'N/A'.\n".format(
+                    customer_name_key)
+            else:
+                pass
+
+        # check for circuit id
+        if circuit_id_key in row.keys():
+            if not row[circuit_id_key]:
+                errors += "Customer: Corrupted Customer created without {}.\n".format(circuit_id_key)
+            elif row[circuit_id_key] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Customer: Customer can't be created with {} as 'na', 'n/a', 'NA', 'N/A'.\n".format(
+                    circuit_id_key)
+            else:
+                pass
+
+    # *********************************** CIRCUIT CHECK **************************************
+    if sheet in ['ptp', 'ptp_bh', 'pmp_sm', 'wimax_ss']:
+        # circuit id keys
+        if sheet in ['ptp', 'ptp_bh']:
+            circuit_id_key = 'SS Circuit ID'
+        else:
+            circuit_id_key = 'Circuit ID'
+
+        # check for circuit id
+        if circuit_id_key in row.keys():
+            if not row[circuit_id_key]:
+                errors += "Circuit: Corrupted Circuit created without {}.\n".format(circuit_id_key)
+            elif row[circuit_id_key] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Circuit: Circuit can't be created with {} as 'na', 'n/a', 'NA', 'N/A'.\n".format(
+                    circuit_id_key)
+            else:
+                pass
+
+    return errors
+
+
+def bulk_upload_error_file_generator(keys_list, error_rows, sheettype, file_path, workbook):
+    """ Generate excel workbook containing per row errors during bulk upload
+
+    Args:
+        keys_list (list): list containing names of excel columns
+        error_rows (list) : list of dictionaries containing excel rows
+        sheettype (unicode): type of sheet i.e. valid/invalid
+        filepath (unicode): path of file i.e. inventory_files/invalid/2014-12-29-02-18-32_invalid_WiMAX Few Rows.xls
+        workbook (str): sheet name i.e. 'PMP BS'
+
+    Returns:
+        device (class 'device.models.Device'): <Device: 10.75.158.219>
+
+    """
+
+    # error rows list
+    error_rows_list = []
+
+    # headers for excel sheet
+    headers = keys_list
+
+    # append errors key in keys_list
+    keys_list.append('Bulk Upload Errors')
+
+    for val in error_rows:
+        temp_list = list()
+        for key in keys_list:
+            try:
+                temp_list.append(val[key])
+            except Exception as e:
+                logger.info(e.message)
+        error_rows_list.append(temp_list)
+
+    wb_bulk_upload_errors = xlwt.Workbook()
+    ws_bulk_upload_errors = wb_bulk_upload_errors.add_sheet(workbook)
+
+    style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+    style_errors = xlwt.easyxf('pattern: pattern solid, fore_colour red;' 'font: colour white, bold True;')
+
+    try:
+        for i, col in enumerate(headers):
+            if col != 'Bulk Upload Errors':
+                ws_bulk_upload_errors.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+            else:
+                ws_bulk_upload_errors.write(0, i, col.decode('utf-8', 'ignore').strip(), style_errors)
+    except Exception as e:
+        pass
+
+    try:
+        for i, l in enumerate(error_rows_list):
+            i += 1
+            for j, col in enumerate(l):
+                ws_bulk_upload_errors.write(i, j, col)
+    except Exception as e:
+        pass
+
+    # bulk upload errors file path
+    if sheettype == 'valid':
+        bulk_upload_file_path = file_path.replace('valid', 'bulk_upload_errors')
+    elif sheettype == 'invalid':
+        bulk_upload_file_path = file_path.replace('invalid', 'bulk_upload_errors')
+    else:
+        bulk_upload_file_path = None
+
+    # if directory for bulk upload excel sheets didn't exist than create one
+    if not os.path.exists(MEDIA_ROOT + 'inventory_files/bulk_upload_errors'):
+        os.makedirs(MEDIA_ROOT + 'inventory_files/bulk_upload_errors')
+
+    # saving bulk upload errors excel sheet
+    try:
+        wb_bulk_upload_errors.save(MEDIA_ROOT + bulk_upload_file_path)
+    except Exception as e:
+        logger.info(e.message)
 
 
 @task()
@@ -6432,7 +6795,6 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
 
             # ************************************ CUSTOMER CHECK ***********************************
             if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
-                print "############################ ENTER IN: "
                 # customer name
                 customer_name = ""
 
@@ -6450,9 +6812,6 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                             row['Circuit ID'] if 'Circuit ID' in row.keys() else ""))
                 else:
                     pass
-                print "****************************** row['Circuit ID'] - ", row['Circuit ID']
-                print "****************************** row['Customer Name'] - ", row['Customer Name']
-                print "****************************** customer_name - ", customer_name
 
                 if customer_name:
                     # customer
@@ -6938,7 +7297,6 @@ def excel_generator_for_new_column(col_name,
         rows_list.append(temp_list)
 
     new_workbook = xlwt.Workbook()
-    print "************************************ sheettype - ", sheettype
     new_worksheet = new_workbook.add_sheet(sheettype)
 
     style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
@@ -12672,19 +13030,14 @@ def remove_duplicate_dict_from_list(input_list=None):
 ## TOPOLOGY UPDATE ##
 #################################################################################################
 from performance.models import Topology, InventoryStatus, ServiceStatus
-from inventory.utils.util import organization_network_devices, \
-    organization_customer_devices\
-    , prepare_machines
+from inventory.utils.util import organization_network_devices, organization_customer_devices
 from organization.models import Organization
 from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
 
 #The Django !!
-from django.db.models import Count, Q
+from django.db.models import Count
 
-#http://timsaylor.com/index.php/2012/05/21/convert-django-model-instances-to-dictionaries/
-from django.forms.models import model_to_dict
-#The Django
 
 def get_organizations():
     """
@@ -12751,41 +13104,19 @@ def get_topology(technology, rf_type=None, site_name=None):
     #topology is now synced at the central database only. no need to creating topology
     topology = Topology.objects.filter(device_name__in=device_list, data_source='topology')
 
-        #topology fields
-        # device_name
-        # service_name
-        # data_source
-        # machine_name
-        # site_name
-        # ip_address
-        # mac_address
-        # sector_id
-        # connected_device_ip
-        # connected_device_mac
-        # sys_timestamp
-        # check_timestamp
-
     required_topology = topology.values('connected_device_ip', 'sector_id', 'connected_device_mac', 'mac_address', 'ip_address')
     sector_ips = topology.values_list('ip_address', flat=True)
 
-    polled_sectors = Sector.objects.filter(sector_id__in=topology.values_list('sector_id', flat=True)
-    )
+    polled_sectors = Sector.objects.filter(sector_id__in=topology.values_list('sector_id', flat=True))
 
     polled_circuits = Circuit.objects.filter(sub_station__in=SubStation.objects.filter(
         device__ip_address__in=topology.values_list('connected_device_ip', flat=True)
         )
     )
 
-    # polled_substations = SubStation.objects.filter(device__ip_address__in=topology.values_list(
-    #     'connected_device_ip', flat=True)
-    # ).select_related('circuit_set', 'device')
-
     polled_devices = Device.objects.filter(ip_address__in=sector_ips) #just work with sector devices here
     #because the ss devices can be get directly with SS only
-        # Q(ip_address__in=sector_ips)  #because that can be a DR as well. hence the IP address
-        # |
-        # Q(substation__in=polled_substations)  #substatoin can have at max one device associated to it
-    # )
+
 
     save_circuit_list = []
     save_device_list = []
@@ -12873,164 +13204,6 @@ def topology_site_wise(technology):
         g_jobs.append(get_topology.s(technology=technology, rf_type=None, site_name=site))
 
     job = group(g_jobs)
-    result = job.apply_async()
-    ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
-
-
-@task()
-def get_topology_with_substations(technology):
-    """
-    the update topology is not working, needs to be debugged, but we have our
-    substations telling the sector id to which it is connected
-    this needs to be done per technology wise
-    :param technology: PMP or WiMAX
-    :return:
-    """
-
-    g_jobs = list()
-
-    customer_devices = get_devices(technology=technology, rf_type='customer')
-    device_list = []
-    for device in customer_devices:
-        device_list.append(
-            {
-                'id': device['id'],
-                'device_name': device['device_name'],
-                'device_machine': device['machine__name']
-            }
-        )
-    machine_dict = {}
-    # prepare_machines(device_list)
-    machine_dict = prepare_machines(device_list)
-
-    connected_sectors = None
-    connected_circuits = None
-
-    if technology and technology.strip().lower() in ['pmp']:
-        for machine in machine_dict:
-            #this is complete topology for the device set
-            data_source = 'ss_sector_id'
-            service_name = 'cambium_ss_sector_id_invent'
-
-            if not connected_sectors:
-                connected_sectors = InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-            else:
-                connected_sectors |= InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-
-            if not connected_circuits:
-                connected_circuits = Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-            else:
-                connected_circuits |= Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-
-        if connected_sectors and connected_circuits:
-            g_jobs.append(update_topology_with_substations.s(
-                    polled_sectors=connected_sectors,
-                    polled_circuits=connected_circuits
-                )
-            )
-
-
-    elif technology and technology.strip().lower() in ['wimax']:
-        for machine in machine_dict:
-            #this is complete topology for the device set
-            data_source = 'wimax_ss_sector_id'
-            service_name = 'ss_sector_id'
-
-            if not connected_sectors:
-                connected_sectors = InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-            else:
-                connected_sectors |= InventoryStatus.objects.filter(
-                    device_name__in=machine_dict[machine],
-                    service_name=service_name,
-                    data_source=data_source).using(alias=machine)
-
-            if not connected_circuits:
-                connected_circuits = Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-            else:
-                connected_circuits |= Circuit.objects.filter(
-                    sub_station__device__device_name__in=machine_dict[machine]
-                )
-
-        if connected_sectors and connected_circuits:
-            g_jobs.append(update_topology_with_substations.s(
-                    polled_sectors=connected_sectors,
-                    polled_circuits=connected_circuits
-                )
-            )
-
-    else:
-        return False
-
-    job = group(g_jobs)
-
-    result = job.apply_async()
-
-    ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
-
-
-@task()
-def update_topology_with_substations(polled_sectors, polled_circuits):
-    """
-
-    :param polled_sectors:
-    :param technology:
-    :param polled_circuits:
-    :param sub_stations:
-    :return:
-    """
-    update_this = list()
-    g_jobs = list()
-
-    count = 0
-    for circuit in polled_circuits:
-        try:
-            device_name = circuit.sub_station.device.device_name
-            sector = polled_sectors.filter(device_name=device_name)[0]
-            sector_sector_id = sector.current_value
-            sector_object = Sector.objects.filter(sector_id__icontains = sector_sector_id)[0]
-            if circuit.sector_id != sector_object.id:
-                circuit.sector_id = sector_object.id
-                update_this.append(circuit)
-                # circuit.save()
-                count += 1
-            else:
-                continue
-        except Exception as e:
-            logger.exception(e.message)
-            continue
-
-
-    if len(update_this):
-        g_jobs.append(cache_clear_task.s())
-        g_jobs.append(bulk_update_create.s(bulky=update_this, action='update', model=Circuit))
-
-    job = group(g_jobs)
-
     result = job.apply_async()
     ret = False
 

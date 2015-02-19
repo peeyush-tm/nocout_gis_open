@@ -1038,12 +1038,6 @@ class DeviceDetail(PermissionsRequiredMixin, DetailView):
                 context['device_model'] = DeviceModel.objects.get(pk=kwargs['object'].device_model).alias
             if kwargs['object'].device_type:
                 context['device_type'] = DeviceType.objects.get(pk=kwargs['object'].device_type).alias
-            if kwargs['object'].country:
-                context['country'] = Country.objects.get(pk=kwargs['object'].country).country_name
-            if kwargs['object'].state:
-                context['state'] = State.objects.get(pk=kwargs['object'].state).state_name
-            if kwargs['object'].city:
-                context['city'] = City.objects.get(pk=kwargs['object'].city).city_name
         except Exception as e:
             logger.exception(e.message)
 
