@@ -1212,9 +1212,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
       """
       if not self.model:
           raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-      print "$"*50
-      print info_dict['start_date']
-      print info_dict['end_date']
+
       if info_dict['service_name'] == 'service':
 
         report_resultset = EventService.objects.filter(
@@ -1259,7 +1257,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
 
       else:
-
+        
         report_resultset = []
 
       return report_resultset
