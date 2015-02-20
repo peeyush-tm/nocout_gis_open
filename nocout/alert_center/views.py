@@ -1447,250 +1447,250 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
 
 
-class SingleDeviceAlertDetails(View):
-    """
-    Generic Class for Network and Customer to render the details page for a single device.
-    """
-
-    def get(self, request, page_type, device_id, service_name):
-
-        logged_in_user, devices_result = request.user.userprofile, list()
-
-        if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
-            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-        else:
-            organizations = [logged_in_user.organization]
-
-        devices_result += self.get_result(page_type, organizations)
-
-        start_date = self.request.GET.get('start_date', '')
-        end_date = self.request.GET.get('end_date', '')
-        isSet = False
-        start_date_object = ""
-        end_date_object = ""
-
-        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
-            try:
-                start_date = float(start_date)
-                end_date = float(end_date)
-            except Exception, e:
-                start_date_object = datetime.datetime.strptime(start_date, "%d-%m-%Y %H:%M:%S")
-                end_date_object = datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
-                start_date = format(start_date_object, 'U')
-                end_date = format(end_date_object, 'U')
-        else:
-            # The end date is the end limit we need to make query till.
-            end_date_object = datetime.datetime.now()
-            # The start date is the last monday of the week we need to calculate from.
-            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-            # Converting the date to epoch time or Unix Timestamp
-            end_date = format(end_date_object, 'U')
-            start_date = format(start_date_object, 'U')
-            isSet = True
-
-        device_obj = Device.objects.get(id=device_id)
-        device_name = device_obj.device_name
-        device_alias = device_obj.device_alias + "(" + device_obj.ip_address + ")"
-        device_id = device_id
-        machine_name = device_obj.machine.name
-
-        device_technology_name = DeviceTechnology.objects.get(id=device_obj.device_technology).name
-
-
-        data_list = None
-        required_columns = [
-            # "device_name",
-            "ip_address",
-            "service_name",
-            "data_source",
-            "severity",
-            "current_value",
-            "sys_timestamp",
-            "description"
-        ]
-
-        is_ping = False
-
-        if service_name == 'latency':
-            data_list = EventNetwork.objects. \
-                filter(device_name=device_name,
-                       data_source='rta',
-                       sys_timestamp__gte=start_date,
-                       sys_timestamp__lte=end_date). \
-                order_by("-sys_timestamp"). \
-                values(*required_columns).using(alias=machine_name)
-
-        elif service_name == 'packetdrop' or service_name == 'packet_drop':
-            data_list = EventNetwork.objects. \
-                filter(device_name=device_name,
-                       data_source='pl',
-                       sys_timestamp__gte=start_date,
-                       sys_timestamp__lte=end_date). \
-                order_by("-sys_timestamp"). \
-                values(*required_columns).using(alias=machine_name)
-
-        elif service_name == 'down':
-            data_list = EventNetwork.objects. \
-                filter(device_name=device_name,
-                       data_source='pl',
-                       current_value=100,  #need to show up and down both
-                       severity='DOWN',
-                       sys_timestamp__gte=start_date,
-                       sys_timestamp__lte=end_date). \
-                order_by("-sys_timestamp"). \
-                values(*required_columns).using(alias=machine_name)
-
-        elif service_name == 'service':
-            data_list = EventService.objects. \
-                filter(device_name=device_name,
-                       sys_timestamp__gte=start_date,
-                       sys_timestamp__lte=end_date). \
-                order_by("-sys_timestamp"). \
-                values(*required_columns).using(alias=machine_name)
-
-        elif service_name == 'ping':
-
-            in_string = lambda x: "'" + str(x) + "'"
-            col_string = lambda x: "`" + str(x) + "`"
-            is_ping = True
-            # raw query is required here so as to get data
-            query = alert_utils.ping_service_query(device_name, start_date, end_date)
-            data_list = nocout_utils.fetch_raw_result(query, machine_name)
-
-        required_columns = [
-            # "device_name",
-            "ip_address",
-            "service_name",
-            "data_source",
-            "severity",
-            "current_value",
-            "alert_date_time",
-            # "alert_time",
-            "description"
-        ]
-
-        if is_ping:
-            required_columns = [
-                # "device_name",
-                "ip_address",
-                "service_name",
-                "severity",
-                "latency",
-                "packet_loss",
-                "alert_date_time",
-                # "alert_time",
-                "description"
-            ]
-
-        for data in data_list:
-            data["alert_date_time"] = datetime.datetime. \
-                fromtimestamp(float(data["sys_timestamp"])). \
-                strftime(DATE_TIME_FORMAT)
-
-            del (data["sys_timestamp"])
-
-        download_excel = self.request.GET.get('download_excel', '')
-        download_csv = self.request.GET.get('download_csv', '')
-
-        if download_excel:
-
-            workbook = xlwt.Workbook()
-            worksheet = workbook.add_sheet('report')
-            style = xlwt.XFStyle()
-
-            borders = xlwt.Borders()
-            borders.bottom = xlwt.Borders.DASHED
-            style.borders = borders
-
-            column_length = len(required_columns)
-            row_length = len(data_list) - 1
-            # Writing headers first for the excel file.
-            for column in range(column_length):
-                worksheet.write(0, column, required_columns[column], style=style)
-            # Writing rest of the rows.
-            for row in range(1, row_length):
-                for column in range(column_length):
-                    worksheet.write(row, column, data_list[row][required_columns[column]], style=style)
-
-            response = HttpResponse(content_type='application/vnd.ms-excel')
-            start_date_string = datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
-            end_date_string = datetime.datetime.fromtimestamp(float(end_date)).strftime("%d/%B/%Y")
-            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.xls' \
-                .format(device_name, start_date_string, end_date_string)
-            workbook.save(response)
-            return response
-
-        elif download_csv:
-
-            response = HttpResponse(content_type='text/csv')
-            start_date_string = datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
-            end_date_string = datetime.datetime.fromtimestamp(float(end_date)).strftime("%d/%B/%Y")
-            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.csv' \
-                .format(device_name, start_date_string, end_date_string)
-
-            writer = csv.writer(response)
-            headers = map(lambda x: x.replace('_', ' '), required_columns)
-            writer.writerow(headers)
-            column_length = len(required_columns)
-            row_length = len(data_list) - 1
-
-            for row in range(1, row_length):
-                row_list = list()
-                for column in range(0, column_length):
-                    row_list.append(data_list[row][required_columns[column]])
-                writer.writerow(row_list)
-            return response
-
-        else:
-
-            required_columns = map(lambda x: x.replace('_', ' '), required_columns)
-            context = dict(is_ping=is_ping,
-                           devices=devices_result,
-                           current_device_id=device_id,
-                           get_status_url='performance/get_inventory_device_status/' + page_type + '/device/' + str(
-                               device_id),
-                           current_device_name=device_name,
-                           device_id=device_id,
-                           device_alias=device_alias,
-                           page_type=page_type,
-                           inventory_page_url=reverse('device_edit',kwargs={'pk': device_id},current_app='device'),
-                           # perf_page_url=reverse('SingleDevicePerf',kwargs={'page_type': page_type, 'device_id' : device_id},current_app='performance'),
-                           perf_page_url="",
-                           table_data=data_list,
-                           table_header=required_columns,
-                           service_name=service_name,
-                           start_date_object=start_date_object,
-                           end_date_object=end_date_object,
-                           device_technology_name=device_technology_name
-            )
-
-            return render(request, 'alert_center/single_device_alert.html', context)
-
-    def get_result(self, page_type, organizations):
-        """
-        Generic function to return the result w.r.t the page_type and organization of the current logged in user.
-
-        :param page_type:
-        :param organization:
-        return result
-        """
-
-        device_result = []
-
-        if page_type == "customer":
-            device_result = inventory_utils.organization_customer_devices(organizations=organizations)
-
-        elif page_type == "network":
-            device_result = inventory_utils.organization_network_devices(organizations=organizations)
-
-        result = list()
-        for device in device_result:
-            result.append({'id': device.id,
-                           'name': device.device_name,
-                           'alias': device.device_alias,
-                           'technology': DeviceTechnology.objects.get(id=device.device_technology).name
-            }
-            )
-        return result
+# class SingleDeviceAlertDetails(View):
+#     """
+#     Generic Class for Network and Customer to render the details page for a single device.
+#     """
+#
+#     def get(self, request, page_type, device_id, service_name):
+#
+#         logged_in_user, devices_result = request.user.userprofile, list()
+#
+#         if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
+#             organizations = list(logged_in_user.organization.get_descendants(include_self=True))
+#         else:
+#             organizations = [logged_in_user.organization]
+#
+#         devices_result += self.get_result(page_type, organizations)
+#
+#         start_date = self.request.GET.get('start_date', '')
+#         end_date = self.request.GET.get('end_date', '')
+#         isSet = False
+#         start_date_object = ""
+#         end_date_object = ""
+#
+#         if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+#             try:
+#                 start_date = float(start_date)
+#                 end_date = float(end_date)
+#             except Exception, e:
+#                 start_date_object = datetime.datetime.strptime(start_date, "%d-%m-%Y %H:%M:%S")
+#                 end_date_object = datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
+#                 start_date = format(start_date_object, 'U')
+#                 end_date = format(end_date_object, 'U')
+#         else:
+#             # The end date is the end limit we need to make query till.
+#             end_date_object = datetime.datetime.now()
+#             # The start date is the last monday of the week we need to calculate from.
+#             start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+#             # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+#             start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+#             # Converting the date to epoch time or Unix Timestamp
+#             end_date = format(end_date_object, 'U')
+#             start_date = format(start_date_object, 'U')
+#             isSet = True
+#
+#         device_obj = Device.objects.get(id=device_id)
+#         device_name = device_obj.device_name
+#         device_alias = device_obj.device_alias + "(" + device_obj.ip_address + ")"
+#         device_id = device_id
+#         machine_name = device_obj.machine.name
+#
+#         device_technology_name = DeviceTechnology.objects.get(id=device_obj.device_technology).name
+#
+#
+#         data_list = None
+#         required_columns = [
+#             # "device_name",
+#             "ip_address",
+#             "service_name",
+#             "data_source",
+#             "severity",
+#             "current_value",
+#             "sys_timestamp",
+#             "description"
+#         ]
+#
+#         is_ping = False
+#
+#         if service_name == 'latency':
+#             data_list = EventNetwork.objects. \
+#                 filter(device_name=device_name,
+#                        data_source='rta',
+#                        sys_timestamp__gte=start_date,
+#                        sys_timestamp__lte=end_date). \
+#                 order_by("-sys_timestamp"). \
+#                 values(*required_columns).using(alias=machine_name)
+#
+#         elif service_name == 'packetdrop' or service_name == 'packet_drop':
+#             data_list = EventNetwork.objects. \
+#                 filter(device_name=device_name,
+#                        data_source='pl',
+#                        sys_timestamp__gte=start_date,
+#                        sys_timestamp__lte=end_date). \
+#                 order_by("-sys_timestamp"). \
+#                 values(*required_columns).using(alias=machine_name)
+#
+#         elif service_name == 'down':
+#             data_list = EventNetwork.objects. \
+#                 filter(device_name=device_name,
+#                        data_source='pl',
+#                        current_value=100,  #need to show up and down both
+#                        severity='DOWN',
+#                        sys_timestamp__gte=start_date,
+#                        sys_timestamp__lte=end_date). \
+#                 order_by("-sys_timestamp"). \
+#                 values(*required_columns).using(alias=machine_name)
+#
+#         elif service_name == 'service':
+#             data_list = EventService.objects. \
+#                 filter(device_name=device_name,
+#                        sys_timestamp__gte=start_date,
+#                        sys_timestamp__lte=end_date). \
+#                 order_by("-sys_timestamp"). \
+#                 values(*required_columns).using(alias=machine_name)
+#
+#         elif service_name == 'ping':
+#
+#             in_string = lambda x: "'" + str(x) + "'"
+#             col_string = lambda x: "`" + str(x) + "`"
+#             is_ping = True
+#             # raw query is required here so as to get data
+#             query = alert_utils.ping_service_query(device_name, start_date, end_date)
+#             data_list = nocout_utils.fetch_raw_result(query, machine_name)
+#
+#         required_columns = [
+#             # "device_name",
+#             "ip_address",
+#             "service_name",
+#             "data_source",
+#             "severity",
+#             "current_value",
+#             "alert_date_time",
+#             # "alert_time",
+#             "description"
+#         ]
+#
+#         if is_ping:
+#             required_columns = [
+#                 # "device_name",
+#                 "ip_address",
+#                 "service_name",
+#                 "severity",
+#                 "latency",
+#                 "packet_loss",
+#                 "alert_date_time",
+#                 # "alert_time",
+#                 "description"
+#             ]
+#
+#         for data in data_list:
+#             data["alert_date_time"] = datetime.datetime. \
+#                 fromtimestamp(float(data["sys_timestamp"])). \
+#                 strftime(DATE_TIME_FORMAT)
+#
+#             del (data["sys_timestamp"])
+#
+#         download_excel = self.request.GET.get('download_excel', '')
+#         download_csv = self.request.GET.get('download_csv', '')
+#
+#         if download_excel:
+#
+#             workbook = xlwt.Workbook()
+#             worksheet = workbook.add_sheet('report')
+#             style = xlwt.XFStyle()
+#
+#             borders = xlwt.Borders()
+#             borders.bottom = xlwt.Borders.DASHED
+#             style.borders = borders
+#
+#             column_length = len(required_columns)
+#             row_length = len(data_list) - 1
+#             # Writing headers first for the excel file.
+#             for column in range(column_length):
+#                 worksheet.write(0, column, required_columns[column], style=style)
+#             # Writing rest of the rows.
+#             for row in range(1, row_length):
+#                 for column in range(column_length):
+#                     worksheet.write(row, column, data_list[row][required_columns[column]], style=style)
+#
+#             response = HttpResponse(content_type='application/vnd.ms-excel')
+#             start_date_string = datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+#             end_date_string = datetime.datetime.fromtimestamp(float(end_date)).strftime("%d/%B/%Y")
+#             response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.xls' \
+#                 .format(device_name, start_date_string, end_date_string)
+#             workbook.save(response)
+#             return response
+#
+#         elif download_csv:
+#
+#             response = HttpResponse(content_type='text/csv')
+#             start_date_string = datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+#             end_date_string = datetime.datetime.fromtimestamp(float(end_date)).strftime("%d/%B/%Y")
+#             response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.csv' \
+#                 .format(device_name, start_date_string, end_date_string)
+#
+#             writer = csv.writer(response)
+#             headers = map(lambda x: x.replace('_', ' '), required_columns)
+#             writer.writerow(headers)
+#             column_length = len(required_columns)
+#             row_length = len(data_list) - 1
+#
+#             for row in range(1, row_length):
+#                 row_list = list()
+#                 for column in range(0, column_length):
+#                     row_list.append(data_list[row][required_columns[column]])
+#                 writer.writerow(row_list)
+#             return response
+#
+#         else:
+#
+#             required_columns = map(lambda x: x.replace('_', ' '), required_columns)
+#             context = dict(is_ping=is_ping,
+#                            devices=devices_result,
+#                            current_device_id=device_id,
+#                            get_status_url='performance/get_inventory_device_status/' + page_type + '/device/' + str(
+#                                device_id),
+#                            current_device_name=device_name,
+#                            device_id=device_id,
+#                            device_alias=device_alias,
+#                            page_type=page_type,
+#                            inventory_page_url=reverse('device_edit',kwargs={'pk': device_id},current_app='device'),
+#                            # perf_page_url=reverse('SingleDevicePerf',kwargs={'page_type': page_type, 'device_id' : device_id},current_app='performance'),
+#                            perf_page_url="",
+#                            table_data=data_list,
+#                            table_header=required_columns,
+#                            service_name=service_name,
+#                            start_date_object=start_date_object,
+#                            end_date_object=end_date_object,
+#                            device_technology_name=device_technology_name
+#             )
+#
+#             return render(request, 'alert_center/single_device_alert.html', context)
+#
+#     def get_result(self, page_type, organizations):
+#         """
+#         Generic function to return the result w.r.t the page_type and organization of the current logged in user.
+#
+#         :param page_type:
+#         :param organization:
+#         return result
+#         """
+#
+#         device_result = []
+#
+#         if page_type == "customer":
+#             device_result = inventory_utils.organization_customer_devices(organizations=organizations)
+#
+#         elif page_type == "network":
+#             device_result = inventory_utils.organization_network_devices(organizations=organizations)
+#
+#         result = list()
+#         for device in device_result:
+#             result.append({'id': device.id,
+#                            'name': device.device_name,
+#                            'alias': device.device_alias,
+#                            'technology': DeviceTechnology.objects.get(id=device.device_technology).name
+#             }
+#             )
+#         return result
