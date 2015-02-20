@@ -609,7 +609,7 @@ $("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .b
         window_title = solid_gauge_url_obj[chart_dom_id]["text"] ? solid_gauge_url_obj[chart_dom_id]["text"]+" - " : "";
     } else if(area_chart_ids.indexOf(chart_dom_id) > -1) {
         trends_url = area_chart_url_obj[chart_dom_id]["trends_url"] ? $.trim(area_chart_url_obj[chart_dom_id]["trends_url"]) : "";
-        window_title = area_chart_url_obj[chart_dom_id]["text"] ? solid_gauge_url_obj[chart_dom_id]["text"]+" - " : "";
+        window_title = area_chart_url_obj[chart_dom_id]["text"] ? area_chart_url_obj[chart_dom_id]["text"]+" - " : "";
     } else if(pie_chart_ids.indexOf(chart_dom_id) > -1) {
         trends_url = pie_chart_url_obj[chart_dom_id]["trends_url"] ? $.trim(pie_chart_url_obj[chart_dom_id]["trends_url"]) : "";
         window_title = pie_chart_url_obj[chart_dom_id]["text"] ? pie_chart_url_obj[chart_dom_id]["text"]+" - " : "";
