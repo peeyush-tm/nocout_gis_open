@@ -1,13 +1,13 @@
 {% extends "nocout/base.html" %}
 {% block breadcrumb_title %}
     <a href="/home">Home</a> >
-    <li><a href="#">Main Dashboard</a></li>
+    <li><a href="#">{{ page_title }}</a></li>
     <li><b>MFR</b></li>
 {% endblock %}
 {% load staticfiles %}
 {% block page_setting_block %} {% endblock %}
-{% block content_title %} Main Dashboard {% endblock %}
-{% block content_description %} Main Dashboard {% endblock %}
+{% block content_title %} {{ page_title }} {% endblock %}
+{% block content_description %} {{ page_title }} {% endblock %}
 
 {% block content %}
 
@@ -23,7 +23,7 @@
 
 <div class="box border lite" id="main_dashboard_container">
     <div class="box-title">
-        <h4><i class="fa fa-dashboard"></i> Main Dashboard</h4>
+        <h4><i class="fa fa-dashboard"></i> {{ page_title }}</h4>
     </div>
     <div class="box-body">
         <!-- ********** FIRST ROW START **********-->
@@ -303,7 +303,32 @@
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
 
+        var isOther = "{{ isOther }}";
+        isOther = isOther ? Number(isOther) : 0;
         // Update the main url & trends url of charts in dict
+
+        if(isOther == 1) {
+            var hidden_ids = [
+                'down-wimax',
+                'down-pmp',
+                'latency-wimax',
+                'packetloss-wimax',
+                'latency-pmp',
+                'packetloss-pmp',
+                'temperature-fan-wimax',
+                'temperature-acb-wimax',
+                'id_mfr_processed',
+                'mfr_cause_code'
+            ];
+
+            for(var i=0;i<hidden_ids.length;i++) {
+                if($("#"+hidden_ids[i]).length > 0) {
+                    $("#"+hidden_ids[i]).parent().addClass("hide");
+                    $("#"+hidden_ids[i]).parent().next('.clearfix').next().remove();
+                    $("#"+hidden_ids[i]).parent().remove();
+                }
+            }
+        }
 
         /***************** GAUGE CHART START ************************/
 
@@ -319,37 +344,40 @@
         solid_gauge_url_obj["temperature-idu-wimax"]["url"] = "{% url 'temperatue-idu-wimax' %}";
         solid_gauge_url_obj["temperature-idu-wimax"]["trends_url"] = "{% url 'trend-monthly-temperature-idu-wimax' %}" + "?dashboard_name=temperature-idu-wimax";
 
-        solid_gauge_url_obj["down-wimax"]["url"] = "{% url 'down-wimax' %}";
-        solid_gauge_url_obj["down-wimax"]["trends_url"] = "";
+        if(isOther == 0) {
+            solid_gauge_url_obj["down-wimax"]["url"] = "{% url 'down-wimax' %}";
+            solid_gauge_url_obj["down-wimax"]["trends_url"] = "";
 
-        solid_gauge_url_obj["down-pmp"]["url"] = "{% url 'down-pmp' %}";
-        solid_gauge_url_obj["down-pmp"]["trends_url"] = "";
+            solid_gauge_url_obj["down-pmp"]["url"] = "{% url 'down-pmp' %}";
+            solid_gauge_url_obj["down-pmp"]["trends_url"] = "";
 
-        solid_gauge_url_obj["latency-wimax"]["url"] = "{% url 'latency-wimax' %}";
-        solid_gauge_url_obj["latency-wimax"]["trends_url"] = "";
+            solid_gauge_url_obj["latency-wimax"]["url"] = "{% url 'latency-wimax' %}";
+            solid_gauge_url_obj["latency-wimax"]["trends_url"] = "";
 
-        solid_gauge_url_obj["latency-pmp"]["url"] = "{% url 'latency-pmp' %}";
-        solid_gauge_url_obj["latency-pmp"]["trends_url"] = "";
+            solid_gauge_url_obj["latency-pmp"]["url"] = "{% url 'latency-pmp' %}";
+            solid_gauge_url_obj["latency-pmp"]["trends_url"] = "";
 
-        solid_gauge_url_obj["packetloss-wimax"]["url"] = "{% url 'packet-loss-wimax' %}";
-        solid_gauge_url_obj["packetloss-wimax"]["trends_url"] = "";
+            solid_gauge_url_obj["packetloss-wimax"]["url"] = "{% url 'packet-loss-wimax' %}";
+            solid_gauge_url_obj["packetloss-wimax"]["trends_url"] = "";
 
-        solid_gauge_url_obj["packetloss-pmp"]["url"] = "{% url 'packet-loss-pmp' %}";
-        solid_gauge_url_obj["packetloss-pmp"]["trends_url"] = "";
+            solid_gauge_url_obj["packetloss-pmp"]["url"] = "{% url 'packet-loss-pmp' %}";
+            solid_gauge_url_obj["packetloss-pmp"]["trends_url"] = "";
 
-        solid_gauge_url_obj["temperature-fan-wimax"]["url"] = "{% url 'temperatue-fan-wimax' %}";
-        solid_gauge_url_obj["temperature-fan-wimax"]["trends_url"] = "";
+            solid_gauge_url_obj["temperature-fan-wimax"]["url"] = "{% url 'temperatue-fan-wimax' %}";
+            solid_gauge_url_obj["temperature-fan-wimax"]["trends_url"] = "";
 
-        solid_gauge_url_obj["temperature-acb-wimax"]["url"] = "{% url 'temperatue-acb-wimax' %}";
-        solid_gauge_url_obj["temperature-acb-wimax"]["trends_url"] = "";
+            solid_gauge_url_obj["temperature-acb-wimax"]["url"] = "{% url 'temperatue-acb-wimax' %}";
+            solid_gauge_url_obj["temperature-acb-wimax"]["trends_url"] = "";
+        }
 
         /***************** GAUGE CHART END ************************/
 
 
         /***************** AREA CHART START ************************/
-
-        area_chart_url_obj["id_mfr_processed"]["url"] = "{% url 'processed-mfr' %}";
-        area_chart_url_obj["id_mfr_processed"]["trends_url"] = "";
+        if(isOther == 0) {
+            area_chart_url_obj["id_mfr_processed"]["url"] = "{% url 'processed-mfr' %}";
+            area_chart_url_obj["id_mfr_processed"]["trends_url"] = "";
+        }
 
         /***************** AREA CHART END ************************/
         
@@ -376,7 +404,9 @@
         pie_chart_url_obj["pmp_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-pmp' %}";
         pie_chart_url_obj["pmp_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-pmp' %}";
 
-        pie_chart_url_obj["mfr_cause_code"]["url"] = "{% url 'cause-code-mfr' %}";
+        if(isOther == 0) {
+            pie_chart_url_obj["mfr_cause_code"]["url"] = "{% url 'cause-code-mfr' %}";
+        }
 
         pie_chart_url_obj["tcl_pop_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-tclpop' %}";
         pie_chart_url_obj["tcl_pop_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-tclpop' %}";

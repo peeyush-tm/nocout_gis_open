@@ -644,8 +644,15 @@ class MainDashboard(View):
         :param request:
         :return Http response object:
         """
+        context = {
+            "isOther" : 0,
+            "page_title" : "Main Dashboard"
+        }
+        if 'isOther' in self.request.GET:
+            context['isOther'] = self.request.GET['isOther']
+            context['page_title'] = "RF Main Dashboard"
 
-        return render(self.request, self.template_name, )
+        return render(self.request, self.template_name, context)
 
 
 class MFRCauseCodeView(View):
