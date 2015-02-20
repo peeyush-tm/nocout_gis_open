@@ -12,6 +12,7 @@ from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
+from operator import itemgetter
 # utilities performance
 from performance.utils import util as perf_utils
 
@@ -1093,7 +1094,7 @@ class SingleDeviceAlertsInit(ListView):
     ping_table_headers = [
       {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
       {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
-      {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+      # {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
       {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
       {"mData": "latency", "sTitle": "Latency", "sWidth": "auto"},
       {"mData": "packet_loss", "sTitle": "Packet Loss", "sWidth": "auto"},
@@ -1148,13 +1149,15 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
     # order_columns = required_columns
 
-    def filter_queryset(self, qs, service_name):
+    def filter_queryset(self, qs, info_dict):
       """ Filter datatable as per requested value """
 
       sSearch = self.request.GET.get('sSearch', None)
 
       if sSearch:
+
         if info_dict['service_name'] == 'ping':
+
           self.required_columns = [
               "ip_address",
               "service_name",
@@ -1165,7 +1168,6 @@ class SingleDeviceAlertsListing(BaseDatatableView):
               "description"
           ]
 
-        if info_dict['service_name'] == 'ping':
           # raw query is required here so as to get data
           query = alert_utils.ping_service_query(info_dict['device_name'], info_dict['start_date'], info_dict['end_date'])
           condition_str = ''
@@ -1173,16 +1175,13 @@ class SingleDeviceAlertsListing(BaseDatatableView):
           
           counter = 0
 
-          for column in self.required_columns[:-1]:
+          for column in self.required_columns:
             counter += 1
-            # avoid search on 'sys_timestamp'
-            if column == 'sys_timestamp':
-              continue
 
-            if counter >= len(self.required_columns):
-              condition_str += " data_tab.%s LIKE '"+sSearch+"%' "
+            if counter == len(self.required_columns):
+              condition_str += " data_tab."+column+" LIKE '"+sSearch+"%' "
             else:
-              condition_str += " data_tab.%s LIKE '"+sSearch+"%' or "
+              condition_str += " data_tab."+column+" LIKE '"+sSearch+"%' or "
 
           if condition_str:
             final_query += 'select data_tab.* from ('+query+') as data_tab where '+condition_str
@@ -1192,18 +1191,52 @@ class SingleDeviceAlertsListing(BaseDatatableView):
           qs = nocout_utils.fetch_raw_result(final_query, info_dict['machine_name'])
 
         else:
+
           query = []
+          if info_dict['service_name'] == 'service':
+            self.model = EventService
+
+          # Create the default model condition string
+          pre_condition_query = "("
+          pre_condition_query += "Q(device_name="+str(info_dict['device_name'])+")"
+
+          if info_dict['service_name'] == 'latency' :
+            pre_condition_query += " & Q(data_source='rta')"
+          elif info_dict['service_name'] == 'packet_drop' :
+            pre_condition_query += " & Q(data_source='pl')"
+          elif info_dict['service_name'] == 'down' :
+            pre_condition_query += " & Q(data_source='pl')"
+            pre_condition_query += " & Q(current_value=100)"
+            pre_condition_query += " & Q(severity='DOWN')"
+
+          pre_condition_query += " & Q({0}__gte={1})".format('sys_timestamp',info_dict['start_date'])
+          pre_condition_query += " & Q({0}__lte={1})".format('sys_timestamp',info_dict['end_date'])
+
+          pre_condition_query += ")"
+
+          query.append(pre_condition_query)
+
+          # Create the search condition string
+          search_condition_query = ''
           exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-          for column in self.required_columns[:-1]:
-            # avoid search on 'sys_timestamp'
-            if column == 'sys_timestamp':
-                continue
-            query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+          counter = 0
+          for column in self.required_columns:
+            counter += 1
 
-          exec_query += " | ".join(query)
+            if counter == len(self.required_columns):
+              search_condition_query += " Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ") "
+            else:
+              search_condition_query += " Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ") | "
+
+          if search_condition_query:
+            search_condition_query = "("+search_condition_query+")"
+            query.append(search_condition_query)
+
+          exec_query += " & ".join(query)
           exec_query += ").values(*" + str(self.required_columns) + ")"
-          exec exec_query
+          exec_query += ".using(alias='" +info_dict['machine_name']+"')"
 
+          exec exec_query
       return qs
 
     def get_initial_queryset(self,info_dict):
@@ -1212,6 +1245,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
       """
       if not self.model:
           raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+      if info_dict['service_name'] == 'ping':
+        self.required_columns = [
+            "ip_address",
+            "service_name",
+            "severity",
+            "latency",
+            "packet_loss",
+            "sys_timestamp",
+            "description"
+        ]
 
       if info_dict['service_name'] == 'service':
 
@@ -1293,8 +1337,10 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
       order = []
 
+      order_columns = self.required_columns
+
       if service_name == 'ping':
-        self.required_columns = [
+        order_columns = [
             "ip_address",
             "service_name",
             "severity",
@@ -1303,8 +1349,6 @@ class SingleDeviceAlertsListing(BaseDatatableView):
             "sys_timestamp",
             "description"
         ]
-
-      order_columns = self.required_columns
 
       for i in range(i_sorting_cols):
           # sorting column
@@ -1387,7 +1431,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
       total_display_records = len(qs)
 
       qs = self.ordering(qs,service_name)
-      # qs = self.paging(qs)
+      qs = self.paging(qs)
       #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
       if not qs and isinstance(qs, ValuesQuerySet):
           qs = list(qs)
@@ -1650,4 +1694,3 @@ class SingleDeviceAlertDetails(View):
             }
             )
         return result
-
