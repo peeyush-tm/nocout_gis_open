@@ -4893,7 +4893,7 @@ def getSearchData(request, search_by="default", pk=0):
                     )
                     # Single Device alert page url
                     alert_page_url = reverse(
-                        'SingleDeviceDetails',
+                        'SingleDeviceAlertsInit',
                         kwargs={'page_type': 'customer', 'device_id' : query_result[0].id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )
@@ -4925,7 +4925,7 @@ def getSearchData(request, search_by="default", pk=0):
 
                     # Single Device alert page url
                     alert_page_url = reverse(
-                        'SingleDeviceDetails',
+                        'SingleDeviceAlertsInit',
                         kwargs={'page_type': 'customer', 'device_id' : ss_device_id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )
@@ -4965,7 +4965,7 @@ def getSearchData(request, search_by="default", pk=0):
                     )
                     # Single Device alert page url
                     alert_page_url = reverse(
-                        'SingleDeviceDetails',
+                        'SingleDeviceAlertsInit',
                         kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )

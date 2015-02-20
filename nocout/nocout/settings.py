@@ -315,17 +315,6 @@ from celery import crontab
 CELERY_TIMEZONE = 'Asia/Calcutta'
 
 CELERYBEAT_SCHEDULE = {
-    # 'wimax-topology': {
-    #     'task': 'inventory.tasks.get_topology',
-    #     'schedule': timedelta(seconds=300),
-    #     'args': ['WiMAX']
-    #     #'kwargs': {'technology':'WiMAX', 'type':None, 'site_name':'ospf1_slave_1'}
-    # },
-    # 'pmp-topology': {
-    #     'task': 'inventory.tasks.get_topology',
-    #     'schedule': timedelta(seconds=300),
-    #     'args': ['PMP']
-    # },
     'wimax-topology-site-wise': {
         'task': 'inventory.tasks.topology_site_wise',
         'schedule': timedelta(seconds=300),
@@ -334,16 +323,6 @@ CELERYBEAT_SCHEDULE = {
     'pmp-topology-site-wise': {
         'task': 'inventory.tasks.topology_site_wise',
         'schedule': timedelta(seconds=300),
-        'args': ['PMP']
-    },
-    'wimax-ss-topology': {
-        'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=13, hour='*/12'),
-        'args': ['WiMAX']
-    },
-    'pmp-ss-topology': {
-        'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=33, hour='*/12'),
         'args': ['PMP']
     },
     #updating the polled sector frequency
@@ -437,11 +416,6 @@ CELERYBEAT_SCHEDULE = {
         'task': 'capacity_management.tasks.gather_backhaul_status',
         'schedule': timedelta(seconds=300)
     },
-    #Remove all caching per 6 hours
-    'cache_clear_task': {
-        'task': 'nocout.tasks.cache_clear_task',
-        'schedule': crontab(minute=0, hour='*/6'), #per 6 hours delete all cache
-    },
     #sector spot dashboard jobs
     #will run on STATUS tables. must run within 5 minutes
     'get_all_sector_devices-PMP': {
@@ -457,7 +431,12 @@ CELERYBEAT_SCHEDULE = {
     'check_for_monthly_spot-WiMAX-PMP': {
         'task': 'performance.tasks.check_for_monthly_spot',
         'schedule': crontab(hour=23, minute=30)
-    }
+    },
+    #Remove all caching per 6 hours
+    'cache_clear_task': {
+        'task': 'nocout.tasks.cache_clear_task',
+        'schedule': crontab(minute=3, hour='*/6'), #per 6 hours delete all cache
+    },
 }
 
 

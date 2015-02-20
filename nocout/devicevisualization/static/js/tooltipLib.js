@@ -1617,15 +1617,29 @@ var wimax_sector_toolTip_polled = [
         'url'   : ''
     },
     {
-		'name'  : 'wimax_pmp1_utilization_pmp1_utilization',
-		'title' : 'Sector Utilization [PMP1] (Mbps)',
+        'name'  : 'wimax_pmp1_ul_util_bgp_pmp1_ul_util',
+        'title' : 'Sector UL Utilization [PMP1] (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
-        'name'  : 'wimax_pmp2_utilization_pmp2_utilization',
-        'title' : 'Sector Utilization [PMP2] (Mbps)',
+        'name'  : 'wimax_pmp1_dl_util_bgp_pmp1_dl_util',
+        'title' : 'Sector DL Utilization [PMP1] (Mbps)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_pmp2_ul_util_bgp_pmp2_ul_util',
+        'title' : 'Sector UL Utilization [PMP2] (Mbps)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_pmp2_dl_util_bgp_pmp2_dl_util',
+        'title' : 'Sector DL Utilization [PMP2] (Mbps)',
         'show'  : 1,
         'value' : '',
         'url'   : ''

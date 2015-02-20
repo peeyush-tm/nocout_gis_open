@@ -411,7 +411,7 @@ def get_highchart_response(dictionary={}):
     elif dictionary['type'] == 'column':
 
         return json.dumps({
-            "message": "",
+            "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
             "data": {
                 "meta": {
                 },

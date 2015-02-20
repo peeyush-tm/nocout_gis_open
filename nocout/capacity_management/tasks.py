@@ -8,7 +8,7 @@ from django.db.models import Count, Max, Avg #F, Max, Min, Q, Sum, Avg
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
 from inventory.models import get_default_org, Sector, Backhaul, BaseStation
 from device.models import DeviceTechnology, Device, DevicePort, DeviceType
-
+from service.models import ServiceDataSource
 from inventory.utils.util import prepare_machines
 
 from inventory.tasks import get_devices
@@ -470,6 +470,9 @@ def update_backhaul_status(basestations, kpi, val):
         val_dl_service = ''
         kpi_ul_service = ''
         kpi_dl_service = ''
+
+        # this complete mapping can be fetced from
+        # device type : service : service data source mapping
         # if device type is 'switch'
         if bs_device_type == 12:
             val_ul_service = 'switch_ul_utilization'
@@ -489,28 +492,39 @@ def update_backhaul_status(basestations, kpi, val):
             kpi_ul_service = 'rici_ul_util_kpi'
             kpi_dl_service = 'rici_dl_util_kpi'
         else:
-            pass
+            # proceed only if there is proper device type mapping
+            continue
 
         # get data source name
-        data_source = ""
+        data_source = None
         try:
-            data_source = DevicePort.objects.get(alias=bs.bh_port_name).name
+            #we dont care about port, till it actually is mapped to a data source
+            data_source = ServiceDataSource.objects.get(name=DevicePort.objects.get(alias=bs.bh_port_name).name).name
         except Exception as e:
-            pass
+            # logger.debug('Back-hual Port {0}'.format(bs.bh_port_name))
+            # logger.debug('Device Port : {0}'.format(DevicePort.objects.get(alias=bs.bh_port_name).name))
+            logger.exception(e)
+            # if we don't have a port mapping
+            # do not query database
+            continue
 
         if data_source:
             bhs = None
             try:
                 bhs = BackhaulCapacityStatus.objects.get(
                     backhaul=bs.backhaul,
-                    basestation=bs,
-                    bh_port_name=bs.bh_port_name
+                    basestation=bs
+                    # bh_port_name=bs.bh_port_name
                 )
             except Exception as e:
                 pass
 
             # backhaul capacity
-            backhaul_capacity = bs.bh_capacity
+            if bs.bh_capacity:
+                backhaul_capacity = bs.bh_capacity
+            else:
+                logger.exception('No Base-Station - Back-haul Capacity Not Possible')
+                continue
 
             # current in/out values
             current_in_val_s = val.filter(
@@ -608,90 +622,80 @@ def update_backhaul_status(basestations, kpi, val):
             )
 
             if bhs:
-                # update the bhs
-                try:
-                    bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else ""
-                    bhs.current_in_per = float(current_in_per) if current_in_per else ""
-                    bhs.current_in_val = float(current_in_val) if current_in_val else ""
-                    bhs.avg_in_per = float(avg_in_per) if avg_in_per else ""
-                    bhs.avg_in_val = float(avg_in_val) if avg_in_val else ""
-                    bhs.peak_in_per = float(peak_in_per) if peak_in_per else ""
-                    bhs.peak_in_val = float(peak_in_val) if peak_in_val else ""
-                    bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else ""
-                    bhs.current_out_per = float(current_out_per) if current_out_per else ""
-                    bhs.current_out_val = float(current_out_val) if current_out_val else ""
-                    bhs.avg_out_per = float(avg_out_per) if avg_out_per else ""
-                    bhs.avg_out_val = float(avg_out_val) if avg_out_val else ""
-                    bhs.peak_out_per = float(peak_out_per) if peak_out_per else ""
-                    bhs.peak_out_val = float(peak_out_val) if peak_out_val else ""
-                    bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else ""
-                    bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else ""
-                    bhs.organization = bs.backhaul.organization if bs.backhaul.organization else ""
-                    bhs.severity = severity if severity else ""
-                    bhs.age = float(age) if age else ""
-                    # bhs.save()
-                    bulk_update_bhs.append(bhs)
-                except Exception as e:
-                    logger.info("Something wrong with backhaul status update. Exception: ", e.message)
+
+                bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else None
+                bhs.current_in_per = float(current_in_per) if current_in_per else None
+                bhs.current_in_val = float(current_in_val) if current_in_val else None
+                bhs.avg_in_per = float(avg_in_per) if avg_in_per else None
+                bhs.avg_in_val = float(avg_in_val) if avg_in_val else None
+                bhs.peak_in_per = float(peak_in_per) if peak_in_per else None
+                bhs.peak_in_val = float(peak_in_val) if peak_in_val else None
+                bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else None
+                bhs.current_out_per = float(current_out_per) if current_out_per else None
+                bhs.current_out_val = float(current_out_val) if current_out_val else None
+                bhs.avg_out_per = float(avg_out_per) if avg_out_per else None
+                bhs.avg_out_val = float(avg_out_val) if avg_out_val else None
+                bhs.peak_out_per = float(peak_out_per) if peak_out_per else None
+                bhs.peak_out_val = float(peak_out_val) if peak_out_val else None
+                bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else None
+                bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else None
+                bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
+                bhs.severity = severity if severity else 'unknown'
+                bhs.age = float(age) if age else None
+                bulk_update_bhs.append(bhs)
 
             else:
-                logger.debug(bulk_create_bhs)
-                try:
-                    bulk_create_bhs.append(
-                        BackhaulCapacityStatus
-                        (
-                            backhaul=bs.backhaul,
-                            basestation=bs,
-                            bh_port_name=bs.bh_port_name,
-                            backhaul_capacity=float(backhaul_capacity),
 
-                            current_in_per=float(current_in_per),
-                            current_in_val=float(current_in_val),
+                bulk_create_bhs.append(
+                    BackhaulCapacityStatus
+                    (
+                        backhaul=bs.backhaul,
+                        basestation=bs,
+                        bh_port_name=bs.bh_port_name,
 
-                            avg_in_per=float(avg_in_per),
-                            avg_in_val=float(avg_in_val),
-                            peak_in_per=float(peak_in_per),
-                            peak_in_val=float(peak_in_val),
-                            peak_in_timestamp=float(peak_in_timestamp),
-
-                            current_out_per=float(current_out_per),
-                            current_out_val=float(current_out_val),
-
-                            avg_out_per=float(avg_out_per),
-                            avg_out_val=float(avg_out_val),
-                            peak_out_per=float(peak_out_per),
-                            peak_out_val=float(peak_out_val),
-                            peak_out_timestamp=float(peak_out_timestamp),
-
-                            sys_timestamp=float(sys_timestamp),
-                            organization=bs.backhaul.organization,
-                            severity=severity,
-                            age=float(age)
-                        )
+                        backhaul_capacity=float(backhaul_capacity) if backhaul_capacity else None,
+                        current_in_per=float(current_in_per) if current_in_per else None,
+                        current_in_val=float(current_in_val) if current_in_val else None,
+                        avg_in_per=float(avg_in_per) if avg_in_per else None,
+                        avg_in_val=float(avg_in_val) if avg_in_val else None,
+                        peak_in_per=float(peak_in_per) if peak_in_per else None,
+                        peak_in_val=float(peak_in_val) if peak_in_val else None,
+                        peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else None,
+                        current_out_per=float(current_out_per) if current_out_per else None,
+                        current_out_val=float(current_out_val) if current_out_val else None,
+                        avg_out_per=float(avg_out_per) if avg_out_per else None,
+                        avg_out_val=float(avg_out_val) if avg_out_val else None,
+                        peak_out_per=float(peak_out_per) if peak_out_per else None,
+                        peak_out_val=float(peak_out_val) if peak_out_val else None,
+                        peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else None,
+                        sys_timestamp=float(sys_timestamp) if sys_timestamp else None,
+                        organization=bs.backhaul.organization if bs.backhaul.organization else 1,
+                        severity=severity if severity else 'unknown',
+                        age=float(age) if age else None
                     )
-                except Exception as e:
-                    logger.info("Something wrong with backhaul status create. Exception: ", e.message)
+                )
 
-    if bulk_update_bhs or bulk_create_bhs:
-        g_jobs = list()
 
-        if len(bulk_create_bhs):
-            g_jobs.append(bulk_update_create(bulk_create_bhs, action='create', model=BackhaulCapacityStatus))
+    g_jobs = list()
 
-        if len(bulk_update_bhs):
-            g_jobs.append(bulk_update_create(bulk_update_bhs, action='update', model=BackhaulCapacityStatus))
+    if len(bulk_create_bhs):
+        g_jobs.append(bulk_update_create.s(bulk_create_bhs, action='create', model=BackhaulCapacityStatus))
 
-        job = group(g_jobs)
+    if len(bulk_update_bhs):
+        g_jobs.append(bulk_update_create.s(bulk_update_bhs, action='update', model=BackhaulCapacityStatus))
 
-        result = job.apply_async()
-        ret = False
-
-        for r in result.get():
-            ret |= r
-
-        return ret
-    else:
+    if not len(g_jobs):
         return False
+
+    job = group(g_jobs)
+
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
 
 
 def update_sector_status(sectors, cbw, kpi, val, technology):
@@ -1003,7 +1007,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 bulk_update_scs.append(scs)
 
             else:
-                logger.debug(bulk_create_scs)
                 bulk_create_scs.append(
                     SectorCapacityStatus
                     (
@@ -1177,7 +1180,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 bulk_update_scs.append(scs)
 
             else:
-                logger.debug(bulk_create_scs)
                 bulk_create_scs.append(
                     SectorCapacityStatus
                     (
@@ -1216,10 +1218,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
     g_jobs = list()
 
     if len(bulk_create_scs):
-        g_jobs.append(bulk_update_create(bulk_create_scs, action='create', model=SectorCapacityStatus))
+        g_jobs.append(bulk_update_create.s(bulk_create_scs, action='create', model=SectorCapacityStatus))
 
     if len(bulk_update_scs):
-        g_jobs.append(bulk_update_create(bulk_update_scs, action='update', model=SectorCapacityStatus))
+        g_jobs.append(bulk_update_create.s(bulk_update_scs, action='update', model=SectorCapacityStatus))
+
+    if not len(g_jobs):
+        return False
 
     job = group(g_jobs)
 
@@ -1297,6 +1302,7 @@ def bulk_update_create(bulky, action='update', model=None):
     :param model: model object
     :return:
     """
+    logger.debug(bulky)
     if bulky and len(bulky):
         if action == 'update':
             for update_this in bulky:

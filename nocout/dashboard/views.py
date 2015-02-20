@@ -819,33 +819,43 @@ class BackhaulCapacityMixin(object):
         tech_name = self.tech_name
         organization = logged_in_user_organizations(self)
         # Getting Technology ID
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        try:
+            technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        except Exception, e:
+            technology = ""
 
-        # Get Backhauls Devices of User's Organizations.
-        user_backhaul = organization_backhaul_devices(organization, technology=technology)     
-        # Get Device name list of User's Backhaul.
-        backhaul_devices_list = user_backhaul.values_list('device_name',flat=True)
-        # Creating Dashboard Name
-        dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
-        # Get the status of the dashboard.
-        dashboard_status_dict = get_severity_status_dict(dashboard_name, backhaul_devices_list)
+        response = json.dumps({
+            "success" : 0,
+            "message" : "Technology doesn't exists",
+            "data" : []
+        })
 
-        chart_series = []
-        if len(dashboard_status_dict):
-            for key,value in dashboard_status_dict.items():           
-                # Changing key in to warning and critical
-                if key == 'Needs_Augmentation':
-                    change_key = 'warning'
-                elif key == 'Stop_Provisioning':
-                    change_key = 'critical'             
-                else:
-                    change_key = key
-                # create a list of "Key: value".    
-                chart_series.append(['%s: %s' % (change_key, value), dashboard_status_dict[key]])
+        if technology:
+            # Get Backhauls Devices of User's Organizations.
+            user_backhaul = organization_backhaul_devices(organization, technology=technology)     
+            # Get Device name list of User's Backhaul.
+            backhaul_devices_list = user_backhaul.values_list('device_name',flat=True)
+            # Creating Dashboard Name
+            dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
+            # Get the status of the dashboard.
+            dashboard_status_dict = get_severity_status_dict(dashboard_name, backhaul_devices_list)
 
-        # get the chart_data for the pie chart.
-        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': ''})
+            chart_series = []
+            if len(dashboard_status_dict):
+                for key,value in dashboard_status_dict.items():           
+                    # Changing key in to warning and critical
+                    if key == 'Needs_Augmentation':
+                        change_key = 'warning'
+                    elif key == 'Stop_Provisioning':
+                        change_key = 'critical'             
+                    else:
+                        change_key = key
+                    # create a list of "Key: value".    
+                    chart_series.append(['%s: %s' % (change_key, value), dashboard_status_dict[key]])
+
+            # get the chart_data for the pie chart.
+            response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+                'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': ''})
 
         return HttpResponse(response)
 
@@ -862,6 +872,14 @@ class WiMAXBackhaulCapacity(BackhaulCapacityMixin, View):
     Class Based View for the WiMAX Backhaul Capacity
     """
     tech_name = 'WiMAX'
+
+class TCLPOPBackhaulCapacity(BackhaulCapacityMixin, View):
+    """
+    Class Based View for the WiMAX Backhaul Capacity
+    """
+    tech_name = 'TCLPOP'
+
+    
 
 #********************************************** main dashboard Sales Opportunity ************************************************
 
@@ -1151,17 +1169,19 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
 
         # Accessing all elements in sector trend items
         for i in range(len(trends_items)):
+            item_color = color_picker()
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
                 "name": trends_items[i]['title'],
                 "valuetext": trends_items[i]['title'],
+                "color" : item_color,
                 "data" : list()
             }
             # Reseting month_before for every element of sector_trends_items
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             # random color picker for sending different colors
-            item_color = color_picker()
+            
             # Loop for sending complete 30 days Data
             while month_before <= datetime.date.today():
                 # Function for getting value for element of sector trend items on every date within month    
@@ -1310,20 +1330,31 @@ class MonthlyTrendBackhaulMixin(object):
         tech_name = self.tech_name
         organization = logged_in_user_organizations(self)
         # Getting Technology ID
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-        # Get Backhauls Devices of User's Organizations.
-        user_backhaul = organization_backhaul_devices(organization, technology=technology)     
-        # Get Device name list of User's Backhaul.
-        backhaul_devices_list = user_backhaul.values_list('device_name',flat=True)
-        # Creating Dashboard Name
-        dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
-        # Get the status of the dashboard.
-        dashboard_status_dict = get_severity_status_dict_monthly(dashboard_name, backhaul_devices_list)
-        chart_series = []
-        chart_series = dashboard_status_dict
+        try:
+            technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        except Exception, e:
+            technology = ""
 
-        response = get_highchart_response(dictionary={'type': 'column','valuesuffix': '', 'chart_series': chart_series,
-            'name': '%s Backhaul Capacity' % tech_name.upper(), 'valuetext' : '' })
+        response = json.dumps({
+            "success" : 0,
+            "message" : "Technology doesn't exists",
+            "data" : []
+        })
+
+        if technology:
+            # Get Backhauls Devices of User's Organizations.
+            user_backhaul = organization_backhaul_devices(organization, technology=technology)     
+            # Get Device name list of User's Backhaul.
+            backhaul_devices_list = user_backhaul.values_list('device_name',flat=True)
+            # Creating Dashboard Name
+            dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
+            # Get the status of the dashboard.
+            dashboard_status_dict = get_severity_status_dict_monthly(dashboard_name, backhaul_devices_list)
+            chart_series = []
+            chart_series = dashboard_status_dict
+
+            response = get_highchart_response(dictionary={'type': 'column','valuesuffix': '', 'chart_series': chart_series,
+                'name': '%s Backhaul Capacity' % tech_name.upper(), 'valuetext' : '' })
 
         return HttpResponse(response)
 
@@ -1336,7 +1367,14 @@ class MonthlyTrendBackhaulPMP(MonthlyTrendBackhaulMixin, View):
 class MonthlyTrendBackhaulWiMAX(MonthlyTrendBackhaulMixin, View):
     """
     """
-    tech_name = 'WIMAX'
+    tech_name = 'WiMAX'
+
+class MonthlyTrendBackhaulTCLPOP(MonthlyTrendBackhaulMixin, View):
+    """
+    """
+    tech_name = 'TCLPOP'
+
+    
 
 
 #************************************************* Monthly Trend Sector chart ***********************************************************************
@@ -1375,7 +1413,7 @@ class MonthlyTrendSectorPMP(MonthlyTrendSectorMixin, View):
 class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
     """
     """
-    tech_name = 'WIMAX'
+    tech_name = 'WiMAX'
 
 
 #************************************************* Monthly Trend Sales chart ***********************************************************************
@@ -1493,15 +1531,83 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
         # Get the dictionary of dashboard status.
         dashboard_status_dict = get_range_status_dict_monthly_devicestatus(dashboard_status_name, sector_devices)
-        final_dict = []
-        # If any dictionary will found then processed further
-        if len(dashboard_status_dict):
+        chart_series = []
+        # Trend Items for matching range
+        trend_items = [
+            {
+                "id" : "range1_start-range1_end",
+                "title" : "range1"
+            },
+            {
+                "id" : "range2_start-range2_end",
+                "title" : "range2"
+            },
+            {
+                "id" : "range3_start-range3_end",
+                "title" : "range3"
+            },
+            {
+                "id" : "range4_start-range4_end",
+                "title" : "range4"
+            },
+            {
+                "id" : "range5_start-range5_end",
+                "title" : "range5"
+            },
+            {
+                "id" : "range6_start-range6_end",
+                "title" : "range6"
+            },
+            {
+                "id" : "range7_start-range7_end",
+                "title" : "range7"
+            },
+            {
+                "id" : "range8_start-range8_end",
+                "title" : "range8"
+            },
+            {
+                "id" : "range9_start-range9_end",
+                "title" : "range9"
+            },
+            {
+                "id" : "range10_start-range10_end",
+                "title" : "range10"
+            },
+            {
+                "id" : "unknown",
+                "title" : "unknown"
+            }
+        ]
+        # Accessing every element of trend items
+        for i in range(len(trend_items)):
+
+            if trend_items[i]['title'] != 'unknown':
+                count_color = getattr(dashboard_setting, '%s_color_hex_value' %trend_items[i]['title'])
+                # print count_color
+            else:
+                # Color for Unknown range
+                count_color = '#CED5DB'   
+            
+            data_dict = {
+                    "type": "column",
+                    "valuesuffix": " ",
+                    "name": trend_items[i]['title'],
+                    "valuetext": " ",
+                    "color" : count_color,
+                    "data" : list(),
+                }
+            
             # Getting date of 30days before from Today
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             # Loop for getting complete month Data
             while month_before <= datetime.date.today():
                 count = 0
-                count_color = '#CED5DB' # For Unknown Range and for Zero count
+                if trend_items[i]['title'] != 'unknown':
+                    count_color = getattr(dashboard_setting, '%s_color_hex_value' %trend_items[i]['title'])
+                else:
+                    count_color = '#CED5DB'   
+            
                 for var in dashboard_status_dict:
                     # Condition for further processing
                     if var['processed_month'] == month_before:
@@ -1510,21 +1616,24 @@ class MonthlyTrendDashboardDeviceStatus(View):
                         # Get the range from the dashbaord setting in which the count falls.
                         range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
                         # Get the name of the range.
-                        count_range = range_status_dct['range_count']               
-                        # get color of range in which count exists.                         
-                        if count_range and count_range != 'unknown':
-                            count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)                
+                        count_range = range_status_dct['range_count']
+                        if count_range != trend_items[i]['title']:
+                            count = 0            
+                        elif count_range == 'unknown':
+                            count_color = '#CED5DB'
+                            
                 # Preparation of final Dict for all days in One month 
-                final_dict.append({
+                data_dict['data'].append({
                     "color": count_color,
                     "y" : count,
-                    "name": dashboard_name,
+                    "name": trend_items[i]['title'],
                     "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
                 })
                 # Increment Date by One
                 month_before += relativedelta.relativedelta(days=1)
 
-        chart_series = final_dict        
+        
+            chart_series.append(data_dict)        
         # Getting Final response pattern
         response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
             'name': dashboard_name, 'valuetext' : '' })   
