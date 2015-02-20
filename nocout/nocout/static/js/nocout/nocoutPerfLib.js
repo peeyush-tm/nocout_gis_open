@@ -685,6 +685,10 @@ function nocoutPerfLib() {
                     } else {
                         hideSpinner();
                     }
+                },
+                error : function(err) {
+                    // console.log(err.statusText);
+                    hideSpinner();
                 }
             });
         }

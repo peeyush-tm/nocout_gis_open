@@ -114,7 +114,12 @@ class BackhaulCapacityStatus(models.Model):
     age = models.IntegerField('Status Age', default=0)
 
     def __unicode__(self):
-        return self.sector_sector_id
+        parameters = {
+            'basestation': self.basestation.name,
+            'backhaul': self.backhaul.name
+        }
+        return ("Base-Station : {basestation} & Back-haul : {backhaul} ").format(**parameters)
+
 
     class Meta:
         ordering = ['-sys_timestamp']

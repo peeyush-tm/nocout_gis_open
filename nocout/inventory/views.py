@@ -2836,11 +2836,11 @@ class GISInventoryBulkImportList(ListView):
             {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
             {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'auto', },
             {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'auto', },
-            {'mData': 'error_filename', 'sTitle': 'Error Sheet', 'sWidth': 'auto', },
-            {'mData': 'valid_delta_filename', 'sTitle': 'Valid Delta Sheet', 'sWidth': 'auto', },
-            {'mData': 'invalid_delta_filename', 'sTitle': 'Invalid Delta Sheet', 'sWidth': 'auto', },
-            {'mData': 'valid_deleted_filename', 'sTitle': 'Valid Deleted Sheet', 'sWidth': 'auto', },
-            {'mData': 'invalid_deleted_filename', 'sTitle': 'Invalid Deleted Sheet', 'sWidth': 'auto', },
+            {'mData': 'error_filename', 'sTitle': 'Error Sheet', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'valid_delta_filename', 'sTitle': 'Valid Delta Sheet', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'invalid_delta_filename', 'sTitle': 'Invalid Delta Sheet', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'valid_deleted_filename', 'sTitle': 'Valid Deleted Sheet', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'invalid_deleted_filename', 'sTitle': 'Invalid Deleted Sheet', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
             {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto', },
             {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', },
@@ -2870,8 +2870,9 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
     model = GISInventoryBulkImport
     columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology',
                'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology',
-                     'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'error_filename', 'valid_delta_filename',
+               'invalid_delta_filename', 'valid_deleted_filename', 'invalid_deleted_filename', 'status', 'sheet_name',
+               'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
     search_columns = ['sheet_name', 'technology', 'description', 'uploaded_by']
 
     def prepare_results(self, qs):
@@ -4892,7 +4893,7 @@ def getSearchData(request, search_by="default", pk=0):
                     )
                     # Single Device alert page url
                     alert_page_url = reverse(
-                        'SingleDeviceDetails',
+                        'SingleDeviceAlertsInit',
                         kwargs={'page_type': 'customer', 'device_id' : query_result[0].id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )
@@ -4924,7 +4925,7 @@ def getSearchData(request, search_by="default", pk=0):
 
                     # Single Device alert page url
                     alert_page_url = reverse(
-                        'SingleDeviceDetails',
+                        'SingleDeviceAlertsInit',
                         kwargs={'page_type': 'customer', 'device_id' : ss_device_id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )
@@ -4964,7 +4965,7 @@ def getSearchData(request, search_by="default", pk=0):
                     )
                     # Single Device alert page url
                     alert_page_url = reverse(
-                        'SingleDeviceDetails',
+                        'SingleDeviceAlertsInit',
                         kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )
