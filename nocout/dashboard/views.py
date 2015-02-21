@@ -1235,74 +1235,95 @@ def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard
     '''
     '''
     # Start Calculations for Monthly Trend Sector
+    has_data = False
     # Last 30 Days
     month_before = datetime.date.today() - datetime.timedelta(days=30)
-    # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
-    dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(select={'processed_month':"date(processed_for)"}).values('processed_month').filter(
-        processed_for__gte=month_before,
-        dashboard_name=dashboard_name,
-        device_name__in=sector_devices_list
-    ).annotate(
-        range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
-        range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
-        range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
-        range10=Sum('range10'), unknown=Sum('unknown')
-    ).order_by('processed_month')
+    try:
+        has_data = True
+        # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+        dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(select={'processed_month':"date(processed_for)"}).values('processed_month').filter(
+            processed_for__gte=month_before,
+            dashboard_name=dashboard_name,
+            device_name__in=sector_devices_list
+        ).annotate(
+            range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
+            range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
+            range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
+            range10=Sum('range10'), unknown=Sum('unknown')
+        ).order_by('processed_month')
+        
+    except Exception, e:
+        has_data = False
 
     final_dict = [] 
+    if has_data:
+        trend_items = ['range1', 'range2', 'range3', 'range4', 'range5', 'range6', 'range7', 'range8', 'range9', 'range10', 'unknown']
+        for i in range(len(trend_items)):  
+            if trend_items[i] != 'unknown':
+                color_dict = getattr(dashboard_setting, 'range%d_color_hex_value' %(i+1))
+            else: 
+                color_dict = '#CED5DB'
+            print trend_items[i]         
+            data_dict = {
+                "type": "column",
+                "valuesuffix": " ",
+                "name": trend_items[i],
+                "valuetext": trend_items[i],
+                "color" : color_dict,
+                "data" : list()
+            }
+            month_before = datetime.date.today() - datetime.timedelta(days=30)
+            chart_color = ''
+            # Loop for sending complete 30 days Data    
+            while month_before <= datetime.date.today():
+                # Loop for every element in list
+                response_dict = {'chart_data' : 0, 'color' : '#000000'} 
+                for var in dashboard_status_dict:
+                    if trend_items[i] != 'unknown':
+                        # Condition for further processing
+                        if var['processed_month'] == month_before:
+                            response_dict = get_dashboardsettings_attributes(dashboard_setting, var, i)
+                    else:
+                        if var['processed_month'] == month_before:
+                            response_dict = {'chart_data' : var['unknown'], 'color' : '#CED5DB'}    
+                data_dict['data'].append({
+                    "color": response_dict['color'],
+                    "y" : response_dict['chart_data'],
+                    "name": trend_items[i],
+                    "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+                })
 
-    # Loop for sending complete 30 days Data    
-    while month_before <= datetime.date.today():
-                                      
-        y= [0,0,0,0,0,0,0,0,0,0,0]
-        color = [0,0,0,0,0,0,0,0,0,0,0]
-        # Loop for every element in list
-        for var in dashboard_status_dict:
-            # Condition for further processing
-            if var['processed_month'] == month_before:
-                response_dict = get_dashboardsettings_attributes(dashboard_setting, var)
-                y = []
-                color = []
-                y.append(response_dict['chart_data'])
-                color.append(response_dict['color'])
-        # Preparation of final dict for sending to main function
-        final_dict.append({
-            "color": color,
-            "y" : y,
-            "name": "Sales Opportunity",
-            "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
-        })
-
-        # Increment of date by one
-        month_before += relativedelta.relativedelta(days=1)
+                # Increment of date by one
+                month_before += relativedelta.relativedelta(days=1)
+                
+            final_dict.append(data_dict)
 
     return final_dict
 
-    
+def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_argument):
 
-def get_dashboardsettings_attributes(dashboard_setting, range_counter):
-
-    chart_data = []
-    colors = []
-     
-    for count in range(1, 11):
-        # Getting value of dashboard setting corresponding to count variable
-        start_range = getattr(dashboard_setting, 'range%d_start' %count)
-        end_range = getattr(dashboard_setting, 'range%d_end' %count)
-        color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
-        if start_range or end_range:
-            if len(str(start_range).strip()) or len(str(end_range).strip()):
-                chart_data.append(['(%s, %s)' % (start_range, end_range), range_counter['range%d' %count]])
-                if color:
-                    colors.append(color)
-                else:
-                    colors.append("#000000")
-        else:
-            chart_data.append(['(0,0)', 0])
-            colors.append("#000000")
+    chart_data = 0
+    colors = '#000000'
+    count = range_argument + 1
+    # for count in range(1, 11):
+    # Getting value of dashboard setting corresponding to count variable
+    start_range = getattr(dashboard_setting, 'range%d_start' %count)
+    end_range = getattr(dashboard_setting, 'range%d_end' %count)
+    color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
+    # if start_range or end_range:
+        # if len(str(start_range).strip()) or len(str(end_range).strip()):
+        # chart_data.append(['(%s, %s)' % (start_range, end_range), range_counter['range%d' %count]])
+    chart_data = range_counter['range%d' %count]
+    if color:
+        colors = color
+    else:
+        colors = "#000000"
+    # else:
+    #     chart_data = 0
+    #     colors = "#000000"
     # Preparation of Final List                    
-    chart_data.append(['Unknown', range_counter['unknown']])
-    colors.append("#d3d3d3")
+    # chart_data.append(['Unknown', range_counter['unknown']])
+    # colors.append("#d3d3d3")
     return {'chart_data' : chart_data, 'color' : colors}
 
 def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_list):
@@ -1477,14 +1498,14 @@ class MonthlyTrendSalesMixin(object):
 
 
 class MonthlyTrendSalesPMP(MonthlyTrendSalesMixin, View):
-	"""
-	"""
-	tech_name = 'PMP'
+    """
+    """
+    tech_name = 'PMP'
 
 class MonthlyTrendSalesWIMAX(MonthlyTrendSalesMixin, View):
-	"""
-	"""
-	tech_name = 'WIMAX'	
+    """
+    """
+    tech_name = 'WIMAX' 
 
 #************************************************** Dashboard Device Status Monthly Trend ***************************************************************
 
