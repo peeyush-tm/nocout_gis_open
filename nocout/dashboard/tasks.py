@@ -18,6 +18,9 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
     )
 
 from inventory.utils.util import organization_sectors, organization_network_devices
+
+from inventory.tasks import bulk_update_create
+
 from dashboard.utils import get_topology_status_results, get_dashboard_status_range_counter
 import logging
 
@@ -1060,26 +1063,3 @@ def calculate_yearly_severity_status(day, first_month):
         bulk_update_create.delay(yearly_severity_status_list, action='create', model=DashboardSeverityStatusYearly)
     else:
         bulk_update_create.delay(yearly_severity_status_list)
-
-
-@task()
-def bulk_update_create(bulky, action='update', model=None):
-    """
-
-    :param bulky: bulk object list
-    :param action: create or update?
-    :param model: model object
-    :return:
-    """
-    if bulky and len(bulky):
-        if action == 'update':
-            for update_this in bulky:
-                update_this.save()
-            return True
-
-        elif action == 'create':
-            if model:
-                model.objects.bulk_create(bulky)
-            return True
-
-    return False
