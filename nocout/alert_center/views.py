@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-import json, datetime, xlwt, csv
-from django.db.models import Count
+
+import datetime
+# faster json processing module
+import ujson as json
+
 from django.db.models.query import ValuesQuerySet
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
-from django.views.generic import ListView, View
-from django.template import RequestContext
+from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceTechnology, DeviceType
-from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
-from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
+
+from performance.models import EventNetwork, EventService
 
 from operator import itemgetter
 # utilities performance
@@ -20,7 +21,6 @@ from performance.utils import util as perf_utils
 from inventory.utils import util as inventory_utils
 
 from django.utils.dateformat import format
-from django.db.models import Q
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import P2P, WiMAX, PMP, DEBUG, DATE_TIME_FORMAT
@@ -35,7 +35,6 @@ from nocout.utils import logged_in_user_organizations
 from alert_center.utils import util as alert_utils
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -46,31 +45,6 @@ def getCustomerAlertDetail(request):
     :return Http Response Object::
 
     """
-    # datatable_headers = [
-    #     {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-    #     {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
-    #     {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
-    #     {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-    #     {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': False},
-    # ]
 
     starting_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
