@@ -57,7 +57,9 @@ SITE_ID = 1
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
-LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/', 'sm/dialog_action/', 'user/change_password/')
+LOGIN_EXEMPT_URLS = (
+    r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/',
+    'sm/dialog_action/', 'user/change_password/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -101,7 +103,7 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'dajaxice.finders.DajaxiceFinder',
-    #'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -122,9 +124,9 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
 )
 
 MIDDLEWARE_CLASSES = (
-    #caching
+    # site caching
     # 'django.middleware.cache.UpdateCacheMiddleware',
-    #caching
+    # site caching
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -134,22 +136,22 @@ MIDDLEWARE_CLASSES = (
     # 'nocout.middleware.UserProfileAuditMiddleware',
     'session_security.middleware.SessionSecurityMiddleware',
     'nocout.middlewares.LoginRequiredMiddleware.LoginRequiredMiddleware',
-    #'audit_log.middleware.UserLoggingMiddleware',
-    #'audit_log.middleware.AuditlogMiddleware',
+    # 'audit_log.middleware.UserLoggingMiddleware',
+    # 'audit_log.middleware.AuditlogMiddleware',
     # Uncomment the next line for simple clickjacking protection
-    #required for GISS SCAN
+    # required for GISS SCAN
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-    #caching
+    # site caching
     # 'django.middleware.cache.FetchFromCacheMiddleware',
-    #caching
+    # site caching
 )
 
-#cookies settings
+# cookies settings
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 
-#session cookie
+# session cookie
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = True
 
@@ -168,7 +170,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'session_security',
     'south',
-    'nocout.signals', # Load before nocout apps
+    'nocout.signals',  # Load before nocout apps
     'user_profile',
     'user_group',
     'device',
@@ -274,9 +276,10 @@ CACHES = {
 
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
-]
+    ]
 
 import djcelery
+
 djcelery.setup_loader()
 
 # MongoDB configuration for django-celery
@@ -284,8 +287,8 @@ CELERY_RESULT_BACKEND = "mongodb"
 CELERY_MONGODB_BACKEND_SETTINGS = {
     "host": "10.133.12.163",
     "port": 27163,
-    "database": "nocout_celery_db",             # mongodb database for django-celery
-    "taskmeta_collection": "c_queue"            # collection name to use for task output
+    "database": "nocout_celery_db",  # mongodb database for django-celery
+    "taskmeta_collection": "c_queue"  # collection name to use for task output
 }
 BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
 
@@ -325,17 +328,17 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
-    #updating the polled sector frequency
+    # updating the polled sector frequency
     'update-sector-frequency': {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
         'schedule': crontab(minute=0, hour=0)
     },
-    #Escalation Status for the configured services
+    # Escalation Status for the configured services
     'check-device-status': {
         'task': 'alarm_escalation.tasks.check_device_status',
         'schedule': timedelta(seconds=300),
-    },
-    #Sector Capacity Caclucations
+        },
+    # Sector Capacity Caclucations
     'gather_sector_status-wimax': {
         'task': 'capacity_management.tasks.gather_sector_status',
         'schedule': timedelta(seconds=300),
@@ -346,11 +349,11 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
-    #Dashboads Calculations
+    # Dashboads Calculations
     'timely-main-dashboard': {
         'task': 'dashboard.tasks.calculate_timely_main_dashboard',
         'schedule': timedelta(seconds=300),
-    },
+        },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
         'schedule': crontab(minute=0)
@@ -361,17 +364,17 @@ CELERYBEAT_SCHEDULE = {
     },
     'weekly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
-        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+        'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
     },
     'monthly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_monthly_main_dashboard',
-        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+        'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
     },
     'yearly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
         'schedule': crontab(minute=0, hour=0, day_of_month=1)
     },
-    ## Far caching the Data for Last down time : per 5 minutes
+    # For caching the Data for Last down time : per 5 minutes
     'device_last_down_time_CanopyPM100AP': {
         'task': 'performance.tasks.device_last_down_time_task',
         'schedule': timedelta(seconds=300),
@@ -416,8 +419,8 @@ CELERYBEAT_SCHEDULE = {
         'task': 'capacity_management.tasks.gather_backhaul_status',
         'schedule': timedelta(seconds=300)
     },
-    #sector spot dashboard jobs
-    #will run on STATUS tables. must run within 5 minutes
+    # sector spot dashboard jobs
+    # will run on STATUS tables. must run within 5 minutes
     'get_all_sector_devices-PMP': {
         'task': 'performance.tasks.get_all_sector_devices',
         'schedule': timedelta(seconds=300),
@@ -432,13 +435,12 @@ CELERYBEAT_SCHEDULE = {
         'task': 'performance.tasks.check_for_monthly_spot',
         'schedule': crontab(hour=23, minute=30)
     },
-    #Remove all caching per 6 hours
+    # Remove all caching per 6 hours
     'cache_clear_task': {
         'task': 'nocout.tasks.cache_clear_task',
-        'schedule': crontab(minute=3, hour='*/6'), #per 6 hours delete all cache
-    },
+        'schedule': crontab(minute=3, hour='*/6'),  # per 6 hours delete all cache
+    }
 }
-
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -455,14 +457,14 @@ LOGGING = {
     'formatters': {
         'verbose': {
             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
-            'datefmt' : "%d/%b/%Y %H:%M:%S"
+            'datefmt': "%d/%b/%Y %H:%M:%S"
         },
-    },
+        },
     'handlers': {
         'sentry': {
             'level': 'ERROR',
             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-        },
+            },
         'console': {
             'level': 'ERROR',
             'class': 'logging.StreamHandler',
@@ -471,55 +473,56 @@ LOGGING = {
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join('/tmp/nocout_main.log' ),
+            'filename': os.path.join('/tmp/nocout_main.log'),
             'maxBytes': 1048576,
-            'backupCount':100,
+            'backupCount': 100,
             'formatter': 'verbose',
-        },
+            },
 
-    },
+        },
     'loggers': {
         'django.db.backends': {
             'level': 'ERROR',
             'handlers': ['sentry'],
             'propagate': False,
-        },
+            },
         'raven': {
             'level': 'ERROR',
             'handlers': ['sentry'],
             'propagate': False,
-        },
+            },
         'sentry.errors': {
             'level': 'ERROR',
             'handlers': ['console'],
             'propagate': False,
-        },
-        '':{
+            },
+        '': {
             'handlers': ['logfile'],
             'level': 'INFO',
+            },
         },
-    },
-}
+    }
 
-##FOR MULTI PROC data analysis
+# #FOR MULTI PROC data analysis
 MULTI_PROCESSING_ENABLED = False
-##FOR MULTI PROC data analysis
+# #FOR MULTI PROC data analysis
 
 SESSION_SECURITY_WARN_AFTER = 540
 SESSION_SECURITY_EXPIRE_AFTER = 600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SECURITY_PASSIVE_URLS = ['dialog_for_page_refresh', 'dialog_expired_logout_user']
 
-MAX_USER_LOGIN_LIMIT=100
+MAX_USER_LOGIN_LIMIT = 100
 
-DEFAULT_USERS= namedtuple('DEFAULT_USERS', 'USERNAME ID')
-NOCOUT_USER= DEFAULT_USERS( USERNAME='nocout', ID=1)
-GISADMIN= DEFAULT_USERS( USERNAME='gisadmin', ID=2)
-GISOPERATOR_ID= DEFAULT_USERS( USERNAME='gisoperator', ID=3)
-GISVIEWER_ID= DEFAULT_USERS( USERNAME='gisviewer', ID=3)
+DEFAULT_USERS = namedtuple('DEFAULT_USERS', 'USERNAME ID')
+NOCOUT_USER = DEFAULT_USERS(USERNAME='nocout', ID=1)
+GISADMIN = DEFAULT_USERS(USERNAME='gisadmin', ID=2)
+GISOPERATOR_ID = DEFAULT_USERS(USERNAME='gisoperator', ID=3)
+GISVIEWER_ID = DEFAULT_USERS(USERNAME='gisviewer', ID=3)
 
 
-DEVICE_TECHNOLOGY = namedtuple('DEVICE_TECHNOLOGY','NAME ID' )
+# TODO: with each deployment check for all the technologies
+DEVICE_TECHNOLOGY = namedtuple('DEVICE_TECHNOLOGY', 'NAME ID')
 P2P = DEVICE_TECHNOLOGY('P2P', '2')
 WiMAX = DEVICE_TECHNOLOGY('WiMAX', '3')
 PMP = DEVICE_TECHNOLOGY('PMP', '4')
@@ -528,9 +531,9 @@ TCLPTPPOP = DEVICE_TECHNOLOGY('TCLPTPPOP', '9')
 
 
 
-MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
+MPTT_TREE = namedtuple('MPTT_TREE', 'lft rght level')
 
-ISOLATED_NODE= MPTT_TREE(lft=1, rght=2, level=0)
+ISOLATED_NODE = MPTT_TREE(lft=1, rght=2, level=0)
 
 # Default PING parameters
 PING_PACKETS = 60
@@ -544,7 +547,7 @@ PING_PL_CRITICAL = 100
 ######################list of private IPs
 
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
-GIS_MAP_MAX_DEVICE_LIMIT=1000
+GIS_MAP_MAX_DEVICE_LIMIT = 1000
 
 ##############################################
 EXCEPTIONAL_SERVICES = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
@@ -561,7 +564,7 @@ DEVICE_APPLICATION = {
     }
 }
 
-###Services & SErvice Datasoruces settings
+# Services & SErvice Datasoruces settings
 SERVICE_DATA_SOURCE = {
     "rta": {
         "display_name": "Latency",
@@ -624,8 +627,7 @@ SERVICE_DATA_SOURCE = {
         "chart_color": "#70AFC4",
         "service_name": 'rf',
         "service_alias": 'RF Latency',
-    },
-
+    }
 }
 
 SERVICES = {
@@ -635,35 +637,35 @@ SERVICES = {
 #Date Format to be used throughout the application
 DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 
-###################REPORT_PATH
+# ##################REPORT_PATH
 
 REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
 REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
 
 # ********************** django password options **********************
-PASSWORD_MIN_LENGTH = 6 # Defaults to 6
-PASSWORD_MAX_LENGTH = 120 # Defaults to None
+PASSWORD_MIN_LENGTH = 6  # Defaults to 6
+PASSWORD_MAX_LENGTH = 120  # Defaults to None
 
-PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
+PASSWORD_DICTIONARY = "/usr/share/dict/words"  # Defaults to None
 # PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
 
-PASSWORD_MATCH_THRESHOLD = 0.9 # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
-PASSWORD_COMMON_SEQUENCES = [] # Should be a list of strings, see passwords/validators.py for default
-PASSWORD_COMPLEXITY = { # You can ommit any or all of these for no limit for that particular set
-    "UPPER": 1,       # Uppercase
-    "LOWER": 1,       # Lowercase
-    "DIGITS": 1,      # Digits
-    "PUNCTUATION": 0, # Punctuation (string.punctuation)
-    "NON ASCII": 0,   # Non Ascii (ord() >= 128)
-    "WORDS": 0        # Words (substrings seperates by a whitespace)
+PASSWORD_MATCH_THRESHOLD = 0.9  # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
+PASSWORD_COMMON_SEQUENCES = []  # Should be a list of strings, see passwords/validators.py for default
+PASSWORD_COMPLEXITY = {  # You can ommit any or all of these for no limit for that particular set
+                         "UPPER": 1,  # Uppercase
+                         "LOWER": 1,  # Lowercase
+                         "DIGITS": 1,  # Digits
+                         "PUNCTUATION": 0,  # Punctuation (string.punctuation)
+                         "NON ASCII": 0,  # Non Ascii (ord() >= 128)
+                         "WORDS": 0  # Words (substrings seperates by a whitespace)
 }
 
 
-####EMAIL SETTINGS
+# ###EMAIL SETTINGS
 DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = '/nocout/tmp/app-messages' # change this to a proper location
+EMAIL_FILE_PATH = '/nocout/tmp/app-messages'  # change this to a proper location
 
 # Import the local_settings.py file to override global settings
 

@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-import json, datetime, xlwt, csv
-from django.db.models import Count
+
+import datetime
+# faster json processing module
+import ujson as json
+
 from django.db.models.query import ValuesQuerySet
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
-from django.views.generic import ListView, View
-from django.template import RequestContext
+from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceTechnology, DeviceType
-from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
-from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
+
+from performance.models import EventNetwork, EventService
 
 from operator import itemgetter
 # utilities performance
@@ -20,9 +21,8 @@ from performance.utils import util as perf_utils
 from inventory.utils import util as inventory_utils
 
 from django.utils.dateformat import format
-from django.db.models import Q
 
-#nocout project settings
+# nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import P2P, WiMAX, PMP, DEBUG, DATE_TIME_FORMAT
 
 #utilities core
@@ -35,7 +35,6 @@ from nocout.utils import logged_in_user_organizations
 from alert_center.utils import util as alert_utils
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -46,31 +45,6 @@ def getCustomerAlertDetail(request):
     :return Http Response Object::
 
     """
-    # datatable_headers = [
-    #     {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-    #     {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
-    #     {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True},
-    #     {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
-    #     {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-    #     {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-    #      'bSortable': False},
-    # ]
 
     starting_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
@@ -173,6 +147,9 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
+        if not DeviceTechnology.objects.filter(name__iexact=self.request.GET.get('data_tab').strip).exists():
+            return []
+
         device_tab_technology = self.request.GET.get('data_tab')
 
         devices = inventory_utils.filter_devices(organizations=kwargs['organizations'],
@@ -180,7 +157,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                                                  page_type=page_type,
                                                  required_value_list=required_value_list
         )
-
+        # query set for customer devices of the technology : P2P, WiMAX, PMP
         return devices
 
     def prepare_devices(self, qs, perf_results):
@@ -314,19 +291,19 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         qs = self.get_initial_queryset()
 
-        #machines dict
+        # machines dict
         machines = self.prepare_machines(qs)
-        #machines dict
+        # machines dict
 
-        #prepare the polled results
+        # prepare the polled results
         perf_results = self.prepare_polled_results(qs, machine_dict=machines)
         # this is query set with complete polled result
 
         qs = alert_utils.map_results(perf_results, qs)
 
-        #this function is for mapping to GIS inventory
+        # this function is for mapping to GIS inventory
         qs = self.prepare_devices(qs, perf_results)
-        #this function is for mapping to GIS inventory
+        # this function is for mapping to GIS inventory
 
         # number of records before filtering
         total_records = len(qs)
@@ -336,7 +313,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         # qs = self.ordering(qs)
         # qs = self.paging(qs) #Removing pagination as of now to render all the data at once.
-        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
 
