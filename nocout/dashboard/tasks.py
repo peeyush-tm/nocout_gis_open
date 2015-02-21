@@ -4,6 +4,7 @@ from django.db.models import Q, Count, F
 from django.utils import timezone
 import datetime
 
+# nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import PMP, WiMAX
 
 from organization.models import Organization

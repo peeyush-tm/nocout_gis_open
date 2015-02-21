@@ -22,7 +22,7 @@ from inventory.utils import util as inventory_utils
 from django.utils.dateformat import format
 from django.db.models import Q
 
-#nocout project settings
+# nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import P2P, WiMAX, PMP, DEBUG, DATE_TIME_FORMAT
 
 #utilities core
