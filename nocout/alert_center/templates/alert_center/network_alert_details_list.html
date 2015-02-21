@@ -16,53 +16,17 @@
           href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
 {% endblock %}
 
-{% block page_setting_block %}
-    <!-- GIS Page  -->
-    <!--   <span class="pull-right col-md-6">
-          <div class="btn-group pull-right">
-              <ul class="list-unstyled list-inline">
-                  <li>
-                      <button id="networkDetailBtn" class="btn btn-info btn-sm" onclick="nw_alert_showFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
-                          <i class='fa fa-filter'></i> Advance Filters
-                      </button>
-
-                      <button id="removeNwDetailFilterBtn" class="btn btn-danger btn-sm hide" onclick="nw_alert_removeFilters();" style="margin-left:10px;">
-                          <i class='fa fa-times'></i> Remove Filters
-                      </button>
-                  </li>
-              </ul>
-          </div>
-          <div class="clearfix"></div>
-          <form class="horizontal-form pull-right" action="#">
-              <div class="form-group">
-                  <label class="control-label pull-left">Alert Types &nbsp;&nbsp;&nbsp;</label>
-                  <div class="pull-left">
-
-                      <label class="radio-inline">
-                          <input type="radio" id="network_detail_current_alarm" class="radioField" value="current" name="alarm_type"> Current
-                      </label>
-                      <label class="radio-inline">
-                          <input type="radio" id="network_detail_clear_alarm" class="radioField" value="clear" name="alarm_type"> Clear
-                      </label>
-                      <label class="radio-inline">
-                          <input type="radio" id="network_detail_history_alarm" class="radioField" value="history" name="alarm_type"> History
-                      </label>
-                  </div>
-              </div>
-              <div class="clearfix"></div>
-          </form>
-          <div class="clearfix"></div>
-      </span> -->
-    <!-- /DATE RANGE PICKER -->
-{% endblock %}
-
 
 {% block content %}
     <!-- Custom Style Start-->
     <style type="text/css">
         /*This is used to adjust the spce for too many tabs.*/
         .box #nwAlert_detail_container .header-tabs .nav-tabs > li > a {
-            padding: 7px 10px !important;
+            padding: 7px !important;
+        }
+        .box #nwAlert_detail_container .header-tabs .nav-tabs {
+          margin-right: 0px !important;
+          top: -44px !important;
         }
     </style>
     <!-- Custom Style End-->
@@ -79,22 +43,51 @@
                 <div class="tabbable header-tabs">
                     <!-- nav-tab Start -->
                     <ul class="nav nav-tabs">
-                        <li><a href="#network_bhUtil_block" id="network_bhUtil_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">BH Utilisation</span></a></li>
-                        <li><a href="#network_sectorUtil_block" id="network_sectorUtil_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">Sector Utilisation</span></a></li>
-                        <li><a href="#network_ulIssue_block" id="network_ulIssue_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">UL Issue</span></a></li>
-                        <li><a href="#network_converter_block" id="network_converter_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">Converter</span></a></li>
-                        <li><a href="#network_temp_block" id="network_temp_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">Temperature</span></a></li>
-                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">PMP BS</span></a></li>
-                        <li><a href="#network_wimax_block" id="network_wimax_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">Wimax BS</span></a></li>
-                        <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span
-                                class="hidden-inline-mobile">PTP BH</span></a></li>
+                        <li>
+                          <a href="#network_bhUtil_block" id="network_bhUtil_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">BH Utilisation</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#network_sectorUtil_block" id="network_sectorUtil_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Sector Utilisation</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#network_ulIssue_block" id="network_ulIssue_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">UL Issue</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#network_converter_block" id="network_converter_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Converter</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#network_bh_temp_block" id="network_bh_temp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">BH Temperature</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#network_temp_block" id="network_temp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Sector Temperature</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP BS</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#network_wimax_block" id="network_wimax_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Wimax BS</span>
+                          </a>
+                        </li>
+                        <li class="active">
+                          <a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PTP BH</span>
+                          </a>
+                        </li>
                     </ul>
                     <!-- nav-tab End -->
 
@@ -102,9 +95,7 @@
                     <div class="tab-content" style="overflow:auto;">
                         <!-- network_bhUtil_block Start -->
                         <div class="tab-pane fade" id="network_bhUtil_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="network_bhUtil_block_table">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_bhUtil_block_table">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -114,9 +105,7 @@
 
                         <!-- network_sectorUtil_block Start -->
                         <div class="tab-pane fade" id="network_sectorUtil_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="network_sectorUtil_block_table">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_sectorUtil_block_table">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -126,9 +115,7 @@
 
                         <!-- network_ulIssue_block Start -->
                         <div class="tab-pane fade" id="network_ulIssue_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="network_ulIssue_block_table">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_ulIssue_block_table">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -137,9 +124,7 @@
 
                         <!-- network_ptp_block Start -->
                         <div class="tab-pane fade in active" id="network_ptp_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="network_ptp_block_table">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_ptp_block_table">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -148,9 +133,7 @@
 
                         <!-- network_converter_block Start -->
                         <div class="tab-pane fade" id="network_converter_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="nnetwork_converter_blocktable">
+                            <table class="datatable table table-striped table-bordered table-hover" id="nnetwork_converter_blocktable">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -159,9 +142,7 @@
 
                         <!-- network_pmpBs_block Start -->
                         <div class="tab-pane fade" id="network_pmp_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="network_pmp_block_table">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_pmp_block_table">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -170,30 +151,34 @@
 
                         <!-- network_wimaxBs_block Start -->
                         <div class="tab-pane fade" id="network_wimax_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="network_wimax_block_table">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_wimax_block_table">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <!-- network_wimaxBs_block End -->
+                        
+                        <!-- network_bh_temp_block Start -->
+                        <div class="tab-pane fade" id="network_bh_temp_block">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_bh_temp_block_table">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <!-- network_bh_temp_block End -->
 
                         <!-- network_temp_block Start -->
                         <div class="tab-pane fade" id="network_temp_block">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover"
-                                   id="network_temp_block_table">
+                            <table class="datatable table table-striped table-bordered table-hover" id="network_temp_block_table">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <!-- network_temp_block End -->
-                        <!-- network_temp_block Start -->
+
+                        <!-- all_network Start -->
                         <div class="tab-pane fade" id="all_network">
-                            <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
+                            <table class="datatable table table-striped table-bordered table-hover" id=""> <thead>
                                 <th></th>
                                 <th>Received Time</th>
                                 <th>Event Type</th>
@@ -206,7 +191,7 @@
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <!-- network_temp_block End -->
+                        <!-- all_network End -->
                     </div>
                     <!-- tab-content Start -->
                 </div>
@@ -310,17 +295,17 @@
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
 
-            var ajax_url_wifi = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAX';
-            var ajax_url_pmp = '{% url "NetworkAlertDetails" %}' + '?data_source=PMP';
-            var ajax_url_p2p = '{% url "NetworkAlertDetails" %}' + '?data_source=P2P';
-            var ajax_url_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature';
-            var ajax_url_con = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul';
-            var ajax_url_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=ULIssue';
-            var ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}';
-            var ajax_url_bhutil = '{% url "NetworkAlertDetails" %}' + '?data_source=BackhaulUtil';
+            var ajax_url_wifi = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAX',
+                ajax_url_pmp = '{% url "NetworkAlertDetails" %}' + '?data_source=PMP',
+                ajax_url_p2p = '{% url "NetworkAlertDetails" %}' + '?data_source=P2P',
+                ajax_url_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature',
+                ajax_url_bh_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature_bh',
+                ajax_url_con = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul',
+                ajax_url_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=ULIssue',
+                ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}',
+                ajax_url_bhutil = '{% url "NetworkAlertDetails" %}' + '?data_source=BackhaulUtil';
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
-
             $("#network_bhUtil_tab").attr("data_url", ajax_url_bhutil);
             $("#network_bhUtil_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
@@ -332,6 +317,9 @@
 
             $("#network_converter_tab").attr("data_url", ajax_url_con);
             $("#network_converter_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_bh_temp_tab").attr("data_url", ajax_url_bh_temp);
+            $("#network_bh_temp_tab").attr("data_header", '{{ bh_headers|safe }}');
 
             $("#network_temp_tab").attr("data_url", ajax_url_temp);
             $("#network_temp_tab").attr("data_header", '{{ datatable_headers|safe }}');
