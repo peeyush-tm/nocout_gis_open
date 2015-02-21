@@ -370,6 +370,13 @@ def getNetworkAlertDetail(request):
          'bSortable': True}
     ]
 
+    bh_specific_headers = [
+        {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True},
+        {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True}
+    ]
+
     common_headers = [
         {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -396,18 +403,26 @@ def getNetworkAlertDetail(request):
          'bSortable': False}
     ]
 
-    datatable_headers = starting_headers
+    datatable_headers = []
+    datatable_headers += starting_headers
     datatable_headers += specific_headers
     datatable_headers += common_headers
     datatable_headers += polled_headers
     datatable_headers += other_headers
+
+    bh_dt_headers = []
+    bh_dt_headers += starting_headers
+    bh_dt_headers += bh_specific_headers
+    bh_dt_headers += common_headers
+    bh_dt_headers += polled_headers
+    bh_dt_headers += other_headers
 
     # Sector Utilization Headers
     sector_util_hidden_headers = [
         {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-        ]
+    ]
 
     sector_util_common_headers = [
         {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -418,7 +433,7 @@ def getNetworkAlertDetail(request):
         {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        ]
+    ]
 
     sector_utils_headers = sector_util_hidden_headers
 
@@ -426,6 +441,7 @@ def getNetworkAlertDetail(request):
 
     context = {
         'datatable_headers': json.dumps(datatable_headers),
+        'bh_headers': json.dumps(bh_dt_headers),
         'sector_utils_headers': json.dumps(sector_utils_headers)
     }
     return render(request, 'alert_center/network_alert_details_list.html', context)
@@ -491,6 +507,11 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 #temperature alarms would be for WiMAX
                 technology = ["WiMAX"]
                 self.data_sources = ['fan_temp', 'acb_temp']
+            elif tab_id == "Temperature_bh":
+                is_bh = True
+                technology = None
+                page_type = "other"
+                self.data_sources = ['temperature']
             elif tab_id in ["ULIssue", "SectorUtil"]:
                 technology = [int(WiMAX.ID), int(PMP.ID)]
             elif tab_id in ["Backhaul", "BackhaulUtil"]:
