@@ -882,11 +882,11 @@ class WiMAXBackhaulCapacity(BackhaulCapacityMixin, View):
     """
     tech_name = 'WiMAX'
 
-class TCLPOPBackhaulCapacity(BackhaulCapacityMixin, View):
+class TCLPTPPOPBackhaulCapacity(BackhaulCapacityMixin, View):
     """
     Class Based View for the WiMAX Backhaul Capacity
     """
-    tech_name = 'TCLPOP'
+    tech_name = 'TCLPTPPOP'
 
     
 
@@ -1399,10 +1399,10 @@ class MonthlyTrendBackhaulWiMAX(MonthlyTrendBackhaulMixin, View):
     """
     tech_name = 'WiMAX'
 
-class MonthlyTrendBackhaulTCLPOP(MonthlyTrendBackhaulMixin, View):
+class MonthlyTrendBackhaulTCLPTPPOP(MonthlyTrendBackhaulMixin, View):
     """
     """
-    tech_name = 'TCLPOP'
+    tech_name = 'TCLPTPPOP'
 
     
 
