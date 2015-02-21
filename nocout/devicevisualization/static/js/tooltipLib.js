@@ -257,6 +257,12 @@ var bh_toolTip_polled = [
 // General SS Tooltip static info object
 var ss_toolTip_static = [
     {
+        'name'  : 'base_station_alias',
+        'title' : 'Base Station Name',
+        'show'  : 0,
+        'value' : ''
+    },
+    {
         'name'  : 'cktid',
         'title' : 'Circuit ID',
         'show'  : 1,

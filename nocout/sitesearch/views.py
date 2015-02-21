@@ -732,6 +732,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
     all_alias = ""
     all_dl_rssi_during_acceptance = ""
     all_date_of_acceptance = ""
+    base_station_alias = ""
     ##### SS Tooltip Variables End
 
     ss_counter = 0
@@ -749,6 +750,9 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                         circuit_ids.append(circuit_id)
 
                     techno_to_append = circuit['SS_TECH']
+                    # Base stattion name of SS
+                    if not base_station_alias:
+                        base_station_alias = circuit['BSALIAS']
 
                     if circuit['CIRCUIT_TYPE'] and circuit['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
                         techno_to_append = 'PTP BH'
@@ -812,6 +816,12 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
 
     # Create Sub Station Info List
     subStationsInfo = [
+        {
+            'name': 'base_station_alias',
+            'title': 'Base Station Name',
+            'show': 0,
+            'value': base_station_alias
+        },
         {
             'name': 'cktid',
             'title': 'Circuit ID',
