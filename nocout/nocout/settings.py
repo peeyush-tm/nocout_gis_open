@@ -520,12 +520,16 @@ GISADMIN = DEFAULT_USERS(USERNAME='gisadmin', ID=2)
 GISOPERATOR_ID = DEFAULT_USERS(USERNAME='gisoperator', ID=3)
 GISVIEWER_ID = DEFAULT_USERS(USERNAME='gisviewer', ID=3)
 
+
+# TODO: with each deployment check for all the technologies
 DEVICE_TECHNOLOGY = namedtuple('DEVICE_TECHNOLOGY', 'NAME ID')
 P2P = DEVICE_TECHNOLOGY('P2P', '2')
 WiMAX = DEVICE_TECHNOLOGY('WiMAX', '3')
 PMP = DEVICE_TECHNOLOGY('PMP', '4')
 Switch = DEVICE_TECHNOLOGY('Switch', '7')
 TCLPTPPOP = DEVICE_TECHNOLOGY('TCLPTPPOP', '9')
+
+
 
 MPTT_TREE = namedtuple('MPTT_TREE', 'lft rght level')
 
