@@ -244,7 +244,7 @@ def get_sector_augmentation_data(sector_ids=[]):
 
     # Execute Query to get augmentation data
     augmentation_data = fetch_raw_result(augmentation_raw_query)
-
+    #logger.debug(augmentation_data)
     return augmentation_data
 
 
@@ -277,7 +277,7 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
 
     # Execute Query to get augmentation data
     ul_issue_data = fetch_raw_result(query=ul_issue_raw_query, machine=machine)
-
+    #logger.debug(ul_issue_data)
     return ul_issue_data
 
 
@@ -301,7 +301,7 @@ def format_polled_data(data=[], key_column_name=''):
 
         if current_timestamp_month not in resultant_dict[current_key]:
             resultant_dict[current_key].append(current_timestamp_month)
-
+    #logger.debug(resultant_dict)
     return resultant_dict
 
 
@@ -360,7 +360,7 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
                 sectors_list[i][ul_issue_key] = 1
         except Exception as e:
             sectors_list[i][ul_issue_key] = 0
-
+    #logger.debug(sectors_list)
     return sectors_list
 
 
@@ -375,26 +375,32 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
     bulky_update = list()
     bulky_create = list()
 
-    counter_val = len(calculated_data)
+    #counter_val = len(calculated_data)
 
-    for i in range(counter_val):
+    for current_row in calculated_data:
 
-        current_row = calculated_data[i]
+        #current_row = calculated_data[i]
+        try:
+            # Foreign Keys
+            sector_id = Sector.objects.get(pk=current_row['id'])
+            device_id = sector_id.sector_configured_on #Device.objects.filter(pk=current_row['sector_configured_on'])[0]
 
-        # Foreign Keys
-        sector_id = Sector.objects.filter(pk=calculated_data[i]['id'])[0]
-        device_id = Device.objects.filter(pk=calculated_data[i]['sector_configured_on'])[0]
+            # Sector Details
+            sector_sector_id = current_row['sector_id']
+            sector_sector_configured_on = current_row['sector_configured_on__ip_address']
+            sector_device_technology = technology
 
-        # Sector Details
-        sector_sector_id = calculated_data[i]['sector_id']
-        sector_sector_configured_on = calculated_data[i]['sector_configured_on__ip_address']
-        sector_device_technology = technology
+            # UL Issues for current month
+            ul_issue_1 = current_row['ul_issue_1']
 
-        # UL Issues for current month
-        ul_issue_1 = calculated_data[i]['ul_issue_1']
+            # Augmentation for current month
+            augment_1 = current_row['augment_1']
 
-        # Augmentation for current month
-        augment_1 = calculated_data[i]['augment_1']
+            logger.debug(current_row)
+
+        except Exception as e:
+            logger.exception(e)
+            continue
 
         #bulk operations
         sector_object = None

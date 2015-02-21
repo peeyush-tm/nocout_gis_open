@@ -13222,6 +13222,7 @@ def bulk_update_create(bulky, action='update', model=None):
     :param model: model object
     :return:
     """
+    logger.debug(bulky)
     if bulky and len(bulky):
         if action == 'update':
             for update_this in bulky:
@@ -13229,7 +13230,6 @@ def bulk_update_create(bulky, action='update', model=None):
                     update_this.save()
                 except Exception as e:
                     logger.exception(e)
-                    continue
             return True
 
         elif action == 'create':

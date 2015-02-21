@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import csv
+
 #import json
 import ujson as json
 import datetime
@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse_lazy, reverse
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
-import xlwt
+
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 

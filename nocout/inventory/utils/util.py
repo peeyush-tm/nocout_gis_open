@@ -3,7 +3,7 @@
 #python core functions
 import datetime
 
-#django settings
+# nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import P2P, WiMAX, PMP, DEBUG
 
 #django core model functions
