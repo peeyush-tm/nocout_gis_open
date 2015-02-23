@@ -14,7 +14,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX
+from nocout.settings import PMP, WiMAX, TCLPOP
 
 from nocout.utils import logged_in_user_organizations
 from inventory.models import Sector
