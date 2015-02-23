@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import csv
+
 #import json
 import ujson as json
 import datetime
@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse_lazy, reverse
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
-import xlwt
+
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 
@@ -635,7 +635,7 @@ class SectorDashboard(ListView):
         last_six_months_list, \
         months_list = getLastXMonths(6);
 
-        for i in range(6):
+        for i in reversed(range(6)):
             # Get month index from year,month tuple
             month_index = last_six_months_list[i][1] - 1
             month_name = months_list[month_index]['name']

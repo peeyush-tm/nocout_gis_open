@@ -184,8 +184,8 @@
                 device_technology = "{{ device_technology_name }}",
                 gridHeadersObj = '{{ table_headers|safe }}',
                 ping_gridHeadersObj = '{{ ping_table_headers|safe }}',
-                oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date') * 1000) : new Date(),
-                oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date(),
+                oldStartDate = new Date().setDate(new Date().getDate()-1),
+                oldENdData = new Date(),
                 location_array = window.location.href.split("#");
 
             if(location_array.length > 1) {
@@ -232,7 +232,7 @@
             });
     
             // Calculate start & end date if available in query string
-            if ($.urlParam('start_date') && $.urlParam('end_date')) {
+            if (oldStartDate && oldENdData) {
                 $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
                 startDate = moment(oldStartDate);
                 endDate = moment(oldENdData);
@@ -268,9 +268,12 @@
 
                 isDateFilterApplied = true;
                 //epoch function
-                var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
-                var myStartTime = myStartDate.getTime() / 1000.0;
-                var myEndTime = myEndDate.getTime() / 1000.0;
+                var myStartDate = startDate.toDate(),
+                    myEndDate = endDate.toDate();
+
+                startDate = myStartDate.getTime() / 1000.0;
+                endDate = myEndDate.getTime() / 1000.0;
+
                 // window.location.href = window.location.href+'?start_date=' + encodeURIComponent(myStartTime)
                 //         + '&end_date=' + encodeURIComponent(myEndTime);
                 // window.location.search = '?start_date=' + encodeURIComponent(myStartTime)+ '&end_date=' + encodeURIComponent(myEndTime);

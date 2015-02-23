@@ -2149,8 +2149,10 @@ class GISPerfData(View):
 
                 # pe ip
                 pe_ip = ""
+                base_station_alias = ""
                 try:
                     pe_ip = circuit.sector.base_station.backhaul.pe_ip
+                    base_station_alias = circuit.sector.base_station.alias
                 except Exception as e:
                     pass
 
@@ -2249,6 +2251,12 @@ class GISPerfData(View):
 
                 # adding gis inventory static parameters to device info
                 device_info = [
+                    {
+                        'name': 'base_station_alias',
+                        'title': 'Base Station Name',
+                        'show': 0,
+                        'value': base_station_alias
+                    },
                     {
                         'name': 'ss_ip',
                         'title': 'SS IP',

@@ -17,14 +17,19 @@ def rta_null(rta=0):
     return rta
 
 
-def display_time(seconds, granularity=4):
+def display_time(seconds=0, granularity=4):
     """
 
     :param seconds: seconds on float
     :param granularity:
     :return:
     """
-    seconds = float(seconds)
+
+    try:
+        seconds = float(seconds)
+    except Exception:
+        return 0
+
     intervals = (
         ('weeks', 604800),
         ('days', 86400),

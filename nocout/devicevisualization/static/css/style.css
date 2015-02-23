@@ -166,7 +166,7 @@
     border: 1px solid #000;
     padding: 8px;
     bottom: 31px;
-    right: -13%; /*10px;*/
+    right: -11%; /*10px;*/
     z-index: 999999;
 }
 #chart-details div {

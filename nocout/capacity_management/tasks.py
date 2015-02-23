@@ -11,7 +11,7 @@ from device.models import DeviceTechnology, Device, DevicePort, DeviceType
 from service.models import ServiceDataSource
 from inventory.utils.util import prepare_machines
 
-from inventory.tasks import get_devices
+from inventory.tasks import get_devices, bulk_update_create
 
 from nocout.utils.util import fetch_raw_result
 
@@ -1235,86 +1235,3 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         ret |= r
 
     return ret
-
-
-@task()
-def bulk_update(bulky, action='update', entity='sector'):
-    """
-
-    :param bulky: bulk object list
-    :param action: update or save
-    :return: True
-    """
-    logger.debug(bulky)
-    if bulky and len(bulky):
-        if action == 'update':
-            for update_this in bulky:
-                try:
-                    update_this.save()
-                except Exception as e:
-                    logger.exception(e)
-            return True
-
-        elif action == 'create':
-            if entity == 'backhaul':
-                BackhaulCapacityStatus.objects.bulk_create(bulky)
-            else:
-                SectorCapacityStatus.objects.bulk_create(bulky)
-            return True
-
-    return False
-
-
-@task()
-def bulk_create(bulky, action='create', entity='sector'):
-    """
-
-    :param bulky: bulk object list
-    :param action: update or save
-    :return: True
-    """
-    logger.debug(bulky)
-    if bulky and len(bulky):
-        if action == 'update':
-            for update_this in bulky:
-                try:
-                    update_this.save()
-                except Exception as e:
-                    logger.exception(e)
-            return True
-
-        elif action == 'create':
-            if entity == 'backhaul':
-                BackhaulCapacityStatus.objects.bulk_create(bulky)
-            else:
-                SectorCapacityStatus.objects.bulk_create(bulky)
-            return True
-
-    return False
-
-#TODO: make this common
-@task()
-def bulk_update_create(bulky, action='update', model=None):
-    """
-
-    :param bulky: bulk object list
-    :param action: create or update?
-    :param model: model object
-    :return:
-    """
-    logger.debug(bulky)
-    if bulky and len(bulky):
-        if action == 'update':
-            for update_this in bulky:
-                try:
-                    update_this.save()
-                except Exception as e:
-                    logger.exception(e)
-            return True
-
-        elif action == 'create':
-            if model:
-                model.objects.bulk_create(bulky)
-            return True
-
-    return False
