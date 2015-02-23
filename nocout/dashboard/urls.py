@@ -59,7 +59,7 @@ urlpatterns = patterns('',
 
     url(r'^backhaul-capacity/pmp/$', views.PMPBackhaulCapacity.as_view(), name='backhaul-capacity-pmp'),
     url(r'^backhaul-capacity/wimax/$', views.WiMAXBackhaulCapacity.as_view(), name='backhaul-capacity-wimax'),
-    url(r'^backhaul-capacity/tclptppop/$', views.TCLPTPPOPBackhaulCapacity.as_view(), name='backhaul-capacity-tclptppop'),
+    url(r'^backhaul-capacity/tclpop/$', views.TCLPOPBackhaulCapacity.as_view(), name='backhaul-capacity-tclpop'),
 
 
     url(r'^sales-opportunity/pmp/$', views.PMPSalesOpportunity.as_view(), name='sales-opportunity-pmp'),
@@ -78,5 +78,5 @@ urlpatterns = patterns('',
 
     url(r'^trend-monthly-backhaul/pmp/$', views.MonthlyTrendBackhaulPMP.as_view(), name = 'trend-monthly-backhaul-pmp' ),
     url(r'^trend-monthly-backhaul/wimax/$', views.MonthlyTrendBackhaulWiMAX.as_view(), name = 'trend-monthly-backhaul-wimax' ),
-    url(r'^trend-monthly-backhaul/tclptppop/$', views.MonthlyTrendBackhaulTCLPTPPOP.as_view(), name = 'trend-monthly-backhaul-tclptppop' ),
+    url(r'^trend-monthly-backhaul/tclpop/$', views.MonthlyTrendBackhaulTCLPOP.as_view(), name = 'trend-monthly-backhaul-tclpop' ),
 )

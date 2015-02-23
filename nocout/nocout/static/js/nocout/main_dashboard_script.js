@@ -127,7 +127,7 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
         "tcl_pop_backhaul_capacity" : {
             "url" : "",
             "trends_url" : "",
-            "text" : "TCL PTP POP Backhaul Capacity"
+            "text" : "TCL POP Backhaul Capacity"
         }
     },
     area_chart_ids = [

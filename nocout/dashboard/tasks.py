@@ -5,7 +5,7 @@ from django.utils import timezone
 import datetime
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX
+from nocout.settings import PMP, WiMAX, TCLPOP
 
 from organization.models import Organization
 from device.models import DeviceTechnology, Device
@@ -42,7 +42,7 @@ def calculate_timely_main_dashboard():
 
     calculate_timely_backhaul_capacity(user_organizations, technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
     calculate_timely_backhaul_capacity(user_organizations, technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
-    calculate_timely_backhaul_capacity(user_organizations, technology=TCLPTPPOP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+    calculate_timely_backhaul_capacity(user_organizations, technology=TCLPOP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
 
     calculate_timely_sales_opportunity(user_organizations, technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
     calculate_timely_sales_opportunity(user_organizations, technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
