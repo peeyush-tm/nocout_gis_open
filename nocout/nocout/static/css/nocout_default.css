@@ -297,7 +297,7 @@ iframe {
 }
 .date_range_filter_container {
   float:left;
-  max-width: 320px !important;
+  max-width: 250px !important;
   margin-bottom:5px;
 }
 .date_range_filter_container .form-control {
@@ -309,4 +309,21 @@ iframe {
 #main_dashboard_container .box-body h5 strong i, #main_dashboard_container .box-body h4 strong i {
   margin-left: 10px;
   cursor: pointer;
+}
+
+.polling_chart_container {
+  max-width:25%;
+  overflow: auto;
+  vertical-align: middle;
+}
+
+#per_live_poll_chart {
+  overflow:auto;
+  width:100%;
+}
+
+#last_polled_val {
+  font-size:15px;
+  font-weight:bold;
+  vertical-align:middle;
 }
