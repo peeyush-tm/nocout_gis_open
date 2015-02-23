@@ -343,6 +343,13 @@ function nocoutPerfLib() {
 
                         /*Bind click event on tabs*/
                         $('.inner_tab_container .nav-tabs li a').click(function (e) {
+
+                            try {
+                                perf_that.resetLivePolling()
+                            } catch() {
+                                // pass
+                            }
+
                             // show loading spinner
                             showSpinner();
                             var serviceId = e.currentTarget.id.slice(0, -4),
@@ -416,6 +423,12 @@ function nocoutPerfLib() {
                 if(active_tab_url && active_tab_id) {
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
+
+                    try {
+                        perf_that.resetLivePolling()
+                    } catch() {
+                        // pass
+                    }
 
                     if($("#other_perf_table").length > 0) {
                         $("#other_perf_table").dataTable().fnDestroy();
@@ -732,6 +745,10 @@ function nocoutPerfLib() {
 
                     var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
 
+                    if(typeof fetched_val == 'object') {
+                        fetched_val = fetched_val[0];
+                    }
+
                     if(fetched_val != "" && fetched_val != null) {
 
                         var existing_val = $("#"+hidden_input_dom_id).val(),
@@ -745,6 +762,9 @@ function nocoutPerfLib() {
 
                         // Update the value in input field
                         $("#"+hidden_input_dom_id).val(new_values_list);
+
+                        // Reset the latest value container
+                        $("#"+polled_val_shown_dom_id).html("");
 
                         // Update latest polled value
                         $("#"+polled_val_shown_dom_id).html(fetched_val);
@@ -787,5 +807,24 @@ function nocoutPerfLib() {
                 $("#perf_poll_now").button("complete");
             }
         });
+    };
+
+    /**
+     * This function reset the live polling section
+     * @method resetLivePolling
+     */
+    this.resetLivePolling = function() {
+
+        // Enable the "Poll Now" button
+        $("#perf_poll_now").button("complete");
+
+        // Reset the input values
+        $("#perf_live_poll_input").val("");
+
+        // Reset the Chart container
+        $("#perf_live_poll_chart").html("");
+
+        // Reset the latest value container
+        $("#last_polled_val").html("");
     };
 }
