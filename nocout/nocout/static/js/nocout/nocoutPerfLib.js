@@ -745,11 +745,12 @@ function nocoutPerfLib() {
 
                     var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
 
-                    if(typeof fetched_val == 'object') {
-                        fetched_val = fetched_val[0];
-                    }
 
-                    if(fetched_val != "" && fetched_val != null) {
+                    if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
+                        
+                        if(typeof fetched_val == 'object') {
+                            fetched_val = fetched_val[0];
+                        }
 
                         var existing_val = $("#"+hidden_input_dom_id).val(),
                             new_values_list = "";
