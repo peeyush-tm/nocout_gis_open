@@ -716,7 +716,7 @@ function nocoutPerfLib() {
         var live_poll_url = "";
 
         $.ajax({
-            url : base_url+"/"+"device/lp_bulk_data/?ts_template=0&service_name="+service_name+"&devices="+JSON.stringify(device_name)+"&ds_name="+ds_name,
+            url : base_url+"/"+"device/lp_bulk_data/?service_name="+service_name+"&devices="+JSON.stringify(device_name)+"&ds_name="+ds_name,
             type : "GET",
             success : function(response) {
                 
