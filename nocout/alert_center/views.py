@@ -491,7 +491,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 page_type = "other"
                 self.data_sources = ['temperature']
             elif tab_id in ["ULIssue"]:
-                technology = [int(WiMAX.ID), int(PMP.ID)]
+                # technology = [int(WiMAX.ID), int(PMP.ID)]
+                technology = ["WiMAX", "PMP"]
                 self.data_sources = ['bs_ul_issue']
             elif tab_id in ["Backhaul", "BackhaulUtil"]:
                 technology = None
