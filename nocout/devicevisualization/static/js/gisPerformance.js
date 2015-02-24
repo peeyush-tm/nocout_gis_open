@@ -486,6 +486,7 @@ function GisPerformance() {
                                     ss_pl = perf_self.getKeyValue(ss_tooltip_info,"pl",true),
                                     ss_rta = perf_self.getKeyValue(ss_tooltip_info,"rta",true),
                                     ckt_id_val = perf_self.getKeyValue(ss_tooltip_info,"cktid",true),
+                                    ss_ip_address = perf_self.getKeyValue(ss_tooltip_info,"ss_ip",true),
                                     ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
                                     ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "";
 
@@ -508,7 +509,7 @@ function GisPerformance() {
                                     bs_sector_device :  sector_device,
                                     filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
                                     device_name      :  ss_marker_data.device_name,
-                                    ss_ip            :  ss_marker_data.data.substation_device_ip_address,
+                                    ss_ip            :  ss_ip_address,
                                     sector_ip        :  sector_ip,
                                     cktId            :  ckt_id_val,
                                     zIndex           :  200,
