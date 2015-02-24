@@ -413,12 +413,36 @@ def getNetworkAlertDetail(request):
         {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
     ]
 
-    sector_utils_headers = sector_util_hidden_headers
-
+    sector_utils_headers = []
+    sector_utils_headers += sector_util_hidden_headers
     sector_utils_headers += sector_util_common_headers
+
+    bh_util_hidden_headers = [
+        {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+        {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+    ]
+
+    bh_util_common_headers = [
+        {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'bSortable': True},
+        {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+        {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True},
+        {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
+        {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+    ]
+
+    bh_utils_headers = []
+    bh_utils_headers += bh_util_hidden_headers
+    bh_utils_headers += bh_util_common_headers
+
+
 
     context = {
         'datatable_headers': json.dumps(datatable_headers),
+        'bh_utils_headers' : json.dumps(bh_utils_headers),
         'bh_headers': json.dumps(bh_dt_headers),
         'sector_utils_headers': json.dumps(sector_utils_headers)
     }
