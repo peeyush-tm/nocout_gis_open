@@ -386,7 +386,10 @@ def prepare_raw_sector(sectors):
 
                 circuit_ids += circuit_id
                 sector_configured_on_devices += substation_ip
+                # Polled Frequency
                 sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
+                # Planned Frequency
+                sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']))
 
                 ### Append Sector Infowindow Content
                 all_sector_cktid += unicode(format_value(format_this=sector['CCID']))+"|"

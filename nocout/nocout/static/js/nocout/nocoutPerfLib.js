@@ -69,13 +69,13 @@ function nocoutPerfLib() {
         //     dataType: "json",
         //     success: function (response) {
 
-        //         var result = "";
-        //         // Type check of response
-        //         if(typeof response == 'string') {
-        //             result = JSON.parse(response);
-        //         } else {
-        //             result = response;
-        //         }
+                // var result = "";
+                // // Type check of response
+                // if(typeof response == 'string') {
+                //     result = JSON.parse(response);
+                // } else {
+                //     result = response;
+                // }
 
         //         if (result.success == 1) {
         //             allDevices = result.data.objects;
@@ -343,6 +343,13 @@ function nocoutPerfLib() {
 
                         /*Bind click event on tabs*/
                         $('.inner_tab_container .nav-tabs li a').click(function (e) {
+
+                            try {
+                                perf_that.resetLivePolling()
+                            } catch() {
+                                // pass
+                            }
+
                             // show loading spinner
                             showSpinner();
                             var serviceId = e.currentTarget.id.slice(0, -4),
@@ -416,6 +423,12 @@ function nocoutPerfLib() {
                 if(active_tab_url && active_tab_id) {
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
+
+                    try {
+                        perf_that.resetLivePolling()
+                    } catch() {
+                        // pass
+                    }
 
                     if($("#other_perf_table").length > 0) {
                         $("#other_perf_table").dataTable().fnDestroy();
@@ -692,5 +705,127 @@ function nocoutPerfLib() {
                 }
             });
         }
+    };
+    
+    /**
+     * This function triggers when live poll button is clicked. It fetched the live polled value & create or update sparkline chart
+     * @method livePollCurrentDevice
+     * @param sparkline_dom_id {String}, It is the dom id in which sparkline chart is to be created
+     * @param hidden_input_dom_id {String}, It is the dom id(input element) in which sparkline chart data is to be saved
+     * @param polled_val_shown_dom_id {String}, It is the dom id in which the latest polled value is to be shown.
+     * @param service_name {String}, It is the name of current service
+     * @param ds_name {String}, It is the name of current data source
+     * @param device_name {Array}, It is the list of device names(right now we have only one device name)
+     */
+    this.livePollCurrentDevice = function(
+        sparkline_dom_id,
+        hidden_input_dom_id,
+        polled_val_shown_dom_id,
+        service_name,
+        ds_name,
+        device_name
+    ) {
+
+        var live_poll_url = "";
+
+        $.ajax({
+            url : base_url+"/"+"device/lp_bulk_data/?service_name="+service_name+"&devices="+JSON.stringify(device_name)+"&ds_name="+ds_name,
+            type : "GET",
+            success : function(response) {
+                
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
+                if(result.success == 1) {
+
+                    var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
+
+
+                    if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
+                        
+                        if(typeof fetched_val == 'object') {
+                            fetched_val = fetched_val[0];
+                        }
+
+                        var existing_val = $("#"+hidden_input_dom_id).val(),
+                            new_values_list = "";
+
+                        if(existing_val) {
+                            new_values_list = existing_val+","+fetched_val;
+                        } else {
+                            new_values_list = fetched_val;
+                        }
+
+                        // Update the value in input field
+                        $("#"+hidden_input_dom_id).val(new_values_list);
+
+                        // Reset the latest value container
+                        $("#"+polled_val_shown_dom_id).html("");
+
+                        // Update latest polled value
+                        $("#"+polled_val_shown_dom_id).html(fetched_val);
+
+                        // Make array of values from "," comma seperated string
+                        var new_chart_data = new_values_list.split(",");
+
+                        /*Plot sparkline chart with the fetched polling value*/
+                        $("#"+sparkline_dom_id).sparkline(new_chart_data, {
+                            type: "line",
+                            lineColor: "blue",
+                            spotColor : "orange",
+                            defaultPixelsPerValue : 10
+                        });
+                    }
+                } else {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Live Polling',
+                        // (string | mandatory) the text inside the notification
+                        text: result.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
+                }
+            },
+            error : function(err) {
+                // console.log(err.statusText);
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Live Polling',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false
+                });
+            },
+            complete : function() {
+                // Enable the "Poll Now" button
+                $("#perf_poll_now").button("complete");
+            }
+        });
+    };
+
+    /**
+     * This function reset the live polling section
+     * @method resetLivePolling
+     */
+    this.resetLivePolling = function() {
+
+        // Enable the "Poll Now" button
+        $("#perf_poll_now").button("complete");
+
+        // Reset the input values
+        $("#perf_live_poll_input").val("");
+
+        // Reset the Chart container
+        $("#perf_live_poll_chart").html("");
+
+        // Reset the latest value container
+        $("#last_polled_val").html("");
     };
 }
