@@ -71,14 +71,31 @@ function populateServiceStatus_nocout(domElement,info) {
         var last_updated = info.last_updated ? info.last_updated : "N/A",
             perf = info.perf ? info.perf : "N/A",
             inner_status_html = '';
-        
+
+        // Create Table for service polled value & live polling --- START
         inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
         inner_status_html += '<tr>';
-        inner_status_html += '<td style="width:45%;"><b>Service O/P</b> : '+perf+'('+last_updated+')</td>';
-        inner_status_html += '<td style="width:45%;"><b>Poll O/P</b> : </td>';
-        inner_status_html += '<td style="width:10%;"><button id="perf_poll_now" class="btn btn-primary btn-xs" title="Poll Now" data-complete-text="Poll Now" data-loading-text="Please Wait...">Poll Now</button></td>';
+        
+        inner_status_html += '<td style="width:47.5%;"><b>Service Output</b> : (<i class="fa fa-arrow-circle-o-right"></i> \
+                             '+perf+', <i class="fa fa-clock-o"></i> '+last_updated+')</td>';
+        
+        inner_status_html += '<td style="width:47.5%;"><b>Poll Output</b> : <span id="perf_live_poll_chart"></span></td>';
+        
+        inner_status_html += '<td style="width:5%;"><button id="perf_poll_now" class="btn btn-primary btn-xs"\
+                             title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
+                             data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
+                             class="fa fa-hand-o-right"></i></button></td>';
+
         inner_status_html += '</tr>';
-        inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+        inner_status_html += '</table>';
+        // Create Table for service polled value & live polling --- END
+
+        // Create hidden input field to store polling values --- START
+        inner_status_html += '<input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">';
+        // Create hidden input field to store polling values --- END
+
+        inner_status_html += '<div class="clearfix"></div><div class="divide-20"></div>';
+
         $("#"+domElement).html(inner_status_html);
     // } else {
     //     $("#"+domElement).html("");
