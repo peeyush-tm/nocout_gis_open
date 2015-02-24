@@ -346,7 +346,7 @@ function nocoutPerfLib() {
 
                             try {
                                 perf_that.resetLivePolling()
-                            } catch() {
+                            } catch(e) {
                                 // pass
                             }
 
@@ -426,7 +426,7 @@ function nocoutPerfLib() {
 
                     try {
                         perf_that.resetLivePolling()
-                    } catch() {
+                    } catch(e) {
                         // pass
                     }
 
