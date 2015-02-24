@@ -2125,6 +2125,7 @@ function devicePlottingClass_gmap() {
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
 						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_infoWindow_content,"antenna_height",true,ss_item_info_index),
 						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
+						ss_ip_address = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"ss_ip",true,ss_item_info_index),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
@@ -2161,7 +2162,7 @@ function devicePlottingClass_gmap() {
 				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
 				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 				    	device_name 	 : 	ss_marker_obj.device_name,
-				    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
+				    	ss_ip 	 		 : 	ss_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
 				    	cktId 			 :  ckt_id_val,
 				    	zIndex 			 : 	200,

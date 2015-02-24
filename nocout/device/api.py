@@ -65,6 +65,7 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
+
         # page_number= request.GET['page_number']
         # limit= request.GET['limit']
 
@@ -734,31 +735,27 @@ class BulkFetchLPDataApi(View):
             service_type = self.request.GET.get('service_type', 'normal')
         except Exception as e:
             service_type = ""
-            pass
 
         # devices list
         devices = eval(str(self.request.GET.get('devices', None)))
 
         # thematic settings template id
         try:
-            ts_template_id = int(self.request.GET.get('ts_template', None))
+            ts_template_id = int(self.request.GET.get('ts_template'))
         except Exception as e:
             ts_template_id = ""
-            pass
 
         # service name
         try:
-            service_name = eval(str(self.request.GET.get('service_name', None)))
+            service_name = self.request.GET.get('service_name')
         except Exception as e:
             service_name = ""
-            pass
 
         # data source
         try:
-            ds_name = int(self.request.GET.get('ds_name', None))
+            ds_name = self.request.GET.get('ds_name')
         except Exception as e:
             ds_name = ""
-            pass
 
         # exceptional services i.e. 'ss' services which get service data from 'bs' instead from 'ss'
         exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
@@ -783,8 +780,7 @@ class BulkFetchLPDataApi(View):
             "data": {}
         }
 
-        if all([service_name, ds_name]):
-
+        if not all([service_name, ds_name]):
             # get thematic settings corresponding to the 'service_type'
             if service_type == 'ping':
                 # thematic settings (ping)
@@ -847,7 +843,7 @@ class BulkFetchLPDataApi(View):
                 }
 
                 # live polling setting
-                if all([service_name, ds_name]):
+                if not all([service_name, ds_name]):
                     if service_type != "ping":
                         lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
 
@@ -966,7 +962,7 @@ class BulkFetchLPDataApi(View):
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
 
-                    if all([service_name, ds_name]):
+                    if not all([service_name, ds_name]):
                         if service_type == 'ping':
                             lp_data['service_list'] = [str(service)]
                             lp_data['ds'] = [str(data_source)]
@@ -1036,7 +1032,7 @@ class BulkFetchLPDataApi(View):
 
                         result['data']['devices'][device_name]['value'] = device_value
 
-                        if all([service_name, ds_name]):
+                        if not all([service_name, ds_name]):
                             # default icon
                             icon = ""
                             try:
