@@ -2456,24 +2456,24 @@ class GISPerfData(View):
                 #                                         processed=processed
                 # )
 
-                # get session uptime
-                format_session = None
-                session_uptime = device_last_down_time(device_obj)
-
-                if session_uptime:
-                    format_session = datetime.datetime.fromtimestamp(
-                        float(session_uptime)
-                    ).strftime('%Y-%m-%d %H:%M:%S')
-                # session uptime tool tip dictionary
-                session_uptime_info = {
-                    "name": 'session_uptime',
-                    "title": 'Session Uptime',
-                    "show": 1,
-                    "url": None,
-                    "value": format_session
-                }
-
-                device_info.append(session_uptime_info)
+                # # get session uptime
+                # format_session = None
+                # session_uptime = device_last_down_time(device_obj)
+                #
+                # if session_uptime:
+                #     format_session = datetime.datetime.fromtimestamp(
+                #         float(session_uptime)
+                #     ).strftime('%Y-%m-%d %H:%M:%S')
+                # # session uptime tool tip dictionary
+                # session_uptime_info = {
+                #     "name": 'session_uptime',
+                #     "title": 'Session Uptime',
+                #     "show": 1,
+                #     "url": None,
+                #     "value": format_session
+                # }
+                #
+                # device_info.append(session_uptime_info)
 
                 # bs connected ip
                 connected_bs_ip_info = {
