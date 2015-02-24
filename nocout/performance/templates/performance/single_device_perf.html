@@ -73,19 +73,6 @@
                         <i class="fa fa-warning text-danger"></i>
                     </a>
                 </li>
-                <li>
-                    <button id="perf_poll_now" class="btn btn-primary btn-sm" data-complete-text="Poll Now" data-loading-text="Please Wait...">
-                        Poll Now
-                    </button>
-                </li>
-                <li>
-                    <span id="last_polled_val"></span>
-                </li>
-                <li class="polling_chart_container">
-                    <input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">
-                    <div id="perf_live_poll_chart" class=""></div> 
-                    <div class="clearfix"></div>
-                </li>
             </ul>
         </div>
         <!--Filters Block End-->
@@ -588,18 +575,24 @@
         });
 
         //When poll now button is clicked
-        $("#perf_poll_now").click(function(e) {
+        $("body").delegate('#perf_poll_now','click',function(e) {
             var sparkline_dom_id = 'perf_live_poll_chart',
                 hidden_input_dom_id = 'perf_live_poll_input',
                 polled_val_shown_dom_id = "last_polled_val",
                 device_name = "{{ device.device_name }}",
                 current_active_tab_url = $(".top_perf_tab_content div.active .left_tabs_container ul li.active a").attr("url"),
                 service_name = "",
-                ds_name = "";
+                ds_name = "",
+                container_id = "",
+                block_dom_id_str = $(".top_perf_tab_content div.active .left_tabs_container ul li.active a").attr("href");
 
             if(current_active_tab_url && current_active_tab_url.indexOf("service/") > -1 && current_active_tab_url.indexOf("service_data_source/") > -1 ) {
                 service_name = current_active_tab_url ? current_active_tab_url.split("service/")[1].split("/")[0] : "";
                 ds_name = current_active_tab_url ? current_active_tab_url.split("service_data_source/")[1].split("/")[0] : "";
+            }
+
+            if(block_dom_id_str && block_dom_id_str.indexOf("#") > -1) {
+                container_id = "last_updated_"+block_dom_id_str.split("#")[1];
             }
             
             if(live_poll_condition1 || live_poll_condition2) {
@@ -609,6 +602,7 @@
 
                     // Call function to fetch live polling data
                     perfInstance.livePollCurrentDevice(
+                        container_id,
                         sparkline_dom_id,
                         hidden_input_dom_id,
                         polled_val_shown_dom_id,
