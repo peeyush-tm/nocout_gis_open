@@ -710,6 +710,7 @@ function nocoutPerfLib() {
     /**
      * This function triggers when live poll button is clicked. It fetched the live polled value & create or update sparkline chart
      * @method livePollCurrentDevice
+     * @param container_dom_id {String}, It is the dom id in of last updated block div in which the chart is to be prepared.
      * @param sparkline_dom_id {String}, It is the dom id in which sparkline chart is to be created
      * @param hidden_input_dom_id {String}, It is the dom id(input element) in which sparkline chart data is to be saved
      * @param polled_val_shown_dom_id {String}, It is the dom id in which the latest polled value is to be shown.
@@ -718,6 +719,7 @@ function nocoutPerfLib() {
      * @param device_name {Array}, It is the list of device names(right now we have only one device name)
      */
     this.livePollCurrentDevice = function(
+        container_dom_id,
         sparkline_dom_id,
         hidden_input_dom_id,
         polled_val_shown_dom_id,
@@ -752,34 +754,36 @@ function nocoutPerfLib() {
                             fetched_val = fetched_val[0];
                         }
 
-                        var existing_val = $("#"+hidden_input_dom_id).val(),
-                            new_values_list = "";
-
-                        if(existing_val) {
-                            new_values_list = existing_val+","+fetched_val;
-                        } else {
-                            new_values_list = fetched_val;
-                        }
-
-                        // Update the value in input field
-                        $("#"+hidden_input_dom_id).val(new_values_list);
-
                         // Reset the latest value container
                         $("#"+polled_val_shown_dom_id).html("");
 
                         // Update latest polled value
                         $("#"+polled_val_shown_dom_id).html(fetched_val);
 
-                        // Make array of values from "," comma seperated string
-                        var new_chart_data = new_values_list.split(",");
+                        if(Number(fetched_val) != NaN) {
+                            var existing_val = $("#"+hidden_input_dom_id).val(),
+                                new_values_list = "";
 
-                        /*Plot sparkline chart with the fetched polling value*/
-                        $("#"+sparkline_dom_id).sparkline(new_chart_data, {
-                            type: "line",
-                            lineColor: "blue",
-                            spotColor : "orange",
-                            defaultPixelsPerValue : 10
-                        });
+                            if(existing_val) {
+                                new_values_list = existing_val+","+fetched_val;
+                            } else {
+                                new_values_list = fetched_val;
+                            }
+
+                            // Update the value in input field
+                            $("#"+hidden_input_dom_id).val(new_values_list);
+
+                            // Make array of values from "," comma seperated string
+                            var new_chart_data = new_values_list.split(",");
+
+                            /*Plot sparkline chart with the fetched polling value*/
+                            $("#"+sparkline_dom_id).sparkline(new_chart_data, {
+                                type: "line",
+                                lineColor: "blue",
+                                spotColor : "orange",
+                                defaultPixelsPerValue : 10
+                            });
+                        }
                     }
                 } else {
                     $.gritter.add({

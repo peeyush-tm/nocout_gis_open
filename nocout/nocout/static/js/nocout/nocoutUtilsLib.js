@@ -67,21 +67,22 @@ function populateDeviceStatus_nocout(domElement,info) {
  */
 function populateServiceStatus_nocout(domElement,info) {
 
-    if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
+    // if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
         var last_updated = info.last_updated ? info.last_updated : "N/A",
             perf = info.perf ? info.perf : "N/A",
             inner_status_html = '';
         
         inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
         inner_status_html += '<tr>';
-        inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-        inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
+        inner_status_html += '<td style="width:45%;"><b>Service O/P</b> : '+perf+'('+last_updated+')</td>';
+        inner_status_html += '<td style="width:45%;"><b>Poll O/P</b> : </td>';
+        inner_status_html += '<td style="width:10%;"><button id="perf_poll_now" class="btn btn-primary btn-xs" title="Poll Now" data-complete-text="Poll Now" data-loading-text="Please Wait...">Poll Now</button></td>';
         inner_status_html += '</tr>';
         inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
         $("#"+domElement).html(inner_status_html);
-    } else {
-        $("#"+domElement).html("");
-    }
+    // } else {
+    //     $("#"+domElement).html("");
+    // }
 }
 
 
