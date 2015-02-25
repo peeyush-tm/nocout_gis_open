@@ -640,7 +640,7 @@ def get_time(start_date, end_date, date_format):
         end_date = format(end_date_object, 'U')
         start_date = format(start_date_object, 'U')
 
-    return isSet, start_date, end_date
+    return isSet, float(start_date), float(end_date)
 
 
 def color_picker():
