@@ -1127,19 +1127,22 @@ var state_wise_device_label_text= {};
 
 		for(var i=0;i<resultantMarkers.length;i++) {			
 
-			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
+			// var bs_marker_icon = base_url+"/static/img/icons/bs.png";
+			// BS marker url
+			var bs_marker_url = resultantMarkers[i].data.markerUrl ? base_url+"/"+resultantMarkers[i].data.markerUrl : base_url+"/static/img/icons/bs.png",
+				bs_maintenance_status = resultantMarkers[i].data.maintenance_status ? $.trim(resultantMarkers[i].data.maintenance_status) : "No";
 
 			var bsInfo = {
 				map 				: 'current',
 				ptLat 				: resultantMarkers[i].data.lat,
 				ptLon 				: resultantMarkers[i].data.lon,
-				icon 				: base_url+"/static/img/icons/bs.png",
-				oldIcon 			: base_url+"/static/img/icons/bs.png",
-				clusterIcon 		: base_url+"/static/img/icons/bs.png",
+				icon 				: bs_marker_url,
+				oldIcon 			: bs_marker_url,
+				clusterIcon 		: bs_marker_url,
 				pointType 			: "base_station",
 				bs_alias 			: resultantMarkers[i].alias,
 				child_ss 			: resultantMarkers[i].data.param.sector,
-				// dataset 			: resultantMarkers[i].data.param.base_station,
+				maintenance_status  : bs_maintenance_status,
 				item_index			: 0,
 				device_name 		: resultantMarkers[i].data.device_name,
 				bsInfo 				: resultantMarkers[i].data.param.base_station,
@@ -1157,7 +1160,7 @@ var state_wise_device_label_text= {};
 
 			// Create BS placemark.
 			var bs_marker = earth_self.makePlacemark(
-				bs_marker_icon,
+				bs_marker_url,
 				resultantMarkers[i].data.lat,
 				resultantMarkers[i].data.lon,
 				'bs_'+resultantMarkers[i].originalId,
