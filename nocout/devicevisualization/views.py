@@ -3599,7 +3599,7 @@ class UpdateMaintenanceStatus(View):
             try:
                 base_station = BaseStation.objects.get(pk=int(bs_id))
 
-                # update mainta
+                # update maintenance status
                 base_station.maintenance_status = maintenance_status
                 base_station.save()
 
