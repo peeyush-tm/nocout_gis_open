@@ -268,11 +268,15 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
     # get the sector of User's Organization [and Sub Organization]
     user_sector = organization_sectors(organizations, technology_id)
     # get the device of the user sector.
-    sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+    # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
     # get the list of dictionary on the basis of parameters.
     service_status_results = get_topology_status_results(
-        sector_devices, model=Topology, service_name='topology', data_source='topology', user_sector=user_sector
+        user_devices=None,
+        model=Topology,
+        service_name=None,
+        data_source='topology',
+        user_sector=user_sector
     )
 
     data_list = list()
