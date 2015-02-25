@@ -352,7 +352,7 @@ CELERYBEAT_SCHEDULE = {
     # Dashboads Calculations
     'timely-main-dashboard': {
         'task': 'dashboard.tasks.calculate_timely_main_dashboard',
-        'schedule': timedelta(seconds=300),
+        'schedule': crontab(minute='*/5') # timedelta(seconds=300), # need to run 12 times per hour
         },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
