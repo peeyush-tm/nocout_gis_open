@@ -476,13 +476,13 @@ var ptp_ss_toolTip_polled = [
         'value' : '',
         'url'   : ''
 	},
-    {
-        'name'  : 'session_uptime',
-        'title' : 'Last Down',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-    },
+    // {
+    //     'name'  : 'session_uptime',
+    //     'title' : 'Last Down',
+    //     'show'  : 1,
+    //     'value' : '',
+    //     'url'   : ''
+    // },
 	{
 		'name'  : 'radwin_uptime_uptime',
         'title' : 'Device Uptime',
@@ -792,13 +792,13 @@ var ptp_sector_toolTip_polled = [
         'value' : '',
         'url'   : ''
     },
-    {
-        'name'  : 'session_uptime',
-        'title' : 'Session Uptime',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-    },
+    // {
+    //     'name'  : 'session_uptime',
+    //     'title' : 'Session Uptime',
+    //     'show'  : 1,
+    //     'value' : '',
+    //     'url'   : ''
+    // },
     {
         'name'  : 'radwin_uptime_uptime',
         'title' : 'Device Uptime',
@@ -918,13 +918,13 @@ var pmp_ss_toolTip_polled = [
         'value' : '',
         'url'   : ''
     },
-    {
-        'name'  : 'session_uptime',
-        'title' : 'Session Uptime',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-    },
+    // {
+    //     'name'  : 'session_uptime',
+    //     'title' : 'Session Uptime',
+    //     'show'  : 1,
+    //     'value' : '',
+    //     'url'   : ''
+    // },
     {
         'name'  : 'cambium_uptime_uptime',
         'title' : 'Device Uptime',

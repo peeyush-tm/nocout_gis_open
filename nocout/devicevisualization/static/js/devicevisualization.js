@@ -404,6 +404,13 @@ $("#resetSearchForm").click(function(e) {
         ccpl_map.getLayersByName("Search Layer")[0].setVisibility(false);
     }
 
+    try {
+        // Reset Search data variable
+        searchResultData = []
+    } catch(e) {
+        // pass
+    }
+
     // Reset Advance Search Flag
     isAdvanceSearch = 0;
     // if (window.location.pathname.indexOf("white_background") > -1) {

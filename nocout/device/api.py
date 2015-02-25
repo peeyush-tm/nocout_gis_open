@@ -65,6 +65,7 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
+
         # page_number= request.GET['page_number']
         # limit= request.GET['limit']
 
@@ -730,13 +731,31 @@ class BulkFetchLPDataApi(View):
         """Returns json containing live polling values and icon urls for bulk devices"""
 
         # get service type i.e. 'ping' or 'normal'
-        service_type = self.request.GET.get('service_type', 'normal')
+        try:
+            service_type = self.request.GET.get('service_type', 'normal')
+        except Exception as e:
+            service_type = ""
 
         # devices list
         devices = eval(str(self.request.GET.get('devices', None)))
 
         # thematic settings template id
-        ts_template_id = int(self.request.GET.get('ts_template', None))
+        try:
+            ts_template_id = int(self.request.GET.get('ts_template'))
+        except Exception as e:
+            ts_template_id = ""
+
+        # service name
+        try:
+            service_name = self.request.GET.get('service_name')
+        except Exception as e:
+            service_name = ""
+
+        # data source
+        try:
+            ds_name = self.request.GET.get('ds_name')
+        except Exception as e:
+            ds_name = ""
 
         # exceptional services i.e. 'ss' services which get service data from 'bs' instead from 'ss'
         exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
@@ -753,43 +772,54 @@ class BulkFetchLPDataApi(View):
 
         # live polling template id
         lp_template_id = ""
+    
+        # result dictionary which needs to be returned as an output of api
+        result = {
+            "success": 0,
+            "message": "Failed to fetch the data.",
+            "data": {}
+        }
 
-        # get thematic settings corresponding to the 'service_type'
-        if service_type == 'ping':
-            # thematic settings (ping)
-            ts = PingThematicSettings.objects.get(pk=ts_template_id)
-            service = ts.service
-            data_source = ts.data_source
+        if not all([service_name, ds_name]):
+            # get thematic settings corresponding to the 'service_type'
+            if service_type == 'ping':
+                # thematic settings (ping)
+                ts = PingThematicSettings.objects.get(pk=ts_template_id)
+                service = ts.service
+                data_source = ts.data_source
 
-            # result dictionary which needs to be returned as an output of api
-            result = {
-                "success": 0,
-                "message": "Failed to fetch thematic settings.",
-                "data": {}
-            }
+                # result dictionary which needs to be returned as an output of api
+                result = {
+                    "success": 0,
+                    "message": "Failed to fetch thematic settings.",
+                    "data": {}
+                }
+            else:
+                # thematic settings (normal)
+                ts = ThematicSettings.objects.get(pk=ts_template_id)
+
+                # live polling template id
+                lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
+
+                # getting service and data source from live polling settings
+                try:
+                    service = LivePollingSettings.objects.get(pk=lp_template_id).service
+                    data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
+                except Exception as e:
+                    logger.info("No service and data source corresponding to this live polling setting template.")
+
+                # result dictionary which needs to be returned as an output of api
+                result = {
+                    "success": 0,
+                    "message": "Failed to fetch live polling data.",
+                    "data": {}
+                }
         else:
-            # thematic settings (normal)
-            ts = ThematicSettings.objects.get(pk=ts_template_id)
+            service = service_name
+            data_source = ds_name
 
-            # live polling template id
-            lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
-
-            # getting service and data source from live polling settings
-            try:
-                service = LivePollingSettings.objects.get(pk=lp_template_id).service
-                data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
-            except Exception as e:
-                logger.info("No service and data source corresponding to this live polling setting template.")
-
-            # result dictionary which needs to be returned as an output of api
-            result = {
-                "success": 0,
-                "message": "Failed to fetch live polling data.",
-                "data": {}
-            }
-
-            # bs device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services')
-            bs_device, site_name = None, None
+        # bs device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services')
+        bs_device, site_name = None, None
 
         result['data']['devices'] = dict()
 
@@ -813,8 +843,9 @@ class BulkFetchLPDataApi(View):
                 }
 
                 # live polling setting
-                if service_type != "ping":
-                    lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
+                if not all([service_name, ds_name]):
+                    if service_type != "ping":
+                        lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
 
                 # current machine devices
                 current_devices_list = []
@@ -931,12 +962,16 @@ class BulkFetchLPDataApi(View):
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
 
-                    if service_type == 'ping':
+                    if not all([service_name, ds_name]):
+                        if service_type == 'ping':
+                            lp_data['service_list'] = [str(service)]
+                            lp_data['ds'] = [str(data_source)]
+                        else:
+                            lp_data['service_list'] = [str(lp_template.service.name)]
+                            lp_data['ds'] = [str(lp_template.data_source.name)]
+                    else:
                         lp_data['service_list'] = [str(service)]
                         lp_data['ds'] = [str(data_source)]
-                    else:
-                        lp_data['service_list'] = [str(lp_template.service.name)]
-                        lp_data['ds'] = [str(lp_template.data_source.name)]
 
                     site = SiteInstance.objects.get(pk=int(site_id))
                     site_list.append({
@@ -997,75 +1032,76 @@ class BulkFetchLPDataApi(View):
 
                         result['data']['devices'][device_name]['value'] = device_value
 
-                        # default icon
-                        icon = ""
-                        try:
-                            icon = DeviceType.objects.get(pk=device_obj.device_type).device_icon
-                        except Exception as e:
-                            logger.info("No icon for this device. Exception: ", e.message)
+                        if not all([service_name, ds_name]):
+                            # default icon
+                            icon = ""
+                            try:
+                                icon = DeviceType.objects.get(pk=device_obj.device_type).device_icon
+                            except Exception as e:
+                                logger.info("No icon for this device. Exception: ", e.message)
 
-                        icon = str(icon)
+                            icon = str(icon)
 
-                        # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
-                        th_icon_settings = ""
-                        try:
-                            th_icon_settings = ts.icon_settings
-                        except Exception as e:
-                            logger.info("No icon settings for thematic settings. Exception: ", e.message)
+                            # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
+                            th_icon_settings = ""
+                            try:
+                                th_icon_settings = ts.icon_settings
+                            except Exception as e:
+                                logger.info("No icon settings for thematic settings. Exception: ", e.message)
 
-                        # fetch thematic ranges as per service type selected i.e. 'ping' or 'normal'
-                        th_ranges = ""
-                        try:
-                            if service_type == "ping":
-                                th_ranges = ts
-                            else:
-                                th_ranges = ts.threshold_template
-                        except Exception as e:
-                            logger.info("No ranges for thematic settings. Exception: ", e.message)
+                            # fetch thematic ranges as per service type selected i.e. 'ping' or 'normal'
+                            th_ranges = ""
+                            try:
+                                if service_type == "ping":
+                                    th_ranges = ts
+                                else:
+                                    th_ranges = ts.threshold_template
+                            except Exception as e:
+                                logger.info("No ranges for thematic settings. Exception: ", e.message)
 
-                        # fetch service type if 'ts_type' is "normal"
-                        svc_type = ""
-                        try:
-                            if service_type != "ping":
-                                svc_type = ts.threshold_template.service_type
-                        except Exception as e:
-                            logger.info("Service Type not exist. Exception: ", e.message)
+                            # fetch service type if 'ts_type' is "normal"
+                            svc_type = ""
+                            try:
+                                if service_type != "ping":
+                                    svc_type = ts.threshold_template.service_type
+                            except Exception as e:
+                                logger.info("Service Type not exist. Exception: ", e.message)
 
-                        # comparing threshold values to get icon
-                        try:
-                            if len(device_value) and (device_value != "NA"):
+                            # comparing threshold values to get icon
+                            try:
+                                if len(device_value) and (device_value != "NA"):
 
-                                value = device_value
+                                    value = device_value
 
-                                # get appropriate icon
-                                if service_type == "normal":
-                                    if svc_type == "INT":
+                                    # get appropriate icon
+                                    if service_type == "normal":
+                                        if svc_type == "INT":
+                                            icon = self.get_icon_for_numeric_service(th_ranges,
+                                                                                     th_icon_settings,
+                                                                                     value,
+                                                                                     icon)
+                                        elif svc_type == "STR":
+                                            icon = self.get_icon_for_string_service(th_ranges,
+                                                                                    th_icon_settings,
+                                                                                    value,
+                                                                                    icon)
+                                        else:
+                                            pass
+                                    elif service_type == "ping":
                                         icon = self.get_icon_for_numeric_service(th_ranges,
                                                                                  th_icon_settings,
                                                                                  value,
                                                                                  icon)
-                                    elif svc_type == "STR":
-                                        icon = self.get_icon_for_string_service(th_ranges,
-                                                                                th_icon_settings,
-                                                                                value,
-                                                                                icon)
                                     else:
                                         pass
-                                elif service_type == "ping":
-                                    icon = self.get_icon_for_numeric_service(th_ranges,
-                                                                             th_icon_settings,
-                                                                             value,
-                                                                             icon)
                                 else:
-                                    pass
-                            else:
-                                icon = "media/" + str(icon) if "uploaded" in str(
-                                    icon) else "static/img/" + str(icon)
+                                    icon = "media/" + str(icon) if "uploaded" in str(
+                                        icon) else "static/img/" + str(icon)
 
-                        except Exception as e:
-                            logger.info("Icon not exist. Exception: ", e.message)
+                            except Exception as e:
+                                logger.info("Icon not exist. Exception: ", e.message)
 
-                        result['data']['devices'][device_name]['icon'] = icon
+                            result['data']['devices'][device_name]['icon'] = icon
 
                         # if response_dict doesn't have key 'success'
                         if device_value and (device_value != "NA"):

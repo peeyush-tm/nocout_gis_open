@@ -13,7 +13,9 @@ var green_color = "#468847",
     down_status_array = ['down'],
     orange_status_array = ['warning'],
     left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;background:#FFF;",
-    right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;";
+    right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;",
+    val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
+    time_icon = '<i class="fa fa-clock-o"></i>';
 
 
 /**
@@ -66,21 +68,51 @@ function populateDeviceStatus_nocout(domElement,info) {
  * @param info {Object}, It contains the latest status object
  */
 function populateServiceStatus_nocout(domElement,info) {
+    
+    // Clear status block when we are on utilization or availablility tabs
+    if(domElement.indexOf('availability') > -1 || domElement.indexOf('utilization_top') > -1) {
 
-    if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
+        $("#"+domElement).html("");
+
+    } else {
+
         var last_updated = info.last_updated ? info.last_updated : "N/A",
             perf = info.perf ? info.perf : "N/A",
             inner_status_html = '';
-        
+
+        // Create Table for service polled value & live polling --- START
         inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
         inner_status_html += '<tr>';
-        inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-        inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
+        
+        inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
+                            '+val_icon+' '+perf+'<br/>\
+                            '+time_icon+' '+last_updated+'</td>';
+        
+        inner_status_html += '<td style="width:5%;vertical-align: middle;">\
+                             <button class="btn btn-primary btn-xs perf_poll_now"\
+                             title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
+                             data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
+                             class="fa fa-hand-o-right"></i></button>\
+                             </td>';
+
+        inner_status_html += '<td style="width:47.5%;">\
+                             <b>Poll Output :</b> \
+                             <span id="perf_live_poll_chart"></span><br/>\
+                             <ul id="perf_live_poll_vals" class="list-unstyled"></ul>\
+                             </td>';
+        
+
         inner_status_html += '</tr>';
-        inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+        inner_status_html += '</table>';
+        // Create Table for service polled value & live polling --- END
+
+        // Create hidden input field to store polling values --- START
+        inner_status_html += '<input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">';
+        // Create hidden input field to store polling values --- END
+
+        inner_status_html += '<div class="clearfix"></div><div class="divide-20"></div>';
+
         $("#"+domElement).html(inner_status_html);
-    } else {
-        $("#"+domElement).html("");
     }
 }
 
