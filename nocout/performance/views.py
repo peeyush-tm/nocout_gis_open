@@ -1837,6 +1837,9 @@ class Get_Service_Type_Performance_Data(View):
         # test once for technology
         try:
             technology = DeviceTechnology.objects.get(id=device.device_technology)
+        except:
+            return HttpResponse(json.dumps(self.result), content_type="application/json")
+        try:
             # test now for sector
             if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
                 dr_devices = device.sector_configured_on.filter()
@@ -1847,7 +1850,7 @@ class Get_Service_Type_Performance_Data(View):
                 parameters['devices'].append(dr_device.device_name)
                 # parameters updated with all devices
         except:
-            return HttpResponse(json.dumps(self.result), content_type="application/json")
+            pass
 
         if service_data_source_type in ['pl', 'rta']:
 
