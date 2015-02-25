@@ -120,7 +120,7 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
     backhaul = BackhaulCapacityStatus.objects.filter(
             Q(organization__in=organizations),
             Q(backhaul__bh_configured_on__device_technology=technology.ID),
-            Q(severity__in=['warning', 'critical', 'ok']),
+            Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
         ).values('id', 'backhaul__name', 'backhaul__bh_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
 
     logger.info("CELERYBEAT: Timely: ", dashboard_name, "Backhaul count: ", backhaul.count())

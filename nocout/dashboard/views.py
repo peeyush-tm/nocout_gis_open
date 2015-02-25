@@ -854,9 +854,9 @@ class BackhaulCapacityMixin(object):
                 for key,value in dashboard_status_dict.items():           
                     # Changing key in to warning and critical
                     if key == 'Needs_Augmentation':
-                        change_key = 'warning'
+                        change_key = 'Warning'
                     elif key == 'Stop_Provisioning':
-                        change_key = 'critical'             
+                        change_key = 'Critical'             
                     else:
                         change_key = key
                     # create a list of "Key: value".    
