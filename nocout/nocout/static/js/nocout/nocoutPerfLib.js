@@ -739,21 +739,35 @@ function nocoutPerfLib() {
                 if(result.success == 1) {
 
                     var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
-
+                    
                     if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
                         
                         if(typeof fetched_val == 'object') {
                             fetched_val = fetched_val[0];
                         }
 
-                        var previous_val = $("#"+container_dom_id+" #perf_output_table tr td:nth-child(2) span").html(),
-                            shown_val = "",
-                            current_val_html = "";
+                        var shown_val = "",
+                            current_val_html = "",
+                            dateObj = new Date(),
+                            current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds();
+
+
+                        if($("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals li").length > 0) {
+                            $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals").prepend("<hr style='margin:2px;'/>")
+                        }
+
+                        // Create Fetched val html with time stamp
+                        current_val_html += '<li style="display:none;">'+val_icon+' '+fetched_val;
+                        current_val_html += '<br/>'+time_icon+' '+current_time+'</li>';
+                        
+                        // Prepend new fetched val & time li
+                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals").prepend(current_val_html);
+                        // Animation effect to added li
+                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals li").slideDown('slow');
 
 
                         /******************** Create Sparkline Chart for numeric values ********************/
-                        if(Number(fetched_val) != NaN) {
-
+                        if(!isNaN(Number(fetched_val))) {
                             var existing_val = $("#"+container_dom_id+" #"+hidden_input_dom_id).val(),
                                 new_values_list = "";
 
@@ -762,7 +776,7 @@ function nocoutPerfLib() {
                             } else {
                                 new_values_list = fetched_val;
                             }
-
+                            
                             // Update the value in input field
                             $("#"+container_dom_id+" #"+hidden_input_dom_id).val(new_values_list);
 

@@ -13,7 +13,9 @@ var green_color = "#468847",
     down_status_array = ['down'],
     orange_status_array = ['warning'],
     left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;background:#FFF;",
-    right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;";
+    right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;",
+    val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
+    time_icon = '<i class="fa fa-clock-o"></i>';
 
 
 /**
@@ -76,15 +78,19 @@ function populateServiceStatus_nocout(domElement,info) {
         inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
         inner_status_html += '<tr>';
         
-        inner_status_html += '<td style="width:47.5%;"><b>Service Output</b> : (<i class="fa fa-arrow-circle-o-right"></i> \
-                             '+perf+', <i class="fa fa-clock-o"></i> '+last_updated+')</td>';
+        inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
+                            '+val_icon+' '+perf+'<br/>\
+                            '+time_icon+' '+last_updated+'</td>';
         
-        inner_status_html += '<td style="width:47.5%;"><b>Poll Output</b> : <span id="perf_live_poll_chart"></span></td>';
-        
-        inner_status_html += '<td style="width:5%;"><button id="perf_poll_now" class="btn btn-primary btn-xs"\
+        inner_status_html += '<td style="width:5%;vertical-align: middle;"><button id="perf_poll_now" class="btn btn-primary btn-xs"\
                              title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
                              data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
                              class="fa fa-hand-o-right"></i></button></td>';
+
+        inner_status_html += '<td style="width:47.5%;"><b>Poll Output :</b> \
+                             <span id="perf_live_poll_chart"></span><br/>\
+                             <ul id="perf_live_poll_vals" class="list-unstyled"></ul></td>';
+        
 
         inner_status_html += '</tr>';
         inner_status_html += '</table>';
