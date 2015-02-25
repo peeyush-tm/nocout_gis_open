@@ -324,24 +324,13 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
                         {'id': sector_id3, ...},
                         ]
     '''
-    # list containing no duplicate name of machine.
-    unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
-
-    machine_dict = {}
-    #Creating the machine as a key and device_name as a list for that machine.
-    for machine in unique_device_machine_list:
-        machine_dict[machine] = [device.device_name for device in user_devices if device.machine.name == machine]
 
     status_results = []
-    # initialize the queryset as empty.
-    topology_status_results = model.objects.none()
-    # Creating a single queryset using all machnies.
-    for machine, machine_device_list in machine_dict.items():
-        topology_status_results |= model.objects.filter(
-                                        device_name__in=machine_device_list,
-                                        # service_name__icontains = service_name,
-                                        data_source = 'topology',
-                                    ).using(machine)
+
+    topology_status_results = model.objects.filter(
+                                    sector_id__in=user_sector.values_list('sector_id', flat=True),
+                                    data_source='topology',
+                                )
 
     # Count the total ss connected to the sector.
     for sector in user_sector:
