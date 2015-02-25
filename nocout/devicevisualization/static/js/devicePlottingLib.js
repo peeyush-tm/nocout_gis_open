@@ -938,12 +938,6 @@ function devicePlottingClass_gmap() {
 			/*Create a instance of google map info window*/
 			infowindow = new google.maps.InfoWindow({zIndex:800});
 
-			// BS icon obj
-            bs_marker_icon_obj = gmap_self.getMarkerImageBySize(
-				base_url+"/static/img/icons/bs.png",
-				"base_station"
-			);
-
 			// 1*1 icon obj
 			hiddenIconImageObj = new google.maps.MarkerImage(
 				base_url+'/static/img/icons/1x1.png',
@@ -1898,39 +1892,242 @@ function devicePlottingClass_gmap() {
 		// for(var i=0;i<bs_ss_devices.length;i++) {
 		for(var i=bs_ss_devices.length;i--;) {
 
+			// BS marker url
+			var bs_marker_url = bs_ss_devices[i].data.markerUrl ? bs_ss_devices[i].data.markerUrl : "static/img/icons/bs.png";
+
+			// BS marker icon obj
+            var bs_marker_icon_obj = gmap_self.getMarkerImageBySize(
+				base_url+"/"+bs_marker_url,
+				"base_station"
+			);
+
+			var bs_maintenance_status = bs_ss_devices[i].data.maintenance_status ? $.trim(bs_ss_devices[i].data.maintenance_status) : "No";
+
 			/*Create BS Marker Object*/
 			var bs_marker_object = {
 				position  	       : 	new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
 				ptLat 		       : 	bs_ss_devices[i].data.lat,
 				ptLon 		       : 	bs_ss_devices[i].data.lon,
-				// map       	       : 	mapInstance,
-				icon 	  	       	 : 	bs_marker_icon_obj,
-				oldIcon 	       	 : 	bs_marker_icon_obj,
-				clusterIcon 	    : 	bs_marker_icon_obj,
+				icon 	  	       : 	bs_marker_icon_obj,
+				oldIcon 	       : 	bs_marker_icon_obj,
+				clusterIcon 	   : 	bs_marker_icon_obj,
 				pointType	       : 	stationType,
-				// dataset 	       : 	bs_ss_devices[i].data.param.base_station,
-				item_index		    : 	0,
-				device_name 	    : 	bs_ss_devices[i].data.device_name,
-				bsInfo 			    : 	bs_ss_devices[i].data.param.base_station,
-				bhInfo 			    : 	bs_ss_devices[i].data.param.backhual,
-				bhInfo_polled 	    :    [],
-				bhSeverity 		    :    "",
-				// bhInfo 			   : 	[],
-				bs_name 		   	 : 	bs_ss_devices[i].name,
-				bs_alias 		    :    bs_ss_devices[i].alias,
-				name 		 	   	 : 	bs_ss_devices[i].name,
-				filter_data 	    : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
+				item_index		   : 	0,
+				maintenance_status : 	bs_maintenance_status,
+				device_name 	   : 	bs_ss_devices[i].data.device_name,
+				bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
+				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
+				bhInfo_polled 	   :    [],
+				bhSeverity 		   :    "",
+				bs_name 		   : 	bs_ss_devices[i].name,
+				bs_alias 		   :    bs_ss_devices[i].alias,
+				name 		 	   : 	bs_ss_devices[i].name,
+				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
 				antenna_height     : 	bs_ss_devices[i].data.antenna_height,
-				zIndex 			    : 	250,
-				optimized 		    : 	false,
-				markerType 		    : 	'BS',
+				zIndex 			   : 	250,
+				optimized 		   : 	false,
+				markerType 		   : 	'BS',
 				isMarkerSpiderfied : 	false,
-				isActive 		    : 	1,
-				windowTitle 	    : 	"Base Station"
+				isActive 		   : 	1,
+				windowTitle 	   : 	"Base Station"
 			};
+
 
 			/*Create BS Marker*/
 			var bs_marker = new google.maps.Marker(bs_marker_object);
+
+			// Right click event on sector marker
+			google.maps.event.addListener(bs_marker, 'rightclick', function(e) {
+				
+				// Close infowindow if any exists
+				infowindow.close()
+
+				var base_station_id = this.filter_data.bs_id;
+
+				var current_maintenance_status = this.maintenance_status ? this.maintenance_status : "No",
+					maintenance_html_str = '';
+
+				var isChecked = current_maintenance_status == 'Yes' ? "Checked" : "";
+
+				maintenance_html_str += '<div align="center">';
+
+				maintenance_html_str += '<div class="make-switch switch-small">\
+										<input type="checkbox" value="'+base_station_id+'" id="yes_no" '+isChecked+'>\
+										</div>';
+				maintenance_html_str += '<div class="clearfix"></div>';
+				maintenance_html_str += '<div class="divide-10"></div><div>';
+				maintenance_html_str += '<input type="hidden" name="previous_maintenance_val" id="previous_maintenance_val" \
+										value="'+current_maintenance_status+'"/>';
+				maintenance_html_str += '<button class="btn btn-xs btn-info" id="change_maintenance_status_btn" \
+										title="Update Maintenance Status">Update</button>';
+				maintenance_html_str += '</div>';
+				maintenance_html_str += '<div class="clearfix"></div>';
+				maintenance_html_str += '</div>';
+
+
+				infowindow.setContent(maintenance_html_str);
+				
+				/*Set The Position for InfoWindow*/
+				infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+
+				/*Shift the window little up*/
+				infowindow.setOptions({pixelOffset: new google.maps.Size(-10, -25)});
+
+				infowindow.open(mapInstance);
+
+				$("#yes_no").bootstrapSwitch({
+					"size" : "small",
+					"animate" : true,
+					"onText" : "Yes",
+					"offText" : "No",
+					"onColor" : "danger",
+					"offColor" : "primary",
+					"disabled" : false
+				});
+
+
+				$("#deviceMap").undelegate('click').delegate('#change_maintenance_status_btn','click',function(e) {
+
+					var updated_maintenance_status = "No",
+						current_bs_id = $("#yes_no").val(),
+						previous_status = $.trim($("#previous_maintenance_val").val());
+
+					if($("#yes_no")[0].checked) {
+						updated_maintenance_status = "Yes"
+					}
+
+					// If updated value & previous value are not same then proceed
+					if(previous_status != updated_maintenance_status) {
+						// If we have status & bs id
+						if(String(current_bs_id).length > 0 && String(updated_maintenance_status).length > 0) {
+
+							// Disable update button
+							$(this).addClass("disabled");
+							$(this).html("Updating...");
+
+							// Disable bootstrap switch
+							$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
+
+							var get_param_str = "?bs_id="+current_bs_id+"&maintenance_status="+updated_maintenance_status;
+
+							// Make AJAX Call
+							$.ajax({
+								url : base_url+"/network_maps/update_maintenance_status/"+get_param_str,
+								type : "GET",
+								success : function(response) {
+									var result = "";
+					                // Type check for response
+					                if(typeof response == 'string') {
+					                    result = JSON.parse(response);
+					                } else {
+					                    result = response;
+					                }
+
+					                if(result.success == 1) {
+					                	var new_status = result.data.maintenance_status ? $.trim(result.data.maintenance_status) : false,
+					                		bs_id = result.data.bs_id ? $.trim(result.data.bs_id) : false,
+					                		new_icon_url = result.data.icon ? $.trim(result.data.icon) : false;
+
+				                		// If API returns BS ID, Updated Status & Marker URL the proceed
+				                		if(new_status && bs_id && new_icon_url) {
+				                			// Fetch BS data object from loki object
+				                			var bs_loki_obj = all_devices_loki_db.where(function(obj) {
+								                    return obj.originalId == bs_id
+								                }),
+								                bs_data_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : false,
+								                bs_name = bs_data_object ? bs_data_object.name : false
+								                bs_marker = bs_name ? allMarkersObject_gmap['bs_'+bs_name] : false;
+
+							                if(bs_data_object) {
+							                	bs_data_object['data']['markerUrl'] = new_icon_url;
+							                	bs_data_object['data']['maintenance_status'] = new_status;
+							                	
+							                	// Update Loki Object
+	        									all_devices_loki_db.update(bs_data_object);
+
+	        									if(bs_marker) {
+	        										var new_bs_icon_obj = gmap_self.getMarkerImageBySize(
+														base_url+"/"+new_icon_url,
+														"base_station"
+													);
+	        										bs_marker.setOptions({
+	        											"icon" : new_bs_icon_obj,
+														"oldIcon" : new_bs_icon_obj,
+														"clusterIcon" : new_bs_icon_obj,
+														"maintenance_status" : new_status
+	        										});
+	        									}
+							                }
+				                		} else {
+
+				                			// Revert bootstrap switch status
+											$("#yes_no").bootstrapSwitch('toggleState',true);
+
+											$.gritter.add({
+								        		// (string | mandatory) the heading of the notification
+								                title: 'Base Station Maintenance Status',
+								                // (string | mandatory) the text inside the notification
+								                text: "Maintenance status not updated. Please try again later.",
+								                // (bool | optional) if you want it to fade out on its own or just sit there
+								                sticky: false,
+								                // Time in ms after which the gritter will dissappear.
+								                time : 1000
+								            });
+				                		}
+
+				                	} else {
+
+				                		// Revert bootstrap switch status
+										$("#yes_no").bootstrapSwitch('toggleState',true);
+
+				                		$.gritter.add({
+							        		// (string | mandatory) the heading of the notification
+							                title: 'Base Station Maintenance Status',
+							                // (string | mandatory) the text inside the notification
+							                text: result.message,
+							                // (bool | optional) if you want it to fade out on its own or just sit there
+							                sticky: false,
+							                // Time in ms after which the gritter will dissappear.
+							                time : 1000
+							            });
+				                	}
+								},
+								error : function(err) {
+
+									$.gritter.add({
+						        		// (string | mandatory) the heading of the notification
+						                title: 'Base Station Maintenance Status',
+						                // (string | mandatory) the text inside the notification
+						                text: err.statusText,
+						                // (bool | optional) if you want it to fade out on its own or just sit there
+						                sticky: false,
+						                // Time in ms after which the gritter will dissappear.
+						                time : 1000
+						            });
+								},
+								complete : function(e) {
+
+									// Enable bootstrap switch
+									$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
+
+									if(e.status != 200) {
+										// Revert bootstrap switch status
+										$("#yes_no").bootstrapSwitch('toggleState',true);
+									}
+
+									// Enable Update Button
+									$("#change_maintenance_status_btn").removeClass("disabled");
+									$("#change_maintenance_status_btn").html("Update")
+
+								}
+							});
+						}
+					} else {
+						bootbox.alert("Please Change The Status");
+					}
+					return false;
+				});
+			});
 
 			/*Add BS Marker To Cluster*/
 			masterClusterInstance.addMarker(bs_marker);
@@ -1979,12 +2176,13 @@ function devicePlottingClass_gmap() {
 					sect_height = gisPerformanceClass.getKeyValue(sector_infoWindow_content,"antenna_height",true,sector_item_index);
 
 				var startEndObj = {};
+
 				// if(sector_tech != "ptp" && sector_tech != "p2p") {
 				if(ptp_tech_list.indexOf(sector_tech)  == -1) {
 					// if(zoom_level > 9) {
 						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 						gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-						
+
 							var halfPt = Math.floor(pointsArray.length / (+2)),
 								polyStartLat = "",
 								polyStartLon = "";
@@ -2002,6 +2200,7 @@ function devicePlottingClass_gmap() {
 								polyStartLat = pointsArray[halfPt].lat;
 								polyStartLon = pointsArray[halfPt].lon;
 							}
+
 							/*Plot sector on map with the retrived points*/
 							gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width,sect_height);
 
@@ -2969,10 +3168,12 @@ function devicePlottingClass_gmap() {
 		/*Condition for the orientation of sector antina*/
 		if(orientation && $.trim(orientation.toLowerCase()) == "horizontal") {
 			var len = Math.floor(PGpoints.length / 3);
-
+			// First Value of Array
 			triangle.push(PGpoints[0]);
+			// Middle Value of Array
 			triangle.push(PGpoints[(len * 2) - 1]);
-			triangle.push(PGpoints[(len * 3) - 1]);
+			// Last Value of Array
+			triangle.push(PGpoints[PGpoints.length - 1]);
 			/*Assign the triangle object array to sectorDataArray for plotting the polygon*/
 			sectorDataArray = triangle;
 		} else {
