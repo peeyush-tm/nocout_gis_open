@@ -362,18 +362,18 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
         'schedule': crontab(minute=0, hour=0)
     },
-    'weekly-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
-        'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
-    },
-    'monthly-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_monthly_main_dashboard',
-        'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
-    },
-    'yearly-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
-        'schedule': crontab(minute=0, hour=0, day_of_month=1)
-    },
+    # 'weekly-main-dashboard': {
+    #     'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
+    #     'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
+    # },
+    # 'monthly-main-dashboard': {
+    #     'task': 'dashboard.tasks.calculate_monthly_main_dashboard',
+    #     'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
+    # },
+    # 'yearly-main-dashboard': {
+    #     'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
+    #     'schedule': crontab(minute=0, hour=0, day_of_month=1)
+    # },
     # For caching the Data for Last down time : per 5 minutes
     'device_last_down_time_CanopyPM100AP': {
         'task': 'performance.tasks.device_last_down_time_task',
