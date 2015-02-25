@@ -31,5 +31,7 @@ urlpatterns = patterns('',
                            cache_page(60 * 3)(views.GISPerfData.as_view()),
                            name='gis_perf_data'),
 
-                       url(r'^l2_report/(?P<ckt_id>\w+)/$', views.getL2Report, name='get_l2_report')
+                       url(r'^l2_report/(?P<ckt_id>\w+)/$', views.getL2Report, name='get_l2_report'),
+                       url(r'^update_maintenance_status/$', views.UpdateMaintenanceStatus.as_view(),
+                           name='update_maintenance_status'),
                )
