@@ -10,6 +10,7 @@
 var perf_that = "",
     allDevices = "",
     device_status = "",
+    perf_page_live_polling_call = "",
     device_services = "",
     tabs_click_counter = -1,
     single_service_data = "",
@@ -721,9 +722,7 @@ function nocoutPerfLib() {
         device_name
     ) {
 
-        var live_poll_url = "";
-
-        $.ajax({
+        perf_page_live_polling_call = $.ajax({
             url : base_url+"/"+"device/lp_bulk_data/?service_name="+service_name+"&devices="+JSON.stringify(device_name)+"&ds_name="+ds_name,
             type : "GET",
             success : function(response) {
@@ -739,21 +738,29 @@ function nocoutPerfLib() {
                 if(result.success == 1) {
 
                     var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
-
                     if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
                         
                         if(typeof fetched_val == 'object') {
                             fetched_val = fetched_val[0];
                         }
 
-                        var previous_val = $("#"+container_dom_id+" #perf_output_table tr td:nth-child(2) span").html(),
-                            shown_val = "",
-                            current_val_html = "";
+                        var shown_val = "",
+                            current_val_html = "",
+                            dateObj = new Date(),
+                            current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds();
+
+                        // Create Fetched val html with time stamp
+                        current_val_html += '<li style="display:none;">'+val_icon+' '+fetched_val;
+                        current_val_html += '<br/>'+time_icon+' '+current_time+'</li>';
+                        
+                        // Prepend new fetched val & time li
+                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals").html(current_val_html);
+                        // Animation effect to added li
+                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals li").slideDown('slow');
 
 
                         /******************** Create Sparkline Chart for numeric values ********************/
-                        if(Number(fetched_val) != NaN) {
-
+                        if(!isNaN(Number(fetched_val))) {
                             var existing_val = $("#"+container_dom_id+" #"+hidden_input_dom_id).val(),
                                 new_values_list = "";
 
@@ -762,7 +769,7 @@ function nocoutPerfLib() {
                             } else {
                                 new_values_list = fetched_val;
                             }
-
+                            
                             // Update the value in input field
                             $("#"+container_dom_id+" #"+hidden_input_dom_id).val(new_values_list);
 
@@ -790,19 +797,20 @@ function nocoutPerfLib() {
                 }
             },
             error : function(err) {
-                // console.log(err.statusText);
-                $.gritter.add({
-                    // (string | mandatory) the heading of the notification
-                    title: 'Live Polling',
-                    // (string | mandatory) the text inside the notification
-                    text: err.statusText,
-                    // (bool | optional) if you want it to fade out on its own or just sit there
-                    sticky: false
-                });
+                if($.trim(err.statusText) != 'abort') {    
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Live Polling',
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
+                }
             },
             complete : function() {
                 // Enable the "Poll Now" button
-                $("#perf_poll_now").button("complete");
+                $("#"+container_dom_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("complete");
             }
         });
     };
@@ -812,10 +820,9 @@ function nocoutPerfLib() {
      * @method resetLivePolling
      */
     this.resetLivePolling = function(container_dom_id) {
-
         // Enable the "Poll Now" button
-        if($("#"+container_dom_id+" #perf_poll_now").length > 0) {
-            $("#"+container_dom_id+" #perf_poll_now").button("complete");
+        if($("#"+container_dom_id+" .perf_poll_now").length > 0) {
+            $("#"+container_dom_id+" .perf_poll_now").button("complete");
         }
 
         // Reset the input values
@@ -826,6 +833,15 @@ function nocoutPerfLib() {
         // Reset the Chart container
         if($("#"+container_dom_id+" #perf_live_poll_chart").length > 0) {
             $("#"+container_dom_id+" #perf_live_poll_chart").html("");
+        }
+
+        try {
+            if(perf_page_live_polling_call) {
+                perf_page_live_polling_call.abort();
+                perf_page_live_polling_call = "";
+            }
+        } catch(e) {
+            // console.error(e);
         }
     };
 }
