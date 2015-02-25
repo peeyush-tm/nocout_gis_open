@@ -23,6 +23,8 @@ import datetime
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
+from nocout.settings import CAPACITY_SPECIFIC_TIME
+
 #to be moved to settings.py
 tech_model_service = {
     'wimax': {
@@ -835,7 +837,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 # and end_time
                 # for a limited cycle between last day's 23:55:00 and 00:05:00
 
-                if start_time < time_now < end_time:
+                if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
                     avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
                                                          service='wimax_pmp1_dl_util_bgp',
                                                          data_source='pmp1_dl_util',
@@ -948,7 +950,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 #all we need to do now
                 #is gather the average and peak values
 
-                if start_time < time_now < end_time:
+                if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
 
                     avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
                                                          service='wimax_pmp2_dl_util_bgp',
@@ -1129,7 +1131,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
             if not severity and not age:
                 continue
 
-            if start_time < time_now < end_time:
+            if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
                 avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
                                                      service='cambium_dl_utilization',
                                                      data_source='dl_utilization',

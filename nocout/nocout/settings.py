@@ -667,6 +667,9 @@ DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/nocout/tmp/app-messages'  # change this to a proper location
 
+# ### Special Calculation Mechanism for Capacity Management
+CAPACITY_SPECIFIC_TIME = 0
+
 # Import the local_settings.py file to override global settings
 
 try:
