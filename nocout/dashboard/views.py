@@ -776,7 +776,8 @@ class SectorCapacityMixin(object):
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology=technology)
         # Get Device of User's Sector.
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         # Get Device name list of User's Sector.
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
@@ -935,7 +936,8 @@ class SalesOpportunityMixin(object):
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
         # Get Device of User's Sector.
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         # Get Device Name List of User's Sector.
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
@@ -1267,7 +1269,7 @@ def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
-                "name": trend_items[i],
+                "name": trend_items[i].title(),
                 "valuetext": trend_items[i],
                 "color" : color_dict,
                 "data" : list()
@@ -1419,7 +1421,8 @@ class MonthlyTrendSectorMixin(object):
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         user_sector = organization_sectors(organization, technology=technology)  #Sector for that user corresponding to organization and technology
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
@@ -1482,7 +1485,8 @@ class MonthlyTrendSalesMixin(object):
         
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
         
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
@@ -1622,7 +1626,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
             data_dict = {
                     "type": "column",
                     "valuesuffix": " ",
-                    "name": trend_items[i]['title'],
+                    "name": trend_items[i]['title'].title(),
                     "valuetext": " ",
                     "color" : count_color,
                     "data" : list(),

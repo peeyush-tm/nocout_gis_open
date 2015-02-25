@@ -29,94 +29,118 @@ logger = logging.getLogger(__name__)
 
 @task()
 def calculate_timely_main_dashboard():
-    '''
+    '''  
     Task to calculate the main dashboard status in every 5 minutes using celerybeat.
     '''
     processed_for = timezone.now()
     logger.debug('CELERYBEAT: Timely: starts at {0} '.format(processed_for))
 
     user_organizations = Organization.objects.all()
-
-    calculate_timely_sector_capacity(user_organizations,
-                                     technology=PMP,
+    g_jobs = list()
+    g_jobs.append(calculate_timely_sector_capacity.s(user_organizations,
+                                     technology='PMP',
                                      model=DashboardSeverityStatusTimely,
-                                     processed_for=processed_for)
-    calculate_timely_sector_capacity(user_organizations,
-                                     technology=WiMAX,
+                                     processed_for=processed_for))
+
+    g_jobs.append(calculate_timely_sector_capacity.s(user_organizations,
+                                     technology='WiMAX',
                                      model=DashboardSeverityStatusTimely,
-                                     processed_for=processed_for)
+                                     processed_for=processed_for))
 
-    calculate_timely_backhaul_capacity(user_organizations,
-                                       technology=PMP,
+    g_jobs.append(calculate_timely_backhaul_capacity.s(user_organizations,
+                                       technology='PMP',
                                        model=DashboardSeverityStatusTimely,
-                                       processed_for=processed_for)
-    calculate_timely_backhaul_capacity(user_organizations,
-                                       technology=WiMAX,
-                                       model=DashboardSeverityStatusTimely,
-                                       processed_for=processed_for)
-    calculate_timely_backhaul_capacity(user_organizations,
-                                       technology=TCLPOP,
-                                       model=DashboardSeverityStatusTimely,
-                                       processed_for=processed_for)
+                                       processed_for=processed_for))
 
-    calculate_timely_sales_opportunity(user_organizations,
-                                       technology=PMP,
+    g_jobs.append(calculate_timely_backhaul_capacity.s(user_organizations,
+                                       technology='WiMAX',
+                                       model=DashboardSeverityStatusTimely,
+                                       processed_for=processed_for))
+    
+    g_jobs.append(calculate_timely_backhaul_capacity.s(user_organizations,
+                                       technology='TCLPOP',
+                                       model=DashboardSeverityStatusTimely,
+                                       processed_for=processed_for))
+
+    g_jobs.append(calculate_timely_sales_opportunity.s(user_organizations,
+                                       technology='PMP',
                                        model=DashboardRangeStatusTimely,
-                                       processed_for=processed_for)
-    calculate_timely_sales_opportunity(user_organizations,
-                                       technology=WiMAX,
-                                       model=DashboardRangeStatusTimely,
-                                       processed_for=processed_for)
+                                       processed_for=processed_for))
 
-    calculate_timely_latency(user_organizations,
+    g_jobs.append(calculate_timely_sales_opportunity.s(user_organizations,
+                                       technology='WiMAX',
+                                       model=DashboardRangeStatusTimely,
+                                       processed_for=processed_for))
+
+    g_jobs.append(calculate_timely_latency.s(user_organizations,
                              dashboard_name='latency-pmp',
                              processed_for=processed_for,
-                             technology=PMP)
-    calculate_timely_latency(user_organizations,
+                             technology='PMP'))
+
+    g_jobs.append(calculate_timely_latency.s(user_organizations,
                              dashboard_name='latency-wimax',
                              processed_for=processed_for,
-                             technology=WiMAX)
-    calculate_timely_latency(user_organizations,
-                             dashboard_name='latency-network',
-                             processed_for=processed_for)
+                             technology='WiMAX'))
 
-    calculate_timely_packet_drop(user_organizations,
+    g_jobs.append(calculate_timely_latency.s(user_organizations,
+                             dashboard_name='latency-network',
+                             processed_for=processed_for))
+
+    g_jobs.append(calculate_timely_packet_drop.s(user_organizations,
                                  dashboard_name='packetloss-pmp',
                                  processed_for=processed_for,
-                                 technology=PMP)
-    calculate_timely_packet_drop(user_organizations,
+                                 technology='PMP'))
+
+    g_jobs.append(calculate_timely_packet_drop.s(user_organizations,
                                  dashboard_name='packetloss-wimax',
                                  processed_for=processed_for,
-                                 technology=WiMAX)
-    calculate_timely_packet_drop(user_organizations,
-                                 dashboard_name='packetloss-network',
-                                 processed_for=processed_for)
+                                 technology='WiMAX'))
 
-    calculate_timely_down_status(user_organizations,
+    g_jobs.append(calculate_timely_packet_drop.s(user_organizations,
+                                 dashboard_name='packetloss-network',
+                                 processed_for=processed_for))
+
+    g_jobs.append(calculate_timely_down_status.s(user_organizations,
                                  dashboard_name='down-pmp',
                                  processed_for=processed_for,
-                                 technology=PMP)
-    calculate_timely_down_status(user_organizations,
+                                 technology='PMP'))
+
+    g_jobs.append(calculate_timely_down_status.s(user_organizations,
                                  dashboard_name='down-wimax',
                                  processed_for=processed_for,
-                                 technology=WiMAX)
-    calculate_timely_down_status(user_organizations,
-                                 dashboard_name='down-network',
-                                 processed_for=processed_for)
+                                 technology='WiMAX'))
 
-    calculate_timely_temperature(user_organizations,
+    g_jobs.append(calculate_timely_down_status.s(user_organizations,
+                                 dashboard_name='down-network',
+                                 processed_for=processed_for))
+
+    g_jobs.append(calculate_timely_temperature.s(user_organizations,
                                  processed_for=processed_for,
-                                 chart_type='IDU')
-    calculate_timely_temperature(user_organizations,
+                                 chart_type='IDU'))
+
+    g_jobs.append(calculate_timely_temperature.s(user_organizations,
                                  processed_for=processed_for,
-                                 chart_type='ACB')
-    calculate_timely_temperature(user_organizations,
+                                 chart_type='ACB'))
+
+    g_jobs.append(calculate_timely_temperature.s(user_organizations,
                                  processed_for=processed_for,
-                                 chart_type='FAN')
+                                 chart_type='FAN'))
+
+
+    job = group(g_jobs)
+
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    # return ret
     logger.debug('CELERYBEAT: Timely: ends at {0} '.format(timezone.now()))
 
-    return True
+    return ret
 
+@task()
 def calculate_timely_sector_capacity(organizations, technology, model, processed_for):
     '''
     :param technology: Named Tuple
@@ -124,11 +148,16 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     :param processed_for:
     return
     '''
-    dashboard_name = '%s_sector_capacity' % (technology.NAME.lower())
+    try:
+        sector_technology = eval(technology)
+    except Exception, e:
+        return False
+    
+    dashboard_name = '%s_sector_capacity' % (sector_technology.NAME.lower())
 
     sectors = SectorCapacityStatus.objects.filter(
             Q(organization__in=organizations),
-            Q(sector__sector_configured_on__device_technology=technology.ID),
+            Q(sector__sector_configured_on__device_technology=sector_technology.ID),
             Q(severity__in=['warning', 'critical', 'ok']),
         ).values('id', 'sector__name', 'sector__sector_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
 
@@ -159,7 +188,9 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     logger.debug('calculate_timely_sector_capacity : data list = {0}'.format(data_list))
     # call the method to bulk create the onjects.
     bulk_update_create.delay(data_list, action='create', model=model)
+    return True
 
+@task()
 def calculate_timely_backhaul_capacity(organizations, technology, model, processed_for):
     '''
     :param technology: Named Tuple
@@ -167,11 +198,16 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
     :param processed_for:
     return
     '''
-    dashboard_name = '%s_backhaul_capacity' % (technology.NAME.lower())
+    try:
+        backhaul_technology = eval(technology)
+    except Exception, e:
+        return False
+
+    dashboard_name = '%s_backhaul_capacity' % (backhaul_technology.NAME.lower())
 
     backhaul = BackhaulCapacityStatus.objects.filter(
             Q(organization__in=organizations),
-            Q(backhaul__bh_configured_on__device_technology=technology.ID),
+            Q(backhaul__bh_configured_on__device_technology=backhaul_technology.ID),
             Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
         ).values('id', 'backhaul__name', 'backhaul__bh_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
 
@@ -201,7 +237,9 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
     logger.debug('calculate_timely_backhaul_capacity : data list = {0}'.format(data_list))
     # call the method to bulk create the onjects.
     bulk_update_create.delay(data_list, action='create', model=model)
+    return True
 
+@task()
 def calculate_timely_sales_opportunity(organizations, technology, model, processed_for):
     '''
     :param technology: Named Tuple
@@ -209,11 +247,15 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
     :param processed_for: datetime (example: timezone.now())
     return
     '''
+    try:
+        sales_technology = eval(technology)
+    except Exception, e:
+        return False
     # convert the data source in format topology_pmp/topology_wimax
-    data_source = '%s-%s' % ('topology', technology.NAME.lower())
-    dashboard_name = '%s_sales_opportunity' % (technology.NAME.lower())
+    data_source = '%s-%s' % ('topology', sales_technology.NAME.lower())
+    dashboard_name = '%s_sales_opportunity' % (sales_technology.NAME.lower())
 
-    technology_id = technology.ID if technology else None
+    technology_id = sales_technology.ID if sales_technology else None
     try:
         dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id,
                                                          page_name='main_dashboard',
@@ -253,8 +295,9 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
     logger.debug("calculate_timely_sales_opportunity : data list {0}".format(data_list))
     # call method to bulk create the model object.
     bulk_update_create.delay(data_list, action='create', model=model)
+    return True
 
-
+@task()
 def calculate_timely_latency(organizations, dashboard_name, processed_for ,technology=None):
     '''
     Method to calculate the latency status of devices.
@@ -267,8 +310,16 @@ def calculate_timely_latency(organizations, dashboard_name, processed_for ,techn
 
     return:
     '''
+    try:
+        if technology:
+            latency_technology = eval(technology)
+        else:
+            latency_technology = None    
+    except Exception, e:
+        return False
+
     processed_for = processed_for
-    technology_id = technology.ID if technology else None
+    technology_id = latency_technology.ID if latency_technology else None
     # get the device of user's organization [and sub organization]
     sector_devices = organization_network_devices(organizations, technology_id)
     # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -289,8 +340,9 @@ def calculate_timely_latency(organizations, dashboard_name, processed_for ,techn
 
     logger.debug('calculate_timely_latency : data list {0}'.format(status_dict_list))
     calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
+    return True
 
-
+@task()
 def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, technology=None):
     '''
     Method to calculate the packed drop status of devices.
@@ -303,8 +355,15 @@ def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, t
 
     return:
     '''
+    try:
+        if technology:
+            packetdrop_technology = eval(technology)
+        else:
+            packetdrop_technology = None
+    except Exception, e:
+        return False
     processed_for = processed_for
-    technology_id = technology.ID if technology else None
+    technology_id = packetdrop_technology.ID if packetdrop_technology else None
     # get the device of user's organization [and sub organization]
     sector_devices = organization_network_devices(organizations, technology_id)
     # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -324,8 +383,9 @@ def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, t
 
     logger.debug('calculate_timely_packet_drop : data list = {0}'.format(status_dict_list))
     calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
+    return True
 
-
+@task()
 def calculate_timely_down_status(organizations, dashboard_name, processed_for, technology=None):
     '''
     Method to calculate the down status of devices.
@@ -338,8 +398,15 @@ def calculate_timely_down_status(organizations, dashboard_name, processed_for, t
 
     return:
     '''
+    try:
+        if technology:
+            down_technology = eval(technology)
+        else:
+            down_technology = None
+    except Exception, e:
+        return False
     processed_for = processed_for
-    technology_id = technology.ID if technology else None
+    technology_id = down_technology.ID if down_technology else None
     # get the device of user's organization [and sub organization]
     sector_devices = organization_network_devices(organizations, technology_id)
     # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -359,8 +426,9 @@ def calculate_timely_down_status(organizations, dashboard_name, processed_for, t
 
     logger.debug('calculate_timely_down_status : data list = {0}'.format(status_dict_list))
     calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
+    return True
 
-
+@task()
 def calculate_timely_temperature(organizations, processed_for, chart_type='IDU'):
     '''
     Method to calculate the temperature status of devices.
@@ -403,8 +471,8 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
             ).using(machine_name).values()
 
     logger.debug('calculate_timely_temperature : data list = {0}'.format(status_dict_list))
-    calculate_timely_network_alert('temperature', processed_for, WiMAX, status_dict_list, status_dashboard_name)
-
+    calculate_timely_network_alert('temperature', processed_for, 'WiMAX', status_dict_list, status_dashboard_name)
+    return True
 
 def calculate_timely_network_alert(dashboard_name, processed_for, technology=None, status_dict_list=[], status_dashboard_name=None):
     '''
@@ -419,7 +487,14 @@ def calculate_timely_network_alert(dashboard_name, processed_for, technology=Non
 
     return:
     '''
-    technology_id = technology.ID if technology else None
+    try:
+        if technology:
+            network_technology = eval(technology)
+        else:
+            network_technology = None    
+    except Exception, e:
+        raise e
+    technology_id = network_technology.ID if network_technology else None
     try:
         dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id,
                 page_name='main_dashboard', name=dashboard_name, is_bh=False)
@@ -468,7 +543,7 @@ def calculate_timely_network_alert(dashboard_name, processed_for, technology=Non
 
     #logger.info("CELERYBEAT: Timely: ")
     bulk_update_create.delay(data_list, action='create', model=DashboardRangeStatusTimely)
-
+    return True
 
 def prepare_machines(device_list):
     """
@@ -746,7 +821,7 @@ def calculate_daily_range_status(now):
     last_day_hourly_range_status.delete()
 
 
-@task()
+# @task()
 def calculate_weekly_main_dashboard():
     '''
     Task to calculate the weekly status of main dashboard.
@@ -869,7 +944,7 @@ def calculate_weekly_range_status(day, first_day):
         bulk_update_create.delay(weekly_range_status_list)
 
 
-@task()
+# @task()
 def calculate_monthly_main_dashboard():
     """
     Task to calculate the monthly status of main dashboard.
@@ -992,7 +1067,7 @@ def calculate_monthly_severity_status(day, first_day):
         bulk_update_create.delay(monthly_severity_status_list)
 
 
-@task()
+# @task()
 def calculate_yearly_main_dashboard():
     """
     Task to calculate the yearly status of main dashboard.
