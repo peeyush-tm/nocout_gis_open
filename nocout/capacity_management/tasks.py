@@ -23,6 +23,8 @@ import datetime
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
+from nocout.settings import CAPACITY_SPECIFIC_TIME
+
 #to be moved to settings.py
 tech_model_service = {
     'wimax': {
@@ -330,8 +332,10 @@ def get_time():
 
     :return: start time and end time
     """
-    end_date = format(datetime.datetime.now(), 'U')
-    start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
+    tdy = datetime.datetime.today()
+    end_time = datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0)
+    end_date = format(end_time, 'U')
+    start_date = format(end_time + datetime.timedelta(days=-1), 'U')
 
     return float(start_date), float(end_date)
 
@@ -420,6 +424,27 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
     else:
         return 0, 0
 
+
+def calc_util_last_day():
+    """
+
+    :return: True. False
+    """
+
+    tdy = datetime.datetime.today()
+    # this is the end time today's 00:15:00
+    end_time = datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 5)
+    # this is the start time yesterday's 23:50:00
+    start_time = format(end_time + datetime.timedelta(minutes=-10), 'U')
+
+    # this is the time when we would be considering to get last 24 hours performance
+    time_now = float(format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U'))
+    start_time = float(start_time)
+    end_time = float(format(end_time, 'U'))
+
+    if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
+        return True
+    return False
 
 def update_backhaul_status(basestations, kpi, val):
     """
@@ -573,75 +598,76 @@ def update_backhaul_status(basestations, kpi, val):
             severity, age = get_higher_severity(severity_s)
 
             # now that we have severity and age all we need to do now is gather the average and peak values
-            avg_in_val = get_average_sector_util(device_object=bh_device,
-                                                 service=val_dl_service,
-                                                 data_source=data_source,
-                                                 getit='val'
-            )
+            if calc_util_last_day():
+                avg_in_val = get_average_sector_util(device_object=bh_device,
+                                                     service=val_dl_service,
+                                                     data_source=data_source,
+                                                     getit='val'
+                )
 
-            avg_out_val = get_average_sector_util(device_object=bh_device,
-                                                 service=val_ul_service,
-                                                 data_source=data_source,
-                                                 getit='val'
-            )
+                avg_out_val = get_average_sector_util(device_object=bh_device,
+                                                     service=val_ul_service,
+                                                     data_source=data_source,
+                                                     getit='val'
+                )
 
-            avg_in_per = get_average_sector_util(device_object=bh_device,
-                                                 service=kpi_dl_service,
-                                                 data_source=data_source,
-                                                 getit='per'
-            )
+                avg_in_per = get_average_sector_util(device_object=bh_device,
+                                                     service=kpi_dl_service,
+                                                     data_source=data_source,
+                                                     getit='per'
+                )
 
-            avg_out_per = get_average_sector_util(device_object=bh_device,
-                                                 service=kpi_ul_service,
-                                                 data_source=data_source,
-                                                 getit='per'
-            )
+                avg_out_per = get_average_sector_util(device_object=bh_device,
+                                                     service=kpi_ul_service,
+                                                     data_source=data_source,
+                                                     getit='per'
+                )
 
-            peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=bh_device,
-                                                service=val_dl_service,
-                                                data_source=data_source,
-                                                getit='val'
-            )
+                peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                    service=val_dl_service,
+                                                    data_source=data_source,
+                                                    getit='val'
+                )
 
-            peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=bh_device,
-                                                service=val_ul_service,
-                                                data_source=data_source,
-                                                getit='val'
-            )
+                peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                    service=val_ul_service,
+                                                    data_source=data_source,
+                                                    getit='val'
+                )
 
-            peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=bh_device,
-                                                service=kpi_dl_service,
-                                                data_source=data_source,
-                                                getit='per'
-            )
+                peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                    service=kpi_dl_service,
+                                                    data_source=data_source,
+                                                    getit='per'
+                )
 
-            peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=bh_device,
-                                                service=kpi_ul_service,
-                                                data_source=data_source,
-                                                getit='per'
-            )
+                peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=bh_device,
+                                                    service=kpi_ul_service,
+                                                    data_source=data_source,
+                                                    getit='per'
+                )
 
             if bhs:
 
-                bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else None
-                bhs.current_in_per = float(current_in_per) if current_in_per else None
-                bhs.current_in_val = float(current_in_val) if current_in_val else None
-                bhs.avg_in_per = float(avg_in_per) if avg_in_per else None
-                bhs.avg_in_val = float(avg_in_val) if avg_in_val else None
-                bhs.peak_in_per = float(peak_in_per) if peak_in_per else None
-                bhs.peak_in_val = float(peak_in_val) if peak_in_val else None
-                bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else None
-                bhs.current_out_per = float(current_out_per) if current_out_per else None
-                bhs.current_out_val = float(current_out_val) if current_out_val else None
-                bhs.avg_out_per = float(avg_out_per) if avg_out_per else None
-                bhs.avg_out_val = float(avg_out_val) if avg_out_val else None
-                bhs.peak_out_per = float(peak_out_per) if peak_out_per else None
-                bhs.peak_out_val = float(peak_out_val) if peak_out_val else None
-                bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else None
-                bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else None
+                bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
+                bhs.current_in_per = float(current_in_per) if current_in_per else 0
+                bhs.current_in_val = float(current_in_val) if current_in_val else 0
+                bhs.avg_in_per = float(avg_in_per) if avg_in_per else 0
+                bhs.avg_in_val = float(avg_in_val) if avg_in_val else 0
+                bhs.peak_in_per = float(peak_in_per) if peak_in_per else 0
+                bhs.peak_in_val = float(peak_in_val) if peak_in_val else 0
+                bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                bhs.current_out_per = float(current_out_per) if current_out_per else 0
+                bhs.current_out_val = float(current_out_val) if current_out_val else 0
+                bhs.avg_out_per = float(avg_out_per) if avg_out_per else 0
+                bhs.avg_out_val = float(avg_out_val) if avg_out_val else 0
+                bhs.peak_out_per = float(peak_out_per) if peak_out_per else 0
+                bhs.peak_out_val = float(peak_out_val) if peak_out_val else 0
+                bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+                bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
-                bhs.age = float(age) if age else None
+                bhs.age = float(age) if age else 0
                 bulk_update_bhs.append(bhs)
 
             else:
@@ -653,25 +679,25 @@ def update_backhaul_status(basestations, kpi, val):
                         basestation=bs,
                         bh_port_name=bs.bh_port_name,
 
-                        backhaul_capacity=float(backhaul_capacity) if backhaul_capacity else None,
-                        current_in_per=float(current_in_per) if current_in_per else None,
-                        current_in_val=float(current_in_val) if current_in_val else None,
-                        avg_in_per=float(avg_in_per) if avg_in_per else None,
-                        avg_in_val=float(avg_in_val) if avg_in_val else None,
-                        peak_in_per=float(peak_in_per) if peak_in_per else None,
-                        peak_in_val=float(peak_in_val) if peak_in_val else None,
-                        peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else None,
-                        current_out_per=float(current_out_per) if current_out_per else None,
-                        current_out_val=float(current_out_val) if current_out_val else None,
-                        avg_out_per=float(avg_out_per) if avg_out_per else None,
-                        avg_out_val=float(avg_out_val) if avg_out_val else None,
-                        peak_out_per=float(peak_out_per) if peak_out_per else None,
-                        peak_out_val=float(peak_out_val) if peak_out_val else None,
-                        peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else None,
-                        sys_timestamp=float(sys_timestamp) if sys_timestamp else None,
+                        backhaul_capacity=float(backhaul_capacity) if backhaul_capacity else 0,
+                        current_in_per=float(current_in_per) if current_in_per else 0,
+                        current_in_val=float(current_in_val) if current_in_val else 0,
+                        avg_in_per=float(avg_in_per) if avg_in_per else 0,
+                        avg_in_val=float(avg_in_val) if avg_in_val else 0,
+                        peak_in_per=float(peak_in_per) if peak_in_per else 0,
+                        peak_in_val=float(peak_in_val) if peak_in_val else 0,
+                        peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
+                        current_out_per=float(current_out_per) if current_out_per else 0,
+                        current_out_val=float(current_out_val) if current_out_val else 0,
+                        avg_out_per=float(avg_out_per) if avg_out_per else 0,
+                        avg_out_val=float(avg_out_val) if avg_out_val else 0,
+                        peak_out_per=float(peak_out_per) if peak_out_per else 0,
+                        peak_out_val=float(peak_out_val) if peak_out_val else 0,
+                        peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
+                        sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
                         organization=bs.backhaul.organization if bs.backhaul.organization else 1,
                         severity=severity if severity else 'unknown',
-                        age=float(age) if age else None
+                        age=float(age) if age else 0
                     )
                 )
 
@@ -703,6 +729,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
     update the sector status per sector id wise
     :return:
     """
+
+
     bulk_update_scs = []
     bulk_create_scs = []
     sector_capacity = None
@@ -762,8 +790,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 if sector_capacity_s and len(sector_capacity_s):
                     sector_capacity = sector_capacity_s[0]
                 else:
-                    logger.exception(sector.sector_id)
-                    logger.exception("No Fucking CBW. Not Fucking Possible")
+                    logger.exception("No CBW for : {0}".format(sector.sector_id))
                     continue
 
                 #current in/out values
@@ -815,53 +842,60 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 #now that we have severity and age
                 #all we need to do now
                 #is gather the average and peak values
-                avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp1_dl_util_bgp',
-                                                     data_source='pmp1_dl_util',
-                                                     getit='val'
-                )
 
-                avg_out_val = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp1_ul_util_bgp',
-                                                     data_source='pmp1_ul_util',
-                                                     getit='val'
-                )
+                # check for the time_noe
+                # time now would be between start_time
+                # and end_time
+                # for a limited cycle between last day's 23:55:00 and 00:05:00
 
-                avg_in_per = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp1_dl_util_kpi',
-                                                     data_source='pmp1_dl_util_kpi',
-                                                     getit='per'
-                )
+                if calc_util_last_day():
+                    avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp1_dl_util_bgp',
+                                                         data_source='pmp1_dl_util',
+                                                         getit='val'
+                    )
 
-                avg_out_per = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp1_ul_util_kpi',
-                                                     data_source='pmp1_ul_util_kpi',
-                                                     getit='per'
-                )
+                    avg_out_val = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp1_ul_util_bgp',
+                                                         data_source='pmp1_ul_util',
+                                                         getit='val'
+                    )
 
-                peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp1_dl_util_bgp',
-                                                    data_source='pmp1_dl_util',
-                                                    getit='val'
-                )
+                    avg_in_per = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp1_dl_util_kpi',
+                                                         data_source='pmp1_dl_util_kpi',
+                                                         getit='per'
+                    )
 
-                peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp1_ul_util_bgp',
-                                                    data_source='pmp1_ul_util',
-                                                    getit='val'
-                )
+                    avg_out_per = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp1_ul_util_kpi',
+                                                         data_source='pmp1_ul_util_kpi',
+                                                         getit='per'
+                    )
 
-                peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp1_dl_util_kpi',
-                                                    data_source='pmp1_dl_util_kpi',
-                                                    getit='per'
-                )
+                    peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp1_dl_util_bgp',
+                                                        data_source='pmp1_dl_util',
+                                                        getit='val'
+                    )
 
-                peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp1_ul_util_kpi',
-                                                    data_source='pmp1_ul_util_kpi',
-                                                    getit='per'
-                )
+                    peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp1_ul_util_bgp',
+                                                        data_source='pmp1_ul_util',
+                                                        getit='val'
+                    )
+
+                    peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp1_dl_util_kpi',
+                                                        data_source='pmp1_dl_util_kpi',
+                                                        getit='per'
+                    )
+
+                    peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp1_ul_util_kpi',
+                                                        data_source='pmp1_ul_util_kpi',
+                                                        getit='per'
+                    )
 
 
             elif 'pmp2' in sector.sector_configured_on_port.name.lower():
@@ -875,8 +909,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     sector_capacity = sector_capacity_s[0]
                 else:
                     #we dont want to store any data till we get a CBW
-                    logger.exception(sector.sector_id)
-                    logger.exception("No Fucking CBW. Not Fucking Possible")
+                    logger.exception("No CBW for : {0}".format(sector.sector_id))
                     continue
                 #current in/out values
                 current_in_val_s = val.filter(
@@ -927,53 +960,55 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 #now that we have severity and age
                 #all we need to do now
                 #is gather the average and peak values
-                avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp2_dl_util_bgp',
-                                                     data_source='pmp2_dl_util',
-                                                     getit='val'
-                )
 
-                avg_out_val = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp2_ul_util_bgp',
-                                                     data_source='pmp2_ul_util',
-                                                     getit='val'
-                )
+                if calc_util_last_day():
+                    avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp2_dl_util_bgp',
+                                                         data_source='pmp2_dl_util',
+                                                         getit='val'
+                    )
 
-                avg_in_per = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp2_dl_util_kpi',
-                                                     data_source='pmp2_dl_util_kpi',
-                                                     getit='per'
-                )
+                    avg_out_val = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp2_ul_util_bgp',
+                                                         data_source='pmp2_ul_util',
+                                                         getit='val'
+                    )
 
-                avg_out_per = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                     service='wimax_pmp2_ul_util_kpi',
-                                                     data_source='pmp2_ul_util_kpi',
-                                                     getit='per'
-                )
+                    avg_in_per = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp2_dl_util_kpi',
+                                                         data_source='pmp2_dl_util_kpi',
+                                                         getit='per'
+                    )
 
-                peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp2_dl_util_bgp',
-                                                    data_source='pmp2_dl_util',
-                                                    getit='val'
-                )
+                    avg_out_per = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                         service='wimax_pmp2_ul_util_kpi',
+                                                         data_source='pmp2_ul_util_kpi',
+                                                         getit='per'
+                    )
 
-                peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp2_ul_util_bgp',
-                                                    data_source='pmp2_ul_util',
-                                                    getit='val'
-                )
+                    peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp2_dl_util_bgp',
+                                                        data_source='pmp2_dl_util',
+                                                        getit='val'
+                    )
 
-                peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp2_dl_util_kpi',
-                                                    data_source='pmp2_dl_util_kpi',
-                                                    getit='per'
-                )
+                    peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp2_ul_util_bgp',
+                                                        data_source='pmp2_ul_util',
+                                                        getit='val'
+                    )
 
-                peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                    service='wimax_pmp2_ul_util_kpi',
-                                                    data_source='pmp2_ul_util_kpi',
-                                                    getit='per'
-                )
+                    peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp2_dl_util_kpi',
+                                                        data_source='pmp2_dl_util_kpi',
+                                                        getit='per'
+                    )
+
+                    peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                        service='wimax_pmp2_ul_util_kpi',
+                                                        data_source='pmp2_ul_util_kpi',
+                                                        getit='per'
+                    )
             else:
                 #we dont give a f*** if we dont get a valid port
                 logger.exception(sector.sector_id)
@@ -984,25 +1019,25 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 #update the scs
                 # scs.sector = sector
                 # scs.sector_sector_id = sector.sector_id
-                scs.sector_capacity = float(sector_capacity)
-                scs.current_in_per = float(current_in_per)
-                scs.current_in_val = float(current_in_val)
-                scs.avg_in_per = float(avg_in_per)
-                scs.avg_in_val = float(avg_in_val)
-                scs.peak_in_per = float(peak_in_per)
-                scs.peak_in_val = float(peak_in_val)
-                scs.peak_in_timestamp = float(peak_in_timestamp)
-                scs.current_out_per = float(current_out_per)
-                scs.current_out_val = float(current_out_val)
-                scs.avg_out_per = float(avg_out_per)
-                scs.avg_out_val = float(avg_out_val)
-                scs.peak_out_per = float(peak_out_per)
-                scs.peak_out_val = float(peak_out_val)
-                scs.peak_out_timestamp = float(peak_out_timestamp)
-                scs.sys_timestamp = float(sys_timestamp)
-                scs.organization = sector.organization
-                scs.severity = severity
-                scs.age = float(age)
+                scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
+                scs.current_in_per = float(current_in_per) if current_in_per else 0
+                scs.current_in_val = float(current_in_val) if current_in_val else 0
+                scs.avg_in_per = float(avg_in_per) if avg_in_per else 0
+                scs.avg_in_val = float(avg_in_val) if avg_in_val else 0
+                scs.peak_in_per = float(peak_in_per) if peak_in_per else 0
+                scs.peak_in_val = float(peak_in_val) if peak_in_val else 0
+                scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                scs.current_out_per = float(current_out_per) if current_out_per else 0
+                scs.current_out_val = float(current_out_val) if current_in_val else 0
+                scs.avg_out_per = float(avg_out_per) if avg_out_per else 0
+                scs.avg_out_val = float(avg_out_val) if avg_out_val else 0
+                scs.peak_out_per = float(peak_out_per) if peak_out_per else 0
+                scs.peak_out_val = float(peak_out_val) if peak_out_val else 0
+                scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+                scs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
+                scs.organization = sector.organization if sector.organization else 1
+                scs.severity = severity if severity else 'unknown'
+                scs.age = float(age) if age else 0
                 # scs.save()
                 bulk_update_scs.append(scs)
 
@@ -1012,30 +1047,30 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     (
                         sector=sector,
                         sector_sector_id=sector.sector_id,
-                        sector_capacity=float(sector_capacity),
+                        sector_capacity=float(sector_capacity) if sector_capacity else 0,
 
-                        current_in_per=float(current_in_per),
-                        current_in_val=float(current_in_val),
+                        current_in_per=float(current_in_per) if current_in_per else 0,
+                        current_in_val=float(current_in_val) if current_in_val else 0,
 
-                        avg_in_per=float(avg_in_per),
-                        avg_in_val=float(avg_in_val),
-                        peak_in_per=float(peak_in_per),
-                        peak_in_val=float(peak_in_val),
-                        peak_in_timestamp=float(peak_in_timestamp),
+                        avg_in_per=float(avg_in_per) if avg_in_per else 0,
+                        avg_in_val=float(avg_in_val) if avg_in_val else 0,
+                        peak_in_per=float(peak_in_per) if peak_in_per else 0,
+                        peak_in_val=float(peak_in_val) if peak_in_val else 0,
+                        peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
 
-                        current_out_per=float(current_out_per),
-                        current_out_val=float(current_out_val),
+                        current_out_per=float(current_out_per) if current_out_per else 0,
+                        current_out_val=float(current_out_val) if current_out_val else 0,
 
-                        avg_out_per=float(avg_out_per),
-                        avg_out_val=float(avg_out_val),
-                        peak_out_per=float(peak_out_per),
-                        peak_out_val=float(peak_out_val),
-                        peak_out_timestamp=float(peak_out_timestamp),
+                        avg_out_per=float(avg_out_per) if avg_out_per else 0,
+                        avg_out_val=float(avg_out_val) if avg_out_val else 0,
+                        peak_out_per=float(peak_out_per) if peak_out_per else 0,
+                        peak_out_val=float(peak_out_val) if peak_out_val else 0,
+                        peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
 
-                        sys_timestamp=float(sys_timestamp),
-                        organization=sector.organization,
-                        severity=severity,
-                        age=float(age)
+                        sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
+                        organization=sector.organization if sector.organization else 1,
+                        severity=severity if severity else 'unknown',
+                        age=float(age) if age else 0
                     )
                 )
 
@@ -1106,76 +1141,77 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
             if not severity and not age:
                 continue
 
-            avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                 service='cambium_dl_utilization',
-                                                 data_source='dl_utilization',
-                                                 getit='val'
-            )
+            if calc_util_last_day():
+                avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                     service='cambium_dl_utilization',
+                                                     data_source='dl_utilization',
+                                                     getit='val'
+                )
 
-            avg_out_val = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                 service='cambium_ul_utilization',
-                                                 data_source='ul_utilization',
-                                                 getit='val'
-            )
+                avg_out_val = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                     service='cambium_ul_utilization',
+                                                     data_source='ul_utilization',
+                                                     getit='val'
+                )
 
-            avg_in_per = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                 service='cambium_dl_util_kpi',
-                                                 data_source='cam_dl_util_kpi',
-                                                 getit='per'
-            )
+                avg_in_per = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                     service='cambium_dl_util_kpi',
+                                                     data_source='cam_dl_util_kpi',
+                                                     getit='per'
+                )
 
-            avg_out_per = get_average_sector_util(device_object=sector.sector_configured_on,
-                                                 service='cambium_ul_util_kpi',
-                                                 data_source='cam_ul_util_kpi',
-                                                 getit='per'
-            )
+                avg_out_per = get_average_sector_util(device_object=sector.sector_configured_on,
+                                                     service='cambium_ul_util_kpi',
+                                                     data_source='cam_ul_util_kpi',
+                                                     getit='per'
+                )
 
-            peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                service='cambium_dl_utilization',
-                                                data_source='dl_utilization',
-                                                getit='val'
-            )
+                peak_in_val, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                    service='cambium_dl_utilization',
+                                                    data_source='dl_utilization',
+                                                    getit='val'
+                )
 
-            peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                service='cambium_ul_utilization',
-                                                data_source='ul_utilization',
-                                                getit='val'
-            )
+                peak_out_val, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                    service='cambium_ul_utilization',
+                                                    data_source='ul_utilization',
+                                                    getit='val'
+                )
 
-            peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                service='cambium_dl_util_kpi',
-                                                data_source='cam_dl_util_kpi',
-                                                getit='per'
-            )
+                peak_in_per, peak_in_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                    service='cambium_dl_util_kpi',
+                                                    data_source='cam_dl_util_kpi',
+                                                    getit='per'
+                )
 
-            peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
-                                                service='cambium_ul_util_kpi',
-                                                data_source='cam_ul_util_kpi',
-                                                getit='per'
-            )
+                peak_out_per, peak_out_timestamp = get_peak_sector_util(device_object=sector.sector_configured_on,
+                                                    service='cambium_ul_util_kpi',
+                                                    data_source='cam_ul_util_kpi',
+                                                    getit='per'
+                )
             if scs:
                 #update the scs
                 # scs.sector = sector
                 # scs.sector_sector_id = sector.sector_id
-                scs.sector_capacity = float(sector_capacity)
-                scs.current_in_per = float(current_in_per)
-                scs.current_in_val = float(current_in_val)
-                scs.avg_in_per = float(avg_in_per)
-                scs.avg_in_val = float(avg_in_val)
-                scs.peak_in_per = float(peak_in_per)
-                scs.peak_in_val = float(peak_in_val)
-                scs.peak_in_timestamp = float(peak_in_timestamp)
-                scs.current_out_per = float(current_out_per)
-                scs.current_out_val = float(current_out_val)
-                scs.avg_out_per = float(avg_out_per)
-                scs.avg_out_val = float(avg_out_val)
-                scs.peak_out_per = float(peak_out_per)
-                scs.peak_out_val = float(peak_out_val)
-                scs.peak_out_timestamp = float(peak_out_timestamp)
-                scs.sys_timestamp = float(sys_timestamp)
-                scs.organization = sector.organization
-                scs.severity = severity
-                scs.age = float(age)
+                scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
+                scs.current_in_per = float(current_in_per) if current_in_per else 0
+                scs.current_in_val = float(current_in_val) if current_in_val else 0
+                scs.avg_in_per = float(avg_in_per) if avg_in_per else 0
+                scs.avg_in_val = float(avg_in_val) if avg_in_val else 0
+                scs.peak_in_per = float(peak_in_per) if peak_in_per else 0
+                scs.peak_in_val = float(peak_in_val) if peak_in_val else 0
+                scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                scs.current_out_per = float(current_out_per) if current_out_per else 0
+                scs.current_out_val = float(current_out_val) if current_in_val else 0
+                scs.avg_out_per = float(avg_out_per) if avg_out_per else 0
+                scs.avg_out_val = float(avg_out_val) if avg_out_val else 0
+                scs.peak_out_per = float(peak_out_per) if peak_out_per else 0
+                scs.peak_out_val = float(peak_out_val) if peak_out_val else 0
+                scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+                scs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
+                scs.organization = sector.organization if sector.organization else 1
+                scs.severity = severity if severity else 'unknown'
+                scs.age = float(age) if age else 0
                 # scs.save()
                 bulk_update_scs.append(scs)
 
@@ -1185,30 +1221,30 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     (
                         sector=sector,
                         sector_sector_id=sector.sector_id,
-                        sector_capacity=float(sector_capacity),
+                        sector_capacity=float(sector_capacity) if sector_capacity else 0,
 
-                        current_in_per=float(current_in_per),
-                        current_in_val=float(current_in_val),
+                        current_in_per=float(current_in_per) if current_in_per else 0,
+                        current_in_val=float(current_in_val) if current_in_val else 0,
 
-                        avg_in_per=float(avg_in_per),
-                        avg_in_val=float(avg_in_val),
-                        peak_in_per=float(peak_in_per),
-                        peak_in_val=float(peak_in_val),
-                        peak_in_timestamp=float(peak_in_timestamp),
+                        avg_in_per=float(avg_in_per) if avg_in_per else 0,
+                        avg_in_val=float(avg_in_val) if avg_in_val else 0,
+                        peak_in_per=float(peak_in_per) if peak_in_per else 0,
+                        peak_in_val=float(peak_in_val) if peak_in_val else 0,
+                        peak_in_timestamp=float(peak_in_timestamp) if peak_in_timestamp else 0,
 
-                        current_out_per=float(current_out_per),
-                        current_out_val=float(current_out_val),
+                        current_out_per=float(current_out_per) if current_out_per else 0,
+                        current_out_val=float(current_out_val) if current_out_val else 0,
 
-                        avg_out_per=float(avg_out_per),
-                        avg_out_val=float(avg_out_val),
-                        peak_out_per=float(peak_out_per),
-                        peak_out_val=float(peak_out_val),
-                        peak_out_timestamp=float(peak_out_timestamp),
+                        avg_out_per=float(avg_out_per) if avg_out_per else 0,
+                        avg_out_val=float(avg_out_val) if avg_out_val else 0,
+                        peak_out_per=float(peak_out_per) if peak_out_per else 0,
+                        peak_out_val=float(peak_out_val) if peak_out_val else 0,
+                        peak_out_timestamp=float(peak_out_timestamp) if peak_out_timestamp else 0,
 
-                        sys_timestamp=float(sys_timestamp),
-                        organization=sector.organization,
-                        severity=severity,
-                        age=float(age)
+                        sys_timestamp=float(sys_timestamp) if sys_timestamp else 0,
+                        organization=sector.organization if sector.organization else 1,
+                        severity=severity if severity else 'unknown',
+                        age=float(age) if age else 0
                     )
                 )
 

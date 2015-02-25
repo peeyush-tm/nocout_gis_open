@@ -291,6 +291,7 @@ def organization_sectors(organization, technology=None):
         sector_list = Sector.objects.filter(
                                 sector_id__isnull=False,
                                 sector_configured_on_port__isnull=True,
+                                sector_configured_on__is_added_to_nms=1,
                                 sector_configured_on__device_technology=technology,
                             ).annotate(total_sector=Count('sector_id'))
 
@@ -298,12 +299,14 @@ def organization_sectors(organization, technology=None):
         sector_list = Sector.objects.filter(
                                 sector_id__isnull=False,
                                 sector_configured_on_port__isnull=False,
+                                sector_configured_on__is_added_to_nms=1,
                                 sector_configured_on__device_technology=technology,
                             ).annotate(total_sector=Count('sector_id'))
 
     elif int(technology) == int(P2P.ID):
         sector_list = Sector.objects.filter(
                                 sector_id__isnull=False,
+                                sector_configured_on__is_added_to_nms=1,
                                 sector_configured_on__device_technology=technology,
                             ).annotate(total_sector=Count('sector_id'))
 
@@ -311,6 +314,7 @@ def organization_sectors(organization, technology=None):
         sector_list = Sector.objects.filter(
                                 sector_id__isnull=False,
                                 sector_configured_on__isnull=False,
+                                sector_configured_on__is_added_to_nms=1,
                             ).annotate(total_sector=Count('sector_id'))
 
     if organization:

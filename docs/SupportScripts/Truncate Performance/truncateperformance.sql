@@ -54,4 +54,5 @@ truncate performance_utilizationmonthly;
 truncate performance_utilizationstatus;
 truncate performance_utilizationweekly;
 truncate performance_utilizationyearly;
-truncate performance_wimaxtopology;
+truncate performance_topology;
+truncate performance_spotdashboard;
