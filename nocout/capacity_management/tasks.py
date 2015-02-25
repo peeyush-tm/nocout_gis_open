@@ -330,8 +330,10 @@ def get_time():
 
     :return: start time and end time
     """
-    end_date = format(datetime.datetime.now(), 'U')
-    start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
+    tdy = datetime.datetime.today()
+    end_time = datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0)
+    end_date = format(end_time, 'U')
+    start_date = format(end_time + datetime.timedelta(days=-1), 'U')
 
     return float(start_date), float(end_date)
 
@@ -762,8 +764,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 if sector_capacity_s and len(sector_capacity_s):
                     sector_capacity = sector_capacity_s[0]
                 else:
-                    logger.exception(sector.sector_id)
-                    logger.exception("No Fucking CBW. Not Fucking Possible")
+                    logger.exception("No CBW for : {0}".format(sector.sector_id))
                     continue
 
                 #current in/out values
@@ -875,8 +876,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     sector_capacity = sector_capacity_s[0]
                 else:
                     #we dont want to store any data till we get a CBW
-                    logger.exception(sector.sector_id)
-                    logger.exception("No Fucking CBW. Not Fucking Possible")
+                    logger.exception("No CBW for : {0}".format(sector.sector_id))
                     continue
                 #current in/out values
                 current_in_val_s = val.filter(
