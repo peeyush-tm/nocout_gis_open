@@ -53,7 +53,7 @@ def prepare_raw_result(bs_dict = []):
 class DeviceStatsApi(View):
 
     raw_result = prepare_raw_result(cached_all_gis_inventory(monitored_only=True))
-
+    
     # @time_it()
     def get(self, request):
 
@@ -806,7 +806,7 @@ class BulkFetchLPDataApi(View):
                     service = LivePollingSettings.objects.get(pk=lp_template_id).service
                     data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
                 except Exception as e:
-                    logger.info("No service and data source corresponding to this live polling setting template.")
+                    pass
 
                 # result dictionary which needs to be returned as an output of api
                 result = {
@@ -830,7 +830,7 @@ class BulkFetchLPDataApi(View):
                 machine = Device.objects.get(device_name=device).machine.id
                 machine_list.append(machine)
             except Exception as e:
-                logger.info(e.message)
+                pass
 
         # remove redundant machine id's from 'machine_list'
         machines = set(machine_list)
@@ -857,7 +857,7 @@ class BulkFetchLPDataApi(View):
                         if device.machine.id == machine_id:
                             current_devices_list.append(str(device.device_name))
                     except Exception as e:
-                        logger.info(e.message)
+                        pass
 
                 # get site instances associated with the current devices
                 site_instances_list = []
@@ -883,7 +883,7 @@ class BulkFetchLPDataApi(View):
                         # append device site instance id in 'site_instances_list' list
                         site_instances_list.append(device.site_instance.id)
                     except Exception as e:
-                        logger.info(e.message)
+                        pass
 
                 # remove redundant site instance id's from 'site_instances_list'
                 sites = set(site_instances_list)
@@ -938,7 +938,7 @@ class BulkFetchLPDataApi(View):
                             elif device.site_instance.id == site_id:
                                 devices_in_current_site.append(device.device_name)
                         except Exception as e:
-                            logger.info(e.message)
+                            pass
 
                     # live polling data dictionary (payload for nocout.py api call)
                     # for e.g.
@@ -1016,7 +1016,7 @@ class BulkFetchLPDataApi(View):
                         try:
                             device_obj = Device.objects.get(device_name=device_name)
                         except Exception as e:
-                            logger.info("Device not exist. Exception: ", e.message)
+                            pass
 
                         device_value = "NA"
 
@@ -1038,7 +1038,7 @@ class BulkFetchLPDataApi(View):
                             try:
                                 icon = DeviceType.objects.get(pk=device_obj.device_type).device_icon
                             except Exception as e:
-                                logger.info("No icon for this device. Exception: ", e.message)
+                                pass
 
                             icon = str(icon)
 
@@ -1047,7 +1047,7 @@ class BulkFetchLPDataApi(View):
                             try:
                                 th_icon_settings = ts.icon_settings
                             except Exception as e:
-                                logger.info("No icon settings for thematic settings. Exception: ", e.message)
+                                pass
 
                             # fetch thematic ranges as per service type selected i.e. 'ping' or 'normal'
                             th_ranges = ""
@@ -1057,7 +1057,7 @@ class BulkFetchLPDataApi(View):
                                 else:
                                     th_ranges = ts.threshold_template
                             except Exception as e:
-                                logger.info("No ranges for thematic settings. Exception: ", e.message)
+                                pass
 
                             # fetch service type if 'ts_type' is "normal"
                             svc_type = ""
@@ -1065,7 +1065,7 @@ class BulkFetchLPDataApi(View):
                                 if service_type != "ping":
                                     svc_type = ts.threshold_template.service_type
                             except Exception as e:
-                                logger.info("Service Type not exist. Exception: ", e.message)
+                                pass
 
                             # comparing threshold values to get icon
                             try:
@@ -1099,7 +1099,7 @@ class BulkFetchLPDataApi(View):
                                         icon) else "static/img/" + str(icon)
 
                             except Exception as e:
-                                logger.info("Icon not exist. Exception: ", e.message)
+                                pass
 
                             result['data']['devices'][device_name]['icon'] = icon
 
@@ -1114,7 +1114,6 @@ class BulkFetchLPDataApi(View):
             result['message'] = "Successfully fetched."
         except Exception as e:
             result['message'] = e.message
-            logger.info(e)
 
         return HttpResponse(json.dumps(result))
 
@@ -1146,17 +1145,16 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
-
         # fetch value from list
         if type(value) is list:
             value = value[0]
-        #value = value[0]
+        # value = value[0]
         elif type(value) is str:
             value = value
         else:
             pass
 
-        #just to be safe of % unit in value for PL polling
+        # just to be safe of % unit in value for PL polling
         value = "".join(str(value).split('%'))
 
 
@@ -1174,7 +1172,6 @@ class BulkFetchLPDataApi(View):
                                 image_partial = str(icon_setting[icon_key])
                                 break
                 except Exception as e:
-                    logger.exception(e.message)
                     continue
 
         # image url
@@ -1214,11 +1211,10 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
-
         # fetch value from list
         if type(value) is list:
             value = value[0]
-        #value = value[0]
+        # value = value[0]
         elif type(value) is str:
             value = value
         else:
@@ -1238,7 +1234,6 @@ class BulkFetchLPDataApi(View):
                                 image_partial = str(icon_setting[icon_key])
                                 break
                 except Exception as e:
-                    logger.exception(e.message)
                     continue
 
         # image url
@@ -1271,4 +1266,4 @@ def nocout_live_polling(q, site):
             temp_dict = deepcopy(response_dict)
             q.put(temp_dict)
     except Exception as e:
-        logger.info(e.message)
+        pass
