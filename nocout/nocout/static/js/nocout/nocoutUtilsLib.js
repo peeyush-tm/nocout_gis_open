@@ -70,7 +70,7 @@ function populateDeviceStatus_nocout(domElement,info) {
 function populateServiceStatus_nocout(domElement,info) {
     
     // Clear status block when we are on utilization or availablility tabs
-    if(domElement.indexOf('availability') > -1 || domElement.indexOf('utilization_top') > -1) {
+    if(domElement.indexOf('availability') > -1 || domElement.indexOf('utilization_top') > -1 || domElement.indexOf('topology') > -1) {
 
         $("#"+domElement).html("");
 
