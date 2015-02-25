@@ -515,6 +515,14 @@ function nocoutPerfLib() {
                 }
             },
             error : function(err) {
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Performance - Service Status',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false
+                });
                 callback("error","");
             }
         });
@@ -695,6 +703,15 @@ function nocoutPerfLib() {
                 },
                 error : function(err) {
                     // console.log(err.statusText);
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Performance - Service Data',
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
+
                     hideSpinner();
                 }
             });
