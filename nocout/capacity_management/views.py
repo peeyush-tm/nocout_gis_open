@@ -513,6 +513,9 @@ class BackhaulStatusListing(BaseDatatableView):
 
     columns = [
         'id',
+        'severity',
+        'age',
+        'organization__alias',
         'backhaul__bh_configured_on__ip_address',
         'backhaul__alias',
         'basestation__alias',
@@ -534,10 +537,7 @@ class BackhaulStatusListing(BaseDatatableView):
         'avg_out_val',
         'peak_out_per',
         'peak_out_val',
-        'peak_out_timestamp',
-        'organization__alias',
-        'severity',
-        'age'
+        'peak_out_timestamp'
     ]
 
     order_columns = columns
