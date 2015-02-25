@@ -598,7 +598,7 @@ def update_backhaul_status(basestations, kpi, val):
             severity, age = get_higher_severity(severity_s)
 
             # now that we have severity and age all we need to do now is gather the average and peak values
-            if calc_util_last_day:
+            if calc_util_last_day():
                 avg_in_val = get_average_sector_util(device_object=bh_device,
                                                      service=val_dl_service,
                                                      data_source=data_source,
@@ -848,7 +848,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 # and end_time
                 # for a limited cycle between last day's 23:55:00 and 00:05:00
 
-                if calc_util_last_day:
+                if calc_util_last_day():
                     avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
                                                          service='wimax_pmp1_dl_util_bgp',
                                                          data_source='pmp1_dl_util',
@@ -961,7 +961,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 #all we need to do now
                 #is gather the average and peak values
 
-                if calc_util_last_day:
+                if calc_util_last_day():
                     avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
                                                          service='wimax_pmp2_dl_util_bgp',
                                                          data_source='pmp2_dl_util',
@@ -1141,7 +1141,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
             if not severity and not age:
                 continue
 
-            if calc_util_last_day:
+            if calc_util_last_day():
                 avg_in_val = get_average_sector_util(device_object=sector.sector_configured_on,
                                                      service='cambium_dl_utilization',
                                                      data_source='dl_utilization',
