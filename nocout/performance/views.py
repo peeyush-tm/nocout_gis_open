@@ -1785,54 +1785,90 @@ class Get_Service_Type_Performance_Data(View):
             }
         }
 
-        date_format = "%d-%m-%Y %H:%M:%S"
+        # for wimax devices special case
+        dr_device = None
 
+        # for topology service these would come in handy
+        sector_object = None
+        sector_device = None
+
+        date_format = DATE_TIME_FORMAT
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        # date time settings
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
-        isSet = False
-
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        if not isSet:
+            end_date = float(format(datetime.datetime.now(), 'U'))
+            start_date = float(format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U'))
 
-        if service_data_source_type in ['pl', 'rta']:
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+
+        if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
+            sds_name = service_name.strip() + "_" + service_data_source_type.strip()
+        else:
+            sds_name = service_data_source_type.strip()
+
+        # to check if data source would be displayed as a chart or as a table
+        #
+        show_chart = False
+        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
+            show_chart = False
+        else:
+            show_chart = True
+
+        # check for the formula
+        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['formula']:
+            formula = SERVICE_DATA_SOURCE[sds_name]['formula']
+        else:
+            formula = None
+
+        parameters = {
+            'model': PerformanceService,
+            'start_time': start_date,
+            'end_time': end_date,
+            'devices': [inventory_device_name],
+            'services': [service_name],
+            'sds': [service_data_source_type]
+        }
+
+        # test once for technology
+        try:
             technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
+            # test now for sector
             if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
                 dr_devices = device.sector_configured_on.filter()
+                sector_device = device
                 for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
+                    dr_device = dr_d.dr_configured_on # there can only be a DR device
+                # append dr device here only
+                parameters['devices'].append(dr_device.device_name)
+                # parameters updated with all devices
+        except:
+            return HttpResponse(json.dumps(self.result), content_type="application/json")
+
+        if service_data_source_type in ['pl', 'rta']:
+
+            parameters.update({
+                'model': PerformanceNetwork
+            })
+
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
+
             if dr_device:
-                performance_data = PerformanceNetwork.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
                 result = self.dr_performance_data_result(performance_data=performance_data,
                                                          sector_device=device,
                                                          dr_device=dr_device
                                                          )
             else:
 
-                performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
-
                 result = self.get_performance_data_result(performance_data)
 
         elif service_data_source_type == 'rf':
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
             sector_device = None
             if device.substation_set.exists():
                 try:
@@ -1840,65 +1876,63 @@ class Get_Service_Type_Performance_Data(View):
                     circuit = ss.circuit_set.get()
                     sector_device = circuit.sector.sector_configured_on
                 except Exception as e:
-                    log.exception(e.message)
-            if sector_device:
-                performance_data_ss = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
-                                                                     service_name='ping',
-                                                                     data_source='rta',
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
-
-                performance_data_bs = PerformanceNetwork.objects.filter(device_name=sector_device.device_name,
-                                                                     service_name='ping',
-                                                                     data_source='rta',
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=sector_device.machine.name).order_by('sys_timestamp')
-
-                result = self.rf_performance_data_result(performance_data_bs=performance_data_bs,
-                                                         performance_data_ss=performance_data_ss
-                )
-
+                    return HttpResponse(json.dumps(self.result), content_type="application/json")
             else:
-                performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
-                                                                     service_name='ping',
-                                                                     data_source='rta',
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+                return HttpResponse(json.dumps(self.result), content_type="application/json")
 
+            parameters.update({
+                'model': PerformanceNetwork,
+                'start_time': start_date,
+                'end_time': end_date,
+                'devices': [inventory_device_name],
+                'services': ['ping'],
+                'sds': ['rta']
+            })
+
+            # ss data performance
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+            if sector_device:
+                # for calculating BS data
+                parameters.update({
+                    'devices': [sector_device.device_name]
+                })
+                # bs data performance
+                performance_data_bs = self.get_performance_data(
+                    **parameters
+                ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
+                result = self.rf_performance_data_result(
+                    performance_data_bs=performance_data_bs,
+                    performance_data_ss=performance_data
+                )
+            else:
                 result = self.get_performance_data_result(performance_data)
 
         elif "availability" in service_name or service_data_source_type in ['availability']:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
+
+            parameters.update({
+                'model': NetworkAvailabilityDaily,
+                'start_time': start_date,
+                'end_time': end_date
+            })
+
+            # gather performance data
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
+
             if dr_device:
-                performance_data = NetworkAvailabilityDaily.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
                 result = self.dr_performance_data_result(performance_data=performance_data,
                                                          sector_device=device,
                                                          dr_device=dr_device,
                                                          availability=True
                                                          )
             else:
-                performance_data = NetworkAvailabilityDaily.objects.filter(device_name=inventory_device_name,
-                                                                       service_name=service_name,
-                                                                       data_source=service_data_source_type,
-                                                                       sys_timestamp__gte=start_date,
-                                                                       sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name).order_by('sys_timestamp')
 
                 result = self.get_performance_data_result(performance_data, data_source="availability")
 
@@ -1908,40 +1942,30 @@ class Get_Service_Type_Performance_Data(View):
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
             #for wimax devices there can be a case of DR
             #we need to incorporate the DR devices as well
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
 
-            sector_object = None
-
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-
+            try:
                 sector_object = device.sector_configured_on.filter()
+            except:
+                return HttpResponse(json.dumps(self.result), content_type="application/json")
 
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
+            parameters.update({
+                'model': Topology,
+                'start_time': start_date,
+                'end_time': end_date,
+                'services': None,
+                'sds': ['topology']
+            })
 
+            performance_data = self.get_performance_data(
+                **parameters
+            )
             if dr_device:
-                dr_device_name = dr_device.device_name
-                performance_data = Topology.objects.filter(device_name__in=[inventory_device_name, dr_device_name],
-                                                           # service_name=service_name,
-                                                           data_source='topology',  #service_data_source_type,
-                                                           sys_timestamp__gte=start_date,
-                                                           sys_timestamp__lte=end_date)#.using(
-                    #alias=inventory_device_machine_name)
                 result = self.get_topology_result(performance_data,
                                                   dr_ip=dr_device.ip_address,
                                                   technology=technology,
                                                   sectors=sector_object
                 )
             else:
-                performance_data = Topology.objects.filter(device_name=inventory_device_name,
-                                                           # service_name=service_name,
-                                                           data_source='topology',  #service_data_source_type,
-                                                           sys_timestamp__gte=start_date,
-                                                           sys_timestamp__lte=end_date)#.using(
-                    #alias=inventory_device_machine_name)
-
                 result = self.get_topology_result(performance_data,
                                                   technology=technology,
                                                   sectors=sector_object
@@ -1952,12 +1976,19 @@ class Get_Service_Type_Performance_Data(View):
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-            performance_data = PerformanceStatus.objects.filter(device_name=inventory_device_name,
-                                                                service_name=service_name,
-                                                                data_source=service_data_source_type,
-                                                                sys_timestamp__gte=start_date,
-                                                                sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name)
+
+            parameters.update({
+                'model': PerformanceStatus,
+                'start_time': start_date,
+                'end_time': end_date,
+                'devices': [inventory_device_name],
+                'services': [service_name],
+                'sds': [service_data_source_type]
+            })
+
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
             result = self.get_perf_table_result(performance_data)
 
@@ -1965,111 +1996,89 @@ class Get_Service_Type_Performance_Data(View):
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-            performance_data = PerformanceInventory.objects.filter(device_name=inventory_device_name,
-                                                                   service_name=service_name,
-                                                                   data_source=service_data_source_type,
-                                                                   sys_timestamp__gte=start_date,
-                                                                   sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name)
+
+            parameters.update({
+                'model': PerformanceInventory,
+                'start_time': start_date,
+                'end_time': end_date,
+                'devices': [inventory_device_name],
+                'services': [service_name],
+                'sds': [service_data_source_type]
+            })
+
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
             result = self.get_perf_table_result(performance_data)
 
         elif '_kpi' in service_name:
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
-            #kpi services depends on the refer fields
-            #and not directly on the "device_name"
-            #the refer filed indicates the sector
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
-            if dr_device:
-                performance_data = Utilization.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
-                result = self.dr_performance_data_result(performance_data=performance_data,
-                                                         sector_device=device,
-                                                         dr_device=dr_device
-                                                         )
-            else:
-                performance_data = Utilization.objects.filter(device_name=inventory_device_name,
-                                                                   service_name=service_name,
-                                                                   data_source=service_data_source_type,
-                                                                   sys_timestamp__gte=start_date,
-                                                                   sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name).order_by('sys_timestamp')
 
-                result = self.get_performance_data_result(performance_data)
+            parameters.update({
+                'model': Utilization,
+                'start_time': start_date,
+                'end_time': end_date,
+                'services': [service_name],
+                'sds': [service_data_source_type]
+            })
 
-        else:
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
-            if dr_device:
-                performance_data = PerformanceService.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
-                #to check of string based dashboards
-                #need to return a table
-
-                sds_name = service_name.strip() + "_" +service_data_source_type.strip()
-
-                if sds_name in SERVICE_DATA_SOURCE \
-                        and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
-                    result = self.get_perf_table_result(performance_data,
-                                                        formula=SERVICE_DATA_SOURCE[sds_name]['formula']
-                    )
-
-                else:
+            if not show_chart:  # show the table
+                result = self.get_perf_table_result(
+                    performance_data=performance_data,
+                    formula=formula
+                )
+            else:  # show the chart
+                if dr_device:
                     result = self.dr_performance_data_result(performance_data=performance_data,
-                                                         sector_device=device,
-                                                         dr_device=dr_device
-                                                         )
-
-            else:
-                performance_data = PerformanceService.objects.filter(device_name=inventory_device_name,
-                                                                 service_name=service_name,
-                                                                 data_source=service_data_source_type,
-                                                                 sys_timestamp__gte=start_date,
-                                                                 sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name).order_by('sys_timestamp')
-                #to check of string based dashboards
-                #need to return a table
-
-                sds_name = service_name.strip() + "_" +service_data_source_type.strip()
-
-                if sds_name in SERVICE_DATA_SOURCE \
-                        and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
-                    result = self.get_perf_table_result(performance_data,
-                                                        formula=SERVICE_DATA_SOURCE[sds_name]['formula']
-                    )
-
+                                                             sector_device=device,
+                                                             dr_device=dr_device
+                                                             )
                 else:
                     result = self.get_performance_data_result(performance_data)
 
-        download_excel = self.request.GET.get('download_excel', '')
-        download_csv = self.request.GET.get('download_csv', '')
+        else:
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
-        #TODO: EXCEL & CSV download
+            if not show_chart: # show the table
+                result = self.get_perf_table_result(
+                    performance_data=performance_data,
+                    formula=formula
+                )
+            else: # show the chart
+                if dr_device:
+                    result = self.dr_performance_data_result(performance_data=performance_data,
+                                                             sector_device=device,
+                                                             dr_device=dr_device
+                                                             )
+                else:
+                    result = self.get_performance_data_result(performance_data)
 
         return HttpResponse(json.dumps(result), content_type="application/json")
+
+    def get_performance_data(self, model=None, start_time=None, end_time=None, devices=None, services=None, sds=None):
+        if services:
+            performance_data = model.objects.filter(
+                device_name__in=devices,
+                service_name__in=services,
+                data_source__in=sds,
+                sys_timestamp__gte=start_time,
+                sys_timestamp__lte=end_time
+            ).order_by('sys_timestamp')
+        else:
+            performance_data = model.objects.filter(
+                device_name__in=devices,
+                data_source__in=sds,
+                sys_timestamp__gte=start_time,
+                sys_timestamp__lte=end_time
+            ).order_by('sys_timestamp')
+
+        return performance_data
 
     def return_table_header_and_table_data(self, service_name, result):
 
