@@ -1951,7 +1951,7 @@ function devicePlottingClass_gmap() {
 
 				maintenance_html_str += '<div align="center">';
 
-				maintenance_html_str += '<div class="make-switch switch-small">\
+				maintenance_html_str += '<strong>Maintenance Status</strong><div class="make-switch switch-small">\
 										<input type="checkbox" value="'+base_station_id+'" id="yes_no" '+isChecked+'>\
 										</div>';
 				maintenance_html_str += '<div class="clearfix"></div>';
@@ -2030,13 +2030,17 @@ function devicePlottingClass_gmap() {
 
 				                		// If API returns BS ID, Updated Status & Marker URL the proceed
 				                		if(new_status && bs_id && new_icon_url) {
+
+				                			// Update new status in input field
+				                			$("#previous_maintenance_val").val(new_status);
+
 				                			// Fetch BS data object from loki object
 				                			var bs_loki_obj = all_devices_loki_db.where(function(obj) {
 								                    return obj.originalId == bs_id
 								                }),
 								                bs_data_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : false,
 								                bs_name = bs_data_object ? bs_data_object.name : false
-								                bs_marker = bs_name ? allMarkersObject_gmap['bs_'+bs_name] : false;
+								                bs_marker = bs_name ? allMarkersObject_gmap['base_station']['bs_'+bs_name] : false;
 
 							                if(bs_data_object) {
 							                	bs_data_object['data']['markerUrl'] = new_icon_url;
@@ -2044,7 +2048,6 @@ function devicePlottingClass_gmap() {
 							                	
 							                	// Update Loki Object
 	        									all_devices_loki_db.update(bs_data_object);
-
 	        									if(bs_marker) {
 	        										var new_bs_icon_obj = gmap_self.getMarkerImageBySize(
 														base_url+"/"+new_icon_url,
@@ -2548,7 +2551,7 @@ function devicePlottingClass_gmap() {
 					var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === oms_bs_markers[k].ptLon;}).length;
 
 					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
-						oms_bs_markers[k].setOptions({"icon" : base_url+"/static/img/icons/bs.png"});
+						oms_bs_markers[k].setOptions({"icon" : oms_bs_markers[k].icon});
 					}
 				}
 			}
