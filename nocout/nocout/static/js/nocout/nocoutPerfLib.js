@@ -155,15 +155,18 @@ function nocoutPerfLib() {
 
                         /*Loop for status table data*/
                         var status_val = "";
-                        status_val += "<tr>";
+                        
                         for (var i = 0; i < device_status.values.length; i++) {
-                            var val = device_status.values[i]["val"] ? device_status.values[i]["val"] : "",
-                                url = device_status.values[i]["url"] ? device_status.values[i]["url"] : "",
-                                display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
+                            status_val += "<tr>";
+                            for (var j = 0; j < device_status.values[i].length; j++) {
+                                var val = device_status.values[i][j]["val"] ? device_status.values[i][j]["val"] : "",
+                                    url = device_status.values[i][j]["url"] ? device_status.values[i][j]["url"] : "",
+                                    display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
 
-                            status_val += '<td>'+display_txt+'</td>';
+                                status_val += '<td>'+display_txt+'</td>';
+                            }   
+                            status_val += "</tr>";
                         }
-                        status_val += "</tr>";
                         
                         /*Populate table data*/
                         $("#status_table tbody").html(status_val);

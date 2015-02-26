@@ -1056,8 +1056,8 @@ class Inventory_Device_Status(View):
                         bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                 if technology.name.lower() in ['ptp', 'p2p']:
-
-                    table_values = [
+                    table_values = []
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1094,13 +1094,13 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
+                    ])
 
                     result['data']['objects']['values'] = table_values
 
                 elif technology.name.lower() in ['wimax']:
-
-                    table_values = [
+                    table_values = []
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1141,8 +1141,8 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
-                    result['data']['objects']['values'] = table_values
+                    ])
+                    # result['data']['objects']['values'].append(table_values)
 
                     # result['data']['objects']['values'].append([display_bs_name,
                     #                                             sector_id,
@@ -1159,7 +1159,7 @@ class Inventory_Device_Status(View):
                     if dr_ip:
                         dr_ip += " (DR) "
 
-                    table_values = [
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1200,7 +1200,7 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
+                    ])
 
                     result['data']['objects']['values'] = table_values
 
@@ -1218,7 +1218,8 @@ class Inventory_Device_Status(View):
                     # ])
 
                 else:
-                    table_values = [
+                    table_values = []
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1255,7 +1256,7 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
+                    ])
                     
                     result['data']['objects']['values'] = table_values
 
@@ -1428,7 +1429,7 @@ class Inventory_Device_Status(View):
                         }
                     ]
                     
-                    result['data']['objects']['values'] = table_values
+                    result['data']['objects']['values'].append(table_values)
 
                     # result['data']['objects']['values'].append([display_bs_name,
                     #                                             substation.alias,
@@ -1837,9 +1838,6 @@ class Get_Service_Type_Performance_Data(View):
         # test once for technology
         try:
             technology = DeviceTechnology.objects.get(id=device.device_technology)
-        except:
-            return HttpResponse(json.dumps(self.result), content_type="application/json")
-        try:
             # test now for sector
             if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
                 dr_devices = device.sector_configured_on.filter()
@@ -1850,7 +1848,7 @@ class Get_Service_Type_Performance_Data(View):
                 parameters['devices'].append(dr_device.device_name)
                 # parameters updated with all devices
         except:
-            pass
+            return HttpResponse(json.dumps(self.result), content_type="application/json")
 
         if service_data_source_type in ['pl', 'rta']:
 
