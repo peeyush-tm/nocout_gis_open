@@ -287,37 +287,42 @@ def organization_sectors(organization, technology=None):
     :param technology:
     :return list of sector
     """
+    sector_objects = Sector.objects.prefetch_related(
+            'sector_configured_on',
+            'sector_configured_on__machine',
+            'sector_configured_on__site_instance'
+        ).filter(
+        sector_configured_on__is_added_to_nms=1,
+        sector_configured_on__isnull=False
+    )
     if int(technology) == int(PMP.ID):
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on_port__isnull=True,
-                                sector_configured_on__is_added_to_nms=1,
-                                sector_configured_on__device_technology=technology,
-                            ).annotate(total_sector=Count('sector_id'))
+        sector_list = sector_objects.filter(
+                sector_id__isnull=False,
+                sector_configured_on_port__isnull=True,
+                sector_configured_on__device_technology=technology,
+            ).annotate(total_sector=Count('sector_id'))
 
     elif int(technology) == int(WiMAX.ID):
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on_port__isnull=False,
-                                sector_configured_on__is_added_to_nms=1,
-                                sector_configured_on__device_technology=technology,
-                            ).annotate(total_sector=Count('sector_id'))
+        sector_list = sector_objects.prefetch_related(
+            'sector_configured_on_port'
+        ).filter(
+            sector_id__isnull=False,
+            sector_configured_on_port__isnull=False,
+            sector_configured_on__device_technology=technology,
+        ).annotate(total_sector=Count('sector_id'))
 
     elif int(technology) == int(P2P.ID):
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on__is_added_to_nms=1,
-                                sector_configured_on__device_technology=technology,
-                            ).annotate(total_sector=Count('sector_id'))
+        sector_list = Sector.objects.prefetch_related(
+            'sector_configured_on',
+            'sector_configured_on__machine'
+        ).filter(
+            sector_configured_on__device_technology=technology,
+        ).annotate(total_sector=Count('id'))
 
     else:
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on__isnull=False,
-                                sector_configured_on__is_added_to_nms=1,
-                            ).annotate(total_sector=Count('sector_id'))
+        sector_list = sector_objects
 
     if organization:
-        sector_list = sector_list.filter(organization__in=organization)
+        sector_list = sector_objects.prefetch_related('organization').filter(organization__in=organization)
 
     return sector_list
