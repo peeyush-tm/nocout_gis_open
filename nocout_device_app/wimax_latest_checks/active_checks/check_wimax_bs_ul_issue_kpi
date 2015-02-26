@@ -42,7 +42,7 @@ def extract_connected_ss_from_topology(hostname):
 		data = cur.fetchall()
 		cur.close()
 	except  Exception,e:
-		print e
+		data = None
 
         return data
 
@@ -72,7 +72,7 @@ def mysql_conn(machine=None):
                         port=port
                         )
         except Exception as exp:
-            print exp
+            db=None
         return db
 
 
@@ -88,27 +88,39 @@ def extract_ss_ul_issue_state_from_live(hostname,site):
 	d = {}
 	final_value = []
 	ul_issue = None
-	connected_ss_entry = extract_connected_ss_from_topology(hostname)
-	for machine, ip in connected_ss_entry:
-		d.setdefault(machine, [machine]).append(str(ip))
-	mapped_ip = map(tuple, d.values())
-	total = 0
 	try:
+		connected_ss_entry = extract_connected_ss_from_topology(hostname)
+		for machine, ip in connected_ss_entry:
+			d.setdefault(machine, [machine]).append(str(ip))
+		mapped_ip = map(tuple, d.values())
+		total = 0
 		for entry in mapped_ip:
-			db=mysql_conn(machine=entry[0])
-			query = """ select current_value from performance_utilizationstatus where ip_address in """ + str(entry[1:])
-			cur = db.cursor()
-			cur.execute(query)
-			data = cur.fetchall()
-			cur.close()
+			try:
+				db=mysql_conn(machine=entry[0])
+				if len(entry[1:]) == 1:
+					ip_tuple = "('%s')" % entry[1:][0]
+				else:
+					ip_tuple = str(entry[1:])
+				
+				query = "select current_value from performance_utilizationstatus where "+ \
+				"service_name='wimax_ss_ul_issue_kpi' and ip_address in " + ip_tuple
+				cur = db.cursor()
+				cur.execute(query)
+				data = cur.fetchall()
+				cur.close()
+				db.close()
+			except:
+				if db:
+					db.close()
+				continue
 			value = [str(item) for sublist in data for item in sublist]
-			final_value.extend(value)	
+			final_value.extend(value)
 			for num in final_value:
 				if num != '':
 					total = total+int(num)
-			if len(final_value):
-				ul_issue = (total/len(final_value))*100
-	except:
+		if len(final_value):
+			ul_issue = (total/float(len(final_value)))*100
+	except Exception,e:
 		ul_issue = None
 	
 
@@ -135,7 +147,6 @@ def live_query_cam_ul_issue_kpi(host_name,site,war,crit):
 			state = 1
 			state_string = "warning"
 	perf += 'bs_ul_issue' + "=%s;%s;%s " %(ul_issue,war,crit)
-   
     except:
         perf = ';%s;%s' % (war,crit)
     plugin_message += "wimax_bs_ul_issue_kpi %s - %s|%s" % (state_string,ul_issue,perf)
@@ -147,6 +158,7 @@ def live_query_cam_ul_issue_kpi(host_name,site,war,crit):
 def  main():
     state_string = "unknown"
     cam_ul=''
+    plugin_message = ''
     try:
     	host_name = sys.argv[1]
     	site = sys.argv[2]

@@ -99,11 +99,11 @@ def check_wimax_dl_intrf(item, params, info):
 	if ss_mac:
 		dl_intrf = live_query_dl_intrf(ss_mac )
 		if dl_intrf:
-			if dl_intrf  == crit:
+			if dl_intrf.lower()  == crit.lower():
 				state  = 2
-			elif dl_intrf  == warn:
+			elif dl_intrf.lower()  == warn.lower():
 				state = 1
-			elif dl_intrf == "Norm":
+			elif dl_intrf.lower() == "Norm".lower():
 				state = 0
 			infotext = "Device dl intrf is %s " % dl_intrf
     except ValueError:
