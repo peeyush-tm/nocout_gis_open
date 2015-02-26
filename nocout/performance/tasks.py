@@ -11,7 +11,6 @@ from inventory.models import Sector
 import inventory.tasks as inventory_tasks
 
 import inventory.utils.util as inventory_utils
-import inventory.tasks as inventory_tasks
 
 from celery.utils.log import get_task_logger
 
