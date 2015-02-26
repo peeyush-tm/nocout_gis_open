@@ -10,7 +10,7 @@ from nocout.settings import PMP, WiMAX, TCLPOP
 from organization.models import Organization
 from device.models import DeviceTechnology, Device
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
-from performance.models import Topology, NetworkStatus
+from performance.models import Topology, NetworkStatus, ServiceStatus
 from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, DashboardSeverityStatusHourly,
         DashboardSeverityStatusDaily, DashboardSeverityStatusWeekly, DashboardSeverityStatusMonthly,
         DashboardSeverityStatusYearly, DashboardRangeStatusTimely, DashboardRangeStatusHourly, DashboardRangeStatusDaily,
@@ -468,10 +468,11 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
     # creating a list dictionary using machine name and there corresponing device list.
     # And list is order by device_name.
     for machine_name, device_list in machine_dict.items():
-        status_dict_list += NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_list,
-                service_name__in=service_list,
-                data_source__in=data_source_list,
-                severity__in=['warning', 'critical']
+        status_dict_list += ServiceStatus.objects.order_by().filter(
+            device_name__in=device_list,
+            service_name__in=service_list,
+            data_source__in=data_source_list,
+            severity__in=['warning', 'critical']
             ).using(machine_name).values()
 
     logger.debug('calculate_timely_temperature : data list = {0}'.format(status_dict_list))
