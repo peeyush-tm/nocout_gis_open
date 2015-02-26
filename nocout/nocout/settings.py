@@ -440,10 +440,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'nocout.tasks.cache_clear_task',
         'schedule': crontab(minute=3, hour='*/6'),  # per 6 hours delete all cache
     },
-    # RF Network Availability Job - P2P
-    'calculate_rf_network_availability-P2P' : {
+    # RF Network Availability Job - PTP-BH
+    'calculate_rf_network_availability-PTP-BH' : {
         'task' : 'performance.tasks.calculate_rf_network_availability',
-        'kwargs': {'technology': 'P2P'},
+        'kwargs': {'technology': 'PTP-BH'},
         'schedule': crontab(minute=05, hour=0)
         
     },
