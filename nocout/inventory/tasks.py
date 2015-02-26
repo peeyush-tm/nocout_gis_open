@@ -13030,7 +13030,7 @@ def remove_duplicate_dict_from_list(input_list=None):
 ## TOPOLOGY UPDATE ##
 #################################################################################################
 from performance.models import Topology, InventoryStatus, ServiceStatus
-from inventory.utils.util import organization_network_devices, organization_customer_devices
+from inventory.utils.util import organization_network_devices, organization_customer_devices, organization_sectors
 from organization.models import Organization
 from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
@@ -13089,33 +13089,49 @@ def get_topology(technology, rf_type=None, site_name=None):
     """
 
     count = False
+    sector_objects = Sector.objects.none()
+    required_columns = [
+        'id',
+        'sector_id',
+        'sector_configured_on'
+    ]
+    # network_devices = get_devices(technology, rf_type=rf_type, site_name=site_name)
+    technology = DeviceTechnology.objects.get(name__icontains=technology).id
+    if site_name and SiteInstance.objects.filter(name=site_name).exists():
+        sector_objects = organization_sectors(organization=None,
+                                           technology=technology
+        ).filter(sector_configured_on__site_instance__name=site_name)
 
-    network_devices = get_devices(technology, rf_type=rf_type, site_name=site_name)
-    device_list = []
+    else:
+        sector_objects = organization_sectors(organization=None,
+                                           technology=technology
+        )
 
+    all_sectors = sector_objects.values(*required_columns)
 
-    for device in network_devices:
-        device_list.append(device['device_name'])
+    sector_list = []
+    for sector in all_sectors:
+        sector_list.append(sector['sector_id'])
 
     #rather than looping ourselves
     #lets do .values('', flat=True)
     #device_list = network_devices.values
 
     #topology is now synced at the central database only. no need to creating topology
-    topology = Topology.objects.filter(device_name__in=device_list, data_source='topology')
-
+    topology = Topology.objects.filter(sector_id__in=sector_list)
     required_topology = topology.values('connected_device_ip', 'sector_id', 'connected_device_mac', 'mac_address', 'ip_address')
+
     sector_ips = topology.values_list('ip_address', flat=True)
 
-    polled_sectors = Sector.objects.filter(sector_id__in=topology.values_list('sector_id', flat=True))
+    polled_sectors = sector_objects.filter(sector_id__in=topology.values_list('sector_id', flat=True))
 
     polled_circuits = Circuit.objects.filter(sub_station__in=SubStation.objects.filter(
         device__ip_address__in=topology.values_list('connected_device_ip', flat=True)
         )
     )
 
-    polled_devices = Device.objects.filter(ip_address__in=sector_ips) #just work with sector devices here
-    #because the ss devices can be get directly with SS only
+    polled_devices = Device.objects.filter(ip_address__in=sector_ips)  # just work with sector devices here
+    # because the ss devices can be get directly with SS only
 
 
     save_circuit_list = []
@@ -13124,13 +13140,16 @@ def get_topology(technology, rf_type=None, site_name=None):
 
     processed_mac = {}
     for topos in required_topology:
-        if topos['connected_device_mac'] not in processed_mac:
+        if (topos['connected_device_mac']) and (topos['connected_device_mac'] not in processed_mac):
             processed_mac[topos['connected_device_mac']] = topos['connected_device_mac']
             ss_ip = topos['connected_device_ip']
             sector_id = topos['sector_id']
             sector_ip = topos['ip_address']
             try:
-                circuit_obj = polled_circuits.select_related('sub_station','sub_station__device', 'sector').get(
+                circuit_obj = polled_circuits.select_related('sub_station',
+                                                             'sub_station__device',
+                                                             'sector'
+                ).get(
                     sub_station__device__ip_address=ss_ip
                 )
                 ss_obj = circuit_obj.sub_station
@@ -13242,4 +13261,4 @@ def bulk_update_create(bulky, action='update', model=None):
                     return False
             return True
 
-    return False
+    return True

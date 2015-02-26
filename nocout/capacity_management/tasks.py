@@ -85,15 +85,28 @@ def gather_backhaul_status():
     # we need the machines
 
     # fetch all backhaul device
-    bh_devices = Backhaul.objects.filter(bh_configured_on__isnull=False).values_list('bh_configured_on', flat=True)
+    # bh_devices = Backhaul.objects.filter('bh_configured_on__isnull=False).values_list('bh_configured_on', flat=True)
 
     # fetch all base stations
-    base_stations = BaseStation.objects.filter(backhaul__bh_configured_on__isnull=False,
-                                               bh_port_name__isnull=False).select_related(
+    base_stations = BaseStation.objects.filter(
+        backhaul__bh_configured_on__isnull=False,
+        bh_port_name__isnull=False,
+        backhaul__bh_configured_on__is_added_to_nms=1,
+        bh_capacity__isnull=False
+    ).select_related(
+        'backhaul',
         'backhaul__bh_configured_on',
-        'backhaul__bh_configured_on__machine__name',
-        'backhaul__bh_configured_on__device_type',
-        'backhaul__bh_capacity')
+        'backhaul__bh_configured_on__machine'
+    )
+
+    bh_devices = Backhaul.objects.select_related(
+        'bh_configured_on',
+        'bh_configured_on__machine'
+    ).filter(
+        id__in=base_stations.values_list('backhaul__id', flat=True),
+        bh_configured_on__isnull=False,
+        bh_configured_on__is_added_to_nms=1
+    )
 
     # get machines associated to all base station devices
     machines = set([bs.backhaul.bh_configured_on.machine.name for bs in base_stations])
@@ -101,41 +114,56 @@ def gather_backhaul_status():
     # get data sources
     ports = set([bs.bh_port_name for bs in base_stations])
 
-    data_sources = set(DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True))
+    data_sources = set(ServiceDataSource.objects.filter(
+        name__in=DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True)
+    ).values_list('name', flat=True))
 
     kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
                     'switch_dl_util_kpi', 'switch_ul_util_kpi']
     val_services = ['rici_dl_utilization', 'rici_ul_utilization', 'mrotek_dl_utilization', 'mrotek_ul_utilization',
                     'switch_dl_utilization', 'switch_ul_utilization']
 
-    kpi = None
-    val = None
+    g_jobs = list()
+    ret = False
 
     for machine in machines:
-        if val:
-            val |= ServiceStatus.objects.filter(
-                    device_name__in=bh_devices,
+        machine_bh_devices = set(bh_devices.filter(
+            bh_configured_on__machine__name=machine
+        ).values_list(
+            'bh_configured_on__device_name',
+            flat=True
+        ))
+
+        val = ServiceStatus.objects.filter(
+                    device_name__in=machine_bh_devices,
                     service_name__in=val_services,
-                    data_source__in=data_sources).using(alias=machine)
-        else:
-            val = ServiceStatus.objects.filter(
-                    device_name__in=bh_devices,
-                    service_name__in=val_services,
-                    data_source__in=data_sources).using(alias=machine)
-
-        if kpi:
-            kpi |= UtilizationStatus.objects.filter(
-                    device_name__in=bh_devices,
+                    data_source__in=data_sources
+        ).order_by().using(alias=machine)
+        kpi = UtilizationStatus.objects.filter(
+                    device_name__in=machine_bh_devices,
                     service_name__in=kpi_services,
-                    data_source__in=data_sources).using(alias=machine)
-        else:
-            kpi = UtilizationStatus.objects.filter(
-                    device_name__in=bh_devices,
-                    service_name__in=kpi_services,
-                    data_source__in=data_sources).using(alias=machine)
+                    data_source__in=data_sources
+        ).order_by().using(alias=machine)
 
-    return update_backhaul_status(base_stations, kpi, val)
+        # pass only base stations connected on a machine
 
+        if kpi.count() and val.count():
+            bs = base_stations.filter(backhaul__bh_configured_on__machine__name=machine)
+            g_jobs.append(
+                update_backhaul_status.s(
+                    basestations=bs,
+                    kpi=kpi,
+                    val=val
+                )
+            )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
 
 @task()
 def gather_sector_status(technology):
@@ -446,6 +474,8 @@ def calc_util_last_day():
         return True
     return False
 
+
+@task()
 def update_backhaul_status(basestations, kpi, val):
     """
     update the backhaul status per sector id wise
@@ -491,10 +521,6 @@ def update_backhaul_status(basestations, kpi, val):
         # pine: 13
         # rici: 14
         # define service names as per device type
-        val_ul_service = ''
-        val_dl_service = ''
-        kpi_ul_service = ''
-        kpi_dl_service = ''
 
         # this complete mapping can be fetced from
         # device type : service : service data source mapping
@@ -506,10 +532,10 @@ def update_backhaul_status(basestations, kpi, val):
             kpi_dl_service = 'switch_dl_util_kpi'
         # if device type is 'pine converter'
         elif bs_device_type == 13:
-            val_ul_service = 'switch_ul_utilization'
-            val_dl_service = 'switch_dl_utilization'
-            kpi_ul_service = 'switch_ul_util_kpi'
-            kpi_dl_service = 'switch_dl_util_kpi'
+            val_ul_service = 'mrotek_ul_utilization'
+            val_dl_service = 'mrotek_dl_utilization'
+            kpi_ul_service = 'mrotek_ul_util_kpi'
+            kpi_dl_service = 'mrotek_dl_util_kpi'
         # if device type is 'rici converter'
         elif bs_device_type == 14:
             val_ul_service = 'rici_ul_utilization'

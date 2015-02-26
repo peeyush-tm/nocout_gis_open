@@ -1693,10 +1693,13 @@ class Topology(models.Model):
     refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
-        return self.device_name
+        return "Sector : {0} | Device {1} | IP {2}".format(self.sector_id,
+                                                           self.device_name,
+                                                           self.ip_address
+        )
 
-    class Meta:
-        ordering = ['-sys_timestamp']
+    # class Meta:
+    #     ordering = ['-sys_timestamp']
 
 
 #==============================================================================================================#

@@ -1203,7 +1203,8 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
             # random color picker for sending different colors
             
             # Loop for sending complete 30 days Data
-            while month_before <= datetime.date.today():
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 # Function for getting value for element of sector trend items on every date within month    
                 data_val = getValueByTime(
                     dashboard_status_dict=dashboard_status_dict,
@@ -1285,8 +1286,9 @@ def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard
             }
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             chart_color = ''
-            # Loop for sending complete 30 days Data    
-            while month_before <= datetime.date.today():
+            # Loop for sending complete 30 days Data
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 # Loop for every element in list
                 response_dict = {'chart_data' : 0, 'color' : '#000000'} 
                 for var in dashboard_status_dict:
@@ -1644,7 +1646,8 @@ class MonthlyTrendDashboardDeviceStatus(View):
             # Getting date of 30days before from Today
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             # Loop for getting complete month Data
-            while month_before <= datetime.date.today():
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 count = 0
                 if trend_items[i]['title'] != 'unknown':
                     count_color = getattr(dashboard_setting, '%s_color_hex_value' %trend_items[i]['title'])

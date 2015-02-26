@@ -360,7 +360,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'daily-main-dashboard': {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
-        'schedule': crontab(minute=0, hour=0)
+        'schedule': crontab(minute=0, hour=0) # Execute Daily at Midnight
     },
     # 'weekly-main-dashboard': {
     #     'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
