@@ -635,7 +635,14 @@ class SectorDashboard(ListView):
         last_six_months_list, \
         months_list = getLastXMonths(6);
 
-        for i in reversed(range(6)):
+        try:
+            # pass
+            last_six_months_list.reverse()
+        except Exception, e:
+            # raise e
+            pass
+
+        for i in range(6):
             # Get month index from year,month tuple
             month_index = last_six_months_list[i][1] - 1
             month_name = months_list[month_index]['name']
