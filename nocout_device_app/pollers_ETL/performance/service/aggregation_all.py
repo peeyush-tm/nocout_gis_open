@@ -6,12 +6,12 @@ Usage ::
 python aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly
 python aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly
 python aggregation_all.py -r mysql -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
-python aggregation_all.py -r mysql -t 1 -f hourly -d performance_performanceservicebihourly -d performance_performanceservicehourly
-python aggregation_all.py -r mysql -t 24 -f daily -d performance_performanceservicehourly -d performance_performanceservicedaily
-python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performancestatusdaily -d performance_performancestatusweekly
-python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performanceinventorydaily -d performance_performanceinventoryweekly
-python aggregation_all.py -r mysql -t 720 -f monthly -d performance_performanceserviceweekly -d performance_performanceservicemonthly
-python aggregation_all.py -r mysql -t 8640 -f yearly -d performance_performanceservicemonthly -d performance_performanceserviceyearly
+python aggregation_all.py -r mysql -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly
+python aggregation_all.py -r mysql -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily
+python aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancestatusdaily -d performance_performancestatusweekly
+python aggregation_all.py -r mysql -t 168 -f weekly -s performance_performanceinventorydaily -d performance_performanceinventoryweekly
+python aggregation_all.py -r mysql -t 720 -f monthly -s performance_performanceserviceweekly -d performance_performanceservicemonthly
+python aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performanceservicemonthly -d performance_performanceserviceyearly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
@@ -54,9 +54,9 @@ parser.add_option('-r', '--read_from', dest='read_from', type='str')
 parser.add_option('-s', '--source', dest='source_db', type='str')
 parser.add_option('-d', '--destination', dest='destination_db', type='str')
 parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['0.5', 
-'1', '24', '168'])
+'1', '24', '168', '720', '8640'])
 parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=[
-'half_hourly', 'hourly', 'daily', 'weekly'])
+'half_hourly', 'hourly', 'daily', 'weekly', 'monthly', 'yearly'])
 options, remainder = parser.parse_args(sys.argv[1:])
 if options.source_db and options.destination_db and options.hours and \
         options.timeframe and options.read_from:
