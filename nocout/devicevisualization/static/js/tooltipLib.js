@@ -1286,6 +1286,7 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
+        'name'  : 'wimax_ss_dl_utilization_dl_utilization',
         'title' : 'Downlink Utilization (Mbps)',
         'show'  : 1,
         'value' : '',
