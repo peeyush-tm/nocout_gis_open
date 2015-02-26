@@ -439,6 +439,25 @@ CELERYBEAT_SCHEDULE = {
     'cache_clear_task': {
         'task': 'nocout.tasks.cache_clear_task',
         'schedule': crontab(minute=3, hour='*/6'),  # per 6 hours delete all cache
+    },
+    # RF Network Availability Job - P2P
+    'calculate_rf_network_availability-P2P' : {
+        'task' : 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'P2P'},
+        'schedule': crontab(minute=05, hour=0)
+        
+    },
+    # RF Network Availability Job - PMP
+    'calculate_rf_network_availability-PMP' : {
+        'task' : 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'PMP'},
+        'schedule': crontab(minute=20, hour=0)
+    },
+    # RF Network Availability Job - WiMAX
+    'calculate_rf_network_availability-WiMAX' : {
+        'task' : 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'WiMAX'},
+        'schedule': crontab(minute=35, hour=0)
     }
 }
 
