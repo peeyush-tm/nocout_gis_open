@@ -8,7 +8,7 @@ var last_clicked_tab = "",
     timeOutId = "",
     ptp_list = ['ptp','p2p'],
     pmp_list = ['pmp'],
-    wimax_list = ['wimax','wifi','temp','ulIssue','sectorUtil'],
+    wimax_list = ['wimax','wifi','temp','ulissue','sectorutil'],
     other_list = ['converter','bh','backhaul','bhutil'];
 
 $(".nav-tabs li a").click(function (e, isFirst) {
@@ -62,7 +62,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
             isOther = other_list.filter(function(list_val) {
                 return tab_id.search(list_val) > -1
             }).length;
-
         // If tab is ptp
         if(isPtp > 0) {
             for (var i = 0; i < grid_headers.length; i++) {

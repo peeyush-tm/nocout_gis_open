@@ -785,14 +785,19 @@ class SectorCapacityMixin(object):
         dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
 
         chart_series = []
+        color = []
         if len(dashboard_status_dict):
             for key,value in dashboard_status_dict.items():
                 # create a list of "Key: value".
                 chart_series.append(['%s: %s' % (key.replace('_', ' '), value), dashboard_status_dict[key]])
 
+            color.append('rgb(255, 153, 0)')
+            color.append('rgb(255, 0, 0)')
+            color.append('rgb(0, 255, 0)')
+            color.append('#d3d3d3')
         # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': '%s Sector Capacity' % tech_name.upper(), 'name': ''})
+            'title': '%s Sector Capacity' % tech_name.upper(), 'name': '', 'colors': color})
 
         return HttpResponse(response)
 
@@ -849,7 +854,7 @@ class BackhaulCapacityMixin(object):
             dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
             # Get the status of the dashboard.
             dashboard_status_dict = get_severity_status_dict(dashboard_name, backhaul_devices_list)
-
+            color = []
             chart_series = []
             if len(dashboard_status_dict):
                 for key,value in dashboard_status_dict.items():           
@@ -862,10 +867,13 @@ class BackhaulCapacityMixin(object):
                         change_key = key
                     # create a list of "Key: value".    
                     chart_series.append(['%s: %s' % (change_key, value), dashboard_status_dict[key]])
-
+                color.append('rgb(255, 153, 0)')
+                color.append('rgb(255, 0, 0)')
+                color.append('rgb(0, 255, 0)')
+                color.append('#d3d3d3')
             # get the chart_data for the pie chart.
             response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': ''})
+                'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': '', 'colors': color})
 
         return HttpResponse(response)
 
@@ -1180,13 +1188,14 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
 
         # Accessing all elements in sector trend items
         for i in range(len(trends_items)):
-            item_color = color_picker()
+            item_color = ['rgb(0, 255, 0)', 'rgb(255, 153, 0)', 'rgb(255, 0, 0)', '#d3d3d3']
+             
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
                 "name": trends_items[i]['title'],
                 "valuetext": trends_items[i]['title'],
-                "color" : item_color,
+                "color" : item_color[i],
                 "data" : list()
             }
             # Reseting month_before for every element of sector_trends_items
@@ -1194,7 +1203,8 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
             # random color picker for sending different colors
             
             # Loop for sending complete 30 days Data
-            while month_before <= datetime.date.today():
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 # Function for getting value for element of sector trend items on every date within month    
                 data_val = getValueByTime(
                     dashboard_status_dict=dashboard_status_dict,
@@ -1205,7 +1215,7 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
 
                 # Preparation of final dict for sending to main function
                 data_dict['data'].append({
-                    "color": item_color,
+                    "color": item_color[i],
                     "y" : data_val,
                     "name": trends_items[i]['title'],
                     "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
@@ -1276,8 +1286,9 @@ def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard
             }
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             chart_color = ''
-            # Loop for sending complete 30 days Data    
-            while month_before <= datetime.date.today():
+            # Loop for sending complete 30 days Data
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 # Loop for every element in list
                 response_dict = {'chart_data' : 0, 'color' : '#000000'} 
                 for var in dashboard_status_dict:
@@ -1635,7 +1646,8 @@ class MonthlyTrendDashboardDeviceStatus(View):
             # Getting date of 30days before from Today
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             # Loop for getting complete month Data
-            while month_before <= datetime.date.today():
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 count = 0
                 if trend_items[i]['title'] != 'unknown':
                     count_color = getattr(dashboard_setting, '%s_color_hex_value' %trend_items[i]['title'])
