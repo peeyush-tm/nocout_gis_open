@@ -48,9 +48,9 @@ parser.add_option('-r', '--read_from', dest='read_from', type='str')
 parser.add_option('-s', '--source', dest='source_db', type='str')
 parser.add_option('-d', '--destination', dest='destination_db', type='str')
 parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['0.5', 
-'1', '24', '168'])
+'1', '24', '168', '720', '8640'])
 parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=[
-'half_hourly', 'hourly', 'daily', 'weekly'])
+'half_hourly', 'hourly', 'daily', 'weekly', 'monthly', 'yearly'])
 options, remainder = parser.parse_args(sys.argv[1:])
 if options.source_db and options.destination_db and options.hours and \
         options.timeframe and options.read_from:
