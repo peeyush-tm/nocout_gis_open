@@ -116,7 +116,7 @@ def gather_backhaul_status():
 
     data_sources = set(ServiceDataSource.objects.filter(
         name__in=DevicePort.objects.filter(alias__in=ports).values_list('name', flat=True)
-    ))
+    ).values_list('name', flat=True))
 
     kpi_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi', 'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
                     'switch_dl_util_kpi', 'switch_ul_util_kpi']
@@ -149,7 +149,13 @@ def gather_backhaul_status():
 
         if kpi.count() and val.count():
             bs = base_stations.filter(backhaul__bh_configured_on__machine__name=machine)
-            g_jobs.append(update_backhaul_status.s(bs, kpi, val))
+            g_jobs.append(
+                update_backhaul_status.s(
+                    basestations=bs,
+                    kpi=kpi,
+                    val=val
+                )
+            )
 
     if len(g_jobs):
         job = group(g_jobs)
