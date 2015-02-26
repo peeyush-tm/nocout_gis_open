@@ -1992,6 +1992,9 @@ class UtilizationStatus(models.Model):
             ("device_name", "service_name", "data_source")
         )
 
+##################################################################
+############ Table for Spot Dashboard Data #######################
+##################################################################
 
 class SpotDashboard(models.Model):
     """
@@ -2026,3 +2029,15 @@ class SpotDashboard(models.Model):
     sia_4 = models.BooleanField('SIA 4', default=False)
     sia_5 = models.BooleanField('SIA 5', default=False)
     sia_6 = models.BooleanField('SIA 6', default=False)
+
+
+##################################################################
+############## Table for RF Network Availability #################
+##################################################################
+
+class RfNetworkAvailability(models.Model):
+
+    technology = models.CharField('Technology', max_length=100, unique=True, null=True, blank=True)
+    avail = models.CharField('Availability', max_length=100,unique=True, null=True, blank=True)
+    unavail = models.CharField('Unavailability', max_length=100, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
