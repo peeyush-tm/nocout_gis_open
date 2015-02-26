@@ -518,6 +518,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 # technology = [int(WiMAX.ID), int(PMP.ID)]
                 technology = ["WiMAX", "PMP"]
                 self.data_sources = ['bs_ul_issue']
+                self.table_name = 'performance_utilizationstatus'
             elif tab_id in ["Backhaul"]:
                 technology = None
                 is_bh = True
