@@ -348,6 +348,17 @@ def getNetworkAlertDetail(request):
          'bSortable': True}
     ]
 
+    ul_issue_specific_headers = [
+        {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True},
+        {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True},
+        {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True},
+        {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True}
+    ]
+
     bh_specific_headers = [
         {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -387,6 +398,14 @@ def getNetworkAlertDetail(request):
     datatable_headers += common_headers
     datatable_headers += polled_headers
     datatable_headers += other_headers
+
+
+    ul_issue_datatable_headers = []
+    ul_issue_datatable_headers += starting_headers
+    ul_issue_datatable_headers += ul_issue_specific_headers
+    ul_issue_datatable_headers += common_headers
+    ul_issue_datatable_headers += polled_headers
+    ul_issue_datatable_headers += other_headers
 
     bh_dt_headers = []
     bh_dt_headers += starting_headers
@@ -443,6 +462,7 @@ def getNetworkAlertDetail(request):
     context = {
         'datatable_headers': json.dumps(datatable_headers),
         'bh_utils_headers' : json.dumps(bh_utils_headers),
+        'ul_issue_headers' : json.dumps(ul_issue_datatable_headers),
         'bh_headers': json.dumps(bh_dt_headers),
         'sector_utils_headers': json.dumps(sector_utils_headers)
     }
@@ -519,6 +539,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 technology = ["WiMAX", "PMP"]
                 self.data_sources = ['bs_ul_issue']
                 self.table_name = 'performance_utilizationstatus'
+                # Add 'refer column' in case of ULIssue
+                self.polled_columns.append('refer')
             elif tab_id in ["Backhaul"]:
                 technology = None
                 is_bh = True
