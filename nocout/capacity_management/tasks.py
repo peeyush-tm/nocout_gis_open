@@ -166,91 +166,108 @@ def gather_sector_status(technology):
     #need to gather from various sources
     #will do a raw query
 
+    g_jobs = list()
 
-    if technology.lower() == 'wimax':
-        sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
-                                        sector_configured_on__is_added_to_nms=1,
-                                        sector_id__isnull=False,
-                                        sector_configured_on_port__isnull=False
-                                        ).prefetch_related('sector_configured_on',
-                                                           'sector_configured_on_port',
-                                                           'base_station',
-                                                           'base_station__city',
-                                                           'base_station__state'
-                                        ).annotate(Count('sector_id'))
+    for machine in machine_dict:
+        if technology.lower() == 'wimax':
+            sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
+                                            sector_configured_on__is_added_to_nms=1,
+                                            sector_configured_on__in=machine_dict[machine],
+                                            sector_id__isnull=False,
+                                            sector_configured_on_port__isnull=False
+                                            ).prefetch_related('sector_configured_on',
+                                                               'sector_configured_on_port',
+                                                               'base_station',
+                                                               'base_station__city',
+                                                               'base_station__state'
+                                            ).annotate(Count('sector_id'))
 
-        cbw = get_sector_bw(machine_dict=machine_dict,
-                            service_name=tech_model_service['wimax']['cbw']['service_name'],
-                            data_source=tech_model_service['wimax']['cbw']['data_source'],
-        )
+            cbw = get_sector_bw(devices=machine_dict[machine],
+                                service_name=tech_model_service['wimax']['cbw']['service_name'],
+                                data_source=tech_model_service['wimax']['cbw']['data_source'],
+                                machine=machine
+            )
 
-        sector_val = get_sector_val(machine_dict=machine_dict,
-                                    service_name=tech_model_service['wimax']['val']['service_name'],
-                                    data_source=tech_model_service['wimax']['val']['data_source'],
-        )
+            sector_val = get_sector_val(devices=machine_dict[machine],
+                                        service_name=tech_model_service['wimax']['val']['service_name'],
+                                        data_source=tech_model_service['wimax']['val']['data_source'],
+                                        machine=machine
+            )
 
-        sector_kpi = get_sector_kpi(machine_dict=machine_dict,
-                                    service_name=tech_model_service['wimax']['per']['service_name'],
-                                    data_source=tech_model_service['wimax']['per']['data_source']
-        )
+            sector_kpi = get_sector_kpi(devices=machine_dict[machine],
+                                        service_name=tech_model_service['wimax']['per']['service_name'],
+                                        data_source=tech_model_service['wimax']['per']['data_source'],
+                                        machine=machine
+            )
 
-        return update_sector_status(sectors=sectors, cbw=cbw, kpi=sector_kpi, val=sector_val, technology=technology)
+            g_jobs.append(update_sector_status.s(sectors=sectors,
+                                                 cbw=cbw,
+                                                 kpi=sector_kpi,
+                                                 val=sector_val,
+                                                 technology=technology)
+            )
 
-    elif technology.lower() == 'pmp':
-        sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
-                                        sector_configured_on__is_added_to_nms=1,
-                                        sector_id__isnull=False,
-                                        sector_configured_on_port__isnull=True
-                                        ).prefetch_related('sector_configured_on',
-                                                           'base_station',
-                                                           'base_station__city',
-                                                           'base_station__state'
-                                        ).annotate(Count('sector_id'))
+        elif technology.lower() == 'pmp':
+            sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
+                                            sector_configured_on__is_added_to_nms=1,
+                                            sector_configured_on__in=machine_dict[machine],
+                                            sector_id__isnull=False,
+                                            sector_configured_on_port__isnull=True
+                                            ).prefetch_related('sector_configured_on',
+                                                               'base_station',
+                                                               'base_station__city',
+                                                               'base_station__state'
+                                            ).annotate(Count('sector_id'))
 
-        cbw = None
+            cbw = None
 
-        sector_val = get_sector_val(machine_dict=machine_dict,
-                                    service_name=tech_model_service['pmp']['val']['service_name'],
-                                    data_source=tech_model_service['pmp']['val']['data_source'],
-        )
+            sector_val = get_sector_val(devices=machine_dict[machine],
+                                        service_name=tech_model_service['pmp']['val']['service_name'],
+                                        data_source=tech_model_service['pmp']['val']['data_source'],
+                                        machine=machine
+            )
 
-        sector_kpi = get_sector_kpi(machine_dict=machine_dict,
-                                    service_name=tech_model_service['pmp']['per']['service_name'],
-                                    data_source=tech_model_service['pmp']['per']['data_source']
-        )
+            sector_kpi = get_sector_kpi(devices=machine_dict[machine],
+                                        service_name=tech_model_service['pmp']['per']['service_name'],
+                                        data_source=tech_model_service['pmp']['per']['data_source'],
+                                        machine=machine
+            )
 
-        return update_sector_status(sectors=sectors, cbw=cbw, kpi=sector_kpi, val=sector_val, technology=technology)
+            g_jobs.append(update_sector_status.s(sectors=sectors,
+                                                 cbw=cbw,
+                                                 kpi=sector_kpi,
+                                                 val=sector_val,
+                                                 technology=technology)
+            )
 
-    else:
-        return False
+        else:
+            return False
+    ret = False
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
 
 
-def get_sector_bw(machine_dict, service_name, data_source):
+def get_sector_bw(devices, service_name, data_source, machine):
     """
 
     :return:
     """
-    performance = None
 
-    for machine in machine_dict:
-        if performance:
-            performance |= InventoryStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name__in=service_name,
-                data_source__in=data_source
-            ).using(alias=machine)
-
-        else:
-            performance = InventoryStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name__in=service_name,
-                data_source__in=data_source
-            ).using(alias=machine)
+    performance = InventoryStatus.objects.filter(
+        device_name__in=devices,
+        service_name__in=service_name,
+        data_source__in=data_source
+    ).order_by().using(alias=machine)
 
     return performance
 
 
-def get_sector_val(machine_dict, service_name, data_source):
+def get_sector_val(devices, service_name, data_source, machine):
     """
 
 
@@ -259,25 +276,17 @@ def get_sector_val(machine_dict, service_name, data_source):
     :param data_source:
     :return:
     """
-    performance = None
-    for machine in machine_dict:
-        if performance:
-            performance |= ServiceStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name__in=service_name,
-                data_source__in=data_source
-            ).using(alias=machine)
 
-        else:
-            performance = ServiceStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name__in=service_name,
-                data_source__in=data_source
-            ).using(alias=machine)
+    performance = ServiceStatus.objects.filter(
+        device_name__in=devices,
+        service_name__in=service_name,
+        data_source__in=data_source
+    ).order_by().using(alias=machine)
+
     return performance
 
 
-def get_sector_kpi(machine_dict, service_name, data_source):
+def get_sector_kpi(devices, service_name, data_source, machine):
     """
 
     :param machine_dict:
@@ -285,22 +294,13 @@ def get_sector_kpi(machine_dict, service_name, data_source):
     :param data_source:
     :return:
     """
-    performance = None
 
-    for machine in machine_dict:
-        if performance:
-            performance |= UtilizationStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name__in=service_name,
-                data_source__in=data_source
-            ).using(alias=machine)
+    performance = UtilizationStatus.objects.filter(
+        device_name__in=devices,
+        service_name__in=service_name,
+        data_source__in=data_source
+    ).order_by().using(alias=machine)
 
-        else:
-            performance = UtilizationStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name__in=service_name,
-                data_source__in=data_source
-            ).using(alias=machine)
     return performance
 
 
@@ -724,6 +724,7 @@ def update_backhaul_status(basestations, kpi, val):
     return ret
 
 
+@task()
 def update_sector_status(sectors, cbw, kpi, val, technology):
     """
     update the sector status per sector id wise
@@ -778,6 +779,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     sector_sector_id=sector.sector_id
                 )
             except Exception as e:
+                logger.debug("WiMAX : {0}".format(e.message))
                 pass
 
             if 'pmp1' in sector.sector_configured_on_port.name.lower():
@@ -790,7 +792,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 if sector_capacity_s and len(sector_capacity_s):
                     sector_capacity = sector_capacity_s[0]
                 else:
-                    logger.exception("No CBW for : {0}".format(sector.sector_id))
+                    logger.debug("#we dont want to store any data till we get a CBW No CBW for : {0}".format(sector.sector_id))
                     continue
 
                 #current in/out values
@@ -908,8 +910,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 if sector_capacity_s and len(sector_capacity_s):
                     sector_capacity = sector_capacity_s[0]
                 else:
-                    #we dont want to store any data till we get a CBW
-                    logger.exception("No CBW for : {0}".format(sector.sector_id))
+                    logger.debug("#we dont want to store any data till we get a CBW No CBW for : {0}".format(sector.sector_id))
                     continue
                 #current in/out values
                 current_in_val_s = val.filter(
@@ -1010,9 +1011,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                                                         getit='per'
                     )
             else:
-                #we dont give a f*** if we dont get a valid port
-                logger.exception(sector.sector_id)
-                logger.exception("No Fucking Port. Not Fucking Possible")
+                logger.debug("WiMAX : #we dont give a f*** if we dont get a valid port")
                 continue
 
             if scs:
@@ -1082,7 +1081,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     sector_sector_id=sector.sector_id
                 )
             except Exception as e:
-                logger.exception(e)
+                logger.debug("PMP : {0}".format(e.message))
+                pass
+                # logger.exception(e)
 
             sector_capacity = 7 #fixed for PMP
 

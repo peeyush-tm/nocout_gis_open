@@ -13213,7 +13213,7 @@ def topology_site_wise(technology):
     return ret
 
 
-@task()
+@task(default_retry_delay=30, max_retries=2)
 def bulk_update_create(bulky, action='update', model=None):
     """
 
@@ -13230,11 +13230,16 @@ def bulk_update_create(bulky, action='update', model=None):
                     update_this.save()
                 except Exception as e:
                     logger.exception(e)
+                    continue
             return True
 
         elif action == 'create':
             if model:
-                model.objects.bulk_create(bulky)
+                try:
+                    model.objects.bulk_create(bulky)
+                except Exception as e:
+                    logger.exception(e)
+                    return False
             return True
 
     return False

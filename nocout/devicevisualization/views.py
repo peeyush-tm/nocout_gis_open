@@ -3560,7 +3560,7 @@ def getL2Report(request, ckt_id = 'no'):
         if len(report_list) > 0:
             file_url = report_list[0]['file_name']
             file_url_dict = {
-                "url" : "media/"+file_url
+                "url": "media/"+file_url
             }
             result['data'].append(file_url_dict)
             result['success'] = 1
@@ -3568,3 +3568,60 @@ def getL2Report(request, ckt_id = 'no'):
     except Exception, e:
         logger.exception(e.message)
     return HttpResponse(json.dumps(result))
+
+
+class UpdateMaintenanceStatus(View):
+    """ Update Maintenance Status of Base Station
+
+        Parameters:
+            - bs_id (unicode) - base station id for e.g. 1
+            - maintenance_status (unicode) - maintenance status i.e. 'Yes' or 'No'
+        URL:
+            - "/network_maps/update_maintenance_status/?bs_id=1&maintenance_status=Yes"
+
+    """
+
+    def get(self, request):
+
+        # get base station id's list
+        bs_id = self.request.GET.get('bs_id', None)
+
+        # get maintenance status
+        maintenance_status = self.request.GET.get('maintenance_status', None)
+
+        # result dictionary which needs to be returned as an output of api
+        result = {
+            "success": 0,
+            "message": "Failed to update maintenance status.",
+            "data": {}
+        }
+
+        if bs_id and maintenance_status:
+            # get base station
+            try:
+                base_station = BaseStation.objects.get(pk=int(bs_id))
+
+                # update maintenance status
+                base_station.maintenance_status = maintenance_status
+                base_station.save()
+
+                # set result success bit to 1
+                result['success'] = 1
+
+                # update result message
+                result['message'] = "Successfully update maintenance status."
+
+                # update result data
+                result['data']['bs_id'] = bs_id
+                result['data']['maintenance_status'] = maintenance_status
+
+                if str(maintenance_status) == 'Yes':
+                    result['data']['icon'] = 'static/img/icons/bs_red.png'
+                elif str(maintenance_status) == 'No':
+                    result['data']['icon'] = 'static/img/icons/bs_black.png'
+                else:
+                    pass
+            except Exception as e:
+                pass
+
+        return HttpResponse(json.dumps(result))
