@@ -123,28 +123,28 @@ def gather_backhaul_status():
     val_services = ['rici_dl_utilization', 'rici_ul_utilization', 'mrotek_dl_utilization', 'mrotek_ul_utilization',
                     'switch_dl_utilization', 'switch_ul_utilization']
 
-    kpi = None
-    val = None
-
     g_jobs = list()
     ret = False
 
     for machine in machines:
-        machine_bh_devices = bh_devices.filter(
+        machine_bh_devices = set(bh_devices.filter(
             bh_configured_on__machine__name=machine
         ).values_list(
             'bh_configured_on__device_name',
             flat=True
-        )
+        ))
+
         val = ServiceStatus.objects.filter(
                     device_name__in=machine_bh_devices,
                     service_name__in=val_services,
-                    data_source__in=data_sources).using(alias=machine)
-
+                    data_source__in=data_sources
+        ).order_by().using(alias=machine)
         kpi = UtilizationStatus.objects.filter(
                     device_name__in=machine_bh_devices,
                     service_name__in=kpi_services,
-                    data_source__in=data_sources).using(alias=machine)
+                    data_source__in=data_sources
+        ).order_by().using(alias=machine)
+
         # pass only base stations connected on a machine
 
         if kpi.count() and val.count():
