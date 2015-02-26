@@ -13261,4 +13261,4 @@ def bulk_update_create(bulky, action='update', model=None):
                     return False
             return True
 
-    return False
+    return True
