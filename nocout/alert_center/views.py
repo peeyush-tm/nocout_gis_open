@@ -1130,26 +1130,80 @@ class SingleDeviceAlertsInit(ListView):
 
         context = super(SingleDeviceAlertsInit, self).get_context_data(**kwargs)
 
-        table_headers = [
+        column_list_1 = [
             {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
             {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+        ]
+
+        ds_column_list = [
             {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+        ]
+
+        polling_alerts_specific_headers = [
+            {"mData": "machine_name", "sTitle": "Machine", "sWidth": "auto"},
+            {"mData": "site_name", "sTitle": "Site", "sWidth": "auto"},
+        ]
+
+        severity_column_list = [
             {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        ]
+
+        current_val_list = [
             {"mData": "current_value", "sTitle": "Current Value", "sWidth": "auto"},
+        ]
+
+        column_list_2 = [
             {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
             {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
         ]
 
-        ping_table_headers = [
-            {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
-            {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
-            # {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
-            {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        ping_specific_columns = [
             {"mData": "latency", "sTitle": "Latency", "sWidth": "auto"},
             {"mData": "packet_loss", "sTitle": "Packet Loss", "sWidth": "auto"},
-            {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
-            {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
         ]
+
+
+        table_headers = []
+        table_headers += column_list_1
+        table_headers += ds_column_list
+        table_headers += severity_column_list
+        table_headers += current_val_list
+        table_headers += column_list_2
+
+
+        ping_table_headers = []
+        ping_table_headers += column_list_1
+        ping_table_headers += severity_column_list
+        ping_table_headers += ping_specific_columns
+        ping_table_headers += column_list_2
+
+        polling_alerts_table_headers = []
+        polling_alerts_table_headers += column_list_1
+        polling_alerts_table_headers += polling_alerts_specific_headers
+        polling_alerts_table_headers += severity_column_list
+        polling_alerts_table_headers += current_val_list
+        polling_alerts_table_headers += column_list_2
+
+        # table_headers = [
+        #     {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
+        #     {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+        #     {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+        #     {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        #     {"mData": "current_value", "sTitle": "Current Value", "sWidth": "auto"},
+        #     {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
+        #     {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
+        # ]
+
+        # ping_table_headers = [
+        #     {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
+        #     {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+        #     # {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+        #     {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        #     {"mData": "latency", "sTitle": "Latency", "sWidth": "auto"},
+        #     {"mData": "packet_loss", "sTitle": "Packet Loss", "sWidth": "auto"},
+        #     {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
+        #     {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
+        # ]
 
         device_obj = Device.objects.get(id=device_id)
         device_name = device_obj.device_name
@@ -1161,6 +1215,7 @@ class SingleDeviceAlertsInit(ListView):
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
         context['ping_table_headers'] = json.dumps(ping_table_headers)
+        context['polling_alerts_headers'] = json.dumps(polling_alerts_table_headers)
         context['current_device_id'] = device_id
         context['page_type'] = page_type
         # Device Inventory page url
@@ -1204,7 +1259,6 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-
             if info_dict['service_name'] == 'ping':
 
                 self.required_columns = [
@@ -1213,6 +1267,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                     "severity",
                     "latency",
                     "packet_loss",
+                    "sys_timestamp",
+                    "description"
+                ]
+            elif info_dict['service_name'] == 'service':
+                self.required_columns = [
+                    "ip_address",
+                    "service_name",
+                    "machine_name",
+                    "service_name",
+                    "severity",
+                    "current_value",
                     "sys_timestamp",
                     "description"
                 ]
@@ -1302,6 +1367,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "severity",
                 "latency",
                 "packet_loss",
+                "sys_timestamp",
+                "description"
+            ]
+        elif info_dict['service_name'] == 'service':
+            self.required_columns = [
+                "ip_address",
+                "service_name",
+                "machine_name",
+                "service_name",
+                "severity",
+                "current_value",
                 "sys_timestamp",
                 "description"
             ]
@@ -1395,6 +1471,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "severity",
                 "latency",
                 "packet_loss",
+                "sys_timestamp",
+                "description"
+            ]
+        elif service_name == 'service':
+            order_columns = [
+                "ip_address",
+                "service_name",
+                "machine_name",
+                "service_name",
+                "severity",
+                "current_value",
                 "sys_timestamp",
                 "description"
             ]
