@@ -71,6 +71,20 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
                         'check_timestamp',
                         'age'
     ]
+    if data_source.strip().lower() in ['availability']:
+        required_values = [
+            'id',
+            'device_name',
+            'service_name',
+            'ip_address',
+            'data_source',
+            'severity',
+            'current_value',
+            'warning_threshold',
+            'critical_threshold',
+            'sys_timestamp',
+            'check_timestamp'
+        ]
     service_status_data = model.objects.filter(
         device_name__in=machine_device_list,
         service_name__icontains = service_name,
