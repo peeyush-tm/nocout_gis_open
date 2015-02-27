@@ -460,15 +460,15 @@ def calc_util_last_day():
     """
 
     tdy = datetime.datetime.today()
-    # this is the end time today's 00:15:00
-    end_time = datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 5)
-    # this is the start time yesterday's 23:50:00
-    start_time = format(end_time + datetime.timedelta(minutes=-10), 'U')
+
+    # this is the end time today's 00:10:00
+    end_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 10), 'U'))
+
+    # this is the start time yesterday's 00:00:00
+    start_time = float(format(datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0), 'U'))
 
     # this is the time when we would be considering to get last 24 hours performance
-    time_now = float(format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U'))
-    start_time = float(start_time)
-    end_time = float(format(end_time, 'U'))
+    time_now = float(format(datetime.datetime.now(), 'U'))
 
     if start_time < time_now < end_time or CAPACITY_SPECIFIC_TIME:
         return True
