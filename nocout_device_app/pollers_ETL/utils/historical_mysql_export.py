@@ -14,7 +14,7 @@ from mysql.connector import connect
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 
-def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_format=None, kpi=False):
+def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_format=None, kpi=False, device_availability=False):
 	print start_time, end_time
 	db = None
 	docs = []
@@ -23,23 +23,23 @@ def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_for
 			port=int(configs.get('port')),
 			db_name='nocout') 
 	if db:
-		if not kpi:
-			cur = db[source_perf_table].find({'local_timestamp': {'$gt': start_time, '$lt': end_time}})
+		if kpi or device_availability:
+			cur = db[source_perf_table].find({'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
 			docs = list(cur)
 		else:
-			cur = db[source_perf_table].find({'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
+			cur = db[source_perf_table].find({'local_timestamp': {'$gt': start_time, '$lt': end_time}})
 			docs = list(cur)
 	return docs
 
 
 def mysql_export(table, db, data_values):
-	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time'].strftime('%s')), data_values)
+	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time'].strftime('%s'), e['refer']), data_values)
 
 	insert_query = "INSERT INTO %s" % table
 	insert_query += """
 	(device_name, service_name, machine_name, site_name, ip_address, data_source, severity, current_value,
-	min_value, max_value, avg_value, warning_threshold, critical_threshold, sys_timestamp, check_timestamp)
-	 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	min_value, max_value, avg_value, warning_threshold, critical_threshold, sys_timestamp, check_timestamp, refer)
+	 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 	"""
 	cursor = db.cursor()
 	try:

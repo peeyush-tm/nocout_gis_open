@@ -509,16 +509,22 @@
                 getFilterApi = "",
                 setFilterApi = "",
                 advSearch = "",
-                deviceName = "", advJustSearch= "";
+                deviceName = "",
+                advJustSearch = "",
+                is_super_admin = "";
 
         $(document).ready(function (e) {
 
+            try {
+                deviceName = "{{ device_name }}";
+                // Is user super admin or admin
+                is_super_admin = '{{ is_admin }}';
+            } catch(e) {
+                // pass
+            }
+
             /*Show page controls page*/
             $("#headerToggleBtn").trigger('click');
-
-            getFilterApi = "{{get_filter_api}}";
-            setFilterApi = "{{set_filter_api}}";
-            deviceName = "{{ device_name }}";
 
             /*Create a instance of gmap_devicePlottingLib*/
             networkMapInstance = new devicePlottingClass_gmap();

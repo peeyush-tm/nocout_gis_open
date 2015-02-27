@@ -318,41 +318,53 @@ from celery import crontab
 CELERY_TIMEZONE = 'Asia/Calcutta'
 
 CELERYBEAT_SCHEDULE = {
-    'wimax-topology-site-wise': {
-        'task': 'inventory.tasks.topology_site_wise',
-        'schedule': timedelta(seconds=300),
-        'args': ['WiMAX']
-    },
+    # BEGIN Topology Updates
     'pmp-topology-site-wise': {
         'task': 'inventory.tasks.topology_site_wise',
-        'schedule': timedelta(seconds=300),
+        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
         'args': ['PMP']
     },
+    'wimax-topology-site-wise': {
+        'task': 'inventory.tasks.topology_site_wise',
+        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    # END Topology Updates
     # updating the polled sector frequency
     'update-sector-frequency': {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
         'schedule': crontab(minute=0, hour=0)
     },
-    # Escalation Status for the configured services
+    # BEGIN Escalation Status for the configured services
     'check-device-status': {
         'task': 'alarm_escalation.tasks.check_device_status',
         'schedule': timedelta(seconds=300),
-        },
-    # Sector Capacity Caclucations
-    'gather_sector_status-wimax': {
-        'task': 'capacity_management.tasks.gather_sector_status',
-        'schedule': timedelta(seconds=300),
-        'args': ['WiMAX']
     },
+    # END Escalation Status for the configured services
+    # BEGIN Calculations for Capacity
+    # Calculations start at 2nd minute for Backhual
+    'gather_backhaul_status': {
+        'task': 'capacity_management.tasks.gather_backhaul_status',
+        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+    },
+    # Sector Capacity Caclucations
+    # Calculations start at 2nd minute for PMP
     'gather_sector_status-pmp': {
         'task': 'capacity_management.tasks.gather_sector_status',
-        'schedule': timedelta(seconds=300),
+        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
         'args': ['PMP']
     },
-    # Dashboads Calculations
+    # Calculations start at 3rd minute for WiMAX
+    'gather_sector_status-wimax': {
+        'task': 'capacity_management.tasks.gather_sector_status',
+        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    # END Calculations for Capacity
+    # Dashboards Calculations start at 4th minute
     'timely-main-dashboard': {
         'task': 'dashboard.tasks.calculate_timely_main_dashboard',
-        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300), # need to run 12 times per hour
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
     },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
@@ -362,18 +374,25 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
         'schedule': crontab(minute=0, hour=0) # Execute Daily at Midnight
     },
-    # 'weekly-main-dashboard': {
-    #     'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
-    #     'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
-    # },
-    # 'monthly-main-dashboard': {
-    #     'task': 'dashboard.tasks.calculate_monthly_main_dashboard',
-    #     'schedule': crontab(minute=0, hour=1)  # Run after daily calculation task is completed.
-    # },
-    # 'yearly-main-dashboard': {
-    #     'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
-    #     'schedule': crontab(minute=0, hour=0, day_of_month=1)
-    # },
+
+    # END Backhaul Capacity Task
+    # BEGIN sector spot dashboard jobs
+    # will run on STATUS tables. must run within 5 minutes
+    'get_all_sector_devices-PMP': {
+        'task': 'performance.tasks.get_all_sector_devices',
+        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP'}
+    },
+    'get_all_sector_devices-WiMAX': {
+        'task': 'performance.tasks.get_all_sector_devices',
+        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX'}
+    },
+    'check_for_monthly_spot-WiMAX-PMP': {
+        'task': 'performance.tasks.check_for_monthly_spot',
+        'schedule': crontab(hour=23, minute=30)
+    },
+    # END sector spot dashboard jobs
     # For caching the Data for Last down time : per 5 minutes
     'device_last_down_time_CanopyPM100AP': {
         'task': 'performance.tasks.device_last_down_time_task',
@@ -415,30 +434,29 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['StarmaxSS']
     },
-    'gather_backhaul_status': {
-        'task': 'capacity_management.tasks.gather_backhaul_status',
-        'schedule': timedelta(seconds=300)
-    },
-    # sector spot dashboard jobs
-    # will run on STATUS tables. must run within 5 minutes
-    'get_all_sector_devices-PMP': {
-        'task': 'performance.tasks.get_all_sector_devices',
-        'schedule': timedelta(seconds=300),
-        'kwargs': {'technology': 'PMP'}
-    },
-    'get_all_sector_devices-WiMAX': {
-        'task': 'performance.tasks.get_all_sector_devices',
-        'schedule': timedelta(seconds=300),
-        'kwargs': {'technology': 'WiMAX'}
-    },
-    'check_for_monthly_spot-WiMAX-PMP': {
-        'task': 'performance.tasks.check_for_monthly_spot',
-        'schedule': crontab(hour=23, minute=30)
-    },
     # Remove all caching per 6 hours
     'cache_clear_task': {
         'task': 'nocout.tasks.cache_clear_task',
         'schedule': crontab(minute=3, hour='*/6'),  # per 6 hours delete all cache
+    },
+    # RF Network Availability Job - PTP-BH
+    'calculate_rf_network_availability-PTP-BH' : {
+        'task' : 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'PTP-BH'},
+        'schedule': crontab(minute=05, hour=0)
+        
+    },
+    # RF Network Availability Job - PMP
+    'calculate_rf_network_availability-PMP' : {
+        'task' : 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'PMP'},
+        'schedule': crontab(minute=20, hour=0)
+    },
+    # RF Network Availability Job - WiMAX
+    'calculate_rf_network_availability-WiMAX' : {
+        'task' : 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'WiMAX'},
+        'schedule': crontab(minute=35, hour=0)
     }
 }
 
