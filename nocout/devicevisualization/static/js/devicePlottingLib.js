@@ -3,6 +3,7 @@
 /*global instance & other variables*/
 var mapInstance = "",
 	gmap_self = "",
+	admin_val_list = ['admin'],
 	gisPerformanceClass = {},
 	infowindow = "",
 	drawingManager = "",
@@ -1938,198 +1939,201 @@ function devicePlottingClass_gmap() {
 
 			// Right click event on sector marker
 			google.maps.event.addListener(bs_marker, 'rightclick', function(e) {
-				
-				// Close infowindow if any exists
-				infowindow.close()
 
-				var base_station_id = this.filter_data.bs_id;
+				// If user is admin then proceed else do nothing
+				if(is_super_admin && admin_val_list.indexOf(is_super_admin) > -1) {
+					// Close infowindow if any exists
+					infowindow.close()
 
-				var current_maintenance_status = this.maintenance_status ? this.maintenance_status : "No",
-					maintenance_html_str = '';
+					var base_station_id = this.filter_data.bs_id;
 
-				var isChecked = current_maintenance_status == 'Yes' ? "Checked" : "";
+					var current_maintenance_status = this.maintenance_status ? this.maintenance_status : "No",
+						maintenance_html_str = '';
 
-				maintenance_html_str += '<div align="center">';
+					var isChecked = current_maintenance_status == 'Yes' ? "Checked" : "";
 
-				maintenance_html_str += '<strong>Maintenance Status</strong><div class="make-switch switch-small">\
-										<input type="checkbox" value="'+base_station_id+'" id="yes_no" '+isChecked+'>\
-										</div>';
-				maintenance_html_str += '<div class="clearfix"></div>';
-				maintenance_html_str += '<div class="divide-10"></div><div>';
-				maintenance_html_str += '<input type="hidden" name="previous_maintenance_val" id="previous_maintenance_val" \
-										value="'+current_maintenance_status+'"/>';
-				maintenance_html_str += '<button class="btn btn-xs btn-info" id="change_maintenance_status_btn" \
-										title="Update Maintenance Status">Update</button>';
-				maintenance_html_str += '</div>';
-				maintenance_html_str += '<div class="clearfix"></div>';
-				maintenance_html_str += '</div>';
+					maintenance_html_str += '<div align="center">';
 
-
-				infowindow.setContent(maintenance_html_str);
-				
-				/*Set The Position for InfoWindow*/
-				infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
-
-				/*Shift the window little up*/
-				infowindow.setOptions({pixelOffset: new google.maps.Size(-10, -25)});
-
-				infowindow.open(mapInstance);
-
-				$("#yes_no").bootstrapSwitch({
-					"size" : "small",
-					"animate" : true,
-					"onText" : "Yes",
-					"offText" : "No",
-					"onColor" : "danger",
-					"offColor" : "primary",
-					"disabled" : false
-				});
+					maintenance_html_str += '<strong>Maintenance Status</strong><div class="make-switch switch-small">\
+											<input type="checkbox" value="'+base_station_id+'" id="yes_no" '+isChecked+'>\
+											</div>';
+					maintenance_html_str += '<div class="clearfix"></div>';
+					maintenance_html_str += '<div class="divide-10"></div><div>';
+					maintenance_html_str += '<input type="hidden" name="previous_maintenance_val" id="previous_maintenance_val" \
+											value="'+current_maintenance_status+'"/>';
+					maintenance_html_str += '<button class="btn btn-xs btn-info" id="change_maintenance_status_btn" \
+											title="Update Maintenance Status">Update</button>';
+					maintenance_html_str += '</div>';
+					maintenance_html_str += '<div class="clearfix"></div>';
+					maintenance_html_str += '</div>';
 
 
-				$("#deviceMap").undelegate('click').delegate('#change_maintenance_status_btn','click',function(e) {
+					infowindow.setContent(maintenance_html_str);
+					
+					/*Set The Position for InfoWindow*/
+					infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
 
-					var updated_maintenance_status = "No",
-						current_bs_id = $("#yes_no").val(),
-						previous_status = $.trim($("#previous_maintenance_val").val());
+					/*Shift the window little up*/
+					infowindow.setOptions({pixelOffset: new google.maps.Size(-10, -25)});
 
-					if($("#yes_no")[0].checked) {
-						updated_maintenance_status = "Yes"
-					}
+					infowindow.open(mapInstance);
 
-					// If updated value & previous value are not same then proceed
-					if(previous_status != updated_maintenance_status) {
-						// If we have status & bs id
-						if(String(current_bs_id).length > 0 && String(updated_maintenance_status).length > 0) {
+					$("#yes_no").bootstrapSwitch({
+						"size" : "small",
+						"animate" : true,
+						"onText" : "Yes",
+						"offText" : "No",
+						"onColor" : "danger",
+						"offColor" : "primary",
+						"disabled" : false
+					});
 
-							// Disable update button
-							$(this).addClass("disabled");
-							$(this).html("Updating...");
 
-							// Disable bootstrap switch
-							$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
+					$("#deviceMap").undelegate('click').delegate('#change_maintenance_status_btn','click',function(e) {
 
-							var get_param_str = "?bs_id="+current_bs_id+"&maintenance_status="+updated_maintenance_status;
+						var updated_maintenance_status = "No",
+							current_bs_id = $("#yes_no").val(),
+							previous_status = $.trim($("#previous_maintenance_val").val());
 
-							// Make AJAX Call
-							$.ajax({
-								url : base_url+"/network_maps/update_maintenance_status/"+get_param_str,
-								type : "GET",
-								success : function(response) {
-									var result = "";
-					                // Type check for response
-					                if(typeof response == 'string') {
-					                    result = JSON.parse(response);
-					                } else {
-					                    result = response;
-					                }
+						if($("#yes_no")[0].checked) {
+							updated_maintenance_status = "Yes"
+						}
 
-					                if(result.success == 1) {
-					                	var new_status = result.data.maintenance_status ? $.trim(result.data.maintenance_status) : false,
-					                		bs_id = result.data.bs_id ? $.trim(result.data.bs_id) : false,
-					                		new_icon_url = result.data.icon ? $.trim(result.data.icon) : false;
+						// If updated value & previous value are not same then proceed
+						if(previous_status != updated_maintenance_status) {
+							// If we have status & bs id
+							if(String(current_bs_id).length > 0 && String(updated_maintenance_status).length > 0) {
 
-				                		// If API returns BS ID, Updated Status & Marker URL the proceed
-				                		if(new_status && bs_id && new_icon_url) {
+								// Disable update button
+								$(this).addClass("disabled");
+								$(this).html("Updating...");
 
-				                			// Update new status in input field
-				                			$("#previous_maintenance_val").val(new_status);
+								// Disable bootstrap switch
+								$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
 
-				                			// Fetch BS data object from loki object
-				                			var bs_loki_obj = all_devices_loki_db.where(function(obj) {
-								                    return obj.originalId == bs_id
-								                }),
-								                bs_data_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : false,
-								                bs_name = bs_data_object ? bs_data_object.name : false
-								                bs_marker = bs_name ? allMarkersObject_gmap['base_station']['bs_'+bs_name] : false;
+								var get_param_str = "?bs_id="+current_bs_id+"&maintenance_status="+updated_maintenance_status;
 
-							                if(bs_data_object) {
-							                	bs_data_object['data']['markerUrl'] = new_icon_url;
-							                	bs_data_object['data']['maintenance_status'] = new_status;
-							                	
-							                	// Update Loki Object
-	        									all_devices_loki_db.update(bs_data_object);
-	        									if(bs_marker) {
-	        										var new_bs_icon_obj = gmap_self.getMarkerImageBySize(
-														base_url+"/"+new_icon_url,
-														"base_station"
-													);
-	        										bs_marker.setOptions({
-	        											"icon" : new_bs_icon_obj,
-														"oldIcon" : new_bs_icon_obj,
-														"clusterIcon" : new_bs_icon_obj,
-														"maintenance_status" : new_status
-	        										});
-	        									}
-							                }
-				                		} else {
+								// Make AJAX Call
+								$.ajax({
+									url : base_url+"/network_maps/update_maintenance_status/"+get_param_str,
+									type : "GET",
+									success : function(response) {
+										var result = "";
+						                // Type check for response
+						                if(typeof response == 'string') {
+						                    result = JSON.parse(response);
+						                } else {
+						                    result = response;
+						                }
 
-				                			// Revert bootstrap switch status
+						                if(result.success == 1) {
+						                	var new_status = result.data.maintenance_status ? $.trim(result.data.maintenance_status) : false,
+						                		bs_id = result.data.bs_id ? $.trim(result.data.bs_id) : false,
+						                		new_icon_url = result.data.icon ? $.trim(result.data.icon) : false;
+
+					                		// If API returns BS ID, Updated Status & Marker URL the proceed
+					                		if(new_status && bs_id && new_icon_url) {
+
+					                			// Update new status in input field
+					                			$("#previous_maintenance_val").val(new_status);
+
+					                			// Fetch BS data object from loki object
+					                			var bs_loki_obj = all_devices_loki_db.where(function(obj) {
+									                    return obj.originalId == bs_id
+									                }),
+									                bs_data_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : false,
+									                bs_name = bs_data_object ? bs_data_object.name : false
+									                bs_marker = bs_name ? allMarkersObject_gmap['base_station']['bs_'+bs_name] : false;
+
+								                if(bs_data_object) {
+								                	bs_data_object['data']['markerUrl'] = new_icon_url;
+								                	bs_data_object['data']['maintenance_status'] = new_status;
+								                	
+								                	// Update Loki Object
+		        									all_devices_loki_db.update(bs_data_object);
+		        									if(bs_marker) {
+		        										var new_bs_icon_obj = gmap_self.getMarkerImageBySize(
+															base_url+"/"+new_icon_url,
+															"base_station"
+														);
+		        										bs_marker.setOptions({
+		        											"icon" : new_bs_icon_obj,
+															"oldIcon" : new_bs_icon_obj,
+															"clusterIcon" : new_bs_icon_obj,
+															"maintenance_status" : new_status
+		        										});
+		        									}
+								                }
+					                		} else {
+
+					                			// Revert bootstrap switch status
+												$("#yes_no").bootstrapSwitch('toggleState',true);
+
+												$.gritter.add({
+									        		// (string | mandatory) the heading of the notification
+									                title: 'Base Station Maintenance Status',
+									                // (string | mandatory) the text inside the notification
+									                text: "Maintenance status not updated. Please try again later.",
+									                // (bool | optional) if you want it to fade out on its own or just sit there
+									                sticky: false,
+									                // Time in ms after which the gritter will dissappear.
+									                time : 1000
+									            });
+					                		}
+
+					                	} else {
+
+					                		// Revert bootstrap switch status
 											$("#yes_no").bootstrapSwitch('toggleState',true);
 
-											$.gritter.add({
+					                		$.gritter.add({
 								        		// (string | mandatory) the heading of the notification
 								                title: 'Base Station Maintenance Status',
 								                // (string | mandatory) the text inside the notification
-								                text: "Maintenance status not updated. Please try again later.",
+								                text: result.message,
 								                // (bool | optional) if you want it to fade out on its own or just sit there
 								                sticky: false,
 								                // Time in ms after which the gritter will dissappear.
 								                time : 1000
 								            });
-				                		}
+					                	}
+									},
+									error : function(err) {
 
-				                	} else {
-
-				                		// Revert bootstrap switch status
-										$("#yes_no").bootstrapSwitch('toggleState',true);
-
-				                		$.gritter.add({
+										$.gritter.add({
 							        		// (string | mandatory) the heading of the notification
 							                title: 'Base Station Maintenance Status',
 							                // (string | mandatory) the text inside the notification
-							                text: result.message,
+							                text: err.statusText,
 							                // (bool | optional) if you want it to fade out on its own or just sit there
 							                sticky: false,
 							                // Time in ms after which the gritter will dissappear.
 							                time : 1000
 							            });
-				                	}
-								},
-								error : function(err) {
+									},
+									complete : function(e) {
 
-									$.gritter.add({
-						        		// (string | mandatory) the heading of the notification
-						                title: 'Base Station Maintenance Status',
-						                // (string | mandatory) the text inside the notification
-						                text: err.statusText,
-						                // (bool | optional) if you want it to fade out on its own or just sit there
-						                sticky: false,
-						                // Time in ms after which the gritter will dissappear.
-						                time : 1000
-						            });
-								},
-								complete : function(e) {
+										// Enable bootstrap switch
+										$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
 
-									// Enable bootstrap switch
-									$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
+										if(e.status != 200) {
+											// Revert bootstrap switch status
+											$("#yes_no").bootstrapSwitch('toggleState',true);
+										}
 
-									if(e.status != 200) {
-										// Revert bootstrap switch status
-										$("#yes_no").bootstrapSwitch('toggleState',true);
+										// Enable Update Button
+										$("#change_maintenance_status_btn").removeClass("disabled");
+										$("#change_maintenance_status_btn").html("Update")
+
 									}
-
-									// Enable Update Button
-									$("#change_maintenance_status_btn").removeClass("disabled");
-									$("#change_maintenance_status_btn").html("Update")
-
-								}
-							});
+								});
+							}
+						} else {
+							bootbox.alert("Please Change The Status");
 						}
-					} else {
-						bootbox.alert("Please Change The Status");
-					}
-					return false;
-				});
+						return false;
+					});
+				}
 			});
 
 			/*Add BS Marker To Cluster*/
