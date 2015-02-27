@@ -722,7 +722,7 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
     """
 
     if not len(resultant_data) or devices_count == 0:
-        return []
+        return False
 
     total_current_val = 0
     devices_list = []
@@ -748,16 +748,37 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
 
     try:
         current_date_time = int((datetime.datetime.now() - datetime.timedelta(days = 1)).strftime('%s'))
+        bulky_create = list()
 
-        table_instance = RfNetworkAvailability(
+        rf_network_avail_instance = RfNetworkAvailability(
             technology=tech,
             avail=avg_avail,
             unavail=avg_unavail,
             sys_timestamp=current_date_time
         )
 
-        # Insert into db
-        table_instance.save()
+        bulky_create.append(rf_network_avail_instance)
+
+        # If any create item exist then start bulk create job
+        if len(bulky_create):
+            g_jobs.append(
+                inventory_tasks.bulk_update_create.s(
+                    bulky=bulky_create,
+                    action='create',
+                    model=RfNetworkAvailability
+                )
+            )
+
+        # Start create & update jobs parallely
+        job = group(g_jobs)
+        result = job.apply_async()
+        ret = False
+        
+        for r in result.get():
+            ret |= r
+        
+        return ret
+        
     except Exception, e:
         # raise e
         return False
