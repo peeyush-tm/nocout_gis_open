@@ -1853,18 +1853,22 @@ function WhiteMapClass() {
 					sector_info_list = bs_ss_devices[i].data.param.sectors_info_list,
 					sector_infoWindow_content = sector_info_list ? sector_info_list : [];
 
+				// BS marker url
+				var bs_marker_url = bs_ss_devices[i].data.markerUrl ? base_url+"/"+bs_ss_devices[i].data.markerUrl : base_url+"/static/img/icons/bs.png",
+					bs_maintenance_status = bs_ss_devices[i].data.maintenance_status ? $.trim(bs_ss_devices[i].data.maintenance_status) : "No";
+
 				/*Create BS Marker Object*/
 				var bs_marker_object = {
 					position  	       : 	{lat: bs_ss_devices[i].data.lat, lon: bs_ss_devices[i].data.lon},
 					ptLat 		       : 	bs_ss_devices[i].data.lat,
 					ptLon 		       : 	bs_ss_devices[i].data.lon,
 					map       	       : 	'current',
-					icon 	  	       : 	base_url+"/static/img/icons/bs.png",
-					oldIcon 	       : 	base_url+"/static/img/icons/bs.png",
-					clusterIcon 	   : 	base_url+"/static/img/icons/bs.png",
+					icon 	  	       : 	bs_marker_url,
+					oldIcon 	       : 	bs_marker_url,
+					clusterIcon 	   : 	bs_marker_url,
 					pointType	       : 	stationType,
 					child_ss   	       : 	bs_ss_devices[i].data.param.sector,
-					// dataset 	       : 	bs_ss_devices[i].data.param.base_station,
+					maintenance_status : 	bs_maintenance_status,
 					item_index 		   :    0,
 					device_name 	   : 	bs_ss_devices[i].data.device_name,
 					bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
@@ -1883,7 +1887,7 @@ function WhiteMapClass() {
 					layerReference     : 	ccpl_map.getLayersByName("Markers")[0]
 				};
 
-				var bs_marker = global_this.createOpenLayerVectorMarker(bs_size, icon, lon, lat, bs_marker_object);
+				var bs_marker = global_this.createOpenLayerVectorMarker(bs_size, bs_marker_url, lon, lat, bs_marker_object);
 				bs_ss_markers.push(bs_marker);
 
 				// ccpl_map.getLayersByName("Markers")[0].addFeatures([bs_marker]);

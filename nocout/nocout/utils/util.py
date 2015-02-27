@@ -435,6 +435,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None)
                         basestation.tower_height as BSTOWERHEIGHT,
                         basestation.tag1 as BSTAG1,
 			            basestation.tag2 as BSTAG2,
+                        basestation.maintenance_status as BSMAINTENANCESTATUS,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,
@@ -831,6 +832,7 @@ def query_all_gis_inventory_improved(monitored_only=False):
                         basestation.tower_height as BSTOWERHEIGHT,
                         basestation.tag1 as BSTAG1,
 			            basestation.tag2 as BSTAG2,
+                        basestation.maintenance_status as BSMAINTENANCESTATUS,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,

@@ -214,7 +214,8 @@ def prepare_raw_alert_results(performance_data=None):
                     float(data["age"])).strftime(DATE_TIME_FORMAT)
                 if data["age"]
                 else "",
-                'description': ''  #data['description']
+                'description': '',  #data['description']
+                'refer': data["refer"] if ('refer' in data and data['refer']) else ''
             })
 
             device_list.append(device_events)

@@ -511,11 +511,21 @@
             earth_instance = "",
             advJustSearch= "",
             gisPerformanceClass = "",
-            gmap_self;
+            gmap_self = "",
+            deviceName = "",
+            is_super_admin = "";
 
         google.load("earth", "1");
 
         $(document).ready(function (e) {
+
+            try {
+                deviceName = "{{ device_name }}";
+                // Is user super admin or admin
+                is_super_admin = '{{ is_admin }}';
+            } catch(e) {
+                // pass
+            }
 
             /*Show page controls page*/
             $("#headerToggleBtn").trigger('click');

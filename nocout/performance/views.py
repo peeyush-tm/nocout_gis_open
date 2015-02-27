@@ -635,7 +635,14 @@ class SectorDashboard(ListView):
         last_six_months_list, \
         months_list = getLastXMonths(6);
 
-        for i in reversed(range(6)):
+        try:
+            # pass
+            last_six_months_list.reverse()
+        except Exception, e:
+            # raise e
+            pass
+
+        for i in range(6):
             # Get month index from year,month tuple
             month_index = last_six_months_list[i][1] - 1
             month_name = months_list[month_index]['name']
@@ -1056,8 +1063,8 @@ class Inventory_Device_Status(View):
                         bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                 if technology.name.lower() in ['ptp', 'p2p']:
-
-                    table_values = [
+                    table_values = []
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1094,13 +1101,13 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
+                    ])
 
                     result['data']['objects']['values'] = table_values
 
                 elif technology.name.lower() in ['wimax']:
-
-                    table_values = [
+                    table_values = []
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1141,8 +1148,8 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
-                    result['data']['objects']['values'] = table_values
+                    ])
+                    # result['data']['objects']['values'].append(table_values)
 
                     # result['data']['objects']['values'].append([display_bs_name,
                     #                                             sector_id,
@@ -1159,48 +1166,48 @@ class Inventory_Device_Status(View):
                     if dr_ip:
                         dr_ip += " (DR) "
 
-                    table_values = [
-                        {
-                            "val" : display_bs_name,
-                            "url" : bs_name_url
-                        },
-                        {
-                            "val" : sector_id,
-                            "url" : sector_id_url
-                        },
-                        {
-                            "val" : pmp_port,
-                            "url" : pmp_port_url
-                        },
-                        {
-                            "val" : technology.alias,
-                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                        },
-                        {
-                            "val" : type.alias,
-                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                        },
-                        {
-                            "val" : city_name,
-                            "url" : city_url
-                        },
-                        {
-                            "val" : state_name,
-                            "url" : state_url
-                        },
-                        {
-                            "val" : dr_ip,
-                            "url" : dr_ip_url
-                        },
-                        {
-                            "val" : planned_frequency,
-                            "url" : planned_frequency_url
-                        },
-                        {
-                            "val" : frequency,
-                            "url" : frequency_url
-                        }
-                    ]
+                        table_values.append([
+                            {
+                                "val" : display_bs_name,
+                                "url" : bs_name_url
+                            },
+                            {
+                                "val" : sector_id,
+                                "url" : sector_id_url
+                            },
+                            {
+                                "val" : pmp_port,
+                                "url" : pmp_port_url
+                            },
+                            {
+                                "val" : technology.alias,
+                                "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                            },
+                            {
+                                "val" : type.alias,
+                                "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                            },
+                            {
+                                "val" : city_name,
+                                "url" : city_url
+                            },
+                            {
+                                "val" : state_name,
+                                "url" : state_url
+                            },
+                            {
+                                "val" : dr_ip,
+                                "url" : dr_ip_url
+                            },
+                            {
+                                "val" : planned_frequency,
+                                "url" : planned_frequency_url
+                            },
+                            {
+                                "val" : frequency,
+                                "url" : frequency_url
+                            }
+                        ])
 
                     result['data']['objects']['values'] = table_values
 
@@ -1218,7 +1225,8 @@ class Inventory_Device_Status(View):
                     # ])
 
                 else:
-                    table_values = [
+                    table_values = []
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1255,7 +1263,7 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
+                    ])
                     
                     result['data']['objects']['values'] = table_values
 
@@ -1428,7 +1436,7 @@ class Inventory_Device_Status(View):
                         }
                     ]
                     
-                    result['data']['objects']['values'] = table_values
+                    result['data']['objects']['values'].append(table_values)
 
                     # result['data']['objects']['values'].append([display_bs_name,
                     #                                             substation.alias,
@@ -1837,6 +1845,9 @@ class Get_Service_Type_Performance_Data(View):
         # test once for technology
         try:
             technology = DeviceTechnology.objects.get(id=device.device_technology)
+        except:
+            return HttpResponse(json.dumps(self.result), content_type="application/json")
+        try:
             # test now for sector
             if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
                 dr_devices = device.sector_configured_on.filter()
@@ -1847,7 +1858,7 @@ class Get_Service_Type_Performance_Data(View):
                 parameters['devices'].append(dr_device.device_name)
                 # parameters updated with all devices
         except:
-            return HttpResponse(json.dumps(self.result), content_type="application/json")
+            pass  # no dr site
 
         if service_data_source_type in ['pl', 'rta']:
 

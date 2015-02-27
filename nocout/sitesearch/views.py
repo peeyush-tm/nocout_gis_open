@@ -961,6 +961,15 @@ def prepare_raw_bs_result(bs_result=None):
 
         base_station = bs_result[0]
 
+        bs_marker_icon = 'static/img/icons/bs_black.png'
+
+        try:
+            if base_station['BSMAINTENANCESTATUS'] and base_station['BSMAINTENANCESTATUS'].strip() == 'Yes':
+                bs_marker_icon = 'static/img/icons/bs_red.png'
+        except Exception, e:
+            # raise e
+            pass
+
         base_station_info = {
             'id': base_station['BSID'],
             'name': base_station['BSNAME'],
@@ -968,7 +977,8 @@ def prepare_raw_bs_result(bs_result=None):
             'data': {
                 'lat': base_station['BSLAT'],
                 'lon': base_station['BSLONG'],
-                "markerUrl": 'static/img/marker/slave01.png',
+                "markerUrl": bs_marker_icon,
+                "maintenance_status" : base_station['BSMAINTENANCESTATUS'],
                 'antenna_height': 0,
                 'vendor': None,
                 'city': base_station['BSCITY'],

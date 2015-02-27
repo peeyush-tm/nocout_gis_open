@@ -17,6 +17,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.settings import PMP, WiMAX, TCLPOP
 
 from nocout.utils import logged_in_user_organizations
+from nocout.utils.util import convert_utc_to_local_timezone
 from inventory.models import Sector
 from device.models import DeviceTechnology, Device
 from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, Topology, NetworkStatus
@@ -776,22 +777,28 @@ class SectorCapacityMixin(object):
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology=technology)
         # Get Device of User's Sector.
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         # Get Device name list of User's Sector.
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Get the status of the dashboard.
-        dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
-
+        dashboard_status_dict,\
+        processed_for_key = get_severity_status_dict(dashboard_name, sector_devices_list)
         chart_series = []
+        color = []
         if len(dashboard_status_dict):
             for key,value in dashboard_status_dict.items():
                 # create a list of "Key: value".
                 chart_series.append(['%s: %s' % (key.replace('_', ' '), value), dashboard_status_dict[key]])
 
+            color.append('rgb(255, 153, 0)')
+            color.append('rgb(255, 0, 0)')
+            color.append('rgb(0, 255, 0)')
+            color.append('#d3d3d3')
         # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': '%s Sector Capacity' % tech_name.upper(), 'name': ''})
+            'title': '%s Sector Capacity' % tech_name.upper(), 'name': '', 'colors': color, 'processed_for_key':processed_for_key})
 
         return HttpResponse(response)
 
@@ -847,24 +854,28 @@ class BackhaulCapacityMixin(object):
             # Creating Dashboard Name
             dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
             # Get the status of the dashboard.
-            dashboard_status_dict = get_severity_status_dict(dashboard_name, backhaul_devices_list)
-
+            dashboard_status_dict,\
+            processed_for_key = get_severity_status_dict(dashboard_name, backhaul_devices_list)
+            color = []
             chart_series = []
             if len(dashboard_status_dict):
                 for key,value in dashboard_status_dict.items():           
                     # Changing key in to warning and critical
                     if key == 'Needs_Augmentation':
-                        change_key = 'warning'
+                        change_key = 'Warning'
                     elif key == 'Stop_Provisioning':
-                        change_key = 'critical'             
+                        change_key = 'Critical'             
                     else:
                         change_key = key
                     # create a list of "Key: value".    
                     chart_series.append(['%s: %s' % (change_key, value), dashboard_status_dict[key]])
-
+                color.append('rgb(255, 153, 0)')
+                color.append('rgb(255, 0, 0)')
+                color.append('rgb(0, 255, 0)')
+                color.append('#d3d3d3')
             # get the chart_data for the pie chart.
             response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': ''})
+                'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': '', 'colors': color, 'processed_for_key':processed_for_key})
 
         return HttpResponse(response)
 
@@ -935,13 +946,15 @@ class SalesOpportunityMixin(object):
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
         # Get Device of User's Sector.
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         # Get Device Name List of User's Sector.
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
         # Get the status of the dashbaord.
-        dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices_list)
+        dashboard_status_dict,\
+        processed_for_key = get_range_status_dict(dashboard_name, sector_devices_list)
 
         chart_series = []
         colors = []
@@ -954,7 +967,7 @@ class SalesOpportunityMixin(object):
 
         # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
+            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors, 'processed_for_key':processed_for_key})
 
         return HttpResponse(response)
 
@@ -984,11 +997,15 @@ def get_severity_status_dict(dashboard_name, devices_list):
 
     return: dictionary
     '''
+
     dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
         device_name__in=devices_list
     )
+    processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
+        processed_for_key_utc = dashboard_status_dict[0].processed_for
+        processed_for_key_localtime =  convert_utc_to_local_timezone(processed_for_key_utc)
         # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
         # get the dashboard data on the basis of the processed_for.
@@ -998,7 +1015,8 @@ def get_severity_status_dict(dashboard_name, devices_list):
                                     Stop_Provisioning=Sum('critical'),
                                     Unknown=Sum('unknown')
                                 )
-    return dashboard_status_dict
+  
+    return (dashboard_status_dict, processed_for_key_localtime)
 
 
 def get_range_status_dict(dashboard_name, sector_devices_list):
@@ -1015,7 +1033,10 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
         dashboard_name=dashboard_name,
         device_name__in=sector_devices_list
     )
+    processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
+        processed_for_key_utc = dashboard_status_dict[0].processed_for
+        processed_for_key_localtime =  convert_utc_to_local_timezone(processed_for_key_utc)
         # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
         # get the dashboard data on the basis of the processed_for.
@@ -1026,7 +1047,7 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
                                     range10=Sum('range10'), unknown=Sum('unknown')
                                 )
 
-    return dashboard_status_dict
+    return (dashboard_status_dict, processed_for_key_localtime)
 
 
 # *************************** Dashboard Gauge Status ***********************
@@ -1084,7 +1105,8 @@ class DashboardDeviceStatus(View):
             }))
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = get_range_status_dict(dashboard_status_name, sector_devices)
+        dashboard_status_dict,\
+        processed_for_key = get_range_status_dict(dashboard_status_name, sector_devices)
         if len(dashboard_status_dict):
             # Sum all the values of the dashboard status dict.
             count = sum(dashboard_status_dict.values())
@@ -1102,7 +1124,7 @@ class DashboardDeviceStatus(View):
         max_range, chart_stops = get_guege_chart_max_n_stops(dashboard_setting)
 
         chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count,
-                'max': max_range, 'stops': chart_stops}
+                'max': max_range, 'stops': chart_stops, 'processed_for_key':processed_for_key}
 
         # get the chart_data for the gauge chart.
         response = get_highchart_response(chart_data_dict)
@@ -1178,13 +1200,14 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
 
         # Accessing all elements in sector trend items
         for i in range(len(trends_items)):
-            item_color = color_picker()
+            item_color = ['rgb(0, 255, 0)', 'rgb(255, 153, 0)', 'rgb(255, 0, 0)', '#d3d3d3']
+             
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
                 "name": trends_items[i]['title'],
                 "valuetext": trends_items[i]['title'],
-                "color" : item_color,
+                "color" : item_color[i],
                 "data" : list()
             }
             # Reseting month_before for every element of sector_trends_items
@@ -1192,7 +1215,8 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
             # random color picker for sending different colors
             
             # Loop for sending complete 30 days Data
-            while month_before <= datetime.date.today():
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 # Function for getting value for element of sector trend items on every date within month    
                 data_val = getValueByTime(
                     dashboard_status_dict=dashboard_status_dict,
@@ -1203,7 +1227,7 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
 
                 # Preparation of final dict for sending to main function
                 data_dict['data'].append({
-                    "color": item_color,
+                    "color": item_color[i],
                     "y" : data_val,
                     "name": trends_items[i]['title'],
                     "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
@@ -1267,15 +1291,16 @@ def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
-                "name": trend_items[i],
+                "name": trend_items[i].title(),
                 "valuetext": trend_items[i],
                 "color" : color_dict,
                 "data" : list()
             }
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             chart_color = ''
-            # Loop for sending complete 30 days Data    
-            while month_before <= datetime.date.today():
+            # Loop for sending complete 30 days Data
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 # Loop for every element in list
                 response_dict = {'chart_data' : 0, 'color' : '#000000'} 
                 for var in dashboard_status_dict:
@@ -1419,7 +1444,8 @@ class MonthlyTrendSectorMixin(object):
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         user_sector = organization_sectors(organization, technology=technology)  #Sector for that user corresponding to organization and technology
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
@@ -1482,7 +1508,8 @@ class MonthlyTrendSalesMixin(object):
         
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+            is_added_to_nms = 1)
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
         
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
@@ -1622,7 +1649,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
             data_dict = {
                     "type": "column",
                     "valuesuffix": " ",
-                    "name": trend_items[i]['title'],
+                    "name": trend_items[i]['title'].title(),
                     "valuetext": " ",
                     "color" : count_color,
                     "data" : list(),
@@ -1631,7 +1658,8 @@ class MonthlyTrendDashboardDeviceStatus(View):
             # Getting date of 30days before from Today
             month_before = datetime.date.today() - datetime.timedelta(days=30)
             # Loop for getting complete month Data
-            while month_before <= datetime.date.today():
+            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+            while month_before < datetime.date.today():
                 count = 0
                 if trend_items[i]['title'] != 'unknown':
                     count_color = getattr(dashboard_setting, '%s_color_hex_value' %trend_items[i]['title'])
