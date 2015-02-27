@@ -5,7 +5,7 @@ from nocout.utils.util import fetch_raw_result
 # performance views import
 import performance.views as perf_views
 # getLastXMonths
-from performance.models import SpotDashboard
+from performance.models import SpotDashboard, RfNetworkAvailability, NetworkAvailabilityDaily
 from device.models import DeviceType, DeviceTechnology, SiteInstance, Device
 from inventory.models import Sector
 import inventory.tasks as inventory_tasks
@@ -13,6 +13,10 @@ import inventory.tasks as inventory_tasks
 import inventory.utils.util as inventory_utils
 
 from celery.utils.log import get_task_logger
+# Django Dateformat utility
+from django.utils.dateformat import format
+# datetime utility
+import datetime
 
 logger = get_task_logger(__name__)
 
@@ -148,7 +152,7 @@ def get_all_sector_devices(technology):
         complete_augmentation_data = get_sector_augmentation_data(sector_ids=sectors_id_list)
 
     # Machine wise data calculation for performance utilization status
-    for machine_name in machine_wise_data.keys():
+    for machine_name in machine_wise_data:
         current_row = machine_wise_data[machine_name]
         # List of sector_id on current machine
         sector_ids = current_row['sector_id']
@@ -476,7 +480,6 @@ def check_for_monthly_spot():
     g_jobs = list()
     technology = ['WiMAX', 'PMP']
     
-    import datetime
     tdy = datetime.datetime.now()
     tom = tdy + datetime.timedelta(days = 1)
 
@@ -561,5 +564,249 @@ def update_spot_dashboard_monthly(technology=None):
     else:
         return True
 
-    ################## Task for Sector Spot Dashboard Calculation - End ###################
+################## Task for Sector Spot Dashboard Calculation - End ###################
+
+
+################## Task for RF Main Dashboard Network Availability Calculation - Start ###################
+
+@task()
+def calculate_rf_network_availability(technology=None):
+    """
+    This function calculates rf network availability & updates model accordingly
+    :param technology: It contains staring value name of technology
+    :return: boolean(True)
+    """
+
+    # If technology exist then proceed
+    if not technology:
+        return False
+
+    # Get the list of organization which are user accessible
+    organizations = inventory_tasks.get_organizations()
+
+    # If no organization then return
+    if not len(organizations):
+        return False
+
+    try:
+        tech_id = DeviceTechnology.objects.get(name=technology).id
+    except Exception as e:
+        return False
+
+    inventory_devices = inventory_utils.organization_network_devices(organizations, tech_id)
+
+    if not len(inventory_devices):
+        return False
+
+    # Get machine wise data
+    machine_wise_devices = rf_getMachineWiseData(inventory_devices)
+
+    # Model used to collect data from distributed databases
+    availability_model = NetworkAvailabilityDaily
+
+    # Data sources name list
+    data_source_list = [
+        "availability"
+    ]
+
+    services_list = data_source_list
+
+    # initialize complete availability data variable
+    complete_rf_network_avail_data = list()
+    total_devices_count = 0
+
+    for machine_name in machine_wise_devices:
+        current_row = machine_wise_devices[machine_name]
+        # List of device_name on current machine
+        device_names = current_row['device_name']
+        # If any devices present then proceed forward
+        if len(device_names) > 0:
+            total_devices_count += len(device_names)
+            # Call 'get_network_availability_data' to get the network availability data per machine
+            complete_rf_network_avail_data += get_network_availability_data(
+                devices_names=device_names,
+                service_name_list=services_list,
+                ds_name_list=data_source_list,
+                machine=machine_name,
+                avail_model=availability_model
+            )
+
+    if len(complete_rf_network_avail_data) and total_devices_count > 0:
+        # Call function to get the count & % wise availability
+        resultant_dict = insert_network_avail_result(
+            resultant_data=complete_rf_network_avail_data,
+            devices_count=total_devices_count,
+            tech=technology
+        )
+
+    return True
+
+
+def rf_getMachineWiseData(devices_list):
+    """
+    This function returns dict of devices list as per machines
+    :param devices_list: Object of devices from device.models
+    :return: dictionary of machines
+    """
+    machines_wise_dict = {}
+
+    for device in devices_list:
+        try:
+            machine_name = device.machine.name
+        except Exception, e:
+            machine_name = ''
+        # If any machine is present then proceed
+        if machine_name:
+            # if new machine then add key else append details of that machine 
+            if machine_name not in machines_wise_dict:
+                # initialize machine name dict with the device elements
+                machines_wise_dict[machine_name] = {
+                    "device_name": list(),
+                    "ip_address": list()
+                }
+            try:
+                # IF device name not present then append
+                if device.device_name and device.device_name not in machines_wise_dict[machine_name]["device_name"]:
+                    machines_wise_dict[machine_name]["device_name"].append(device.device_name)
+
+                # IF IP adress not present then append
+                if device.ip_address and device.ip_address not in machines_wise_dict[machine_name]["ip_address"]:
+                    machines_wise_dict[machine_name]["ip_address"].append(device.ip_address)
+            except Exception as e:
+                continue
+
+    return machines_wise_dict
+
+
+def get_network_availability_data(devices_names=[], service_name_list=["availability"], ds_name_list=["availability"], machine='', avail_model=''):
+    """
+    :This function fetch availability data as per given params
+    :param devices_names: It contains list of device names
+    :param ds_name_list: It contains list of data source names
+    :param service_name_list: It contains list of service names
+    :param machine: It contains the name of machine
+    :param avail_model: It contains the model from which data is to be fetched
+    :return polled_data_list: It contains the fetched polled data as per given params
+    """
+
+    polled_data_list = []
+    
+    # Columns required to be fetched
+    required_values = [
+        'device_name',
+        'current_value',
+        'sys_timestamp'
+    ]
+
+    # If no model present then return blank list
+    if not avail_model:
+        return polled_data_list
+
+    try:
+        # this is today object
+        tdy = datetime.datetime.today()
+
+        # this is the end time today's 00:00:00
+        end_time = datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0)
+
+        # this is the start time today's 00:00:00
+        start_time = end_time +  datetime.timedelta(days = -1)
+
+        # start time in UNIX TIME
+        start_time = float( format ( start_time , 'U' ))
+
+        # end time in UNIX TIME
+        end_time = float( format ( end_time , 'U' ))
+
+        # Fetch data from given model
+        polled_data_list = avail_model.objects.extra(
+            select={'sys_timestamp':"date(sys_timestamp)"}
+        ).filter(
+            device_name__in=devices_names,
+            service_name__in=service_name_list,
+            data_source__in=ds_name_list,
+            sys_timestamp__gte=start_time,
+            sys_timestamp__lte=end_time
+        ).using(machine).values(*required_values)
+
+        return polled_data_list
+
+    except Exception, e:
+        return polled_data_list
+
+
+def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
+    """
+    :This function calcultes the availability & unavailability of devices as per the fetched result
+    :param resultant_data: It contains the list of data fetched from distributed databases
+    """
+
+    if not len(resultant_data) or devices_count == 0:
+        return False
+
+    total_current_val = 0
+    devices_list = []
+
+    for val in resultant_data:
+        current_row = resultant_data[val]
+        if current_row:
+            try:
+                device_name = current_row.device_name
+                current_value = current_row.current_value
+            except Exception, e:
+                device_name = ''
+                current_value = 0
+
+            if device_name and device_name not in devices_list:
+                devices_list.append(device_name)
+                total_current_val += current_value
+
+    # Calculate the percentage availability
+    avg_avail = total_current_val / devices_count
+    avg_unavail = 100 - avg_avail
+
+
+    try:
+        current_date_time = int((datetime.datetime.now() - datetime.timedelta(days = 1)).strftime('%s'))
+        bulky_create = list()
+
+        rf_network_avail_instance = RfNetworkAvailability(
+            technology=tech,
+            avail=avg_avail,
+            unavail=avg_unavail,
+            sys_timestamp=current_date_time
+        )
+
+        bulky_create.append(rf_network_avail_instance)
+
+        # If any create item exist then start bulk create job
+        if len(bulky_create):
+            g_jobs.append(
+                inventory_tasks.bulk_update_create.s(
+                    bulky=bulky_create,
+                    action='create',
+                    model=RfNetworkAvailability
+                )
+            )
+
+        # If any g_jobs exists
+        if len(g_jobs):
+            # Start create jobs parallely
+            job = group(g_jobs)
+            result = job.apply_async()
+            ret = False
+            
+            for r in result.get():
+                ret |= r
+            
+            return ret
+        
+    except Exception, e:
+        # raise e
+        return False
+
+    return True
+
+
+################## Task for RF Main Dashboard Network Availability Calculation - End ###################
 

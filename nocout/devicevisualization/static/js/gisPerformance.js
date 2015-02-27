@@ -22,7 +22,8 @@ var recallPerf = "",
         borderRadius  : "5px",
         width         : '90px'
     },
-    callsInProcess = false;
+    callsInProcess = false,
+    gis_perf_call_instance = "";
 
 if(!base_url) {
     var base_url = "";
@@ -157,8 +158,17 @@ function GisPerformance() {
 
         var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
 
+        if(gis_perf_call_instance) {
+            try {
+                gis_perf_call_instance.abort()
+                gis_perf_call_instance = "";
+            } catch(e) {
+                // pass
+            }
+        }
+
         //Ajax Request
-        $.ajax({
+        gis_perf_call_instance = $.ajax({
             url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&ts='+selected_thematics+'&freeze_time=' + freezedAt,
             // url: base_url + '/static/new_perf_ptp.json',
             type: 'GET',
