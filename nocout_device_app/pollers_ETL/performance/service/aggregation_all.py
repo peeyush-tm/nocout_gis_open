@@ -226,7 +226,7 @@ def quantify_perf_data(host_specific_data):
                 max_val = max(values_list) 
                 if aggr_data.get('avg'):
                     try:
-                        avg_val = (float(existing_doc.get('avg')) + float(aggr_data.get('avg')))/ 2
+                        avg_val = (float(existing_doc.get('avg')) + float(aggr_data.get('avg')))/ 2.0
                     except Exception:
                         avg_val = existing_doc.get('avg') if existing_doc.get('avg') else aggr_data.get('avg')
                 else:
