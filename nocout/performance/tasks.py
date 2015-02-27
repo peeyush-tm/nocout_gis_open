@@ -740,6 +740,8 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
     :This function calcultes the availability & unavailability of devices as per the fetched result
     :param resultant_data: It contains the list of data fetched from distributed databases
     """
+    g_jobs = list()
+    ret = False
 
     if not len(resultant_data) or devices_count == 0:
         return False
@@ -765,9 +767,8 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
     avg_avail = total_current_val / devices_count
     avg_unavail = 100 - avg_avail
 
-
     try:
-        current_date_time = int((datetime.datetime.now() - datetime.timedelta(days = 1)).strftime('%s'))
+        current_date_time = int((datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%s'))
         bulky_create = list()
 
         rf_network_avail_instance = RfNetworkAvailability(
@@ -801,8 +802,8 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
             
             return ret
         
-    except Exception, e:
-        # raise e
+    except Exception as e:
+        logger.exception(e)
         return False
 
     return True

@@ -18,6 +18,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.settings import PMP, WiMAX, TCLPOP
 
 from nocout.utils import logged_in_user_organizations
+from nocout.utils.util import convert_utc_to_local_timezone
 from inventory.models import Sector
 from device.models import DeviceTechnology, Device
 from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, \
@@ -784,8 +785,8 @@ class SectorCapacityMixin(object):
         sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Get the status of the dashboard.
-        dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
-
+        dashboard_status_dict,\
+        processed_for_key = get_severity_status_dict(dashboard_name, sector_devices_list)
         chart_series = []
         color = []
         if len(dashboard_status_dict):
@@ -799,7 +800,7 @@ class SectorCapacityMixin(object):
             color.append('#d3d3d3')
         # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': '%s Sector Capacity' % tech_name.upper(), 'name': '', 'colors': color})
+            'title': '%s Sector Capacity' % tech_name.upper(), 'name': '', 'colors': color, 'processed_for_key':processed_for_key})
 
         return HttpResponse(response)
 
@@ -855,7 +856,8 @@ class BackhaulCapacityMixin(object):
             # Creating Dashboard Name
             dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
             # Get the status of the dashboard.
-            dashboard_status_dict = get_severity_status_dict(dashboard_name, backhaul_devices_list)
+            dashboard_status_dict,\
+            processed_for_key = get_severity_status_dict(dashboard_name, backhaul_devices_list)
             color = []
             chart_series = []
             if len(dashboard_status_dict):
@@ -875,7 +877,7 @@ class BackhaulCapacityMixin(object):
                 color.append('#d3d3d3')
             # get the chart_data for the pie chart.
             response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': '', 'colors': color})
+                'title': '%s Backhaul Capacity' % tech_name.upper(), 'name': '', 'colors': color, 'processed_for_key':processed_for_key})
 
         return HttpResponse(response)
 
@@ -953,7 +955,8 @@ class SalesOpportunityMixin(object):
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
         # Get the status of the dashbaord.
-        dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices_list)
+        dashboard_status_dict,\
+        processed_for_key = get_range_status_dict(dashboard_name, sector_devices_list)
 
         chart_series = []
         colors = []
@@ -966,7 +969,7 @@ class SalesOpportunityMixin(object):
 
         # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
+            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors, 'processed_for_key':processed_for_key})
 
         return HttpResponse(response)
 
@@ -996,11 +999,15 @@ def get_severity_status_dict(dashboard_name, devices_list):
 
     return: dictionary
     '''
+
     dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
         device_name__in=devices_list
     )
+    processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
+        processed_for_key_utc = dashboard_status_dict[0].processed_for
+        processed_for_key_localtime =  convert_utc_to_local_timezone(processed_for_key_utc)
         # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
         # get the dashboard data on the basis of the processed_for.
@@ -1010,7 +1017,8 @@ def get_severity_status_dict(dashboard_name, devices_list):
                                     Stop_Provisioning=Sum('critical'),
                                     Unknown=Sum('unknown')
                                 )
-    return dashboard_status_dict
+  
+    return (dashboard_status_dict, processed_for_key_localtime)
 
 
 def get_range_status_dict(dashboard_name, sector_devices_list):
@@ -1027,7 +1035,10 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
         dashboard_name=dashboard_name,
         device_name__in=sector_devices_list
     )
+    processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
+        processed_for_key_utc = dashboard_status_dict[0].processed_for
+        processed_for_key_localtime =  convert_utc_to_local_timezone(processed_for_key_utc)
         # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
         # get the dashboard data on the basis of the processed_for.
@@ -1038,7 +1049,7 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
                                     range10=Sum('range10'), unknown=Sum('unknown')
                                 )
 
-    return dashboard_status_dict
+    return (dashboard_status_dict, processed_for_key_localtime)
 
 
 # *************************** Dashboard Gauge Status ***********************
@@ -1096,7 +1107,8 @@ class DashboardDeviceStatus(View):
             }))
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = get_range_status_dict(dashboard_status_name, sector_devices)
+        dashboard_status_dict,\
+        processed_for_key = get_range_status_dict(dashboard_status_name, sector_devices)
         if len(dashboard_status_dict):
             # Sum all the values of the dashboard status dict.
             count = sum(dashboard_status_dict.values())
@@ -1114,7 +1126,7 @@ class DashboardDeviceStatus(View):
         max_range, chart_stops = get_guege_chart_max_n_stops(dashboard_setting)
 
         chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count,
-                'max': max_range, 'stops': chart_stops}
+                'max': max_range, 'stops': chart_stops, 'processed_for_key':processed_for_key}
 
         # get the chart_data for the gauge chart.
         response = get_highchart_response(chart_data_dict)

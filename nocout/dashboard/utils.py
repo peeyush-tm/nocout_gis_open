@@ -71,6 +71,20 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
                         'check_timestamp',
                         'age'
     ]
+    if data_source.strip().lower() in ['availability']:
+        required_values = [
+            'id',
+            'device_name',
+            'service_name',
+            'ip_address',
+            'data_source',
+            'severity',
+            'current_value',
+            'warning_threshold',
+            'critical_threshold',
+            'sys_timestamp',
+            'check_timestamp'
+        ]
     service_status_data = model.objects.filter(
         device_name__in=machine_device_list,
         service_name__icontains = service_name,
@@ -366,6 +380,8 @@ def get_highchart_response(dictionary={}):
         })
 
     if dictionary['type'] == 'pie':
+        if dictionary['title'] != 'MFR Cause Code':
+            timestamp = dictionary['processed_for_key']
         chart_data = {
             'type': 'pie',
             'name': dictionary['name'],
@@ -374,7 +390,21 @@ def get_highchart_response(dictionary={}):
         }
         if 'colors' in dictionary:
             chart_data.update({'color': dictionary['colors']})
+        if dictionary['title'] != 'MFR Cause Code':    
+            return json.dumps({
+                "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+                "data": {
+                    "meta": {
+                },
+                    "objects": {
+                        "TimeStamp" : timestamp,
+                        "chart_data": [chart_data]
+                    }
+                },
+            "success": 1
+            })    
     elif dictionary['type'] == 'gauge':
+        timestamp = dictionary['processed_for_key']
         chart_data = {
             "is_inverted": False,
             "name": dictionary['name'],
@@ -390,6 +420,18 @@ def get_highchart_response(dictionary={}):
             "type": "gauge",
             "valuetext": ""
         }
+        return json.dumps({
+            "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+            "data": {
+                "meta": {
+            },
+                "objects": {
+                    "TimeStamp" : timestamp,
+                    "chart_data": [chart_data]
+                }
+            },
+        "success": 1
+        })
     elif dictionary['type'] == 'areaspline':
         chart_data = {
             'type': 'areaspline',

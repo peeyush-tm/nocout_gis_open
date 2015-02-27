@@ -158,7 +158,7 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     sectors = SectorCapacityStatus.objects.filter(
             Q(organization__in=organizations),
             Q(sector__sector_configured_on__device_technology=sector_technology.ID),
-            Q(severity__in=['warning', 'critical', 'ok']),
+            Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
         ).values('id', 'sector__name', 'sector__sector_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
 
     logger.debug('CELERYBEAT: Timely: dashboard_name {0} & Sectors count: {1}'.format(dashboard_name, sectors.count()))
