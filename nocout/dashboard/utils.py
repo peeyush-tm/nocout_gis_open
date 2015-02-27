@@ -380,6 +380,8 @@ def get_highchart_response(dictionary={}):
         })
 
     if dictionary['type'] == 'pie':
+        if dictionary['title'] != 'MFR Cause Code':
+            timestamp = dictionary['processed_for_key']
         chart_data = {
             'type': 'pie',
             'name': dictionary['name'],
@@ -388,7 +390,21 @@ def get_highchart_response(dictionary={}):
         }
         if 'colors' in dictionary:
             chart_data.update({'color': dictionary['colors']})
+        if dictionary['title'] != 'MFR Cause Code':    
+            return json.dumps({
+                "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+                "data": {
+                    "meta": {
+                },
+                    "objects": {
+                        "TimeStamp" : timestamp,
+                        "chart_data": [chart_data]
+                    }
+                },
+            "success": 1
+            })    
     elif dictionary['type'] == 'gauge':
+        timestamp = dictionary['processed_for_key']
         chart_data = {
             "is_inverted": False,
             "name": dictionary['name'],
@@ -404,6 +420,18 @@ def get_highchart_response(dictionary={}):
             "type": "gauge",
             "valuetext": ""
         }
+        return json.dumps({
+            "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+            "data": {
+                "meta": {
+            },
+                "objects": {
+                    "TimeStamp" : timestamp,
+                    "chart_data": [chart_data]
+                }
+            },
+        "success": 1
+        })
     elif dictionary['type'] == 'areaspline':
         chart_data = {
             'type': 'areaspline',
