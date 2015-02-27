@@ -13,6 +13,10 @@ import inventory.tasks as inventory_tasks
 import inventory.utils.util as inventory_utils
 
 from celery.utils.log import get_task_logger
+# Django Dateformat utility
+from django.utils.dateformat import format
+# datetime utility
+import datetime
 
 logger = get_task_logger(__name__)
 
@@ -476,7 +480,6 @@ def check_for_monthly_spot():
     g_jobs = list()
     technology = ['WiMAX', 'PMP']
     
-    import datetime
     tdy = datetime.datetime.now()
     tom = tdy + datetime.timedelta(days = 1)
 
@@ -700,13 +703,30 @@ def get_network_availability_data(devices_names=[], service_name_list=["availabi
         return polled_data_list
 
     try:
+        # this is today object
+        tdy = datetime.datetime.today()
+
+        # this is the end time today's 00:00:00
+        end_time = datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0)
+
+        # this is the start time today's 00:00:00
+        start_time = end_time +  datetime.timedelta(days = -1)
+
+        # start time in UNIX TIME
+        start_time = float( format ( start_time , 'U' ))
+
+        # end time in UNIX TIME
+        end_time = float( format ( end_time , 'U' ))
+
         # Fetch data from given model
         polled_data_list = avail_model.objects.extra(
             select={'sys_timestamp':"date(sys_timestamp)"}
         ).filter(
             device_name__in=devices_names,
             service_name__in=service_name_list,
-            data_source__in=ds_name_list
+            data_source__in=ds_name_list,
+            sys_timestamp__gte=start_time,
+            sys_timestamp__lte=end_time
         ).using(machine).values(*required_values)
 
         return polled_data_list
@@ -769,15 +789,17 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
                 )
             )
 
-        # Start create & update jobs parallely
-        job = group(g_jobs)
-        result = job.apply_async()
-        ret = False
-        
-        for r in result.get():
-            ret |= r
-        
-        return ret
+        # If any g_jobs exists
+        if len(g_jobs):
+            # Start create jobs parallely
+            job = group(g_jobs)
+            result = job.apply_async()
+            ret = False
+            
+            for r in result.get():
+                ret |= r
+            
+            return ret
         
     except Exception, e:
         # raise e
