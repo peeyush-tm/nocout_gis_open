@@ -94,7 +94,7 @@ def load_google_earth(request, device_name = "default_device_name"):
                                 template_data,
                                 context_instance=RequestContext(request))
 
-def load_earth(request):
+def load_earth(request, device_name = "default_device_name"):
     """
     Returns the Context Variable for google earth.
     """
