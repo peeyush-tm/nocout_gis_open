@@ -1166,48 +1166,48 @@ class Inventory_Device_Status(View):
                     if dr_ip:
                         dr_ip += " (DR) "
 
-                    table_values.append([
-                        {
-                            "val" : display_bs_name,
-                            "url" : bs_name_url
-                        },
-                        {
-                            "val" : sector_id,
-                            "url" : sector_id_url
-                        },
-                        {
-                            "val" : pmp_port,
-                            "url" : pmp_port_url
-                        },
-                        {
-                            "val" : technology.alias,
-                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                        },
-                        {
-                            "val" : type.alias,
-                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                        },
-                        {
-                            "val" : city_name,
-                            "url" : city_url
-                        },
-                        {
-                            "val" : state_name,
-                            "url" : state_url
-                        },
-                        {
-                            "val" : dr_ip,
-                            "url" : dr_ip_url
-                        },
-                        {
-                            "val" : planned_frequency,
-                            "url" : planned_frequency_url
-                        },
-                        {
-                            "val" : frequency,
-                            "url" : frequency_url
-                        }
-                    ])
+                        table_values.append([
+                            {
+                                "val" : display_bs_name,
+                                "url" : bs_name_url
+                            },
+                            {
+                                "val" : sector_id,
+                                "url" : sector_id_url
+                            },
+                            {
+                                "val" : pmp_port,
+                                "url" : pmp_port_url
+                            },
+                            {
+                                "val" : technology.alias,
+                                "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                            },
+                            {
+                                "val" : type.alias,
+                                "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                            },
+                            {
+                                "val" : city_name,
+                                "url" : city_url
+                            },
+                            {
+                                "val" : state_name,
+                                "url" : state_url
+                            },
+                            {
+                                "val" : dr_ip,
+                                "url" : dr_ip_url
+                            },
+                            {
+                                "val" : planned_frequency,
+                                "url" : planned_frequency_url
+                            },
+                            {
+                                "val" : frequency,
+                                "url" : frequency_url
+                            }
+                        ])
 
                     result['data']['objects']['values'] = table_values
 
