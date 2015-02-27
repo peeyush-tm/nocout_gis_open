@@ -2007,7 +2007,7 @@ class SpotDashboard(models.Model):
     sector = models.ForeignKey(Sector)
     device = models.ForeignKey(Device)
     #static information so as to save another db
-    sector_sector_id = models.CharField('Sector ID', max_length=64, unique=True, null=True, blank=True)
+    sector_sector_id = models.CharField('Sector ID', max_length=64,  null=True, blank=True)
     sector_sector_configured_on = models.CharField('IP Address', max_length=64,  null=True, blank=True)
     sector_device_technology = models.CharField('Technology', max_length=64,  null=True, blank=True)
     #Calculated information
@@ -2040,7 +2040,7 @@ class SpotDashboard(models.Model):
 
 class RfNetworkAvailability(models.Model):
 
-    technology = models.CharField('Technology', max_length=100, unique=True, null=True, blank=True)
-    avail = models.CharField('Availability', max_length=100,unique=True, null=True, blank=True)
+    technology = models.CharField('Technology', max_length=100, null=True, blank=True)
+    avail = models.CharField('Availability', max_length=100, null=True, blank=True)
     unavail = models.CharField('Unavailability', max_length=100, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
