@@ -2040,7 +2040,7 @@ class SpotDashboard(models.Model):
 
 class RfNetworkAvailability(models.Model):
 
-    technology = models.CharField('Technology', max_length=100, unique=True, null=True, blank=True)
-    avail = models.CharField('Availability', max_length=100,unique=True, null=True, blank=True)
+    technology = models.CharField('Technology', max_length=100, null=True, blank=True)
+    avail = models.CharField('Availability', max_length=100, null=True, blank=True)
     unavail = models.CharField('Unavailability', max_length=100, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
