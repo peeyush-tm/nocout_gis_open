@@ -180,6 +180,16 @@ function googleEarthClass() {
         				// Set Perf calling Flag
             			isPerfCallStopped = 1;
             			isPerfCallStarted = 0;
+
+            			// If any periodic polling ajax call is in process then abort it
+			            try {
+							if(gis_perf_call_instance) {
+				                gis_perf_call_instance.abort()
+				                gis_perf_call_instance = "";
+				        	}
+			            } catch(e) {
+			                // pass
+			            }
         			}
 					if(AltToZoom(lookAt.getRange()) < 12 || searchResultData.length > 0) {
 						var poly = getCurrentEarthBoundPolygon();
@@ -362,6 +372,16 @@ function googleEarthClass() {
             		}
             		
 				} else if(AltToZoom(lookAt.getRange()) <= 7) {
+
+					// If any periodic polling ajax call is in process then abort it
+		            try {
+						if(gis_perf_call_instance) {
+			                gis_perf_call_instance.abort()
+			                gis_perf_call_instance = "";
+			        	}
+		            } catch(e) {
+		                // pass
+		            }
 
 					// At zoom level less than or equal to 4, hide state clusters & show country cluster.
 					if(AltToZoom(lookAt.getRange()) < 4) {

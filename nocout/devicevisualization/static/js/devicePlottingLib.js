@@ -584,7 +584,7 @@ function devicePlottingClass_gmap() {
             	/* When zoom level is greater than 8 show lines */
             	if(mapInstance.getZoom() > 7) {
 
-            		// If zoom level is greate than 11 then start perf calling
+            		// If zoom level is greate than 13 then start perf calling
             		if(mapInstance.getZoom() > 13) {
 	            		// Reset Perf calling Flag
             			isPerfCallStopped = 0;
@@ -592,6 +592,16 @@ function devicePlottingClass_gmap() {
         				// Set Perf calling Flag
             			isPerfCallStopped = 1;
             			isPerfCallStarted = 0;
+
+            			// If any periodic polling ajax call is in process then abort it
+            			try {
+		    				if(gis_perf_call_instance) {
+				                gis_perf_call_instance.abort()
+				                gis_perf_call_instance = "";
+				        	}
+			            } catch(e) {
+			                // pass
+			            }
         			}
 
             		if(mapInstance.getZoom() < 14 || searchResultData.length > 0) {
@@ -754,6 +764,16 @@ function devicePlottingClass_gmap() {
 	        		
 	        		// Show only country counter below 4 level zoom
 	        		gmap_self.hideStateCountersLabel();
+
+	        		// If any periodic polling ajax call is in process then abort it
+        			try {
+	    				if(gis_perf_call_instance) {
+			                gis_perf_call_instance.abort()
+			                gis_perf_call_instance = "";
+			        	}
+		            } catch(e) {
+		                // pass
+		            }
 
 	        		if(mapInstance.getZoom() <= 4) {
 	            		// Hide State Labels which are in current bounds
