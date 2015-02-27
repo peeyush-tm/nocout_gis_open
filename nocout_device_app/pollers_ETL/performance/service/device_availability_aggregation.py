@@ -182,7 +182,7 @@ def quantify_utilization_data(host_specific_data):
 			min_val = min(values_list) 
 			max_val = max(values_list) 
 			if aggr_data.get('avg'):
-				avg_val = float(str((existing_doc.get('avg')))) + float(str((aggr_data.get('avg'))))/ 2.0
+				avg_val = (float(str((existing_doc.get('avg')))) + float(str((aggr_data.get('avg')))))/ 2.0
 			else:
 				avg_val = existing_doc.get('avg')
 			aggr_data.update({
