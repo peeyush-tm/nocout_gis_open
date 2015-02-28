@@ -215,16 +215,16 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
 
         if sector_objects.count():
             range_counter = {
-                dashboard_name: dashboard_name,
-                'device_name': '',
-                'reference_name': '',
+                'dashboard_name': dashboard_name,
+                'device_name': dashboard_name,
+                'reference_name': dashboard_name,
                 'warning': 0,
                 'critical': 0,
                 'ok': 0,
                 'down': 0,
                 'unknown': 0,
-                organization: organization,
-                processed_for: processed_for
+                'organization': organization,
+                'processed_for': processed_for
             }
             bulk_data_list = list()
             sectors = sector_objects.values(*required_values)
@@ -284,37 +284,40 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
             )
 
         if backhaul_objects.count():
+            range_counter = {
+                'dashboard_name': dashboard_name,
+                'device_name': dashboard_name,
+                'reference_name': dashboard_name,
+                'warning': 0,
+                'critical': 0,
+                'ok': 0,
+                'down': 0,
+                'unknown': 0,
+                'organization': organization,
+                'processed_for': processed_for
+            }
+
             data_list = list()
             backhaul = backhaul_objects.values(*required_values)
 
             for item in backhaul:
-                # Create the range_counter dictionay containg the model's field name as key
-                range_counter = dict(
-                    dashboard_name=dashboard_name,
-                    device_name=item['backhaul__bh_configured_on__device_name'],
-                    reference_name=item['backhaul__name'],
-                    processed_for=processed_for,
-                    organization=item['organization']
-                )
                 # Update the range_counter on the basis of severity.
                 if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
-                    range_counter.update({item['severity'].strip().lower() : 1})
+                    range_counter[item['severity'].strip().lower()] += 1
                 elif item['severity'].strip().lower() == 'ok':
-                    range_counter.update({'ok' : 1})
+                    range_counter['ok'] += 1
                 else:
-                    range_counter.update({'unknown' : 1})
+                    range_counter['unknown'] += 1
 
-                # Create the list of model object.
-                try:
-                    data_list.append(model(**range_counter))
-                except Exception as e:
-                    pass
+            # Create the list of model object.
+            data_list.append(model(**range_counter))
 
-            # call the method to bulk create the onjects.
-            bulk_update_create.delay(
-                data_list,
-                action='create',
-                model=model)
+            if len(data_list):
+                # call the method to bulk create the onjects.
+                bulk_update_create.delay(
+                    data_list,
+                    action='create',
+                    model=model)
 
     return True
 
