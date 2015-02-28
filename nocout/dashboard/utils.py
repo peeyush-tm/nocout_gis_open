@@ -424,7 +424,11 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
         ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
                         annotate(Count('connected_device_ip'))
         # current value define the total ss connected to the sector.
-        status_results.append({'id': sector.id, 'name': sector.name, 'device_name':  sector.sector_configured_on.device_name, 'current_value': ss_qs.count()})
+        status_results.append({'id': sector.id,
+                               'name': sector.name,
+                               'device_name':  sector.sector_configured_on.device_name,
+                               'organization': sector.organization,
+                               'current_value': ss_qs.count()})
     return status_results
 
 

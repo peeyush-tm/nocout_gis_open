@@ -3,7 +3,11 @@ from django.db import models
 from device.models import DeviceTechnology
 from dashboard.config import dashboards
 
-import datetime, time
+from organization.models import Organization
+from inventory.models import get_default_org
+
+import datetime
+import time
 
 PAGE_NAME_CHOICES = (
     ('rf_dashboard', 'RF Performance Dashboard'),
@@ -158,6 +162,10 @@ class DashboardRangeStatus(models.Model):
     device_name = models.CharField(max_length=100, db_index=True)
     reference_name = models.CharField(max_length=100, db_index=True)
     processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
+
+    #static information to be updated
+    organization = models.ForeignKey(Organization, default=get_default_org)
+
     range1 = models.IntegerField(default=0)
     range2 = models.IntegerField(default=0)
     range3 = models.IntegerField(default=0)
@@ -217,6 +225,10 @@ class DashboardSeverityStatus(models.Model):
     device_name = models.CharField(max_length=100, db_index=True)
     reference_name = models.CharField(max_length=100, db_index=True)
     processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
+
+    #static information to be updated
+    organization = models.ForeignKey(Organization, default=get_default_org)
+
     warning = models.IntegerField(default=0)
     critical = models.IntegerField(default=0)
     ok = models.IntegerField(default=0)

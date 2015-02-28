@@ -381,19 +381,14 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'WiMAX'}
     },
-    # 'timely-main-dashboard': {
-    #     'task': 'dashboard.tasks.calculate_timely_main_dashboard',
-    #     'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
-    # },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
         'schedule': crontab(minute=0)
     },
     'daily-main-dashboard': {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
-        'schedule': crontab(minute=0, hour=0) # Execute Daily at Midnight
+        'schedule': crontab(minute=0, hour=0)  # Execute Daily at Midnight
     },
-
     # END Backhaul Capacity Task
     # BEGIN sector spot dashboard jobs
     # will run on STATUS tables. must run within 5 minutes
