@@ -940,7 +940,10 @@ class SalesOpportunityMixin(object):
         # convert the data source in format topology-pmp/topology-wimax
         data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+            dashboard_setting = DashboardSetting.objects.get(technology=technology,
+                                                             page_name='main_dashboard',
+                                                             name=data_source,
+                                                             is_bh=is_bh)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard setting is not available.",
@@ -948,17 +951,16 @@ class SalesOpportunityMixin(object):
             }))
 
         # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector = organization_sectors(organization, technology)
+        # user_sector = organization_sectors(organization, technology)
         # Get Device of User's Sector.
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
-            is_added_to_nms = 1)
+        # sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+        #     is_added_to_nms = 1)
         # Get Device Name List of User's Sector.
-        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
+        # sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
         # Get the status of the dashbaord.
-        dashboard_status_dict,\
-        processed_for_key = get_range_status_dict(dashboard_name, sector_devices_list)
+        dashboard_status_dict, processed_for_key = view_range_status(dashboard_name, organization)
 
         chart_series = []
         colors = []
