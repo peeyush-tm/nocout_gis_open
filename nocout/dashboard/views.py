@@ -257,6 +257,8 @@ class WiMAX_Performance_Dashboard(PerformanceDashboardMixin, View):
             'dl_rssi': {'service_name': 'wimax_dl_rssi', 'model': ServiceStatus},
             'ul_cinr': {'service_name': 'wimax_ul_cinr', 'model': ServiceStatus},
             'dl_cinr': {'service_name': 'wimax_dl_cinr', 'model': ServiceStatus},
+            'modulation_ul_fec': {'service_name': 'wimax_modulation_ul_fec', 'model': ServiceStatus},
+            'modulation_dl_fec': {'service_name': 'wimax_modulation_dl_fec', 'model': ServiceStatus},
         }
         technology = DeviceTechnology.objects.get(name__icontains='WiMAX').id
         devices_method_to_call = organization_customer_devices
