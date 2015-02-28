@@ -636,7 +636,7 @@ def calculate_rf_network_availability(technology=None):
         resultant_dict = insert_network_avail_result(
             resultant_data=complete_rf_network_avail_data,
             devices_count=total_devices_count,
-            tech=technology
+            tech_id=tech_id
         )
 
     return True
@@ -719,9 +719,7 @@ def get_network_availability_data(devices_names=[], service_name_list=["availabi
         end_time = float( format ( end_time , 'U' ))
 
         # Fetch data from given model
-        polled_data_list = avail_model.objects.extra(
-            select={'sys_timestamp':"date(sys_timestamp)"}
-        ).filter(
+        polled_data_list = avail_model.objects.filter(
             device_name__in=devices_names,
             service_name__in=service_name_list,
             data_source__in=ds_name_list,
@@ -735,7 +733,7 @@ def get_network_availability_data(devices_names=[], service_name_list=["availabi
         return polled_data_list
 
 
-def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
+def insert_network_avail_result(resultant_data=[], devices_count=0, tech_id=''):
     """
     :This function calcultes the availability & unavailability of devices as per the fetched result
     :param resultant_data: It contains the list of data fetched from distributed databases
@@ -772,7 +770,7 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech=''):
         bulky_create = list()
 
         rf_network_avail_instance = RfNetworkAvailability(
-            technology=tech,
+            technology=tech_id,
             avail=avg_avail,
             unavail=avg_unavail,
             sys_timestamp=current_date_time

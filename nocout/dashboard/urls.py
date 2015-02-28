@@ -79,4 +79,5 @@ urlpatterns = patterns('',
     url(r'^trend-monthly-backhaul/pmp/$', views.MonthlyTrendBackhaulPMP.as_view(), name = 'trend-monthly-backhaul-pmp' ),
     url(r'^trend-monthly-backhaul/wimax/$', views.MonthlyTrendBackhaulWiMAX.as_view(), name = 'trend-monthly-backhaul-wimax' ),
     url(r'^trend-monthly-backhaul/tclpop/$', views.MonthlyTrendBackhaulTCLPOP.as_view(), name = 'trend-monthly-backhaul-tclpop' ),
+    url(r'^rf_network_availability/$', views.GetRfNetworkAvailData.as_view(), name = 'GetRfNetworkAvailData' ),
 )
