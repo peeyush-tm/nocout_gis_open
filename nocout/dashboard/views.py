@@ -758,7 +758,9 @@ class MFRProcesedView(View):
 
         return HttpResponse(response)
 
-#********************************************** main dashboard sector capacity ************************************************
+# *********************** main dashboard sector capacity
+
+
 class SectorCapacityMixin(object):
     '''
     Provide common method get for Sector Capacity Dashboard.
@@ -820,7 +822,9 @@ class WiMAXSectorCapacity(SectorCapacityMixin, View):
     """
     tech_name = 'WiMAX'
 
-#********************************************** main dashboard Backhaul Capacity  ************************************************
+# *********************** main dashboard Backhaul Capacity
+
+
 class BackhaulCapacityMixin(object):
     '''
     Provide common method (Mixin) get for Backhaul Capacity Dashboard.
@@ -884,12 +888,12 @@ class BackhaulCapacityMixin(object):
         return HttpResponse(response)
 
 
-
 class PMPBackhaulCapacity(BackhaulCapacityMixin, View):
     """
     Class Based View for the PMP Backhaul Capacity
     """
     tech_name = 'PMP'
+
 
 class WiMAXBackhaulCapacity(BackhaulCapacityMixin, View):
     """
@@ -897,15 +901,15 @@ class WiMAXBackhaulCapacity(BackhaulCapacityMixin, View):
     """
     tech_name = 'WiMAX'
 
+
 class TCLPOPBackhaulCapacity(BackhaulCapacityMixin, View):
     """
     Class Based View for the WiMAX Backhaul Capacity
     """
     tech_name = 'TCLPOP'
 
-    
+# ************************* main dashboard Sales Opportunity
 
-#********************************************** main dashboard Sales Opportunity ************************************************
 
 class SalesOpportunityMixin(object):
     """
@@ -993,6 +997,8 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
 
 
 # *************************** Dashboard Timely Data ***********************
+
+
 def get_severity_status_dict(dashboard_name, devices_list):
     '''
     Method based view to get latest data from central database table.
@@ -1022,7 +1028,7 @@ def get_severity_status_dict(dashboard_name, devices_list):
                                     Unknown=Sum('unknown')
                                 )
   
-    return (dashboard_status_dict, processed_for_key_localtime)
+    return dashboard_status_dict, processed_for_key_localtime
 
 
 def view_range_status(dashboard_name, organizations):
@@ -1064,6 +1070,7 @@ def view_range_status(dashboard_name, organizations):
 
     return dashboard_status_dict, processed_for_key_localtime
 
+
 def get_range_status_dict(dashboard_name, sector_devices_list):
     '''
     Method based view to get latest data from central database table.
@@ -1095,7 +1102,9 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
     return (dashboard_status_dict, processed_for_key_localtime)
 
 
-# *************************** Dashboard Gauge Status ***********************
+# *************************** Dashboard Gauge Status
+
+
 class DashboardDeviceStatus(View):
     '''
     Class Based View for the Guage Chart of main Dashboard.
@@ -1179,7 +1188,9 @@ class DashboardDeviceStatus(View):
 
         return HttpResponse(response)
 
-#*************************************************Dashboard Monthly Data ***********************************************************************
+# *************************Dashboard Monthly Data
+
+
 def get_severity_status_dict_monthly(dashboard_name, devices_list):
     '''
     '''
@@ -1303,6 +1314,7 @@ def getValueByTime(dashboard_status_dict=[],key='',current_date='',date_column='
 
     return val
 
+
 def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard_setting):
     '''
     '''
@@ -1372,6 +1384,7 @@ def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard
 
     return final_dict
 
+
 def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_argument):
 
     chart_data = 0
@@ -1397,6 +1410,7 @@ def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_arg
     # chart_data.append(['Unknown', range_counter['unknown']])
     # colors.append("#d3d3d3")
     return {'chart_data' : chart_data, 'color' : colors}
+
 
 def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_list):
     '''
