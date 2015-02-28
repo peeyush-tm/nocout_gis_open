@@ -393,12 +393,19 @@ function createHighChart_nocout(chartConfig,dom_id,text_color,need_extra_config)
             title : {
                 text : chartConfig.valuetext
             },
-            max : need_extra_config ? 100 : "",
             reversed : is_y_inverted
         },
-        series: chartConfig.chart_data,
-        plotOptions : need_extra_config ? {series: {stacking: 'normal'}} : {}
+        series: chartConfig.chart_data
     };
+
+    try {
+        if(need_extra_config) {
+            chart_options["yAxis"]["max"] = 100;
+            chart_options["plotOptions"] = {series: {stacking: 'normal'}};
+        }
+    } catch(e) {
+        // pass
+    }
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
 }
