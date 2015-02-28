@@ -212,28 +212,34 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
                 Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
             )
 
+
         if sector_objects.count():
+            range_counter = {
+                dashboard_name: dashboard_name,
+                'device_name': '',
+                'reference_name': '',
+                'warning': 0,
+                'critical': 0,
+                'ok': 0,
+                'down': 0,
+                'unknown': 0,
+                organization: organization,
+                processed_for: processed_for
+            }
             bulk_data_list = list()
             sectors = sector_objects.values(*required_values)
 
             for item in sectors:
                 # Create the range_counter dictionay containg the model's field name as key
-                range_counter = dict(
-                    dashboard_name=dashboard_name,
-                    device_name=item['sector__sector_configured_on__device_name'],
-                    reference_name=item['sector__name'],
-                    processed_for=processed_for,
-                    organization=item['organization']
-                )
                 # Update the range_counter on the basis of severity.
                 if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
-                    range_counter.update({item['severity'].strip().lower() : 1})
+                    range_counter[item['severity'].strip().lower()] += 1
                 elif item['severity'].strip().lower() == 'ok':
-                    range_counter.update({'ok' : 1})
+                    range_counter['ok'] += 1
                 else:
-                    range_counter.update({'unknown' : 1})
+                    range_counter['unknown'] += 1
 
-                bulk_data_list.append(model(**range_counter))
+            bulk_data_list.append(model(**range_counter))
 
             if len(bulk_data_list):
                 # call the method to bulk create the onjects.
@@ -770,11 +776,14 @@ def calculate_hourly_main_dashboard():
     '''
 
     now = timezone.now()
-    calculate_hourly_severity_status(now)
-    calculate_hourly_range_status(now)
+    buffer_now = now + datetime.timedelta(minutes=-5)
+    then = now + datetime.timedelta(hours=-1)
+    calculate_hourly_range_status(now=buffer_now, then=then)
+    calculate_hourly_range_status(now=buffer_now, then=then)
+    return True
 
 
-def calculate_hourly_severity_status(now):
+def calculate_hourly_severity_status(now, then):
     '''
     Calculate the status of dashboard from DashboardSeverityStatusTimely model
     and create list of DashboardSeverityStatusHourly model object for calculated data
@@ -785,44 +794,40 @@ def calculate_hourly_severity_status(now):
     return:
     '''
     # get all data from the model order by 'dashboard_name' and 'device_name'.
-    last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__lt=now)
+    last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    )
 
     hourly_severity_status_list = []    # list for the DashboardSeverityStatusHourly model object
-    hourly_severity_status = None
-    dashboard_name = ''
-    device_name = ''
 
     for timely_severity_status in last_hour_timely_severity_status:
         # Sum the status value for the same dashboard_name and device_name.
-        if dashboard_name == timely_severity_status.dashboard_name and device_name == timely_severity_status.device_name:
-            hourly_severity_status = sum_severity_status(hourly_severity_status, timely_severity_status)
-        else:
-            # Create new model object when dashboard_name and device_name are different from previous dashboard_name and device_name.
-            hourly_severity_status = DashboardSeverityStatusHourly(
-                dashboard_name=timely_severity_status.dashboard_name,
-                device_name=timely_severity_status.device_name,
-                reference_name=timely_severity_status.reference_name,
-                processed_for=now,
-                warning=timely_severity_status.warning,
-                critical=timely_severity_status.critical,
-                ok=timely_severity_status.ok,
-                down=timely_severity_status.down,
-                unknown=timely_severity_status.unknown
-            )
-            # append in list for every new dashboard_name and device_name.
-            hourly_severity_status_list.append(hourly_severity_status)
-            # assign new dashboard_name and device_name.
-            dashboard_name = timely_severity_status.dashboard_name
-            device_name = timely_severity_status.device_name
+        # Create new model object when dashboard_name and
+        # device_name are different from previous dashboard_name and device_name.
+        hourly_severity_status = DashboardSeverityStatusHourly(
+            dashboard_name=timely_severity_status.dashboard_name,
+            device_name=timely_severity_status.device_name,
+            reference_name=timely_severity_status.reference_name,
+            processed_for=now,
+            warning=timely_severity_status.warning,
+            critical=timely_severity_status.critical,
+            ok=timely_severity_status.ok,
+            down=timely_severity_status.down,
+            unknown=timely_severity_status.unknown,
+            organization=timely_severity_status.organization
+        )
+        # append in list for every new dashboard_name and device_name.
+        hourly_severity_status_list.append(hourly_severity_status)
 
-    bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
+    if len(hourly_severity_status_list):
+        bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
 
     # delete the data from the DashboardSeverityStatusTimely model.
     last_hour_timely_severity_status.delete()
 
 
-def calculate_hourly_range_status(now):
+def calculate_hourly_range_status(now, then):
     '''
     Calculate the status of dashboard from DashboardRangeStatusTimely model
     and create list of DashboardRangeStatusHourly model object for calculated data
@@ -833,43 +838,39 @@ def calculate_hourly_range_status(now):
     return:
     '''
     # get all data from the model order by 'dashboard_name' and 'device_name'.
-    last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__lt=now)
+    last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    )
 
     hourly_range_status_list = []   # list for the DashboardRangeStatusHourly model object
-    hourly_range_status = None
-    dashboard_name = ''
-    device_name = ''
-    for timely_range_status in last_hour_timely_range_status:
-        # Sum the status value for the same dashboard_name and device_name.
-        if dashboard_name == timely_range_status.dashboard_name and device_name == timely_range_status.device_name:
-            hourly_range_status = sum_range_status(hourly_range_status, timely_range_status)
-        else:
-            # Create new model object when dashboard_name and device_name are different from previous dashboard_name and device_name.
-            hourly_range_status = DashboardRangeStatusHourly(
-                dashboard_name=timely_range_status.dashboard_name,
-                device_name=timely_range_status.device_name,
-                reference_name=timely_range_status.reference_name,
-                processed_for=now,
-                range1=timely_range_status.range1,
-                range2=timely_range_status.range2,
-                range3=timely_range_status.range3,
-                range4=timely_range_status.range4,
-                range5=timely_range_status.range5,
-                range6=timely_range_status.range6,
-                range7=timely_range_status.range7,
-                range8=timely_range_status.range8,
-                range9=timely_range_status.range9,
-                range10=timely_range_status.range10,
-                unknown=timely_range_status.unknown
-            )
-            # append in list for every new dashboard_name and device_name.
-            hourly_range_status_list.append(hourly_range_status)
-            # assign new dashboard_name and device_name.
-            dashboard_name = timely_range_status.dashboard_name
-            device_name = timely_range_status.device_name
 
-    bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
+    for timely_range_status in last_hour_timely_range_status:
+        # Create new model object when dashboard_name and device_name are different
+        # from previous dashboard_name and device_name.
+        hourly_range_status = DashboardRangeStatusHourly(
+            dashboard_name=timely_range_status.dashboard_name,
+            device_name=timely_range_status.device_name,
+            reference_name=timely_range_status.reference_name,
+            processed_for=now,
+            range1=timely_range_status.range1,
+            range2=timely_range_status.range2,
+            range3=timely_range_status.range3,
+            range4=timely_range_status.range4,
+            range5=timely_range_status.range5,
+            range6=timely_range_status.range6,
+            range7=timely_range_status.range7,
+            range8=timely_range_status.range8,
+            range9=timely_range_status.range9,
+            range10=timely_range_status.range10,
+            unknown=timely_range_status.unknown,
+            organization=timely_range_status.organization
+        )
+        # append in list for every new dashboard_name and device_name.
+        hourly_range_status_list.append(hourly_range_status)
+
+    if len(hourly_range_status_list):
+        bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
 
     # delete the data from the DashboardRangeStatusTimely model.
     last_hour_timely_range_status.delete()
