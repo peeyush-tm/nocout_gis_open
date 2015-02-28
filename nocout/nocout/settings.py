@@ -362,11 +362,29 @@ CELERYBEAT_SCHEDULE = {
         'args': ['WiMAX']
     },
     # END Calculations for Capacity
-    # Dashboards Calculations start at 4th minute
-    'timely-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_timely_main_dashboard',
-        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+    # Dashboards Calculations start at 5th minute of the hour
+    'calculate_speedometer_dashboards-ALL': {
+        'task': 'dashboard.tasks.calculate_speedometer_dashboards',
+        'schedule': crontab(minute='*/5'),
     },
+    'calculate_range_dashboards-ALL': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='*/5'),
+    },
+    'calculate_status_dashboards-PMP': {
+        'task': 'dashboard.tasks.calculate_status_dashboards',
+        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP'}
+    },
+    'calculate_status_dashboards-WiMAX': {
+        'task': 'dashboard.tasks.calculate_status_dashboards',
+        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX'}
+    },
+    # 'timely-main-dashboard': {
+    #     'task': 'dashboard.tasks.calculate_timely_main_dashboard',
+    #     'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+    # },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
         'schedule': crontab(minute=0)
