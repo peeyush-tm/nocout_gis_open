@@ -358,7 +358,24 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
         if sector_objects.count():
             data_list = list()
             user_sector = sector_objects
-
+            status_counter = {
+                "dashboard_name": dashboard_name,
+                "device_name": dashboard_name,
+                "reference_name": dashboard_name,
+                "processed_for": processed_for,
+                "organization": organization,
+                "range1": 0,
+                "range2": 0,
+                "range3": 0,
+                "range4": 0,
+                "range5": 0,
+                "range6": 0,
+                "range7": 0,
+                "range8": 0,
+                "range9": 0,
+                "range10": 0,
+                "unknown": 0,
+            }
             # get the list of dictionary on the basis of parameters.
             service_status_results = get_topology_status_results(
                 user_devices=None,
@@ -372,25 +389,18 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
                 # get the dictionary containing the model's field name as key.
                 # range_counter in format {'range1': 1, 'range2': 2,...}
                 range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
-                # update the range_counter to add further details
-                range_counter.update(
-                    {
-                        'dashboard_name': dashboard_name,
-                        'device_name': result['device_name'],
-                        'reference_name': result['name'],   # Store sector name as reference_name
-                        'processed_for': processed_for,
-                        'organization': result['organization']
-                    }
-                )
+                for ranges in range_counter:
+                    status_counter[ranges] += range_counter[ranges]
                 # prepare a list of model object.
-                data_list.append(model(**range_counter))
+            data_list.append(model(**status_counter))
 
-            # call method to bulk create the model object.
-            bulk_update_create.delay(
-                data_list,
-                action='create',
-                model=model
-            )
+            if len(data_list):
+                # call method to bulk create the model object.
+                bulk_update_create.delay(
+                    data_list,
+                    action='create',
+                    model=model
+                )
 
     return True
 
