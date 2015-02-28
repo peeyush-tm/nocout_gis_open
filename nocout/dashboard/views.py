@@ -1763,96 +1763,93 @@ class GetRfNetworkAvailData(View):
             }
         }
 
-        try:
-            # Last 30th datetime object
-            month_before = (datetime.date.today() - datetime.timedelta(days=30))
-            epoch_month_before = int(month_before.strftime('%s'))
-            
-            rf_availability_data_dict = RfNetworkAvailability.objects.filter(
-                sys_timestamp__gte=epoch_month_before
-            ).order_by('sys_timestamp')
+        # Last 30th datetime object
+        month_before = (datetime.date.today() - datetime.timedelta(days=30))
+        epoch_month_before = int(month_before.strftime('%s'))
 
-            # Chart data
-            availability_chart_data = list()
+        rf_availability_data_dict = RfNetworkAvailability.objects.filter(
+            sys_timestamp__gte=epoch_month_before
+        ).order_by('sys_timestamp')
 
-            if rf_availability_data_dict and len(rf_availability_data_dict):
-                # Get technologies list from fetched queryset
-                existing_tech_list = rf_availability_data_dict.values_list('technology__name',flat=True).distinct()
+        # Chart data
+        availability_chart_data = list()
 
-                # If any technology exists then proceed
-                if len(existing_tech_list):
+        if rf_availability_data_dict and rf_availability_data_dict.count():
+            # Get technologies list from fetched queryset
+            existing_tech_list = set(rf_availability_data_dict.values_list('technology__name', flat=True))
+            #  .distinct() : does not work with mysql
 
-                    tech_wise_dict = get_technology_wise_data_dict(rf_avail_queryset=rf_availability_data_dict)
+            # If any technology exists then proceed
+            if len(existing_tech_list):
 
-                    # Loop all technologies
-                    for tech in tech_wise_dict:
-                        avail_chart_color = color_picker()
-                        avail_chart_dict = {
-                            "type"          :   "column",
-                            "valuesuffix"   :   " ",
-                            "stack"         :   tech,
-                            "name"          :   "Availability("+tech+")",
-                            "valuetext"     :   "Availability ("+tech+")",
-                            "color"         :   avail_chart_color,
-                            "data"          :   list()
+                tech_wise_dict = get_technology_wise_data_dict(rf_avail_queryset=rf_availability_data_dict)
+
+                # Loop all technologies
+                for tech in tech_wise_dict:
+                    avail_chart_color = color_picker()
+                    avail_chart_dict = {
+                        "type"          :   "column",
+                        "valuesuffix"   :   " ",
+                        "stack"         :   tech,
+                        "name"          :   "Availability("+tech+")",
+                        "valuetext"     :   "Availability ("+tech+")",
+                        "color"         :   avail_chart_color,
+                        "data"          :   list()
+                    }
+
+                    unavail_chart_color = color_picker()
+                    unavail_chart_dict = {
+                        "type"          :   "column",
+                        "valuesuffix"   :   " ",
+                        "stack"         :   tech,
+                        "name"          :   "Unavailability("+tech+")",
+                        "valuetext"     :   "Unavailability ("+tech+")",
+                        "color"         :   unavail_chart_color,
+                        "data"          :   list()
+                    }
+
+                    current_tech_data = tech_wise_dict[tech]
+
+                    # Reseting month_before for every element of sector_trends_items
+                    month_before = datetime.date.today() - datetime.timedelta(days=30)
+
+                    # Loop for last 30 days
+                    while month_before < datetime.date.today():
+
+                        avail_day_data = {
+                            "color": avail_chart_color,
+                            "y" : 0,
+                            "name": "Availability("+tech+")",
+                            "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
                         }
 
-                        unavail_chart_color = color_picker()
-                        unavail_chart_dict = {
-                            "type"          :   "column",
-                            "valuesuffix"   :   " ",
-                            "stack"         :   tech,
-                            "name"          :   "Unavailability("+tech+")",
-                            "valuetext"     :   "Unavailability ("+tech+")",
-                            "color"         :   unavail_chart_color,
-                            "data"          :   list()
+                        unavail_day_data = {
+                            "color": unavail_chart_color,
+                            "y" : 0,
+                            "name": "Unavailability("+tech+")",
+                            "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
                         }
+                        str_month_string = str(month_before)
+                        if str_month_string in current_tech_data:
+                            avail_day_data['y'] = int(current_tech_data[str_month_string]['avail'])
+                            unavail_day_data['y'] = int(current_tech_data[str_month_string]['unavail'])
 
-                        current_tech_data = tech_wise_dict[tech]
+                        unavail_chart_dict['data'].append(unavail_day_data)
+                        avail_chart_dict['data'].append(avail_day_data)
+                        # Increment of date by one
+                        month_before += relativedelta.relativedelta(days=1)
 
-                        # Reseting month_before for every element of sector_trends_items
-                        month_before = datetime.date.today() - datetime.timedelta(days=30)
+                    availability_chart_data.append(unavail_chart_dict)
+                    availability_chart_data.append(avail_chart_dict)
 
-                        # Loop for last 30 days
-                        while month_before < datetime.date.today():
-                            
-                            avail_day_data = {
-                                "color": avail_chart_color,
-                                "y" : 0,
-                                "name": "Availability("+tech+")",
-                                "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
-                            }
-
-                            unavail_day_data = {
-                                "color": unavail_chart_color,
-                                "y" : 0,
-                                "name": "Unavailability("+tech+")",
-                                "x" : calendar.timegm(month_before.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
-                            }
-                            str_month_string = str(month_before)
-                            if str_month_string in current_tech_data:
-                                avail_day_data['y'] = int(current_tech_data[str_month_string]['avail'])
-                                unavail_day_data['y'] = int(current_tech_data[str_month_string]['unavail'])
-
-                            unavail_chart_dict['data'].append(unavail_day_data)
-                            avail_chart_dict['data'].append(avail_day_data)
-                            # Increment of date by one  
-                            month_before += relativedelta.relativedelta(days=1)
-
-                        availability_chart_data.append(unavail_chart_dict)
-                        availability_chart_data.append(avail_chart_dict)
-
-            result['success'] = 1
-            result['message'] = "RF Network Availability Data Fetched Successfully."
-            result["data"]['objects']['chart_data'] = availability_chart_data
-
-        except Exception, e:
-            pass
+        result['success'] = 1
+        result['message'] = "RF Network Availability Data Fetched Successfully."
+        result["data"]['objects']['chart_data'] = availability_chart_data
 
         return HttpResponse(json.dumps(result))
 
 
-def get_technology_wise_data_dict(rf_avail_queryset=[]):
+def get_technology_wise_data_dict(rf_avail_queryset):
     """
     : This function return data dict per technology wise
     """
@@ -1866,25 +1863,20 @@ def get_technology_wise_data_dict(rf_avail_queryset=[]):
             if technology not in updated_data_dict:
                 updated_data_dict[technology] = {}
 
+            sys_timestamp = current_row.sys_timestamp
+            avail = current_row.avail
+            unavail = current_row.unavail
+            date_str = time.strftime('%Y-%m-%d', time.localtime(sys_timestamp))
 
-            try:
-                sys_timestamp = current_row.sys_timestamp
-                avail = current_row.avail
-                unavail = current_row.unavail
-                date_str = time.strftime('%Y-%m-%d', time.localtime(sys_timestamp))
+            if date_str not in updated_data_dict[technology]:
+                updated_data_dict[technology][date_str] = {}
 
-                if date_str not in updated_data_dict[technology]:
-                    updated_data_dict[technology][date_str] = {}
-                
-                row_data = {
-                    "sys_timestamp" : current_row.sys_timestamp,
-                    "avail" : current_row.avail,
-                    "unavail" : current_row.unavail
-                }
-                updated_data_dict[technology][date_str] = row_data
-
-            except Exception, e:
-                pass
+            row_data = {
+                "sys_timestamp" : current_row.sys_timestamp,
+                "avail" : current_row.avail,
+                "unavail" : current_row.unavail
+            }
+            updated_data_dict[technology][date_str] = row_data
 
     return updated_data_dict
 
