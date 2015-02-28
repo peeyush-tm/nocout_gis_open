@@ -2041,7 +2041,7 @@ class SpotDashboard(models.Model):
 class RfNetworkAvailability(models.Model):
 
     # technology = models.CharField('Technology', max_length=100, null=True, blank=True)
-    technology = models.ForeignKey(DeviceTechnology)
+    technology = models.ForeignKey(DeviceTechnology, default=0)
     avail = models.FloatField('Availability', default=0, null=True, blank=True)
     unavail = models.FloatField('Unavailability', default=0, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
