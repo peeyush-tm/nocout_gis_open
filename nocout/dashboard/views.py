@@ -1023,6 +1023,45 @@ def get_severity_status_dict(dashboard_name, devices_list):
     return (dashboard_status_dict, processed_for_key_localtime)
 
 
+def view_range_status(dashboard_name, organizations):
+    """
+
+    :param dashboard_name:
+    :param organizations:
+    :return:
+    """
+    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
+        dashboard_name=dashboard_name,
+        organization__in=organizations
+    )
+    processed_for_key_localtime = ''
+    if dashboard_status_dict.exists():
+        processed_for_key_utc = dashboard_status_dict[0].processed_for
+        try:
+            processed_for_key_localtime = convert_utc_to_local_timezone(processed_for_key_utc)
+        except:
+            processed_for_key_localtime = processed_for_key_utc
+        # get the latest processed_for(datetime) from the database.
+        processed_for = dashboard_status_dict[0].processed_for
+        # get the dashboard data on the basis of the processed_for.
+        dashboard_status_dict = dashboard_status_dict.filter(
+            processed_for=processed_for
+        ).aggregate(
+            range1=Sum('range1'),
+            range2=Sum('range2'),
+            range3=Sum('range3'),
+            range4=Sum('range4'),
+            range5=Sum('range5'),
+            range6=Sum('range6'),
+            range7=Sum('range7'),
+            range8=Sum('range8'),
+            range9=Sum('range9'),
+            range10=Sum('range10'),
+            unknown=Sum('unknown')
+        )
+
+    return dashboard_status_dict, processed_for_key_localtime
+
 def get_range_status_dict(dashboard_name, sector_devices_list):
     '''
     Method based view to get latest data from central database table.
@@ -1095,13 +1134,16 @@ class DashboardDeviceStatus(View):
         organizations = logged_in_user_organizations(self)
 
         # Get Device of User's Organizations. [and are Sub Station]
-        user_devices = organization_network_devices(organizations, technology)
-        sector_devices = user_devices.filter(sector_configured_on__isnull=False)
+        # user_devices = organization_network_devices(organizations, technology)
+        # sector_devices = user_devices.filter(sector_configured_on__isnull=False)
         # Get Device Name list.
-        sector_devices = sector_devices.values_list('device_name',flat=True)
+        # sector_devices = sector_devices.values_list('device_name',flat=True)
 
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+            dashboard_setting = DashboardSetting.objects.get(technology=technology,
+                                                             page_name='main_dashboard',
+                                                             name=dashboard_name,
+                                                             is_bh=False)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard setting is not available.",
@@ -1109,8 +1151,8 @@ class DashboardDeviceStatus(View):
             }))
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict,\
-        processed_for_key = get_range_status_dict(dashboard_status_name, sector_devices)
+        dashboard_status_dict, processed_for_key = view_range_status(dashboard_status_name, organizations)
+
         if len(dashboard_status_dict):
             # Sum all the values of the dashboard status dict.
             count = sum(dashboard_status_dict.values())
