@@ -135,7 +135,7 @@
                         bDestroy: true,
                         bPaginate: true,
                         bProcessing: true,
-                        bServerSide: false,
+                        bServerSide: true,
                         sAjaxSource: ajax_url,
                         /*This is the callback funtion for data ajax call*/
                         fnInitComplete: function (oSettings, json) {
@@ -144,10 +144,7 @@
                         },
                         aoColumns: tableheaders,
                         sPaginationType: "full_numbers",
-                        aaSorting: [
-                            [10, 'desc'],
-                            [0, 'asc']
-                        ]
+                        aaSorting:[]
                     });
                 };
             }
