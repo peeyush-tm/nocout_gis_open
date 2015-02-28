@@ -21,9 +21,13 @@ from inventory.utils.util import organization_sectors, organization_network_devi
 
 from inventory.tasks import bulk_update_create
 
-from dashboard.utils import get_topology_status_results, get_dashboard_status_range_counter
-import logging
+from dashboard.utils import \
+    get_topology_status_results, \
+    get_dashboard_status_range_counter, \
+    get_dashboard_status_range_mapped
 
+
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -190,6 +194,7 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     bulk_update_create.delay(data_list, action='create', model=model)
     return True
 
+
 @task()
 def calculate_timely_backhaul_capacity(organizations, technology, model, processed_for):
     '''
@@ -238,6 +243,7 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
     # call the method to bulk create the onjects.
     bulk_update_create.delay(data_list, action='create', model=model)
     return True
+
 
 @task()
 def calculate_timely_sales_opportunity(organizations, technology, model, processed_for):
@@ -301,6 +307,7 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
     bulk_update_create.delay(data_list, action='create', model=model)
     return True
 
+
 @task()
 def calculate_timely_latency(organizations, dashboard_name, processed_for ,technology=None):
     '''
@@ -315,15 +322,13 @@ def calculate_timely_latency(organizations, dashboard_name, processed_for ,techn
     return:
     '''
     try:
-        if technology:
-            latency_technology = eval(technology)
-        else:
-            latency_technology = None    
-    except Exception, e:
+        latency_technology = eval(technology)
+        processed_for = processed_for
+        technology_id = latency_technology.ID
+    except Exception as e:
+        logger.exception(e)
         return False
 
-    processed_for = processed_for
-    technology_id = latency_technology.ID if latency_technology else None
     # get the device of user's organization [and sub organization]
     sector_devices = organization_network_devices(organizations, technology_id)
     # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -331,20 +336,27 @@ def calculate_timely_latency(organizations, dashboard_name, processed_for ,techn
 
     # get the dictionary of machine_name as key and device_name as a list for that machine.
     machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
-    # creating a list dictionary using machine name and there corresponing device list.
-    # And list is order by device_name.
-    for machine_name, device_list in machine_dict.items():
-        status_dict_list += NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_list,
-                service_name='ping',
-                data_source='rta',
-                current_value__gt=0,
-                severity__in=['warning', 'critical', 'down']
-            ).using(machine_name).values()
 
-    logger.debug('calculate_timely_latency : data list {0}'.format(status_dict_list))
-    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
-    return True
+    status_count = 0
+
+    # creating a list dictionary using machine name and there corresponing device list.
+    for machine_name, device_list in machine_dict.items():
+        status_count += NetworkStatus.objects.order_by().filter(
+            device_name__in=device_list,
+            service_name='ping',
+            data_source='rta',
+            current_value__gt=0,
+            severity__in=['warning', 'critical', 'down']
+            ).using(machine_name).count()
+
+    return calculate_timely_network_alert(
+        dashboard_name=dashboard_name,
+        processed_for=processed_for,
+        technology=technology,
+        status_count=status_count,
+        status_dashboard_name=None
+    )
+
 
 @task()
 def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, technology=None):
@@ -360,39 +372,46 @@ def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, t
     return:
     '''
     try:
-        if technology:
-            packetdrop_technology = eval(technology)
-        else:
-            packetdrop_technology = None
-    except Exception, e:
+        pd_technology = eval(technology)
+        processed_for = processed_for
+        technology_id = pd_technology.ID
+    except Exception as e:
+        logger.exception(e)
         return False
-    processed_for = processed_for
-    technology_id = packetdrop_technology.ID if packetdrop_technology else None
+
     # get the device of user's organization [and sub organization]
     sector_devices = organization_network_devices(organizations, technology_id)
     # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
+    # get the dictionary of machine_name as key and device_name as a list for that machine.
     machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
-    # creating a list dictionary using machine name and there corresponing device list.
-    # And list is order by device_name.
-    for machine_name, device_list in machine_dict.items():
-        status_dict_list += NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_list,
-                service_name='ping',
-                data_source='pl',
-                severity__in=['warning', 'critical', 'down'],
-                current_value__lt=100
-            ).using(machine_name).values()
 
-    logger.debug('calculate_timely_packet_drop : data list = {0}'.format(status_dict_list))
-    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
-    return True
+    status_count = 0
+
+    # creating a list dictionary using machine name and there corresponing device list.
+    for machine_name, device_list in machine_dict.items():
+        status_count += NetworkStatus.objects.order_by().filter(
+            device_name__in=device_list,
+            service_name='ping',
+            data_source='pl',
+            current_value__lt=100,
+            severity__in=['warning', 'critical']
+            ).using(machine_name).count()
+
+    return calculate_timely_network_alert(
+        dashboard_name=dashboard_name,
+        processed_for=processed_for,
+        technology=technology,
+        status_count=status_count,
+        status_dashboard_name=None
+    )
+
 
 @task()
 def calculate_timely_down_status(organizations, dashboard_name, processed_for, technology=None):
     '''
-    Method to calculate the down status of devices.
+    Method to calculate the packed drop status of devices.
 
     :param:
     organizations: list of organization.
@@ -403,34 +422,41 @@ def calculate_timely_down_status(organizations, dashboard_name, processed_for, t
     return:
     '''
     try:
-        if technology:
-            down_technology = eval(technology)
-        else:
-            down_technology = None
-    except Exception, e:
+        pd_technology = eval(technology)
+        processed_for = processed_for
+        technology_id = pd_technology.ID
+    except Exception as e:
+        logger.exception(e)
         return False
-    processed_for = processed_for
-    technology_id = down_technology.ID if down_technology else None
+
     # get the device of user's organization [and sub organization]
     sector_devices = organization_network_devices(organizations, technology_id)
     # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
+    # get the dictionary of machine_name as key and device_name as a list for that machine.
     machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
-    # creating a list dictionary using machine name and there corresponing device list.
-    # And list is order by device_name.
-    for machine_name, device_list in machine_dict.items():
-        status_dict_list += NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_list,
-                service_name='ping',
-                data_source='pl',
-                severity__in=['down'],
-                current_value__gte=100
-            ).using(machine_name).values()
 
-    logger.debug('calculate_timely_down_status : data list = {0}'.format(status_dict_list))
-    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
-    return True
+    status_count = 0
+
+    # creating a list dictionary using machine name and there corresponing device list.
+    for machine_name, device_list in machine_dict.items():
+        status_count += NetworkStatus.objects.order_by().filter(
+            device_name__in=device_list,
+            service_name='ping',
+            data_source='pl',
+            current_value__gte=100,
+            severity__in=['critical', 'down']
+            ).using(machine_name).count()
+
+    return calculate_timely_network_alert(
+        dashboard_name=dashboard_name,
+        processed_for=processed_for,
+        technology=technology,
+        status_count=status_count,
+        status_dashboard_name=None
+    )
+
 
 @task()
 def calculate_timely_temperature(organizations, processed_for, chart_type='IDU'):
@@ -456,6 +482,9 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
     elif chart_type == 'FAN':
         service_list = ['wimax_bs_temperature_fan']
         data_source_list = ['fan_temp']
+    else:
+        return False
+
     status_dashboard_name = 'temperature-' + chart_type.lower()
 
     # get the device of user's organization [and sub organization]
@@ -464,91 +493,96 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
     machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
+
+    # count of devices in severity
+    status_count = 0
     # creating a list dictionary using machine name and there corresponing device list.
     # And list is order by device_name.
     for machine_name, device_list in machine_dict.items():
-        status_dict_list += ServiceStatus.objects.order_by().filter(
+        status_count += ServiceStatus.objects.order_by().filter(
             device_name__in=device_list,
             service_name__in=service_list,
             data_source__in=data_source_list,
             severity__in=['warning', 'critical']
-            ).using(machine_name).values()
+            ).count().using(machine_name)
 
-    logger.debug('calculate_timely_temperature : data list = {0}'.format(status_dict_list))
-    calculate_timely_network_alert('temperature', processed_for, 'WiMAX', status_dict_list, status_dashboard_name)
-    return True
+    return calculate_timely_network_alert(
+        dashboard_name='temperature',
+        processed_for=processed_for,
+        technology='WiMAX',
+        status_count=status_count,
+        status_dashboard_name=status_dashboard_name
+    )
 
-def calculate_timely_network_alert(dashboard_name, processed_for, technology=None, status_dict_list=[], status_dashboard_name=None):
-    '''
+
+def calculate_timely_network_alert(dashboard_name,
+                                   processed_for,
+                                   technology=None,
+                                   status_count=0,
+                                   status_dashboard_name=None):
+    """
     prepare a list of model object to bulk create the model objects.
 
-    :param:
-    dashboard_name: name of dashboard used in dashboard_setting.
-    processed_for: datetime
-    technology: Named Tuple
-    status_dict_list: list of dictionay.
-    status_dashboard_name: string
+    :param dashboard_name: dashboard_name: name of dashboard used in dashboard_setting.
+    :param processed_for: processed_for: datetime
+    :param technology: technology: Named Tuple
+    :param status_count: count of status of objects in warning, critical
+    :param status_dashboard_name: string
+    return: True
+    """
 
-    return:
-    '''
     try:
         if technology:
             network_technology = eval(technology)
         else:
-            network_technology = None    
-    except Exception, e:
-        raise e
+            network_technology = None
+    except Exception as e:
+        logger.exception(e)
+        return False
+
     technology_id = network_technology.ID if network_technology else None
     try:
-        dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id,
-                page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        dashboard_setting = DashboardSetting.objects.get(
+            technology_id=technology_id,
+            page_name='main_dashboard',
+            name=dashboard_name,
+            is_bh=False
+        )
     except DashboardSetting.DoesNotExist as e:
-        logger.info(" Dashboard Setting of %s is not available." % dashboard_name)
-        return None
+        logger.exception(" Dashboard Setting of {0} is not available. {1}".format(dashboard_name, e))
+        return False
 
-    data_list = []
-    device_name = ''
-    device_result = []
+    device_name = '-1'  # lets just say it does not exists # todo remove this s**t
     processed_for = processed_for
+
+    bulky = list()
 
     if status_dashboard_name is None:
         status_dashboard_name = dashboard_name
 
-    # status_dict_list is a ordered list of dictionay which is ordered by device_name.
-    for result_dict in status_dict_list:
-        # Creating list for same device_name to collectively get the status_range_counter of same devices.
-        if device_name == result_dict['device_name']:
-            device_result.append(result_dict)
-        else:
-            # Creating a list of model object for a list of same devices.
-            if device_result:
-                # get the dictionay where keys are same as of the model fields.
-                dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
-                # updating the dictionay with some other fields used in model.
-                dashboard_data_dict.update({'device_name': device_name, 'reference_name': device_name,
-                    'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
-                # creating a list of model object for bulk create.
-                data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
+    # get the dictionay where keys are same as of the model fields.
+    dashboard_data_dict = get_dashboard_status_range_mapped(dashboard_setting, status_count)
+    # updating the dictionay with some other fields used in model.
 
-            # assign the new device name to device_name.
-            device_name = result_dict['device_name']
-            # creating new list for the new device.
-            # so that again we can collectively get the status_range_counter for new device.
-            device_result = [result_dict]
-    # creating the list of model object for the final list of the device name of status_dict_list.
-    if device_result:
-        # get the dictionay where keys are same as of the model fields.
-        dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
-        # updating the dictionay with some other fields used in model.
-        dashboard_data_dict.update({'device_name': result_dict['device_name'], 'reference_name': result_dict['device_name'],
-            'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
+    if dashboard_data_dict:
+        dashboard_data_dict.update(
+            {
+                'device_name': device_name,
+                'reference_name': device_name,
+                'dashboard_name': status_dashboard_name,
+                'processed_for': processed_for
+            }
+        )
         # creating a list of model object for bulk create.
-        data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
+        bulky.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
-    #logger.info("CELERYBEAT: Timely: ")
-    bulk_update_create.delay(data_list, action='create', model=DashboardRangeStatusTimely)
+        # call celery task to create dashboard data
+        bulk_update_create.delay(bulky=bulky,
+                                 action='create',
+                                 model=DashboardRangeStatusTimely)
+
     return True
+
 
 def prepare_machines(device_list):
     """
@@ -563,7 +597,7 @@ def prepare_machines(device_list):
     unique_device_machine_list = {device['machine__name']: True for device in device_list}.keys()
 
     machine_dict = {}
-    #Creating the machine as a key and device_name as a list for that machine.
+    # Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
         machine_dict[machine] = [device['device_name'] for device in device_list if
                                  device['machine__name'] == machine]
@@ -576,12 +610,10 @@ def calculate_hourly_main_dashboard():
     '''
     Task to calculate the main dashboard status in every hour using celerybeat.
     '''
-    now = timezone.now()
 
-    logger.info("CELERYBEAT: Hourly: starts at ", now)
+    now = timezone.now()
     calculate_hourly_severity_status(now)
     calculate_hourly_range_status(now)
-    logger.info("CELERYBEAT: Hourly: ends at ", timezone.now())
 
 
 def calculate_hourly_severity_status(now):
