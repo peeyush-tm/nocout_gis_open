@@ -155,7 +155,7 @@ def calculate_range_dashboards():
             calculate_timely_sales_opportunity.s(
                 user_organizations,
                 technology=tech,
-                model=DashboardSeverityStatusTimely,
+                model=DashboardRangeStatusTimely,
                 processed_for=processed_for
             )
         )
@@ -205,38 +205,42 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
 
     dashboard_name = '%s_sector_capacity' % (sector_technology.NAME.lower())
 
-    sectors = SectorCapacityStatus.objects.filter(
-            Q(organization__in=organizations),
-            Q(sector__sector_configured_on__device_technology=sector_technology.ID),
-            Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
-        ).values(*required_values)
+    for organization in organizations:
+        sector_objects = SectorCapacityStatus.objects.filter(
+                Q(organization__in=organization),
+                Q(sector__sector_configured_on__device_technology=sector_technology.ID),
+                Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
+            )
 
-    bulk_data_list = list()
+        if sector_objects.count():
+            bulk_data_list = list()
+            sectors = sector_objects.values(*required_values)
 
-    for item in sectors:
-        # Create the range_counter dictionay containg the model's field name as key
-        range_counter = dict(
-            dashboard_name=dashboard_name,
-            device_name=item['sector__sector_configured_on__device_name'],
-            reference_name=item['sector__name'],
-            processed_for=processed_for,
-            organization=item['organization']
-        )
-        # Update the range_counter on the basis of severity.
-        if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
-            range_counter.update({item['severity'].strip().lower() : 1})
-        elif item['severity'].strip().lower() == 'ok':
-            range_counter.update({'ok' : 1})
-        else:
-            range_counter.update({'unknown' : 1})
+            for item in sectors:
+                # Create the range_counter dictionay containg the model's field name as key
+                range_counter = dict(
+                    dashboard_name=dashboard_name,
+                    device_name=item['sector__sector_configured_on__device_name'],
+                    reference_name=item['sector__name'],
+                    processed_for=processed_for,
+                    organization=item['organization']
+                )
+                # Update the range_counter on the basis of severity.
+                if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                    range_counter.update({item['severity'].strip().lower() : 1})
+                elif item['severity'].strip().lower() == 'ok':
+                    range_counter.update({'ok' : 1})
+                else:
+                    range_counter.update({'unknown' : 1})
 
-        bulk_data_list.append(model(**range_counter))
+                bulk_data_list.append(model(**range_counter))
 
-    if len(bulk_data_list):
-        # call the method to bulk create the onjects.
-        bulk_update_create.delay(bulky=bulk_data_list,
-                             action='create',
-                             model=model)
+            if len(bulk_data_list):
+                # call the method to bulk create the onjects.
+                bulk_update_create.delay(
+                    bulky=bulk_data_list,
+                    action='create',
+                    model=model)
     return True
 
 
@@ -265,38 +269,47 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
         'organization'
     ]
 
-    backhaul = BackhaulCapacityStatus.objects.filter(
-            Q(organization__in=organizations),
-            Q(backhaul__bh_configured_on__device_technology=backhaul_technology.ID),
-            Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
-        ).values(*required_values)
+    for organization in organizations:
 
-    data_list = list()
-    for item in backhaul:
-        # Create the range_counter dictionay containg the model's field name as key
-        range_counter = dict(
-            dashboard_name=dashboard_name,
-            device_name=item['backhaul__bh_configured_on__device_name'],
-            reference_name=item['backhaul__name'],
-            processed_for=processed_for,
-            organization=item['organization']
-        )
-        # Update the range_counter on the basis of severity.
-        if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
-            range_counter.update({item['severity'].strip().lower() : 1})
-        elif item['severity'].strip().lower() == 'ok':
-            range_counter.update({'ok' : 1})
-        else:
-            range_counter.update({'unknown' : 1})
+        backhaul_objects = BackhaulCapacityStatus.objects.filter(
+                Q(organization__in=organization),
+                Q(backhaul__bh_configured_on__device_technology=backhaul_technology.ID),
+                Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
+            )
 
-        # Create the list of model object.
-        try:
-            data_list.append(model(**range_counter))
-        except Exception as e:
-            pass
+        if backhaul_objects.count():
+            data_list = list()
+            backhaul = backhaul_objects.values(*required_values)
 
-    # call the method to bulk create the onjects.
-    bulk_update_create.delay(data_list, action='create', model=model)
+            for item in backhaul:
+                # Create the range_counter dictionay containg the model's field name as key
+                range_counter = dict(
+                    dashboard_name=dashboard_name,
+                    device_name=item['backhaul__bh_configured_on__device_name'],
+                    reference_name=item['backhaul__name'],
+                    processed_for=processed_for,
+                    organization=item['organization']
+                )
+                # Update the range_counter on the basis of severity.
+                if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                    range_counter.update({item['severity'].strip().lower() : 1})
+                elif item['severity'].strip().lower() == 'ok':
+                    range_counter.update({'ok' : 1})
+                else:
+                    range_counter.update({'unknown' : 1})
+
+                # Create the list of model object.
+                try:
+                    data_list.append(model(**range_counter))
+                except Exception as e:
+                    pass
+
+            # call the method to bulk create the onjects.
+            bulk_update_create.delay(
+                data_list,
+                action='create',
+                model=model)
+
     return True
 
 
@@ -326,41 +339,50 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
         logger.info("DashboardSetting for %s is not available." % dashboard_name)
         return False
 
-    # get the sector of User's Organization [and Sub Organization]
-    user_sector = organization_sectors(organizations, technology_id)
-    # get the device of the user sector.
-    # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+    for organization in organizations:
 
-    # get the list of dictionary on the basis of parameters.
-    service_status_results = get_topology_status_results(
-        user_devices=None,
-        model=Topology,
-        service_name=None,
-        data_source='topology',
-        user_sector=user_sector
-    )
+        # get the sector of User's Organization [and Sub Organization]
+        sector_objects = organization_sectors(organization, technology_id)
+        # get the device of the user sector.
+        # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
-    data_list = list()
-    for result in service_status_results:
-        # get the dictionary containing the model's field name as key.
-        # range_counter in format {'range1': 1, 'range2': 2,...}
-        range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
-        # update the range_counter to add further details
-        range_counter.update(
-            {
-                'dashboard_name': dashboard_name,
-                'device_name': result['device_name'],
-                'reference_name': result['name'],   # Store sector name as reference_name
-                'processed_for': processed_for,
-                'organization': result['organization']
-            }
-        )
+        if sector_objects.count():
+            data_list = list()
+            user_sector = sector_objects
 
-        # prepare a list of model object.
-        data_list.append(model(**range_counter))
+            # get the list of dictionary on the basis of parameters.
+            service_status_results = get_topology_status_results(
+                user_devices=None,
+                model=Topology,
+                service_name=None,
+                data_source='topology',
+                user_sector=user_sector
+            )
 
-    # call method to bulk create the model object.
-    bulk_update_create.delay(data_list, action='create', model=model)
+            for result in service_status_results:
+                # get the dictionary containing the model's field name as key.
+                # range_counter in format {'range1': 1, 'range2': 2,...}
+                range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
+                # update the range_counter to add further details
+                range_counter.update(
+                    {
+                        'dashboard_name': dashboard_name,
+                        'device_name': result['device_name'],
+                        'reference_name': result['name'],   # Store sector name as reference_name
+                        'processed_for': processed_for,
+                        'organization': result['organization']
+                    }
+                )
+                # prepare a list of model object.
+                data_list.append(model(**range_counter))
+
+            # call method to bulk create the model object.
+            bulk_update_create.delay(
+                data_list,
+                action='create',
+                model=model
+            )
+
     return True
 
 
