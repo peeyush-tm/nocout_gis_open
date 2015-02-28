@@ -1289,7 +1289,6 @@ def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard
                 color_dict = getattr(dashboard_setting, 'range%d_color_hex_value' %(i+1))
             else: 
                 color_dict = '#CED5DB'
-            print trend_items[i]         
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
@@ -1643,7 +1642,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
             if trend_items[i]['title'] != 'unknown':
                 count_color = getattr(dashboard_setting, '%s_color_hex_value' %trend_items[i]['title'])
-                # print count_color
+
             else:
                 # Color for Unknown range
                 count_color = '#CED5DB'   
@@ -1722,7 +1721,7 @@ class GetRfNetworkAvailData(View):
             # Last 30th datetime object
             month_before = (datetime.date.today() - datetime.timedelta(days=30))
             epoch_month_before = int(month_before.strftime('%s'))
-
+            
             rf_availability_data_dict = RfNetworkAvailability.objects.filter(
                 sys_timestamp__gte=epoch_month_before
             ).order_by('sys_timestamp')
@@ -1731,9 +1730,8 @@ class GetRfNetworkAvailData(View):
             availability_chart_data = list()
 
             if rf_availability_data_dict and len(rf_availability_data_dict):
-                
                 # Get technologies list from fetched queryset
-                existing_tech_list = rf_availability_data_dict.values_list('technology',flat=True).distinct()
+                existing_tech_list = rf_availability_data_dict.values_list('technology__name',flat=True).distinct()
 
                 # If any technology exists then proceed
                 if len(existing_tech_list):
@@ -1803,8 +1801,6 @@ class GetRfNetworkAvailData(View):
             result["data"]['objects']['chart_data'] = availability_chart_data
 
         except Exception, e:
-            print "^"*50
-            print e.message
             pass
 
         return HttpResponse(json.dumps(result))
@@ -1820,7 +1816,7 @@ def get_technology_wise_data_dict(rf_avail_queryset=[]):
     for rows in rf_avail_queryset:
         current_row = rows
         if current_row:
-            technology = current_row.technology
+            technology = current_row.technology.name
             if technology not in updated_data_dict:
                 updated_data_dict[technology] = {}
 
