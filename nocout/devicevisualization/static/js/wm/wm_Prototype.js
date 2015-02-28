@@ -45,8 +45,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	mapClick.activate();
 
 	//Map moveend event
-	ccpl_map.events.register("moveend", ccpl_map, function(e){
-		that.mapIdleCondition();
+	ccpl_map.events.register("moveend", ccpl_map, function(e) {
+		that.mapDragEndCondition();
 		return;
 	});
 
@@ -55,6 +55,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		that.mapIdleCondition();
 		return;
 	});
+	if(ccpl_map.getLayersByName("Markers")[0]) {
+		ccpl_map.getLayersByName("Markers")[0].events.register('mousedown', ccpl_map.getLayersByName("Markers")[0], function(evt){
+		    if(evt && evt.button == 2){
+		    	console.log(evt);
+		    	console.log(evt.button);
+		    }
+		});
+	}
 
 	//Create WMS layer to load Map from our geoserver.
 	layers.india_Layer = new OpenLayers.Layer.WMS(
@@ -286,8 +294,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		strategy = new OpenLayers.Strategy.Cluster({
 			"distance": clustererSettings.clustererDistance, 
 			"threshold": clustererSettings.threshold,
-			"autoActivate": false,
-			"autoDestroy": false
+			"autoActivate": true,
+			"autoDestroy": true
 		});
 
 

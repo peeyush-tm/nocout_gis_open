@@ -27,20 +27,41 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
         
     }
 });
+/**
+ * This event triggers when map pan ends
+ * @event mapDragEndCondition
+ */
+WhiteMapClass.prototype.mapDragEndCondition = function() {
+	
+	if(ccpl_map.getZoom() > 10 && isPerfCallStarted == 1) {
+    	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
+    	if(new_bs.length > 0) {
+    		if(!callsInProcess) {
+    			// Clear performance calling timeout
+				if(recallPerf != "") {
+        			clearTimeout(recallPerf);
+        			recallPerf = "";
+        		}
+    			gisPerformanceClass.start(new_bs);
+    		} else {
+    			current_bs_list = current_bs_list.concat(new_bs);
+    		}
+    	}
+    }
+};
 
-/*
-Event triggered for Map Idle Condition. [Whenever Map is Zoomed, Panned or something else]
+/**
+ * Event triggered for Map Idle Condition. [Whenever Map is Zoomed, Panned or something else]
  */
 var lastZoomLevel = 1;
 WhiteMapClass.prototype.mapIdleCondition = function() {
 	
 	setTimeout(function() {
     	if(isDebug) {
-			console.log("Google Map Idle Event");
-			console.log("Google Map Idle Event Start Time :- "+ new Date().toLocaleString());
+			console.log("White Map Idle Event");
+			var start_date_idle = new Date();
 		}
-		// Save current zoom value in global variable
-    	current_zoom = ccpl_map.getZoom();
+
     	/* When zoom level is greater than 8 show lines */
     	if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
 
@@ -115,7 +136,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     				}
 
 
-        			if(currentlyPlottedDevices.length === 0) {
+        			if(currentlyPlottedDevices.length == 0) {
         				ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
 	            		/*Clear all everything from map*/
 						$.grep(allMarkersArray_wmap,function(marker) {
@@ -169,17 +190,22 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						for(key in polylines) {
 							hideOpenLayerFeature(polylines[key]);
 						}
-						// alert();
+						// Redraw Lines layer to apply updates(Hide Lines)
+						ccpl_map.getLayersByName('Lines')[0].redraw();
+
 						// Hide polygons if shown
 						for(key in polygons) {
 							hideOpenLayerFeature(polygons[key]);
 						}
+						// Redraw Sectors layer to apply updates(Hide Sectors)
+						ccpl_map.getLayersByName('Sectors')[0].redraw();
+
 					} else {
-						whiteMapClass.showSubStaionsInBounds();
 						whiteMapClass.showBaseStaionsInBounds();
 						whiteMapClass.showSectorDevicesInBounds();
-						whiteMapClass.showLinesInBounds();
 						whiteMapClass.showSectorPolygonInBounds();
+						whiteMapClass.showLinesInBounds();
+						whiteMapClass.showSubStaionsInBounds();
 						// whiteMapClass.showBackhaulDevicesInBounds();
 					}
 
@@ -213,7 +239,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 				}
     		}
-
     		// Start Performance API calling
     		if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
     			var bs_id_list = getMarkerInCurrentBound();
@@ -378,8 +403,10 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         // Save last Zoom Value
         lastZoomLevel = ccpl_map.getZoom();
         if(isDebug) {
-			console.log("Google Map Idle Event End Time :- "+ new Date().toLocaleString());
+        	var time_diff = (new Date().getTime() - start_date_idle.getTime())/1000;
+			console.log("White Map Idle Event End Time :- "+ time_diff + "Seconds");
 			console.log("*************************************");
+			start_date_idle = "";
 		}
 	},300);
 };
@@ -426,7 +453,7 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 			//Show Info Window for it
 			showInfoWindow(feature);
 			//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
-			if(feature.pointType === 'path') {
+			if(feature.pointType == 'path') {
 				setTimeout(function() {
 					//remove freshnel zone button
 					$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
@@ -435,6 +462,7 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 		//Else if base station was clicked
 		} else {
 			//First spiderify base station is not spiderfied, else open Info Window for it.
+			console.log(feature);
 			if(this.spiderifyMarker(feature)) {
 				showInfoWindow(feature);
 			}

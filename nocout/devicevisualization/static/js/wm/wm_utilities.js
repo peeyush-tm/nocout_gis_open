@@ -424,7 +424,7 @@ function createSectorData(lat, lng, radius, azimuth, beamWidth, orientation, cal
         var len = Math.floor(PGpoints.length / 3);
         triangle.push(PGpoints[0]);
         triangle.push(PGpoints[(len * 2) - 1]);
-        triangle.push(PGpoints[(len * 3) - 1]);
+        triangle.push(PGpoints[PGpoints.length - 1]);
         /*Assign the triangle object array to sectorDataArray for plotting the polygon*/
         sectorDataArray = triangle;
     } else {
@@ -580,7 +580,7 @@ function hideOpenLayerFeature(feature) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = 'none';
         if(featureLayer) {
-            featureLayer.redraw();
+            // featureLayer.redraw();
             
         }
     }

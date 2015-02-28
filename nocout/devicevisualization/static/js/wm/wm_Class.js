@@ -209,7 +209,10 @@ function WhiteMapClass() {
 	 */
 	
 		this.initLivePolling = function() {
-
+			if(isDebug) {
+				console.log("White Map - initLivePolling");
+				var start_date_initLivePolling = new Date();
+			}
 			if(ccpl_map.getZoom() > whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
 				/*Reset marker icon*/
 				for(var i=0;i<polygonSelectedDevices.length;i++) {
@@ -309,6 +312,13 @@ function WhiteMapClass() {
 			} else {
 				bootbox.alert("<p style='position:relative;z-index:9999;'>Please zoom in for live poll devices.There are too many devices.</p>");
 				$("#clearPolygonBtn").trigger('click');
+			}
+			if(isDebug) {
+            	var time_diff = (new Date().getTime() - start_date_initLivePolling.getTime())/1000;
+				// console.log("Google Map Idle Event End Time :- "+ new Date().toLocaleString());
+				console.log("White Map - initLivePolling End Time :- "+ time_diff + "Seconds");
+				console.log("*************************************");
+				start_date_initLivePolling = "";
 			}
 		}
 
@@ -1475,8 +1485,8 @@ function WhiteMapClass() {
 	 */
 	this.showBaseStaionsInBounds = function() {
 		if(isDebug) {
-			console.log("Show in bound BS");
-			console.log("Show in bound BS Start Time :- "+ new Date().toLocaleString());
+			console.log("White Map - Show in bound BS");
+			var start_date_bs_bounds = new Date();
 		}
 		// var plotted_bs_ids = [];
 		/*Loop for polylines*/
@@ -1500,7 +1510,8 @@ function WhiteMapClass() {
 
 		// var sector_to_plot = all_devices_loki_db.where(function(obj){return plotted_bs_ids.indexOf(obj.originalId) > -1;});
 		if(isDebug) {
-			console.log("Show in bound BS End Time :- "+ new Date().toLocaleString());
+			var time_diff = (new Date().getTime() - start_date_bs_bounds.getTime())/1000;
+			console.log("White Map - Show in bound BS End Time :- "+ time_diff + "Seconds");
 			console.log("**********************************");
 		}
 	};
@@ -1829,8 +1840,8 @@ function WhiteMapClass() {
 	    this.plotDevices_wmaps = function(bs_ss_devices, stationType) {
 
 			if(isDebug) {
-				console.log("Plot Devices Function");
-				console.log("Plot Devices Start Time :- "+ new Date().toLocaleString());
+				console.log("White Map - Plot Devices Function");
+				start_date_white_plot = new Date();
 			}
 			var zoom_level = ccpl_map.getZoom(),
 				hide_flag = !$("#show_hide_label")[0].checked,
@@ -2256,8 +2267,11 @@ function WhiteMapClass() {
 			}
 
 			if(isDebug) {
-				console.log("Plot Devices End Time :- "+ new Date().toLocaleString());
-				console.log("**********************************");
+				var time_diff = (new Date().getTime() - start_date_white_plot.getTime())/1000;
+				// console.log("Google Map Idle Event End Time :- "+ new Date().toLocaleString());
+				console.log("White Map - Plot Devices End Time :- "+ time_diff + "Seconds");
+				console.log("*************************************");
+				start_date_white_plot = "";
 			}
 		}
 
