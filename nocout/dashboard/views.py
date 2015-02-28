@@ -18,7 +18,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.settings import PMP, WiMAX, TCLPOP
 
 from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import convert_utc_to_local_timezone
+# from nocout.utils.util import convert_utc_to_local_timezone
 from inventory.models import Sector
 from device.models import DeviceTechnology, Device
 from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, \
@@ -1048,7 +1048,7 @@ def get_severity_status_dict(dashboard_name, devices_list):
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
         processed_for_key_utc = dashboard_status_dict[0].processed_for
-        processed_for_key_localtime = convert_utc_to_local_timezone(processed_for_key_utc)
+        processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
         # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
         # get the dashboard data on the basis of the processed_for.
@@ -1077,7 +1077,7 @@ def view_range_status(dashboard_name, organizations):
     if dashboard_status_dict.exists():
         processed_for_key_utc = dashboard_status_dict[0].processed_for
         try:
-            processed_for_key_localtime = convert_utc_to_local_timezone(processed_for_key_utc)
+            processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
         except:
             processed_for_key_localtime = processed_for_key_utc
         # get the latest processed_for(datetime) from the database.
@@ -1119,7 +1119,7 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
         processed_for_key_utc = dashboard_status_dict[0].processed_for
-        processed_for_key_localtime = convert_utc_to_local_timezone(processed_for_key_utc)
+        processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
         # get the latest processed_for(datetime) from the database.
         processed_for = dashboard_status_dict[0].processed_for
         # get the dashboard data on the basis of the processed_for.
