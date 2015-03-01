@@ -804,16 +804,17 @@ class SectorCapacityMixin(object):
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector = organization_sectors(organization, technology=technology)
+        # user_sector = organization_sectors(organization, technology=technology)
         # Get Device of User's Sector.
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
-                                                    is_added_to_nms=1)
+        # sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
+        #                                             is_added_to_nms=1)
         # Get Device name list of User's Sector.
-        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
+        # sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
+
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Get the status of the dashboard.
         dashboard_status_dict, \
-        processed_for_key = get_severity_status_dict(dashboard_name, sector_devices_list)
+        processed_for_key = view_severity_status(dashboard_name, organization)
         chart_series = []
         color = []
         if len(dashboard_status_dict):
@@ -882,14 +883,15 @@ class BackhaulCapacityMixin(object):
 
         if technology:
             # Get Backhauls Devices of User's Organizations.
-            user_backhaul = organization_backhaul_devices(organization, technology=technology)
+            # user_backhaul = organization_backhaul_devices(organization, technology=technology)
             # Get Device name list of User's Backhaul.
-            backhaul_devices_list = user_backhaul.values_list('device_name', flat=True)
+            # backhaul_devices_list = user_backhaul.values_list('device_name', flat=True)
             # Creating Dashboard Name
             dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
             # Get the status of the dashboard.
-            dashboard_status_dict, \
-            processed_for_key = get_severity_status_dict(dashboard_name, backhaul_devices_list)
+            dashboard_status_dict, processed_for_key = view_severity_status(dashboard_name,
+                                                                            organizations=organization
+            )
             color = []
             chart_series = []
             if len(dashboard_status_dict):
@@ -1030,7 +1032,7 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
 # *************************** Dashboard Timely Data ***********************
 
 
-def get_severity_status_dict(dashboard_name, devices_list):
+def view_severity_status(dashboard_name, organizations):
     '''
     Method based view to get latest data from central database table.
     retun data for the severity based dashboard.
@@ -1043,7 +1045,7 @@ def get_severity_status_dict(dashboard_name, devices_list):
 
     dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
-        device_name__in=devices_list
+        organization__in=organizations
     )
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
@@ -1097,6 +1099,38 @@ def view_range_status(dashboard_name, organizations):
             range9=Sum('range9'),
             range10=Sum('range10'),
             unknown=Sum('unknown')
+        )
+
+    return dashboard_status_dict, processed_for_key_localtime
+
+
+def get_severity_status_dict(dashboard_name, devices_list):
+    '''
+    Method based view to get latest data from central database table.
+    retun data for the severity based dashboard.
+
+    dashboard_name: name of the dashboard.
+    sector_devices_list: list of device.
+
+    return: dictionary
+    '''
+
+    dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
+        dashboard_name=dashboard_name,
+        device_name__in=devices_list
+    )
+    processed_for_key_localtime = ''
+    if dashboard_status_dict.exists():
+        processed_for_key_utc = dashboard_status_dict[0].processed_for
+        processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
+        # get the latest processed_for(datetime) from the database.
+        processed_for = dashboard_status_dict[0].processed_for
+        # get the dashboard data on the basis of the processed_for.
+        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
+            Normal=Sum('ok'),
+            Needs_Augmentation=Sum('warning'),
+            Stop_Provisioning=Sum('critical'),
+            Unknown=Sum('unknown')
         )
 
     return dashboard_status_dict, processed_for_key_localtime
