@@ -810,7 +810,18 @@ def calculate_hourly_severity_status(now, then):
     last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by().filter(
         processed_for__lte=now,
         processed_for__gte=then
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Normal=Sum('ok'),
+        Needs_Augmentation=Sum('warning'),
+        Stop_Provisioning=Sum('critical'),
+        Down=Sum('down'),
+        Unknown=Sum('unknown')
     )
+
+    organizations = Organization.objects.all()
 
     hourly_severity_status_list = []    # list for the DashboardSeverityStatusHourly model object
 
@@ -819,16 +830,16 @@ def calculate_hourly_severity_status(now, then):
         # Create new model object when dashboard_name and
         # device_name are different from previous dashboard_name and device_name.
         hourly_severity_status = DashboardSeverityStatusHourly(
-            dashboard_name=timely_severity_status.dashboard_name,
-            device_name=timely_severity_status.device_name,
-            reference_name=timely_severity_status.reference_name,
+            dashboard_name=hourly_severity_status['dashboard_name'],
+            device_name=hourly_severity_status['dashboard_name'],
+            reference_name=hourly_severity_status['dashboard_name'],
             processed_for=now,
-            warning=timely_severity_status.warning,
-            critical=timely_severity_status.critical,
-            ok=timely_severity_status.ok,
-            down=timely_severity_status.down,
-            unknown=timely_severity_status.unknown,
-            organization=timely_severity_status.organization
+            warning=hourly_severity_status['Needs_Augmentation'],
+            critical=hourly_severity_status['Stop_Provisioning'],
+            ok=hourly_severity_status['Normal'],
+            down=hourly_severity_status['Down'],
+            unknown=hourly_severity_status['Unknown'],
+            organization=organizations.get(id=hourly_severity_status['organization'])
         )
         # append in list for every new dashboard_name and device_name.
         hourly_severity_status_list.append(hourly_severity_status)
@@ -854,7 +865,24 @@ def calculate_hourly_range_status(now, then):
     last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by().filter(
         processed_for__lte=now,
         processed_for__gte=then
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Range1=Sum('range1'),
+        Range2=Sum('range2'),
+        Range3=Sum('range3'),
+        Range4=Sum('range4'),
+        Range5=Sum('range5'),
+        Range6=Sum('range6'),
+        Range7=Sum('range7'),
+        Range8=Sum('range8'),
+        Range9=Sum('range9'),
+        Range10=Sum('range10'),
+        Unknown=Sum('unknown')
     )
+
+    organizations = Organization.objects.all()
 
     hourly_range_status_list = []   # list for the DashboardRangeStatusHourly model object
 
@@ -862,22 +890,22 @@ def calculate_hourly_range_status(now, then):
         # Create new model object when dashboard_name and device_name are different
         # from previous dashboard_name and device_name.
         hourly_range_status = DashboardRangeStatusHourly(
-            dashboard_name=timely_range_status.dashboard_name,
-            device_name=timely_range_status.device_name,
-            reference_name=timely_range_status.reference_name,
+            dashboard_name=hourly_range_status['dashboard_name'],
+            device_name=hourly_range_status['dashboard_name'],
+            reference_name=hourly_range_status['dashboard_name'],
             processed_for=now,
-            range1=timely_range_status.range1,
-            range2=timely_range_status.range2,
-            range3=timely_range_status.range3,
-            range4=timely_range_status.range4,
-            range5=timely_range_status.range5,
-            range6=timely_range_status.range6,
-            range7=timely_range_status.range7,
-            range8=timely_range_status.range8,
-            range9=timely_range_status.range9,
-            range10=timely_range_status.range10,
-            unknown=timely_range_status.unknown,
-            organization=timely_range_status.organization
+            range1=hourly_range_status['Range1'],
+            range2=hourly_range_status['Range2'],
+            range3=hourly_range_status['Range3'],
+            range4=hourly_range_status['Range4'],
+            range5=hourly_range_status['Range5'],
+            range6=hourly_range_status['Range6'],
+            range7=hourly_range_status['Range7'],
+            range8=hourly_range_status['Range8'],
+            range9=hourly_range_status['Range9'],
+            range10=hourly_range_status['Range10'],
+            unknown=hourly_range_status['Unknown'],
+            organization=organizations.get(id=hourly_range_status['organization'])
         )
         # append in list for every new dashboard_name and device_name.
         hourly_range_status_list.append(hourly_range_status)
