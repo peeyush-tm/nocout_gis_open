@@ -586,7 +586,7 @@ def calculate_timely_down_status(organization, dashboard_name, processed_for, te
             status_count += NetworkStatus.objects.order_by().filter(
                 device_name__in=device_list,
                 service_name='ping',
-                data_source='rta',
+                data_source='pl',
                 current_value__gte=100,
                 severity__in=['critical', 'down']
                 ).using(machine_name).count()
