@@ -1,6 +1,6 @@
 from celery import task, group
 
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Sum
 from django.utils import timezone
 import datetime
 
@@ -936,30 +936,52 @@ def calculate_daily_severity_status(now):
     return:
     '''
     # get the current timezone.
-    tzinfo = timezone.get_current_timezone()
+    # tzinfo = timezone.get_current_timezone()
     # get today date according to current timezone and reset time to 12 o'clock.
-    today = timezone.datetime(now.year, now.month, now.day, tzinfo=tzinfo)
+
+    today = timezone.datetime(now.year, now.month, now.day, 0, 0)
     previous_day = now - timezone.timedelta(days=1)
-    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
+    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, 0, 0)
+
     # get all result of yesterday only and order by 'dashboard_name' and'device_name'
     last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by().filter(
         processed_for__gte=yesterday,
         processed_for__lt=today
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Normal=Sum('ok'),
+        Needs_Augmentation=Sum('warning'),
+        Stop_Provisioning=Sum('critical'),
+        Down=Sum('down'),
+        Unknown=Sum('unknown')
     )
+    organizations = Organization.objects.all()
+    # [
+    # {
+    #   'dashboard_name': u'pmp_backhaul_capacity',
+    #   'Needs_Augmentation': 0, '
+    #   Normal': 1102,
+    #   'Unknown': 0,
+    #   'Stop_Provisioning': 0
+    #  }
+    # ]
 
     daily_severity_status_list = []     # list for the DashboardSeverityStatusDaily model object
 
     for hourly_severity_status in last_day_timely_severity_status:
         daily_severity_status = DashboardSeverityStatusDaily(
-            dashboard_name=hourly_severity_status.dashboard_name,
-            device_name=hourly_severity_status.device_name,
-            reference_name=hourly_severity_status.reference_name,
+            dashboard_name=hourly_severity_status['dashboard_name'],
+            device_name=hourly_severity_status['dashboard_name'],
+            reference_name=hourly_severity_status['dashboard_name'],
             processed_for=yesterday,
-            warning=hourly_severity_status.warning,
-            critical=hourly_severity_status.critical,
-            ok=hourly_severity_status.ok,
-            down=hourly_severity_status.down,
-            unknown=hourly_severity_status.unknown
+            warning=hourly_severity_status['Needs_Augmentation'],
+            critical=hourly_severity_status['Stop_Provisioning'],
+            ok=hourly_severity_status['Normal'],
+            down=hourly_severity_status['Down'],
+            unknown=hourly_severity_status['Unknown'],
+            organization=organizations.get(id=hourly_severity_status['organization'])
         )
         daily_severity_status_list.append(daily_severity_status)
 
@@ -983,34 +1005,52 @@ def calculate_daily_range_status(now):
     # get the current timezone.
     tzinfo = timezone.get_current_timezone()
     # get today date according to current timezone and reset time to 12 o'clock.
-    today = timezone.datetime(now.year, now.month, now.day, tzinfo=tzinfo)
+    today = timezone.datetime(now.year, now.month, now.day, 0, 0)
     previous_day = now - timezone.timedelta(days=1)
-    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
+    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, 0, 0)
     # get all result of yesterday only and order by 'dashboard_name' and'device_name'
     last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by().filter(
         processed_for__gte=yesterday,
         processed_for__lt=today
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Range1=Sum('range1'),
+        Range2=Sum('range2'),
+        Range3=Sum('range3'),
+        Range4=Sum('range4'),
+        Range5=Sum('range5'),
+        Range6=Sum('range6'),
+        Range7=Sum('range7'),
+        Range8=Sum('range8'),
+        Range9=Sum('range9'),
+        Range10=Sum('range10'),
+        Unknown=Sum('unknown')
     )
+
+    organizations = Organization.objects.all()
 
     daily_range_status_list = []
 
     for hourly_range_status in last_day_hourly_range_status:
         daily_range_status = DashboardRangeStatusDaily(
-            dashboard_name=hourly_range_status.dashboard_name,
-            device_name=hourly_range_status.device_name,
-            reference_name=hourly_range_status.reference_name,
+            dashboard_name=hourly_range_status['dashboard_name'],
+            device_name=hourly_range_status['dashboard_name'],
+            reference_name=hourly_range_status['dashboard_name'],
             processed_for=yesterday,
-            range1=hourly_range_status.range1,
-            range2=hourly_range_status.range2,
-            range3=hourly_range_status.range3,
-            range4=hourly_range_status.range4,
-            range5=hourly_range_status.range5,
-            range6=hourly_range_status.range6,
-            range7=hourly_range_status.range7,
-            range8=hourly_range_status.range8,
-            range9=hourly_range_status.range9,
-            range10=hourly_range_status.range10,
-            unknown=hourly_range_status.unknown
+            range1=hourly_range_status['Range1'],
+            range2=hourly_range_status['Range2'],
+            range3=hourly_range_status['Range3'],
+            range4=hourly_range_status['Range4'],
+            range5=hourly_range_status['Range5'],
+            range6=hourly_range_status['Range6'],
+            range7=hourly_range_status['Range7'],
+            range8=hourly_range_status['Range8'],
+            range9=hourly_range_status['Range9'],
+            range10=hourly_range_status['Range10'],
+            unknown=hourly_range_status['Unknown'],
+            organization=organizations.get(id=hourly_range_status['organization'])
         )
         daily_range_status_list.append(daily_range_status)
 
