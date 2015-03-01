@@ -942,35 +942,32 @@ def calculate_daily_severity_status(now):
     previous_day = now - timezone.timedelta(days=1)
     yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
     # get all result of yesterday only and order by 'dashboard_name' and'device_name'
-    last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
+    last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    )
 
     daily_severity_status_list = []     # list for the DashboardSeverityStatusDaily model object
-    daily_severity_status = None
-    dashboard_name = ''
-    device_name = ''
-    for hourly_severity_status in last_day_timely_severity_status:
-        if dashboard_name == hourly_severity_status.dashboard_name and device_name == hourly_severity_status.device_name:
-            daily_severity_status = sum_severity_status(daily_severity_status, hourly_severity_status)
-        else:
-            daily_severity_status = DashboardSeverityStatusDaily(
-                dashboard_name=hourly_severity_status.dashboard_name,
-                device_name=hourly_severity_status.device_name,
-                reference_name=hourly_severity_status.reference_name,
-                processed_for=yesterday,
-                warning=hourly_severity_status.warning,
-                critical=hourly_severity_status.critical,
-                ok=hourly_severity_status.ok,
-                down=hourly_severity_status.down,
-                unknown=hourly_severity_status.unknown
-            )
-            daily_severity_status_list.append(daily_severity_status)
-            dashboard_name = hourly_severity_status.dashboard_name
-            device_name = hourly_severity_status.device_name
 
-    bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
+    for hourly_severity_status in last_day_timely_severity_status:
+        daily_severity_status = DashboardSeverityStatusDaily(
+            dashboard_name=hourly_severity_status.dashboard_name,
+            device_name=hourly_severity_status.device_name,
+            reference_name=hourly_severity_status.reference_name,
+            processed_for=yesterday,
+            warning=hourly_severity_status.warning,
+            critical=hourly_severity_status.critical,
+            ok=hourly_severity_status.ok,
+            down=hourly_severity_status.down,
+            unknown=hourly_severity_status.unknown
+        )
+        daily_severity_status_list.append(daily_severity_status)
+
+    if len(daily_severity_status_list):
+        bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
 
     last_day_timely_severity_status.delete()
+    return True
 
 
 def calculate_daily_range_status(now):
@@ -990,39 +987,36 @@ def calculate_daily_range_status(now):
     previous_day = now - timezone.timedelta(days=1)
     yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
     # get all result of yesterday only and order by 'dashboard_name' and'device_name'
-    last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
+    last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    )
 
     daily_range_status_list = []
-    daily_range_status = None
-    dashboard_name = ''
-    device_name = ''
-    for hourly_range_status in last_day_hourly_range_status:
-        if dashboard_name == hourly_range_status.dashboard_name and device_name == hourly_range_status.device_name:
-            daily_range_status = sum_range_status(daily_range_status, hourly_range_status)
-        else:
-            daily_range_status = DashboardRangeStatusDaily(
-                dashboard_name=hourly_range_status.dashboard_name,
-                device_name=hourly_range_status.device_name,
-                reference_name=hourly_range_status.reference_name,
-                processed_for=yesterday,
-                range1=hourly_range_status.range1,
-                range2=hourly_range_status.range2,
-                range3=hourly_range_status.range3,
-                range4=hourly_range_status.range4,
-                range5=hourly_range_status.range5,
-                range6=hourly_range_status.range6,
-                range7=hourly_range_status.range7,
-                range8=hourly_range_status.range8,
-                range9=hourly_range_status.range9,
-                range10=hourly_range_status.range10,
-                unknown=hourly_range_status.unknown
-            )
-            daily_range_status_list.append(daily_range_status)
-            dashboard_name = hourly_range_status.dashboard_name
-            device_name = hourly_range_status.device_name
 
-    bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
+    for hourly_range_status in last_day_hourly_range_status:
+        daily_range_status = DashboardRangeStatusDaily(
+            dashboard_name=hourly_range_status.dashboard_name,
+            device_name=hourly_range_status.device_name,
+            reference_name=hourly_range_status.reference_name,
+            processed_for=yesterday,
+            range1=hourly_range_status.range1,
+            range2=hourly_range_status.range2,
+            range3=hourly_range_status.range3,
+            range4=hourly_range_status.range4,
+            range5=hourly_range_status.range5,
+            range6=hourly_range_status.range6,
+            range7=hourly_range_status.range7,
+            range8=hourly_range_status.range8,
+            range9=hourly_range_status.range9,
+            range10=hourly_range_status.range10,
+            unknown=hourly_range_status.unknown
+        )
+        daily_range_status_list.append(daily_range_status)
+
+    if len(daily_range_status_list):
+        bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
 
     last_day_hourly_range_status.delete()
+    return True
 
