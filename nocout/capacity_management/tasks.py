@@ -355,6 +355,34 @@ def get_higher_severity(severity_dict):
     return s, a
 
 
+def compare_old_severity(old_severity, new_severity, old_age, new_age):
+    """
+
+    :param old_severity: 'warning', 'critical', 'unknown', 'ok'
+    :param new_severity: 'warning', 'critical', 'unknown', 'ok'
+    :param old_age: float
+    :param new_age: float
+    :return:
+    """
+    if old_severity in ['warning', 'critical'] and new_severity in ['warning', 'critical']:
+        # since both were in non ok state
+        # lets just return the higher value
+        severity_dict = {
+            old_severity: old_age,
+            new_severity: new_age
+        }
+        return get_higher_severity(severity_dict)
+
+    elif old_severity in ['ok', 'unknown'] or new_severity in ['ok', 'unknown']:
+        # we don't know what's going on
+        # what ever is the latest lets just go with it
+        return new_severity, new_age
+
+    else:
+        # severity must be existsting
+        return new_severity, new_age
+
+
 def get_time():
     """
 
