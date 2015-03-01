@@ -207,7 +207,7 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
 
     for organization in organizations:
         sector_objects = SectorCapacityStatus.objects.filter(
-                Q(organization__in=organization),
+                Q(organization__in=[organization]),
                 Q(sector__sector_configured_on__device_technology=sector_technology.ID),
                 Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
             )
@@ -278,7 +278,7 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
     for organization in organizations:
 
         backhaul_objects = BackhaulCapacityStatus.objects.filter(
-                Q(organization__in=organization),
+                Q(organization__in=[organization]),
                 Q(backhaul__bh_configured_on__device_technology=backhaul_technology.ID),
                 Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
             )
@@ -351,7 +351,7 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
     for organization in organizations:
 
         # get the sector of User's Organization [and Sub Organization]
-        sector_objects = organization_sectors(organization, technology_id)
+        sector_objects = organization_sectors([organization], technology_id)
         # get the device of the user sector.
         # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
@@ -432,7 +432,7 @@ def calculate_timely_latency(organization, dashboard_name, processed_for ,techno
     #calculate these organization wise
 
     # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organization, technology_id)
+    sector_devices = organization_network_devices([organization], technology_id)
 
     if sector_devices.count():
         # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -501,7 +501,7 @@ def calculate_timely_packet_drop(organization, dashboard_name, processed_for, te
     #calculate these organization wise
 
     # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organization, technology_id)
+    sector_devices = organization_network_devices([organization], technology_id)
 
     if sector_devices.count():
         # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -570,7 +570,7 @@ def calculate_timely_down_status(organization, dashboard_name, processed_for, te
     #calculate these organization wise
 
     # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organization, technology_id)
+    sector_devices = organization_network_devices([organization], technology_id)
 
     if sector_devices.count():
         # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -646,7 +646,7 @@ def calculate_timely_temperature(organization, processed_for, chart_type='IDU'):
     status_dashboard_name = 'temperature-' + chart_type.lower()
 
     # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organization, technology_id)
+    sector_devices = organization_network_devices([organization], technology_id)
 
     if sector_devices.count():
         # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
@@ -664,7 +664,7 @@ def calculate_timely_temperature(organization, processed_for, chart_type='IDU'):
                 service_name__in=service_list,
                 data_source__in=data_source_list,
                 severity__in=['warning', 'critical']
-                ).count().using(machine_name)
+                ).using(machine_name).count()
 
         g_jobs.append(
             calculate_timely_network_alert.s(
@@ -704,8 +704,10 @@ def calculate_timely_network_alert(dashboard_name,
     :param status_dashboard_name: string
     return: True
     """
-    if not organization:
-        assumed_organization = get_default_org()
+    assumed_organization = get_default_org()
+
+    if organization:
+        assumed_organization = organization
 
     try:
         if technology:
@@ -728,7 +730,7 @@ def calculate_timely_network_alert(dashboard_name,
         logger.exception(" Dashboard Setting of {0} is not available. {1}".format(dashboard_name, e))
         return False
 
-    device_name = '-1'  # lets just say it does not exists # todo remove this s**t
+    # device_name = '-1'  # lets just say it does not exists # todo remove this s**t
     processed_for = processed_for
 
     bulky = list()
@@ -743,8 +745,8 @@ def calculate_timely_network_alert(dashboard_name,
     if dashboard_data_dict:
         dashboard_data_dict.update(
             {
-                'device_name': device_name,
-                'reference_name': device_name,
+                'device_name': status_dashboard_name,
+                'reference_name': status_dashboard_name,
                 'dashboard_name': status_dashboard_name,
                 'processed_for': processed_for,
                 'organization': assumed_organization

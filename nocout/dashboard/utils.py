@@ -260,7 +260,7 @@ def get_dashboard_status_range_mapped(dashboard_setting, service_status_results)
                 dashboard_setting=dashboard_setting,
                 counter_result=service_status_results
             )
-            range_counter[counter_key] = service_status_results
+            range_counter[counter_key['range_count']] = service_status_results
 
         except Exception as e:
             log.exception(e)

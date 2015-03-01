@@ -1061,7 +1061,7 @@ def view_severity_status(dashboard_name, organizations):
             Unknown=Sum('unknown')
         )
 
-    return dashboard_status_dict, processed_for_key_localtime
+    return dashboard_status_dict, str(processed_for_key_localtime)
 
 
 def view_range_status(dashboard_name, organizations):
@@ -1101,7 +1101,7 @@ def view_range_status(dashboard_name, organizations):
             unknown=Sum('unknown')
         )
 
-    return dashboard_status_dict, processed_for_key_localtime
+    return dashboard_status_dict, str(processed_for_key_localtime)
 
 
 def get_severity_status_dict(dashboard_name, devices_list):
