@@ -2,6 +2,7 @@ from django.conf.urls import patterns, url
 
 from dashboard import views
 
+from django.views.decorators.cache import cache_page
 
 urlpatterns = patterns('',
     url(r'^settings/$', views.DashbaordSettingsListView.as_view(), name='dashboard-settings'),
@@ -11,10 +12,22 @@ urlpatterns = patterns('',
     url(r'^settings/(?P<pk>\d+)/edit/$', views.DashbaordSettingsUpdateView.as_view(), name='dashboard-settings-update'),
     url(r'^settings/(?P<pk>\d+)/delete/$', views.DashbaordSettingsDeleteView.as_view(), name='dashboard-settings-delete'),
 
-    url(r'^rf-performance/wimax/$', views.WiMAX_Performance_Dashboard.as_view(), name='dashboard-rf-performance-wimax'),
-    url(r'^rf-performance/pmp/$', views.PMP_Performance_Dashboard.as_view(), name='dashboard-rf-performance-pmp'),
-    url(r'^rf-performance/ptp/$', views.PTP_Performance_Dashboard.as_view(), name='dashboard-rf-performance-ptp'),
-    url(r'^rf-performance/ptp-bh/$', views.PTPBH_Performance_Dashboard.as_view(), name='dashboard-rf-performance-ptp-bh'),
+    url(r'^rf-performance/wimax/$',
+        cache_page(60 * 2)(views.WiMAX_Performance_Dashboard.as_view()),
+        name='dashboard-rf-performance-wimax'
+    ),
+    url(r'^rf-performance/pmp/$',
+        cache_page(60 * 2)(views.PMP_Performance_Dashboard.as_view()),
+        name='dashboard-rf-performance-pmp'
+    ),
+    url(r'^rf-performance/ptp/$',
+        cache_page(60 * 2)(views.PTP_Performance_Dashboard.as_view()),
+        name='dashboard-rf-performance-ptp'
+    ),
+    url(r'^rf-performance/ptp-bh/$',
+        cache_page(60 * 2)(views.PTPBH_Performance_Dashboard.as_view()),
+        name='dashboard-rf-performance-ptp-bh'
+    ),
 
     url(r'^rf-dashbaord/main/$', views.MainDashboard.as_view(), name='rf-main-dashbaord'),
 
@@ -79,4 +92,5 @@ urlpatterns = patterns('',
     url(r'^trend-monthly-backhaul/pmp/$', views.MonthlyTrendBackhaulPMP.as_view(), name = 'trend-monthly-backhaul-pmp' ),
     url(r'^trend-monthly-backhaul/wimax/$', views.MonthlyTrendBackhaulWiMAX.as_view(), name = 'trend-monthly-backhaul-wimax' ),
     url(r'^trend-monthly-backhaul/tclpop/$', views.MonthlyTrendBackhaulTCLPOP.as_view(), name = 'trend-monthly-backhaul-tclpop' ),
+    url(r'^rf_network_availability/$', views.GetRfNetworkAvailData.as_view(), name = 'GetRfNetworkAvailData' ),
 )

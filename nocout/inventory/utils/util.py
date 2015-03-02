@@ -125,36 +125,43 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
     :return list of network devices
     """
 
-
     if not technology:
-        organization_network_devices = Device.objects.filter(
-                                        Q(id__in= ptp_device_circuit_backhaul())
+        devices = Device.objects.filter(Q(id__in=ptp_device_circuit_backhaul())
                                         |
-                                        Q(device_technology = int(WiMAX.ID))
-                                        |
-                                        Q(device_technology = int(PMP.ID)),
+                                        (
+                                            Q(
+                                                device_technology=int(PMP.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
+                                            )
+                                            |
+                                            Q(
+                                                device_technology=int(WiMAX.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
+                                            )
+                                        ),
                                         is_added_to_nms=1,
                                         is_deleted=0,
-                                        organization__in= organizations
-        )
+                                        organization__in=organizations)
     else:
         if int(technology) == int(P2P.ID):
             if specify_ptp_bh_type in ['ss', 'bs']:
-                organization_network_devices = Device.objects.filter(
+                devices = Device.objects.filter(
                                             Q(id__in= ptp_device_circuit_backhaul(specify_type=specify_ptp_bh_type)),
                                             is_added_to_nms=1,
                                             is_deleted=0,
                                             organization__in= organizations
                 )
             else:
-                organization_network_devices = Device.objects.filter(
+                devices = Device.objects.filter(
                                             Q(id__in= ptp_device_circuit_backhaul()),
                                             is_added_to_nms=1,
                                             is_deleted=0,
                                             organization__in= organizations
                 )
         else:
-            organization_network_devices = Device.objects.filter(
+            devices = Device.objects.filter(
                                             device_technology = int(technology),
                                             is_added_to_nms=1,
                                             sector_configured_on__isnull = False,
@@ -163,7 +170,7 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                             organization__in= organizations
             ).annotate(dcount=Count('id'))
 
-    return organization_network_devices
+    return devices
 
 
 # @cache_for(300)
@@ -279,7 +286,7 @@ def prepare_machines(device_list):
     return machine_dict
 
 
-def organization_sectors(organization, technology=None):
+def organization_sectors(organization, technology=0):
     """
     To result back the all the sector from the respective organization.
 
@@ -295,6 +302,10 @@ def organization_sectors(organization, technology=None):
         sector_configured_on__is_added_to_nms=1,
         sector_configured_on__isnull=False
     )
+
+    if organization:
+        sector_objects = sector_objects.prefetch_related('organization').filter(organization__in=organization)
+
     if int(technology) == int(PMP.ID):
         sector_list = sector_objects.filter(
                 sector_id__isnull=False,
@@ -321,8 +332,5 @@ def organization_sectors(organization, technology=None):
 
     else:
         sector_list = sector_objects
-
-    if organization:
-        sector_list = sector_objects.prefetch_related('organization').filter(organization__in=organization)
 
     return sector_list

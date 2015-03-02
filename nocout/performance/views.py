@@ -1166,48 +1166,48 @@ class Inventory_Device_Status(View):
                     if dr_ip:
                         dr_ip += " (DR) "
 
-                    table_values.append([
-                        {
-                            "val" : display_bs_name,
-                            "url" : bs_name_url
-                        },
-                        {
-                            "val" : sector_id,
-                            "url" : sector_id_url
-                        },
-                        {
-                            "val" : pmp_port,
-                            "url" : pmp_port_url
-                        },
-                        {
-                            "val" : technology.alias,
-                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                        },
-                        {
-                            "val" : type.alias,
-                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                        },
-                        {
-                            "val" : city_name,
-                            "url" : city_url
-                        },
-                        {
-                            "val" : state_name,
-                            "url" : state_url
-                        },
-                        {
-                            "val" : dr_ip,
-                            "url" : dr_ip_url
-                        },
-                        {
-                            "val" : planned_frequency,
-                            "url" : planned_frequency_url
-                        },
-                        {
-                            "val" : frequency,
-                            "url" : frequency_url
-                        }
-                    ])
+                        table_values.append([
+                            {
+                                "val" : display_bs_name,
+                                "url" : bs_name_url
+                            },
+                            {
+                                "val" : sector_id,
+                                "url" : sector_id_url
+                            },
+                            {
+                                "val" : pmp_port,
+                                "url" : pmp_port_url
+                            },
+                            {
+                                "val" : technology.alias,
+                                "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                            },
+                            {
+                                "val" : type.alias,
+                                "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                            },
+                            {
+                                "val" : city_name,
+                                "url" : city_url
+                            },
+                            {
+                                "val" : state_name,
+                                "url" : state_url
+                            },
+                            {
+                                "val" : dr_ip,
+                                "url" : dr_ip_url
+                            },
+                            {
+                                "val" : planned_frequency,
+                                "url" : planned_frequency_url
+                            },
+                            {
+                                "val" : frequency,
+                                "url" : frequency_url
+                            }
+                        ])
 
                     result['data']['objects']['values'] = table_values
 
@@ -1845,6 +1845,9 @@ class Get_Service_Type_Performance_Data(View):
         # test once for technology
         try:
             technology = DeviceTechnology.objects.get(id=device.device_technology)
+        except:
+            return HttpResponse(json.dumps(self.result), content_type="application/json")
+        try:
             # test now for sector
             if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
                 dr_devices = device.sector_configured_on.filter()
@@ -1855,7 +1858,7 @@ class Get_Service_Type_Performance_Data(View):
                 parameters['devices'].append(dr_device.device_name)
                 # parameters updated with all devices
         except:
-            return HttpResponse(json.dumps(self.result), content_type="application/json")
+            pass  # no dr site
 
         if service_data_source_type in ['pl', 'rta']:
 

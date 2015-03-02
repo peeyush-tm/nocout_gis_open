@@ -161,7 +161,7 @@
                     MFR Processed
                 </strong>
             </h4>
-            <div id="id_mfr_processed" class="rf_chart_style"></div>
+            <div id="id_mfr_processed_chart" class="rf_chart_style"></div>
         </div>
         <div class="col-md-3">
             <div id="tcl_pop_backhaul_capacity" class="rf_chart_style"></div>
@@ -315,7 +315,7 @@
                 'packetloss-pmp',
                 'temperature-fan-wimax',
                 'temperature-acb-wimax',
-                'id_mfr_processed',
+                // 'id_mfr_processed_chart',
                 'mfr_cause_code'
             ];
 
@@ -373,8 +373,19 @@
 
         /***************** AREA CHART START ************************/
         if(isOther == 0) {
-            area_chart_url_obj["id_mfr_processed"]["url"] = "{% url 'processed-mfr' %}";
-            area_chart_url_obj["id_mfr_processed"]["trends_url"] = "";
+            area_chart_url_obj["id_mfr_processed_chart"]["url"] = "{% url 'processed-mfr' %}";
+            area_chart_url_obj["id_mfr_processed_chart"]["trends_url"] = "";
+        } else {
+            area_chart_url_obj["id_mfr_processed_chart"]["url"] = "{% url 'GetRfNetworkAvailData' %}";
+            area_chart_url_obj["id_mfr_processed_chart"]["trends_url"] = "";
+            area_chart_url_obj["id_mfr_processed_chart"]["text"] = "RF Network Availability"
+
+            try {
+                $("#id_mfr_processed_chart").parent().find("h4").find("strong").html("RF Network Availability")
+            } catch(e) {
+                // pass
+            }
+
         }
 
         /***************** AREA CHART END ************************/

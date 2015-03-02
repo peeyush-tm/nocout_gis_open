@@ -51,6 +51,16 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				// Set Perf calling Flag
     			isPerfCallStopped = 1;
     			isPerfCallStarted = 0;
+
+    			// If any periodic polling ajax call is in process then abort it
+	            try {
+    				if(gis_perf_call_instance) {
+		                gis_perf_call_instance.abort()
+		                gis_perf_call_instance = "";
+		        	}
+	            } catch(e) {
+	                // pass
+	            }
 			}
 
     		if(ccpl_map.getZoom() < 11 || searchResultData.length > 0) {
@@ -212,6 +222,16 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     			}
     		}
         } else {
+
+        	// If any periodic polling ajax call is in process then abort it
+            try {
+				if(gis_perf_call_instance) {
+	                gis_perf_call_instance.abort()
+	                gis_perf_call_instance = "";
+	        	}
+            } catch(e) {
+                // pass
+            }
 
         	if(ccpl_map.getZoom() < 1) {
         		// Hide State Labels which are in current bounds

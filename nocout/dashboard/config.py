@@ -2,14 +2,14 @@ dashboards = [
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
-        "dashboard_name" : "ul_modulation",
+        "dashboard_name" : "modulation_ul_fec",
         "dashboard_type" : "string",
         "is_bh": False,
     },
     {
         "page_name": "rf_dashboard",
         "technology": "WiMAX",
-        "dashboard_name" : "dl_modulation",
+        "dashboard_name" : "modulation_dl_fec",
         "dashboard_type" : "string",
         "is_bh": False,
     },

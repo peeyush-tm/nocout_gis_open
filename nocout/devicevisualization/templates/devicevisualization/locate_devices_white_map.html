@@ -519,9 +519,23 @@
 
     <script type="text/javascript">
 
-        var gmap_self = "", advSearch = "", advJustSearch = "", whiteMapClass = "", networkMapInstance= "";
+        var gmap_self = "",
+            advSearch = "",
+            advJustSearch = "",
+            whiteMapClass = "",
+            networkMapInstance= "",
+            is_super_admin = "",
+            deviceName = '';
 
         $(document).ready(function (e) {
+
+            try {
+                deviceName = "{{ device_name }}";
+                // Is user super admin or admin
+                is_super_admin = '{{ is_admin }}';
+            } catch(e) {
+                // pass
+            }
 
             /*Show page controls page*/
             $("#headerToggleBtn").trigger('click');

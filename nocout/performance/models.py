@@ -1,7 +1,7 @@
 from django.db import models
 
 from inventory.models import Sector
-from device.models import Device
+from device.models import Device, DeviceTechnology
 
 
 ##################################################################
@@ -1995,6 +1995,9 @@ class UtilizationStatus(models.Model):
             ("device_name", "service_name", "data_source")
         )
 
+##################################################################
+############ Table for Spot Dashboard Data #######################
+##################################################################
 
 class SpotDashboard(models.Model):
     """
@@ -2029,3 +2032,16 @@ class SpotDashboard(models.Model):
     sia_4 = models.BooleanField('SIA 4', default=False)
     sia_5 = models.BooleanField('SIA 5', default=False)
     sia_6 = models.BooleanField('SIA 6', default=False)
+
+
+##################################################################
+############## Table for RF Network Availability #################
+##################################################################
+
+class RfNetworkAvailability(models.Model):
+
+    # technology = models.CharField('Technology', max_length=100, null=True, blank=True)
+    technology = models.ForeignKey(DeviceTechnology, default=0)
+    avail = models.FloatField('Availability', default=0, null=True, blank=True)
+    unavail = models.FloatField('Unavailability', default=0, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)

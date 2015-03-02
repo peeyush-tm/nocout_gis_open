@@ -103,23 +103,52 @@ class GetCustomerAlertDetail(BaseDatatableView):
     """
     is_polled = False
     model = EventService
-    columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'max_value', 'sys_timestamp', 'description']
-    order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'max_value', 'sys_timestamp', 'description']
 
-    polled_columns = ["id",
-                      "ip_address",
-                      "service_name",
-                      "data_source",
-                      "device_name",
-                      "severity",
-                      "current_value",
-                      "max_value",
-                      "min_value",
-                      "sys_timestamp",
-                      "age"
-                      # "description"
+    columns = [
+        'severity',
+        'sector_id',
+        'circuit_id',
+        'customer_name',
+        'near_end_ip',
+        'ip_address',
+        'device_type',
+        'bs_name',
+        'city',
+        'state',
+        'data_source_name',
+        'current_value',
+        'sys_timestamp'
+    ]
+
+    order_columns = [
+        'severity',
+        'sector_id',
+        'circuit_id',
+        'customer_name',
+        'near_end_ip',
+        'ip_address',
+        'device_type',
+        'bs_name',
+        'city',
+        'state',
+        'data_source_name',
+        'current_value',
+        'sys_timestamp'
+    ]
+
+    polled_columns = [
+        "id",
+        "ip_address",
+        "service_name",
+        "data_source",
+        "device_name",
+        "severity",
+        "current_value",
+        "max_value",
+        "min_value",
+        "sys_timestamp",
+        "age"
+        # "description"
     ]
 
     def get_initial_queryset(self):
@@ -280,6 +309,89 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         return []
 
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return result_list:
+        """
+
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            if len(sSearch) > 3:
+                search_data = qs
+                result_list = list()
+                for dictionary in search_data:
+                    x = json.dumps(dictionary)
+                    dictionary = json.loads(x)
+                    for dict in dictionary:
+                        if dictionary[dict]:
+                            if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                                        dictionary not in result_list
+                            ):
+                                if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                    result_list.append(dictionary)
+                            else:
+                                if sSearch == dictionary[dict] and dictionary not in result_list:
+                                    result_list.append(dictionary)
+
+                return result_list
+        return qs
+
+    def ordering(self, qs):
+        """
+        sorting for the table
+        """
+        request = self.request
+
+        i_sort_col = 0
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        reverse = True
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            reverse = True if s_sort_dir == 'desc' else False
+
+        if i_sorting_cols:
+            sort_data = qs
+            try:
+                sort_using = self.columns[i_sort_col]
+                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+                return sorted_qs
+
+            except Exception as nocolumn:
+                return qs
+
+        else:
+            return qs
+
+    def paging(self, qs):
+        """
+
+        :param qs : query set contains all the required data mapped properly
+        """
+        limit = min(int(self.request.REQUEST.get('iDisplayLength', 10)), self.max_display_length)
+        # if pagination is disabled ("bPaginate": false)
+        if limit == -1:
+            return qs
+        start = int(self.request.REQUEST.get('iDisplayStart', 0))
+        offset = start + limit
+        return qs[start:offset]
+
     def get_context_data(self, *args, **kwargs):
         """
         The maine function call to fetch, search, prepare and display the data on the data table.
@@ -308,11 +420,17 @@ class GetCustomerAlertDetail(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
+        # filtering the query set
+        qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = len(qs)
 
-        # qs = self.ordering(qs)
-        # qs = self.paging(qs) #Removing pagination as of now to render all the data at once.
+        # order by column
+        qs = self.ordering(qs)
+        # pagination enabled
+        qs = self.paging(qs) #Removing pagination as of now to render all the data at once.
+
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
@@ -1130,26 +1248,80 @@ class SingleDeviceAlertsInit(ListView):
 
         context = super(SingleDeviceAlertsInit, self).get_context_data(**kwargs)
 
-        table_headers = [
+        column_list_1 = [
             {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
             {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+        ]
+
+        ds_column_list = [
             {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+        ]
+
+        polling_alerts_specific_headers = [
+            {"mData": "machine_name", "sTitle": "Machine", "sWidth": "auto"},
+            {"mData": "site_name", "sTitle": "Site", "sWidth": "auto"},
+        ]
+
+        severity_column_list = [
             {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        ]
+
+        current_val_list = [
             {"mData": "current_value", "sTitle": "Current Value", "sWidth": "auto"},
+        ]
+
+        column_list_2 = [
             {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
             {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
         ]
 
-        ping_table_headers = [
-            {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
-            {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
-            # {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
-            {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        ping_specific_columns = [
             {"mData": "latency", "sTitle": "Latency", "sWidth": "auto"},
             {"mData": "packet_loss", "sTitle": "Packet Loss", "sWidth": "auto"},
-            {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
-            {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
         ]
+
+
+        table_headers = []
+        table_headers += column_list_1
+        table_headers += ds_column_list
+        table_headers += severity_column_list
+        table_headers += current_val_list
+        table_headers += column_list_2
+
+
+        ping_table_headers = []
+        ping_table_headers += column_list_1
+        ping_table_headers += severity_column_list
+        ping_table_headers += ping_specific_columns
+        ping_table_headers += column_list_2
+
+        polling_alerts_table_headers = []
+        polling_alerts_table_headers += column_list_1
+        polling_alerts_table_headers += polling_alerts_specific_headers
+        polling_alerts_table_headers += severity_column_list
+        polling_alerts_table_headers += current_val_list
+        polling_alerts_table_headers += column_list_2
+
+        # table_headers = [
+        #     {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
+        #     {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+        #     {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+        #     {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        #     {"mData": "current_value", "sTitle": "Current Value", "sWidth": "auto"},
+        #     {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
+        #     {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
+        # ]
+
+        # ping_table_headers = [
+        #     {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
+        #     {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
+        #     # {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
+        #     {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
+        #     {"mData": "latency", "sTitle": "Latency", "sWidth": "auto"},
+        #     {"mData": "packet_loss", "sTitle": "Packet Loss", "sWidth": "auto"},
+        #     {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
+        #     {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
+        # ]
 
         device_obj = Device.objects.get(id=device_id)
         device_name = device_obj.device_name
@@ -1161,6 +1333,7 @@ class SingleDeviceAlertsInit(ListView):
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
         context['ping_table_headers'] = json.dumps(ping_table_headers)
+        context['polling_alerts_headers'] = json.dumps(polling_alerts_table_headers)
         context['current_device_id'] = device_id
         context['page_type'] = page_type
         # Device Inventory page url
@@ -1204,7 +1377,6 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-
             if info_dict['service_name'] == 'ping':
 
                 self.required_columns = [
@@ -1213,6 +1385,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                     "severity",
                     "latency",
                     "packet_loss",
+                    "sys_timestamp",
+                    "description"
+                ]
+            elif info_dict['service_name'] == 'service':
+                self.required_columns = [
+                    "ip_address",
+                    "service_name",
+                    "machine_name",
+                    "service_name",
+                    "severity",
+                    "current_value",
                     "sys_timestamp",
                     "description"
                 ]
@@ -1302,6 +1485,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "severity",
                 "latency",
                 "packet_loss",
+                "sys_timestamp",
+                "description"
+            ]
+        elif info_dict['service_name'] == 'service':
+            self.required_columns = [
+                "ip_address",
+                "service_name",
+                "machine_name",
+                "service_name",
+                "severity",
+                "current_value",
                 "sys_timestamp",
                 "description"
             ]
@@ -1395,6 +1589,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "severity",
                 "latency",
                 "packet_loss",
+                "sys_timestamp",
+                "description"
+            ]
+        elif service_name == 'service':
+            order_columns = [
+                "ip_address",
+                "service_name",
+                "machine_name",
+                "service_name",
+                "severity",
+                "current_value",
                 "sys_timestamp",
                 "description"
             ]

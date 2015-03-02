@@ -46,11 +46,23 @@ def locate_devices(request , device_name = "default_device_name"):
     """
     Returns the Context Variable to GIS Map page.
     """
-    template_data = { 'username' : request.user.username,
-                    'device_name' : device_name,
-                    'get_filter_api': get_url(request, 'GET'),
-                    'set_filter_api': get_url(request, 'POST')
-                    }
+    
+    is_admin = 'other'
+    user_roles_list = []
+    
+    try:
+        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
+    except Exception, e:
+        pass
+
+    if(request.user.is_superuser or 'admin' in user_roles_list):
+        is_admin = 'admin'
+
+    template_data = {
+        'username' : request.user.username,
+        'device_name' : device_name,
+        'is_admin' : is_admin
+    }
 
     return render_to_response('devicevisualization/locate_devices.html',
                                 template_data,
@@ -61,21 +73,47 @@ def load_google_earth(request, device_name = "default_device_name"):
     """
     Returns the Context Variable for google earth.
     """
-    template_data = { 'username' : request.user.username,
-                    'device_name' : device_name,
-                    'get_filter_api': get_url(request, 'GET'),
-                    'set_filter_api': get_url(request, 'POST')
-                    }
+    is_admin = 'other'
+    user_roles_list = []
+    
+    try:
+        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
+    except Exception, e:
+        pass
+
+    if(request.user.is_superuser or 'admin' in user_roles_list):
+        is_admin = 'admin'
+
+    template_data = {
+        'username' : request.user.username,
+        'device_name' : device_name,
+        'is_admin' : is_admin
+    }
 
     return render_to_response('devicevisualization/google_earth_template.html',
                                 template_data,
                                 context_instance=RequestContext(request))
 
-def load_earth(request):
+def load_earth(request, device_name = "default_device_name"):
     """
     Returns the Context Variable for google earth.
     """
-    template_data = {}
+    is_admin = 'other'
+    user_roles_list = []
+    
+    try:
+        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
+    except Exception, e:
+        pass
+
+    if(request.user.is_superuser or 'admin' in user_roles_list):
+        is_admin = 'admin'
+
+    template_data = {
+        'username' : request.user.username,
+        'device_name' : device_name,
+        'is_admin' : is_admin
+    }
 
     return render_to_response('devicevisualization/locate_devices_earth.html',
                                 template_data,
@@ -86,11 +124,22 @@ def load_white_background(request , device_name = "default_device_name"):
     """
     Returns the Context Variable to GIS Map page.
     """
-    template_data = { 'username' : request.user.username,
-                    'device_name' : device_name,
-                    'get_filter_api': get_url(request, 'GET'),
-                    'set_filter_api': get_url(request, 'POST')
-                    }
+    is_admin = 'other'
+    user_roles_list = []
+    
+    try:
+        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
+    except Exception, e:
+        pass
+
+    if(request.user.is_superuser or 'admin' in user_roles_list):
+        is_admin = 'admin'
+
+    template_data = {
+        'username' : request.user.username,
+        'device_name' : device_name,
+        'is_admin' : is_admin
+    }
 
     return render_to_response('devicevisualization/locate_devices_white_map.html',
                                 template_data,
@@ -1717,33 +1766,27 @@ class GISPerfData(View):
 
         # pl
         try:
-            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
                                                             data_source='pl').values('current_value').using(
-                                                            alias=bh_device.machine.name)[0].current_value
+                                                            alias=bh_device.machine.name)[0].get('current_value')
         except Exception as e:
             pl_dict['value'] = "NA"
-            # logger.error("PL not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-            #                                                                         e.message))
 
         # rta
         try:
-            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
                                                             data_source='rta').values('current_value').using(
-                                                            alias=bh_device.machine.name)[0].current_value
+                                                            alias=bh_device.machine.name)[0].get('current_value')
         except Exception as e:
             rta_dict['value'] = "NA"
-            # logger.error("RTA not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-            #                                                                          e.message))
 
         # bh severity
         try:
-            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device,
+            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
                                                             data_source='pl').values('severity').using(
-                                                            alias=bh_device.machine.name)[0].severity
+                                                            alias=bh_device.machine.name)[0].get('severity')
         except Exception as e:
             backhaul_data['bhSeverity'] = 'unknown'
-            # logger.error("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-            #                                                                                  e.message))
 
         # append 'pl_dict' to 'bh_info' list
         backhaul_data['bh_info'].append(pl_dict)
