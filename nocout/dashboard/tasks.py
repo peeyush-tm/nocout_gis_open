@@ -101,19 +101,38 @@ def calculate_status_dashboards(technology):
     user_organizations = Organization.objects.all()
     processed_for = timezone.now()
 
-    dashboards = [
-        "latency-{0}".format(technology),
-        "packetloss-{0}".format(technology),
-        "down-{0}".format(technology),
-    ]
+    dashboards = {
+        "latency-{0}".format(technology): {
+            'model': NetworkStatus,
+            'data_source': 'rta',
+            'service': 'ping',
+            'severity': ['warning', 'critical'],
+            'current_value': 'gt=0'
+        },
+        "packetloss-{0}".format(technology): {
+            'model': NetworkStatus,
+            'data_source': 'rta',
+            'service': 'ping',
+            'severity': ['warning', 'critical', 'down'],
+            'current_value': 'lt=100'
+        },
+        "down-{0}".format(technology): {
+            'model': NetworkStatus,
+            'data_source': 'pl',
+            'service': 'ping',
+            'severity': ['critical', 'down'],
+            'current_value': 'gte=100'
+        }
+    }
 
     for dashboard in dashboards:
         for organization in user_organizations:
             g_jobs.append(
-                calculate_timely_latency.s(
+                prepare_network_alert.s(
                     organization=organization,
                     dashboard_name=dashboard,
                     processed_for=processed_for,
+                    dashboard_config=dashboards,
                     technology=technology
                 )
             )
@@ -403,6 +422,107 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
                 )
 
     return True
+
+
+@task()
+def prepare_network_alert(organization, dashboard_name, processed_for, dashboard_config, technology=None):
+    """
+
+    :param organization:
+    :param dashboard_name:
+    :param processed_for:
+    :param technology:
+    :return:
+    """
+    processed_for = processed_for
+    technology_id = None
+
+    try:
+        latency_technology = eval(technology)
+        technology_id = latency_technology.ID
+    except Exception as e:
+        logger.exception(e)
+        # return False
+
+    g_jobs = list()
+    ret = False
+    #calculate these organization wise
+
+    # get the device of user's organization [and sub organization]
+    sector_devices = organization_network_devices([organization], technology_id)
+
+    if sector_devices.count():
+        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
+        sector_devices = sector_devices.filter(
+            sector_configured_on__isnull=False,
+            sector_configured_on__sector_id__isnull=False
+        ).values('machine__name', 'device_name')
+
+        # get the dictionary of machine_name as key and device_name as a list for that machine.
+        machine_dict = prepare_machines(sector_devices)
+
+        status_count = 0
+
+        model = dashboard_config[dashboard_name]['model']
+        service_name = dashboard_config[dashboard_name]['service_name']
+        data_source = dashboard_config[dashboard_name]['data_source']
+        severity = dashboard_config[dashboard_name]['severity']
+        current_value = dashboard_config[dashboard_name]['current_value'].split("=")
+        condition = current_value[0]
+        value = current_value[1]
+
+        # "down-{0}".format(technology): {
+        #     'model': NetworkStatus,
+        #     'data_source': 'pl',
+        #     'service': 'ping',
+        #     'severity': ['critical', 'down'],
+        #     'current_value': 'current_value__gte=100'
+        # }
+        # creating a list dictionary using machine name and there corresponing device list.
+
+        for machine_name, device_list in machine_dict.items():
+            common_query = model.objects.order_by().filter(
+                device_name__in=device_list,
+                service_name=service_name,
+                data_source=data_source,
+                severity__in=severity)
+            if condition == 'gte':
+                status_count += common_query.filter(
+                    current_value__gte=value
+                ).using(machine_name).count()
+            elif condition == 'lte':
+                status_count += common_query.filter(
+                    current_value__lte=value
+                ).using(machine_name).count()
+            elif condition == 'gt':
+                status_count += common_query.filter(
+                    current_value__gt=value
+                ).using(machine_name).count()
+            elif condition == 'lt':
+                status_count += common_query.filter(
+                    current_value__lt=value
+                ).using(machine_name).count()
+            else:
+                continue
+
+        g_jobs.append(
+            calculate_timely_network_alert.s(
+                dashboard_name=dashboard_name,
+                processed_for=processed_for,
+                organization=organization,
+                technology=technology,
+                status_count=status_count,
+                status_dashboard_name=None
+            )
+        )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
 
 
 @task()
