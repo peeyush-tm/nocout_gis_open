@@ -1670,16 +1670,15 @@ class MonthlyTrendDashboardDeviceStatus(View):
                     # Condition for further processing
                     if var['processed_month'] == month_before:
                         # Sum all ranges for particular Date
-                        # count = sum(value for key, value in var.iteritems() if key != 'processed_month')
+                        count = sum(value for key, value in var.iteritems() if key != 'processed_month')
                         # Get the range from the dashbaord setting in which the count falls.
-                        # range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
+                        range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
                         # Get the name of the range.
-                        # count_range = range_status_dct['range_count']
-                        count = var[trend_items[i]['title']]
-                        # if count_range != trend_items[i]['title']:
-                        #     count = 0            
-                        # elif count_range == 'unknown':
-                        #     count_color = '#CED5DB'
+                        count_range = range_status_dct['range_count']
+                        if count_range != trend_items[i]['title']:
+                            count = 0            
+                        elif count_range == 'unknown':
+                            count_color = '#CED5DB'
                             
                 # Preparation of final Dict for all days in One month 
                 data_dict['data'].append({
