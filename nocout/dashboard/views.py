@@ -1571,11 +1571,12 @@ def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_arg
     return {'chart_data': chart_data, 'color': colors}
 
 
-def view_range_status_monthly(dashboard_name, organizations):
+def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=None):
     """
 
     :param dashboard_name:
     :param organizations:
+    :param dashboard_settings:
     :return:
     """
     month_before = datetime.date.today() - datetime.timedelta(days=30)
@@ -1602,6 +1603,95 @@ def view_range_status_monthly(dashboard_name, organizations):
         range10=Sum('range10'),
         unknown=Sum('unknown')
     ).order_by('processed_month')
+
+    chart_data = list()
+    if dashboard_settings:
+        trend_items = [
+            {
+                "id": "range1_start-range1_end",
+                "title": "range1"
+            },
+            {
+                "id": "range2_start-range2_end",
+                "title": "range2"
+            },
+            {
+                "id": "range3_start-range3_end",
+                "title": "range3"
+            },
+            {
+                "id": "range4_start-range4_end",
+                "title": "range4"
+            },
+            {
+                "id": "range5_start-range5_end",
+                "title": "range5"
+            },
+            {
+                "id": "range6_start-range6_end",
+                "title": "range6"
+            },
+            {
+                "id": "range7_start-range7_end",
+                "title": "range7"
+            },
+            {
+                "id": "range8_start-range8_end",
+                "title": "range8"
+            },
+            {
+                "id": "range9_start-range9_end",
+                "title": "range9"
+            },
+            {
+                "id": "range10_start-range10_end",
+                "title": "range10"
+            },
+            {
+                "id": "unknown",
+                "title": "unknown"
+            }
+        ]
+        # Accessing every element of trend items
+        for item in trend_items:
+
+            if item['title'] != 'unknown':
+                count_color = getattr(dashboard_settings, '%s_color_hex_value' % ['title'])
+
+            else:
+                # Color for Unknown range
+                count_color = '#CED5DB'
+
+            data_dict = {
+                "type": "column",
+                "valuesuffix": " ",
+                "name": item['title'].title(),
+                "valuetext": " ",
+                "color": count_color,
+                "data": list(),
+            }
+
+            for var in dashboard_status_dict:
+
+                processed_date = var['processed_month']  # this is date object of date time
+                js_time = float(format(datetime.datetime(processed_date.year,
+                                                         processed_date.month,
+                                                         processed_date.day,
+                                                         0,
+                                                         0), 'U'))
+                # Preparation of final Dict for all days in One month
+                data_dict['data'].append({
+                    "color": count_color,
+                    "y": var[item['title']],
+                    "name": item['title'],
+                    "x": js_time * 1000,
+                    # Multiply by 1000 to return correct GMT+05:30 timestamp
+                })
+                # Increment Date by One
+                # month_before += relativedelta.relativedelta(days=1)
+
+            chart_data.append(data_dict)
+        return chart_data
 
     return dashboard_status_dict
 
@@ -1776,12 +1866,15 @@ class MonthlyTrendSalesMixin(object):
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
-        dashboard_status_dict = get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard_setting)
+        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_name,
+                                                          organizations=organization,
+                                                          dashboard_settings=dashboard_setting)
 
-        chart_series = []
         chart_series = dashboard_status_dict
         # Sending Final response
-        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
+        response = get_highchart_response(dictionary={'type': 'column',
+                                                      'valuesuffix': '',
+                                                      'chart_series': chart_series,
                                                       'name': '%s Sales Opportunity' % tech_name.upper(),
                                                       'valuetext': ''})
 
@@ -1840,13 +1933,6 @@ class MonthlyTrendDashboardDeviceStatus(View):
         # Finding Organization of user   
         organizations = logged_in_user_organizations(self)
 
-        # Get Device of User's Organizations. [and are Sub Station]
-        # user_devices = organization_network_devices(organizations, technology)
-        # sector_devices = user_devices.filter(sector_configured_on__isnull=False)
-        # Get Device Name list.
-        # sector_devices = sector_devices.values_list('device_name', flat=True)
-        # Getting Dashboard Settings
-
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology,
                                                              page_name='main_dashboard',
@@ -1859,95 +1945,12 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = view_range_status_monthly(dashboard_status_name, organizations)
-        chart_series = []
+        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_status_name,
+                                                          organizations=organizations,
+                                                          dashboard_settings=dashboard_setting)
+        chart_series = dashboard_status_dict
         # Trend Items for matching range
-        trend_items = [
-            {
-                "id": "range1_start-range1_end",
-                "title": "range1"
-            },
-            {
-                "id": "range2_start-range2_end",
-                "title": "range2"
-            },
-            {
-                "id": "range3_start-range3_end",
-                "title": "range3"
-            },
-            {
-                "id": "range4_start-range4_end",
-                "title": "range4"
-            },
-            {
-                "id": "range5_start-range5_end",
-                "title": "range5"
-            },
-            {
-                "id": "range6_start-range6_end",
-                "title": "range6"
-            },
-            {
-                "id": "range7_start-range7_end",
-                "title": "range7"
-            },
-            {
-                "id": "range8_start-range8_end",
-                "title": "range8"
-            },
-            {
-                "id": "range9_start-range9_end",
-                "title": "range9"
-            },
-            {
-                "id": "range10_start-range10_end",
-                "title": "range10"
-            },
-            {
-                "id": "unknown",
-                "title": "unknown"
-            }
-        ]
-        # Accessing every element of trend items
-        for item in trend_items:
 
-            if item['title'] != 'unknown':
-                count_color = getattr(dashboard_setting, '%s_color_hex_value' % ['title'])
-
-            else:
-                # Color for Unknown range
-                count_color = '#CED5DB'
-
-            data_dict = {
-                "type": "column",
-                "valuesuffix": " ",
-                "name": item['title'].title(),
-                "valuetext": " ",
-                "color": count_color,
-                "data": list(),
-            }
-
-            for var in dashboard_status_dict:
-
-                processed_date = var['processed_month']  # this is date object of date time
-                js_time = float(format(datetime.datetime(processed_date.year,
-                                                         processed_date.month,
-                                                         processed_date.day,
-                                                         0,
-                                                         0), 'U'))
-                # Preparation of final Dict for all days in One month
-                data_dict['data'].append({
-                    "color": count_color,
-                    "y": var[item['title']],
-                    "name": item['title'],
-                    "x": js_time * 1000,
-                    # Multiply by 1000 to return correct GMT+05:30 timestamp
-                })
-                # Increment Date by One
-                # month_before += relativedelta.relativedelta(days=1)
-
-            chart_series.append(data_dict)
-            # Getting Final response pattern
         response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
                                                       'name': dashboard_name, 'valuetext': ''})
 
