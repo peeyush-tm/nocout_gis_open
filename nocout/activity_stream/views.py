@@ -4,6 +4,7 @@ from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from django.conf import settings
+from nocout.utils.util import convert_utc_to_local_timezone
 from user_profile.models import UserProfile
 
 from django.http import HttpResponse
@@ -85,7 +86,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         startdate = datetime.now()
-        enddate = startdate + timedelta(days=-15)
+        enddate = startdate + timedelta(days=15)
 
         qs = []
         limit = 10
@@ -98,7 +99,6 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 logged_at__range=(startdate.strftime("%Y-%m-%d 00:00:00"), enddate.strftime("%Y-%m-%d 00:00:00"))
             ).values("id", "logged_at")[start:offset]
             start += limit
-
 
         return qs
 
@@ -113,22 +113,21 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         if qs:
             for dct in qs:
-                # dct['logged_at'] = time_converter(dct['logged_at'])
-                # logger.debug(dct)
+                dct['logged_at'] = convert_utc_to_local_timezone(dct['logged_at'])
                 for key, val in dct.items():
                     try:
                         if key =='id':
-                            action_object = UserAction.objects.get(pk= val)
+                            action_object = UserAction.objects.get(pk = val)
                             dct['user_id'] = unicode(UserProfile.objects.get(id=action_object.user_id) )
                             dct['module'] = action_object.module
                             dct['action'] = action_object.action
                         else:
                             dct[key] = val
                     except Exception as deleted_user:
-                        if key =='id':
+                        if key == 'id':
                             action_object = UserAction.objects.get(pk= val)
                             dct['user_id'] = 'User Unknown/Deleted'
-                            dct['module'] = 'Unknown : (System Exception):[%s]' % (action_object.module)
+                            dct['module'] = 'Unknown : (System Exception):[%s]' % action_object.module
                             dct['action'] = 'Failed to Fetch Action for ' \
                                             'Deleted User (System Exception):[%s : %s]' % (
                                 deleted_user.message,
