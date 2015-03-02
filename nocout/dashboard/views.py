@@ -4,9 +4,10 @@ import calendar
 from dateutil import relativedelta
 import time
 
+from django.utils.dateformat import format
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.db.models import Q, Count, Sum
-from django.db.models.query import ValuesQuerySet
+
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
 from django.views.generic import ListView, DetailView, TemplateView
@@ -1483,13 +1484,48 @@ def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_arg
     return {'chart_data': chart_data, 'color': colors}
 
 
+def view_range_status_monthly(dashboard_name, organizations):
+    """
+
+    :param dashboard_name:
+    :param organizations:
+    :return:
+    """
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+    dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
+        select={'processed_month': "date(processed_for)"}
+    ).values(
+        'processed_month',
+        'dashboard_name'
+        # 'organization'
+    ).filter(
+        dashboard_name=dashboard_name,
+        organization__in=organizations,
+        processed_for__gte=month_before
+    ).annotate(
+        range1=Sum('range1'),
+        range2=Sum('range2'),
+        range3=Sum('range3'),
+        range4=Sum('range4'),
+        range5=Sum('range5'),
+        range6=Sum('range6'),
+        range7=Sum('range7'),
+        range8=Sum('range8'),
+        range9=Sum('range9'),
+        range10=Sum('range10'),
+        unknown=Sum('unknown')
+    ).order_by('processed_month')
+
+    return dashboard_status_dict
+
 def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_list):
     '''
     '''
     # Start Calculations for Monthly Trend Sector
     # Last 30 Days
     month_before = datetime.date.today() - datetime.timedelta(days=30)
-    # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+    # Query Set with filter, annotate(for summation of data),
+    # extra parameter to make a new column of only date from datetime column for using group by of only date
     dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
         select={'processed_month': "date(processed_for)"}).values('processed_month').filter(
         device_name__in=sector_devices_list,
@@ -1719,14 +1755,17 @@ class MonthlyTrendDashboardDeviceStatus(View):
             dashboard_status_name = dashboard_status_name.replace('-wimax', '')
         # Finding Organization of user   
         organizations = logged_in_user_organizations(self)
+
         # Get Device of User's Organizations. [and are Sub Station]
-        user_devices = organization_network_devices(organizations, technology)
-        sector_devices = user_devices.filter(sector_configured_on__isnull=False)
+        # user_devices = organization_network_devices(organizations, technology)
+        # sector_devices = user_devices.filter(sector_configured_on__isnull=False)
         # Get Device Name list.
-        sector_devices = sector_devices.values_list('device_name', flat=True)
+        # sector_devices = sector_devices.values_list('device_name', flat=True)
         # Getting Dashboard Settings
+
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard',
+            dashboard_setting = DashboardSetting.objects.get(technology=technology,
+                                                             page_name='main_dashboard',
                                                              name=dashboard_name, is_bh=False)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
@@ -1736,7 +1775,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = get_range_status_dict_monthly_devicestatus(dashboard_status_name, sector_devices)
+        dashboard_status_dict = view_range_status_monthly(dashboard_status_name, organizations)
         chart_series = []
         # Trend Items for matching range
         trend_items = [
@@ -1786,10 +1825,10 @@ class MonthlyTrendDashboardDeviceStatus(View):
             }
         ]
         # Accessing every element of trend items
-        for i in range(len(trend_items)):
+        for item in trend_items:
 
-            if trend_items[i]['title'] != 'unknown':
-                count_color = getattr(dashboard_setting, '%s_color_hex_value' % trend_items[i]['title'])
+            if item['title'] != 'unknown':
+                count_color = getattr(dashboard_setting, '%s_color_hex_value' % ['title'])
 
             else:
                 # Color for Unknown range
@@ -1798,47 +1837,30 @@ class MonthlyTrendDashboardDeviceStatus(View):
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
-                "name": trend_items[i]['title'].title(),
+                "name": item['title'].title(),
                 "valuetext": " ",
                 "color": count_color,
                 "data": list(),
             }
 
-            # Getting date of 30days before from Today
-            month_before = datetime.date.today() - datetime.timedelta(days=30)
-            # Loop for getting complete month Data
-            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
-            while month_before < datetime.date.today():
-                count = 0
-                if trend_items[i]['title'] != 'unknown':
-                    count_color = getattr(dashboard_setting, '%s_color_hex_value' % trend_items[i]['title'])
-                else:
-                    count_color = '#CED5DB'
+            for var in dashboard_status_dict:
 
-                for var in dashboard_status_dict:
-                    # Condition for further processing
-                    if var['processed_month'] == month_before:
-                        # Sum all ranges for particular Date
-                        count = sum(value for key, value in var.iteritems() if key != 'processed_month')
-                        # Get the range from the dashbaord setting in which the count falls.
-                        range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
-                        # Get the name of the range.
-                        count_range = range_status_dct['range_count']
-                        if count_range != trend_items[i]['title']:
-                            count = 0
-                        elif count_range == 'unknown':
-                            count_color = '#CED5DB'
-
-                # Preparation of final Dict for all days in One month 
+                processed_date = var['processed_month']  # this is date object of date time
+                js_time = float(format(datetime.datetime(processed_date.year,
+                                                         processed_date.month,
+                                                         processed_date.day,
+                                                         0,
+                                                         0), 'U'))
+                # Preparation of final Dict for all days in One month
                 data_dict['data'].append({
                     "color": count_color,
-                    "y": count,
-                    "name": trend_items[i]['title'],
-                    "x": calendar.timegm(month_before.timetuple()) * 1000,
+                    "y": var[item['title']],
+                    "name": item['title'],
+                    "x": js_time * 1000,
                     # Multiply by 1000 to return correct GMT+05:30 timestamp
                 })
                 # Increment Date by One
-                month_before += relativedelta.relativedelta(days=1)
+                # month_before += relativedelta.relativedelta(days=1)
 
             chart_series.append(data_dict)
             # Getting Final response pattern
