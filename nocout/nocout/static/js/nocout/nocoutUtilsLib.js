@@ -335,13 +335,13 @@ function addPointsToChart_nocout(pointArray, dom_id) {
  * @param chartConfig {Array}, It contains configuration & data to initialize highcharts
  * @param dom_id {String}, It contains the chart dom element ID
  */
-function createHighChart_nocout(chartConfig,dom_id,text_color) {
+function createHighChart_nocout(chartConfig,dom_id,text_color,need_extra_config) {
 
     // Is the y axis should be reversed or not
     var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false,
         legends_color = text_color ? text_color : "#FFF";
 
-    var chart_instance = $('#'+dom_id+'_chart').highcharts({
+    var chart_options = {
         chart: {
             zoomType: 'x',
             type: chartConfig.type
@@ -374,7 +374,7 @@ function createHighChart_nocout(chartConfig,dom_id,text_color) {
         },
         xAxis: {
             title: {
-                text: "time"
+                text: "Time"
             },
             type: 'datetime',
             minRange: 3600000,
@@ -393,10 +393,14 @@ function createHighChart_nocout(chartConfig,dom_id,text_color) {
             title : {
                 text : chartConfig.valuetext
             },
+            max : need_extra_config ? 100 : "",
             reversed : is_y_inverted
         },
-        series: chartConfig.chart_data
-    });
+        series: chartConfig.chart_data,
+        plotOptions : need_extra_config ? {series: {stacking: 'normal'}} : {}
+    };
+
+    var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
 }
 
 /**

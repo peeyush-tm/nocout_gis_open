@@ -316,6 +316,7 @@ from celery import crontab
 
 #=time zone for celery periodic tasks
 CELERY_TIMEZONE = 'Asia/Calcutta'
+CELERY_ENABLE_UTC = False
 
 CELERYBEAT_SCHEDULE = {
     # BEGIN Topology Updates

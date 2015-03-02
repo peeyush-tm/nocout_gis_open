@@ -131,10 +131,10 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
         }
     },
     area_chart_ids = [
-        "id_mfr_processed"
+        "id_mfr_processed_chart"
     ],
     area_chart_url_obj = {
-      "id_mfr_processed" : {
+      "id_mfr_processed_chart" : {
         "url" : "",
         "trends_url" : "",
         "text" : "MFR Processed"
@@ -348,7 +348,21 @@ function highcharts_areachart(url, domElement, chart_title) {
             }
 
             if(response.success == 1) {
-                updateAreaChart(response.data.objects,domElement);
+                // If rf network availability url then call 
+                if(url.indexOf('rf_network_availability') > -1) {
+
+                    var chart_prename = domElement.split("#")[1].split("_chart")[0];
+
+                    // Create Chart
+                    createHighChart_nocout(
+                        response.data.objects,
+                        chart_prename,
+                        '#333333',
+                        true
+                    );
+                } else {
+                    updateAreaChart(response.data.objects,domElement);
+                }
             } else {
                 $(domElement).html("<h5>Dashboard Setting is not available.</h5>");
             }

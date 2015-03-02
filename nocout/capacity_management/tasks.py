@@ -674,26 +674,28 @@ def update_backhaul_status(basestations, kpi, val):
                 )
 
             if bhs:
-
+                # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
                 bhs.current_in_per = float(current_in_per) if current_in_per else 0
                 bhs.current_in_val = float(current_in_val) if current_in_val else 0
-                bhs.avg_in_per = float(avg_in_per) if avg_in_per else 0
-                bhs.avg_in_val = float(avg_in_val) if avg_in_val else 0
-                bhs.peak_in_per = float(peak_in_per) if peak_in_per else 0
-                bhs.peak_in_val = float(peak_in_val) if peak_in_val else 0
-                bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
-                bhs.current_out_per = float(current_out_per) if current_out_per else 0
-                bhs.current_out_val = float(current_out_val) if current_out_val else 0
-                bhs.avg_out_per = float(avg_out_per) if avg_out_per else 0
-                bhs.avg_out_val = float(avg_out_val) if avg_out_val else 0
-                bhs.peak_out_per = float(peak_out_per) if peak_out_per else 0
-                bhs.peak_out_val = float(peak_out_val) if peak_out_val else 0
-                bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
                 bhs.severity = severity if severity else 'unknown'
                 bhs.age = float(age) if age else 0
+                if calc_util_last_day():  # values that would be updated once in a day
+                    bhs.avg_in_per = float(avg_in_per) if avg_in_per else 0
+                    bhs.avg_in_val = float(avg_in_val) if avg_in_val else 0
+                    bhs.peak_in_per = float(peak_in_per) if peak_in_per else 0
+                    bhs.peak_in_val = float(peak_in_val) if peak_in_val else 0
+                    bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                    bhs.current_out_per = float(current_out_per) if current_out_per else 0
+                    bhs.current_out_val = float(current_out_val) if current_out_val else 0
+                    bhs.avg_out_per = float(avg_out_per) if avg_out_per else 0
+                    bhs.avg_out_val = float(avg_out_val) if avg_out_val else 0
+                    bhs.peak_out_per = float(peak_out_per) if peak_out_per else 0
+                    bhs.peak_out_val = float(peak_out_val) if peak_out_val else 0
+                    bhs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+
                 bulk_update_bhs.append(bhs)
 
             else:
@@ -1047,22 +1049,23 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
                 scs.current_in_per = float(current_in_per) if current_in_per else 0
                 scs.current_in_val = float(current_in_val) if current_in_val else 0
-                scs.avg_in_per = float(avg_in_per) if avg_in_per else 0
-                scs.avg_in_val = float(avg_in_val) if avg_in_val else 0
-                scs.peak_in_per = float(peak_in_per) if peak_in_per else 0
-                scs.peak_in_val = float(peak_in_val) if peak_in_val else 0
-                scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
-                scs.current_out_per = float(current_out_per) if current_out_per else 0
-                scs.current_out_val = float(current_out_val) if current_in_val else 0
-                scs.avg_out_per = float(avg_out_per) if avg_out_per else 0
-                scs.avg_out_val = float(avg_out_val) if avg_out_val else 0
-                scs.peak_out_per = float(peak_out_per) if peak_out_per else 0
-                scs.peak_out_val = float(peak_out_val) if peak_out_val else 0
-                scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
                 scs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 scs.organization = sector.organization if sector.organization else 1
                 scs.severity = severity if severity else 'unknown'
                 scs.age = float(age) if age else 0
+                if calc_util_last_day():
+                    scs.avg_in_per = float(avg_in_per) if avg_in_per else 0
+                    scs.avg_in_val = float(avg_in_val) if avg_in_val else 0
+                    scs.peak_in_per = float(peak_in_per) if peak_in_per else 0
+                    scs.peak_in_val = float(peak_in_val) if peak_in_val else 0
+                    scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                    scs.current_out_per = float(current_out_per) if current_out_per else 0
+                    scs.current_out_val = float(current_out_val) if current_in_val else 0
+                    scs.avg_out_per = float(avg_out_per) if avg_out_per else 0
+                    scs.avg_out_val = float(avg_out_val) if avg_out_val else 0
+                    scs.peak_out_per = float(peak_out_per) if peak_out_per else 0
+                    scs.peak_out_val = float(peak_out_val) if peak_out_val else 0
+                    scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
                 # scs.save()
                 bulk_update_scs.append(scs)
 
@@ -1217,28 +1220,31 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                                                     getit='per'
                 )
             if scs:
-                #update the scs
+                # update the scs
                 # scs.sector = sector
                 # scs.sector_sector_id = sector.sector_id
+                # values taht would be updated per 5 minutes
                 scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
                 scs.current_in_per = float(current_in_per) if current_in_per else 0
                 scs.current_in_val = float(current_in_val) if current_in_val else 0
-                scs.avg_in_per = float(avg_in_per) if avg_in_per else 0
-                scs.avg_in_val = float(avg_in_val) if avg_in_val else 0
-                scs.peak_in_per = float(peak_in_per) if peak_in_per else 0
-                scs.peak_in_val = float(peak_in_val) if peak_in_val else 0
-                scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
-                scs.current_out_per = float(current_out_per) if current_out_per else 0
-                scs.current_out_val = float(current_out_val) if current_in_val else 0
-                scs.avg_out_per = float(avg_out_per) if avg_out_per else 0
-                scs.avg_out_val = float(avg_out_val) if avg_out_val else 0
-                scs.peak_out_per = float(peak_out_per) if peak_out_per else 0
-                scs.peak_out_val = float(peak_out_val) if peak_out_val else 0
-                scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
                 scs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 scs.organization = sector.organization if sector.organization else 1
                 scs.severity = severity if severity else 'unknown'
                 scs.age = float(age) if age else 0
+                if calc_util_last_day():  # values that would be updated once 24 hours
+                    scs.avg_in_per = float(avg_in_per) if avg_in_per else 0
+                    scs.avg_in_val = float(avg_in_val) if avg_in_val else 0
+                    scs.peak_in_per = float(peak_in_per) if peak_in_per else 0
+                    scs.peak_in_val = float(peak_in_val) if peak_in_val else 0
+                    scs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
+                    scs.current_out_per = float(current_out_per) if current_out_per else 0
+                    scs.current_out_val = float(current_out_val) if current_in_val else 0
+                    scs.avg_out_per = float(avg_out_per) if avg_out_per else 0
+                    scs.avg_out_val = float(avg_out_val) if avg_out_val else 0
+                    scs.peak_out_per = float(peak_out_per) if peak_out_per else 0
+                    scs.peak_out_val = float(peak_out_val) if peak_out_val else 0
+                    scs.peak_out_timestamp = float(peak_out_timestamp) if peak_out_timestamp else 0
+
                 # scs.save()
                 bulk_update_scs.append(scs)
 
