@@ -790,11 +790,11 @@ def convert_utc_to_local_timezone(datetime_obj=None):
 
     if output:
         try:
-            # modify timezone info in datetime object to 'utc'
-            output = output.replace(tzinfo=from_zone)
-
-            # convert timezone from 'utc' to 'local'
-            output = output.astimezone(to_zone)
+            # # modify timezone info in datetime object to 'utc'
+            # output = output.replace(tzinfo=from_zone)
+            #
+            # # convert timezone from 'utc' to 'local'
+            # output = output.astimezone(to_zone)
 
             # format datetime string
             output = output.strftime(DATE_TIME_FORMAT)
