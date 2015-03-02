@@ -34,6 +34,7 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time - timedelta(minutes=1), end_time - timedelta(minutes=1)
     start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
 
@@ -43,7 +44,8 @@ def main(**configs):
    
    	# Read data function reads the data from mongodb and insert into mysql
     docs = read_data(start_time, end_time,configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
-    for doc in docs:
+    print 'Found %s values for %s' % (len(docs), configs.get('table_name'))
+    for doc in docs: 
         values_list = build_data(doc)
         data_values.extend(values_list)
     if data_values:
