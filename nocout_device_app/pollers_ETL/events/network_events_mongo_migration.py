@@ -9,6 +9,7 @@ from nocout_site_name import *
 import mysql.connector
 from datetime import datetime
 from datetime import timedelta
+from events_rrd_migration import get_latest_event_entry
 import imp
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -92,7 +93,7 @@ def build_data(doc):
     t = (
         doc.get('device_name'),
     doc.get('service_name'),
-        doc.get('sys_timestamp'),
+        doc.get('check_timestamp'),
     doc.get('check_timestamp'),
     doc.get('current_value'),
     doc.get('min_value'),

@@ -184,6 +184,7 @@ def quantify_perf_data(host_specific_data):
                 'severity': severity,
                 'war': war,
                 'cric': cric,
+		'refer': doc.get('refer'),
                 'check_time': check_time
                 }
         if read_from == 'mysql':

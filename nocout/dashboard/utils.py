@@ -196,6 +196,79 @@ def get_range_status(dashboard_setting, result):
     return {'range_count': range_count}
 
 
+def get_status_range(dashboard_setting, counter_result):
+    """
+    get the perfect range for the dashbord and counter result
+
+    :param dashboard_setting: dashboard settings dictionary
+    :param counter_result: count of the query set results
+    :return: unknown range always if the comparision is of string type
+    """
+    range_count = 'unknown'
+    for i in range(1, 11):
+        # Get the start_range and end_range attribute of dashboard_setting.
+        start_range = getattr(dashboard_setting, 'range%d_start' %i)
+        end_range = getattr(dashboard_setting, 'range%d_end' %i)
+
+        # dashboard type is numeric and start_range and end_range exists to compare result.
+        if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
+            try:
+                if float(start_range) <= float(counter_result) <= float(end_range):
+                    range_count = 'range%d' %i
+            except ValueError as value_error:
+                range_count = 'unknown'
+                break
+            except TypeError as type_error:
+                pass
+
+        # dashboard type is string and start_range exists to compare result.
+        elif dashboard_setting.dashboard_type == 'STR' and start_range:
+            # if result['current_value'].lower() in start_range.lower():
+            #     range_count = 'range%d' %i
+            range_count = 'unknown'
+
+    return {'range_count': range_count}
+
+
+def get_empty_ranges():
+    """
+
+    :param dashboard_setting:
+    :return: ranges for the dashboard
+    """
+    range_counter = dict()
+    # initialize the ranges of range_counter to 0(zero)
+    for i in range(1, 11):
+        range_counter.update({'range%d' %i: 0})
+    range_counter.update({'unknown': 0})
+
+    return range_counter
+
+
+def get_dashboard_status_range_mapped(dashboard_setting, service_status_results):
+    """
+
+    :param dashboard_setting: dashboard settings
+    :param service_status_results: counter for dashboard settings
+    :return: mapped ranges according to counter { 'unknown': 0, 'range1': 1, 'range2': 2,... }
+    """
+    range_counter = None
+    if dashboard_setting:
+        try:
+            range_counter = get_empty_ranges()
+            counter_key = get_status_range(
+                dashboard_setting=dashboard_setting,
+                counter_result=service_status_results
+            )
+            range_counter[counter_key['range_count']] = service_status_results
+
+        except Exception as e:
+            log.exception(e)
+            pass
+
+    return range_counter
+
+
 def get_dashboard_status_range_counter(dashboard_setting, service_status_results):
     '''
     Method return the count of ranges according to dashboard_setting.
@@ -351,7 +424,11 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
         ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
                         annotate(Count('connected_device_ip'))
         # current value define the total ss connected to the sector.
-        status_results.append({'id': sector.id, 'name': sector.name, 'device_name':  sector.sector_configured_on.device_name, 'current_value': ss_qs.count()})
+        status_results.append({'id': sector.id,
+                               'name': sector.name,
+                               'device_name':  sector.sector_configured_on.device_name,
+                               'organization': sector.organization,
+                               'current_value': ss_qs.count()})
     return status_results
 
 

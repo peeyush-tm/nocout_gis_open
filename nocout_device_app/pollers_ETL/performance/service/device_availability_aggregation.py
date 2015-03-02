@@ -82,10 +82,12 @@ def prepare_data(aggregated_data_values=[]):
 		end_time = datetime.now()
 		start_time = end_time - timedelta(hours=hours)
 		start_time, end_time = start_time - timedelta(minutes=1), end_time + timedelta(minutes=1)
+		start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
 		# Read data from mongodb, performance live data
 		data_values = mysql_migration_mod.read_data_from_mongo(source_perf_table, start_time, end_time, mongo_configs, device_availability=True)
 
 	data_values = sorted(data_values, key=itemgetter('device_name'))
+	print 'data_values', len(data_values)
 	for host, host_values in groupby(data_values, key=itemgetter('device_name')):
 		aggregated_data_values.extend(quantify_utilization_data(list(host_values)))
 	
@@ -94,8 +96,8 @@ def prepare_data(aggregated_data_values=[]):
 
 def quantify_utilization_data(host_specific_data):
 	host_specific_aggregated_data = []
-	print '## Docs len ##'
-	print len(data_values)
+	#print '## Docs len ##'
+	#print len(data_values)
 	for doc in host_specific_data:
 		aggr_data = {}
 		find_query = {}
@@ -113,6 +115,8 @@ def quantify_utilization_data(host_specific_data):
 			original_time, time = time, datetime.fromtimestamp(time)
 		elif read_from == 'mongodb':
 			time = doc.get('local_timestamp') if doc.get('local_timestamp') else doc.get('sys_timestamp')
+			time = datetime.fromtimestamp(time)
+			check_time = datetime.fromtimestamp(check_time)
 		current_value = doc.get('current_value')
 		war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
 
@@ -164,6 +168,19 @@ def quantify_utilization_data(host_specific_data):
 				'cric': cric,
 				'check_time': check_time
 				}
+
+		if read_from == 'mysql':
+            		aggr_data.update({
+                	'min': doc.get('min_value'),
+                	'max': doc.get('max_value'),
+                	'avg': doc.get('avg_value'),
+            		})
+        	elif read_from == 'mongodb':
+            		aggr_data.update({
+                		'min': current_value,
+                		'max': current_value,
+                		'avg': current_value,
+            			})
 
 		# Find the existing doc to update
 		find_query = {
@@ -225,4 +242,4 @@ if __name__ == '__main__':
 	print len(final_data_values)
 	if final_data_values:
 		db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
-		mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)
+		mysql_migration_mod.mysql_export_device_availability(destination_perf_table, db, final_data_values)

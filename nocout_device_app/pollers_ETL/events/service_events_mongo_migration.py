@@ -8,8 +8,10 @@ File contains code for migrating the embeded mongodb data to mysql database.This
 from nocout_site_name import *
 import mysql.connector
 from datetime import datetime, timedelta
+from events_rrd_migration import get_latest_event_entry
+import socket
 import imp
-
+import time
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -94,7 +96,7 @@ def build_data(doc):
 	t = (
         doc.get('device_name'),
         doc.get('service_name'),
-        doc.get('sys_timestamp'),
+        doc.get('check_timestamp'),
 	doc.get('check_timestamp'),
         doc.get('description'),
         doc.get('severity'),

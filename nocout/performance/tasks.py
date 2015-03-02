@@ -123,10 +123,7 @@ def get_all_sector_devices(technology):
 
     sector_objects = inventory_utils.organization_sectors(organization=organizations, technology=tech)
 
-    sector_devices_list = sector_objects.select_related(
-        'sector_configured_on',
-        'sector_configured_on__machine'
-    ).values(*sector_values)
+    sector_devices_list = sector_objects.values(*sector_values)
 
     # Get machine wise seperated devices,sectors list
     machine_wise_data,\
@@ -139,10 +136,19 @@ def get_all_sector_devices(technology):
     #list of services
     service_list = list()
 
+
+    # datasources technology wise
+    data_source_tech = {
+        'wimax': ['pmp1_ul_issue', 'pmp2_ul_issue'],
+        'pmp': ['bs_ul_issue']
+    }
+
     # Datasources list
-    data_source_list = [
-        'bs_ul_issue'
-    ]
+    try:
+        data_source_list = data_source_tech[technology.strip().lower()]
+    except Exception as e:
+        logger.exception(e)
+        return False
 
     # Call 'get_sector_augmentation_data' to get the sector augmentation data from default machine
     # because sector capacity is calculated per 5 minutes and status is stored
@@ -150,6 +156,9 @@ def get_all_sector_devices(technology):
     # If any sectors present then proceed forward
     if len(sectors_id_list) > 0:
         complete_augmentation_data = get_sector_augmentation_data(sector_ids=sectors_id_list)
+    else:
+        logger.exception('sectors_id_list is empty')
+        return False
 
     # Machine wise data calculation for performance utilization status
     for machine_name in machine_wise_data:
