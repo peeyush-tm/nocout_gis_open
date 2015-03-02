@@ -633,7 +633,7 @@ class SectorDashboard(ListView):
 
         # Get Last Six Month List
         last_six_months_list, \
-        months_list = getLastXMonths(6);
+        months_list = getLastXMonths(6)
 
         try:
             # pass

@@ -23,7 +23,7 @@ SS mac information is sent to device application
 # Output: service state and plugin output
 # #####################################################################
 
-def get_from_socket(socket_ip,socket_port, query):
+def get_from_socket(socket_ip,socket_port, query,site,machine):
     """
     Function_name : get_from_socket (collect the query data from the socket)
 
@@ -33,15 +33,29 @@ def get_from_socket(socket_ip,socket_port, query):
 
     Return : None
 
-    raise 
-         Exception: SyntaxError,socket error 
+    raise
+         Exception: SyntaxError,socket error
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((socket_ip,socket_port))
+
+    my_machine = nagios_user.split('_')[0]
+    if site == nagios_user:
+        s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(livestatus_unix_socket)
+    elif machine == my_machine:
+        socket_path = "/omd/sites/%s/tmp/run/live" % site
+        s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(socket_path)
+    else:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((socket_ip,socket_port))
+    s.settimeout(60.0)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
+    try:
+        output = s.recv(100000000)
+        output.strip("\n")
+    except:
+        output=None
     return output
 
 def live_query_ul_rssi(mac):
@@ -64,7 +78,7 @@ def live_query_ul_rssi(mac):
 			machine_name = host_name[0][1].split('_')[0]
 			socket_ip = _LIVESTATUS[machine_name]['host']
 			socket_port = _LIVESTATUS[machine_name][site]['port']
-                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('- ')[1])
                                 plugin_output = [entry for entry in plugin_output.split(' ')]
@@ -119,7 +133,7 @@ def check_cambium_ul_rssi(item, params, info):
 			if ul_rssi != None:
 				if ul_rssi < crit:
 					state  = 2
-				elif ul_rssi >= crit and ul_rssi <= warn:
+				elif ul_rssi > crit and ul_rssi < warn:
 					state = 1
 				else:
 					state = 0
@@ -127,7 +141,7 @@ def check_cambium_ul_rssi(item, params, info):
     except ValueError:
         infotext = "type_mismatch_value"
     except:
-        infotext = "unknown_value"
+        infotext = "unknown"
     return (state, infotext, [("ul_rssi", ul_rssi, warn, crit)])
 
 

@@ -125,36 +125,43 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
     :return list of network devices
     """
 
-
     if not technology:
-        organization_network_devices = Device.objects.filter(
-                                        Q(id__in= ptp_device_circuit_backhaul())
+        devices = Device.objects.filter(Q(id__in=ptp_device_circuit_backhaul())
                                         |
-                                        Q(device_technology = int(WiMAX.ID))
-                                        |
-                                        Q(device_technology = int(PMP.ID)),
+                                        (
+                                            Q(
+                                                device_technology=int(PMP.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
+                                            )
+                                            |
+                                            Q(
+                                                device_technology=int(WiMAX.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
+                                            )
+                                        ),
                                         is_added_to_nms=1,
                                         is_deleted=0,
-                                        organization__in= organizations
-        )
+                                        organization__in=organizations)
     else:
         if int(technology) == int(P2P.ID):
             if specify_ptp_bh_type in ['ss', 'bs']:
-                organization_network_devices = Device.objects.filter(
+                devices = Device.objects.filter(
                                             Q(id__in= ptp_device_circuit_backhaul(specify_type=specify_ptp_bh_type)),
                                             is_added_to_nms=1,
                                             is_deleted=0,
                                             organization__in= organizations
                 )
             else:
-                organization_network_devices = Device.objects.filter(
+                devices = Device.objects.filter(
                                             Q(id__in= ptp_device_circuit_backhaul()),
                                             is_added_to_nms=1,
                                             is_deleted=0,
                                             organization__in= organizations
                 )
         else:
-            organization_network_devices = Device.objects.filter(
+            devices = Device.objects.filter(
                                             device_technology = int(technology),
                                             is_added_to_nms=1,
                                             sector_configured_on__isnull = False,
@@ -163,7 +170,7 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                             organization__in= organizations
             ).annotate(dcount=Count('id'))
 
-    return organization_network_devices
+    return devices
 
 
 # @cache_for(300)

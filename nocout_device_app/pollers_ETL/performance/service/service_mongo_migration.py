@@ -197,8 +197,7 @@ def insert_data(table, data_values, **kwargs):
 
     Kwargs:
         kwargs (dict): Python dict to store connection variables
-    """
-   
+    """   
     db = utility_module.mysql_conn(configs=kwargs.get('configs'))
     query = "INSERT INTO `%s` " % table
     query += """
