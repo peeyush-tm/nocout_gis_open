@@ -4,6 +4,7 @@ import binascii
 import sys
 import os
 import socket
+from pprint import pformat
 import mysql.connector
 """
 Poller script which runs on ss and calculates the downlink utilization for the ss from the connected BS
@@ -31,14 +32,19 @@ except Exception as exp:
 
 
 
-def extract_connected_ss_from_topology(hostname):
+def extract_connected_ss_from_topology(hostname,dr_slave):
         query = """select connected_device_ip from performance_topology where device_name ='%s' """ %(hostname)
 	query1 = """ select M.name, D.ip_address from device_device as D left join machine_machine as M on (D.machine_id = M.id) where D.ip_address in 
 	(select connected_device_ip from performance_topology where device_name ='%s')""" %(hostname)
+
+	query2 ="""select device_device.ip_address, performance_topology.sector_id, machine_machine.name from device_device  
+	join (machine_machine, performance_topology)  on  ( device_device.machine_id  = machine_machine.id  and 
+	device_device.ip_address = performance_topology.connected_device_ip ) where performance_topology.device_name in %s """ % pformat((hostname,dr_slave))
+		
 	try:
 		db = mysql_conn()
 		cur = db.cursor()
-		cur.execute(query1)
+		cur.execute(query2)
 		data = cur.fetchall()
 		cur.close()
 	except  Exception,e:
@@ -78,78 +84,127 @@ def mysql_conn(machine=None):
 
 
 
-def extract_ss_ul_issue_state_from_live(hostname,site):
+def extract_ss_ul_issue_state_from_live(hostname,site,dr_slave):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
     
         """
-	d = {}
+	d1= {}
+	d2= {}
 	final_value = []
-	ul_issue = None
+	pmp1_ul_issue = ''
+	pmp2_ul_issue = ''
+	pmp1_sect_id = ''
+	pmp2_sect_id = ''
 	try:
-		connected_ss_entry = extract_connected_ss_from_topology(hostname)
-		for machine, ip in connected_ss_entry:
-			d.setdefault(machine, [machine]).append(str(ip))
-		mapped_ip = map(tuple, d.values())
-		total = 0
-		for entry in mapped_ip:
+		connected_ss_entry = extract_connected_ss_from_topology(hostname,dr_slave)
+		for ip,sector_id,machine in connected_ss_entry:
+			if sector_id in d1.keys():
+				d1[sector_id].append(str(ip))
+			else:
+				d1[sector_id]= []
+				d1[sector_id].append(str(ip))
+			if machine in d2.keys():
+				d2[machine].append(str(ip))
+			else:
+				d2[machine]= []
+				d2[machine].append(str(ip))
+		pmp1_count = 0
+		pmp2_count = 0
+		for machine_name in d2:
 			try:
-				db=mysql_conn(machine=entry[0])
-				if len(entry[1:]) == 1:
-					ip_tuple = "('%s')" % entry[1:][0]
-				else:
-					ip_tuple = str(entry[1:])
+				db=mysql_conn(machine=machine_name)
+				ip_tuple = str(tuple(d2[machine_name]))
 				
-				query = "select current_value from performance_utilizationstatus where "+ \
+				query = "select ip_address,current_value from performance_utilizationstatus where "+ \
 				"service_name='wimax_ss_ul_issue_kpi' and ip_address in " + ip_tuple
 				cur = db.cursor()
 				cur.execute(query)
 				data = cur.fetchall()
 				cur.close()
 				db.close()
-			except:
+			except Exception,e:
 				if db:
 					db.close()
 				continue
-			value = [str(item) for sublist in data for item in sublist]
-			final_value.extend(value)
-			for num in final_value:
-				if num != '':
-					total = total+int(num)
-		if len(final_value):
-			ul_issue = (total/float(len(final_value)))*100
+			for entry_value in data:
+				ip =str(entry_value[0])
+				value = entry_value[1]
+				try:
+					if ip in d1.values()[0] and value != '':
+						#Name has been taken just for naming convention actual sector id may bereverse
+						pmp1_count = pmp1_count + int(value)
+						continue
+				except Exception,e:
+					pass
+				try:
+					if ip in d1.values()[1] and value != '':
+						#Name has been taken just for naming convention actual sector id may bereverse
+						pmp2_count = pmp2_count + int(value)
+				except Exception,e:
+					pass
+		try:				
+			pmp1_sect_id = d1.keys()[0]
+			if len(d1.values()[0]):
+				pmp1_ul_issue = (pmp1_count/float(len(d1.values()[0])))*100
+		except Exception,e:
+			pmp1_ul_issue = ''
+			pmp1_sect_id = ''
+		try:
+			pmp2_sect_id = d1.keys()[1]
+			if len(d1.values()[1]):
+				pmp2_ul_issue = (pmp2_count/float(len(d1.values()[1])))*100
+		except Exception,e:
+			pmp2_ul_issue = ''
+			pmp2_sect_id = ''
+		# Name has been taken just for naming convention actual sector id may be reverse
 	except Exception,e:
-		ul_issue = None
-	
+		pmp1_ul_issue = ''
+		pmp2_ul_issue = ''
+		pmp2_sect_id= ''	
+		pmp1_sect_id= ''	
 
-        return ul_issue
+        return pmp1_ul_issue,pmp2_ul_issue,pmp1_sect_id,pmp2_sect_id
 
 
 
-def live_query_cam_ul_issue_kpi(host_name,site,war,crit):
+def live_query_cam_ul_issue_kpi(host_name,site,war,crit,dr_slave):
     perf = ''
-    ul_issue = ''
+    pmp1_ul_issue = ''
+    pmp2_ul_issue = ''
     state = 3
+    pmp2_state = 0
+    pmp1_state = 0
     plugin_message = ''
     state_string = "unknown"
+    match_severity = {1:"warning",2:"critical",0:"ok"}
     try:
-	ul_issue =extract_ss_ul_issue_state_from_live(host_name,site)
-	if ul_issue != None:
-		if ul_issue < war:
-                	state = 0
-			state_string = "ok"
-		elif ul_issue >= crit:
-			state = 2
-			state_string = "critical"
+	pmp1_ul_issue,pmp2_ul_issue,pmp1_sect_id,pmp2_sect_id =extract_ss_ul_issue_state_from_live(host_name,site,dr_slave)
+	if pmp1_ul_issue != '':
+		if pmp1_ul_issue < war:
+                	pmp1_state = 0
+		elif pmp1_ul_issue >= crit:
+			pmp1_state = 2
 		else:
-			state = 1
-			state_string = "warning"
-	perf += 'bs_ul_issue' + "=%s;%s;%s " %(ul_issue,war,crit)
-    except:
+			pmp1_state = 1
+	if pmp2_ul_issue != '':
+		if pmp2_ul_issue < war:
+                	pmp2_state = 0
+		elif pmp2_ul_issue >= crit:
+			pmp2_state = 2
+		else:
+			pmp2_state = 1
+	state = max(pmp1_state,pmp2_state)
+	state_string= match_severity[state]
+	perf += 'pmp1_ul_issue' + "=%s;%s;%s;%s " %(pmp1_ul_issue,war,crit,pmp1_sect_id)
+	perf += 'pmp2_ul_issue' + "=%s;%s;%s;%s " %(pmp2_ul_issue,war,crit,pmp2_sect_id)
+    except Exception,e:
+	state= 3
+        state_string = "unknown"
         perf = ';%s;%s' % (war,crit)
-    plugin_message += "wimax_bs_ul_issue_kpi %s - %s|%s" % (state_string,ul_issue,perf)
+    plugin_message += "wimax_bs_ul_issue_kpi %s -|%s" % (state_string,perf)
     sys.stdout.write(plugin_message)
     sys.exit((state))
 
@@ -158,17 +213,19 @@ def live_query_cam_ul_issue_kpi(host_name,site,war,crit):
 def  main():
     state_string = "unknown"
     cam_ul=''
-    plugin_message = ''
     try:
     	host_name = sys.argv[1]
     	site = sys.argv[2]
     	war = sys.argv[3]
     	crit = sys.argv[4]
+	dr_slave = sys.argv[5]
+	if dr_slave == None:
+		dr_slave = ''
     except:
 	perf =''
     	plugin_message += "wimax_bs_ul_issue_kpi %s - %s|%s" % (state_string,cam_ul,perf)
 	sys.exit((3))	
-    live_query_cam_ul_issue_kpi(host_name,site,float(war),float(crit))
+    live_query_cam_ul_issue_kpi(host_name,site,float(war),float(crit),dr_slave)
 
 
 if __name__ == '__main__':

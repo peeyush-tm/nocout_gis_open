@@ -6,6 +6,14 @@ import socket
 import json
 import os
 import mysql.connector
+
+from mysql_connection import db
+try:
+    import nocout_settings
+    from nocout_settings import _DATABASES, _LIVESTATUS
+except Exception as exp:
+    print exp
+
 """
 service on SS,which calculates the ss mac.
 
@@ -23,26 +31,6 @@ SS mac information is sent to device application
 # Output: service state and plugin output
 # #####################################################################
 
-def get_from_socket(socket_ip,socket_port, query):
-    """
-    Function_name : get_from_socket (collect the query data from the socket)
-
-    Args: site_name (poller on which monitoring data is to be collected)
-
-    Kwargs: query (query for which data to be collectes from nagios.)
-
-    Return : None
-
-    raise 
-         Exception: SyntaxError,socket error 
-    """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((socket_ip,socket_port))
-    s.send(query)
-    s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
-    return output
 
 def live_query_ul_jitter(mac):
         """
@@ -61,10 +49,10 @@ def live_query_ul_jitter(mac):
                         machine_name = host_name[0][1].split('_')[0]
                         socket_ip = _LIVESTATUS[machine_name]['host']
                         socket_port = _LIVESTATUS[machine_name][site]['port']
-                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('- ')[1])
-                                plugin_output = [entry for entry in plugin_output.split(' ')]
+                                plugin_output = [mac for mac in plugin_output.split(' ')]
                                 ss_params = filter(lambda x: '/' in x,plugin_output)
                                 ss_matched_params = filter(lambda x: mac in x,ss_params)
                                 ul_jitter= map(lambda x: x.split('/')[3],ss_matched_params)
@@ -111,7 +99,7 @@ def check_cambium_ul_jitter(item, params, info):
                 n = 2
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		ul_jitter = live_query_ul_jitter(ss_mac )
-		if ul_jitter != None:
+		if isinstance(ul_jitter,int):
 			if ul_jitter > crit:
 				state  = 2
 			elif ul_jitter <= crit and ul_jitter >= warn:
