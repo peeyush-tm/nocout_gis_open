@@ -1656,7 +1656,7 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
         for item in trend_items:
 
             if item['title'] != 'unknown':
-                count_color = getattr(dashboard_settings, '%s_color_hex_value' % ['title'])
+                count_color = getattr(dashboard_settings, '%s_color_hex_value' % item['title'])
 
             else:
                 # Color for Unknown range

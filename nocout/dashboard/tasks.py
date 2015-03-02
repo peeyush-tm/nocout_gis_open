@@ -532,6 +532,7 @@ def calculate_timely_latency(organization, dashboard_name, processed_for ,techno
     except Exception as e:
         logger.exception(e)
         # return False
+        pass
 
     g_jobs = list()
     ret = False
@@ -606,6 +607,7 @@ def calculate_timely_packet_drop(organization, dashboard_name, processed_for, te
     except Exception as e:
         logger.exception(e)
         # return False
+        pass
 
     g_jobs = list()
     ret = False
@@ -680,6 +682,7 @@ def calculate_timely_down_status(organization, dashboard_name, processed_for, te
     except Exception as e:
         logger.exception(e)
         # return False
+        pass
 
     g_jobs = list()
     ret = False
