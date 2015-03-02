@@ -283,7 +283,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     # query for the extracting the log from nagios .This query is ping serviecs
     query = "GET log\nColumns: log_type log_time log_state_type log_state  host_name service_description " +\
         "options host_address current_host_perf_data host_last_state_change service_last_state_change \n" +\
-        "Filter: log_time > %s\nFilter: log_type !~ FLAPPING\nFilter: service_description !~ Check_MK\nFilter: class = 0\n" % start_epoch +\
+        "Filter: log_time >= %s\nFilter: log_type !~ FLAPPING\nFilter: service_description !~ Check_MK\nFilter: class = 0\n" % start_epoch +\
         "Filter: class = 1\nFilter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n"
     output = utility_module.get_from_socket(site, query)
     #print output
@@ -302,6 +302,9 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
                 network_events_data, network_events_update_criteria = network_perf_data_live_query(site,log_split, 
                         network_events_data, network_events_update_criteria)    
             elif log_split[0] == 'SERVICE ALERT' or log_split[0] == 'INITIAL SERVICE STATE':
+		# We dont need Counter_wrapped events for utilization services
+		if 'wrapped' in log_split[11]:
+			continue
                 service_events_data, service_events_update_criteria = service_perf_data_live_query(site, log_split,
                         service_events_data, service_events_update_criteria)
         except Exception, e:

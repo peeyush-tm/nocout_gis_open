@@ -367,11 +367,11 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     # Get the wimax BS devices (we need them for active checks)
     # Ex entry : ('device_1', 'ospf4_slave_1')
     L0 = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'wimax', data))
-    #L1 = map(lambda e: (e[1], e[7]), dr_en_devices)
-    L1 = []
-    for entry in final_dr_devices:
-        L1.append((entry[0][1], entry[0][7]))
-        L1.append((entry[1][0], entry[0][7]))
+    # Ex entry : ('device_1', 'ospf4_slave_1', 'dr_site')
+    L1 = map(lambda e: (e[0][1], e[0][7], e[1][0]), final_dr_devices)
+    #for entry in final_dr_devices:
+    #    L1.append((entry[0][1], entry[0][7]))
+    #    L1.append((entry[1][0], entry[0][7]))
     wimax_bs_devices = L0 + L1
     # Get the Cambium BS devices (we need them for active checks)
     # Since, as of now, we have only Cambium devices in pmp technology
@@ -907,6 +907,11 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
             if service in qos_based_services:
                 container[service].append(((str(service), {'host': str(host_tuple[0]), \
                         'site': str(host_tuple[1]), 'qos': host_tuple[2], 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
+            # Check for wimax BS devices
+            elif 'wimax' in service and '_ss_' not in service:
+                dr_site = host_tuple[2] if len(host_tuple) == 3 else None
+                container[service].append(((str(service), {'host': str(host_tuple[0]), \
+                        'site': str(host_tuple[1]), 'war': war, 'crit': crit, 'dr_slave': dr_site}), [], [str(host_tuple[0])]))
             else:
                 container[service].append(((str(service), {'host': str(host_tuple[0]), \
                         'site': str(host_tuple[1]), 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
@@ -929,7 +934,7 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
     check_dict = make_active_check_rows(check_dict, devices.cambium_bs_devices,
             cambium_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
             def_war=80, def_crit=90)
-    check_dict = make_active_check_rows(check_dict, devices.total_radwin_devices,
+    check_dict = make_active_check_rows(check_dict, devices.radwin_ss_devices,
             radwin_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
 	    def_war=80, def_crit=90)
     # mrotek utilization active checks
