@@ -24,6 +24,7 @@ def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_for
 			db_name='nocout') 
 	if db:
 		if kpi or device_availability:
+			print start_time, end_time
 			cur = db[source_perf_table].find({'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
 			docs = list(cur)
 		else:
@@ -33,7 +34,7 @@ def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_for
 
 
 def mysql_export(table, db, data_values):
-	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time'].strftime('%s'), e['refer']), data_values)
+	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time'].strftime('%s'), e.get('refer')), data_values)
 
 	insert_query = "INSERT INTO %s" % table
 	insert_query += """
@@ -50,6 +51,24 @@ def mysql_export(table, db, data_values):
 	cursor.close()
 	db.close()
 
+
+def mysql_export_device_availability(table, db, data_values):
+	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time'].strftime('%s')), data_values)
+
+	insert_query = "INSERT INTO %s" % table
+	insert_query += """
+	(device_name, service_name, machine_name, site_name, ip_address, data_source, severity, current_value,
+	min_value, max_value, avg_value, warning_threshold, critical_threshold, sys_timestamp, check_timestamp)
+	 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	"""
+	cursor = db.cursor()
+	try:
+		cursor.executemany(insert_query, data_values)
+	except mysql.connector.Error as err:
+		raise mysql.connector.Error, err
+	db.commit()
+	cursor.close()
+	db.close()
 
 def mysql_conn(mysql_configs=None, db=None):
 	try:
