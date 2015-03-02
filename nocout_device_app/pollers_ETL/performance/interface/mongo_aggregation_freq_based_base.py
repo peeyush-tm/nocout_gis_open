@@ -119,6 +119,8 @@ def quantify_data_based_on_freq(docs):
 	ds, service = docs[0].get('data_source'), docs[0].get('service_name')
 	site = docs[0].get('site_name')
 	war, cric = docs[0].get('warning_threshold'), docs[0].get('critical_threshold')
+	severity = docs[0].get('severity')
+	current_value = docs[0].get('current_value')
 	check_time = docs[0].get('check_timestamp')
 	# Convert the time into datetime object
 	time = datetime.fromtimestamp(docs[0].get('sys_timestamp')) 
@@ -160,6 +162,8 @@ def quantify_data_based_on_freq(docs):
 		'avg': None,
 		'war': war,
 		'cric': cric,
+		'severity': severity,
+		'current_value': current_value,
 		'check_time': check_time
 		})
 	#upsert_aggregated_data(find_query, aggr_data)

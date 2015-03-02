@@ -2,86 +2,86 @@
 ## Live Mongodb --> Historical Mongodb
 
 # Bihourly scripts
-*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly >> /dev/null 2>&1
-*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly >> /dev/null 2>&1
+*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly > /dev/null 2>&1
+*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly > /dev/null 2>&1
 
 # Hourly scripts
-5 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly >> /dev/null 2>&1
-5 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly >> /dev/null 2>&1
+5 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly > /dev/null 2>&1
+5 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly > /dev/null 2>&1
 
 # Daily scripts
-10 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 24 -f daily -s performance_performancenetworkhourly -d performance_performancenetworkdaily >> /dev/null 2>&1
-15 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily >> /dev/null 2>&1
-20 23 * * * /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily >> /dev/null 2>&1
-25 23 * * * /usr/bin/python nocout/performance/inventory/inventory_mongo_aggregation_daily.py >> /dev/null 2>&1
+10 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 24 -f daily -s performance_performancenetworkhourly -d performance_performancenetworkdaily > /dev/null 2>&1
+15 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily > /dev/null 2>&1
+20 23 * * * /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily > /dev/null 2>&1
+25 23 * * * /usr/bin/python nocout/performance/inventory/inventory_mongo_aggregation_daily.py > /dev/null 2>&1
 
 # Weekly scripts
-30 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancenetworkdaily -d performance_performancenetworkweekly >> /dev/null 2>&1
-30 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performanceservicedaily -d performance_performanceserviceweekly >> /dev/null 2>&1
-30 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancestatusdaily -d performance_performancestatusweekly >> /dev/null 2>&1
-30 23 * * 0 /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 168 -f weekly -s nocout_inventory_service_perf_data -d inventory_perf_weekly >> /dev/null 2>&1
+30 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancenetworkdaily -d performance_performancenetworkweekly > /dev/null 2>&1
+30 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performanceservicedaily -d performance_performanceserviceweekly > /dev/null 2>&1
+30 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancestatusdaily -d performance_performancestatusweekly > /dev/null 2>&1
+30 23 * * 0 /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 168 -f weekly -s nocout_inventory_service_perf_data -d inventory_perf_weekly > /dev/null 2>&1
 
 # Monthly scripts
-35 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performancenetworkweekly -d performance_performancenetworkmonthly >> /dev/null 2>&1
-35 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performanceserviceweekly -d performance_performanceservicemonthly >> /dev/null 2>&1
-40 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performancestatusweekly -d performance_performancestatusmonthly >> /dev/null 2>&1
-40 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performanceinventoryweekly -d performance_performanceinventorymonthly >> /dev/null 2>&1
+35 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performancenetworkweekly -d performance_performancenetworkmonthly > /dev/null 2>&1
+35 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performanceserviceweekly -d performance_performanceservicemonthly > /dev/null 2>&1
+40 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performancestatusweekly -d performance_performancestatusmonthly > /dev/null 2>&1
+40 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 720 -f monthly -s performance_performanceinventoryweekly -d performance_performanceinventorymonthly > /dev/null 2>&1
 
 # Yearly scripts
-45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performancenetworkmonthly -d performance_performancenetworkyearly >> /dev/null 2>&1
-45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performanceservicemonthly -d  performance_performanceserviceyearly >> /dev/null 2>&1
-45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performancestatusmonthly -d performance_performancestatusyearly >> /dev/null 2>&1
-45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performanceinventorymonthly -d performance_performanceinventoryyearly >> /dev/null 2>&1
+45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performancenetworkmonthly -d performance_performancenetworkyearly > /dev/null 2>&1
+45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performanceservicemonthly -d  performance_performanceserviceyearly > /dev/null 2>&1
+45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performancestatusmonthly -d performance_performancestatusyearly > /dev/null 2>&1
+45 23 31 12 * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performanceinventorymonthly -d performance_performanceinventoryyearly > /dev/null 2>&1
 
 ## Historical Mongodb --> Historical Mysql
 
 # Daily Migration
-5 23 * * * /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 24 -s interface_perf_daily -d performance_performancestatusdaily >> /dev/null 2>&1
+5 23 * * * /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 24 -s interface_perf_daily -d performance_performancestatusdaily > /dev/null 2>&1
 
 # Weekly Migration
-5 23 * * 0 /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly >> /dev/null 2>&1
+5 23 * * 0 /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly > /dev/null 2>&1
 
 ## Events Migration
 
 # Daily Migration
-#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_host_event_log -d performance_eventnetworkdaily >> /dev/null 2>&1
-#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily >> /dev/null 2>&1
+#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_host_event_log -d performance_eventnetworkdaily > /dev/null 2>&1
+#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily > /dev/null 2>&1
 
 # Weekly Migrtation
-10 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventnetworkdaily -d performance_eventnetworkweekly >> /dev/null 2>&1
-10 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventservicedaily -d performance_eventserviceweekly >> /dev/null 2>&1
+10 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventnetworkdaily -d performance_eventnetworkweekly > /dev/null 2>&1
+10 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventservicedaily -d performance_eventserviceweekly > /dev/null 2>&1
 
 ## Utilization
 
 # Bi-hourly
-*/30 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mongodb -t 0.5 -f half_hourly -s kpi_data -d performance_utilizationbihourly >> /dev/null 2>&1
+*/30 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mongodb -t 0.5 -f half_hourly -s kpi_data -d performance_utilizationbihourly > /dev/null 2>&1
 
 # Hourly
-5 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 1 -f hourly -s performance_utilizationbihourly -d performance_utilizationhourly >> /dev/null 2>&1
+5 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 1 -f hourly -s performance_utilizationbihourly -d performance_utilizationhourly > /dev/null 2>&1
 
 # Daily
-10 23 * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 24 -f daily -s performance_utilizationhourly -d performance_utilizationdaily >> /dev/null 2>&1
+10 23 * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 24 -f daily -s performance_utilizationhourly -d performance_utilizationdaily > /dev/null 2>&1
 
 # Weekly
-15 23 * * 0 /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 168 -f weekly -s performance_utilizationdaily -d performance_utilizationweekly >> /dev/null 2>&1
+15 23 * * 0 /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 168 -f weekly -s performance_utilizationdaily -d performance_utilizationweekly > /dev/null 2>&1
 
 # Monthly
-20 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 720 -f monthly -s performance_utilizationweekly -d performance_utilizationmonthly >> /dev/null 2>&1 
+20 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 720 -f monthly -s performance_utilizationweekly -d performance_utilizationmonthly > /dev/null 2>&1 
 
 # Yearly
-25 23 31 12 * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 8640 -f yearly -s performance_utilizationmonthly -d performance_utilizationyearly >> /dev/null 2>&1
+25 23 31 12 * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 8640 -f yearly -s performance_utilizationmonthly -d performance_utilizationyearly > /dev/null 2>&1
 
 ## Device Availability
 
 # Daily
-5 23 * * * /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mongodb -t 24 -f daily -s device_availability -d performance_networkavailabilitydaily  >> /dev/null 2>&1
+5 23 * * * /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mongodb -t 24 -f daily -s device_availability -d performance_networkavailabilitydaily  > /dev/null 2>&1
 
 # Weekly
-10 23 * * 0 /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mysql -t 168 -f weekly -s performance_networkavailabilitydaily -d performance_networkavailabilityweekly >> /dev/null 2>&1
+10 23 * * 0 /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mysql -t 168 -f weekly -s performance_networkavailabilitydaily -d performance_networkavailabilityweekly > /dev/null 2>&1
 
 # Monthly
-15 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mysql -t 720 -f monthly -s performance_networkavailabilityweekly -d performance_networkavailabilitymonthly >> /dev/null 2>&1
+15 23 28-31 * * [ $(date -d +1day +\%d) -eq 1 ] && /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mysql -t 720 -f monthly -s performance_networkavailabilityweekly -d performance_networkavailabilitymonthly > /dev/null 2>&1
 
 # Yearly
-20 23 31 12 * /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mysql -t 8640 -f yearly -s performance_networkavailabilitymonthly -d performance_networkavailabilityyearly >> /dev/null 2>&1
+20 23 31 12 * /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mysql -t 8640 -f yearly -s performance_networkavailabilitymonthly -d performance_networkavailabilityyearly > /dev/null 2>&1
 #-------------------------------------------------------------------------------------------------------

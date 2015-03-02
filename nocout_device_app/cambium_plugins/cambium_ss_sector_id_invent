@@ -23,26 +23,6 @@ SS mac information is sent to device application
 # Output: service state and plugin output
 # #####################################################################
 
-def get_from_socket(socket_ip,socket_port, query):
-    """
-    Function_name : get_from_socket (collect the query data from the socket)
-
-    Args: site_name (poller on which monitoring data is to be collected)
-
-    Kwargs: query (query for which data to be collectes from nagios.)
-
-    Return : None
-
-    raise 
-         Exception: SyntaxError,socket error 
-    """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((socket_ip,socket_port))
-    s.send(query)
-    s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
-    return output
 
 def live_query_ss_sector_id(mac):
         """
@@ -62,10 +42,10 @@ def live_query_ss_sector_id(mac):
 			machine_name = host_name[0][1].split('_')[0]
 			socket_ip = _LIVESTATUS[machine_name]['host']
 			socket_port = _LIVESTATUS[machine_name][site]['port']
-                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string).strip())
+                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('- ')[1])
-                                plugin_output = [mac for mac in plugin_output.split(' ')]
+                                plugin_output = [entry for entry in plugin_output.split(' ')]
                                 ss_sector_id= plugin_output[1]
 					
         except:
