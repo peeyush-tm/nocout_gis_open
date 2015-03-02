@@ -129,14 +129,16 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
         devices = Device.objects.filter(Q(id__in=ptp_device_circuit_backhaul())
                                         |
                                         (
-                                            (
-                                                Q(device_technology=int(PMP.ID))
-                                                |
-                                                Q(device_technology=int(WiMAX.ID))
-                                            ),
-                                            (
-                                                Q(sector_configured_on__isnull=False),
-                                                Q(sector_configured_on__sector_id__isnull=False)
+                                            Q(
+                                                device_technology=int(PMP.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
+                                            )
+                                            |
+                                            Q(
+                                                device_technology=int(WiMAX.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
                                             )
                                         ),
                                         is_added_to_nms=1,

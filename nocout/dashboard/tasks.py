@@ -418,13 +418,15 @@ def calculate_timely_latency(organization, dashboard_name, processed_for ,techno
 
     return:
     '''
+    processed_for = processed_for
+    technology_id = None
+
     try:
         latency_technology = eval(technology)
-        processed_for = processed_for
         technology_id = latency_technology.ID
     except Exception as e:
         logger.exception(e)
-        return False
+        # return False
 
     g_jobs = list()
     ret = False
@@ -436,7 +438,10 @@ def calculate_timely_latency(organization, dashboard_name, processed_for ,techno
 
     if sector_devices.count():
         # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+        sector_devices = sector_devices.filter(
+            sector_configured_on__isnull=False,
+            sector_configured_on__sector_id__isnull=False
+        ).values('machine__name', 'device_name')
 
         # get the dictionary of machine_name as key and device_name as a list for that machine.
         machine_dict = prepare_machines(sector_devices)
@@ -487,13 +492,15 @@ def calculate_timely_packet_drop(organization, dashboard_name, processed_for, te
 
     return:
     '''
+    processed_for = processed_for
+    technology_id = None
+
     try:
         latency_technology = eval(technology)
-        processed_for = processed_for
         technology_id = latency_technology.ID
     except Exception as e:
         logger.exception(e)
-        return False
+        # return False
 
     g_jobs = list()
     ret = False
@@ -505,7 +512,10 @@ def calculate_timely_packet_drop(organization, dashboard_name, processed_for, te
 
     if sector_devices.count():
         # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+        sector_devices = sector_devices.filter(
+            sector_configured_on__isnull=False,
+            sector_configured_on__sector_id__isnull=False
+        ).values('machine__name', 'device_name')
 
         # get the dictionary of machine_name as key and device_name as a list for that machine.
         machine_dict = prepare_machines(sector_devices)
@@ -556,13 +566,15 @@ def calculate_timely_down_status(organization, dashboard_name, processed_for, te
 
     return:
     '''
+    processed_for = processed_for
+    technology_id = None
+
     try:
         latency_technology = eval(technology)
-        processed_for = processed_for
         technology_id = latency_technology.ID
     except Exception as e:
         logger.exception(e)
-        return False
+        # return False
 
     g_jobs = list()
     ret = False
@@ -574,7 +586,10 @@ def calculate_timely_down_status(organization, dashboard_name, processed_for, te
 
     if sector_devices.count():
         # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+        sector_devices = sector_devices.filter(
+            sector_configured_on__isnull=False,
+            sector_configured_on__sector_id__isnull=False
+        ).values('machine__name', 'device_name')
 
         # get the dictionary of machine_name as key and device_name as a list for that machine.
         machine_dict = prepare_machines(sector_devices)
