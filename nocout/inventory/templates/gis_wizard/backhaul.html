@@ -3,7 +3,7 @@
 {% block content_title %}GIS Wizard: Backhaul{% endblock %}
 {% block content_description %}gis wizard: backhaul{% endblock %}
 {% block content %}
-<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
+<p><a href="javascript:void(0)" class="previous_page_url"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
     <div class="row formContainer">
         <div class="col-md-12">
             <div class="row">
@@ -123,6 +123,13 @@
                 placement: 'right',
                 trigger: 'focus'
             });
+
+            $(".previous_page_url").click(function(){
+                var required_url = window.location.href.split('/');
+                required_url.splice(-3);
+                required_url = required_url.join('/');
+                $(this).attr("href", required_url);
+            })
             // getting values of select menu's on load
 
             $("#id_bh_configured_on").select2({
