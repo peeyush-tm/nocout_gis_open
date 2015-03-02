@@ -127,7 +127,7 @@ def check_cambium_rereg_count(item, params, info):
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if ss_mac:
 			rereg_count = live_query_rereg_count(ss_mac )
-			if isinstance(rereg_count,int):
+			if rereg_count != None:
 				if rereg_count > crit:
 					state  = 2
 				elif rereg_count <= crit and rereg_count >= warn:

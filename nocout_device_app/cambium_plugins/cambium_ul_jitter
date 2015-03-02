@@ -99,7 +99,7 @@ def check_cambium_ul_jitter(item, params, info):
                 n = 2
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		ul_jitter = live_query_ul_jitter(ss_mac )
-		if isinstance(ul_jitter,int):
+		if ul_jitter != None:
 			if ul_jitter > crit:
 				state  = 2
 			elif ul_jitter <= crit and ul_jitter >= warn:

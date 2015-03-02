@@ -95,7 +95,7 @@ def check_cambium_reg_count(item, params, info):
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if ss_mac:
 			reg_count = live_query_reg_count(ss_mac )
-			if isinstance(reg_count,int):
+			if reg_count != None:
 				if reg_count > crit:
 					state  = 2
 				elif reg_count <= crit and reg_count >= warn:
