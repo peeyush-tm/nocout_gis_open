@@ -45,7 +45,7 @@ def live_query_ss_sector_id(mac):
                         query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string,site,machine_name).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('- ')[1])
-                                plugin_output = [mac for mac in plugin_output.split(' ')]
+                                plugin_output = [entry for entry in plugin_output.split(' ')]
                                 ss_sector_id= plugin_output[1]
 					
         except:
