@@ -224,7 +224,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			if str(entry[0]) in original_dr_host_list:
 				dr_flag = 1
 		
-		if str(entry[0]) in s_device_down_list and (str(entry[2]) not in exceptional_serv) and not dr_flag :
+		if str(entry[0]) in s_device_down_list and  not dr_flag :
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
@@ -463,7 +463,18 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ radwin_dl_util_kpi\n"+\
                             "Filter: service_description ~ radwin_ul_util_kpi\n"+\
                             "Filter: service_description ~ mrotek_port_values\n"+\
-                            "Or: 13\nNegate:\nOutputFormat: python\n"
+			    "Filter: service_description ~ mrotek_ul_util_kpi\n"+\
+	                    "Filter: service_description ~ mrotek_dl_util_kpi\n"+\
+                            "Filter: service_description ~ rici_ul_util_kpi\n"+\
+                            "Filter: service_description ~ rici_dl_util_kpi\n"+\
+		            "Filter: service_description ~ radwin_ss_provis_kpi\n"+\
+                            "Filter: service_description ~ cambium_ss_provis_kpi\n"+\
+                            "Filter: service_description ~ wimax_ss_provis_kpi\n"+\
+                            "Filter: service_description ~ wimax_ss_ul_issue_kpi\n"+\
+                            "Filter: service_description ~ cambium_ss_ul_issue_kpi\n"+\
+                            "Filter: service_description ~ cambium_bs_ul_issue_kpi\n"+\
+                            "Filter: service_description ~ wimax_bs_ul_issue_kpi\n"+\
+                            "Or: 24\nNegate:\nOutputFormat: python\n"
 	    device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
 				"And: 2\nOutputFormat: python\n"
 
