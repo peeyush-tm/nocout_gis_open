@@ -184,7 +184,7 @@ def insert_data(table, data_values, **kwargs):
 	db = mysql_connection(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
-                	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1])
+                	"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])
 		cursor = db.cursor()
         	try:
                 	cursor.execute(query)
@@ -196,7 +196,7 @@ def insert_data(table, data_values, **kwargs):
 		if result:
                         insert_dict['1'].append(data_values[i])
 			query = "DELETE FROM %s " % table +\
-                	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1])
+                	"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])
         		try:
                 		cursor.execute(query)
 			except mysql.connector.Error as err:

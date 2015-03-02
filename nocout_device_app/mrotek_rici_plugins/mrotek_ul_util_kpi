@@ -4,6 +4,7 @@
 def check_mrotek_ul_util_kpi_arguments(params):
     description,settings = params
     args =''
+    qos_string = ''
     if "host" in settings:
         args += '%s ' % quote_shell_string(settings['host'])
     if "site" in settings:
@@ -15,7 +16,10 @@ def check_mrotek_ul_util_kpi_arguments(params):
     if "crit" in settings:
         args += '%f ' % int(settings['crit'])
     if "qos" in settings:
-        args += '%f ' % float(settings['qos'])
+        for a in settings['qos']:
+		qos_string += '%s|' % a
+        if qos_string:
+                args += '%s ' % quote_shell_string(qos_string)
 
     return args
 
