@@ -122,7 +122,7 @@ def quantify_utilization_data(host_specific_data):
 	try:
             current_value = eval(doc.get('current_value'))
 	except Exception:
-	    current_value = None
+	    current_value = doc.get('current_value')
         war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
         # `refer` field to store Ckt-id for current device
         refer = str(doc.get('refer'))

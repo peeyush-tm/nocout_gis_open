@@ -12,7 +12,10 @@ def check_wimax_pmp2_dl_util_kpi_arguments(params):
         args += '%s ' % settings['war']
     if "crit" in settings:
         args += '%s ' % settings['crit']
+    if 'dr_slave' in settings:
+        args += '%s ' % quote_shell_string(settings['dr_slave'])
 
+	
     return args
 
 active_check_info['wimax_pmp2_dl_util_kpi'] = {

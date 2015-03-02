@@ -81,7 +81,7 @@ def main(**configs):
             doc.get('avg_value'),
             doc.get('warning_threshold'),
             doc.get('critical_threshold'),
-            local_time_epoch,
+            check_time_epoch,
             check_time_epoch,
             doc.get('ip_address'),
             doc.get('severity'),
