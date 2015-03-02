@@ -32,8 +32,15 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
  * @event mapDragEndCondition
  */
 WhiteMapClass.prototype.mapDragEndCondition = function() {
-	
-	if(ccpl_map.getZoom() > 10 && isPerfCallStarted == 1) {
+
+	if(ccpl_map.getZoom() > 10) {
+
+		whiteMapClass.showBaseStaionsInBounds();
+		whiteMapClass.showSectorDevicesInBounds();
+		whiteMapClass.showSectorPolygonInBounds();
+		whiteMapClass.showLinesInBounds();
+		whiteMapClass.showSubStaionsInBounds();
+
     	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
     	if(new_bs.length > 0) {
     		if(!callsInProcess) {
@@ -137,36 +144,13 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 
         			if(currentlyPlottedDevices.length == 0) {
+
         				ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
-	            		/*Clear all everything from map*/
-						$.grep(allMarkersArray_wmap,function(marker) {
-							var markerLayer = marker.layer ? marker.layer : marker.layerReference;
-							marker.isActive = 0;
-							if(marker.style) {
-								marker.style.display = 'none';
-							}
-							markerLayer.redraw();
-						});
+
+        				// Clear white map features & reset variables
+						removeAllOpenLayerFeature();
+
 						ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
-						// Reset Variables
-						allMarkersArray_wmap = [];
-						bs_ss_markers= [];
-						main_devices_data_wmap = [];
-						plottedBsIds = [];
-						deviceIDArray = [];
-						sectorMarkerConfiguredOn = [];
-						sectorMarkersMasterObj = {};
-						sector_MarkersArray = [];
-						pollableDevices = [];
-						currentlyPlottedDevices = [];
-						allMarkersObject_wmap= {
-							'base_station': {},
-							'path': {},
-							'sub_station': {},
-							'sector_device': {},
-							'sector_polygon': {},
-							'backhaul': {}
-						};
 						
 						inBoundData = gmap_self.getInBoundDevices(data_to_plot);
 						// Assign currently plotted devices to global array.
@@ -248,6 +232,17 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     		}
         } else {
 
+        	// Clear white map features & reset variables
+			removeAllOpenLayerFeature();
+
+			// Hide State Counters Label
+			for(key in state_wise_device_labels) {
+				if(state_wise_device_labels[key]) {
+					state_wise_device_labels[key].attributes.display = 'none';
+    				ccpl_map.getLayersByName("States")[0].redraw();
+				}
+			}
+
         	// If any periodic polling ajax call is in process then abort it
             try {
 				if(gis_perf_call_instance) {
@@ -262,14 +257,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         		// Hide State Labels which are in current bounds
         		var country_click_event = "onClick='gmap_self.state_label_clicked(0)'",
         			total_devices_count = gmap_self.getCountryWiseCount();
-
-    			// Hide State Counters Label
-    			for(key in state_wise_device_labels) {
-					if(state_wise_device_labels[key]) {
-						state_wise_device_labels[key].attributes.display = 'none';
-        				ccpl_map.getLayersByName("States")[0].redraw();
-					}
-				}
 
     			var country_point = new OpenLayers.Geometry.Point(77.7832, 24.2870),
     				country_counter_label = new OpenLayers.Feature.Vector(country_point);
@@ -294,16 +281,8 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
     		} else {
 
-    			// Hide State Counters Label
-    			for(key in state_wise_device_labels) {
-					if(state_wise_device_labels[key]) {
-						state_wise_device_labels[key].attributes.display = 'none';
-        				ccpl_map.getLayersByName("States")[0].redraw();
-					}
-				}
     			if(country_label["india"] != "") {
     				country_label["india"].attributes.display = 'none';
-    				ccpl_map.getLayersByName("States")[0].redraw();
 		        	country_label["india"].destroy();
 		        	country_label["india"] = "";
 		        }
@@ -319,58 +298,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 				// Reset Performance variables
 				gisPerformanceClass.resetVariable();
-
-				// Hide perf info label
-			    for (var x = 0; x < labelsArray.length; x++) {
-			        // labelsArray[x].destroy();
-			        ccpl_map.removePopup(labelsArray[x]);
-			    }
-
-			    // Hide tooltip info label
-			    for (key in tooltipInfoLabel) {
-			        // tooltipInfoLabel[key].destroy();
-			    	ccpl_map.removePopup(tooltipInfoLabel[key]);
-			    }
-
-	            // Reset labels array 
-	            labelsArray = [];
-	            tooltipInfoLabel = {};
-
-
-	            /*Clear master marker cluster objects*/
-	            // Deactivate Marker Clustering Strategy
-	            ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
-
-	            /*Clear all everything from map*/
-				$.grep(allMarkersArray_wmap,function(marker) {
-					var markerLayer = marker.layer ? marker.layer : marker.layerReference;
-					marker.isActive = 0;
-					marker.style.display = 'none';
-					markerLayer.redraw();
-				});
-
-				ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
-				ccpl_map.getLayersByName('Markers')[0].redraw();
-
-				// Reset Variables
-				allMarkersArray_wmap = [];
-				bs_ss_markers= [];
-				main_devices_data_wmap = [];
-				plottedBsIds = [];
-				pollableDevices = [];
-				deviceIDArray = [];
-				sectorMarkerConfiguredOn = [];
-				sectorMarkersMasterObj = {};
-				sector_MarkersArray = [];
-				currentlyPlottedDevices = [];
-				allMarkersObject_wmap= {
-					'base_station': {},
-					'path': {},
-					'sub_station': {},
-					'sector_device': {},
-					'sector_polygon': {},
-					'backhaul': {}
-				};
 
 				var states_with_bounds = state_lat_lon_db.where(function(obj) {
 	    			return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
@@ -430,9 +357,9 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	}
 
 	//Check if feature clicked was a cluster
-	if(feature.cluster) {
+	if(feature && feature.cluster) {
 		//If feature cluster was present
-		if(feature.cluster.length >= 2) {
+		if(feature && feature.cluster.length >= 2) {
 			var clusterPoints = [];
 			//Loop through all the points in cluster
 			for(var i = 0; i< feature.cluster.length; i++){
@@ -449,11 +376,11 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 		}
 	} else {
 		//If clicked feature was not base setation
-		if(feature.pointType !== "base_station") {
+		if(feature && feature.pointType !== "base_station") {
 			//Show Info Window for it
 			showInfoWindow(feature);
 			//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
-			if(feature.pointType == 'path') {
+			if(feature && feature.pointType == 'path') {
 				setTimeout(function() {
 					//remove freshnel zone button
 					$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
@@ -462,8 +389,7 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 		//Else if base station was clicked
 		} else {
 			//First spiderify base station is not spiderfied, else open Info Window for it.
-			console.log(feature);
-			if(this.spiderifyMarker(feature)) {
+			if(feature && this.spiderifyMarker(feature)) {
 				showInfoWindow(feature);
 			}
 		}

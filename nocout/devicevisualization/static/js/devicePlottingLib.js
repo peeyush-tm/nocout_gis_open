@@ -765,6 +765,9 @@ function devicePlottingClass_gmap() {
 	        		// Show only country counter below 4 level zoom
 	        		gmap_self.hideStateCountersLabel();
 
+	        		// Clear map markers & reset variables
+					gmap_self.clearMapMarkers();
+
 	        		// If any periodic polling ajax call is in process then abort it
         			try {
 	    				if(gis_perf_call_instance) {
@@ -819,9 +822,6 @@ function devicePlottingClass_gmap() {
 
             			// Reset Performance variables
             			gisPerformanceClass.resetVariable();
-
-            			// Clear map markers & reset variables
-						gmap_self.clearMapMarkers();
 
 						var states_with_bounds = state_lat_lon_db.where(function(obj) {
 	            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
@@ -1763,9 +1763,6 @@ function devicePlottingClass_gmap() {
         gmap_self.toggleSpecifixMarkers_gmap('sub_station',null);
         // Clear link line
         gmap_self.toggleSpecifixMarkers_gmap('path',null);
-		// $.grep(allMarkersArray_gmap,function(marker) {
-		// 	marker.setMap(null);
-		// });
 
 		// Reset Variables
 		allMarkersArray_gmap = [];
@@ -5178,8 +5175,10 @@ function devicePlottingClass_gmap() {
     			break;
     		}
 
-    		var search_condition1 = selected_bs_alias.length > 0 ? selected_bs_alias.indexOf(String(data_to_plot[i].alias.toLowerCase())) > -1 : true,
-	            search_condition2 = selected_bs_city.length > 0 ? selected_bs_city.indexOf(String(data_to_plot[i].data.city.toLowerCase())) > -1 : true,
+    		var current_city = data_to_plot[i].data.city ? $.trim(data_to_plot[i].data.city).toLowerCase() : "",
+    			current_bs_alias = data_to_plot[i].alias ? $.trim(data_to_plot[i].alias).toLowerCase() : "",
+    			search_condition1 = selected_bs_alias.length > 0 ? selected_bs_alias.indexOf(String(current_bs_alias)) > -1 : true,
+	            search_condition2 = selected_bs_city.length > 0 ? selected_bs_city.indexOf(String(current_city)) > -1 : true,
 	            circuit_id_count = selected_circuit_id.length >  0 ? $.grep(data_to_plot[i].circuit_ids.split("|"), function (elem) {
 	            	return selected_circuit_id.indexOf(elem.toLowerCase()) > -1;
 	            }).length : 1,
@@ -8600,7 +8599,6 @@ function devicePlottingClass_gmap() {
 		var markers = allMarkersObject_gmap[key];
 		if(markers) {
 			var marker_keys = Object.keys(markers);
-
 			// Loop object key to show/hide markers
 			for(var i=marker_keys.length;i--;) {
 				if(markers[marker_keys[i]]) {

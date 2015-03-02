@@ -55,14 +55,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		that.mapIdleCondition();
 		return;
 	});
-	if(ccpl_map.getLayersByName("Markers")[0]) {
-		ccpl_map.getLayersByName("Markers")[0].events.register('mousedown', ccpl_map.getLayersByName("Markers")[0], function(evt){
-		    if(evt && evt.button == 2){
-		    	console.log(evt);
-		    	console.log(evt.button);
-		    }
-		});
-	}
+	// if(ccpl_map.getLayersByName("Markers")[0]) {
+	// 	ccpl_map.getLayersByName("Markers")[0].events.register('mousedown', ccpl_map.getLayersByName("Markers")[0], function(evt){
+	// 	    if(evt && evt.button == 2){
+	// 	    	console.log(evt);
+	// 	    	console.log(evt.button);
+	// 	    }
+	// 	});
+	// }
 
 	//Create WMS layer to load Map from our geoserver.
 	layers.india_Layer = new OpenLayers.Layer.WMS(
@@ -319,7 +319,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			renderIndent: "temporary",
 			eventListeners: {
 				onfeatureselected: function(e) {
-					console.log(e);
 					// setTimeout(function() {
 					// 	whiteMapClass.mouseOverEvent(e);
 					// }, 20);
@@ -738,7 +737,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
     }
 
     // poly.setMap(mapInstance);
-    allMarkersArray_wmap.push(poly);
+    // allMarkersArray_wmap.push(poly);
 
     allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
 

@@ -638,7 +638,7 @@ function GisPerformance() {
                                     markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
                                     markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
                                     allMarkersObject_wmap['sub_station']['ss_'+ss_marker_data.name] = ss_marker;
-                                    allMarkersArray_wmap.push(ss_marker);
+                                    // allMarkersArray_wmap.push(ss_marker);
                                     /*Push SS marker to pollableDevices array*/
                                     pollableDevices.push(ss_marker)
 
@@ -876,7 +876,7 @@ function GisPerformance() {
                                     allMarkersObject_wmap['path']['line_'+ss_marker_data.name] = ss_link_line;
                                     markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
                                     markersMasterObj['LinesName'][String(bs_object.name)+ ss_marker_data.name]= ss_link_line;
-                                    allMarkersArray_wmap.push(ss_link_line);
+                                    // allMarkersArray_wmap.push(ss_link_line);
 
                                     // This is to show "X"(Cross) on line if pl is 100%
                                     if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {

@@ -112,20 +112,23 @@ function WhiteMapClass() {
 		}
 
 		this.spiderifyMarker = function(feature) {
+			
 			if(markerSpiderfied) {
-				if(markerSpiderfied === feature) {
+				if(markerSpiderfied == feature) {
 					return true;
 				}
 				global_this.unSpiderifyBsMarker();
 
 			}
-			var bsData = wm_obj.data[feature.bs_name];
-			var bsSectors = bsDevicesObj[bsData.name];
+
+			var bsData = wm_obj.data[feature.bs_name],
+				bsSectors = bsDevicesObj[bsData.name];
+
 			// var bsSectorLength = bsData.data.param.sector.length;
 			if(bsSectors && bsSectors.length) {
 				var currentAngle = 0;
 				for(var i=0; i<= bsSectors.length; i++) {
-					if(i=== bsSectors.length) {
+					if(i == bsSectors.length) {
 						var bsMarker = allMarkersObject_wmap['base_station']['bs_'+bsData.name];						
 						var xyDirection= "";
 						if(ccpl_map.getZoom() < 9) {
@@ -158,33 +161,37 @@ function WhiteMapClass() {
 						if(current_sector) {
 							var sectorMarker = current_sector.sector_configured_on ? allMarkersObject_wmap['sector_device']['sector_'+current_sector.sector_configured_on] : "",
 								xyDirection = "";
-
-							if(ccpl_map.getZoom() < 9) {
-								xyDirection = getAtXYDirection(currentAngle, 7, feature.ptLon, feature.ptLat);
-							} else {
-								if(ccpl_map.getZoom() >= 12) {
-									if(ccpl_map.getZoom() >= 14) {
-										xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);		
-									} else {
-										xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);		
-									}
+							// If sector marker then proceed
+							if(sectorMarker) {
+								if(ccpl_map.getZoom() < 9) {
+									xyDirection = getAtXYDirection(currentAngle, 7, feature.ptLon, feature.ptLat);
 								} else {
-									xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
-								}
-								
-							}					
+									if(ccpl_map.getZoom() >= 12) {
+										if(ccpl_map.getZoom() >= 14) {
+											xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);		
+										} else {
+											xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);		
+										}
+									} else {
+										xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
+									}
+									
+								}					
 
-							var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat),
-								start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat),
-								end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
+								var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat),
+									start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat),
+									end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
 
-							ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
-							ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
-							sectorMarker.move(finalLatLong);
-							sectorMarker.style.externalGraphic = sectorMarker.pollingIcon ? sectorMarker.pollingIcon : sectorMarker.oldIcon;
+								ccpl_map.getLayersByName("Devices")[0].addFeatures(
+									[new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]
+								);
+								ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
+								sectorMarker.move(finalLatLong);
+								sectorMarker.style.externalGraphic = sectorMarker.pollingIcon ? sectorMarker.pollingIcon : sectorMarker.oldIcon;
+							}
 						}
 					}
-					currentAngle= currentAngle+(360/(bsSectors.length+1));
+					currentAngle = currentAngle+(360/(bsSectors.length+1));
 				}
 				ccpl_map.getLayersByName("Devices")[0].redraw();
 			} else {
@@ -548,7 +555,7 @@ function WhiteMapClass() {
 			for(var k=0;k<allSS.length;k++) {
 				
 				if(allSS[k].ptLon && allSS[k].ptLat && polygon) {
-					if (displayBounds(polygon, allSS[k].ptLon, allSS[k].ptLat) === 'in') {
+					if (displayBounds(polygon, allSS[k].ptLon, allSS[k].ptLat) == 'in') {
 						var point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
 						if(point_tech) {
 							if(point_tech == $.trim(selected_polling_technology.toLowerCase())) {
@@ -805,9 +812,9 @@ function WhiteMapClass() {
 					sector_ip = "";
 
 				for(var x=0;x<polygonSelectedDevices.length;x++) {
-					if(polygonSelectedDevices[x].device_name === polled_devices_names[i]) {
+					if(polygonSelectedDevices[x].device_name == polled_devices_names[i]) {
 						marker_name = polygonSelectedDevices[x].name;
-						if(polygonSelectedDevices[x].pointType === 'sub_station') {
+						if(polygonSelectedDevices[x].pointType == 'sub_station') {
 							sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
 						} else {
 							sector_ip = polygonSelectedDevices[x].sectorName ? polygonSelectedDevices[x].sectorName : "";
@@ -868,9 +875,9 @@ function WhiteMapClass() {
 					sector_ip = "";
 
 				for(var x=0;x<polygonSelectedDevices.length;x++) {
-					if(polygonSelectedDevices[x].device_name === polled_devices_names[i]) {
+					if(polygonSelectedDevices[x].device_name == polled_devices_names[i]) {
 						marker_name = polygonSelectedDevices[x].name;
-						if(polygonSelectedDevices[x].pointType === 'sub_station') {
+						if(polygonSelectedDevices[x].pointType == 'sub_station') {
 							sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
 						} else {
 							sector_ip = polygonSelectedDevices[x].sectorName ? polygonSelectedDevices[x].sectorName : "";
@@ -968,7 +975,7 @@ function WhiteMapClass() {
 				isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
 
 			var states_within_polygon = state_lat_lon_db.where(function(obj) {
-				return displayBounds(polygon, obj.lon, obj.lat) === 'in';
+				return displayBounds(polygon, obj.lon, obj.lat) == 'in';
 				// return google.maps.geometry.poly.containsLocation(new google.maps.LatLng(obj.lat,obj.lon),polygon);
 			});
 
@@ -1055,8 +1062,8 @@ function WhiteMapClass() {
 							if(filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor') {
 								var basic_filter_technology = filterObj['technology'] != 'Select Technology' ? filterObj['technology'] : false,
 									basic_filter_vendor = filterObj['vendor'] != 'Select Vendor' ? filterObj['vendor'] : false,
-									basic_filter_condition1 = basic_filter_technology ? basic_filter_technology === sector_technology : true,
-									basic_filter_condition2 = basic_filter_vendor ? basic_filter_vendor === sector_vendor : true;
+									basic_filter_condition1 = basic_filter_technology ? basic_filter_technology == sector_technology : true,
+									basic_filter_condition2 = basic_filter_vendor ? basic_filter_vendor == sector_vendor : true;
 									
 								if(!basic_filter_condition1 || !basic_filter_condition2) {
 									delete_index.push(y);
@@ -1104,7 +1111,7 @@ function WhiteMapClass() {
 				selected_bs_ids = [],
 				selected_bs_markers = [];
 			for(key in bs_obj) {
-            	if(displayBounds(polygon, bs_obj[key].ptLon, bs_obj[key].ptLat) === 'in') {
+            	if(displayBounds(polygon, bs_obj[key].ptLon, bs_obj[key].ptLat) == 'in') {
             		if(selected_bs_ids.indexOf(bs_obj[key].filter_data.bs_id) == -1) {
             			selected_bs_ids.push(bs_obj[key].filter_data.bs_id);
             			selected_bs_markers.push(bs_obj[key]);
@@ -1217,22 +1224,28 @@ function WhiteMapClass() {
 		};
 
 		/*
-		 * This function toggles all Station Marker
-		s size based on the Value selected in the dropdown.
+		 * This function toggles all Station Markers size based on the Value selected in the dropdown.
+		 * @method updateMarkersSize
 		 */
 		this.updateMarkersSize = function(iconSize) {
 			global_this.unSpiderifyBsMarker();
-			var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
+			var largeur = 32/1.4,
+				hauteur = 37/1.4,
+				largeur_bs = 20/1.4,
+				hauteur_bs = 40/1.4,
+				divideBy;
+
 			var anchorX, i, markerImage, markerImage2, icon;
-			if(iconSize=== 'small') {
-				divideBy= 1.4;
-				anchorX= 0.4;
-			} else if(iconSize=== 'medium') {
-				divideBy= 1;
-				anchorX= 0;
+
+			if(iconSize == 'small') {
+				divideBy = 1.4;
+				anchorX = 0.4;
+			} else if(iconSize== 'medium') {
+				divideBy = 1;
+				anchorX = 0;
 			} else {
-				divideBy= 0.8;
-				anchorX= -0.2;
+				divideBy = 0.8;
+				anchorX = -0.2;
 			}
 
 			//Loop through the sector markers
@@ -1246,10 +1259,6 @@ function WhiteMapClass() {
 
 					marker.style.graphicWidth = newGraphicWidth;
 					marker.style.graphicHeight = newGraphicHeight;
-					// marker.style.graphicXOffset = newGraphicXOffset;
-					// marker.style.graphicYOffset = newGraphicYOffset;
-					
-					// 
 					ccpl_map.getLayersByName("Devices")[0].drawFeature(marker);
 				})(sector_MarkersArray[i]);
 			}
@@ -1260,24 +1269,20 @@ function WhiteMapClass() {
 
 
 			// Loop through the Master Markers
-			for(var i=0; i< masterMarkersObj.length; i++ ) {
+			for(var i=0; i< bs_ss_markers.length; i++ ) {
 				(function updateMasterMarker(marker) {
-
 					var newGraphicHeight = 0, newGraphicWidth = 0, newGraphicXOffset = 0, newGraphicYOffset = 0;
-					if(marker.pointType=== "base_station") {
-						newGraphicHeight= Math.ceil(hauteur_bs/divideBy)+5;
-						newGraphicWidth = Math.ceil(largeur_bs/divideBy)-5;
+					if(marker.pointType == "base_station") {
+						newGraphicHeight = Math.ceil(hauteur_bs/divideBy);
+						newGraphicWidth = Math.ceil(largeur_bs/divideBy);
 						newGraphicXOffset = Math.ceil(16-(16*anchorX));
 						newGraphicYOffset = Math.ceil(hauteur_bs/divideBy);
 
 						marker.style.graphicWidth = newGraphicWidth;
 						marker.style.graphicHeight = newGraphicHeight;
-						// marker.style.graphicXOffset = newGraphicXOffset;
-						// marker.style.graphicYOffset = newGraphicYOffset;
-						
-						// 
 						ccpl_map.getLayersByName('Markers')[0].drawFeature(marker);
-					} else if (marker.pointType === "sub_station") {
+
+					} else if (marker.pointType == "sub_station") {
 						newGraphicWidth = Math.ceil(largeur/divideBy);
 						newGraphicHeight = Math.ceil(hauteur/divideBy);
 						newGraphicXOffset = Math.ceil(16-(16*anchorX));
@@ -1285,13 +1290,9 @@ function WhiteMapClass() {
 
 						marker.style.graphicWidth = newGraphicWidth;
 						marker.style.graphicHeight = newGraphicHeight;
-						// marker.style.graphicXOffset = newGraphicXOffset;
-						// marker.style.graphicYOffset = newGraphicYOffset;
-						
-						// 
 						ccpl_map.getLayersByName('Markers')[0].drawFeature(marker);
 					}
-				})(masterMarkersObj[i]);
+				})(bs_ss_markers[i]);
 			}
 			//End of Loop through the Master Markers
 			//
@@ -1425,7 +1426,7 @@ function WhiteMapClass() {
 		    	var bh_marker = allMarkersObject_wmap['backhaul'][key],
 		      		isMarkerExist = global_this.checkIfPointLiesInside({lat: bh_marker.ptLat, lon: bh_marker.ptLon});
 	      		if(isMarkerExist) {
-			    	if(bh_marker.isActive && +(bh_marker.isActive) === 1) {
+			    	if(bh_marker.isActive && +(bh_marker.isActive) == 1) {
 			    		// If Backhaul Marker not shown then show the Backhaul Marker
 		    			showOpenLayerFeature(allMarkersObject_wmap['backhaul'][key]);
 			    	} else {
@@ -1462,7 +1463,7 @@ function WhiteMapClass() {
 			    	isMarkerExist= global_this.checkIfPointLiesInside({lat: ss_marker.ptLat, lon: ss_marker.ptLon});
 			    		// mapInstance.getBounds().contains(ss_marker.getPosition());
 		    		if(isMarkerExist) {
-				    	if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
+				    	if(ss_marker.isActive && +(ss_marker.isActive) == 1) {
 				    		// If SS Marker not shown then show the SS Marker
 				    		showOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
 				    	} else {
@@ -1496,7 +1497,7 @@ function WhiteMapClass() {
 		      		isMarkerExist = "";
 		      	isMarkerExist = global_this.checkIfPointLiesInside({lat: bs_marker.ptLat, lon: bs_marker.ptLon});
 	      		if(isMarkerExist) {
-			    	if(bs_marker.isActive && +(bs_marker.isActive) === 1) {
+			    	if(bs_marker.isActive && +(bs_marker.isActive) == 1) {
 			    		// If BS Marker not shown then show the BS Marker
 		      			showOpenLayerFeature(allMarkersObject_wmap['base_station'][key]);
 			    		// plotted_bs_ids.push(allMarkersObject_wmap['base_station'][key].filter_data.bs_id);
@@ -1533,7 +1534,7 @@ function WhiteMapClass() {
 		      	isMarkerExist = global_this.checkIfPointLiesInside({lat: sector_marker.ptLat, lon: sector_marker.ptLon});
 	      		if(isMarkerExist) {
 	      			var sector_layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
-			    	if(sector_marker.isActive && +(sector_marker.isActive) === 1) {
+			    	if(sector_marker.isActive && +(sector_marker.isActive) == 1) {
 			    		// If Sector Marker not shown then show the Sector Marker
 		      			showOpenLayerFeature(allMarkersObject_wmap['sector_device'][key]);
 			    	} else {
@@ -1566,7 +1567,7 @@ function WhiteMapClass() {
 		    	isMarkerExist = global_this.checkIfPointLiesInside({lat: sector_polygon.ptLat, lon: sector_polygon.ptLon});
 	    		if(isMarkerExist) {
 	    			var sector_polygon_layer = sector_polygon.layer ? sector_polygon.layer : sector_polygon.layerReference;
-			    	if(sector_polygon.isActive && +(sector_polygon.isActive) === 1) {
+			    	if(sector_polygon.isActive && +(sector_polygon.isActive) == 1) {
 			    		// If Polygon not shown then show the polygon
 		      			showOpenLayerFeature(allMarkersObject_wmap['sector_polygon'][key]);
 			    	} else {
@@ -1750,7 +1751,7 @@ function WhiteMapClass() {
 	                            state_click_event = "onClick='gmap_self.state_label_clicked("+state_param+")'";
 
 								var new_lat_lon_obj = state_lat_lon_db.where(function(obj) {
-									return obj.name === current_state_name;
+									return obj.name == current_state_name;
 								});
 								if(state_wise_device_counters[current_state_name]) {
 									state_wise_device_counters[current_state_name] += 1;
@@ -1783,7 +1784,7 @@ function WhiteMapClass() {
 					}
 				}
 				/*Insert devices object to loki db variables*/
-				if(isApiResponse === 1) {
+				if(isApiResponse == 1) {
 					all_devices_loki_db.insert(dataset[i]);
 				}
 
@@ -2041,13 +2042,14 @@ function WhiteMapClass() {
 						if(!bsDevicesObj[bs_ss_devices[i].name]) {
 							bsDevicesObj[bs_ss_devices[i].name]= [];
 						}
+
 						bsDevicesObj[bs_ss_devices[i].name].push(sector_Marker);
 
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([sector_Marker]);
 
 						if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 							sector_MarkersArray.push(sector_Marker);
-							allMarkersArray_wmap.push(sector_Marker);
+							// allMarkersArray_wmap.push(sector_Marker);
 
 							/*Push Sector marker to pollableDevices array*/
 							pollableDevices.push(sector_Marker);
@@ -2163,7 +2165,7 @@ function WhiteMapClass() {
 
 				    	allMarkersObject_wmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
 
-				    	allMarkersArray_wmap.push(ss_marker);
+				    	// allMarkersArray_wmap.push(ss_marker);
 
 					    /*Push SS marker to pollableDevices array*/
 						pollableDevices.push(ss_marker)
@@ -2225,7 +2227,7 @@ function WhiteMapClass() {
 					    	markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
 							markersMasterObj['LinesName'][String(bs_ss_devices[i].name)+ ss_marker_obj.name]= ss_link_line;
 
-					    	allMarkersArray_wmap.push(ss_link_line);
+					    	// allMarkersArray_wmap.push(ss_link_line);
 		    			}
 					}
 				}
@@ -2235,7 +2237,7 @@ function WhiteMapClass() {
 
 		    	allMarkersObject_wmap['base_station']['bs_'+bs_ss_devices[i].name] = bs_marker;
 
-		    	allMarkersArray_wmap.push(bs_marker);
+		    	// allMarkersArray_wmap.push(bs_marker);
 
 		    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 				markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
@@ -2304,7 +2306,7 @@ function WhiteMapClass() {
 					if(result.success == 1) {
 						
 						//First Time, find how many times Ajax Request is to be sent.
-						if (i === 1) {
+						if (i == 1) {
 							total_count = result.data.meta.total_count;
 							device_count = result.data.meta.device_count;
 							limit = result.data.meta.limit;
@@ -2324,7 +2326,7 @@ function WhiteMapClass() {
 						if (i <= loop_count && result.success) {
 
 							//if all calls are completed
-							if (i === loop_count) {
+							if (i == loop_count) {
 
 								isCallCompleted = 1;
 								//hide Loading

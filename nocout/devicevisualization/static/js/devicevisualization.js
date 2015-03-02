@@ -110,10 +110,6 @@ city_options = []
 /*This event trigger when state dropdown value is changes*/
 $("#state").change(function(e) {
 
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
 
     var state_id = $(this).val(),
@@ -128,7 +124,9 @@ $("#state").change(function(e) {
 
     var city_option = "<option value=''> Select City</option>";
     for(var i=0;i<city_array.length;i++) {
-        city_option += "<option value='"+ i+1 +"'> "+city_array[i]+"</option>";
+        if(city_array[i]) {
+            city_option += "<option value='"+ i+1 +"'> "+city_array[i]+"</option>";
+        }
     }
 
     $("#city").html(city_option);
@@ -138,20 +136,12 @@ $("#state").change(function(e) {
 
 /*This event trigger when city dropdown value is changes*/
 $("#city").change(function(e) {
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
 /*This event trigger when vendor dropdown value is changes*/
 $("#vendor").change(function(e) {
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -173,7 +163,9 @@ $("#technology").change(function(e) {
     var vendor_option = "<option value=''> Select Vendor</option>";
     if(vendor_array) {
         for(var i=0;i<vendor_array.length;i++) {
-            vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+            if(vendor_array[i]) {
+                vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+            }
         }
     }
 
@@ -1470,7 +1462,7 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
     if(ckt_id) {
 
         $.ajax({
-            url: base_url+'/network_maps/l2_report/'+ckt_id+'/',
+            url: base_url+'/network_maps/l2_report/'+encodeURIComponent(ckt_id)+'/',
             type : "GET",
             success : function(response) {
 

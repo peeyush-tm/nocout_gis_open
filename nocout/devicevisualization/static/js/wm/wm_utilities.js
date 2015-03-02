@@ -586,6 +586,66 @@ function hideOpenLayerFeature(feature) {
     }
 }
 
+
+/**
+ * This function removes all items from white map
+ * @method removeAllOpenLayerFeature
+ */
+function removeAllOpenLayerFeature() {
+    
+    // Hide perf info label
+    for (var x = 0; x < labelsArray.length; x++) {
+        ccpl_map.removePopup(labelsArray[x]);
+    }
+
+    // Hide tooltip info label
+    for (key in tooltipInfoLabel) {
+        ccpl_map.removePopup(tooltipInfoLabel[key]);
+    }
+
+    // Reset labels array 
+    labelsArray = [];
+    tooltipInfoLabel = {};
+
+
+    /*Clear master marker cluster objects*/
+    // Deactivate Marker Clustering Strategy
+    ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+
+    ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
+    ccpl_map.getLayersByName('Markers')[0].redraw();
+
+    ccpl_map.getLayersByName('Lines')[0].destroyFeatures(ccpl_map.getLayersByName('Lines')[0].features);
+    ccpl_map.getLayersByName('Lines')[0].redraw();
+
+    ccpl_map.getLayersByName('Sectors')[0].destroyFeatures(ccpl_map.getLayersByName('Sectors')[0].features);
+    ccpl_map.getLayersByName('Sectors')[0].redraw();
+
+    ccpl_map.getLayersByName('Devices')[0].destroyFeatures(ccpl_map.getLayersByName('Devices')[0].features);
+    ccpl_map.getLayersByName('Devices')[0].redraw();
+
+    // Reset Variables
+    bs_ss_markers= [];
+    main_devices_data_wmap = [];
+    plottedBsIds = [];
+    pollableDevices = [];
+    deviceIDArray = [];
+    sectorMarkerConfiguredOn = [];
+    sectorMarkersMasterObj = {};
+    sector_MarkersArray = [];
+    currentlyPlottedDevices = [];
+    allMarkersObject_wmap= {
+        'base_station': {},
+        'path': {},
+        'sub_station': {},
+        'sector_device': {},
+        'sector_polygon': {},
+        'backhaul': {}
+    };
+}
+
+
+
 /**
  * This function checks if given feature lies in bound of polygon if polygon is provided else, in map bounds.
  * @param  {Object} point   Point which is to be check. It contains Lat Lng keys.
