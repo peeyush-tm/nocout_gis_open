@@ -105,23 +105,23 @@ def calculate_status_dashboards(technology):
         "latency-{0}".format(technology): {
             'model': NetworkStatus,
             'data_source': 'rta',
-            'service': 'ping',
+            'service_name': 'ping',
             'severity': ['warning', 'critical'],
-            'current_value': 'gt=0'
+            'current_value': ' current_value > 0 '
         },
         "packetloss-{0}".format(technology): {
             'model': NetworkStatus,
             'data_source': 'rta',
-            'service': 'ping',
+            'service_name': 'ping',
             'severity': ['warning', 'critical', 'down'],
-            'current_value': 'lt=100'
+            'current_value': ' current_value < 100 '
         },
         "down-{0}".format(technology): {
             'model': NetworkStatus,
             'data_source': 'pl',
-            'service': 'ping',
+            'service_name': 'ping',
             'severity': ['critical', 'down'],
-            'current_value': 'gte=100'
+            'current_value': ' current_value >= 100 '
         }
     }
 
@@ -467,9 +467,7 @@ def prepare_network_alert(organization, dashboard_name, processed_for, dashboard
         service_name = dashboard_config[dashboard_name]['service_name']
         data_source = dashboard_config[dashboard_name]['data_source']
         severity = dashboard_config[dashboard_name]['severity']
-        current_value = dashboard_config[dashboard_name]['current_value'].split("=")
-        condition = current_value[0]
-        value = current_value[1]
+        current_value = dashboard_config[dashboard_name]['current_value']
 
         # "down-{0}".format(technology): {
         #     'model': NetworkStatus,
@@ -481,29 +479,16 @@ def prepare_network_alert(organization, dashboard_name, processed_for, dashboard
         # creating a list dictionary using machine name and there corresponing device list.
 
         for machine_name, device_list in machine_dict.items():
-            common_query = model.objects.order_by().filter(
+            status_count += model.objects.order_by(
+
+            ).extra(
+                where=[current_value]
+            ).filter(
                 device_name__in=device_list,
                 service_name=service_name,
                 data_source=data_source,
-                severity__in=severity)
-            if condition == 'gte':
-                status_count += common_query.filter(
-                    current_value__gte=value
-                ).using(machine_name).count()
-            elif condition == 'lte':
-                status_count += common_query.filter(
-                    current_value__lte=value
-                ).using(machine_name).count()
-            elif condition == 'gt':
-                status_count += common_query.filter(
-                    current_value__gt=value
-                ).using(machine_name).count()
-            elif condition == 'lt':
-                status_count += common_query.filter(
-                    current_value__lt=value
-                ).using(machine_name).count()
-            else:
-                continue
+                severity__in=severity
+            ).using(machine_name).count()
 
         g_jobs.append(
             calculate_timely_network_alert.s(
