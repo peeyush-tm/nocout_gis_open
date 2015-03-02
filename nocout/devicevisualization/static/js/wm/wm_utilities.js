@@ -72,7 +72,6 @@ function displayBounds(feature, lon, lat){
     var lonlat = new OpenLayers.LonLat(lon, lat);
 
     if ((lonlat.lon < bounds.left) || (lonlat.lat > bounds.top) || (lonlat.lat < bounds.bottom) ||(lonlat.lon > bounds.right) ) {
-        // console.log('out');
         return 'out';
     }
     return 'in';
@@ -424,7 +423,7 @@ function createSectorData(lat, lng, radius, azimuth, beamWidth, orientation, cal
         var len = Math.floor(PGpoints.length / 3);
         triangle.push(PGpoints[0]);
         triangle.push(PGpoints[(len * 2) - 1]);
-        triangle.push(PGpoints[(len * 3) - 1]);
+        triangle.push(PGpoints[PGpoints.length - 1]);
         /*Assign the triangle object array to sectorDataArray for plotting the polygon*/
         sectorDataArray = triangle;
     } else {
@@ -565,7 +564,7 @@ function showOpenLayerFeature(feature) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = '';
         if(featureLayer) {
-            featureLayer.redraw();
+            // featureLayer.redraw();
         }
     }
 }
@@ -580,11 +579,71 @@ function hideOpenLayerFeature(feature) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = 'none';
         if(featureLayer) {
-            featureLayer.redraw();
+            // featureLayer.redraw();
             
         }
     }
 }
+
+
+/**
+ * This function removes all items from white map
+ * @method removeAllOpenLayerFeature
+ */
+function removeAllOpenLayerFeature() {
+
+    // Hide perf info label
+    for (var x = 0; x < labelsArray.length; x++) {
+        ccpl_map.removePopup(labelsArray[x]);
+    }
+
+    // Hide tooltip info label
+    for (key in tooltipInfoLabel) {
+        ccpl_map.removePopup(tooltipInfoLabel[key]);
+    }
+
+    // Reset labels array 
+    labelsArray = [];
+    tooltipInfoLabel = {};
+
+
+    /*Clear master marker cluster objects*/
+    // Deactivate Marker Clustering Strategy
+    ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+
+    ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
+    ccpl_map.getLayersByName('Markers')[0].redraw();
+
+    ccpl_map.getLayersByName('Lines')[0].destroyFeatures(ccpl_map.getLayersByName('Lines')[0].features);
+    ccpl_map.getLayersByName('Lines')[0].redraw();
+
+    ccpl_map.getLayersByName('Sectors')[0].destroyFeatures(ccpl_map.getLayersByName('Sectors')[0].features);
+    ccpl_map.getLayersByName('Sectors')[0].redraw();
+
+    ccpl_map.getLayersByName('Devices')[0].destroyFeatures(ccpl_map.getLayersByName('Devices')[0].features);
+    ccpl_map.getLayersByName('Devices')[0].redraw();
+
+    // Reset Variables
+    bs_ss_markers= [];
+    main_devices_data_wmap = [];
+    plottedBsIds = [];
+    pollableDevices = [];
+    deviceIDArray = [];
+    sectorMarkerConfiguredOn = [];
+    sectorMarkersMasterObj = {};
+    sector_MarkersArray = [];
+    currentlyPlottedDevices = [];
+    allMarkersObject_wmap= {
+        'base_station': {},
+        'path': {},
+        'sub_station': {},
+        'sector_device': {},
+        'sector_polygon': {},
+        'backhaul': {}
+    };
+}
+
+
 
 /**
  * This function checks if given feature lies in bound of polygon if polygon is provided else, in map bounds.

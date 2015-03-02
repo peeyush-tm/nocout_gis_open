@@ -110,10 +110,6 @@ city_options = []
 /*This event trigger when state dropdown value is changes*/
 $("#state").change(function(e) {
 
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
 
     var state_id = $(this).val(),
@@ -128,7 +124,9 @@ $("#state").change(function(e) {
 
     var city_option = "<option value=''> Select City</option>";
     for(var i=0;i<city_array.length;i++) {
-        city_option += "<option value='"+ i+1 +"'> "+city_array[i]+"</option>";
+        if(city_array[i]) {
+            city_option += "<option value='"+ i+1 +"'> "+city_array[i]+"</option>";
+        }
     }
 
     $("#city").html(city_option);
@@ -138,20 +136,12 @@ $("#state").change(function(e) {
 
 /*This event trigger when city dropdown value is changes*/
 $("#city").change(function(e) {
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
 /*This event trigger when vendor dropdown value is changes*/
 $("#vendor").change(function(e) {
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -173,7 +163,9 @@ $("#technology").change(function(e) {
     var vendor_option = "<option value=''> Select Vendor</option>";
     if(vendor_array) {
         for(var i=0;i<vendor_array.length;i++) {
-            vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+            if(vendor_array[i]) {
+                vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+            }
         }
     }
 
@@ -292,6 +284,17 @@ $("#resetFilters").click(function(e) {
     if(lastSearchedPt && lastSearchedPt.map) {
         lastSearchedPt.setMap(null);
         lastSearchedPt = {};
+    }
+
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        try {
+            var lat_lon_search_layer = ccpl_map.getLayersByName('SearchMarkers');
+            if(lat_lon_search_layer && lat_lon_search_layer.length > 0) {
+                lat_lon_search_layer[0].destroy();
+            }
+        } catch(e) {
+            // pass
+        }
     }
 
     if($("#google_loc_search").val()) {
@@ -858,14 +861,14 @@ function isLatLon(e) {
                 $("#lat_lon_search").val("");
             } else {
                 
-                var lat = +(entered_txt.split(",")[0]),
-                    lng = +(entered_txt.split(",")[1]),
-                    lat_check = (lat >= -90 && lat < 90),
-                    lon_check = (lat >= -180 && lat < 180),
+                var lat = $.trim(entered_txt.split(",")[0]),
+                    lng = $.trim(entered_txt.split(",")[1]),
+                    lat_check = (+(lat) >= -90 && +(lat) < 90),
+                    lon_check = (+(lng) >= -180 && +(lng) < 180),
                     dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['':]?\s?(?:(\d+(?:\.\d+)?)["?]?)?)?\s?([NSEW])?/i;
                     dms_regex = new RegExp(dms_pattern);
                 
-                if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
+                if((lat_check && lon_check) || (dms_regex.exec(lat) && dms_regex.exec(lng))) {
                     if((lat_check && lon_check)) {
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(entered_txt);
@@ -875,8 +878,8 @@ function isLatLon(e) {
                             networkMapInstance.pointToLatLon(entered_txt);
                         }
                     } else {
-                        var converted_lat = dmsToDegree(dms_regex.exec(entered_txt.split(",")[0]));
-                        var converted_lng = dmsToDegree(dms_regex.exec(entered_txt.split(",")[1]));
+                        var converted_lat = dmsToDegree(dms_regex.exec(lat));
+                        var converted_lng = dmsToDegree(dms_regex.exec(lng));
                         
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(String(converted_lat)+","+String(converted_lng));
@@ -1470,7 +1473,7 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
     if(ckt_id) {
 
         $.ajax({
-            url: base_url+'/network_maps/l2_report/'+ckt_id+'/',
+            url: base_url+'/network_maps/l2_report/'+encodeURIComponent(ckt_id)+'/',
             type : "GET",
             success : function(response) {
 

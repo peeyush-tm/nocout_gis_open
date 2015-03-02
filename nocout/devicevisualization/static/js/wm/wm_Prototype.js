@@ -45,8 +45,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	mapClick.activate();
 
 	//Map moveend event
-	ccpl_map.events.register("moveend", ccpl_map, function(e){
-		that.mapIdleCondition();
+	ccpl_map.events.register("moveend", ccpl_map, function(e) {
+		that.mapDragEndCondition();
 		return;
 	});
 
@@ -292,7 +292,10 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 
 		//Create a Vector Layer for Markers with styleMap and strategy
-		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {styleMap  : styleMap, strategies: [strategy]});
+		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {
+			styleMap   : styleMap,
+			strategies : [strategy]
+		});
 
 		//Add layer to the map
 		ccpl_map.addLayer(layers.markersLayer);
@@ -311,7 +314,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			renderIndent: "temporary",
 			eventListeners: {
 				onfeatureselected: function(e) {
-					console.log(e);
 					// setTimeout(function() {
 					// 	whiteMapClass.mouseOverEvent(e);
 					// }, 20);
@@ -730,7 +732,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
     }
 
     // poly.setMap(mapInstance);
-    allMarkersArray_wmap.push(poly);
+    // allMarkersArray_wmap.push(poly);
 
     allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
 
