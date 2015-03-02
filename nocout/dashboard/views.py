@@ -1259,6 +1259,92 @@ class DashboardDeviceStatus(View):
 # *************************Dashboard Monthly Data
 
 
+def view_severity_status_monthly(dashboard_name, organizations):
+    """
+
+    :param dashboard_name:
+    :param organizations:
+    :return:
+    """
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+
+    chart_data = list()
+
+    dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(
+        select={'processed_month': "date(processed_for)"}
+    ).values(
+        'processed_month',
+        'dashboard_name'
+    ).filter(
+        processed_for__gte=month_before,
+        dashboard_name=dashboard_name,
+        organization__in=organizations
+    ).annotate(
+        Normal=Sum('ok'),
+        Needs_Augmentation=Sum('warning'),
+        Stop_Provisioning=Sum('critical'),
+        Unknown=Sum('unknown')
+    ).order_by('processed_month')
+
+    item_color = ['rgb(0, 255, 0)', 'rgb(255, 153, 0)', 'rgb(255, 0, 0)', '#d3d3d3']
+
+    trend_items = [
+        {
+            "id": "Normal",
+            "title": "Normal",
+            "color": item_color[0]
+        },
+        {
+            "id": "Needs_Augmentation",
+            "title": "Needs Augmentation",
+            "color": item_color[1]
+        },
+        {
+            "id": "Stop_Provisioning",
+            "title": "Stop Provisioning",
+            "color": item_color[2]
+        },
+        {
+            "id": "Unknown",
+            "title": "Unknown",
+            "color": item_color[3]
+        }
+    ]
+
+    for item in trend_items:
+
+        data_dict = {
+            "type": "column",
+            "valuesuffix": " ",
+            "name": item['title'].title(),
+            "valuetext": " ",
+            "color": item['color'],
+            "data": list(),
+        }
+
+        for var in dashboard_status_dict:
+
+            processed_date = var['processed_month']  # this is date object of date time
+            js_time = float(format(datetime.datetime(processed_date.year,
+                                                     processed_date.month,
+                                                     processed_date.day,
+                                                     0,
+                                                     0), 'U'))
+            # Preparation of final Dict for all days in One month
+            data_dict['data'].append({
+                "color": item['color'],
+                "y": var[item['title']],
+                "name": item['title'],
+                "x": js_time * 1000,
+                # Multiply by 1000 to return correct GMT+05:30 timestamp
+            })
+            # Increment Date by One
+            # month_before += relativedelta.relativedelta(days=1)
+        chart_data.append(data_dict)
+
+    return chart_data
+
+
 def get_severity_status_dict_monthly(dashboard_name, devices_list):
     '''
     '''
@@ -1269,7 +1355,8 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
     # Exceptional handling case
     try:
         has_data = True
-        # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+        # Query Set with filter, annotate(for summation of data),
+        # extra parameter to make a new column of only date from datetime column for using group by of only date
         dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(
             select={'processed_month': "date(processed_for)"}).values('processed_month').filter(
             processed_for__gte=month_before,
@@ -1518,6 +1605,7 @@ def view_range_status_monthly(dashboard_name, organizations):
 
     return dashboard_status_dict
 
+
 def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_list):
     '''
     '''
@@ -1570,20 +1658,20 @@ class MonthlyTrendBackhaulMixin(object):
         })
 
         if technology:
-            # Get Backhauls Devices of User's Organizations.
-            user_backhaul = organization_backhaul_devices(organization, technology=technology)
-            # Get Device name list of User's Backhaul.
-            backhaul_devices_list = user_backhaul.values_list('device_name', flat=True)
+
             # Creating Dashboard Name
             dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
             # Get the status of the dashboard.
-            dashboard_status_dict = get_severity_status_dict_monthly(dashboard_name, backhaul_devices_list)
-            chart_series = []
+            dashboard_status_dict = view_severity_status_monthly(dashboard_name, organizations=organization)
+
             chart_series = dashboard_status_dict
 
             response = get_highchart_response(
-                dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
-                            'name': '%s Backhaul Capacity' % tech_name.upper(), 'valuetext': ''})
+                dictionary={'type': 'column',
+                            'valuesuffix': '',
+                            'chart_series': chart_series,
+                            'name': '%s Backhaul Capacity' % tech_name.upper(),
+                            'valuetext': ''})
 
         return HttpResponse(response)
 
@@ -1615,22 +1703,18 @@ class MonthlyTrendSectorMixin(object):
     def get(self, request):
         tech_name = self.tech_name
         organization = logged_in_user_organizations(self)
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-
-        user_sector = organization_sectors(organization,
-                                           technology=technology)  #Sector for that user corresponding to organization and technology
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
-                                                    is_added_to_nms=1)
-        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Function call for calculating no. of hosts in different states on different days
-        processed_key_dict = get_severity_status_dict_monthly(dashboard_name, sector_devices_list)
+        processed_key_dict = view_severity_status_monthly(dashboard_name=dashboard_name,
+                                                          organizations=organization)
 
         chart_series = []
         chart_series = processed_key_dict
 
-        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
+        response = get_highchart_response(dictionary={'type': 'column',
+                                                      'valuesuffix': '',
+                                                      'chart_series': chart_series,
                                                       'name': '%s Sector Capacity' % tech_name.upper(),
                                                       'valuetext': ''})
 
