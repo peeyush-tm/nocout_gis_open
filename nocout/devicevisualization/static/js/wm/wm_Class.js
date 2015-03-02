@@ -10,7 +10,8 @@ var state_city_obj= {},
 	tech_vendor_obj= {}, 
 	all_vendor_array= [], 
 	sectorMarkerConfiguredOn= [], 
-	sectorMarkersMasterObj = {};
+	sectorMarkersMasterObj = {},
+	lat_lon_search_icon = "/static/img/icons/search_icon.png";
 
 var bs_loki_db = [],
     ss_loki_db = [],
@@ -535,6 +536,11 @@ function WhiteMapClass() {
 			total_polled_occurence = 0;
 			nav_click_counter = 0;
 			polled_device_count = {};
+
+			if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
+				/*Restart performance calling*/
+		    	gisPerformanceClass.restart();
+	    	}
 		}
 
 		var polygon = "";
@@ -550,17 +556,29 @@ function WhiteMapClass() {
 			var allSS = pollableDevices;
 			allSSIds = [];
 
-			var selected_polling_technology = $("#polling_tech option:selected").text();
+			var selected_polling_technology = $("#polling_tech option:selected").text(),
+				polling_technology_condition = $.trim(selected_polling_technology.toLowerCase());
 
 			for(var k=0;k<allSS.length;k++) {
 				
 				if(allSS[k].ptLon && allSS[k].ptLat && polygon) {
 					if (displayBounds(polygon, allSS[k].ptLon, allSS[k].ptLat) == 'in') {
 						var point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
+
+						// if point technology is PTP BH then use it as PTP
+						if(ptp_tech_list.indexOf(point_tech) > -1) {
+							point_tech = 'ptp';
+						}
+
+						// PTP, P2P & PTP BH are same
+						if(ptp_tech_list.indexOf(polling_technology_condition) > -1) {
+							polling_technology_condition = 'ptp';
+						}
+
 						if(point_tech) {
-							if(point_tech == $.trim(selected_polling_technology.toLowerCase())) {
+							if(point_tech == polling_technology_condition) {
 								if(ptp_tech_list.indexOf(point_tech)  > -1) {
-									if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+									if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 										if(allSS[k].pointType == 'sub_station') {
 											if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
 												allSSIds.push(allSS[k].bs_sector_device);
@@ -572,7 +590,7 @@ function WhiteMapClass() {
 									}
 								} else {
 									if(allSS[k].pointType == 'sub_station') {
-										if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+										if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 											allSSIds.push(allSS[k].device_name);
 											polygonSelectedDevices.push(allSS[k]);
 										}
@@ -1304,13 +1322,35 @@ function WhiteMapClass() {
 		This function is triggered when Lat Lng Search is done.Validate the point, if LatLng is valid, zoom to the given lat lng.
 		 */
 		this.zoomToLonLat = function(lat_long_string) {
+
+			try {
+				if(ccpl_map.getLayersByName('SearchMarkers')) {
+					ccpl_map.getLayersByName('SearchMarkers')[0].clearMarkers();
+				}
+			} catch(e) {
+				// pass
+			}
+
 			// Update "searchResultData" with map data as per applied filters for plotting.
 			searchResultData = JSON.parse(JSON.stringify(networkMapInstance.updateStateCounter_gmaps(true)));
-			var lat = +lat_long_string.split(",")[0], lng = +lat_long_string.split(",")[1];
-			var bounds = new OpenLayers.Bounds;
-			var lonLat = new OpenLayers.LonLat(lng, lat);
+			var lat = +lat_long_string.split(",")[0], lng = +lat_long_string.split(",")[1],
+				bounds = new OpenLayers.Bounds,
+				lonLat = new OpenLayers.LonLat(lng, lat);
+
+			// search_icon.png
 			bounds.extend(lonLat);
 			ccpl_map.zoomToExtent(bounds);
+
+			var markers = new OpenLayers.Layer.Markers("SearchMarkers"),
+				search_icon = base_url+""+lat_lon_search_icon,
+				size = new OpenLayers.Size(20,40),
+				offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+				
+			ccpl_map.addLayer(markers);
+
+			var icon = new OpenLayers.Icon(search_icon, size, offset);
+			markers.addMarker(new OpenLayers.Marker(lonLat,icon));
+
 		}
 		this.goFullScreen= function() {
 			$("#content_div").hide();
@@ -1384,6 +1424,7 @@ function WhiteMapClass() {
 		var isLineChecked = $("#showConnLines:checked").length;
 		/*checked case*/
 		if(isLineChecked > 0) {
+			var isLineShown = false;
 			/*Loop for polylines*/
 			for(var key in allMarkersObject_wmap['path']) {
 				if(allMarkersObject_wmap['path'].hasOwnProperty(key)) {
@@ -1394,14 +1435,17 @@ function WhiteMapClass() {
 					    	nearEndVisible = global_this.checkIfPointLiesInside({lat: connected_bs["ptLat"], lon: connected_bs["ptLon"]}),
 					      	farEndVisible = global_this.checkIfPointLiesInside({lat: connected_ss["ptLat"], lon: connected_ss["ptLon"]});
 					    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
+					    	if(!isLineShown) {
+					    		isLineShown = true;
+					    	}
 					    	// If polyline not shown then show the polyline
 				    		showOpenLayerFeature(current_line);
-					    } else {
-					    	// If polyline shown then hide the polyline
-				    		hideOpenLayerFeature(current_line);
 					    }
 			    	}
 			    }
+			}
+			if(isLineShown) {
+				ccpl_map.getLayersByName('Lines')[0].redraw();
 			}
 		}
 
@@ -1449,34 +1493,30 @@ function WhiteMapClass() {
 	this.showSubStaionsInBounds = function() {
 		if(isDebug) {
 			console.log("Show in bound SS Function");
-			console.log("Show in bound SS Start Time :- "+ new Date().toLocaleString());
+			var start_date_ss_bounds = new Date();
 		}
  		var isSSChecked = $("#showAllSS:checked").length;
-
 		/*Checked case*/
 		if(isSSChecked > 0) {
+			var ss_keys_array = Object.keys(allMarkersObject_wmap['sub_station']);
 			/*Loop for polylines*/
-			for(var key in allMarkersObject_wmap['sub_station']) {
-				if(allMarkersObject_wmap['sub_station'].hasOwnProperty(key)) {
-			    	var ss_marker = allMarkersObject_wmap['sub_station'][key],
-			    		isMarkerExist = "";
-			    	isMarkerExist= global_this.checkIfPointLiesInside({lat: ss_marker.ptLat, lon: ss_marker.ptLon});
-			    		// mapInstance.getBounds().contains(ss_marker.getPosition());
-		    		if(isMarkerExist) {
-				    	if(ss_marker.isActive && +(ss_marker.isActive) == 1) {
-				    		// If SS Marker not shown then show the SS Marker
-				    		showOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
-				    	} else {
-				    		hideOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
-				    	}
+			for(var i=0;i<ss_keys_array.length;i++) {
+		    	var key = ss_keys_array[i],
+		    		ss_marker = allMarkersObject_wmap['sub_station'][key],
+		    		isMarkerExist = global_this.checkIfPointLiesInside({lat: ss_marker.ptLat, lon: ss_marker.ptLon});
+	    		if(isMarkerExist) {
+		    		if(!ss_marker.getVisibility()) {
+		    			showOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
 		    		}
-			    }
+	    		}
 			}
 		}
 
 		if(isDebug) {
-			console.log("Show in bound SS End Time :- "+ new Date().toLocaleString());
+			var time_diff = (new Date().getTime() - start_date_ss_bounds.getTime())/1000;
+            console.log("Show in bound SS End Time :- "+ time_diff + "Seconds");
 			console.log("***********************************");
+			start_date_ss_bounds = "";
 		}
 	};
 
@@ -1489,7 +1529,7 @@ function WhiteMapClass() {
 			console.log("White Map - Show in bound BS");
 			var start_date_bs_bounds = new Date();
 		}
-		// var plotted_bs_ids = [];
+
 		/*Loop for polylines*/
 		for(var key in allMarkersObject_wmap['base_station']) {
 			if(allMarkersObject_wmap['base_station'].hasOwnProperty(key)) {
@@ -1497,13 +1537,9 @@ function WhiteMapClass() {
 		      		isMarkerExist = "";
 		      	isMarkerExist = global_this.checkIfPointLiesInside({lat: bs_marker.ptLat, lon: bs_marker.ptLon});
 	      		if(isMarkerExist) {
-			    	if(bs_marker.isActive && +(bs_marker.isActive) == 1) {
+			    	if(!bs_marker.getVisibility()) {
 			    		// If BS Marker not shown then show the BS Marker
 		      			showOpenLayerFeature(allMarkersObject_wmap['base_station'][key]);
-			    		// plotted_bs_ids.push(allMarkersObject_wmap['base_station'][key].filter_data.bs_id);
-			        } else {
-			        	// If BS Marker shown then hide the BS Marker
-		      			hideOpenLayerFeature(allMarkersObject_wmap['base_station'][key]);
 			        }
 	      		}
 		    }
@@ -1526,6 +1562,7 @@ function WhiteMapClass() {
 			console.log("Show in bound Sector Devices");
 			console.log("Show in bound Sector Devices Start Time :- "+ new Date().toLocaleString());
 		}
+		var areMarkerShown = false;
 		/*Loop for polylines*/
 		for(var key in allMarkersObject_wmap['sector_device']) {
 			if(allMarkersObject_wmap['sector_device'].hasOwnProperty(key)) {
@@ -1534,15 +1571,19 @@ function WhiteMapClass() {
 		      	isMarkerExist = global_this.checkIfPointLiesInside({lat: sector_marker.ptLat, lon: sector_marker.ptLon});
 	      		if(isMarkerExist) {
 	      			var sector_layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
-			    	if(sector_marker.isActive && +(sector_marker.isActive) == 1) {
+			    	if(!sector_marker.getVisibility()) {
+			    		if(!areMarkerShown) {
+			    			areMarkerShown = true;
+			    		}
 			    		// If Sector Marker not shown then show the Sector Marker
 		      			showOpenLayerFeature(allMarkersObject_wmap['sector_device'][key]);
-			    	} else {
-			    		// If Sector Marker shown then hide the Sector Marker
-		    			hideOpenLayerFeature(allMarkersObject_wmap['sector_device'][key]);
-			        }
+			    	}
 	      		}
 	      	}
+		}
+
+		if(areMarkerShown) {
+			ccpl_map.getLayersByName("Devices")[0].redraw();
 		}
 		if(isDebug) {
 			console.log("Show in bound Sector Devices End Time :- "+ new Date().toLocaleString());
@@ -1559,6 +1600,7 @@ function WhiteMapClass() {
 			console.log("Show in bound Sector Polygons");
 			console.log("Show in bound Sector Polygons Start Time :- "+ new Date().toLocaleString());
 		}
+		var areMarkerShown = false;
 		/*Loop for polylines*/
 		for(var key in allMarkersObject_wmap['sector_polygon']) {
 			if(allMarkersObject_wmap['sector_polygon'].hasOwnProperty(key)) {
@@ -1567,15 +1609,19 @@ function WhiteMapClass() {
 		    	isMarkerExist = global_this.checkIfPointLiesInside({lat: sector_polygon.ptLat, lon: sector_polygon.ptLon});
 	    		if(isMarkerExist) {
 	    			var sector_polygon_layer = sector_polygon.layer ? sector_polygon.layer : sector_polygon.layerReference;
-			    	if(sector_polygon.isActive && +(sector_polygon.isActive) == 1) {
+			    	if(!sector_polygon.getVisibility()) {
+			    		if(!areMarkerShown) {
+			    			areMarkerShown = true;
+			    		}
 			    		// If Polygon not shown then show the polygon
 		      			showOpenLayerFeature(allMarkersObject_wmap['sector_polygon'][key]);
-			    	} else {
-			    		// If Polygon shown then hide the polygon
-		      			hideOpenLayerFeature(allMarkersObject_wmap['sector_polygon'][key]);
-			        }
+			    	}
 	    		}
 		    }
+		}
+
+		if(areMarkerShown) {
+			ccpl_map.getLayersByName("Sectors")[0].redraw();
 		}
 		if(isDebug) {
 			console.log("Show in bound Sector Polygons End Time :- "+ new Date().toLocaleString());
@@ -1607,6 +1653,8 @@ function WhiteMapClass() {
 				showOpenLayerFeature(allMarkersObject_wmap['path'][key]);
 			}
 		}
+
+		ccpl_map.getLayersByName("Lines")[0].redraw();
 
 		if(isDebug) {
 			console.log("Show/Hide Connection Lines End Time :- "+ new Date().toLocaleString());
@@ -1896,7 +1944,8 @@ function WhiteMapClass() {
 					markerType 		   : 	'BS',
 					isMarkerSpiderfied : 	false,
 					isActive 		   : 	1,
-					layerReference     : 	ccpl_map.getLayersByName("Markers")[0]
+					layerReference     : 	ccpl_map.getLayersByName("Markers")[0],
+					layer     		   : 	ccpl_map.getLayersByName("Markers")[0]
 				};
 
 				var bs_marker = global_this.createOpenLayerVectorMarker(bs_size, bs_marker_url, lon, lat, bs_marker_object);
@@ -2109,7 +2158,8 @@ function WhiteMapClass() {
 					    	hasPerf 		 :  0,
 					    	optimized 		 : 	false,
 					    	isActive 		 :  1,
-					    	layerReference   :  ccpl_map.getLayersByName("Markers")[0]
+					    	layerReference   :  ccpl_map.getLayersByName("Markers")[0],
+					    	layer     		 : 	ccpl_map.getLayersByName("Markers")[0]
 					    };
 
 					    /*Create SS Marker*/

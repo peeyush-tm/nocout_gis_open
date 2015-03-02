@@ -106,6 +106,11 @@ function GisPerformance() {
 
         if (this.bsNamesList && this.bsNamesList.length > 0) {
             this.start(this.bsNamesList);
+        } else {
+            var bs_id_list = getMarkerInCurrentBound();
+            if(bs_id_list.length > 0) {
+                gisPerformanceClass.start(bs_id_list);
+            }
         }
     }
 
@@ -629,7 +634,9 @@ function GisPerformance() {
                                     // If show SS checkbox is unchecked then hide SS
                                     if(show_ss_len <= 0) {
                                         hideOpenLayerFeature(ss_marker);
-                                        ss_marker.layer.redraw();
+                                    }
+                                    if(ss_marker.layerReference) {
+                                        ss_marker.layerReference.redraw();
                                     }
 
                                     new_plotted_ss.push(ss_marker);
@@ -904,13 +911,13 @@ function GisPerformance() {
                                         var crossLabelPosition = new OpenLayers.Geometry.Point(center_lon,center_lat);
 
 
-                                        cross_label_array['line_'+ss_marker_data.name] = cross_label;
+                                        // cross_label_array['line_'+ss_marker_data.name] = cross_label;
 
-                                        if(isLineChecked > 0) {
-                                            cross_label.show();
-                                        } else {
-                                            cross_label.hide();
-                                        }
+                                        // if(isLineChecked > 0) {
+                                        //     cross_label.show();
+                                        // } else {
+                                        //     cross_label.hide();
+                                        // }
                                     } else {
                                         try {
                                             // Close the label if exist
@@ -1419,7 +1426,10 @@ function GisPerformance() {
      * @param {array} newArray, It is the bs name array
      */
     this.get_intersection_bs = function(oldArray,newArray) {
-
+        if(isDebug) {
+            console.log("Uncommon BS Start");
+            var start_date_uncommon_bs = new Date();
+        }
         var uncommon_bs = [];
         for(var i=0;i<newArray.length;i++) {
             var current_new_bs = newArray[i];
@@ -1428,6 +1438,12 @@ function GisPerformance() {
             }
         }
 
+        if(isDebug) {
+            var time_diff = (new Date().getTime() - start_date_uncommon_bs.getTime())/1000;
+            console.log("Uncommon BS End Time :- "+ time_diff + "Seconds");
+            console.log("*************************************");
+            start_date_uncommon_bs = "";
+        }
         /*return the uncommon or different bs list*/
         return uncommon_bs;
     };

@@ -55,14 +55,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		that.mapIdleCondition();
 		return;
 	});
-	// if(ccpl_map.getLayersByName("Markers")[0]) {
-	// 	ccpl_map.getLayersByName("Markers")[0].events.register('mousedown', ccpl_map.getLayersByName("Markers")[0], function(evt){
-	// 	    if(evt && evt.button == 2){
-	// 	    	console.log(evt);
-	// 	    	console.log(evt.button);
-	// 	    }
-	// 	});
-	// }
 
 	//Create WMS layer to load Map from our geoserver.
 	layers.india_Layer = new OpenLayers.Layer.WMS(
@@ -294,13 +286,16 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		strategy = new OpenLayers.Strategy.Cluster({
 			"distance": clustererSettings.clustererDistance, 
 			"threshold": clustererSettings.threshold,
-			"autoActivate": true,
-			"autoDestroy": true
+			"autoActivate": false,
+			"autoDestroy": false
 		});
 
 
 		//Create a Vector Layer for Markers with styleMap and strategy
-		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {styleMap  : styleMap, strategies: [strategy]});
+		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {
+			styleMap   : styleMap,
+			strategies : [strategy]
+		});
 
 		//Add layer to the map
 		ccpl_map.addLayer(layers.markersLayer);

@@ -28,6 +28,6 @@ var clustererSettings = {
 	fontColor: 'black',
 	fontFamily: 'Arial,sans-serif',
 	clustererDistance: 100,
-	threshold: 3,
+	threshold: 2,
 	thresholdAtHighZoomLevel: 5
 }

@@ -72,7 +72,6 @@ function displayBounds(feature, lon, lat){
     var lonlat = new OpenLayers.LonLat(lon, lat);
 
     if ((lonlat.lon < bounds.left) || (lonlat.lat > bounds.top) || (lonlat.lat < bounds.bottom) ||(lonlat.lon > bounds.right) ) {
-        // console.log('out');
         return 'out';
     }
     return 'in';
@@ -565,7 +564,7 @@ function showOpenLayerFeature(feature) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = '';
         if(featureLayer) {
-            featureLayer.redraw();
+            // featureLayer.redraw();
         }
     }
 }
@@ -592,7 +591,7 @@ function hideOpenLayerFeature(feature) {
  * @method removeAllOpenLayerFeature
  */
 function removeAllOpenLayerFeature() {
-    
+
     // Hide perf info label
     for (var x = 0; x < labelsArray.length; x++) {
         ccpl_map.removePopup(labelsArray[x]);
