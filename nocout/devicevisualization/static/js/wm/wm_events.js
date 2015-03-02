@@ -42,7 +42,7 @@ WhiteMapClass.prototype.mapDragEndCondition = function() {
 		if(ccpl_map.getLayersByName("Markers") && ccpl_map.getLayersByName("Markers").length > 0) {
 			var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
 				current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
-			if(current_threshold > 1  && current_distance > 1) {
+			if(current_threshold > 1.5  && current_distance > 1) {
 				// Remove Clusters
 				ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
 				ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
@@ -207,7 +207,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 						var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
 							current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
-						if(current_threshold == 1  && current_distance == 1) {
+						if(current_threshold == 1.5  && current_distance == 1) {
 							// Remove Clusters
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 2;
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 100;
@@ -215,20 +215,20 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						}
 
 					} else {
-						var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
-							current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
-						if(current_threshold > 1  && current_distance > 1) {
-							// Remove Clusters
-							ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 2;
-							ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 100;
-							ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-						}
+						// var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
+						// 	current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
+						// if(current_threshold > 1.5  && current_distance > 1) {
+						// 	// Remove Clusters
+						// 	ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 2;
+						// 	ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 100;
+						// 	ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+						// }
 
-						whiteMapClass.showBaseStaionsInBounds();
-						whiteMapClass.showSectorDevicesInBounds();
-						whiteMapClass.showSectorPolygonInBounds();
-						whiteMapClass.showLinesInBounds();
-						whiteMapClass.showSubStaionsInBounds();
+						// whiteMapClass.showBaseStaionsInBounds();
+						// whiteMapClass.showSectorDevicesInBounds();
+						// whiteMapClass.showSectorPolygonInBounds();
+						// whiteMapClass.showLinesInBounds();
+						// whiteMapClass.showSubStaionsInBounds();
 						// whiteMapClass.showBackhaulDevicesInBounds();
 					}
 

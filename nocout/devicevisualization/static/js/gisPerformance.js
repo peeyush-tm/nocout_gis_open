@@ -1219,10 +1219,10 @@ function GisPerformance() {
                 //     } catch(e) {
                 //         // console.log(e);
                 //     }
-                //     ccpl_map.getLayersByName("Markers")[0].redraw();
+                    ccpl_map.getLayersByName("Markers")[0].redraw();
                     
                 //     // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = ccpl_map.getLayersByName("Markers")[0].features;
-                //     ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+                    ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
                 // }
 
                 // ccpl_map.getLayersByName("Sectors")[0].redraw();

@@ -5129,8 +5129,12 @@ function devicePlottingClass_gmap() {
         		var showing_cities = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
         			var searchPattern = new RegExp('^' + query.term, 'i');
-        			if(searchPattern.test(obj.data.city)) {
-        				return true;
+        			if(obj.data.city) {
+	        			if(searchPattern.test(obj.data.city)) {
+	        				return true;
+	        			} else {
+	        				return false;
+	        			}
         			} else {
         				return false;
         			}
@@ -5139,9 +5143,11 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < limit; i++) {
-		        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
-		        		showing_cities.push(filtered_data[i].data.city);
-		            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+		        	if(filtered_data[i].data.city) {
+			        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
+			        		showing_cities.push(filtered_data[i].data.city);
+			            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+			        	}
 		        	}
 		        }
 		        query.callback(data);
@@ -5214,12 +5220,12 @@ function devicePlottingClass_gmap() {
 	    	
 		    for(var i=data_to_plot.length;i--;) {
 		    	
-		    	var onlyCityCondition = selected_bs_alias.length === 0 && selected_ip_address.length === 0 && selected_circuit_id.length === 0;
+		    	var onlyCityCondition = selected_bs_alias.length == 0 && selected_ip_address.length == 0 && selected_circuit_id.length == 0;
 
 		    	if(onlyCityCondition) {
-
-		    		var city_val = data_to_plot[i].data.city ? data_to_plot[i].data.city : "",
+		    		var city_val = data_to_plot[i].data.city ? $.trim(data_to_plot[i].data.city).toLowerCase() : "",
 		    			city_condition = selected_bs_city.indexOf(city_val.toLowerCase()) > -1;
+
 		    		if(city_condition) {
 			    		if(window.location.pathname.indexOf("googleEarth") > -1) {
 							folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
@@ -8860,7 +8866,7 @@ function devicePlottingClass_gmap() {
     		url : base_url+"/inventory/export_selected_bs_inventory/",
     		type : "POST",
     		data : {
-    			"base_stations" : JSON.stringify(inventory_bs_ids)
+    			"base_stations" : inventory_bs_ids
     		},
     		success : function(response) {
     			
