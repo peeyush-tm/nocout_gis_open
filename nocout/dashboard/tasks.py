@@ -1,6 +1,6 @@
 from celery import task, group
 
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Sum
 from django.utils import timezone
 import datetime
 
@@ -18,127 +18,166 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
     )
 
 from inventory.utils.util import organization_sectors, organization_network_devices
+from inventory.models import get_default_org
 
 from inventory.tasks import bulk_update_create
 
-from dashboard.utils import get_topology_status_results, get_dashboard_status_range_counter
-import logging
+from dashboard.utils import \
+    get_topology_status_results, \
+    get_dashboard_status_range_counter, \
+    get_dashboard_status_range_mapped
 
+
+import logging
 logger = logging.getLogger(__name__)
 
 
 @task()
-def calculate_timely_main_dashboard():
-    '''  
-    Task to calculate the main dashboard status in every 5 minutes using celerybeat.
-    '''
-    processed_for = timezone.now()
-    logger.debug('CELERYBEAT: Timely: starts at {0} '.format(processed_for))
+def calculate_speedometer_dashboards():
+    """
+
+    :return: Calculation Status for the objects
+    """
+    g_jobs = list()
 
     user_organizations = Organization.objects.all()
-    g_jobs = list()
-    g_jobs.append(calculate_timely_sector_capacity.s(user_organizations,
-                                     technology='PMP',
-                                     model=DashboardSeverityStatusTimely,
-                                     processed_for=processed_for))
+    processed_for = timezone.now()
 
-    g_jobs.append(calculate_timely_sector_capacity.s(user_organizations,
-                                     technology='WiMAX',
-                                     model=DashboardSeverityStatusTimely,
-                                     processed_for=processed_for))
+    for organization in user_organizations:
+        g_jobs.append(
+            calculate_timely_latency.s(
+                organization=organization,
+                dashboard_name='latency-network',
+                processed_for=processed_for
+            )
+        )
 
-    g_jobs.append(calculate_timely_backhaul_capacity.s(user_organizations,
-                                       technology='PMP',
-                                       model=DashboardSeverityStatusTimely,
-                                       processed_for=processed_for))
+        g_jobs.append(
+            calculate_timely_packet_drop.s(
+                organization=organization,
+                dashboard_name='packetloss-network',
+                processed_for=processed_for
+            )
+        )
 
-    g_jobs.append(calculate_timely_backhaul_capacity.s(user_organizations,
-                                       technology='WiMAX',
-                                       model=DashboardSeverityStatusTimely,
-                                       processed_for=processed_for))
-    
-    g_jobs.append(calculate_timely_backhaul_capacity.s(user_organizations,
-                                       technology='TCLPOP',
-                                       model=DashboardSeverityStatusTimely,
-                                       processed_for=processed_for))
+        g_jobs.append(
+            calculate_timely_down_status.s(
+                organization=organization,
+                dashboard_name='down-network',
+                processed_for=processed_for
+            )
+        )
 
-    g_jobs.append(calculate_timely_sales_opportunity.s(user_organizations,
-                                       technology='PMP',
-                                       model=DashboardRangeStatusTimely,
-                                       processed_for=processed_for))
+        temperatures = ['IDU', 'ACB', 'FAN']
 
-    g_jobs.append(calculate_timely_sales_opportunity.s(user_organizations,
-                                       technology='WiMAX',
-                                       model=DashboardRangeStatusTimely,
-                                       processed_for=processed_for))
-
-    g_jobs.append(calculate_timely_latency.s(user_organizations,
-                             dashboard_name='latency-pmp',
-                             processed_for=processed_for,
-                             technology='PMP'))
-
-    g_jobs.append(calculate_timely_latency.s(user_organizations,
-                             dashboard_name='latency-wimax',
-                             processed_for=processed_for,
-                             technology='WiMAX'))
-
-    g_jobs.append(calculate_timely_latency.s(user_organizations,
-                             dashboard_name='latency-network',
-                             processed_for=processed_for))
-
-    g_jobs.append(calculate_timely_packet_drop.s(user_organizations,
-                                 dashboard_name='packetloss-pmp',
-                                 processed_for=processed_for,
-                                 technology='PMP'))
-
-    g_jobs.append(calculate_timely_packet_drop.s(user_organizations,
-                                 dashboard_name='packetloss-wimax',
-                                 processed_for=processed_for,
-                                 technology='WiMAX'))
-
-    g_jobs.append(calculate_timely_packet_drop.s(user_organizations,
-                                 dashboard_name='packetloss-network',
-                                 processed_for=processed_for))
-
-    g_jobs.append(calculate_timely_down_status.s(user_organizations,
-                                 dashboard_name='down-pmp',
-                                 processed_for=processed_for,
-                                 technology='PMP'))
-
-    g_jobs.append(calculate_timely_down_status.s(user_organizations,
-                                 dashboard_name='down-wimax',
-                                 processed_for=processed_for,
-                                 technology='WiMAX'))
-
-    g_jobs.append(calculate_timely_down_status.s(user_organizations,
-                                 dashboard_name='down-network',
-                                 processed_for=processed_for))
-
-    g_jobs.append(calculate_timely_temperature.s(user_organizations,
-                                 processed_for=processed_for,
-                                 chart_type='IDU'))
-
-    g_jobs.append(calculate_timely_temperature.s(user_organizations,
-                                 processed_for=processed_for,
-                                 chart_type='ACB'))
-
-    g_jobs.append(calculate_timely_temperature.s(user_organizations,
-                                 processed_for=processed_for,
-                                 chart_type='FAN'))
-
+        for temp in temperatures:
+            g_jobs.append(
+                calculate_timely_temperature.s(
+                    organization=organization,
+                    processed_for=processed_for,
+                    chart_type=temp
+                )
+            )
 
     job = group(g_jobs)
-
     result = job.apply_async()
     ret = False
 
     for r in result.get():
         ret |= r
 
-    # return ret
-    logger.debug('CELERYBEAT: Timely: ends at {0} '.format(timezone.now()))
+    return ret
+
+
+@task()
+def calculate_status_dashboards(technology):
+    """
+
+    :return:
+    """
+    g_jobs = list()
+    ret = False
+
+    user_organizations = Organization.objects.all()
+    processed_for = timezone.now()
+
+    dashboards = [
+        "latency-{0}".format(technology),
+        "packetloss-{0}".format(technology),
+        "down-{0}".format(technology),
+    ]
+
+    for dashboard in dashboards:
+        for organization in user_organizations:
+            g_jobs.append(
+                calculate_timely_latency.s(
+                    organization=organization,
+                    dashboard_name=dashboard,
+                    processed_for=processed_for,
+                    technology=technology
+                )
+            )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+    return ret
+
+
+@task()
+def calculate_range_dashboards():
+    """
+
+    :return:
+    """
+    g_jobs = list()
+    ret = False
+
+    user_organizations = Organization.objects.all()
+    processed_for = timezone.now()
+
+    sector_tech = ['PMP', 'WiMAX']
+    backhaul_tech = ['TCLPOP', 'PMP', 'WiMAX']
+
+    for tech in sector_tech:
+        g_jobs.append(
+            calculate_timely_sector_capacity.s(
+                user_organizations,
+                technology=tech,
+                model=DashboardSeverityStatusTimely,
+                processed_for=processed_for
+            )
+        )
+
+        g_jobs.append(
+            calculate_timely_sales_opportunity.s(
+                user_organizations,
+                technology=tech,
+                model=DashboardRangeStatusTimely,
+                processed_for=processed_for
+            )
+        )
+
+    for tech in backhaul_tech:
+        g_jobs.append(
+            calculate_timely_backhaul_capacity.s(
+                user_organizations,
+                technology=tech,
+                model=DashboardSeverityStatusTimely,
+                processed_for=processed_for
+            )
+        )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
 
     return ret
+
 
 @task()
 def calculate_timely_sector_capacity(organizations, technology, model, processed_for):
@@ -150,45 +189,66 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
     '''
     try:
         sector_technology = eval(technology)
-    except Exception, e:
+    except Exception as e:
+        logger.exception(e)
         return False
-    
+
+    required_values = [
+        'id',
+        'sector__name',
+        'sector__sector_configured_on__device_name',
+        'severity',
+        'sys_timestamp',
+        'age',
+        'organization'
+    ]
+
     dashboard_name = '%s_sector_capacity' % (sector_technology.NAME.lower())
 
-    sectors = SectorCapacityStatus.objects.filter(
-            Q(organization__in=organizations),
-            Q(sector__sector_configured_on__device_technology=sector_technology.ID),
-            Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
-        ).values('id', 'sector__name', 'sector__sector_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
+    for organization in organizations:
+        sector_objects = SectorCapacityStatus.objects.filter(
+                Q(organization__in=[organization]),
+                Q(sector__sector_configured_on__device_technology=sector_technology.ID),
+                Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
+            )
 
-    logger.debug('CELERYBEAT: Timely: dashboard_name {0} & Sectors count: {1}'.format(dashboard_name, sectors.count()))
-    data_list = list()
-    for item in sectors:
-        # Create the range_counter dictionay containg the model's field name as key
-        range_counter = dict(
-            dashboard_name=dashboard_name,
-            device_name=item['sector__sector_configured_on__device_name'],
-            reference_name=item['sector__name'],
-            processed_for=processed_for,
-        )
-        # Update the range_counter on the basis of severity.
-        if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
-            range_counter.update({item['severity'].strip().lower() : 1})
-        elif item['severity'].strip().lower() == 'ok':
-            range_counter.update({'ok' : 1})
-        else:
-            range_counter.update({'unknown' : 1})
 
-        # Create the list of model object.
-        try:
-            data_list.append(model(**range_counter))
-        except Exception as e:
-            pass
+        if sector_objects.count():
+            range_counter = {
+                'dashboard_name': dashboard_name,
+                'device_name': dashboard_name,
+                'reference_name': dashboard_name,
+                'warning': 0,
+                'critical': 0,
+                'ok': 0,
+                'down': 0,
+                'unknown': 0,
+                'organization': organization,
+                'processed_for': processed_for
+            }
+            bulk_data_list = list()
+            sectors = sector_objects.values(*required_values)
 
-    logger.debug('calculate_timely_sector_capacity : data list = {0}'.format(data_list))
-    # call the method to bulk create the onjects.
-    bulk_update_create.delay(data_list, action='create', model=model)
+            for item in sectors:
+                # Create the range_counter dictionay containg the model's field name as key
+                # Update the range_counter on the basis of severity.
+                if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                    range_counter[item['severity'].strip().lower()] += 1
+                elif item['severity'].strip().lower() == 'ok':
+                    range_counter['ok'] += 1
+                else:
+                    range_counter['unknown'] += 1
+
+            bulk_data_list.append(model(**range_counter))
+
+            if len(bulk_data_list):
+                # call the method to bulk create the onjects.
+                bulk_update_create.delay(
+                    bulky=bulk_data_list,
+                    action='create',
+                    model=model)
     return True
+
 
 @task()
 def calculate_timely_backhaul_capacity(organizations, technology, model, processed_for):
@@ -205,39 +265,62 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
 
     dashboard_name = '%s_backhaul_capacity' % (backhaul_technology.NAME.lower())
 
-    backhaul = BackhaulCapacityStatus.objects.filter(
-            Q(organization__in=organizations),
-            Q(backhaul__bh_configured_on__device_technology=backhaul_technology.ID),
-            Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
-        ).values('id', 'backhaul__name', 'backhaul__bh_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
+    required_values = [
+        'id',
+        'backhaul__name',
+        'backhaul__bh_configured_on__device_name',
+        'severity',
+        'sys_timestamp',
+        'age',
+        'organization'
+    ]
 
-    data_list = list()
-    for item in backhaul:
-        # Create the range_counter dictionay containg the model's field name as key
-        range_counter = dict(
-            dashboard_name=dashboard_name,
-            device_name=item['backhaul__bh_configured_on__device_name'],
-            reference_name=item['backhaul__name'],
-            processed_for=processed_for,
-        )
-        # Update the range_counter on the basis of severity.
-        if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
-            range_counter.update({item['severity'].strip().lower() : 1})
-        elif item['severity'].strip().lower() == 'ok':
-            range_counter.update({'ok' : 1})
-        else:
-            range_counter.update({'unknown' : 1})
+    for organization in organizations:
 
-        # Create the list of model object.
-        try:
+        backhaul_objects = BackhaulCapacityStatus.objects.filter(
+                Q(organization__in=[organization]),
+                Q(backhaul__bh_configured_on__device_technology=backhaul_technology.ID),
+                Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
+            )
+
+        if backhaul_objects.count():
+            range_counter = {
+                'dashboard_name': dashboard_name,
+                'device_name': dashboard_name,
+                'reference_name': dashboard_name,
+                'warning': 0,
+                'critical': 0,
+                'ok': 0,
+                'down': 0,
+                'unknown': 0,
+                'organization': organization,
+                'processed_for': processed_for
+            }
+
+            data_list = list()
+            backhaul = backhaul_objects.values(*required_values)
+
+            for item in backhaul:
+                # Update the range_counter on the basis of severity.
+                if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                    range_counter[item['severity'].strip().lower()] += 1
+                elif item['severity'].strip().lower() == 'ok':
+                    range_counter['ok'] += 1
+                else:
+                    range_counter['unknown'] += 1
+
+            # Create the list of model object.
             data_list.append(model(**range_counter))
-        except Exception as e:
-            pass
 
-    logger.debug('calculate_timely_backhaul_capacity : data list = {0}'.format(data_list))
-    # call the method to bulk create the onjects.
-    bulk_update_create.delay(data_list, action='create', model=model)
+            if len(data_list):
+                # call the method to bulk create the onjects.
+                bulk_update_create.delay(
+                    data_list,
+                    action='create',
+                    model=model)
+
     return True
+
 
 @task()
 def calculate_timely_sales_opportunity(organizations, technology, model, processed_for):
@@ -265,44 +348,65 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
         logger.info("DashboardSetting for %s is not available." % dashboard_name)
         return False
 
-    # get the sector of User's Organization [and Sub Organization]
-    user_sector = organization_sectors(organizations, technology_id)
-    # get the device of the user sector.
-    # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+    for organization in organizations:
 
-    # get the list of dictionary on the basis of parameters.
-    service_status_results = get_topology_status_results(
-        user_devices=None,
-        model=Topology,
-        service_name=None,
-        data_source='topology',
-        user_sector=user_sector
-    )
+        # get the sector of User's Organization [and Sub Organization]
+        sector_objects = organization_sectors([organization], technology_id)
+        # get the device of the user sector.
+        # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
-    data_list = list()
-    for result in service_status_results:
-        # get the dictionary containing the model's field name as key.
-        # range_counter in format {'range1': 1, 'range2': 2,...}
-        range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
-        # update the range_counter to add further details
-        range_counter.update(
-            {'dashboard_name': dashboard_name,
-                'device_name': result['device_name'],
-                'reference_name': result['name'],   # Store sector name as reference_name
-                'processed_for': processed_for
+        if sector_objects.count():
+            data_list = list()
+            user_sector = sector_objects
+            status_counter = {
+                "dashboard_name": dashboard_name,
+                "device_name": dashboard_name,
+                "reference_name": dashboard_name,
+                "processed_for": processed_for,
+                "organization": organization,
+                "range1": 0,
+                "range2": 0,
+                "range3": 0,
+                "range4": 0,
+                "range5": 0,
+                "range6": 0,
+                "range7": 0,
+                "range8": 0,
+                "range9": 0,
+                "range10": 0,
+                "unknown": 0,
             }
-        )
+            # get the list of dictionary on the basis of parameters.
+            service_status_results = get_topology_status_results(
+                user_devices=None,
+                model=Topology,
+                service_name=None,
+                data_source='topology',
+                user_sector=user_sector
+            )
 
-        # prepare a list of model object.
-        data_list.append(model(**range_counter))
+            for result in service_status_results:
+                # get the dictionary containing the model's field name as key.
+                # range_counter in format {'range1': 1, 'range2': 2,...}
+                range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
+                for ranges in range_counter:
+                    status_counter[ranges] += range_counter[ranges]
+                # prepare a list of model object.
+            data_list.append(model(**status_counter))
 
-    logger.debug("calculate_timely_sales_opportunity : data list {0}".format(data_list))
-    # call method to bulk create the model object.
-    bulk_update_create.delay(data_list, action='create', model=model)
+            if len(data_list):
+                # call method to bulk create the model object.
+                bulk_update_create.delay(
+                    data_list,
+                    action='create',
+                    model=model
+                )
+
     return True
 
+
 @task()
-def calculate_timely_latency(organizations, dashboard_name, processed_for ,technology=None):
+def calculate_timely_latency(organization, dashboard_name, processed_for ,technology=None):
     '''
     Method to calculate the latency status of devices.
 
@@ -315,39 +419,63 @@ def calculate_timely_latency(organizations, dashboard_name, processed_for ,techn
     return:
     '''
     try:
-        if technology:
-            latency_technology = eval(technology)
-        else:
-            latency_technology = None    
-    except Exception, e:
+        latency_technology = eval(technology)
+        processed_for = processed_for
+        technology_id = latency_technology.ID
+    except Exception as e:
+        logger.exception(e)
         return False
 
-    processed_for = processed_for
-    technology_id = latency_technology.ID if latency_technology else None
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organizations, technology_id)
-    # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+    g_jobs = list()
+    ret = False
 
-    # get the dictionary of machine_name as key and device_name as a list for that machine.
-    machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
-    # creating a list dictionary using machine name and there corresponing device list.
-    # And list is order by device_name.
-    for machine_name, device_list in machine_dict.items():
-        status_dict_list += NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_list,
+    #calculate these organization wise
+
+    # get the device of user's organization [and sub organization]
+    sector_devices = organization_network_devices([organization], technology_id)
+
+    if sector_devices.count():
+        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
+        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+
+        # get the dictionary of machine_name as key and device_name as a list for that machine.
+        machine_dict = prepare_machines(sector_devices)
+
+        status_count = 0
+
+        # creating a list dictionary using machine name and there corresponing device list.
+        for machine_name, device_list in machine_dict.items():
+            status_count += NetworkStatus.objects.order_by().filter(
+                device_name__in=device_list,
                 service_name='ping',
                 data_source='rta',
                 current_value__gt=0,
                 severity__in=['warning', 'critical', 'down']
-            ).using(machine_name).values()
+                ).using(machine_name).count()
 
-    logger.debug('calculate_timely_latency : data list {0}'.format(status_dict_list))
-    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
-    return True
+        g_jobs.append(
+            calculate_timely_network_alert.s(
+                dashboard_name=dashboard_name,
+                processed_for=processed_for,
+                organization=organization,
+                technology=technology,
+                status_count=status_count,
+                status_dashboard_name=None
+            )
+        )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
+
+
 
 @task()
-def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, technology=None):
+def calculate_timely_packet_drop(organization, dashboard_name, processed_for, technology=None):
     '''
     Method to calculate the packed drop status of devices.
 
@@ -360,39 +488,65 @@ def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, t
     return:
     '''
     try:
-        if technology:
-            packetdrop_technology = eval(technology)
-        else:
-            packetdrop_technology = None
-    except Exception, e:
+        latency_technology = eval(technology)
+        processed_for = processed_for
+        technology_id = latency_technology.ID
+    except Exception as e:
+        logger.exception(e)
         return False
-    processed_for = processed_for
-    technology_id = packetdrop_technology.ID if packetdrop_technology else None
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organizations, technology_id)
-    # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
-    machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
-    # creating a list dictionary using machine name and there corresponing device list.
-    # And list is order by device_name.
-    for machine_name, device_list in machine_dict.items():
-        status_dict_list += NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_list,
+    g_jobs = list()
+    ret = False
+
+    #calculate these organization wise
+
+    # get the device of user's organization [and sub organization]
+    sector_devices = organization_network_devices([organization], technology_id)
+
+    if sector_devices.count():
+        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
+        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+
+        # get the dictionary of machine_name as key and device_name as a list for that machine.
+        machine_dict = prepare_machines(sector_devices)
+
+        status_count = 0
+
+        # creating a list dictionary using machine name and there corresponing device list.
+        for machine_name, device_list in machine_dict.items():
+            status_count += NetworkStatus.objects.order_by().filter(
+                device_name__in=device_list,
                 service_name='ping',
                 data_source='pl',
-                severity__in=['warning', 'critical', 'down'],
-                current_value__lt=100
-            ).using(machine_name).values()
+                current_value__lt=100,
+                severity__in=['warning', 'critical', 'down']
+                ).using(machine_name).count()
 
-    logger.debug('calculate_timely_packet_drop : data list = {0}'.format(status_dict_list))
-    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
-    return True
+        g_jobs.append(
+            calculate_timely_network_alert.s(
+                dashboard_name=dashboard_name,
+                processed_for=processed_for,
+                organization=organization,
+                technology=technology,
+                status_count=status_count,
+                status_dashboard_name=None
+            )
+        )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
+
+
 
 @task()
-def calculate_timely_down_status(organizations, dashboard_name, processed_for, technology=None):
+def calculate_timely_down_status(organization, dashboard_name, processed_for, technology=None):
     '''
-    Method to calculate the down status of devices.
+    Method to calculate the packed drop status of devices.
 
     :param:
     organizations: list of organization.
@@ -403,37 +557,63 @@ def calculate_timely_down_status(organizations, dashboard_name, processed_for, t
     return:
     '''
     try:
-        if technology:
-            down_technology = eval(technology)
-        else:
-            down_technology = None
-    except Exception, e:
+        latency_technology = eval(technology)
+        processed_for = processed_for
+        technology_id = latency_technology.ID
+    except Exception as e:
+        logger.exception(e)
         return False
-    processed_for = processed_for
-    technology_id = down_technology.ID if down_technology else None
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organizations, technology_id)
-    # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
-    machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
-    # creating a list dictionary using machine name and there corresponing device list.
-    # And list is order by device_name.
-    for machine_name, device_list in machine_dict.items():
-        status_dict_list += NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_list,
+    g_jobs = list()
+    ret = False
+
+    #calculate these organization wise
+
+    # get the device of user's organization [and sub organization]
+    sector_devices = organization_network_devices([organization], technology_id)
+
+    if sector_devices.count():
+        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
+        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+
+        # get the dictionary of machine_name as key and device_name as a list for that machine.
+        machine_dict = prepare_machines(sector_devices)
+
+        status_count = 0
+
+        # creating a list dictionary using machine name and there corresponing device list.
+        for machine_name, device_list in machine_dict.items():
+            status_count += NetworkStatus.objects.order_by().filter(
+                device_name__in=device_list,
                 service_name='ping',
                 data_source='pl',
-                severity__in=['down'],
-                current_value__gte=100
-            ).using(machine_name).values()
+                current_value__gte=100,
+                severity__in=['critical', 'down']
+                ).using(machine_name).count()
 
-    logger.debug('calculate_timely_down_status : data list = {0}'.format(status_dict_list))
-    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
-    return True
+        g_jobs.append(
+            calculate_timely_network_alert.s(
+                dashboard_name=dashboard_name,
+                processed_for=processed_for,
+                organization=organization,
+                technology=technology,
+                status_count=status_count,
+                status_dashboard_name=None
+            )
+        )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
+
+
 
 @task()
-def calculate_timely_temperature(organizations, processed_for, chart_type='IDU'):
+def calculate_timely_temperature(organization, processed_for, chart_type='IDU'):
     '''
     Method to calculate the temperature status of devices.
 
@@ -444,8 +624,6 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
 
     return:
     '''
-    technology_id = 3
-    processed_for=processed_for
 
     if chart_type == 'IDU':
         service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
@@ -456,99 +634,134 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
     elif chart_type == 'FAN':
         service_list = ['wimax_bs_temperature_fan']
         data_source_list = ['fan_temp']
+    else:
+        return False
+
+    g_jobs = list()
+    ret = False
+
+    technology_id = 3
+    processed_for=processed_for
+
     status_dashboard_name = 'temperature-' + chart_type.lower()
 
     # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices(organizations, technology_id)
-    # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+    sector_devices = organization_network_devices([organization], technology_id)
 
-    machine_dict = prepare_machines(sector_devices)
-    status_dict_list = []
-    # creating a list dictionary using machine name and there corresponing device list.
-    # And list is order by device_name.
-    for machine_name, device_list in machine_dict.items():
-        status_dict_list += ServiceStatus.objects.order_by().filter(
-            device_name__in=device_list,
-            service_name__in=service_list,
-            data_source__in=data_source_list,
-            severity__in=['warning', 'critical']
-            ).using(machine_name).values()
+    if sector_devices.count():
+        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
+        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
-    logger.debug('calculate_timely_temperature : data list = {0}'.format(status_dict_list))
-    calculate_timely_network_alert('temperature', processed_for, 'WiMAX', status_dict_list, status_dashboard_name)
-    return True
+        machine_dict = prepare_machines(sector_devices)
 
-def calculate_timely_network_alert(dashboard_name, processed_for, technology=None, status_dict_list=[], status_dashboard_name=None):
-    '''
+        # count of devices in severity
+        status_count = 0
+        # creating a list dictionary using machine name and there corresponing device list.
+        # And list is order by device_name.
+        for machine_name, device_list in machine_dict.items():
+            status_count += ServiceStatus.objects.order_by().filter(
+                device_name__in=device_list,
+                service_name__in=service_list,
+                data_source__in=data_source_list,
+                severity__in=['warning', 'critical']
+                ).using(machine_name).count()
+
+        g_jobs.append(
+            calculate_timely_network_alert.s(
+                dashboard_name='temperature',
+                processed_for=processed_for,
+                organization=organization,
+                technology='WiMAX',
+                status_count=status_count,
+                status_dashboard_name=status_dashboard_name
+            )
+        )
+
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
+
+    return ret
+
+
+@task()
+def calculate_timely_network_alert(dashboard_name,
+                                   processed_for,
+                                   organization,  # assume the organization to be default
+                                   technology=None,
+                                   status_count=0,
+                                   status_dashboard_name=None
+                                   ):
+    """
     prepare a list of model object to bulk create the model objects.
 
-    :param:
-    dashboard_name: name of dashboard used in dashboard_setting.
-    processed_for: datetime
-    technology: Named Tuple
-    status_dict_list: list of dictionay.
-    status_dashboard_name: string
+    :param dashboard_name: dashboard_name: name of dashboard used in dashboard_setting.
+    :param processed_for: processed_for: datetime
+    :param technology: technology: Named Tuple
+    :param status_count: count of status of objects in warning, critical
+    :param status_dashboard_name: string
+    return: True
+    """
+    assumed_organization = get_default_org()
 
-    return:
-    '''
+    if organization:
+        assumed_organization = organization
+
     try:
         if technology:
             network_technology = eval(technology)
         else:
-            network_technology = None    
-    except Exception, e:
-        raise e
+            network_technology = None
+    except Exception as e:
+        logger.exception(e)
+        return False
+
     technology_id = network_technology.ID if network_technology else None
     try:
-        dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id,
-                page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        dashboard_setting = DashboardSetting.objects.get(
+            technology_id=technology_id,
+            page_name='main_dashboard',
+            name=dashboard_name,
+            is_bh=False
+        )
     except DashboardSetting.DoesNotExist as e:
-        logger.info(" Dashboard Setting of %s is not available." % dashboard_name)
-        return None
+        logger.exception(" Dashboard Setting of {0} is not available. {1}".format(dashboard_name, e))
+        return False
 
-    data_list = []
-    device_name = ''
-    device_result = []
+    # device_name = '-1'  # lets just say it does not exists # todo remove this s**t
     processed_for = processed_for
+
+    bulky = list()
 
     if status_dashboard_name is None:
         status_dashboard_name = dashboard_name
 
-    # status_dict_list is a ordered list of dictionay which is ordered by device_name.
-    for result_dict in status_dict_list:
-        # Creating list for same device_name to collectively get the status_range_counter of same devices.
-        if device_name == result_dict['device_name']:
-            device_result.append(result_dict)
-        else:
-            # Creating a list of model object for a list of same devices.
-            if device_result:
-                # get the dictionay where keys are same as of the model fields.
-                dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
-                # updating the dictionay with some other fields used in model.
-                dashboard_data_dict.update({'device_name': device_name, 'reference_name': device_name,
-                    'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
-                # creating a list of model object for bulk create.
-                data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
+    # get the dictionay where keys are same as of the model fields.
+    dashboard_data_dict = get_dashboard_status_range_mapped(dashboard_setting, status_count)
+    # updating the dictionay with some other fields used in model.
 
-            # assign the new device name to device_name.
-            device_name = result_dict['device_name']
-            # creating new list for the new device.
-            # so that again we can collectively get the status_range_counter for new device.
-            device_result = [result_dict]
-    # creating the list of model object for the final list of the device name of status_dict_list.
-    if device_result:
-        # get the dictionay where keys are same as of the model fields.
-        dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
-        # updating the dictionay with some other fields used in model.
-        dashboard_data_dict.update({'device_name': result_dict['device_name'], 'reference_name': result_dict['device_name'],
-            'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
+    if dashboard_data_dict:
+        dashboard_data_dict.update(
+            {
+                'device_name': status_dashboard_name,
+                'reference_name': status_dashboard_name,
+                'dashboard_name': status_dashboard_name,
+                'processed_for': processed_for,
+                'organization': assumed_organization
+            }
+        )
         # creating a list of model object for bulk create.
-        data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
+        bulky.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
-    #logger.info("CELERYBEAT: Timely: ")
-    bulk_update_create.delay(data_list, action='create', model=DashboardRangeStatusTimely)
+        # call celery task to create dashboard data
+        bulk_update_create.delay(bulky=bulky,
+                                 action='create',
+                                 model=DashboardRangeStatusTimely)
+
     return True
+
 
 def prepare_machines(device_list):
     """
@@ -563,7 +776,7 @@ def prepare_machines(device_list):
     unique_device_machine_list = {device['machine__name']: True for device in device_list}.keys()
 
     machine_dict = {}
-    #Creating the machine as a key and device_name as a list for that machine.
+    # Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
         machine_dict[machine] = [device['device_name'] for device in device_list if
                                  device['machine__name'] == machine]
@@ -576,15 +789,16 @@ def calculate_hourly_main_dashboard():
     '''
     Task to calculate the main dashboard status in every hour using celerybeat.
     '''
+
     now = timezone.now()
+    buffer_now = now + datetime.timedelta(minutes=-5)
+    then = now + datetime.timedelta(hours=-1)
+    calculate_hourly_range_status(now=buffer_now, then=then)
+    calculate_hourly_range_status(now=buffer_now, then=then)
+    return True
 
-    logger.info("CELERYBEAT: Hourly: starts at ", now)
-    calculate_hourly_severity_status(now)
-    calculate_hourly_range_status(now)
-    logger.info("CELERYBEAT: Hourly: ends at ", timezone.now())
 
-
-def calculate_hourly_severity_status(now):
+def calculate_hourly_severity_status(now, then):
     '''
     Calculate the status of dashboard from DashboardSeverityStatusTimely model
     and create list of DashboardSeverityStatusHourly model object for calculated data
@@ -595,44 +809,51 @@ def calculate_hourly_severity_status(now):
     return:
     '''
     # get all data from the model order by 'dashboard_name' and 'device_name'.
-    last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__lt=now)
+    last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Normal=Sum('ok'),
+        Needs_Augmentation=Sum('warning'),
+        Stop_Provisioning=Sum('critical'),
+        Down=Sum('down'),
+        Unknown=Sum('unknown')
+    )
+
+    organizations = Organization.objects.all()
 
     hourly_severity_status_list = []    # list for the DashboardSeverityStatusHourly model object
-    hourly_severity_status = None
-    dashboard_name = ''
-    device_name = ''
 
     for timely_severity_status in last_hour_timely_severity_status:
         # Sum the status value for the same dashboard_name and device_name.
-        if dashboard_name == timely_severity_status.dashboard_name and device_name == timely_severity_status.device_name:
-            hourly_severity_status = sum_severity_status(hourly_severity_status, timely_severity_status)
-        else:
-            # Create new model object when dashboard_name and device_name are different from previous dashboard_name and device_name.
-            hourly_severity_status = DashboardSeverityStatusHourly(
-                dashboard_name=timely_severity_status.dashboard_name,
-                device_name=timely_severity_status.device_name,
-                reference_name=timely_severity_status.reference_name,
-                processed_for=now,
-                warning=timely_severity_status.warning,
-                critical=timely_severity_status.critical,
-                ok=timely_severity_status.ok,
-                down=timely_severity_status.down,
-                unknown=timely_severity_status.unknown
-            )
-            # append in list for every new dashboard_name and device_name.
-            hourly_severity_status_list.append(hourly_severity_status)
-            # assign new dashboard_name and device_name.
-            dashboard_name = timely_severity_status.dashboard_name
-            device_name = timely_severity_status.device_name
+        # Create new model object when dashboard_name and
+        # device_name are different from previous dashboard_name and device_name.
+        hourly_severity_status = DashboardSeverityStatusHourly(
+            dashboard_name=hourly_severity_status['dashboard_name'],
+            device_name=hourly_severity_status['dashboard_name'],
+            reference_name=hourly_severity_status['dashboard_name'],
+            processed_for=now,
+            warning=hourly_severity_status['Needs_Augmentation'],
+            critical=hourly_severity_status['Stop_Provisioning'],
+            ok=hourly_severity_status['Normal'],
+            down=hourly_severity_status['Down'],
+            unknown=hourly_severity_status['Unknown'],
+            organization=organizations.get(id=hourly_severity_status['organization'])
+        )
+        # append in list for every new dashboard_name and device_name.
+        hourly_severity_status_list.append(hourly_severity_status)
 
-    bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
+    if len(hourly_severity_status_list):
+        bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
 
     # delete the data from the DashboardSeverityStatusTimely model.
     last_hour_timely_severity_status.delete()
 
 
-def calculate_hourly_range_status(now):
+def calculate_hourly_range_status(now, then):
     '''
     Calculate the status of dashboard from DashboardRangeStatusTimely model
     and create list of DashboardRangeStatusHourly model object for calculated data
@@ -643,43 +864,56 @@ def calculate_hourly_range_status(now):
     return:
     '''
     # get all data from the model order by 'dashboard_name' and 'device_name'.
-    last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__lt=now)
+    last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Range1=Sum('range1'),
+        Range2=Sum('range2'),
+        Range3=Sum('range3'),
+        Range4=Sum('range4'),
+        Range5=Sum('range5'),
+        Range6=Sum('range6'),
+        Range7=Sum('range7'),
+        Range8=Sum('range8'),
+        Range9=Sum('range9'),
+        Range10=Sum('range10'),
+        Unknown=Sum('unknown')
+    )
+
+    organizations = Organization.objects.all()
 
     hourly_range_status_list = []   # list for the DashboardRangeStatusHourly model object
-    hourly_range_status = None
-    dashboard_name = ''
-    device_name = ''
-    for timely_range_status in last_hour_timely_range_status:
-        # Sum the status value for the same dashboard_name and device_name.
-        if dashboard_name == timely_range_status.dashboard_name and device_name == timely_range_status.device_name:
-            hourly_range_status = sum_range_status(hourly_range_status, timely_range_status)
-        else:
-            # Create new model object when dashboard_name and device_name are different from previous dashboard_name and device_name.
-            hourly_range_status = DashboardRangeStatusHourly(
-                dashboard_name=timely_range_status.dashboard_name,
-                device_name=timely_range_status.device_name,
-                reference_name=timely_range_status.reference_name,
-                processed_for=now,
-                range1=timely_range_status.range1,
-                range2=timely_range_status.range2,
-                range3=timely_range_status.range3,
-                range4=timely_range_status.range4,
-                range5=timely_range_status.range5,
-                range6=timely_range_status.range6,
-                range7=timely_range_status.range7,
-                range8=timely_range_status.range8,
-                range9=timely_range_status.range9,
-                range10=timely_range_status.range10,
-                unknown=timely_range_status.unknown
-            )
-            # append in list for every new dashboard_name and device_name.
-            hourly_range_status_list.append(hourly_range_status)
-            # assign new dashboard_name and device_name.
-            dashboard_name = timely_range_status.dashboard_name
-            device_name = timely_range_status.device_name
 
-    bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
+    for timely_range_status in last_hour_timely_range_status:
+        # Create new model object when dashboard_name and device_name are different
+        # from previous dashboard_name and device_name.
+        hourly_range_status = DashboardRangeStatusHourly(
+            dashboard_name=hourly_range_status['dashboard_name'],
+            device_name=hourly_range_status['dashboard_name'],
+            reference_name=hourly_range_status['dashboard_name'],
+            processed_for=now,
+            range1=hourly_range_status['Range1'],
+            range2=hourly_range_status['Range2'],
+            range3=hourly_range_status['Range3'],
+            range4=hourly_range_status['Range4'],
+            range5=hourly_range_status['Range5'],
+            range6=hourly_range_status['Range6'],
+            range7=hourly_range_status['Range7'],
+            range8=hourly_range_status['Range8'],
+            range9=hourly_range_status['Range9'],
+            range10=hourly_range_status['Range10'],
+            unknown=hourly_range_status['Unknown'],
+            organization=organizations.get(id=hourly_range_status['organization'])
+        )
+        # append in list for every new dashboard_name and device_name.
+        hourly_range_status_list.append(hourly_range_status)
+
+    if len(hourly_range_status_list):
+        bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
 
     # delete the data from the DashboardRangeStatusTimely model.
     last_hour_timely_range_status.delete()
@@ -717,11 +951,8 @@ def calculate_daily_main_dashboard():
     Task to calculate the daily status of main dashboard.
     '''
     now = timezone.now()
-
-    logger.info("CELERYBEAT: Daily: starts at ", now)
     calculate_daily_severity_status(now)
     calculate_daily_range_status(now)
-    logger.info("CELERYBEAT: Daily: ends at ", timezone.now())
 
 
 def calculate_daily_severity_status(now):
@@ -735,41 +966,60 @@ def calculate_daily_severity_status(now):
     return:
     '''
     # get the current timezone.
-    tzinfo = timezone.get_current_timezone()
+    # tzinfo = timezone.get_current_timezone()
     # get today date according to current timezone and reset time to 12 o'clock.
-    today = timezone.datetime(now.year, now.month, now.day, tzinfo=tzinfo)
+
+    today = timezone.datetime(now.year, now.month, now.day, 0, 0)
     previous_day = now - timezone.timedelta(days=1)
-    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
+    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, 0, 0)
+
     # get all result of yesterday only and order by 'dashboard_name' and'device_name'
-    last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
+    last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Normal=Sum('ok'),
+        Needs_Augmentation=Sum('warning'),
+        Stop_Provisioning=Sum('critical'),
+        Down=Sum('down'),
+        Unknown=Sum('unknown')
+    )
+    organizations = Organization.objects.all()
+    # [
+    # {
+    #   'dashboard_name': u'pmp_backhaul_capacity',
+    #   'Needs_Augmentation': 0, '
+    #   Normal': 1102,
+    #   'Unknown': 0,
+    #   'Stop_Provisioning': 0
+    #  }
+    # ]
 
     daily_severity_status_list = []     # list for the DashboardSeverityStatusDaily model object
-    daily_severity_status = None
-    dashboard_name = ''
-    device_name = ''
-    for hourly_severity_status in last_day_timely_severity_status:
-        if dashboard_name == hourly_severity_status.dashboard_name and device_name == hourly_severity_status.device_name:
-            daily_severity_status = sum_severity_status(daily_severity_status, hourly_severity_status)
-        else:
-            daily_severity_status = DashboardSeverityStatusDaily(
-                dashboard_name=hourly_severity_status.dashboard_name,
-                device_name=hourly_severity_status.device_name,
-                reference_name=hourly_severity_status.reference_name,
-                processed_for=yesterday,
-                warning=hourly_severity_status.warning,
-                critical=hourly_severity_status.critical,
-                ok=hourly_severity_status.ok,
-                down=hourly_severity_status.down,
-                unknown=hourly_severity_status.unknown
-            )
-            daily_severity_status_list.append(daily_severity_status)
-            dashboard_name = hourly_severity_status.dashboard_name
-            device_name = hourly_severity_status.device_name
 
-    bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
+    for hourly_severity_status in last_day_timely_severity_status:
+        daily_severity_status = DashboardSeverityStatusDaily(
+            dashboard_name=hourly_severity_status['dashboard_name'],
+            device_name=hourly_severity_status['dashboard_name'],
+            reference_name=hourly_severity_status['dashboard_name'],
+            processed_for=yesterday,
+            warning=hourly_severity_status['Needs_Augmentation'],
+            critical=hourly_severity_status['Stop_Provisioning'],
+            ok=hourly_severity_status['Normal'],
+            down=hourly_severity_status['Down'],
+            unknown=hourly_severity_status['Unknown'],
+            organization=organizations.get(id=hourly_severity_status['organization'])
+        )
+        daily_severity_status_list.append(daily_severity_status)
+
+    if len(daily_severity_status_list):
+        bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
 
     last_day_timely_severity_status.delete()
+    return True
 
 
 def calculate_daily_range_status(now):
@@ -785,411 +1035,58 @@ def calculate_daily_range_status(now):
     # get the current timezone.
     tzinfo = timezone.get_current_timezone()
     # get today date according to current timezone and reset time to 12 o'clock.
-    today = timezone.datetime(now.year, now.month, now.day, tzinfo=tzinfo)
+    today = timezone.datetime(now.year, now.month, now.day, 0, 0)
     previous_day = now - timezone.timedelta(days=1)
-    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
+    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, 0, 0)
     # get all result of yesterday only and order by 'dashboard_name' and'device_name'
-    last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
+    last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    ).values(
+        'dashboard_name',
+        'organization'
+    ).annotate(
+        Range1=Sum('range1'),
+        Range2=Sum('range2'),
+        Range3=Sum('range3'),
+        Range4=Sum('range4'),
+        Range5=Sum('range5'),
+        Range6=Sum('range6'),
+        Range7=Sum('range7'),
+        Range8=Sum('range8'),
+        Range9=Sum('range9'),
+        Range10=Sum('range10'),
+        Unknown=Sum('unknown')
+    )
+
+    organizations = Organization.objects.all()
 
     daily_range_status_list = []
-    daily_range_status = None
-    dashboard_name = ''
-    device_name = ''
-    for hourly_range_status in last_day_hourly_range_status:
-        if dashboard_name == hourly_range_status.dashboard_name and device_name == hourly_range_status.device_name:
-            daily_range_status = sum_range_status(daily_range_status, hourly_range_status)
-        else:
-            daily_range_status = DashboardRangeStatusDaily(
-                dashboard_name=hourly_range_status.dashboard_name,
-                device_name=hourly_range_status.device_name,
-                reference_name=hourly_range_status.reference_name,
-                processed_for=yesterday,
-                range1=hourly_range_status.range1,
-                range2=hourly_range_status.range2,
-                range3=hourly_range_status.range3,
-                range4=hourly_range_status.range4,
-                range5=hourly_range_status.range5,
-                range6=hourly_range_status.range6,
-                range7=hourly_range_status.range7,
-                range8=hourly_range_status.range8,
-                range9=hourly_range_status.range9,
-                range10=hourly_range_status.range10,
-                unknown=hourly_range_status.unknown
-            )
-            daily_range_status_list.append(daily_range_status)
-            dashboard_name = hourly_range_status.dashboard_name
-            device_name = hourly_range_status.device_name
 
-    bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
+    for hourly_range_status in last_day_hourly_range_status:
+        daily_range_status = DashboardRangeStatusDaily(
+            dashboard_name=hourly_range_status['dashboard_name'],
+            device_name=hourly_range_status['dashboard_name'],
+            reference_name=hourly_range_status['dashboard_name'],
+            processed_for=yesterday,
+            range1=hourly_range_status['Range1'],
+            range2=hourly_range_status['Range2'],
+            range3=hourly_range_status['Range3'],
+            range4=hourly_range_status['Range4'],
+            range5=hourly_range_status['Range5'],
+            range6=hourly_range_status['Range6'],
+            range7=hourly_range_status['Range7'],
+            range8=hourly_range_status['Range8'],
+            range9=hourly_range_status['Range9'],
+            range10=hourly_range_status['Range10'],
+            unknown=hourly_range_status['Unknown'],
+            organization=organizations.get(id=hourly_range_status['organization'])
+        )
+        daily_range_status_list.append(daily_range_status)
+
+    if len(daily_range_status_list):
+        bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
 
     last_day_hourly_range_status.delete()
+    return True
 
-
-# @task()
-def calculate_weekly_main_dashboard():
-    '''
-    Task to calculate the weekly status of main dashboard.
-    '''
-    logger.info("CELERYBEAT: Weekly: starts at ", timezone.now())
-    tzinfo = timezone.get_current_timezone()
-    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
-    previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
-    first_day = previous_day - timezone.timedelta(previous_day.weekday()) # First Day of Week [Date of Monday]
-    first_day = timezone.datetime(first_day.year, first_day.month, first_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
-
-    calculate_weekly_severity_status(previous_day, first_day)
-    calculate_weekly_range_status(previous_day, first_day)
-    logger.info("CELERYBEAT: Weekly: ends at ", timezone.now())
-
-
-def calculate_weekly_severity_status(day, first_day):
-    '''
-    Calculate the status of dashboard from DashboardSeverityStatusDaily model
-    and create list of DashboardSeverityStatusWeekly model object for calculated data
-    and result's processed_for date will be first day of week (i.e date of monday)
-
-    :param day: datetime - previous day of today
-    :param first_day: datetime - first day of Week(Date of Monday)
-
-    return:
-    '''
-    # get all result of day and order by 'dashboard_name' and'device_name'
-    last_week_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for=day)
-
-    weekly_severity_status_list = []
-    weekly_severity_status = None
-    # check if the day is monday or not.
-    is_monday = True if day.weekday() == 0 else False
-    for daily_severity_status in last_week_daily_severity_status:
-        # Creating object for the processed_for date of monday.
-        if is_monday:
-            weekly_severity_status = DashboardSeverityStatusWeekly(
-                dashboard_name=daily_severity_status.dashboard_name,
-                device_name=daily_severity_status.device_name,
-                reference_name=daily_severity_status.reference_name,
-                processed_for=first_day,
-                warning=daily_severity_status.warning,
-                critical=daily_severity_status.critical,
-                ok=daily_severity_status.ok,
-                down=daily_severity_status.down,
-                unknown=daily_severity_status.unknown
-            )
-        # getting object where processed_for is monday of that week or creating object for the same.
-        else:
-            weekly_severity_status, created  = DashboardSeverityStatusWeekly.objects.get_or_create(
-                dashboard_name=daily_severity_status.dashboard_name,
-                device_name=daily_severity_status.device_name,
-                processed_for=first_day
-            )
-            weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
-        weekly_severity_status_list.append(weekly_severity_status)
-
-    # Create the bulk object if day is monday else bulk update the model.
-    if is_monday:
-        bulk_update_create.delay(weekly_severity_status_list, action='create', model=DashboardSeverityStatusWeekly)
-    else:
-        bulk_update_create.delay(weekly_severity_status_list)
-
-
-def calculate_weekly_range_status(day, first_day):
-    '''
-    Calculate the status of dashboard from DashboardRangeStatusDaily model
-    and create list of DashboardRangeStatusWeekly model object for calculated data
-    and result's processed_for date will be first day of week (i.e date of monday)
-
-    :param day: datetime - previous day of today
-    :param first_day: datetime - first day of Week(Date of Monday)
-
-    return:
-    '''
-    # get all result of day and order by 'dashboard_name' and'device_name'
-    last_week_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for=day)
-
-    weekly_range_status_list = []
-    weekly_range_status = None
-    # check if the day is monday or not.
-    is_monday = True if day.weekday() == 0 else False
-    for daily_range_status in last_week_daily_range_status:
-        # Creating object for the processed_for date of monday.
-        if is_monday:
-            weekly_range_status = DashboardRangeStatusWeekly(
-                dashboard_name=daily_range_status.dashboard_name,
-                device_name=daily_range_status.device_name,
-                reference_name=daily_range_status.reference_name,
-                processed_for=first_day,
-                range1=daily_range_status.range1,
-                range2=daily_range_status.range2,
-                range3=daily_range_status.range3,
-                range4=daily_range_status.range4,
-                range5=daily_range_status.range5,
-                range6=daily_range_status.range6,
-                range7=daily_range_status.range7,
-                range8=daily_range_status.range8,
-                range9=daily_range_status.range9,
-                range10=daily_range_status.range10,
-                unknown=daily_range_status.unknown
-            )
-        # getting object where processed_for is monday of that week or creating object for the same.
-        else:
-            weekly_range_status, created = DashboardRangeStatusWeekly.objects.get_or_create(
-                dashboard_name=daily_range_status.dashboard_name,
-                device_name=daily_range_status.device_name,
-                processed_for=first_day,
-            )
-            weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
-        weekly_range_status_list.append(weekly_range_status)
-
-    # Create the bulk object if day is monday else bulk update the model.
-    if is_monday:
-        bulk_update_create.delay(weekly_range_status_list, action='create', model=DashboardRangeStatusWeekly)
-    else:
-        bulk_update_create.delay(weekly_range_status_list)
-
-
-# @task()
-def calculate_monthly_main_dashboard():
-    """
-    Task to calculate the monthly status of main dashboard.
-    """
-    now = timezone.now()
-    logger.info("CELERYBEAT: Monthly: starts at ", now)
-    tzinfo = timezone.get_current_timezone()
-    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
-    previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
-    first_day = timezone.datetime(previous_day.year, previous_day.month, 1, tzinfo=timezone.get_current_timezone())
-
-    calculate_monthly_severity_status(previous_day, first_day)
-    calculate_monthly_range_status(previous_day, first_day)
-    logger.info("CELERYBEAT: Monthly: ends at ", timezone.now())
-
-
-def calculate_monthly_range_status(day, first_day):
-    '''
-    Calculate the status of dashboard from DashboardRangeStatusDaily model
-    and create list of DashboardRangeStatusMonthly model object for calculated data
-    and result's processed_for date will be first day of month.
-
-    :param day: datetime - previous day of today
-    :param first_day: datetime - first day of month.
-
-    return:
-    '''
-    # get all result of day and order by 'dashboard_name' and'device_name'
-    last_month_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for=day)
-
-    monthly_range_status_list = []
-    monthly_range_status = None
-    # check if the day is first day of month or not.
-    is_first_day_of_month = True if day.day == 1 else False
-    for daily_range_status in last_month_daily_range_status:
-        # getting object where processed_for is first day of month or creating object for the same.
-        if not is_first_day_of_month:
-            monthly_range_status, created = DashboardRangeStatusMonthly.objects.get_or_create(
-                dashboard_name=daily_range_status.dashboard_name,
-                device_name=daily_range_status.device_name,
-                processed_for=first_day
-            )
-            monthly_range_status = sum_range_status(monthly_range_status, daily_range_status)
-            # monthly_range_status.save() # Save later so current process doesn't slow.
-        # Creating object for the processed_for date of first day of month.
-        else:
-            monthly_range_status = DashboardRangeStatusMonthly(
-                dashboard_name=daily_range_status.dashboard_name,
-                device_name=daily_range_status.device_name,
-                reference_name=daily_range_status.reference_name,
-                processed_for=first_day,
-                range1=daily_range_status.range1,
-                range2=daily_range_status.range2,
-                range3=daily_range_status.range3,
-                range4=daily_range_status.range4,
-                range5=daily_range_status.range5,
-                range6=daily_range_status.range6,
-                range7=daily_range_status.range7,
-                range8=daily_range_status.range8,
-                range9=daily_range_status.range9,
-                range10=daily_range_status.range10,
-                unknown=daily_range_status.unknown
-            )
-        monthly_range_status_list.append(monthly_range_status)
-
-    if is_first_day_of_month:
-        bulk_update_create.delay(monthly_range_status_list, action='create', model=DashboardRangeStatusMonthly)
-    else:
-        bulk_update_create.delay(monthly_range_status_list)
-
-
-def calculate_monthly_severity_status(day, first_day):
-    '''
-    Calculate the status of dashboard from DashboardSeverityStatusDaily model
-    and create list of DashboardSeverityStatusMonthly model object for calculated data
-    and result's processed_for date will be first day of month.
-
-    :param day: datetime - previous day of today
-    :param first_day: datetime - first day of month.
-
-    return:
-    '''
-    # get all result of day and order by 'dashboard_name' and'device_name'
-    last_month_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for=day)
-
-    monthly_severity_status_list = []
-    monthly_severity_status = None
-    # check if the day is first day of month or not.
-    is_first_day_of_month = True if day.day == 1 else False
-    for daily_severity_status in last_month_daily_severity_status:
-        # getting object where processed_for is first day of month or creating object for the same.
-        if not is_first_day_of_month:
-            monthly_severity_status, created = DashboardSeverityStatusMonthly.objects.get_or_create(
-                dashboard_name=daily_severity_status.dashboard_name,
-                device_name=daily_severity_status.device_name,
-                processed_for=first_day
-            )
-            monthly_severity_status = sum_severity_status(monthly_severity_status, daily_severity_status)
-            # monthly_severity_status.save() # Save later so current process doesn't slow.
-        # Creating object for the processed_for date of first day of month.
-        else:
-            monthly_severity_status = DashboardSeverityStatusMonthly(
-                dashboard_name=daily_severity_status.dashboard_name,
-                device_name=daily_severity_status.device_name,
-                reference_name=daily_severity_status.reference_name,
-                processed_for=first_day,
-                warning=daily_severity_status.warning,
-                critical=daily_severity_status.critical,
-                ok=daily_severity_status.ok,
-                down=daily_severity_status.down,
-                unknown=daily_severity_status.unknown
-            )
-        monthly_severity_status_list.append(monthly_severity_status)
-
-    if is_first_day_of_month:
-        bulk_update_create.delay(monthly_severity_status_list, action='create', model=DashboardSeverityStatusMonthly)
-    else:
-        bulk_update_create.delay(monthly_severity_status_list)
-
-
-# @task()
-def calculate_yearly_main_dashboard():
-    """
-    Task to calculate the yearly status of main dashboard.
-    """
-    now = timezone.now()
-    logger.info("CELERYBEAT: Yearly: starts at ", now)
-    tzinfo = timezone.get_current_timezone()
-    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
-    previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
-    first_month = timezone.datetime(previous_day.year, 1, previous_day.day, tzinfo=timezone.get_current_timezone())
-
-    calculate_yearly_severity_status(previous_day, first_month)
-    calculate_yearly_range_status(previous_day, first_month)
-    logger.info("CELERYBEAT: Yearly: ends at ", timezone.now())
-
-
-def calculate_yearly_range_status(day, first_month):
-    '''
-    Calculate the status of dashboard from DashboardRangeStatusMonthly model
-    and create list of DashboardRangeStatusYearly model object for calculated data
-    and result's processed_for date will be first day of month.
-
-    :param day: datetime - previous day of today
-    :param first_month: datetime - first month of today's year.
-
-    return:
-    '''
-    # get all result of day and order by 'dashboard_name' and'device_name'
-    last_year_monthly_range_status = DashboardRangeStatusMonthly.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__year=day.year)
-
-    yearly_range_status_list = []
-    yearly_range_status = None
-    # check if the day of the month is january or not.
-    is_january = True if day.month == 1 else False
-    for monthly_range_status in last_year_monthly_range_status:
-        # getting object where processed_for is first month or creating object for the same.
-        if not is_january:
-            yearly_range_status, created = DashboardRangeStatusYearly.objects.get_or_create(
-                dashboard_name=monthly_range_status.dashboard_name,
-                device_name=monthly_range_status.device_name,
-                processed_for=first_month
-            )
-            yearly_range_status = sum_range_status(yearly_range_status, monthly_range_status)
-            # yearly_range_status.save() # Save later so current process doesn't slow.
-        # Creating object for the processed_for date of first month.
-        else:
-            yearly_range_status = DashboardRangeStatusYearly(
-                dashboard_name=monthly_range_status.dashboard_name,
-                device_name=monthly_range_status.device_name,
-                reference_name=monthly_range_status.reference_name,
-                processed_for=first_month,
-                range1=monthly_range_status.range1,
-                range2=monthly_range_status.range2,
-                range3=monthly_range_status.range3,
-                range4=monthly_range_status.range4,
-                range5=monthly_range_status.range5,
-                range6=monthly_range_status.range6,
-                range7=monthly_range_status.range7,
-                range8=monthly_range_status.range8,
-                range9=monthly_range_status.range9,
-                range10=monthly_range_status.range10,
-                unknown=monthly_range_status.unknown
-            )
-        yearly_range_status_list.append(yearly_range_status)
-
-    if is_january:
-        bulk_update_create.delay(yearly_range_status_list, action='create', model=DashboardRangeStatusYearly)
-    else:
-        bulk_update_create.delay(yearly_range_status_list)
-
-
-def calculate_yearly_severity_status(day, first_month):
-    '''
-    Calculate the status of dashboard from DashboardSeverityStatusMonthly model
-    and create list of DashboardSeverityStatusYearly model object for calculated data
-    and result's processed_for date will be first day of month.
-
-    :param day: datetime - previous day of today
-    :param first_month: datetime - first month of today's year.
-
-    return:
-    '''
-    # get all result of day and order by 'dashboard_name' and'device_name'
-    last_year_monthly_severity_status = DashboardSeverityStatusMonthly.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__year=day.year)
-
-    yearly_severity_status_list = []
-    yearly_severity_status = None
-    is_january = True if day.month == 1 else False
-    # check if the day of the month is january or not.
-    for monthly_severity_status in last_year_monthly_severity_status:
-        # getting object where processed_for is first month or creating object for the same.
-        if not is_january:
-            yearly_severity_status, created = DashboardSeverityStatusYearly.objects.get_or_create(
-                dashboard_name=monthly_severity_status.dashboard_name,
-                device_name=monthly_severity_status.device_name,
-                processed_for=first_month
-            )
-            yearly_severity_status = sum_severity_status(yearly_severity_status, monthly_severity_status)
-            # yearly_severity_status.save() # Save later so current process doesn't slow.
-        # Creating object for the processed_for date of first month.
-        else:
-            yearly_severity_status = DashboardSeverityStatusYearly(
-                dashboard_name=monthly_severity_status.dashboard_name,
-                device_name=monthly_severity_status.device_name,
-                reference_name=monthly_severity_status.reference_name,
-                processed_for=first_month,
-                warning=monthly_severity_status.warning,
-                critical=monthly_severity_status.critical,
-                ok=monthly_severity_status.ok,
-                down=monthly_severity_status.down,
-                unknown=monthly_severity_status.unknown
-            )
-        yearly_severity_status_list.append(yearly_severity_status)
-
-    if is_january:
-        bulk_update_create.delay(yearly_severity_status_list, action='create', model=DashboardSeverityStatusYearly)
-    else:
-        bulk_update_create.delay(yearly_severity_status_list)

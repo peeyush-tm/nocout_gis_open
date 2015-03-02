@@ -279,7 +279,7 @@ def prepare_machines(device_list):
     return machine_dict
 
 
-def organization_sectors(organization, technology=None):
+def organization_sectors(organization, technology=0):
     """
     To result back the all the sector from the respective organization.
 
@@ -295,6 +295,10 @@ def organization_sectors(organization, technology=None):
         sector_configured_on__is_added_to_nms=1,
         sector_configured_on__isnull=False
     )
+
+    if organization:
+        sector_objects = sector_objects.prefetch_related('organization').filter(organization__in=organization)
+
     if int(technology) == int(PMP.ID):
         sector_list = sector_objects.filter(
                 sector_id__isnull=False,
@@ -321,8 +325,5 @@ def organization_sectors(organization, technology=None):
 
     else:
         sector_list = sector_objects
-
-    if organization:
-        sector_list = sector_objects.prefetch_related('organization').filter(organization__in=organization)
 
     return sector_list

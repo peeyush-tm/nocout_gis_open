@@ -85,7 +85,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         startdate = datetime.now()
-        enddate = startdate + timedelta(days=15)
+        enddate = startdate + timedelta(days=-15)
 
         qs = []
         limit = 10
@@ -113,7 +113,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         if qs:
             for dct in qs:
-                dct['logged_at'] = time_converter(dct['logged_at'])
+                # dct['logged_at'] = time_converter(dct['logged_at'])
                 # logger.debug(dct)
                 for key, val in dct.items():
                     try:
