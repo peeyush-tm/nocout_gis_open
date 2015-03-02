@@ -338,7 +338,7 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
 
     # Get Last Six Month List
     last_six_months_list, \
-    months_list = perf_views.getLastXMonths(6);
+    months_list = perf_views.getLastXMonths(6)
 
     # loop sectors list
     for i in range(len(sectors_list)):
