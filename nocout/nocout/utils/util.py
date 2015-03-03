@@ -801,7 +801,7 @@ def convert_utc_to_local_timezone(datetime_obj=None):
             except Exception as e:
                 log.error("Timezone conversion not possible. Exception: {0}".format(e.message))
     else:
-        return datetime_obj
+        return datetime_obj.strftime(DATE_TIME_FORMAT)
 
     return output
 
