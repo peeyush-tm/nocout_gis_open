@@ -359,11 +359,11 @@ def cache_for(time):
 def non_cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None):
     """
 
-    :param monitored_only:
-    :param technology:
-    :param type_rf:
-    :param bs_id:
-    :return:
+    :param monitored_only: true false
+    :param technology: technology name
+    :param type_rf: sector, ss, bh
+    :param bs_id: id of the base station
+    :return: live cached result for the bs or for complete inventory
     """
     query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id)
     return fetch_raw_result(query)
@@ -373,7 +373,12 @@ def non_cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=
 def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None):
     """
 
-    :return:
+
+    :param monitored_only: true false
+    :param technology: technology name
+    :param type_rf: sector, ss, bh
+    :param bs_id: id of the base station
+    :return: cached result for the bs or for complete inventory
     """
     query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id)
     return fetch_raw_result(query)
