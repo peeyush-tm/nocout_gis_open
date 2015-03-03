@@ -4221,16 +4221,66 @@ function devicePlottingClass_gmap() {
 			}
 
 			/*Fresnel template String*/
-			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div>'+left_str+'</div>';
-			var chart_detail = '<div id="chart-details"><div><span id="longitude-lbl" class="chart-detail-lbl">Longitude </span> <span id="longitude"></span></div><div><span id="latitude-lbl" class="chart-detail-lbl">Latitude </span> <span id="latitude"></span></div><div><span id="distance-lbl" class="chart-detail-lbl">Distance </span> <span id="distance"></span></div><div><span id="altitude-lbl" class="chart-detail-lbl">Altitude </span> <span id="altitude"></span></div><div><span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span> <span id="obstacle"></span></div><div><span id="los-lbl" class="chart-detail-lbl">LOS </span> <span id="los"></span></div><div><span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span> <span id="fresnel1"></span></div><div><span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span> <span id="fresnel2"></span></div><div><span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span> <span id="fresnel-altitude"></span></div></div>';
-			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
-			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div>'+right_str+'</div>';
+			var leftSlider = '<div class="col-md-2" align="center">\
+							  <div class="col-md-8 col-md-offset-2">\
+						 	  <input type="text" style="width:73%;float:left;" id="antinaVal1" class="form-control" value="'+antenaHight1+'"> \
+						 	  <span style="top:5px;position:relative;">m</span>\
+						 	  </div><div class="clearfix"></div>\
+						 	  <div id="antina_height1" style="height:300px;" class="slider slider-blue"></div>'+left_str+'</div>';
 
-			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;z-index:9999;position:relative;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"<div class='clearfix'></div>"+chart_detail+"</div>";
+			var chart_detail = '<div id="chart-details">\
+								<div>\
+								<span id="longitude-lbl" class="chart-detail-lbl">Longitude </span>\
+								<span id="longitude"></span>\
+								</div><div>\
+								<span id="latitude-lbl" class="chart-detail-lbl">Latitude </span>\
+								<span id="latitude"></span>\
+								</div><div>\
+								<span id="distance-lbl" class="chart-detail-lbl">Distance </span>\
+								<span id="distance"></span>\
+								</div><div>\
+								<span id="altitude-lbl" class="chart-detail-lbl">Altitude </span>\
+								<span id="altitude"></span>\
+								</div><div>\
+								<span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span>\
+								<span id="obstacle"></span>\
+								</div><div>\
+								<span id="los-lbl" class="chart-detail-lbl">LOS </span>\
+								<span id="los"></span>\
+								</div><div>\
+								<span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span>\
+								<span id="fresnel1"></span>\
+								</div><div>\
+								<span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span>\
+								<span id="fresnel2"></span>\
+								</div><div>\
+								<span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span>\
+								<span id="fresnel-altitude"></span>\
+								</div></div>';
 
-			// if(window.location.pathname.indexOf("googleEarth")> -1) {
-			// 	fresnelTemplate = '<iframe allowTransparency="true" style="position:absolute; top:35px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-4 col-md-offset-8"></iframe>'+fresnelTemplate; 
-			// }
+			var middleBlock = '<div class="col-md-8 mid_fresnel_container">\
+							   <div align="center">\
+							   <div class="col-md-12">Clearance Factor</div>\
+							   <div class="col-md-4 col-md-offset-3">\
+							   <div id="clear-factor" class="slider slider-red"></div>\
+							   </div><div class="col-md-2">\
+							   <input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'">\
+							   </div><div class="clearfix"></div></div>\
+							   <div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div>\
+							   <div class="clearfix divide-10"></div>\
+							   <div id="pin-points-container" class="col-md-12" align="center"></div></div>';
+			
+			var rightSlider = '<div class="col-md-2" align="center">\
+							   <div class="col-md-8 col-md-offset-2">\
+							   <input type="text" id="antinaVal2" style="width:73%;float:left;" class="form-control" value="'+antenaHight2+'">\
+							   <span style="top:5px;position:relative;">m</span>\
+							   </div><div class="clearfix"></div>\
+							   <div id="antina_height2" class="slider slider-blue" style="height:300px;"></div>'+right_str+'</div>';
+
+			var fresnelTemplate = "<div class='fresnelContainer row' \
+								   style='height:400px;overflow-y:auto;z-index:9999;position:relative;'\
+								   >"+leftSlider+" "+middleBlock+" "+rightSlider+"<div class='clearfix'></div>"+chart_detail+"</div>";
+
 
 			/*Call the bootbox to show the popup with Fresnel Zone Graph*/
 			bootbox.dialog({
@@ -4296,12 +4346,49 @@ function devicePlottingClass_gmap() {
 		/*Plotting chart with points array using jquery.flot.js*/
 		var fresnelChart = $.plot(
 			$("#chart_div"),
-			[ 
-				{ data: dataPinpoints, label: "Pin Points", lines: { show: false}, points: { show: true ,fill: true, radius: 1}, bars: {show:true, lineWidth:1, fill:false, barWidth:0}},
-				{ data: dataAltitude, label: "Altitude",lines: { show: true ,fill: 0.8, fillColor: altitudeColor}},
-				{ data: dataLOS, label: "LOS", lines: { show: true}},
-				{ data: dataFresnel1, label: "Fresnel-1 U"},
-				{ data: dataFresnel2, label: "Fresnel-2 L"}
+			[
+				{
+					data: dataPinpoints,
+					label: "Pin Points",
+					lines: {
+						show: false
+					},
+					points: {
+						show: true ,
+						fill: true,
+						radius: 1
+					},
+					bars: {
+						show:true,
+						lineWidth:1,
+						fill:false,
+						barWidth:0
+					}
+				},
+				{
+					data: dataAltitude,
+					label: "Altitude",
+					lines: {
+						show: true,
+						fill: 0.8,
+						fillColor: altitudeColor
+					}
+				},
+				{
+					data: dataLOS,
+					label: "LOS",
+					lines: {
+						show: true
+					}
+				},
+				{
+					data: dataFresnel1,
+					label: "Fresnel-1 U"
+				},
+				{
+					data: dataFresnel2,
+					label: "Fresnel-2 L"
+				}
 			],
 			{
 				series: {
@@ -4359,6 +4446,10 @@ function devicePlottingClass_gmap() {
 			});
 			$("#chart_div").addClass('readytoclick');
 		}
+
+		var yaxisLabel = $("<div class='axisLabel yaxisLabel'></div>").text("Height (m)").appendTo("#chart_div");
+		var xaxisLabel = $("<div class='axisLabel xaxisLabel'></div>").text("Distance (m)").appendTo("#chart_div");
+		// yaxisLabel.css("margin-top", yaxisLabel.width() / 2 - 20);
 
 		/*Graph Click Event End*/
 	};
