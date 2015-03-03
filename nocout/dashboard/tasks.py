@@ -334,7 +334,7 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
             if len(data_list):
                 # call the method to bulk create the onjects.
                 bulk_update_create.delay(
-                    data_list,
+                    bulky=data_list,
                     action='create',
                     model=model)
 
@@ -416,7 +416,7 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
             if len(data_list):
                 # call method to bulk create the model object.
                 bulk_update_create.delay(
-                    data_list,
+                    bulky=data_list,
                     action='create',
                     model=model
                 )
@@ -442,7 +442,7 @@ def prepare_network_alert(organization, dashboard_name, processed_for, dashboard
         technology_id = latency_technology.ID
     except Exception as e:
         logger.exception(e)
-        # return False
+        return False
 
     g_jobs = list()
     ret = False
@@ -970,7 +970,9 @@ def calculate_hourly_severity_status(now, then):
         hourly_severity_status_list.append(hourly_severity_status)
 
     if len(hourly_severity_status_list):
-        bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
+        bulk_update_create.delay(bulky=hourly_severity_status_list,
+                                 action='create',
+                                 model=DashboardSeverityStatusHourly)
 
     # delete the data from the DashboardSeverityStatusTimely model.
     last_hour_timely_severity_status.delete()
@@ -1036,7 +1038,9 @@ def calculate_hourly_range_status(now, then):
         hourly_range_status_list.append(hourly_range_status)
 
     if len(hourly_range_status_list):
-        bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
+        bulk_update_create.delay(bulky=hourly_range_status_list,
+                                 action='create',
+                                 model=DashboardRangeStatusHourly)
 
     # delete the data from the DashboardRangeStatusTimely model.
     last_hour_timely_range_status.delete()
@@ -1139,7 +1143,9 @@ def calculate_daily_severity_status(now):
         daily_severity_status_list.append(daily_severity_status)
 
     if len(daily_severity_status_list):
-        bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
+        bulk_update_create.delay(bulky=daily_severity_status_list,
+                                 action='create',
+                                 model=DashboardSeverityStatusDaily)
 
     last_day_timely_severity_status.delete()
     return True
@@ -1208,7 +1214,9 @@ def calculate_daily_range_status(now):
         daily_range_status_list.append(daily_range_status)
 
     if len(daily_range_status_list):
-        bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
+        bulk_update_create.delay(bulky=daily_range_status_list,
+                                 action='create',
+                                 model=DashboardRangeStatusDaily)
 
     last_day_hourly_range_status.delete()
     return True
