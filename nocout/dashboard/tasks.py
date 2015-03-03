@@ -1,6 +1,6 @@
 from celery import task, group
 
-from django.db.models import Q, Count, F, Sum
+from django.db.models import Q, Sum, Avg
 from django.utils import timezone
 import datetime
 
@@ -940,10 +940,10 @@ def calculate_hourly_severity_status(now, then):
         'organization'
     ).annotate(
         Normal=Sum('ok'),
-        Needs_Augmentation=Sum('warning'),
-        Stop_Provisioning=Sum('critical'),
-        Down=Sum('down'),
-        Unknown=Sum('unknown')
+        Needs_Augmentation=Avg('warning'),
+        Stop_Provisioning=Avg('critical'),
+        Down=Avg('down'),
+        Unknown=Avg('unknown')
     )
 
     organizations = Organization.objects.all()
@@ -996,17 +996,17 @@ def calculate_hourly_range_status(now, then):
         'dashboard_name',
         'organization'
     ).annotate(
-        Range1=Sum('range1'),
-        Range2=Sum('range2'),
-        Range3=Sum('range3'),
-        Range4=Sum('range4'),
-        Range5=Sum('range5'),
-        Range6=Sum('range6'),
-        Range7=Sum('range7'),
-        Range8=Sum('range8'),
-        Range9=Sum('range9'),
-        Range10=Sum('range10'),
-        Unknown=Sum('unknown')
+        Range1=Avg('range1'),
+        Range2=Avg('range2'),
+        Range3=Avg('range3'),
+        Range4=Avg('range4'),
+        Range5=Avg('range5'),
+        Range6=Avg('range6'),
+        Range7=Avg('range7'),
+        Range8=Avg('range8'),
+        Range9=Avg('range9'),
+        Range10=Avg('range10'),
+        Unknown=Avg('unknown')
     )
 
     organizations = Organization.objects.all()
@@ -1109,10 +1109,10 @@ def calculate_daily_severity_status(now):
         'organization'
     ).annotate(
         Normal=Sum('ok'),
-        Needs_Augmentation=Sum('warning'),
-        Stop_Provisioning=Sum('critical'),
-        Down=Sum('down'),
-        Unknown=Sum('unknown')
+        Needs_Augmentation=Avg('warning'),
+        Stop_Provisioning=Avg('critical'),
+        Down=Avg('down'),
+        Unknown=Avg('unknown')
     )
     organizations = Organization.objects.all()
     # [
@@ -1175,17 +1175,17 @@ def calculate_daily_range_status(now):
         'dashboard_name',
         'organization'
     ).annotate(
-        Range1=Sum('range1'),
-        Range2=Sum('range2'),
-        Range3=Sum('range3'),
-        Range4=Sum('range4'),
-        Range5=Sum('range5'),
-        Range6=Sum('range6'),
-        Range7=Sum('range7'),
-        Range8=Sum('range8'),
-        Range9=Sum('range9'),
-        Range10=Sum('range10'),
-        Unknown=Sum('unknown')
+        Range1=Avg('range1'),
+        Range2=Avg('range2'),
+        Range3=Avg('range3'),
+        Range4=Avg('range4'),
+        Range5=Avg('range5'),
+        Range6=Avg('range6'),
+        Range7=Avg('range7'),
+        Range8=Avg('range8'),
+        Range9=Avg('range9'),
+        Range10=Avg('range10'),
+        Unknown=Avg('unknown')
     )
 
     organizations = Organization.objects.all()
