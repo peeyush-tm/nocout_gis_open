@@ -1333,13 +1333,19 @@ function WhiteMapClass() {
 
 			// Update "searchResultData" with map data as per applied filters for plotting.
 			searchResultData = JSON.parse(JSON.stringify(networkMapInstance.updateStateCounter_gmaps(true)));
-			var lat = +lat_long_string.split(",")[0], lng = +lat_long_string.split(",")[1],
+
+			var lat = +lat_long_string.split(",")[0],
+				lng = +lat_long_string.split(",")[1],
 				bounds = new OpenLayers.Bounds,
 				lonLat = new OpenLayers.LonLat(lng, lat);
 
 			// search_icon.png
 			bounds.extend(lonLat);
 			ccpl_map.zoomToExtent(bounds);
+
+			if(ccpl_map.getZoom() > 12) {
+                ccpl_map.zoomTo(12);
+            }
 
 			var markers = new OpenLayers.Layer.Markers("SearchMarkers"),
 				search_icon = base_url+""+lat_lon_search_icon,
