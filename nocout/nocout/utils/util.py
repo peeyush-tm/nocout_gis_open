@@ -6,7 +6,7 @@ from random import randint
 from django.db import connections
 from nocout.settings import DATE_TIME_FORMAT
 
-from nocout.settings import DATE_TIME_FORMAT
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
@@ -778,28 +778,30 @@ def convert_utc_to_local_timezone(datetime_obj=None):
            - output (str) - output as a timestamp string for e.g. 12/25/14 (Dec) 17:56:03 (05:56 PM)
 
     """
+    if USE_TZ:
+        # get 'utc' timezone
+        from_zone = tz.tzutc()
 
-    # get 'utc' timezone
-    from_zone = tz.tzutc()
+        # get 'local' timezone
+        to_zone = tz.tzlocal()
 
-    # get 'local' timezone
-    to_zone = tz.tzlocal()
+        # output timestamp
+        output = datetime_obj
 
-    # output timestamp
-    output = datetime_obj
+        if output:
+            try:
+                # modify timezone info in datetime object to 'utc'
+                output = output.replace(tzinfo=from_zone)
 
-    if output:
-        try:
-            # modify timezone info in datetime object to 'utc'
-            output = output.replace(tzinfo=from_zone)
+                # convert timezone from 'utc' to 'local'
+                output = output.astimezone(to_zone)
 
-            # convert timezone from 'utc' to 'local'
-            output = output.astimezone(to_zone)
-
-            # format datetime string
-            output = output.strftime(DATE_TIME_FORMAT)
-        except Exception as e:
-            log.error("Timezone conversion not possible. Exception: ", e.message)
+                # format datetime string
+                output = output.strftime(DATE_TIME_FORMAT)
+            except Exception as e:
+                log.error("Timezone conversion not possible. Exception: {0}".format(e.message))
+    else:
+        return datetime_obj
 
     return output
 
