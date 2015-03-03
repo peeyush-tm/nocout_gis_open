@@ -89,6 +89,7 @@
                 window.location.replace('{{ delete_url }}');
             }
         }
+
         $(document).ready(function() {
         $("#id_update_and_show").on("click", function(e) {
             e.preventDefault();
@@ -123,13 +124,6 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-
-            $(".previous_page_url").click(function(){
-                var required_url = window.location.href.split('/');
-                required_url.splice(-3);
-                required_url = required_url.join('/');
-                $(this).attr("href", required_url);
-            })
             // getting values of select menu's on load
 
             $("#id_bh_configured_on").select2({
@@ -301,6 +295,21 @@
     {% endif %}
 
     <script>
+        // previous url redirection on base station
+        $(".previous_page_url").click(function() {
+            // split current window url by taking slash as a seperator
+            required_url = window.location.href.split('/');
+
+            // remove last three elements of url
+            required_url.splice(-3);
+
+            // join array elements to create url
+            required_url = required_url.join('/');
+
+            // redirect to 'required_url'
+            window.location.href = required_url;
+        });
+
         // Radio specific functions only, nothing to do with form fields.
         $(function() {
             /* :START: Technology radio select selected and bind reload onchange event
