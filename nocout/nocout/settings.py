@@ -455,8 +455,8 @@ CELERYBEAT_SCHEDULE = {
     },
     # RF Network Availability Job - PTP-BH
     'calculate_rf_network_availability-PTP-BH' : {
-        'task' : 'performance.tasks.calculate_rf_network_availability',
-        'kwargs': {'technology': 'PTP-BH'},
+        'task': 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'P2P'},  # PTP BH is not a tachnology, P2P is
         'schedule': crontab(minute=05, hour=0)
         
     },
