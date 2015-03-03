@@ -31,58 +31,57 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
  * This event triggers when map pan ends
  * @event mapDragEndCondition
  */
-WhiteMapClass.prototype.mapDragEndCondition = function() {
+// WhiteMapClass.prototype.mapDragEndCondition = function() {
+// 	setTimeout(function() {
+// 		if(ccpl_map.getZoom() > 10) {
+// 			if(isDebug) {
+// 				console.log("White Map Dragend Event");
+// 				var start_date_drag = new Date();
+// 			}
 
-	setTimeout(function() {
-		if(ccpl_map.getZoom() > 10) {
-			if(isDebug) {
-				console.log("White Map Dragend Event");
-				var start_date_drag = new Date();
-			}
+// 			if(ccpl_map.getLayersByName("Markers") && ccpl_map.getLayersByName("Markers").length > 0) {
+// 				var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
+// 					current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
+// 				if(current_threshold > 1.5  && current_distance > 1) {
+// 					// Remove Clusters
+// 					ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
+// 					ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
+// 					ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+// 					ccpl_map.getLayersByName("Markers")[0].redraw();
+// 				}
+// 			}
 
-			if(ccpl_map.getLayersByName("Markers") && ccpl_map.getLayersByName("Markers").length > 0) {
-				var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
-					current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
-				if(current_threshold > 1.5  && current_distance > 1) {
-					// Remove Clusters
-					ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
-					ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
-					ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-					ccpl_map.getLayersByName("Markers")[0].redraw();
-				}
-			}
-
-			// Show/Hide White Map Features
-			whiteMapClass.showBaseStaionsInBounds();
-			whiteMapClass.showSectorDevicesInBounds();
-			whiteMapClass.showSectorPolygonInBounds();
-			whiteMapClass.showLinesInBounds();
-			whiteMapClass.showSubStaionsInBounds();
+// 			// Show/Hide White Map Features
+// 			whiteMapClass.showBaseStaionsInBounds();
+// 			whiteMapClass.showSectorDevicesInBounds();
+// 			whiteMapClass.showSectorPolygonInBounds();
+// 			whiteMapClass.showLinesInBounds();
+// 			whiteMapClass.showSubStaionsInBounds();
 			
 
-	    	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-	    	if(new_bs.length > 0) {
-	    		if(!callsInProcess) {
-	    			// Clear performance calling timeout
-					if(recallPerf != "") {
-	        			clearTimeout(recallPerf);
-	        			recallPerf = "";
-	        		}
-	    			gisPerformanceClass.start(new_bs);
-	    		} else {
-	    			current_bs_list = current_bs_list.concat(new_bs);
-	    		}
-	    	}
+// 	    	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
+// 	    	if(new_bs.length > 0) {
+// 	    		if(!callsInProcess) {
+// 	    			// Clear performance calling timeout
+// 					if(recallPerf != "") {
+// 	        			clearTimeout(recallPerf);
+// 	        			recallPerf = "";
+// 	        		}
+// 	    			gisPerformanceClass.start(new_bs);
+// 	    		} else {
+// 	    			current_bs_list = current_bs_list.concat(new_bs);
+// 	    		}
+// 	    	}
 
-	    	if(isDebug) {
-	        	var time_diff = (new Date().getTime() - start_date_drag.getTime())/1000;
-				console.log("White Map Dragend End Time :- "+ time_diff + "Seconds");
-				console.log("*************************************");
-				start_date_drag = "";
-			}
-	    }
-	}, 500);
-};
+// 	    	if(isDebug) {
+// 	        	var time_diff = (new Date().getTime() - start_date_drag.getTime())/1000;
+// 				console.log("White Map Dragend End Time :- "+ time_diff + "Seconds");
+// 				console.log("*************************************");
+// 				start_date_drag = "";
+// 			}
+// 	    }
+// 	}, 300);
+// };
 
 /**
  * Event triggered for Map Idle Condition. [Whenever Map is Zoomed, Panned or something else]
@@ -118,11 +117,11 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 	            }
 			}
 
-    		if(ccpl_map.getZoom() < 11 || searchResultData.length > 0) {
+			var states_with_bounds = state_lat_lon_db.where(function(obj) {
+				return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
+    		});
 
-    			var states_with_bounds = state_lat_lon_db.where(function(obj) {
-    				return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
-        		});
+			if(states_with_bounds.length > 0 || ccpl_map.getZoom() < 11 || searchResultData.length > 0) {
 
         		var states_array = [];
 
@@ -135,7 +134,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         			}
         		}
 
-        		var plottable_data = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true))),
+        		var plottable_data =  searchResultData.length > 0 ? searchResultData : gmap_self.updateStateCounter_gmaps(true),
 					current_bound_devices = [],
 					data_to_plot = [];
 
@@ -216,14 +215,57 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 						var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
 							current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
+
 						if(current_threshold == 1.5  && current_distance == 1) {
 							// Remove Clusters
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 2;
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 100;
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+							ccpl_map.getLayersByName("Markers")[0].redraw();
 						}
-					}
+					} else {
 
+						if(ccpl_map.getLayersByName("Markers") && ccpl_map.getLayersByName("Markers").length > 0) {
+							var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
+								current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
+
+							if(current_threshold > 1.5  && current_distance > 1) {
+								// Remove Clusters
+								ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
+								ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
+								ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+								ccpl_map.getLayersByName("Markers")[0].redraw();
+							}
+						}
+
+						// Show/Hide White Map Features
+						whiteMapClass.showBaseStaionsInBounds();
+						whiteMapClass.showSectorDevicesInBounds();
+						whiteMapClass.showSectorPolygonInBounds();
+						whiteMapClass.showLinesInBounds();
+						whiteMapClass.showSubStaionsInBounds();
+						
+					    if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
+							var bs_id_list = getMarkerInCurrentBound();
+			            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
+			            		gisPerformanceClass.start(bs_id_list);
+			            	}
+	            		} else {
+	            			var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
+					    	if(new_bs.length > 0) {
+					    		if(!callsInProcess) {
+					    			// Clear performance calling timeout
+									if(recallPerf != "") {
+					        			clearTimeout(recallPerf);
+					        			recallPerf = "";
+					        		}
+					    			gisPerformanceClass.start(new_bs);
+					    		} else {
+					    			current_bs_list = current_bs_list.concat(new_bs);
+					    		}
+					    	}
+	            		}
+					}
         		}
         		// Show points line if exist
         		for(key in line_data_obj) {
@@ -233,9 +275,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         		}
 
 				ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
-    		// 8 LEVEL ZOOM CONDITION
-    		} else {
-				// ccpl_map.getLayersByName('Markers')[0].redraw();
     		}
         } else {
 
@@ -342,7 +381,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			console.log("*************************************");
 			start_date_idle = "";
 		}
-	},300);
+	},450);
 };
 
 

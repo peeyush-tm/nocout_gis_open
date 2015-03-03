@@ -605,11 +605,11 @@ function devicePlottingClass_gmap() {
 			            }
         			}
 
-            		if(mapInstance.getZoom() < 14 || searchResultData.length > 0) {
+        			var states_with_bounds = state_lat_lon_db.where(function(obj) {
+            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
+            		});
 
-            			var states_with_bounds = state_lat_lon_db.where(function(obj) {
-	            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
-	            		});
+            		if(states_with_bounds.length > 0 || mapInstance.getZoom() < 14 || searchResultData.length > 0) {
 
 	            		var states_array = [];
 

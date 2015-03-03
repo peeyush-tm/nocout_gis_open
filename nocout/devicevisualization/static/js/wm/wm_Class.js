@@ -1,5 +1,6 @@
 var ccpl_map, 
 	base_url, 
+	global_this = "",
 	main_devices_data_wmap= [],
 	wm_obj = {'features': {}, 'data': {}, 'devices': {}, 'lines': {}, 'sectors': {}},
 	data_for_filter_wmap= [],
@@ -94,8 +95,7 @@ function WhiteMapClass() {
 	 *
 	 * Private Variables
 	*/	
-		var global_this = "",
-			total_count = 0, device_count= 0, limit= 0, loop_count = 0;
+		var total_count = 0, device_count= 0, limit= 0, loop_count = 0;
 
 		/*
 		Marker Spidifier For BS
@@ -1664,7 +1664,7 @@ function WhiteMapClass() {
 
 		// Redraw Lines layer to apply updates(Hide Lines)
 		ccpl_map.getLayersByName('Lines')[0].redraw();
-		
+
 		// Redraw Red Cross layer to apply updates(Hide Lines)
 		ccpl_map.getLayersByName("RedCross")[0].redraw();
 
