@@ -5,6 +5,7 @@ var recallPerf = "",
     perf_self = "",
     hiddenIconObj = "",
     crossLabelHTML = "<i class='fa fa-times'></i>",
+    red_cross_icon = "/static/img/icons/red_cross_1.png"
     crossLabelStyle = {
         background  :   "transparent",
         fontSize    :   "16px",
@@ -732,8 +733,9 @@ function GisPerformance() {
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
                                     if(last_selected_label) {
-                                        var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-                                            labelInfoObject = perf_self.getKeyValue(ss_actual_data,last_selected_label,false),
+                                        // var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
+                                        var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
+                                            labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
                                             labelHtml = "";
 
                                         if(labelInfoObject) {
@@ -883,7 +885,6 @@ function GisPerformance() {
                                     allMarkersObject_wmap['path']['line_'+ss_marker_data.name] = ss_link_line;
                                     markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
                                     markersMasterObj['LinesName'][String(bs_object.name)+ ss_marker_data.name]= ss_link_line;
-                                    // allMarkersArray_wmap.push(ss_link_line);
 
                                     // This is to show "X"(Cross) on line if pl is 100%
                                     if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
@@ -908,27 +909,44 @@ function GisPerformance() {
                                             delete cross_label_array['line_'+ss_marker_data.name];
                                         }
 
-                                        var crossLabelPosition = new OpenLayers.Geometry.Point(center_lon,center_lat);
+                                        // var crossLabelPosition = new OpenLayers.Geometry.Point(center_lon,center_lat);
+                                        var red_cross_icon_size = new OpenLayers.Size(16, 16),
+                                            red_cross_icon_url = base_url+""+red_cross_icon;
+
+                                        var red_cross_layer_info = {
+                                            layerReference : ccpl_map.getLayersByName("RedCross")[0],
+                                            layer          : ccpl_map.getLayersByName("RedCross")[0]
+                                        };
+
+                                        var cross_label = whiteMapClass.createOpenLayerVectorMarker(
+                                            red_cross_icon_size,
+                                            red_cross_icon_url,
+                                            center_lon,
+                                            center_lat,
+                                            red_cross_layer_info
+                                        );
+
+                                        ccpl_map.getLayersByName("RedCross")[0].addFeatures([cross_label]);
+                                        cross_label_array['line_'+ss_marker_data.name] = cross_label;
 
 
-                                        // cross_label_array['line_'+ss_marker_data.name] = cross_label;
+                                        if(isLineChecked <= 0) {
+                                            hideOpenLayerFeature(cross_label);
+                                        }
 
-                                        // if(isLineChecked > 0) {
-                                        //     cross_label.show();
-                                        // } else {
-                                        //     cross_label.hide();
-                                        // }
+                                        cross_label.layerReference.redraw();
                                     } else {
                                         try {
                                             // Close the label if exist
                                             if(cross_label_array['line_'+ss_marker_data.name]) {
                                                 // Remove the cross label
-                                                cross_label_array['line_'+ss_marker_data.name].close();
+                                                cross_label_array['line_'+ss_marker_data.name].destroy();
                                                 // Delete cross label from global object
                                                 delete cross_label_array['line_'+ss_marker_data.name];
                                             }
                                         } catch(e) {
-                                            // console.log(e);
+                                            hideOpenLayerFeature(cross_label_array['line_'+ss_marker_data.name]);
+                                            cross_label_array['line_'+ss_marker_data.name].layerReference.redraw();
                                         }
                                     }
 
@@ -1053,7 +1071,16 @@ function GisPerformance() {
                                     labelsArray.splice(existing_index, 1);
                                 }
                                 
-                                var ss_val = ss_marker_data.data.perf_value ? ss_marker_data.data.perf_value : "N/A",
+                                var fetched_ss_val = ss_marker_data.data.perf_value;
+                                if(typeof fetched_ss_val == 'object') {
+                                    fetched_ss_val = fetched_ss_val[0];
+                                }
+
+                                if(typeof sector_perf_val == 'object') {
+                                    sector_perf_val = sector_perf_val[0];
+                                }
+
+                                var ss_val = fetched_ss_val ? fetched_ss_val : "N/A",
                                     perf_val = "";
 
                                 if(sector_marker) {
@@ -1211,22 +1238,9 @@ function GisPerformance() {
             all_devices_loki_db.update(bs_object);
 
             if(window.location.pathname.indexOf("white_background") > -1) {
-
-                // if(new_plotted_ss && new_plotted_ss.length > 0) {
-                //     // ccpl_map.getLayersByName("Markers")[0].addFeatures(new_plotted_ss);
-                //     try {
-                //         ccpl_map.getLayersByName("Markers")[0].addFeatures(ccpl_map.getLayersByName("Markers")[0].features.concat(new_plotted_ss));
-                //     } catch(e) {
-                //         // console.log(e);
-                //     }
-                    ccpl_map.getLayersByName("Markers")[0].redraw();
-                    
-                //     // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = ccpl_map.getLayersByName("Markers")[0].features;
-                    ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-                // }
-
-                // ccpl_map.getLayersByName("Sectors")[0].redraw();
-                // ccpl_map.getLayersByName("Lines")[0].redraw();
+                ccpl_map.getLayersByName("Markers")[0].redraw();
+                ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+                ccpl_map.getLayersByName("Lines")[0].redraw();
             }
             // Reset New Plotted SS array
             new_plotted_ss = [];

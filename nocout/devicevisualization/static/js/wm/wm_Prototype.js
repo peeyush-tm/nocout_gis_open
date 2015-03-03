@@ -44,17 +44,17 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	//Activate Click
 	mapClick.activate();
 
-	//Map moveend event
+	//Map moveend event(Used for pan & zoom both cases)
 	ccpl_map.events.register("moveend", ccpl_map, function(e) {
-		that.mapDragEndCondition();
+		that.mapIdleCondition();
 		return;
 	});
 
 	//Map zoomend event
-	ccpl_map.events.register("zoomend", ccpl_map, function(e){
-		that.mapIdleCondition();
-		return;
-	});
+	// ccpl_map.events.register("zoomend", ccpl_map, function(e){
+	// 	that.mapIdleCondition();
+	// 	return;
+	// });
 
 	//Create WMS layer to load Map from our geoserver.
 	layers.india_Layer = new OpenLayers.Layer.WMS(
@@ -171,6 +171,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Lines Layer to the Map
 		ccpl_map.addLayer(layers.linesLayer);
+
+		//Create a Vector Layer which will hold Lines
+		layers.red_cross = new OpenLayers.Layer.Vector('RedCross');
+
+		//Add Red Cross Layer to the Map
+		ccpl_map.addLayer(layers.red_cross);
+
 	/*
 	End of OpenLayer Layer Vector For Showing Lines
 	 */
