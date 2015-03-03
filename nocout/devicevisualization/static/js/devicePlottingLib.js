@@ -2402,7 +2402,7 @@ function devicePlottingClass_gmap() {
 				    if($.trim(last_selected_label)) {
 				    	var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 			    			item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false, item_index),
+				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false, item_index),
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
@@ -8994,7 +8994,7 @@ function devicePlottingClass_gmap() {
 					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
 					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false,item_index);
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index);
 
             	if(labelInfoObject) {
             		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
@@ -9044,7 +9044,7 @@ function devicePlottingClass_gmap() {
 					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
 					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false, item_index);
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false, item_index);
 
             	if(labelInfoObject) {
             		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
