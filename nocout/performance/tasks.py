@@ -601,7 +601,8 @@ def calculate_rf_network_availability(technology=None):
         return False
 
     try:
-        tech_id = DeviceTechnology.objects.get(name=technology).id
+        tech_object = DeviceTechnology.objects.get(name=technology)
+        tech_id = tech_object.id
     except Exception as e:
         return False
 
@@ -658,7 +659,7 @@ def calculate_rf_network_availability(technology=None):
             continue
 
     try:
-        availability /= machine_count
+        availability = availability/machine_count
         unavailability = 100 - availability
     except Exception as e:
         logger.exception(e)
@@ -667,7 +668,7 @@ def calculate_rf_network_availability(technology=None):
     # Call function to get the count & % wise availability
     resultant_dict = insert_network_avail_result(
         resultant_data=[availability, unavailability],
-        tech_id=tech_id
+        tech_id=tech_object
     )
 
     return resultant_dict
