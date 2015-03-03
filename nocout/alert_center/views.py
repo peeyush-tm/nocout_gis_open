@@ -652,9 +652,16 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 technology = None
                 page_type = "other"
                 self.data_sources = ['temperature']
-            elif tab_id in ["ULIssue"]:
+            elif tab_id == "WiMAXULIssue":
                 # technology = [int(WiMAX.ID), int(PMP.ID)]
-                technology = ["WiMAX", "PMP"]
+                technology = ["WiMAX"]
+                self.data_sources = ['pmp1_ul_issue', 'pmp2_ul_issue']
+                self.table_name = 'performance_utilizationstatus'
+                # Add 'refer column' in case of ULIssue
+                self.polled_columns.append('refer')
+            elif tab_id == "PMPULIssue":
+                # technology = [int(WiMAX.ID), int(PMP.ID)]
+                technology = ["PMP"]
                 self.data_sources = ['bs_ul_issue']
                 self.table_name = 'performance_utilizationstatus'
                 # Add 'refer column' in case of ULIssue
