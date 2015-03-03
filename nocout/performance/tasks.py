@@ -632,7 +632,7 @@ def calculate_rf_network_availability(technology=None):
     # the devices filtered are present int organization devices
     total_devices_count = len(organization_devices)
 
-    machine_count = len(machine_wise_devices.keys())
+    machine_count = 0
 
     for machine in machine_wise_devices:
 
@@ -652,6 +652,7 @@ def calculate_rf_network_availability(technology=None):
     for rf_network_avail_data in complete_rf_network_avail_data:
         try:
             availability += rf_network_avail_data['Availability']
+            machine_count += 1
         except Exception as e:
             logger.exception(e)
             continue

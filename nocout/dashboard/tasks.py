@@ -1032,7 +1032,7 @@ def calculate_hourly_range_status(now, then):
             range9=timely_range_status['Range9'],
             range10=timely_range_status['Range10'],
             unknown=timely_range_status['Unknown'],
-            organization=organizations.get(id=hourly_range_status['organization'])
+            organization=organizations.get(id=timely_range_status['organization'])
         )
         # append in list for every new dashboard_name and device_name.
         hourly_range_status_list.append(hourly_range_status)
