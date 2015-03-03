@@ -407,32 +407,16 @@ $("#resetSearchForm").click(function(e) {
         ccpl_map.getLayersByName("Search Layer")[0].setVisibility(false);
     }
 
-    try {
-        // Reset Search data variable
-        searchResultData = []
-    } catch(e) {
-        // pass
-    }
+    // Reset Search data variable
+    searchResultData = []
+    search_element_bs_id = [];
 
     // Reset Advance Search Flag
     isAdvanceSearch = 0;
-    // if (window.location.pathname.indexOf("white_background") > -1) {
-    //     $("form#searchInfoModal_form").find('select').each(function(i, el) {
-    //         $(el).select2("val", [])
-    //         if(i== $("form#searchInfoModal_form").find('select').length-1) {
-    //             //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-    //             //     $("#advSearchContainerBlock").addClass("hide");
-    //             // } 
-    //         }
-    //     });
-    // } else {
-    //     // Reset Search Fields
-    // }
+
 
     advJustSearch.removeSearchMarkers();
     advJustSearch.resetVariables();
-    // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-    // mapInstance.setZoom(5);
     advJustSearch.hideNotification();
 
     if(isDebug) {

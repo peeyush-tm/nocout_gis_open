@@ -913,9 +913,9 @@ function GisPerformance() {
                                             red_cross_icon_url = base_url+""+red_cross_icon;
 
                                         var red_cross_layer_info = {
-                                            layerReference     :    ccpl_map.getLayersByName("RedCross")[0],
-                                            layer              :    ccpl_map.getLayersByName("RedCross")[0]
-                                        }
+                                            layerReference : ccpl_map.getLayersByName("RedCross")[0],
+                                            layer          : ccpl_map.getLayersByName("RedCross")[0]
+                                        };
 
                                         var cross_label = whiteMapClass.createOpenLayerVectorMarker(
                                             red_cross_icon_size,

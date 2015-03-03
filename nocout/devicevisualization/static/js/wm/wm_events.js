@@ -52,6 +52,7 @@ WhiteMapClass.prototype.mapDragEndCondition = function() {
 				}
 			}
 
+			// Show/Hide White Map Features
 			whiteMapClass.showBaseStaionsInBounds();
 			whiteMapClass.showSectorDevicesInBounds();
 			whiteMapClass.showSectorPolygonInBounds();
@@ -202,7 +203,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						}
 						// Redraw Lines layer to apply updates(Hide Lines)
 						ccpl_map.getLayersByName('Lines')[0].redraw();
-						
+
 						// Redraw Red Cross layer to apply updates(Hide Lines)
 						ccpl_map.getLayersByName("RedCross")[0].redraw();
 
