@@ -614,7 +614,7 @@ def calculate_rf_network_availability(technology=None):
     )
 
     # Get machine wise data
-    machine_wise_devices = inventory_utils.filter_devices(organization_devices)
+    machine_wise_devices = inventory_utils.prepare_machines(organization_devices, machine_key='machine_name')
 
     # Model used to collect data from distributed databases
     availability_model = NetworkAvailabilityDaily
@@ -631,6 +631,8 @@ def calculate_rf_network_availability(technology=None):
 
     # the devices filtered are present int organization devices
     total_devices_count = len(organization_devices)
+
+    machine_count = len(machine_wise_devices.keys())
 
     for machine in machine_wise_devices:
 
@@ -654,7 +656,12 @@ def calculate_rf_network_availability(technology=None):
             logger.exception(e)
             continue
 
-    unavailability = 100 - availability
+    try:
+        availability /= machine_count
+        unavailability = 100 - availability
+    except Exception as e:
+        logger.exception(e)
+        return False
 
     # Call function to get the count & % wise availability
     resultant_dict = insert_network_avail_result(
@@ -780,4 +787,3 @@ def insert_network_avail_result(resultant_data, tech_id):
 
 
 ################## Task for RF Main Dashboard Network Availability Calculation - End ###################
-
