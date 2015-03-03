@@ -733,8 +733,9 @@ function GisPerformance() {
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
                                     if(last_selected_label) {
-                                        var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-                                            labelInfoObject = perf_self.getKeyValue(ss_actual_data,last_selected_label,false),
+                                        // var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
+                                        var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
+                                            labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
                                             labelHtml = "";
 
                                         if(labelInfoObject) {

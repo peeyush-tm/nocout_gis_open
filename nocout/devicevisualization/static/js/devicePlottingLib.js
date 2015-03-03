@@ -2400,8 +2400,8 @@ function devicePlottingClass_gmap() {
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
 				    if($.trim(last_selected_label)) {
-				    	var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-			    			item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
+				    	// var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
+			    		var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
 				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false, item_index),
                         	labelHtml = "";
 
