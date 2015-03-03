@@ -979,7 +979,11 @@ def calculate_hourly_severity_status(now, then):
                                  model=DashboardSeverityStatusHourly)
 
     # delete the data from the DashboardSeverityStatusTimely model.
-    last_hour_timely_severity_status.delete()
+    DashboardSeverityStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    ).delete()
+    return True
 
 
 def calculate_hourly_range_status(now, then):
@@ -1047,7 +1051,11 @@ def calculate_hourly_range_status(now, then):
                                  model=DashboardRangeStatusHourly)
 
     # delete the data from the DashboardRangeStatusTimely model.
-    last_hour_timely_range_status.delete()
+    DashboardRangeStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    ).delete()
+    return True
 
 
 def sum_severity_status(parent, child):
@@ -1151,7 +1159,10 @@ def calculate_daily_severity_status(now):
                                  action='create',
                                  model=DashboardSeverityStatusDaily)
 
-    last_day_timely_severity_status.delete()
+    DashboardSeverityStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    ).delete()
     return True
 
 
@@ -1222,6 +1233,9 @@ def calculate_daily_range_status(now):
                                  action='create',
                                  model=DashboardRangeStatusDaily)
 
-    last_day_hourly_range_status.delete()
+    DashboardRangeStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    ).delete()
     return True
 

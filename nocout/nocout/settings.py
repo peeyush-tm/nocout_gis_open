@@ -410,7 +410,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
-        'schedule': crontab(minute='5')
+        'schedule': crontab(minute='5', hour='*')
     },
     'daily-main-dashboard': {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
