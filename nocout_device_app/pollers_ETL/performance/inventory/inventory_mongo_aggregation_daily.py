@@ -94,7 +94,11 @@ def build_data(doc):
 	"""
 	values_list = []
 	machine = doc['site_name'][:-8]
-
+    sys_timestamp = datetime.fromtimestamp(float(doc.get('sys_timestamp')))
+    sys_timestamp = sys_timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+    # pivot the time to next day
+    sys_timestamp += timedelta(days=1)
+    sys_timestamp = sys_timestamp.strftime('%s')
         t = (
         doc.get('device_name'),
         doc.get('service_name'),
