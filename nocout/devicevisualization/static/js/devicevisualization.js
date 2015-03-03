@@ -290,6 +290,7 @@ $("#resetFilters").click(function(e) {
         try {
             var lat_lon_search_layer = ccpl_map.getLayersByName('SearchMarkers');
             if(lat_lon_search_layer && lat_lon_search_layer.length > 0) {
+                lat_lon_search_layer[0].clearMarkers();
                 lat_lon_search_layer[0].destroy();
             }
         } catch(e) {

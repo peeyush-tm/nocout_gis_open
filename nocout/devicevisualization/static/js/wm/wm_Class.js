@@ -1325,6 +1325,7 @@ function WhiteMapClass() {
 
 			try {
 				if(ccpl_map.getLayersByName('SearchMarkers')) {
+					ccpl_map.getLayersByName('SearchMarkers')[0].destroy();
 					ccpl_map.getLayersByName('SearchMarkers')[0].clearMarkers();
 				}
 			} catch(e) {

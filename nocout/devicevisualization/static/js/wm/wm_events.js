@@ -287,6 +287,27 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				whiteMapClass.showSectorPolygonInBounds();
 				whiteMapClass.showLinesInBounds();
 				whiteMapClass.showSubStaionsInBounds();
+
+				if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
+						var bs_id_list = getMarkerInCurrentBound();
+		            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
+		            		gisPerformanceClass.start(bs_id_list);
+		            	}
+            		} else {
+            			var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
+				    	if(new_bs.length > 0) {
+				    		if(!callsInProcess) {
+				    			// Clear performance calling timeout
+								if(recallPerf != "") {
+				        			clearTimeout(recallPerf);
+				        			recallPerf = "";
+				        		}
+				    			gisPerformanceClass.start(new_bs);
+				    		} else {
+				    			current_bs_list = current_bs_list.concat(new_bs);
+				    		}
+				    	}
+            		}
     		}
         } else {
 
