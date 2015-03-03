@@ -464,3 +464,18 @@ iframe {
 .text-bold {
     font-weight: bold;
 }
+#chart_div .yaxisLabel {
+    z-index: 99999;
+    transform: rotate(270deg);
+    float: left;
+    position: fixed;
+    top: 52%;
+    left: 14%;
+}
+#chart_div .xaxisLabel {
+    z-index: 99999;
+    /*transform: rotate(270deg);*/
+    position: fixed;
+    top: 86%;
+    left: 43%;
+}
