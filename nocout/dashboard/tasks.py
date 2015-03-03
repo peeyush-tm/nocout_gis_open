@@ -1,6 +1,6 @@
 from celery import task, group
 
-from django.db.models import Q, Count, F, Sum
+from django.db.models import Q, Sum, Avg
 from django.utils import timezone
 import datetime
 
@@ -146,7 +146,7 @@ def calculate_status_dashboards(technology):
 
 
 @task()
-def calculate_range_dashboards():
+def calculate_range_dashboards(technology, type):
     """
 
     :return:
@@ -157,10 +157,11 @@ def calculate_range_dashboards():
     user_organizations = Organization.objects.all()
     processed_for = timezone.now()
 
-    sector_tech = ['PMP', 'WiMAX']
-    backhaul_tech = ['TCLPOP', 'PMP', 'WiMAX']
+    # sector_tech = ['PMP', 'WiMAX']
+    # backhaul_tech = ['TCLPOP', 'PMP', 'WiMAX']
 
-    for tech in sector_tech:
+    tech = technology
+    if type == 'sector':
         g_jobs.append(
             calculate_timely_sector_capacity.s(
                 user_organizations,
@@ -179,7 +180,7 @@ def calculate_range_dashboards():
             )
         )
 
-    for tech in backhaul_tech:
+    elif type == 'backhaul':
         g_jobs.append(
             calculate_timely_backhaul_capacity.s(
                 user_organizations,
@@ -188,6 +189,9 @@ def calculate_range_dashboards():
                 processed_for=processed_for
             )
         )
+
+    else:
+        return False
 
     if len(g_jobs):
         job = group(g_jobs)
@@ -334,7 +338,7 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
             if len(data_list):
                 # call the method to bulk create the onjects.
                 bulk_update_create.delay(
-                    data_list,
+                    bulky=data_list,
                     action='create',
                     model=model)
 
@@ -416,7 +420,7 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
             if len(data_list):
                 # call method to bulk create the model object.
                 bulk_update_create.delay(
-                    data_list,
+                    bulky=data_list,
                     action='create',
                     model=model
                 )
@@ -442,7 +446,7 @@ def prepare_network_alert(organization, dashboard_name, processed_for, dashboard
         technology_id = latency_technology.ID
     except Exception as e:
         logger.exception(e)
-        # return False
+        return False
 
     g_jobs = list()
     ret = False
@@ -532,6 +536,7 @@ def calculate_timely_latency(organization, dashboard_name, processed_for ,techno
     except Exception as e:
         logger.exception(e)
         # return False
+        pass
 
     g_jobs = list()
     ret = False
@@ -606,6 +611,7 @@ def calculate_timely_packet_drop(organization, dashboard_name, processed_for, te
     except Exception as e:
         logger.exception(e)
         # return False
+        pass
 
     g_jobs = list()
     ret = False
@@ -680,6 +686,7 @@ def calculate_timely_down_status(organization, dashboard_name, processed_for, te
     except Exception as e:
         logger.exception(e)
         # return False
+        pass
 
     g_jobs = list()
     ret = False
@@ -937,10 +944,10 @@ def calculate_hourly_severity_status(now, then):
         'organization'
     ).annotate(
         Normal=Sum('ok'),
-        Needs_Augmentation=Sum('warning'),
-        Stop_Provisioning=Sum('critical'),
-        Down=Sum('down'),
-        Unknown=Sum('unknown')
+        Needs_Augmentation=Avg('warning'),
+        Stop_Provisioning=Avg('critical'),
+        Down=Avg('down'),
+        Unknown=Avg('unknown')
     )
 
     organizations = Organization.objects.all()
@@ -967,10 +974,16 @@ def calculate_hourly_severity_status(now, then):
         hourly_severity_status_list.append(hourly_severity_status)
 
     if len(hourly_severity_status_list):
-        bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
+        bulk_update_create.delay(bulky=hourly_severity_status_list,
+                                 action='create',
+                                 model=DashboardSeverityStatusHourly)
 
     # delete the data from the DashboardSeverityStatusTimely model.
-    last_hour_timely_severity_status.delete()
+    DashboardSeverityStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    ).delete()
+    return True
 
 
 def calculate_hourly_range_status(now, then):
@@ -991,17 +1004,17 @@ def calculate_hourly_range_status(now, then):
         'dashboard_name',
         'organization'
     ).annotate(
-        Range1=Sum('range1'),
-        Range2=Sum('range2'),
-        Range3=Sum('range3'),
-        Range4=Sum('range4'),
-        Range5=Sum('range5'),
-        Range6=Sum('range6'),
-        Range7=Sum('range7'),
-        Range8=Sum('range8'),
-        Range9=Sum('range9'),
-        Range10=Sum('range10'),
-        Unknown=Sum('unknown')
+        Range1=Avg('range1'),
+        Range2=Avg('range2'),
+        Range3=Avg('range3'),
+        Range4=Avg('range4'),
+        Range5=Avg('range5'),
+        Range6=Avg('range6'),
+        Range7=Avg('range7'),
+        Range8=Avg('range8'),
+        Range9=Avg('range9'),
+        Range10=Avg('range10'),
+        Unknown=Avg('unknown')
     )
 
     organizations = Organization.objects.all()
@@ -1027,16 +1040,22 @@ def calculate_hourly_range_status(now, then):
             range9=timely_range_status['Range9'],
             range10=timely_range_status['Range10'],
             unknown=timely_range_status['Unknown'],
-            organization=organizations.get(id=hourly_range_status['organization'])
+            organization=organizations.get(id=timely_range_status['organization'])
         )
         # append in list for every new dashboard_name and device_name.
         hourly_range_status_list.append(hourly_range_status)
 
     if len(hourly_range_status_list):
-        bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
+        bulk_update_create.delay(bulky=hourly_range_status_list,
+                                 action='create',
+                                 model=DashboardRangeStatusHourly)
 
     # delete the data from the DashboardRangeStatusTimely model.
-    last_hour_timely_range_status.delete()
+    DashboardRangeStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then
+    ).delete()
+    return True
 
 
 def sum_severity_status(parent, child):
@@ -1102,10 +1121,10 @@ def calculate_daily_severity_status(now):
         'organization'
     ).annotate(
         Normal=Sum('ok'),
-        Needs_Augmentation=Sum('warning'),
-        Stop_Provisioning=Sum('critical'),
-        Down=Sum('down'),
-        Unknown=Sum('unknown')
+        Needs_Augmentation=Avg('warning'),
+        Stop_Provisioning=Avg('critical'),
+        Down=Avg('down'),
+        Unknown=Avg('unknown')
     )
     organizations = Organization.objects.all()
     # [
@@ -1136,9 +1155,14 @@ def calculate_daily_severity_status(now):
         daily_severity_status_list.append(daily_severity_status)
 
     if len(daily_severity_status_list):
-        bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
+        bulk_update_create.delay(bulky=daily_severity_status_list,
+                                 action='create',
+                                 model=DashboardSeverityStatusDaily)
 
-    last_day_timely_severity_status.delete()
+    DashboardSeverityStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    ).delete()
     return True
 
 
@@ -1166,17 +1190,17 @@ def calculate_daily_range_status(now):
         'dashboard_name',
         'organization'
     ).annotate(
-        Range1=Sum('range1'),
-        Range2=Sum('range2'),
-        Range3=Sum('range3'),
-        Range4=Sum('range4'),
-        Range5=Sum('range5'),
-        Range6=Sum('range6'),
-        Range7=Sum('range7'),
-        Range8=Sum('range8'),
-        Range9=Sum('range9'),
-        Range10=Sum('range10'),
-        Unknown=Sum('unknown')
+        Range1=Avg('range1'),
+        Range2=Avg('range2'),
+        Range3=Avg('range3'),
+        Range4=Avg('range4'),
+        Range5=Avg('range5'),
+        Range6=Avg('range6'),
+        Range7=Avg('range7'),
+        Range8=Avg('range8'),
+        Range9=Avg('range9'),
+        Range10=Avg('range10'),
+        Unknown=Avg('unknown')
     )
 
     organizations = Organization.objects.all()
@@ -1205,8 +1229,13 @@ def calculate_daily_range_status(now):
         daily_range_status_list.append(daily_range_status)
 
     if len(daily_range_status_list):
-        bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
+        bulk_update_create.delay(bulky=daily_range_status_list,
+                                 action='create',
+                                 model=DashboardRangeStatusDaily)
 
-    last_day_hourly_range_status.delete()
+    DashboardRangeStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today
+    ).delete()
     return True
 

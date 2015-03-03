@@ -598,7 +598,8 @@ def calculate_rf_network_availability(technology=None):
         return False
 
     try:
-        tech_id = DeviceTechnology.objects.get(name=technology).id
+        tech_object = DeviceTechnology.objects.get(name=technology)
+        tech_id = tech_object.id
     except Exception as e:
         return False
 
@@ -611,7 +612,7 @@ def calculate_rf_network_availability(technology=None):
     )
 
     # Get machine wise data
-    machine_wise_devices = inventory_utils.filter_devices(organization_devices)
+    machine_wise_devices = inventory_utils.prepare_machines(organization_devices, machine_key='machine_name')
 
     # Model used to collect data from distributed databases
     availability_model = NetworkAvailabilityDaily
@@ -628,6 +629,8 @@ def calculate_rf_network_availability(technology=None):
 
     # the devices filtered are present int organization devices
     total_devices_count = len(organization_devices)
+
+    machine_count = 0
 
     for machine in machine_wise_devices:
 
@@ -647,16 +650,22 @@ def calculate_rf_network_availability(technology=None):
     for rf_network_avail_data in complete_rf_network_avail_data:
         try:
             availability += rf_network_avail_data['Availability']
+            machine_count += 1
         except Exception as e:
             logger.exception(e)
             continue
 
-    unavailability = 100 - availability
+    try:
+        availability = availability/machine_count
+        unavailability = 100 - availability
+    except Exception as e:
+        logger.exception(e)
+        return False
 
     # Call function to get the count & % wise availability
     resultant_dict = insert_network_avail_result(
         resultant_data=[availability, unavailability],
-        tech_id=tech_id
+        tech_id=tech_object
     )
 
     return resultant_dict
@@ -777,4 +786,3 @@ def insert_network_avail_result(resultant_data, tech_id):
 
 
 ################## Task for RF Main Dashboard Network Availability Calculation - End ###################
-
