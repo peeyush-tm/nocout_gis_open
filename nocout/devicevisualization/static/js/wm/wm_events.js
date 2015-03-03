@@ -215,7 +215,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
 							current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
 
-						if(current_threshold == 1.5  && current_distance == 1) {
+						if(current_threshold == 1.5  && current_distance == -1) {
 							// Remove Clusters
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 2;
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 100;
@@ -226,10 +226,10 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
 							current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
 
-						if(current_threshold > 1.5  && current_distance > 1) {
+						if(current_threshold > 1.5  && current_distance > -1) {
 							// Remove Clusters
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
-							ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
+							ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = -1;
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
 							ccpl_map.getLayersByName("Markers")[0].redraw();
 						}
@@ -273,10 +273,10 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     			var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
 					current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
 
-				if(current_threshold > 1.5  && current_distance > 1) {
+				if(current_threshold > 1.5  && current_distance > -1) {
 					// Remove Clusters
 					ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
-					ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
+					ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = -1;
 					ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
 					ccpl_map.getLayersByName("Markers")[0].redraw();
 				}
