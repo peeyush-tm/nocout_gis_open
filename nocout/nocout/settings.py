@@ -367,10 +367,37 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_speedometer_dashboards',
         'schedule': crontab(minute='*/5'),
     },
-    'calculate_range_dashboards-ALL': {
+    # 'calculate_range_dashboards-ALL': {
+    #     'task': 'dashboard.tasks.calculate_range_dashboards',
+    #     'schedule': crontab(minute='*/5'),
+    # },
+    # BEGIN: Range Dashboards
+    'calculate_range_dashboards-PMP': {
         'task': 'dashboard.tasks.calculate_range_dashboards',
         'schedule': crontab(minute='*/5'),
+        'kwargs': {'technology': 'PMP', 'type': 'sector'}
     },
+    'calculate_range_dashboards-WiMAX': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX', 'type': 'sector'}
+    },
+    'calculate_range_dashboards-PMP-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='*/5'),
+        'kwargs': {'technology': 'PMP', 'type': 'backhaul'}
+    },
+    'calculate_range_dashboards-WiMAX-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX', 'type': 'backhaul'}
+    },
+    'calculate_range_dashboards-TCLPOP-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'TCLPOP', 'type': 'backhaul'}
+    },
+    # END: Range Dashboards
     'calculate_status_dashboards-PMP': {
         'task': 'dashboard.tasks.calculate_status_dashboards',
         'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),

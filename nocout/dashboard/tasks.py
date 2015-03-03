@@ -146,7 +146,7 @@ def calculate_status_dashboards(technology):
 
 
 @task()
-def calculate_range_dashboards():
+def calculate_range_dashboards(technology, type):
     """
 
     :return:
@@ -157,10 +157,11 @@ def calculate_range_dashboards():
     user_organizations = Organization.objects.all()
     processed_for = timezone.now()
 
-    sector_tech = ['PMP', 'WiMAX']
-    backhaul_tech = ['TCLPOP', 'PMP', 'WiMAX']
+    # sector_tech = ['PMP', 'WiMAX']
+    # backhaul_tech = ['TCLPOP', 'PMP', 'WiMAX']
 
-    for tech in sector_tech:
+    tech = technology
+    if type == 'sector':
         g_jobs.append(
             calculate_timely_sector_capacity.s(
                 user_organizations,
@@ -179,7 +180,7 @@ def calculate_range_dashboards():
             )
         )
 
-    for tech in backhaul_tech:
+    elif type == 'backhaul':
         g_jobs.append(
             calculate_timely_backhaul_capacity.s(
                 user_organizations,
@@ -188,6 +189,9 @@ def calculate_range_dashboards():
                 processed_for=processed_for
             )
         )
+
+    else:
+        return False
 
     if len(g_jobs):
         job = group(g_jobs)
