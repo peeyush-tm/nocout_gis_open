@@ -185,7 +185,7 @@ def get_all_sector_devices(technology):
 
     # Format UL issue data
     if len(complete_ul_issue_data) > 0:
-        complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='device_name')
+        complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='sector_id')
 
     # Call function to create resultant data from the calculated data
     resultant_data = get_spot_dashboard_result(
@@ -281,7 +281,7 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
     in_string = lambda x: "'" + str(x) + "'"
 
     ul_issue_raw_query = '''
-                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, device_name
+                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, device_name, refer as sector_id
                          FROM {0}
                          WHERE
                             device_name IN ( {1} )
@@ -289,6 +289,7 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
                             data_source IN ( {2} )
                             AND
                             severity IN ( 'warning', 'critical' )
+                            AND isnull(refer) = false
                          '''.format(
                                     table_name,
                                     (",".join(map(in_string, devices_names))),
@@ -341,9 +342,10 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
     months_list = perf_views.getLastXMonths(6)
 
     # loop sectors list
-    for i in range(len(sectors_list)):
-        sector_id = str(sectors_list[i]['id'])
-        device_name = sectors_list[i]['sector_configured_on__device_name']
+    for sector in sectors_list:
+        refered_sector = sectors_list[sector]
+        sector_id = str(refered_sector['id'])
+        # device_name = refered_sector['sector_configured_on__device_name']
 
         augment_data = []
         ul_issue_data = []
@@ -351,10 +353,8 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
         if sector_id in augmentation_list:
             augment_data = augmentation_list[sector_id]
 
-        if device_name in ul_issues_list:
-            ul_issue_data = ul_issues_list[device_name]
-
-        # for x in range(1):
+        if sector_id in ul_issues_list:
+            ul_issue_data = ul_issues_list[sector_id]
 
         # Reverse the list to get the current month at first index
         last_six_months_list.reverse()
@@ -362,24 +362,24 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
 
         augment_key = 'augment_1'
 
-        if augment_key not in sectors_list[i]:
-            sectors_list[i][augment_key] = ""
+        if augment_key not in refered_sector:
+            sectors_list[sector][augment_key] = ""
 
         try:
             if month_num in augment_data:
-                sectors_list[i][augment_key] = 1
+                refered_sector[augment_key] = 1
         except Exception, e:
-            sectors_list[i][augment_key] = 0
+            refered_sector[augment_key] = 0
 
         ul_issue_key = 'ul_issue_1'
-        if ul_issue_key not in sectors_list[i]:
-            sectors_list[i][ul_issue_key] = ""
+        if ul_issue_key not in refered_sector:
+            refered_sector[ul_issue_key] = ""
 
         try:
             if month_num in ul_issue_data:
-                sectors_list[i][ul_issue_key] = 1
+                refered_sector[ul_issue_key] = 1
         except Exception as e:
-            sectors_list[i][ul_issue_key] = 0
+            refered_sector[ul_issue_key] = 0
     #logger.debug(sectors_list)
     return sectors_list
 
@@ -402,7 +402,7 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         #current_row = calculated_data[i]
         try:
             # Foreign Keys
-            sector_id = Sector.objects.get(pk=current_row['id'])
+            sector_id = Sector.objects.prefetch_related('sector_configured_on').get(pk=current_row['id'])
             device_id = sector_id.sector_configured_on #Device.objects.filter(pk=current_row['sector_configured_on'])[0]
 
             # Sector Details
