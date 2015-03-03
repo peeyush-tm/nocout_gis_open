@@ -343,8 +343,9 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
 
     # loop sectors list
     for sector in sectors_list:
-        refered_sector = sectors_list[sector]
-        sector_id = str(refered_sector['id'])
+
+        sector_id = str(sector['id'])
+        sector_sector_id = str(sector['sector_id'])
         # device_name = refered_sector['sector_configured_on__device_name']
 
         augment_data = []
@@ -353,8 +354,8 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
         if sector_id in augmentation_list:
             augment_data = augmentation_list[sector_id]
 
-        if sector_id in ul_issues_list:
-            ul_issue_data = ul_issues_list[sector_id]
+        if sector_sector_id in ul_issues_list:
+            ul_issue_data = ul_issues_list[sector_sector_id]
 
         # Reverse the list to get the current month at first index
         last_six_months_list.reverse()
@@ -362,24 +363,24 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
 
         augment_key = 'augment_1'
 
-        if augment_key not in refered_sector:
-            sectors_list[sector][augment_key] = ""
+        if augment_key not in sector:
+            sector[augment_key] = ""
 
         try:
             if month_num in augment_data:
-                refered_sector[augment_key] = 1
+                sector[augment_key] = 1
         except Exception, e:
-            refered_sector[augment_key] = 0
+            sector[augment_key] = 0
 
         ul_issue_key = 'ul_issue_1'
-        if ul_issue_key not in refered_sector:
-            refered_sector[ul_issue_key] = ""
+        if ul_issue_key not in sector:
+            sector[ul_issue_key] = ""
 
         try:
             if month_num in ul_issue_data:
-                refered_sector[ul_issue_key] = 1
+                sector[ul_issue_key] = 1
         except Exception as e:
-            refered_sector[ul_issue_key] = 0
+            sector[ul_issue_key] = 0
     #logger.debug(sectors_list)
     return sectors_list
 
