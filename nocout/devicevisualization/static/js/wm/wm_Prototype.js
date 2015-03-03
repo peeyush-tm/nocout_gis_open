@@ -171,6 +171,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Lines Layer to the Map
 		ccpl_map.addLayer(layers.linesLayer);
+
+		//Create a Vector Layer which will hold Lines
+		layers.red_cross = new OpenLayers.Layer.Vector('RedCross');
+
+		//Add Red Cross Layer to the Map
+		ccpl_map.addLayer(layers.red_cross);
+
 	/*
 	End of OpenLayer Layer Vector For Showing Lines
 	 */

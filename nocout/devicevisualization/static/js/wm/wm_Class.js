@@ -1646,15 +1646,27 @@ function WhiteMapClass() {
 		if(isLineChecked == 0) {
 			for(key in allMarkersObject_wmap['path']) {
 				hideOpenLayerFeature(allMarkersObject_wmap['path'][key]);
+				// Hide the red cross if exists
+				if(cross_label_array[key] && cross_label_array[key].getVisibility()) {
+					hideOpenLayerFeature(cross_label_array[key]);
+				}
 			}
 
 		} else {
 			for(key in allMarkersObject_wmap['path']) {
 				showOpenLayerFeature(allMarkersObject_wmap['path'][key]);
+				// Show the red cross if exists
+				if(cross_label_array[key] && !cross_label_array[key].getVisibility()) {
+					showOpenLayerFeature(cross_label_array[key]);
+				}
 			}
 		}
 
-		ccpl_map.getLayersByName("Lines")[0].redraw();
+		// Redraw Lines layer to apply updates(Hide Lines)
+		ccpl_map.getLayersByName('Lines')[0].redraw();
+		
+		// Redraw Red Cross layer to apply updates(Hide Lines)
+		ccpl_map.getLayersByName("RedCross")[0].redraw();
 
 		if(isDebug) {
 			console.log("Show/Hide Connection Lines End Time :- "+ new Date().toLocaleString());

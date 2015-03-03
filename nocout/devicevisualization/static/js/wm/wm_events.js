@@ -33,52 +33,54 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
  */
 WhiteMapClass.prototype.mapDragEndCondition = function() {
 
-	if(ccpl_map.getZoom() > 10) {
-		if(isDebug) {
-			console.log("White Map Dragend Event");
-			var start_date_drag = new Date();
-		}
-
-		if(ccpl_map.getLayersByName("Markers") && ccpl_map.getLayersByName("Markers").length > 0) {
-			var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
-				current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
-			if(current_threshold > 1.5  && current_distance > 1) {
-				// Remove Clusters
-				ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
-				ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
-				ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-				ccpl_map.getLayersByName("Markers")[0].redraw();
+	setTimeout(function() {
+		if(ccpl_map.getZoom() > 10) {
+			if(isDebug) {
+				console.log("White Map Dragend Event");
+				var start_date_drag = new Date();
 			}
-		}
 
-		whiteMapClass.showBaseStaionsInBounds();
-		whiteMapClass.showSectorDevicesInBounds();
-		whiteMapClass.showSectorPolygonInBounds();
-		whiteMapClass.showLinesInBounds();
-		whiteMapClass.showSubStaionsInBounds();
-		
+			if(ccpl_map.getLayersByName("Markers") && ccpl_map.getLayersByName("Markers").length > 0) {
+				var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
+					current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
+				if(current_threshold > 1.5  && current_distance > 1) {
+					// Remove Clusters
+					ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 1.5;
+					ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 1;
+					ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+					ccpl_map.getLayersByName("Markers")[0].redraw();
+				}
+			}
 
-    	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-    	if(new_bs.length > 0) {
-    		if(!callsInProcess) {
-    			// Clear performance calling timeout
-				if(recallPerf != "") {
-        			clearTimeout(recallPerf);
-        			recallPerf = "";
-        		}
-    			gisPerformanceClass.start(new_bs);
-    		} else {
-    			current_bs_list = current_bs_list.concat(new_bs);
-    		}
-    	}
+			whiteMapClass.showBaseStaionsInBounds();
+			whiteMapClass.showSectorDevicesInBounds();
+			whiteMapClass.showSectorPolygonInBounds();
+			whiteMapClass.showLinesInBounds();
+			whiteMapClass.showSubStaionsInBounds();
+			
 
-    	if(isDebug) {
-        	var time_diff = (new Date().getTime() - start_date_drag.getTime())/1000;
-			console.log("White Map Dragend End Time :- "+ time_diff + "Seconds");
-			console.log("*************************************");
-			start_date_drag = "";
-		}
-    }
+	    	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
+	    	if(new_bs.length > 0) {
+	    		if(!callsInProcess) {
+	    			// Clear performance calling timeout
+					if(recallPerf != "") {
+	        			clearTimeout(recallPerf);
+	        			recallPerf = "";
+	        		}
+	    			gisPerformanceClass.start(new_bs);
+	    		} else {
+	    			current_bs_list = current_bs_list.concat(new_bs);
+	    		}
+	    	}
+
+	    	if(isDebug) {
+	        	var time_diff = (new Date().getTime() - start_date_drag.getTime())/1000;
+				console.log("White Map Dragend End Time :- "+ time_diff + "Seconds");
+				console.log("*************************************");
+				start_date_drag = "";
+			}
+	    }
+	}, 500);
 };
 
 /**
@@ -194,9 +196,15 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						// Hide polylines if shown
 						for(key in polylines) {
 							hideOpenLayerFeature(polylines[key]);
+							if(cross_label_array[key] && cross_label_array[key].getVisibility()) {
+								hideOpenLayerFeature(cross_label_array[key]);
+							}
 						}
 						// Redraw Lines layer to apply updates(Hide Lines)
 						ccpl_map.getLayersByName('Lines')[0].redraw();
+						
+						// Redraw Red Cross layer to apply updates(Hide Lines)
+						ccpl_map.getLayersByName("RedCross")[0].redraw();
 
 						// Hide polygons if shown
 						for(key in polygons) {
@@ -213,23 +221,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 100;
 							ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
 						}
-
-					} else {
-						// var current_threshold = ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold,
-						// 	current_distance = ccpl_map.getLayersByName("Markers")[0].strategies[0].distance;
-						// if(current_threshold > 1.5  && current_distance > 1) {
-						// 	// Remove Clusters
-						// 	ccpl_map.getLayersByName("Markers")[0].strategies[0].threshold = 2;
-						// 	ccpl_map.getLayersByName("Markers")[0].strategies[0].distance = 100;
-						// 	ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-						// }
-
-						// whiteMapClass.showBaseStaionsInBounds();
-						// whiteMapClass.showSectorDevicesInBounds();
-						// whiteMapClass.showSectorPolygonInBounds();
-						// whiteMapClass.showLinesInBounds();
-						// whiteMapClass.showSubStaionsInBounds();
-						// whiteMapClass.showBackhaulDevicesInBounds();
 					}
 
         		}
@@ -240,35 +231,10 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         			}
         		}
 
-        		//Update Clusters Threshold value and recluster it
-        		// if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.threshold) {
-					//Update Strategy with New Threshold and Distance Value
-					// ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = clustererSettings.threshold;
-					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
-				// }
+				ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
     		// 8 LEVEL ZOOM CONDITION
     		} else {
-				// whiteMapClass.showSubStaionsInBounds();
-				// whiteMapClass.showBaseStaionsInBounds();
-				// whiteMapClass.showSectorDevicesInBounds();
-				// whiteMapClass.showLinesInBounds();
-				// whiteMapClass.showSectorPolygonInBounds();
-				// whiteMapClass.showBackhaulDevicesInBounds();
-
-				//Update Clusters Threshold value and recluster it
-				// if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.thresholdAtHighZoomLevel) {
-					//Update Strategy with New Threshold and Distance Value
-					// ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = clustererSettings.thresholdAtHighZoomLevel;
-				// }
-				ccpl_map.getLayersByName('Markers')[0].redraw();
-				// ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
-    		}
-    		// Start Performance API calling
-    		if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
-    			var bs_id_list = getMarkerInCurrentBound();
-    			if(bs_id_list.length > 0 && isCallCompleted == 1) {
-	    			gisPerformanceClass.start(bs_id_list);
-    			}
+				// ccpl_map.getLayersByName('Markers')[0].redraw();
     		}
         } else {
 

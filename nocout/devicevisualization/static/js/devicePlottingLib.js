@@ -1384,6 +1384,7 @@ function devicePlottingClass_gmap() {
 				        
 				    	} else if(window.location.pathname.indexOf("white_background") > -1) {
 							hideOpenLayerFeature(state_wise_device_labels[clicked_state]);
+							state_wise_device_labels[clicked_state].layer.redraw();
 						} else {
 							state_wise_device_labels[clicked_state].hide();	
 						}
@@ -3039,12 +3040,8 @@ function devicePlottingClass_gmap() {
 					allMarkersObject_gmap['path'][key].setMap(null);
 				}
 
-				try {
-					if(cross_label_array[key] && cross_label_array[key].getVisible()) {
-						cross_label_array[key].hide()
-					}
-				} catch(e) {
-					// console.log(e);
+				if(cross_label_array[key] && cross_label_array[key].getVisible()) {
+					cross_label_array[key].hide()
 				}
 			}
 
@@ -3054,12 +3051,8 @@ function devicePlottingClass_gmap() {
 					allMarkersObject_gmap['path'][key].setMap(mapInstance);
 				}
 
-				try {
-					if(cross_label_array[key] && !cross_label_array[key].getVisible()) {
-						cross_label_array[key].show()
-					}
-				} catch(e) {
-					// console.log(e);
+				if(cross_label_array[key] && !cross_label_array[key].getVisible()) {
+					cross_label_array[key].show()
 				}
 			}
 		}
@@ -5397,8 +5390,8 @@ function devicePlottingClass_gmap() {
 		    	} else if (window.location.pathname.indexOf("white_background") > -1) {
 		    		//Zoom in to selected state
 		    		ccpl_map.zoomToExtent(bounds_lat_lon);
-		    		if(ccpl_map.getZoom() > 15) {
-		                ccpl_map.zoomTo(15);
+		    		if(ccpl_map.getZoom() > 12) {
+		                ccpl_map.zoomTo(12);
 		            }
 		    	} else {
 			    	//Zoom in to selected state
@@ -5417,6 +5410,10 @@ function devicePlottingClass_gmap() {
 					    }
 					},350);
 		    	}
+
+		    	// Set Perf calling Flag
+    			isPerfCallStopped = 0;
+    			isPerfCallStarted = 0;
     		}
 	    } else {
 	    	$.gritter.add({
@@ -9652,9 +9649,7 @@ function getMarkerInCurrentBound() {
 				markerVisible = mapInstance.getBounds().contains(allBSObject[key].getPosition());
         	}
             if(markerVisible) {
-            	if(allBSObject[key].isActive && allBSObject[key].isActive == 1) {
-            		bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
-            	}
+        		bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
             }
         }
     }

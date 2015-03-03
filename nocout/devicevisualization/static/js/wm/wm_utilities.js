@@ -617,6 +617,9 @@ function removeAllOpenLayerFeature() {
     ccpl_map.getLayersByName('Lines')[0].destroyFeatures(ccpl_map.getLayersByName('Lines')[0].features);
     ccpl_map.getLayersByName('Lines')[0].redraw();
 
+    ccpl_map.getLayersByName('RedCross')[0].destroyFeatures(ccpl_map.getLayersByName('RedCross')[0].features);
+    ccpl_map.getLayersByName('RedCross')[0].redraw();
+
     ccpl_map.getLayersByName('Sectors')[0].destroyFeatures(ccpl_map.getLayersByName('Sectors')[0].features);
     ccpl_map.getLayersByName('Sectors')[0].redraw();
 
@@ -641,6 +644,7 @@ function removeAllOpenLayerFeature() {
         'sector_polygon': {},
         'backhaul': {}
     };
+    cross_label_array = {};
 }
 
 
