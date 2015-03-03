@@ -106,6 +106,11 @@ function GisPerformance() {
 
         if (this.bsNamesList && this.bsNamesList.length > 0) {
             this.start(this.bsNamesList);
+        } else {
+            var bs_id_list = getMarkerInCurrentBound();
+            if(bs_id_list.length > 0) {
+                gisPerformanceClass.start(bs_id_list);
+            }
         }
     }
 
@@ -422,6 +427,7 @@ function GisPerformance() {
                                 sector_polygon["path"] = polyPathArray;
                                 sector_polygon.geometry.components[0].components = polyPathArray;
 
+                                sector_polygon.layer.redraw();
                             } catch(e) {
                                 // console.log(e);
                             }
@@ -629,6 +635,9 @@ function GisPerformance() {
                                     if(show_ss_len <= 0) {
                                         hideOpenLayerFeature(ss_marker);
                                     }
+                                    if(ss_marker.layerReference) {
+                                        ss_marker.layerReference.redraw();
+                                    }
 
                                     new_plotted_ss.push(ss_marker);
 
@@ -636,7 +645,7 @@ function GisPerformance() {
                                     markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
                                     markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
                                     allMarkersObject_wmap['sub_station']['ss_'+ss_marker_data.name] = ss_marker;
-                                    allMarkersArray_wmap.push(ss_marker);
+                                    // allMarkersArray_wmap.push(ss_marker);
                                     /*Push SS marker to pollableDevices array*/
                                     pollableDevices.push(ss_marker)
 
@@ -874,7 +883,7 @@ function GisPerformance() {
                                     allMarkersObject_wmap['path']['line_'+ss_marker_data.name] = ss_link_line;
                                     markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
                                     markersMasterObj['LinesName'][String(bs_object.name)+ ss_marker_data.name]= ss_link_line;
-                                    allMarkersArray_wmap.push(ss_link_line);
+                                    // allMarkersArray_wmap.push(ss_link_line);
 
                                     // This is to show "X"(Cross) on line if pl is 100%
                                     if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
@@ -902,13 +911,13 @@ function GisPerformance() {
                                         var crossLabelPosition = new OpenLayers.Geometry.Point(center_lon,center_lat);
 
 
-                                        cross_label_array['line_'+ss_marker_data.name] = cross_label;
+                                        // cross_label_array['line_'+ss_marker_data.name] = cross_label;
 
-                                        if(isLineChecked > 0) {
-                                            cross_label.show();
-                                        } else {
-                                            cross_label.hide();
-                                        }
+                                        // if(isLineChecked > 0) {
+                                        //     cross_label.show();
+                                        // } else {
+                                        //     cross_label.hide();
+                                        // }
                                     } else {
                                         try {
                                             // Close the label if exist
@@ -1203,20 +1212,20 @@ function GisPerformance() {
 
             if(window.location.pathname.indexOf("white_background") > -1) {
 
-                if(new_plotted_ss && new_plotted_ss.length > 0) {
-                    // ccpl_map.getLayersByName("Markers")[0].addFeatures(new_plotted_ss);
-                    try {
-                        ccpl_map.getLayersByName("Markers")[0].addFeatures(ccpl_map.getLayersByName("Markers")[0].features.concat(new_plotted_ss));
-                    } catch(e) {
-                        // console.log(e);
-                    }
+                // if(new_plotted_ss && new_plotted_ss.length > 0) {
+                //     // ccpl_map.getLayersByName("Markers")[0].addFeatures(new_plotted_ss);
+                //     try {
+                //         ccpl_map.getLayersByName("Markers")[0].addFeatures(ccpl_map.getLayersByName("Markers")[0].features.concat(new_plotted_ss));
+                //     } catch(e) {
+                //         // console.log(e);
+                //     }
                     ccpl_map.getLayersByName("Markers")[0].redraw();
                     
-                    // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = ccpl_map.getLayersByName("Markers")[0].features;
+                //     // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = ccpl_map.getLayersByName("Markers")[0].features;
                     ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-                }
+                // }
 
-                ccpl_map.getLayersByName("Sectors")[0].redraw();
+                // ccpl_map.getLayersByName("Sectors")[0].redraw();
                 // ccpl_map.getLayersByName("Lines")[0].redraw();
             }
             // Reset New Plotted SS array
@@ -1417,7 +1426,10 @@ function GisPerformance() {
      * @param {array} newArray, It is the bs name array
      */
     this.get_intersection_bs = function(oldArray,newArray) {
-
+        if(isDebug) {
+            console.log("Uncommon BS Start");
+            var start_date_uncommon_bs = new Date();
+        }
         var uncommon_bs = [];
         for(var i=0;i<newArray.length;i++) {
             var current_new_bs = newArray[i];
@@ -1426,6 +1438,12 @@ function GisPerformance() {
             }
         }
 
+        if(isDebug) {
+            var time_diff = (new Date().getTime() - start_date_uncommon_bs.getTime())/1000;
+            console.log("Uncommon BS End Time :- "+ time_diff + "Seconds");
+            console.log("*************************************");
+            start_date_uncommon_bs = "";
+        }
         /*return the uncommon or different bs list*/
         return uncommon_bs;
     };

@@ -765,6 +765,9 @@ function devicePlottingClass_gmap() {
 	        		// Show only country counter below 4 level zoom
 	        		gmap_self.hideStateCountersLabel();
 
+	        		// Clear map markers & reset variables
+					gmap_self.clearMapMarkers();
+
 	        		// If any periodic polling ajax call is in process then abort it
         			try {
 	    				if(gis_perf_call_instance) {
@@ -819,9 +822,6 @@ function devicePlottingClass_gmap() {
 
             			// Reset Performance variables
             			gisPerformanceClass.resetVariable();
-
-            			// Clear map markers & reset variables
-						gmap_self.clearMapMarkers();
 
 						var states_with_bounds = state_lat_lon_db.where(function(obj) {
 	            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
@@ -1763,9 +1763,6 @@ function devicePlottingClass_gmap() {
         gmap_self.toggleSpecifixMarkers_gmap('sub_station',null);
         // Clear link line
         gmap_self.toggleSpecifixMarkers_gmap('path',null);
-		// $.grep(allMarkersArray_gmap,function(marker) {
-		// 	marker.setMap(null);
-		// });
 
 		// Reset Variables
 		allMarkersArray_gmap = [];
@@ -5132,8 +5129,12 @@ function devicePlottingClass_gmap() {
         		var showing_cities = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
         			var searchPattern = new RegExp('^' + query.term, 'i');
-        			if(searchPattern.test(obj.data.city)) {
-        				return true;
+        			if(obj.data.city) {
+	        			if(searchPattern.test(obj.data.city)) {
+	        				return true;
+	        			} else {
+	        				return false;
+	        			}
         			} else {
         				return false;
         			}
@@ -5142,9 +5143,11 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < limit; i++) {
-		        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
-		        		showing_cities.push(filtered_data[i].data.city);
-		            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+		        	if(filtered_data[i].data.city) {
+			        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
+			        		showing_cities.push(filtered_data[i].data.city);
+			            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+			        	}
 		        	}
 		        }
 		        query.callback(data);
@@ -5178,8 +5181,10 @@ function devicePlottingClass_gmap() {
     			break;
     		}
 
-    		var search_condition1 = selected_bs_alias.length > 0 ? selected_bs_alias.indexOf(String(data_to_plot[i].alias.toLowerCase())) > -1 : true,
-	            search_condition2 = selected_bs_city.length > 0 ? selected_bs_city.indexOf(String(data_to_plot[i].data.city.toLowerCase())) > -1 : true,
+    		var current_city = data_to_plot[i].data.city ? $.trim(data_to_plot[i].data.city).toLowerCase() : "",
+    			current_bs_alias = data_to_plot[i].alias ? $.trim(data_to_plot[i].alias).toLowerCase() : "",
+    			search_condition1 = selected_bs_alias.length > 0 ? selected_bs_alias.indexOf(String(current_bs_alias)) > -1 : true,
+	            search_condition2 = selected_bs_city.length > 0 ? selected_bs_city.indexOf(String(current_city)) > -1 : true,
 	            circuit_id_count = selected_circuit_id.length >  0 ? $.grep(data_to_plot[i].circuit_ids.split("|"), function (elem) {
 	            	return selected_circuit_id.indexOf(elem.toLowerCase()) > -1;
 	            }).length : 1,
@@ -5215,12 +5220,12 @@ function devicePlottingClass_gmap() {
 	    	
 		    for(var i=data_to_plot.length;i--;) {
 		    	
-		    	var onlyCityCondition = selected_bs_alias.length === 0 && selected_ip_address.length === 0 && selected_circuit_id.length === 0;
+		    	var onlyCityCondition = selected_bs_alias.length == 0 && selected_ip_address.length == 0 && selected_circuit_id.length == 0;
 
 		    	if(onlyCityCondition) {
-
-		    		var city_val = data_to_plot[i].data.city ? data_to_plot[i].data.city : "",
+		    		var city_val = data_to_plot[i].data.city ? $.trim(data_to_plot[i].data.city).toLowerCase() : "",
 		    			city_condition = selected_bs_city.indexOf(city_val.toLowerCase()) > -1;
+
 		    		if(city_condition) {
 			    		if(window.location.pathname.indexOf("googleEarth") > -1) {
 							folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
@@ -8600,7 +8605,6 @@ function devicePlottingClass_gmap() {
 		var markers = allMarkersObject_gmap[key];
 		if(markers) {
 			var marker_keys = Object.keys(markers);
-
 			// Loop object key to show/hide markers
 			for(var i=marker_keys.length;i--;) {
 				if(markers[marker_keys[i]]) {
@@ -8862,7 +8866,7 @@ function devicePlottingClass_gmap() {
     		url : base_url+"/inventory/export_selected_bs_inventory/",
     		type : "POST",
     		data : {
-    			"base_stations" : JSON.stringify(inventory_bs_ids)
+    			"base_stations" : inventory_bs_ids
     		},
     		success : function(response) {
     			

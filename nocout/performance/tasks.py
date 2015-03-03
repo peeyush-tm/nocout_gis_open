@@ -416,8 +416,6 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
             # Augmentation for current month
             augment_1 = current_row['augment_1']
 
-            logger.debug(current_row)
-
         except Exception as e:
             logger.exception(e)
             continue
@@ -429,8 +427,7 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         try:
             sector_object = SpotDashboard.objects.get(
                 sector_sector_id=sector_sector_id,
-                sector=sector_id,
-                device=device_id
+                sector=sector_id
             )
 
             sector_object.sector_sector_configured_on = sector_sector_configured_on
