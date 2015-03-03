@@ -212,7 +212,7 @@ AUTHENTICATION_BACKENDS = (
 ##TODO: dynamically populate cache
 #
 # def get_cache():
-#     import os
+# import os
 #
 #     try:
 #         os.environ['MEMCACHE_SERVERS'] = os.environ['MEMCACHIER_SERVERS'].replace(',', ';')
@@ -276,7 +276,7 @@ CACHES = {
 
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
-    ]
+]
 
 import djcelery
 
@@ -454,21 +454,21 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute=3, hour='*/6'),  # per 6 hours delete all cache
     },
     # RF Network Availability Job - PTP-BH
-    'calculate_rf_network_availability-PTP-BH' : {
+    'calculate_rf_network_availability-PTP-BH': {
         'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'P2P'},  # PTP BH is not a tachnology, P2P is
         'schedule': crontab(minute=05, hour=0)
-        
+
     },
     # RF Network Availability Job - PMP
-    'calculate_rf_network_availability-PMP' : {
-        'task' : 'performance.tasks.calculate_rf_network_availability',
+    'calculate_rf_network_availability-PMP': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'PMP'},
         'schedule': crontab(minute=20, hour=0)
     },
     # RF Network Availability Job - WiMAX
-    'calculate_rf_network_availability-WiMAX' : {
-        'task' : 'performance.tasks.calculate_rf_network_availability',
+    'calculate_rf_network_availability-WiMAX': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'WiMAX'},
         'schedule': crontab(minute=35, hour=0)
     }
@@ -491,12 +491,12 @@ LOGGING = {
             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
             'datefmt': "%d/%b/%Y %H:%M:%S"
         },
-        },
+    },
     'handlers': {
         'sentry': {
             'level': 'ERROR',
             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-            },
+        },
         'console': {
             'level': 'ERROR',
             'class': 'logging.StreamHandler',
@@ -509,31 +509,31 @@ LOGGING = {
             'maxBytes': 1048576,
             'backupCount': 100,
             'formatter': 'verbose',
-            },
-
         },
+
+    },
     'loggers': {
         'django.db.backends': {
             'level': 'ERROR',
             'handlers': ['sentry'],
             'propagate': False,
-            },
+        },
         'raven': {
             'level': 'ERROR',
             'handlers': ['sentry'],
             'propagate': False,
-            },
+        },
         'sentry.errors': {
             'level': 'ERROR',
             'handlers': ['console'],
             'propagate': False,
-            },
+        },
         '': {
             'handlers': ['logfile'],
             'level': 'INFO',
-            },
         },
-    }
+    },
+}
 
 # #FOR MULTI PROC data analysis
 MULTI_PROCESSING_ENABLED = False
@@ -561,7 +561,6 @@ PMP = DEVICE_TECHNOLOGY('PMP', '4')
 Switch = DEVICE_TECHNOLOGY('Switch', '7')
 TCLPTPPOP = DEVICE_TECHNOLOGY('TCLPTPPOP', '9')
 TCLPOP = DEVICE_TECHNOLOGY('TCLPOP', '8')
-
 
 MPTT_TREE = namedtuple('MPTT_TREE', 'lft rght level')
 
