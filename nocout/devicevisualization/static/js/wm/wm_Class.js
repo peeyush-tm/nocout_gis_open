@@ -1,5 +1,6 @@
 var ccpl_map, 
 	base_url, 
+	global_this = "",
 	main_devices_data_wmap= [],
 	wm_obj = {'features': {}, 'data': {}, 'devices': {}, 'lines': {}, 'sectors': {}},
 	data_for_filter_wmap= [],
@@ -94,8 +95,7 @@ function WhiteMapClass() {
 	 *
 	 * Private Variables
 	*/	
-		var global_this = "",
-			total_count = 0, device_count= 0, limit= 0, loop_count = 0;
+		var total_count = 0, device_count= 0, limit= 0, loop_count = 0;
 
 		/*
 		Marker Spidifier For BS
@@ -1325,6 +1325,7 @@ function WhiteMapClass() {
 
 			try {
 				if(ccpl_map.getLayersByName('SearchMarkers')) {
+					ccpl_map.getLayersByName('SearchMarkers')[0].destroy();
 					ccpl_map.getLayersByName('SearchMarkers')[0].clearMarkers();
 				}
 			} catch(e) {
@@ -1333,13 +1334,19 @@ function WhiteMapClass() {
 
 			// Update "searchResultData" with map data as per applied filters for plotting.
 			searchResultData = JSON.parse(JSON.stringify(networkMapInstance.updateStateCounter_gmaps(true)));
-			var lat = +lat_long_string.split(",")[0], lng = +lat_long_string.split(",")[1],
+
+			var lat = +lat_long_string.split(",")[0],
+				lng = +lat_long_string.split(",")[1],
 				bounds = new OpenLayers.Bounds,
 				lonLat = new OpenLayers.LonLat(lng, lat);
 
 			// search_icon.png
 			bounds.extend(lonLat);
 			ccpl_map.zoomToExtent(bounds);
+
+			if(ccpl_map.getZoom() > 12) {
+                ccpl_map.zoomTo(12);
+            }
 
 			var markers = new OpenLayers.Layer.Markers("SearchMarkers"),
 				search_icon = base_url+""+lat_lon_search_icon,
@@ -1646,15 +1653,27 @@ function WhiteMapClass() {
 		if(isLineChecked == 0) {
 			for(key in allMarkersObject_wmap['path']) {
 				hideOpenLayerFeature(allMarkersObject_wmap['path'][key]);
+				// Hide the red cross if exists
+				if(cross_label_array[key] && cross_label_array[key].getVisibility()) {
+					hideOpenLayerFeature(cross_label_array[key]);
+				}
 			}
 
 		} else {
 			for(key in allMarkersObject_wmap['path']) {
 				showOpenLayerFeature(allMarkersObject_wmap['path'][key]);
+				// Show the red cross if exists
+				if(cross_label_array[key] && !cross_label_array[key].getVisibility()) {
+					showOpenLayerFeature(cross_label_array[key]);
+				}
 			}
 		}
 
-		ccpl_map.getLayersByName("Lines")[0].redraw();
+		// Redraw Lines layer to apply updates(Hide Lines)
+		ccpl_map.getLayersByName('Lines')[0].redraw();
+
+		// Redraw Red Cross layer to apply updates(Hide Lines)
+		ccpl_map.getLayersByName("RedCross")[0].redraw();
 
 		if(isDebug) {
 			console.log("Show/Hide Connection Lines End Time :- "+ new Date().toLocaleString());

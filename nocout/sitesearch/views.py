@@ -753,9 +753,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                         circuit_ids.append(circuit_id)
 
                     techno_to_append = circuit['SS_TECH']
-                    # Base stattion name of SS
-                    if not base_station_alias:
-                        base_station_alias = circuit['BSALIAS']
 
                     if circuit['CIRCUIT_TYPE'] and circuit['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
                         techno_to_append = 'PTP BH'
@@ -773,6 +770,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                         substation_ip.append(circuit['SSIP'])
 
                     # Appending SS Infowindow Content
+                    base_station_alias += unicode(format_value(circuit['BSALIAS']))+"|"
                     all_ckt_ids += unicode(format_value(circuit['CCID']))+"|"
                     all_customer_alias += unicode(format_value(circuit['CUST']))+"|"
                     all_ss_ip +=  unicode(format_value(circuit['SSIP']))+"|"
