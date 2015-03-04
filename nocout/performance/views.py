@@ -1209,7 +1209,7 @@ class Inventory_Device_Status(View):
                             }
                         ])
 
-                    result['data']['objects']['values'] = table_values
+                    result['data']['objects']['values'].append(table_values)
 
                     #     result['data']['objects']['values'].append([display_bs_name,
                     #                                             sector_id,
@@ -1265,7 +1265,7 @@ class Inventory_Device_Status(View):
                         }
                     ])
                     
-                    result['data']['objects']['values'] = table_values
+                    result['data']['objects']['values'].append(table_values)
 
                     # result['data']['objects']['values'].append([display_bs_name,
                     #                                             sector_id,
@@ -1389,7 +1389,8 @@ class Inventory_Device_Status(View):
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
 
-                    table_values = [
+                    table_values = []
+                    table_values.append([
                         {
                             "val" : display_bs_name,
                             "url" : display_bs_url
@@ -1434,7 +1435,7 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ]
+                    ])
                     
                     result['data']['objects']['values'].append(table_values)
 
