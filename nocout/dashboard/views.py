@@ -16,7 +16,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP
+from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG
 
 from nocout.utils import logged_in_user_organizations
 # from nocout.utils.util import convert_utc_to_local_timezone
@@ -672,8 +672,13 @@ class MainDashboard(View):
         """
         context = {
             "isOther": 0,
-            "page_title": "Main Dashboard"
+            "page_title": "Main Dashboard",
+            "debug" : 0
         }
+
+        if DEBUG:
+            context['debug'] = 1
+        
         if 'isOther' in self.request.GET:
             context['isOther'] = self.request.GET['isOther']
             context['page_title'] = "RF Main Dashboard"
@@ -1995,27 +2000,37 @@ class GetRfNetworkAvailData(View):
 
                 tech_wise_dict = get_technology_wise_data_dict(rf_avail_queryset=rf_availability_data_dict)
 
+                avail_chart_color = {
+                    'PMP' : '#70AFC4',
+                    'WiMAX' : '#A9FF96',
+                    'PTP-BH' : '#95CEFF'
+                }
+
+                unavail_chart_color = {
+                    'PMP' : '#FF193B',
+                    'WiMAX' : '#F7A35C',
+                    'PTP-BH' : '#434348'
+                }
+
                 # Loop all technologies
                 for tech in tech_wise_dict:
-                    avail_chart_color = color_picker()
                     avail_chart_dict = {
                         "type": "column",
                         "valuesuffix": " ",
                         "stack": tech,
                         "name": "Availability(" + tech + ")",
                         "valuetext": "Availability (" + tech + ")",
-                        "color": avail_chart_color,
+                        "color": avail_chart_color[tech],
                         "data": list()
                     }
 
-                    unavail_chart_color = color_picker()
                     unavail_chart_dict = {
                         "type": "column",
                         "valuesuffix": " ",
                         "stack": tech,
                         "name": "Unavailability(" + tech + ")",
                         "valuetext": "Unavailability (" + tech + ")",
-                        "color": unavail_chart_color,
+                        "color": unavail_chart_color[tech],
                         "data": list()
                     }
 
@@ -2028,7 +2043,7 @@ class GetRfNetworkAvailData(View):
                     while month_before < datetime.date.today():
 
                         avail_day_data = {
-                            "color": avail_chart_color,
+                            "color": avail_chart_color[tech],
                             "y": 0,
                             "name": "Availability(" + tech + ")",
                             "x": calendar.timegm(month_before.timetuple()) * 1000,
@@ -2036,7 +2051,7 @@ class GetRfNetworkAvailData(View):
                         }
 
                         unavail_day_data = {
-                            "color": unavail_chart_color,
+                            "color": unavail_chart_color[tech],
                             "y": 0,
                             "name": "Unavailability(" + tech + ")",
                             "x": calendar.timegm(month_before.timetuple()) * 1000,
