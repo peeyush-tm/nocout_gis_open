@@ -44,17 +44,17 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	//Activate Click
 	mapClick.activate();
 
-	//Map moveend event
-	ccpl_map.events.register("moveend", ccpl_map, function(e){
+	//Map moveend event(Used for pan & zoom both cases)
+	ccpl_map.events.register("moveend", ccpl_map, function(e) {
 		that.mapIdleCondition();
 		return;
 	});
 
 	//Map zoomend event
-	ccpl_map.events.register("zoomend", ccpl_map, function(e){
-		that.mapIdleCondition();
-		return;
-	});
+	// ccpl_map.events.register("zoomend", ccpl_map, function(e){
+	// 	that.mapIdleCondition();
+	// 	return;
+	// });
 
 	//Create WMS layer to load Map from our geoserver.
 	layers.india_Layer = new OpenLayers.Layer.WMS(
@@ -171,6 +171,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Lines Layer to the Map
 		ccpl_map.addLayer(layers.linesLayer);
+
+		//Create a Vector Layer which will hold Lines
+		layers.red_cross = new OpenLayers.Layer.Vector('RedCross');
+
+		//Add Red Cross Layer to the Map
+		ccpl_map.addLayer(layers.red_cross);
+
 	/*
 	End of OpenLayer Layer Vector For Showing Lines
 	 */
@@ -292,7 +299,10 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 
 		//Create a Vector Layer for Markers with styleMap and strategy
-		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {styleMap  : styleMap, strategies: [strategy]});
+		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {
+			styleMap   : styleMap,
+			strategies : [strategy]
+		});
 
 		//Add layer to the map
 		ccpl_map.addLayer(layers.markersLayer);
@@ -311,7 +321,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			renderIndent: "temporary",
 			eventListeners: {
 				onfeatureselected: function(e) {
-					console.log(e);
 					// setTimeout(function() {
 					// 	whiteMapClass.mouseOverEvent(e);
 					// }, 20);
@@ -730,7 +739,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
     }
 
     // poly.setMap(mapInstance);
-    allMarkersArray_wmap.push(poly);
+    // allMarkersArray_wmap.push(poly);
 
     allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
 

@@ -96,11 +96,11 @@ def check_wimax_ul_intrf(item, params, info):
 	if ss_mac:
 		ul_intrf = live_query_ul_intrf(ss_mac )
 		if ul_intrf:
-			if ul_intrf  == crit:
+			if ul_intrf.lower()  == crit.lower():
 				state  = 2
-			elif ul_intrf  == warn:
+			elif ul_intrf.lower()  == warn.lower():
 				state = 1
-			elif ul_intrf == "Norm":
+			elif ul_intrf.lower() == "Norm".lower():
 				state = 0
         		infotext = "Device ul intrf is %s " % ul_intrf
     except ValueError:

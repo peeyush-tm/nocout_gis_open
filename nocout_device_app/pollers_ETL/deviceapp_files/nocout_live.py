@@ -236,7 +236,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				check_output =  filter(lambda t: 'wimax_ss_port_params' in t, check_output.split('\n'))
 				check_output = check_output[0].split('- ')[1].split(',')
 				index =  wimax_ss_port_service.index(old_service)
-				value = check_output[index].split['='][1]
+				value = check_output[index].split('=')[1]
 				data_value.append(value)
 				data_dict = {old_device:data_value}
 				data_value = []

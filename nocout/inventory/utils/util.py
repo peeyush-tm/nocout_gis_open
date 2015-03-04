@@ -269,19 +269,22 @@ def filter_devices(organizations=[],
 
 
 @cache_for(300)
-def prepare_machines(device_list):
+def prepare_machines(device_list, machine_key='device_machine'):
     """
 
+
+    :param device_list:
+    :param machine_key:
     :return:
     """
     # Unique machine from the device_list
-    unique_device_machine_list = {device['device_machine']: True for device in device_list}.keys()
+    unique_device_machine_list = {device[machine_key]: True for device in device_list}.keys()
 
     machine_dict = {}
     #Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
         machine_dict[machine] = [device['device_name'] for device in device_list if
-                                 device['device_machine'] == machine]
+                                 device[machine_key] == machine]
 
     return machine_dict
 

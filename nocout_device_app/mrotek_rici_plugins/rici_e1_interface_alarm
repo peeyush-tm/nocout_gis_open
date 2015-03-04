@@ -59,7 +59,7 @@ def check_rici_e1_interface_alarm(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     interface_status_list = []
-    interface_string = "e1_"
+    interface_string = "fe_"
     try:
 	interface_status_list = []
         infotext = ""
@@ -69,7 +69,7 @@ def check_rici_e1_interface_alarm(item, _no_params, info):
 		interface_alarm = interface_alarm_value(str(interface_alarm))
                 if interface_alarm == None:
                     interface_alarm = "unknown_interface_alarm"
-                interface_status_list.append((interface_string+"%s" % (index+1), interface_alarm.lower()))
+                interface_status_list.append((interface_string+"%s" % (index+1) +"_state", interface_alarm.lower()))
 	for index, interface_status in interface_status_list:
                 infotext += "[interface %s] %s " % (index, interface_status)
 	state = 0

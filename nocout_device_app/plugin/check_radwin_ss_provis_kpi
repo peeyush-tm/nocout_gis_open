@@ -89,6 +89,7 @@ def  main():
 
     state_string = "unknown"
     ss_state=''
+    plugin_message = ''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]

@@ -46,7 +46,10 @@ def extract_rici_ul_util_from_live(hostname,site):
 		for param in query_output.split(" "):
 			param = param.strip("['\n', ' ']")
 			if param.partition('=')[2]:
-				mro_ul =param.split("=")[1]
+				try:
+					mro_ul =param.split("=")[1].split(';')[0]
+				except:
+					mro_ul=0
 				port = param.split("=")[0]
 				mro_ul_dict[port] = mro_ul 
 	except Exception ,e:
@@ -60,38 +63,41 @@ def live_query_rici_ul_util_kpi(hostname,site,war,crit,qos):
     ul_kpi = ''
     perf = ''
     plugin_message = ''
-    warn_flag=0
-    crit_flag=0
-    normal_flag=0
     state_string = "unknown"
+    crit_flag=0
+    warn_flag=0
+    normal_flag=0
+    qos_value = qos.split('|')[:-1]
     try:
 	ul_util_dict= extract_rici_ul_util_from_live(hostname,site)
-	
-	for entry in ul_util_dict:
+	for index,entry in enumerate(sorted(ul_util_dict)):
 		ul_kpi =  ul_util_dict[entry]
-		ul_kpi = (float(ul_kpi)/qos) *100
+		try:
+			ul_kpi = (float(ul_kpi)/float(qos_value[index])) *100
+		except Exception,e:
+			continue
 		if ul_kpi:
-			perf += str(entry) + "=%s;%s;%s;%s " % (ul_kpi,war,crit,qos)
+			perf += str(entry) + "=%s;%s;%s;%s " % (ul_kpi,war,crit,qos_value[index])
 			if ul_kpi >= crit:
-                                crit_flag = 1
-                        elif ul_kpi >= war and ul_kpi < crit:
-                                warn_flag = 1
-                        else:
-                                normal_flag = 1
-
-        if crit_flag:
-                state =2
-                state_string = "critical"
+				crit_flag = 1
+			elif ul_kpi >= war and ul_kpi < crit:
+				warn_flag = 1
+			else:
+				normal_flag = 1
+	if crit_flag:
+		state =2
+		state_string = "critical"
         elif warn_flag:
-                state =1
-                state_string = "warning"
-        elif normal_flag:
-                state = 0
-                state_string = "ok"
+		state =1
+		state_string = "warning"
+	elif normal_flag:
+		state = 0
+		state_string = "ok"
+
 		
     except Exception ,e:
 	perf = '' 
-    plugin_message += "rici_ul_util_kpi %s - %s|%s" % (state_string,ul_kpi,perf)
+    plugin_message += "rici_ul_util_kpi %s-|%s" % (state_string,perf)
     sys.stdout.write(plugin_message)
     sys.exit((state))
 		
@@ -99,6 +105,7 @@ def  main():
 
     state_string = "unknown"
     ul_util=''
+    plugin_message = ''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]
@@ -107,10 +114,10 @@ def  main():
 	qos = sys.argv[5]
     except:
         perf =';;;%s ' % qos
-        plugin_message += "rici_ul_util_kpi %s - %s|%s" % (state_string,ul_util,perf)
+        plugin_message += "rici_ul_util_kpi %s-|%s" % (state_string,perf)
         sys.exit((3))
 
-    live_query_rici_ul_util_kpi(host_name,site,float(war),float(crit),float(qos))
+    live_query_rici_ul_util_kpi(host_name,site,float(war),float(crit),qos)
 	
 
 if __name__ == '__main__':

@@ -32,6 +32,7 @@ except Exception as exp:
 
 
 def extract_connected_ss_from_topology(hostname):
+	data=None
         query = """select connected_device_ip from performance_topology where device_name ='%s' """ %(hostname)
 	query1 = """ select M.name, D.ip_address from device_device as D left join machine_machine as M on (D.machine_id = M.id) where D.ip_address in 
 	(select connected_device_ip from performance_topology where device_name ='%s')""" %(hostname)
@@ -72,7 +73,7 @@ def mysql_conn(machine=None):
                         port=port
                         )
         except Exception as exp:
-            print exp
+            db=None
         return db
 
 
@@ -88,26 +89,37 @@ def extract_ss_ul_issue_state_from_live(hostname,site):
 	d = {}
 	final_value = []
 	ul_issue = None
-	connected_ss_entry = extract_connected_ss_from_topology(hostname)
-	for machine, ip in connected_ss_entry:
-		d.setdefault(machine, [machine]).append(str(ip))
-	mapped_ip = map(tuple, d.values())
-	total = 0
 	try:
+		connected_ss_entry = extract_connected_ss_from_topology(hostname)
+		for machine, ip in connected_ss_entry:
+			d.setdefault(machine, [machine]).append(str(ip))
+		mapped_ip = map(tuple, d.values())
+		total = 0
 		for entry in mapped_ip:
-			db=mysql_conn(machine=entry[0])
-			query = """ select current_value from performance_utilizationstatus where ip_address in """ + str(entry[1:])
-			cur = db.cursor()
-			cur.execute(query)
-			data = cur.fetchall()
-			cur.close()
+			try:
+				db=mysql_conn(machine=entry[0])
+				if len(entry[1:]) == 1:
+					ip_tuple = "('%s')" % entry[1:][0]
+				else:
+					ip_tuple = str(entry[1:])
+				query = "select current_value from performance_utilizationstatus where "+\
+				"service_name='cambium_ss_ul_issue_kpi' and ip_address in " + ip_tuple
+				cur = db.cursor()
+				cur.execute(query)
+				data = cur.fetchall()
+				cur.close()
+				db.close()
+			except:
+				if db:
+					db.close()
+				continue
 			value = [str(item) for sublist in data for item in sublist]
 			final_value.extend(value)	
 			for num in final_value:
 				if num != '':
 					total = total+int(num)
 			if len(final_value):
-				ul_issue = (total/len(final_value))*100
+				ul_issue = (total/float(len(final_value)))*100
 	except:
 		ul_issue = None
 	
@@ -147,6 +159,7 @@ def live_query_cam_ul_issue_kpi(host_name,site,war,crit):
 def  main():
     state_string = "unknown"
     cam_ul=''
+    plugin_message =''
     try:
     	host_name = sys.argv[1]
     	site = sys.argv[2]
