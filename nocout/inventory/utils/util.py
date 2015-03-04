@@ -144,6 +144,24 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                         is_added_to_nms=1,
                                         is_deleted=0,
                                         organization__in=organizations)
+
+    elif (not technology) and (not specify_ptp_bh_type):
+        devices = Device.objects.filter(Q(
+                                            device_technology=int(PMP.ID),
+                                            sector_configured_on__isnull=False,
+                                            sector_configured_on__sector_id__isnull=False
+                                        )
+                                        |
+                                        Q(
+                                            device_technology=int(WiMAX.ID),
+                                            sector_configured_on__isnull=False,
+                                            sector_configured_on__sector_id__isnull=False
+                                        )
+                                        ,
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in=organizations)
+
     else:
         if int(technology) == int(P2P.ID):
             if specify_ptp_bh_type in ['ss', 'bs']:
