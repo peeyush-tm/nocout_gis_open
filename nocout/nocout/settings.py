@@ -363,14 +363,14 @@ CELERYBEAT_SCHEDULE = {
     },
     # END Calculations for Capacity
     # Dashboards Calculations start at 5th minute of the hour
-    'calculate_speedometer_dashboards-ALL': {
-        'task': 'dashboard.tasks.calculate_speedometer_dashboards',
+    'calculate_speedometer_dashboards-NW': {
+        'task': 'dashboard.tasks.network_speedometer_dashboards',
         'schedule': crontab(minute='*/5'),
     },
-    # 'calculate_range_dashboards-ALL': {
-    #     'task': 'dashboard.tasks.calculate_range_dashboards',
-    #     'schedule': crontab(minute='*/5'),
-    # },
+    'calculate_speedometer_dashboards-TEMP': {
+        'task': 'dashboard.tasks.temperature_speedometer_dashboards',
+        'schedule': crontab(minute='*/5'),
+    },
     # BEGIN: Range Dashboards
     'calculate_range_dashboards-PMP': {
         'task': 'dashboard.tasks.calculate_range_dashboards',

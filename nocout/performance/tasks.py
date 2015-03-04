@@ -396,6 +396,8 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
     bulky_update = list()
     bulky_create = list()
 
+    is_updated = False
+
     #counter_val = len(calculated_data)
 
     for current_row in calculated_data:
@@ -431,12 +433,20 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
                 sector=sector_id
             )
 
-            sector_object.sector_sector_configured_on = sector_sector_configured_on
-            sector_object.sector_device_technology=sector_device_technology
-            sector_object.ul_issue_1 = ul_issue_1
-            sector_object.augment_1 = augment_1
-    
-            bulky_update.append(sector_object)
+            # sector_object.sector_sector_configured_on = sector_sector_configured_on
+            # sector_object.sector_device_technology=sector_device_technology
+
+            if (not sector_object.ul_issue_1) or (not sector_object.augment_1):
+                is_updated = True
+
+            if not sector_object.ul_issue_1:
+                sector_object.ul_issue_1 = ul_issue_1
+
+            if not sector_object.augment_1:
+                sector_object.augment_1 = augment_1
+
+            if is_updated:
+                bulky_update.append(sector_object)
     
         except Exception as e:
             sector_object = SpotDashboard(

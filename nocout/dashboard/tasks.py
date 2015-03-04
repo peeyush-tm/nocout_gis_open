@@ -5,7 +5,7 @@ from django.utils import timezone
 import datetime
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP
+from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG
 
 from organization.models import Organization
 from device.models import DeviceTechnology, Device
@@ -33,56 +33,126 @@ logger = logging.getLogger(__name__)
 
 
 @task()
-def calculate_speedometer_dashboards():
+def network_speedometer_dashboards():
     """
 
     :return: Calculation Status for the objects
     """
     g_jobs = list()
+    ret = False
 
     user_organizations = Organization.objects.all()
     processed_for = timezone.now()
 
+    network_dashboards = {
+        'latency-network': {
+            'model': NetworkStatus,
+            'data_source': 'rta',
+            'service_name': 'ping',
+            'severity': ['warning', 'critical'],
+            'current_value': ' current_value > 0 '
+        },
+        'packetloss-network': {
+            'model': NetworkStatus,
+            'data_source': 'rta',
+            'service_name': 'ping',
+            'severity': ['warning', 'critical', 'down'],
+            'current_value': ' current_value < 100 '
+        },
+        'down-network': {
+            'model': NetworkStatus,
+            'data_source': 'pl',
+            'service_name': 'ping',
+            'severity': ['critical', 'down'],
+            'current_value': ' current_value >= 100 '
+        }
+    }
+
     for organization in user_organizations:
-        g_jobs.append(
-            calculate_timely_latency.s(
-                organization=organization,
-                dashboard_name='latency-network',
-                processed_for=processed_for
-            )
-        )
 
-        g_jobs.append(
-            calculate_timely_packet_drop.s(
-                organization=organization,
-                dashboard_name='packetloss-network',
-                processed_for=processed_for
-            )
-        )
+        required_devices = organization_network_devices(organizations=[organization.id],
+                                                        technology=None,
+                                                        specify_ptp_bh_type=None
+                                                        )  # this will give PMP and WiMAX devices
 
-        g_jobs.append(
-            calculate_timely_down_status.s(
-                organization=organization,
-                dashboard_name='down-network',
-                processed_for=processed_for
-            )
-        )
+        if not required_devices.exists():  # this evaluates the query set
+            continue
 
-        temperatures = ['IDU', 'ACB', 'FAN']
+        sector_devices = required_devices.values('machine__name', 'device_name')
+        machine_dict = prepare_machines(sector_devices)
 
-        for temp in temperatures:
+        for dashboard in network_dashboards:
+            # organization,
+            # dashboard_name,
+            # processed_for,
+            # dashboard_config,
+            # technology=None,
+            # required_devices=None
             g_jobs.append(
-                calculate_timely_temperature.s(
+                prepare_network_alert.s(
                     organization=organization,
+                    dashboard_name=dashboard,
                     processed_for=processed_for,
-                    chart_type=temp
+                    dashboard_config=network_dashboards,
+                    technology=None,
+                    machine_dict=machine_dict
                 )
             )
 
+    if not len(g_jobs):
+        return ret
+
     job = group(g_jobs)
     result = job.apply_async()
+    for r in result.get():
+        ret |= r
+
+    return ret
+
+
+@task()
+def temperature_speedometer_dashboards():
+    """
+
+    :return: True
+    """
+    g_jobs = list()
     ret = False
 
+    user_organizations = Organization.objects.all()
+    processed_for = timezone.now()
+
+    temperatures = ['IDU']
+    if DEBUG:
+        temperatures = ['IDU', 'ACB', 'FAN']
+
+    for organization in user_organizations:
+
+        required_devices = organization_network_devices(organizations=[organization.id],
+                                                        technology=WiMAX.ID,
+                                                        specify_ptp_bh_type=None
+                                                        )
+        if required_devices.exists():
+            sector_devices = required_devices.values('machine__name', 'device_name')
+            machine_dict = prepare_machines(sector_devices)
+            for temp in temperatures:
+                # organization,
+                # processed_for,
+                # required_devices,
+                # chart_type='IDU'
+                g_jobs.append(
+                    calculate_timely_temperature.s(
+                        organization=organization,
+                        processed_for=processed_for,
+                        machine_dict=machine_dict,
+                        chart_type=temp
+                    )
+                )
+    if not len(g_jobs):
+        return ret
+
+    job = group(g_jobs)
+    result = job.apply_async()
     for r in result.get():
         ret |= r
 
@@ -97,6 +167,17 @@ def calculate_status_dashboards(technology):
     """
     g_jobs = list()
     ret = False
+
+    if not DEBUG:  # calculate technology wise only if the debug is set
+        return ret
+
+    if not technology:
+        return ret
+
+    try:
+        tech_id = eval(technology).ID
+    except:
+        return ret
 
     user_organizations = Organization.objects.all()
     processed_for = timezone.now()
@@ -125,17 +206,25 @@ def calculate_status_dashboards(technology):
         }
     }
 
-    for dashboard in dashboards:
-        for organization in user_organizations:
-            g_jobs.append(
-                prepare_network_alert.s(
-                    organization=organization,
-                    dashboard_name=dashboard,
-                    processed_for=processed_for,
-                    dashboard_config=dashboards,
-                    technology=technology
+    for organization in user_organizations:
+        required_devices = organization_network_devices(organizations=[organization.id],
+                                                        technology=tech_id,
+                                                        specify_ptp_bh_type=None
+                                                        )
+        if required_devices.exists():
+            sector_devices = required_devices.values('machine__name', 'device_name')
+            machine_dict = prepare_machines(sector_devices)
+            for dashboard in dashboards:
+                g_jobs.append(
+                    prepare_network_alert.s(
+                        organization=organization,
+                        dashboard_name=dashboard,
+                        processed_for=processed_for,
+                        dashboard_config=dashboards,
+                        technology=technology,
+                        machine_dict=machine_dict
+                    )
                 )
-            )
 
     if len(g_jobs):
         job = group(g_jobs)
@@ -236,7 +325,7 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
             )
 
 
-        if sector_objects.count():
+        if sector_objects.exists():
             range_counter = {
                 'dashboard_name': dashboard_name,
                 'device_name': dashboard_name,
@@ -306,7 +395,7 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
                 Q(severity__in=['warning', 'critical', 'ok', 'unknown']),
             )
 
-        if backhaul_objects.count():
+        if backhaul_objects.exists():
             range_counter = {
                 'dashboard_name': dashboard_name,
                 'device_name': dashboard_name,
@@ -378,7 +467,7 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
         # get the device of the user sector.
         # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
-        if sector_objects.count():
+        if sector_objects.exists():
             data_list = list()
             user_sector = sector_objects
             status_counter = {
@@ -429,9 +518,18 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
 
 
 @task()
-def prepare_network_alert(organization, dashboard_name, processed_for, dashboard_config, technology=None):
+def prepare_network_alert(organization,
+                          dashboard_name,
+                          processed_for,
+                          dashboard_config,
+                          machine_dict,
+                          technology=None,
+                          ):
     """
 
+
+    :param dashboard_config:
+    :param required_devices:
     :param organization:
     :param dashboard_name:
     :param processed_for:
@@ -441,143 +539,54 @@ def prepare_network_alert(organization, dashboard_name, processed_for, dashboard
     processed_for = processed_for
     technology_id = None
 
-    try:
-        latency_technology = eval(technology)
-        technology_id = latency_technology.ID
-    except Exception as e:
-        logger.exception(e)
-        return False
-
-    g_jobs = list()
-    ret = False
-    #calculate these organization wise
-
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices([organization], technology_id)
-
-    if sector_devices.count():
-        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(
-            sector_configured_on__isnull=False,
-            sector_configured_on__sector_id__isnull=False
-        ).values('machine__name', 'device_name')
-
-        # get the dictionary of machine_name as key and device_name as a list for that machine.
-        machine_dict = prepare_machines(sector_devices)
-
-        status_count = 0
-
-        model = dashboard_config[dashboard_name]['model']
-        service_name = dashboard_config[dashboard_name]['service_name']
-        data_source = dashboard_config[dashboard_name]['data_source']
-        severity = dashboard_config[dashboard_name]['severity']
-        current_value = dashboard_config[dashboard_name]['current_value']
-
-        # "down-{0}".format(technology): {
-        #     'model': NetworkStatus,
-        #     'data_source': 'pl',
-        #     'service': 'ping',
-        #     'severity': ['critical', 'down'],
-        #     'current_value': 'current_value__gte=100'
-        # }
-        # creating a list dictionary using machine name and there corresponing device list.
-
-        for machine_name, device_list in machine_dict.items():
-            status_count += model.objects.order_by(
-
-            ).extra(
-                where=[current_value]
-            ).filter(
-                device_name__in=device_list,
-                service_name=service_name,
-                data_source=data_source,
-                severity__in=severity
-            ).using(machine_name).count()
-
-        g_jobs.append(
-            calculate_timely_network_alert.s(
-                dashboard_name=dashboard_name,
-                processed_for=processed_for,
-                organization=organization,
-                technology=technology,
-                status_count=status_count,
-                status_dashboard_name=None
-            )
-        )
-
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
-
-    return ret
-
-
-@task()
-def calculate_timely_latency(organization, dashboard_name, processed_for ,technology=None):
-    '''
-    Method to calculate the latency status of devices.
-
-    :param:
-    organizations: list of organization.
-    dashboard_name: name of dashboard used in dashboard_setting.
-    processed_for: datetime.
-    technology: Named Tuple.
-
-    return:
-    '''
-    processed_for = processed_for
-    technology_id = None
-
-    try:
-        latency_technology = eval(technology)
-        technology_id = latency_technology.ID
-    except Exception as e:
-        logger.exception(e)
-        # return False
+    if technology:
+        try:
+            latency_technology = eval(technology)
+            technology_id = latency_technology.ID
+        except Exception as e:
+            logger.exception(e)
+            return False
+    else:
         pass
 
     g_jobs = list()
     ret = False
 
-    #calculate these organization wise
+    if not machine_dict:
+        return ret
 
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices([organization], technology_id)
+    # get the dictionary of machine_name as key and device_name as a list for that machine.
+    machine_dict = machine_dict
 
-    if sector_devices.count():
-        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(
-            sector_configured_on__isnull=False,
-            sector_configured_on__sector_id__isnull=False
-        ).values('machine__name', 'device_name')
+    status_count = 0
 
-        # get the dictionary of machine_name as key and device_name as a list for that machine.
-        machine_dict = prepare_machines(sector_devices)
+    model = dashboard_config[dashboard_name]['model']
+    service_name = dashboard_config[dashboard_name]['service_name']
+    data_source = dashboard_config[dashboard_name]['data_source']
+    severity = dashboard_config[dashboard_name]['severity']
+    current_value = dashboard_config[dashboard_name]['current_value']
 
-        status_count = 0
+    for machine_name, device_list in machine_dict.items():
+        status_count += model.objects.order_by(
+        ).extra(
+            where=[current_value]
+        ).filter(
+            device_name__in=device_list,
+            service_name=service_name,
+            data_source=data_source,
+            severity__in=severity
+        ).using(machine_name).count()
 
-        # creating a list dictionary using machine name and there corresponing device list.
-        for machine_name, device_list in machine_dict.items():
-            status_count += NetworkStatus.objects.order_by().filter(
-                device_name__in=device_list,
-                service_name='ping',
-                data_source='rta',
-                current_value__gt=0,
-                severity__in=['warning', 'critical', 'down']
-                ).using(machine_name).count()
-
-        g_jobs.append(
-            calculate_timely_network_alert.s(
-                dashboard_name=dashboard_name,
-                processed_for=processed_for,
-                organization=organization,
-                technology=technology,
-                status_count=status_count,
-                status_dashboard_name=None
-            )
+    g_jobs.append(
+        calculate_timely_network_alert.s(
+            dashboard_name=dashboard_name,
+            processed_for=processed_for,
+            organization=organization,
+            technology=technology,
+            status_count=status_count,
+            status_dashboard_name=None
         )
+    )
 
     if len(g_jobs):
         job = group(g_jobs)
@@ -588,167 +597,16 @@ def calculate_timely_latency(organization, dashboard_name, processed_for ,techno
     return ret
 
 
-
 @task()
-def calculate_timely_packet_drop(organization, dashboard_name, processed_for, technology=None):
-    '''
-    Method to calculate the packed drop status of devices.
-
-    :param:
-    organizations: list of organization.
-    dashboard_name: name of dashboard used in dashboard_setting.
-    processed_for: datetime.
-    technology: Named Tuple.
-
-    return:
-    '''
-    processed_for = processed_for
-    technology_id = None
-
-    try:
-        latency_technology = eval(technology)
-        technology_id = latency_technology.ID
-    except Exception as e:
-        logger.exception(e)
-        # return False
-        pass
-
-    g_jobs = list()
-    ret = False
-
-    #calculate these organization wise
-
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices([organization], technology_id)
-
-    if sector_devices.count():
-        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(
-            sector_configured_on__isnull=False,
-            sector_configured_on__sector_id__isnull=False
-        ).values('machine__name', 'device_name')
-
-        # get the dictionary of machine_name as key and device_name as a list for that machine.
-        machine_dict = prepare_machines(sector_devices)
-
-        status_count = 0
-
-        # creating a list dictionary using machine name and there corresponing device list.
-        for machine_name, device_list in machine_dict.items():
-            status_count += NetworkStatus.objects.order_by().filter(
-                device_name__in=device_list,
-                service_name='ping',
-                data_source='pl',
-                current_value__lt=100,
-                severity__in=['warning', 'critical', 'down']
-                ).using(machine_name).count()
-
-        g_jobs.append(
-            calculate_timely_network_alert.s(
-                dashboard_name=dashboard_name,
-                processed_for=processed_for,
-                organization=organization,
-                technology=technology,
-                status_count=status_count,
-                status_dashboard_name=None
-            )
-        )
-
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
-
-    return ret
-
-
-
-@task()
-def calculate_timely_down_status(organization, dashboard_name, processed_for, technology=None):
-    '''
-    Method to calculate the packed drop status of devices.
-
-    :param:
-    organizations: list of organization.
-    dashboard_name: name of dashboard used in dashboard_setting.
-    processed_for: datetime.
-    technology: Named Tuple.
-
-    return:
-    '''
-    processed_for = processed_for
-    technology_id = None
-
-    try:
-        latency_technology = eval(technology)
-        technology_id = latency_technology.ID
-    except Exception as e:
-        logger.exception(e)
-        # return False
-        pass
-
-    g_jobs = list()
-    ret = False
-
-    #calculate these organization wise
-
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices([organization], technology_id)
-
-    if sector_devices.count():
-        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(
-            sector_configured_on__isnull=False,
-            sector_configured_on__sector_id__isnull=False
-        ).values('machine__name', 'device_name')
-
-        # get the dictionary of machine_name as key and device_name as a list for that machine.
-        machine_dict = prepare_machines(sector_devices)
-
-        status_count = 0
-
-        # creating a list dictionary using machine name and there corresponing device list.
-        for machine_name, device_list in machine_dict.items():
-            status_count += NetworkStatus.objects.order_by().filter(
-                device_name__in=device_list,
-                service_name='ping',
-                data_source='pl',
-                current_value__gte=100,
-                severity__in=['critical', 'down']
-                ).using(machine_name).count()
-
-        g_jobs.append(
-            calculate_timely_network_alert.s(
-                dashboard_name=dashboard_name,
-                processed_for=processed_for,
-                organization=organization,
-                technology=technology,
-                status_count=status_count,
-                status_dashboard_name=None
-            )
-        )
-
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
-
-    return ret
-
-
-
-@task()
-def calculate_timely_temperature(organization, processed_for, chart_type='IDU'):
+def calculate_timely_temperature(organization, processed_for, machine_dict, chart_type='IDU'):
     '''
     Method to calculate the temperature status of devices.
 
+    :param organization:
+    :param processed_for:
+    :param required_devices:
+    :param chart_type:
     :param:
-    organizations: list of organization.
-    processed_for: datetime.
-    chart_type: string.
-
     return:
     '''
 
@@ -768,41 +626,40 @@ def calculate_timely_temperature(organization, processed_for, chart_type='IDU'):
     ret = False
 
     technology_id = 3
-    processed_for=processed_for
+    processed_for = processed_for
 
     status_dashboard_name = 'temperature-' + chart_type.lower()
 
-    # get the device of user's organization [and sub organization]
-    sector_devices = organization_network_devices([organization], technology_id)
+    machine_dict = machine_dict
 
-    if sector_devices.count():
-        # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-        sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+    # count of devices in severity
+    status_count = 0
+    # creating a list dictionary using machine name and there corresponing device list.
+    # And list is order by device_name.
+    for machine_name, device_list in machine_dict.items():
+        status_count += ServiceStatus.objects.order_by().filter(
+            device_name__in=device_list,
+            service_name__in=service_list,
+            data_source__in=data_source_list,
+            severity__in=['warning', 'critical']
+            ).using(machine_name).count()
 
-        machine_dict = prepare_machines(sector_devices)
-
-        # count of devices in severity
-        status_count = 0
-        # creating a list dictionary using machine name and there corresponing device list.
-        # And list is order by device_name.
-        for machine_name, device_list in machine_dict.items():
-            status_count += ServiceStatus.objects.order_by().filter(
-                device_name__in=device_list,
-                service_name__in=service_list,
-                data_source__in=data_source_list,
-                severity__in=['warning', 'critical']
-                ).using(machine_name).count()
-
-        g_jobs.append(
-            calculate_timely_network_alert.s(
-                dashboard_name='temperature',
-                processed_for=processed_for,
-                organization=organization,
-                technology='WiMAX',
-                status_count=status_count,
-                status_dashboard_name=status_dashboard_name
-            )
+    g_jobs.append(
+        # dashboard_name,
+        # processed_for,
+        # organization,
+        # technology=None,
+        # status_count=0,
+        # status_dashboard_name=None
+        calculate_timely_network_alert.s(
+            dashboard_name='temperature',
+            processed_for=processed_for,
+            organization=organization,
+            technology='WiMAX',
+            status_count=status_count,
+            status_dashboard_name=status_dashboard_name
         )
+    )
 
     if len(g_jobs):
         job = group(g_jobs)
@@ -862,7 +719,7 @@ def calculate_timely_network_alert(dashboard_name,
 
     bulky = list()
 
-    if status_dashboard_name is None:
+    if not status_dashboard_name:
         status_dashboard_name = dashboard_name
 
     # get the dictionay where keys are same as of the model fields.
