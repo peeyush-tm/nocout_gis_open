@@ -8457,6 +8457,10 @@ function devicePlottingClass_gmap() {
             // searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)));
             searchResultData = gmap_self.updateStateCounter_gmaps(true);
 
+            // Set Perf calling Flag
+			isPerfCallStopped = 0;
+			isPerfCallStarted = 0;
+
         });
 
 		lastSearchedPt = marker;
