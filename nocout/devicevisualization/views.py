@@ -1450,9 +1450,9 @@ class GISPerfData(View):
         # defer_sector_list = []
         # defer_Ss_list = []
 
-        # device_list = list()
-        # machine_dict = dict()
-        # device_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
+        device_list = list()
+        machine_dict = dict()
+        device_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
         # get base stations id's list
         bs_ids = eval(str(self.request.GET.get('base_stations', None)))
@@ -1509,15 +1509,8 @@ class GISPerfData(View):
                     except Exception as e:
                         pass #no backhaul. dont care.
 
-                    # backhaul data
-                    if backhaul_device and backhaul_device.is_added_to_nms == 1:
-                        backhaul_data = self.get_backhaul_info(backhaul_device)
-                        bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
-                        bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
-
-
                     # get all sectors associated with base station (bs)
-                    #query for sectors and sector configured on
+                    # query for sectors and sector configured on
                     sectors = bs.sector.prefetch_related('sector_configured_on',
                                                          'circuit_set',
                                                          'antenna',
@@ -1528,7 +1521,7 @@ class GISPerfData(View):
                     )
 
                     if bs.backhaul and bs.backhaul.bh_configured_on_id:
-                        #first gather all the devices
+                        # first gather all the devices
                         device_list = Device.objects.filter(
                             Q(id__in=sectors.values_list('sector_configured_on', flat=True)) #query saved
                             |
@@ -1563,39 +1556,87 @@ class GISPerfData(View):
 
                     machine_dict = inventory_utils.prepare_machines(bs_devices)
 
-                    network_perf_data = list()
-                    other_perf_data = list()
+                    # ############################## PERF DATA GATHERING START #################################
+
+                    network_perf_data = None
+                    performance_perf_data = None
+                    service_perf_data = None
+                    inventory_perf_data = None
+                    status_perf_data = None
+                    utilization_perf_data = None
 
                     for machine_name in machine_dict:
                         devices_list = machine_dict[machine_name]
-                        # device network info
-                        device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).values(
-                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                        ).order_by().using(alias=machine_name)
 
-                        network_perf_data.extend(list(device_network_info))
+                        # device network info
+                        device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).order_by().using(alias=machine_name)
+                        if network_perf_data:
+                            network_perf_data |= device_network_info
+                        else:
+                            network_perf_data = device_network_info
 
                         # device performance info
-                        device_performance_info = ServiceStatus.objects.filter(device_name__in=devices_list).values(
-                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                        ).order_by().using(alias=machine_name)
+                        performance_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).order_by().using(alias=machine_name)
+                        if performance_perf_data:
+                            performance_perf_data |= performance_network_info
+                        else:
+                            performance_perf_data = performance_network_info
 
-                        other_perf_data.extend(list(device_performance_info))
+                        # device service info
+                        device_service_info = ServiceStatus.objects.filter(device_name__in=devices_list).order_by().using(alias=machine_name)
+                        if service_perf_data:
+                            service_perf_data |= device_service_info
+                        else:
+                            service_perf_data = device_service_info
 
                         # device inventory info
-                        device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).values(
-                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                        ).order_by().using(alias=machine_name)
-
-                        other_perf_data.extend(list(device_inventory_info))
+                        device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).order_by().using(alias=machine_name)
+                        if inventory_perf_data:
+                            inventory_perf_data |= device_inventory_info
+                        else:
+                            inventory_perf_data = device_inventory_info
 
                         # device status info
-                        device_status_info = Status.objects.filter(device_name__in=devices_list).values(
-                            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
-                        ).order_by().using(alias=machine_name)
+                        device_status_info = Status.objects.filter(device_name__in=devices_list).order_by().using(alias=machine_name)
+                        if status_perf_data:
+                            status_perf_data |= device_status_info
+                        else:
+                            status_perf_data = device_status_info
 
-                        other_perf_data.extend(list(device_status_info))
+                        # device utilization info
+                        device_utilization_info = UtilizationStatus.objects.filter(device_name__in=devices_list).order_by().using(alias=machine_name)
+                        if utilization_perf_data:
+                            utilization_perf_data |= device_utilization_info
+                        else:
+                            utilization_perf_data = device_utilization_info
 
+                    network_perf_data = network_perf_data.values(
+                        'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                    )
+
+                    service_perf_data = service_perf_data.values(
+                        'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                    )
+
+                    inventory_perf_data = inventory_perf_data.values(
+                        'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                    )
+
+                    status_perf_data = status_perf_data.values(
+                        'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                    )
+
+                    utilization_perf_data = utilization_perf_data.values(
+                        'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                    )
+
+                    # ############################## PERF DATA GATHERING END #################################
+
+                    # backhaul data
+                    if backhaul_device and backhaul_device.is_added_to_nms == 1:
+                        backhaul_data = self.get_backhaul_info(backhaul_device, network_perf_data)
+                        bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
+                        bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
                     # loop through all sectors
                     for sector_obj in sectors:
@@ -1648,13 +1689,16 @@ class GISPerfData(View):
 
                             sector_performance_data = self.get_sector_performance_info(sector_device,
                                                                                        network_perf_data,
-                                                                                       other_perf_data,
+                                                                                       performance_perf_data,
+                                                                                       service_perf_data,
+                                                                                       inventory_perf_data,
+                                                                                       status_perf_data,
+                                                                                       utilization_perf_data,
                                                                                        sector_obj,
                                                                                        user_thematics,
                                                                                        device_technology,
                                                                                        service,
                                                                                        data_source)
-
 
                             # sector dictionary
                             sector_dict = dict()
@@ -1696,7 +1740,11 @@ class GISPerfData(View):
                                                                                substation_device,
                                                                                ss_default_link_color,
                                                                                network_perf_data,
-                                                                               other_perf_data,
+                                                                               performance_perf_data,
+                                                                               service_perf_data,
+                                                                               inventory_perf_data,
+                                                                               status_perf_data,
+                                                                               utilization_perf_data,
                                                                                user_thematics,
                                                                                device_technology,
                                                                                service,
@@ -1720,7 +1768,7 @@ class GISPerfData(View):
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
 
-    def get_backhaul_info(self, bh_device):
+    def get_backhaul_info(self, bh_device, network_perf_data):
         """ Get Sector performance info
 
             Parameters:
@@ -1766,25 +1814,25 @@ class GISPerfData(View):
 
         # pl
         try:
-            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
-                                                            data_source='pl').values('current_value').using(
-                                                            alias=bh_device.machine.name)[0].get('current_value')
+            pl_dict['value'] = network_perf_data.filter(device_name=bh_device.device_name,
+                                                            data_source='pl').values(
+                'current_value')[0].get('current_value')
         except Exception as e:
             pl_dict['value'] = "NA"
 
         # rta
         try:
-            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
-                                                            data_source='rta').values('current_value').using(
-                                                            alias=bh_device.machine.name)[0].get('current_value')
+            rta_dict['value'] = network_perf_data.filter(device_name=bh_device.device_name,
+                                                            data_source='rta').values(
+                'current_value')[0].get('current_value')
         except Exception as e:
             rta_dict['value'] = "NA"
 
         # bh severity
         try:
-            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
-                                                            data_source='pl').values('severity').using(
-                                                            alias=bh_device.machine.name)[0].get('severity')
+            backhaul_data['bhSeverity'] = network_perf_data.filter(device_name=bh_device.device_name,
+                                                            data_source='pl').values(
+                'severity')[0].get('severity')
         except Exception as e:
             backhaul_data['bhSeverity'] = 'unknown'
 
@@ -1796,11 +1844,14 @@ class GISPerfData(View):
 
         return backhaul_data
 
-
     def get_sector_performance_info(self,
                                     device,
                                     network_perf_data,
-                                    other_perf_data,
+                                    performance_perf_data,
+                                    service_perf_data,
+                                    inventory_perf_data,
+                                    status_perf_data,
+                                    utilization_perf_data,
                                     sector=None,
                                     user_thematics=None,
                                     device_technology=None,
@@ -1874,7 +1925,9 @@ class GISPerfData(View):
             performance_data['perf_info'] = self.get_device_info(device,
                                                                  machine_name,
                                                                  network_perf_data,
-                                                                 other_perf_data)
+                                                                 service_perf_data,
+                                                                 inventory_perf_data,
+                                                                 status_perf_data)
         except Exception as e:
             pass
 
@@ -1885,13 +1938,21 @@ class GISPerfData(View):
         ts_type = self.request.GET.get('ts', 'normal')
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time, sector)
+        device_frequency = self.get_device_polled_frequency(device_name,
+                                                            machine_name,
+                                                            freeze_time,
+                                                            performance_perf_data,
+                                                            inventory_perf_data,
+                                                            sector)
 
         # update device frequency
         performance_data['polled_frequency'] = device_frequency
 
         # device pl
-        device_pl = self.get_device_pl(device_name, machine_name, freeze_time)
+        device_pl = self.get_device_pl(device_name,
+                                       machine_name,
+                                       network_perf_data,
+                                       freeze_time)
 
         # update device pl
         performance_data['pl'] = device_pl
@@ -1936,7 +1997,14 @@ class GISPerfData(View):
         else:
             return performance_data
 
-        performance_value = self.get_performance_value(perf_payload, ts_type)
+        performance_value = self.get_performance_value(perf_payload,
+                                                       network_perf_data,
+                                                       performance_perf_data,
+                                                       service_perf_data,
+                                                       inventory_perf_data,
+                                                       status_perf_data,
+                                                       utilization_perf_data,
+                                                       ts_type)
 
         if user_thematics:
             # icon
@@ -2117,7 +2185,9 @@ class GISPerfData(View):
                         device_obj,
                         machine_name,
                         network_perf_data,
-                        other_perf_data,
+                        service_perf_data,
+                        inventory_perf_data,
+                        status_perf_data,
                         device_pl="",
                         ss=None,
                         is_static=False):
@@ -2479,7 +2549,9 @@ class GISPerfData(View):
                 #     'service_name', 'data_source', 'current_value', 'sys_timestamp'
                 # ).using(alias=machine_name)
 
-                other_perf_data = [d for d in other_perf_data if d['device_name'] == device_name]
+                service_perf_data = [d for d in service_perf_data if d['device_name'] == device_name]
+                inventory_perf_data = [d for d in inventory_perf_data if d['device_name'] == device_name]
+                status_perf_data = [d for d in status_perf_data if d['device_name'] == device_name]
 
                 # # device inventory info
                 # device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
@@ -2491,20 +2563,19 @@ class GISPerfData(View):
                 #     'service_name', 'data_source', 'current_value', 'sys_timestamp'
                 # ).using(alias=machine_name)
 
-                device_info += self.collect_performance(performance=other_perf_data,
+                device_info += self.collect_performance(performance=service_perf_data,
+                                                        device_id=device_id,
+                                                        processed=processed)
+
+                device_info += self.collect_performance(performance=inventory_perf_data,
                                                         device_id=device_id,
                                                         processed=processed
                 )
-                #
-                # device_info += self.collect_performance(performance=other_perf_data,
-                #                                         device_id=device_id,
-                #                                         processed=processed
-                # )
-                #
-                # device_info += self.collect_performance(performance=device_status_info,
-                #                                         device_id=device_id,
-                #                                         processed=processed
-                # )
+
+                device_info += self.collect_performance(performance=status_perf_data,
+                                                        device_id=device_id,
+                                                        processed=processed
+                )
 
                 # # get session uptime
                 # format_session = None
@@ -2687,7 +2758,11 @@ class GISPerfData(View):
                             substation_device,
                             ss_default_link_color,
                             network_perf_data,
-                            other_perf_data,
+                            performance_perf_data,
+                            service_perf_data,
+                            inventory_perf_data,
+                            status_perf_data,
+                            utilization_perf_data,
                             user_thematics=None,
                             device_technology=None,
                             service=None,
@@ -2908,13 +2983,20 @@ class GISPerfData(View):
             return substation_info
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time,
+        device_frequency = self.get_device_polled_frequency(device_name,
+                                                            machine_name,
+                                                            freeze_time,
+                                                            performance_perf_data,
+                                                            inventory_perf_data,
                                                             sector=None,
                                                             device_type=device_type
         )
 
         # device pl
-        device_pl = self.get_device_pl(device_name, machine_name, freeze_time)
+        device_pl = self.get_device_pl(device_name,
+                                       machine_name,
+                                       network_perf_data,
+                                       freeze_time)
 
         # device link/frequency color
         device_link_color = self.get_frequency_color_and_radius(device_frequency, device_pl)[0]
@@ -2953,18 +3035,22 @@ class GISPerfData(View):
         substation_info['param'] = dict()
 
         # Fetch sub station static info
-        substation_info['param']['sub_station'] = self.get_device_info(device_obj=substation_device,
-                                                                       machine_name=machine_name,
-                                                                       network_perf_data=network_perf_data,
-                                                                       other_perf_data=other_perf_data,
+        substation_info['param']['sub_station'] = self.get_device_info(substation_device,
+                                                                       machine_name,
+                                                                       network_perf_data,
+                                                                       service_perf_data,
+                                                                       inventory_perf_data,
+                                                                       status_perf_data,
                                                                        device_pl=device_pl,
                                                                        ss=substation,
                                                                        is_static=True,)
         # Fetch sub station polled info
-        substation_info['param']['polled_info'] = self.get_device_info(device_obj=substation_device,
-                                                                       machine_name=machine_name,
-                                                                       network_perf_data=network_perf_data,
-                                                                       other_perf_data=other_perf_data,
+        substation_info['param']['polled_info'] = self.get_device_info(substation_device,
+                                                                       machine_name,
+                                                                       network_perf_data,
+                                                                       service_perf_data,
+                                                                       inventory_perf_data,
+                                                                       status_perf_data,
                                                                        device_pl=device_pl,
                                                                        ss=substation,
                                                                        is_static=False)
@@ -2990,7 +3076,14 @@ class GISPerfData(View):
         performance_value = None
 
         if device_pl != "100":
-            performance_value = self.get_performance_value(perf_payload, ts_type)
+            performance_value = self.get_performance_value(perf_payload,
+                                                           network_perf_data,
+                                                           performance_perf_data,
+                                                           service_perf_data,
+                                                           inventory_perf_data,
+                                                           status_perf_data,
+                                                           utilization_perf_data,
+                                                           ts_type)
             substation_info['perf_value'] = performance_value
         else:
             substation_info['perf_value'] = ""
@@ -3059,7 +3152,14 @@ class GISPerfData(View):
 
         return substation_info
 
-    def get_device_polled_frequency(self, device_name, machine_name, freeze_time, sector=None, device_type=None):
+    def get_device_polled_frequency(self,
+                                    device_name,
+                                    machine_name,
+                                    freeze_time,
+                                    performance_perf_data,
+                                    inventory_perf_data,
+                                    sector=None,
+                                    device_type=None):
         """ Get device polled frequency
             Parameters:
                 - device_name (unicode) - device name
@@ -3103,25 +3203,23 @@ class GISPerfData(View):
                 frequency_service = device_type.service.filter(name__icontains='frequency')
 
             if port_based_frequency:
-                device_frequency = InventoryStatus.objects.filter(device_name=device_name,
-                                                                  service_name=service_name,
-                                                                  data_source='frequency'
-                ).order_by().using(alias=machine_name)
+                device_frequency = inventory_perf_data.filter(device_name=device_name,
+                                                          service_name=service_name,
+                                                          data_source='frequency').order_by()
 
             elif frequency_service:
-                service_name = frequency_service[0].name
+                service_name = frequency_service[0]['name']
                 if "_invent" in service_name:
-                    device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency'
-                    ).order_by().using(alias=machine_name)
+                    device_frequency = inventory_perf_data.filter(device_name=device_name,
+                                                              data_source='frequency').order_by()
                 else:
-                    device_frequency = PerformanceStatus.objects.filter(device_name=device_name,
-                                                                        service_name=service_name,
-                                                                        data_source='frequency'
-                    ).order_by().using(alias=machine_name)
+                    device_frequency = performance_perf_data.filter(device_name=device_name,
+                                                              service_name=service_name,
+                                                              data_source='frequency').order_by()
 
             else:
-                device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency'
-                ).order_by().using(alias=machine_name)
+                device_frequency = inventory_perf_data.filter(device_name=device_name,
+                                                          data_source='frequency').order_by()
 
             if device_frequency:
                 try:
@@ -3135,7 +3233,11 @@ class GISPerfData(View):
 
         return device_frequency
 
-    def get_device_pl(self, device_name, machine_name, freeze_time):
+    def get_device_pl(self,
+                      device_name,
+                      machine_name,
+                      network_perf_data,
+                      freeze_time):
         """ Get device pl
             Parameters:
                 - device_name (unicode) - device name
@@ -3157,14 +3259,13 @@ class GISPerfData(View):
                                                               service_name='ping',
                                                               data_source='pl',
                                                               sys_timestamp__gte=start_time,
-                                                              sys_timestamp__lte=end_time
-                ).order_by().using(alias=machine_name).values('current_value')
+                                                              sys_timestamp__lte=end_time).order_by().using(
+                    alias=machine_name).values('current_value')
 
             else:
-                device_pl = NetworkStatus.objects.filter(device_name=device_name,
-                                                         service_name='ping',
-                                                         data_source='pl'
-                ).order_by().using(alias=machine_name).values('current_value')
+                device_pl = network_perf_data.filter(device_name=device_name,
+                                                     service_name='ping',
+                                                     data_source='pl').order_by().values('current_value')
 
             if device_pl:
                 device_pl = device_pl[0]['current_value']
@@ -3173,7 +3274,6 @@ class GISPerfData(View):
 
         except Exception as e:
             logger.exception(e)
-            device_pl = ""
 
         return device_pl
 
@@ -3270,7 +3370,15 @@ class GISPerfData(View):
 
         return user_thematics
 
-    def get_performance_value(self, perf_payload, ts_type):
+    def get_performance_value(self,
+                              perf_payload,
+                              network_perf_data,
+                              performance_perf_data,
+                              service_perf_data,
+                              inventory_perf_data,
+                              status_perf_data,
+                              utilization_perf_data,
+                              ts_type):
         """ Get device pl
             Parameters:
                 - perf_payload (dict) - performance payload dictionary
@@ -3313,44 +3421,43 @@ class GISPerfData(View):
                     if int(freeze_time):
 
                         performance_value = PerformanceInventory.objects.filter(device_name=device_name,
-                                                                              service_name=device_service_name,
-                                                                              data_source=device_service_data_source,
-                                                                              sys_timestamp__gte=start_time,
-                                                                              sys_timestamp__lte=end_time
+                                                                               service_name=device_service_name,
+                                                                               data_source=device_service_data_source,
+                                                                               sys_timestamp__gte=start_time,
+                                                                               sys_timestamp__lte=end_time
                         ).order_by().using(alias=machine_name)
 
                     else:
-                        performance_value = InventoryStatus.objects.filter(device_name=device_name,
-                                                                         service_name=device_service_name,
-                                                                         data_source=device_service_data_source
-                        ).order_by().using(alias=machine_name)
+                        performance_value = inventory_perf_data.filter(device_name=device_name,
+                                                                       service_name=device_service_name,
+                                                                       data_source=device_service_data_source
+                        ).order_by()
 
                 elif "_status" in device_service_name:
                     if int(freeze_time):
-                        performance_value = PerformanceStatus.objects.filter(device_name=device_name,
-                                                                              service_name=device_service_name,
-                                                                              data_source=device_service_data_source,
-                                                                              sys_timestamp__gte=start_time,
-                                                                              sys_timestamp__lte=end_time
-                        ).order_by().using(alias=machine_name)
+                        performance_value = performance_perf_data.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source,
+                                                                         sys_timestamp__gte=start_time,
+                                                                         sys_timestamp__lte=end_time
+                        ).order_by()
 
                     else:
-                        performance_value = Status.objects.filter(device_name=device_name,
-                                                                         service_name=device_service_name,
-                                                                         data_source=device_service_data_source
-                        ).order_by().using(alias=machine_name)
+                        performance_value = status_perf_data.filter(device_name=device_name,
+                                                                    service_name=device_service_name,
+                                                                    data_source=device_service_data_source).order_by().values('current_value')
 
                 elif "_kpi" in device_service_name:
                     if int(freeze_time):
                         performance_value = Utilization.objects.filter(device_name=device_name,
-                                                                              service_name=device_service_name,
-                                                                              data_source=device_service_data_source,
-                                                                              sys_timestamp__gte=start_time,
-                                                                              sys_timestamp__lte=end_time
+                                                                      service_name=device_service_name,
+                                                                      data_source=device_service_data_source,
+                                                                      sys_timestamp__gte=start_time,
+                                                                      sys_timestamp__lte=end_time
                         ).order_by().using(alias=machine_name)
 
                     else:
-                        performance_value = UtilizationStatus.objects.filter(device_name=device_name,
+                        performance_value = utilization_perf_data.filter(device_name=device_name,
                                                                          service_name=device_service_name,
                                                                          data_source=device_service_data_source
                         ).order_by().using(alias=machine_name)
@@ -3364,24 +3471,24 @@ class GISPerfData(View):
                         ).order_by().using(alias=machine_name)
 
                     else:
-                        performance_value = ServiceStatus.objects.filter(device_name=device_name,
-                                                                         service_name=device_service_name,
-                                                                         data_source=device_service_data_source
+                        performance_value = service_perf_data.filter(device_name=device_name,
+                                                                     service_name=device_service_name,
+                                                                     data_source=device_service_data_source
                         ).order_by().using(alias=machine_name)
 
             elif ts_type == "ping":
                 if int(freeze_time):
                     performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
-                                                                              service_name=device_service_name,
-                                                                              data_source=device_service_data_source,
-                                                                              sys_timestamp__gte=start_time,
-                                                                              sys_timestamp__lte=end_time
+                                                                          service_name=device_service_name,
+                                                                          data_source=device_service_data_source,
+                                                                          sys_timestamp__gte=start_time,
+                                                                          sys_timestamp__lte=end_time
                         ).order_by().using(alias=machine_name)
 
                 else:
-                    performance_value = NetworkStatus.objects.filter(device_name=device_name,
-                                                         service_name=device_service_name,
-                                                         data_source=device_service_data_source
+                    performance_value = network_perf_data.filter(device_name=device_name,
+                                                                 service_name=device_service_name,
+                                                                 data_source=device_service_data_source
                     ).order_by().using(alias=machine_name)
 
             if performance_value and len(performance_value):
