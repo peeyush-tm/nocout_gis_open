@@ -78,6 +78,9 @@ def network_speedometer_dashboards():
         if not required_devices.exists():  # this evaluates the query set
             continue
 
+        sector_devices = required_devices.values('machine__name', 'device_name')
+        machine_dict = prepare_machines(sector_devices)
+
         for dashboard in network_dashboards:
             # organization,
             # dashboard_name,
@@ -92,7 +95,7 @@ def network_speedometer_dashboards():
                     processed_for=processed_for,
                     dashboard_config=network_dashboards,
                     technology=None,
-                    required_devices=required_devices
+                    machine_dict=machine_dict
                 )
             )
 
@@ -130,6 +133,8 @@ def temperature_speedometer_dashboards():
                                                         specify_ptp_bh_type=None
                                                         )
         if required_devices.exists():
+            sector_devices = required_devices.values('machine__name', 'device_name')
+            machine_dict = prepare_machines(sector_devices)
             for temp in temperatures:
                 # organization,
                 # processed_for,
@@ -139,7 +144,7 @@ def temperature_speedometer_dashboards():
                     calculate_timely_temperature.s(
                         organization=organization,
                         processed_for=processed_for,
-                        required_devices=required_devices,
+                        machine_dict=machine_dict,
                         chart_type=temp
                     )
                 )
@@ -207,6 +212,8 @@ def calculate_status_dashboards(technology):
                                                         specify_ptp_bh_type=None
                                                         )
         if required_devices.exists():
+            sector_devices = required_devices.values('machine__name', 'device_name')
+            machine_dict = prepare_machines(sector_devices)
             for dashboard in dashboards:
                 g_jobs.append(
                     prepare_network_alert.s(
@@ -215,7 +222,7 @@ def calculate_status_dashboards(technology):
                         processed_for=processed_for,
                         dashboard_config=dashboards,
                         technology=technology,
-                        required_devices=required_devices
+                        machine_dict=machine_dict
                     )
                 )
 
@@ -515,7 +522,7 @@ def prepare_network_alert(organization,
                           dashboard_name,
                           processed_for,
                           dashboard_config,
-                          required_devices,
+                          machine_dict,
                           technology=None,
                           ):
     """
@@ -545,14 +552,11 @@ def prepare_network_alert(organization,
     g_jobs = list()
     ret = False
 
-    if not required_devices:
+    if not machine_dict:
         return ret
 
-    # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-    sector_devices = required_devices.values('machine__name', 'device_name')
-
     # get the dictionary of machine_name as key and device_name as a list for that machine.
-    machine_dict = prepare_machines(sector_devices)
+    machine_dict = machine_dict
 
     status_count = 0
 
@@ -564,7 +568,6 @@ def prepare_network_alert(organization,
 
     for machine_name, device_list in machine_dict.items():
         status_count += model.objects.order_by(
-
         ).extra(
             where=[current_value]
         ).filter(
@@ -595,7 +598,7 @@ def prepare_network_alert(organization,
 
 
 @task()
-def calculate_timely_temperature(organization, processed_for, required_devices, chart_type='IDU'):
+def calculate_timely_temperature(organization, processed_for, machine_dict, chart_type='IDU'):
     '''
     Method to calculate the temperature status of devices.
 
@@ -627,12 +630,7 @@ def calculate_timely_temperature(organization, processed_for, required_devices, 
 
     status_dashboard_name = 'temperature-' + chart_type.lower()
 
-    # get the device of user's organization [and sub organization]
-
-    # get the list of dictionay where 'machine__name' and 'device_name' as key of the user's device.
-    sector_devices = required_devices.values('machine__name', 'device_name')
-
-    machine_dict = prepare_machines(sector_devices)
+    machine_dict = machine_dict
 
     # count of devices in severity
     status_count = 0
