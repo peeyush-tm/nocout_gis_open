@@ -16,7 +16,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP
+from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG
 
 from nocout.utils import logged_in_user_organizations
 # from nocout.utils.util import convert_utc_to_local_timezone
@@ -672,8 +672,13 @@ class MainDashboard(View):
         """
         context = {
             "isOther": 0,
-            "page_title": "Main Dashboard"
+            "page_title": "Main Dashboard",
+            "debug" : 0
         }
+
+        if DEBUG:
+            context['debug'] = 1
+        
         if 'isOther' in self.request.GET:
             context['isOther'] = self.request.GET['isOther']
             context['page_title'] = "RF Main Dashboard"
@@ -735,13 +740,54 @@ class MFRProcesedView(View):
         year_before = datetime.date.today() - datetime.timedelta(days=365)
         year_before = datetime.date(year_before.year, year_before.month, 1)
 
+        # colors_list = [
+        #     "#2b908f",
+        #     "#90ee7e",
+        #     "#f45b5b",
+        #     "#7798BF",
+        #     "#aaeeee",
+        #     "#ff0066",
+        #     "#eeaaee",
+        #     "#55BF3B",
+        #     "#DF5353",
+        #     '#008B8B',
+        #     '#556B2F',
+        #     '#8FBC8F',
+        #     '#00CED1',
+        #     '#FFA07A',
+        #     '#663399',
+        #     '#6A5ACD',
+        #     '#8470FF',
+        #     '#00C5CD',
+        #     '#FF7F24',
+        #     '#7ec0ee',
+        #     '#6495ed'
+        # ]
+
         mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
             'processed_key', 'processed_value', 'processed_for__process_for')
 
         day = year_before
         # area_chart_categories = []
         processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-        processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
+        # processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
+
+
+        # # MFR PROCESS KEYS LIST
+        # mfr_process_keys = mfr_processed_results.values_list('processed_key', flat=True)
+        # # Numeric counter used to get the color from specific list index 
+        # processed_key_color = {}
+        # color_counter = 0
+        # for key in mfr_process_keys:
+        #     if key not in processed_key_color: 
+        #         processed_key_color[key] = ""
+
+        #     processed_key_color[key] = ''
+        #     # Increment the color index counter
+        #     color_counter += 1
+
+
+
         while day <= datetime.date.today():
             #area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
 
@@ -750,7 +796,8 @@ class MFRProcesedView(View):
                 result_date = result['processed_for__process_for']
                 if result_date.year == day.year and result_date.month == day.month:
                     processed_key_dict[result['processed_key']].append({
-                        "color": processed_key_color[result['processed_key']],
+                        # "color": processed_key_color[result['processed_key']],
+                        "color": '',
                         "y": int(result['processed_value']),
                         "name": result['processed_key'],
                         "x": calendar.timegm(day.timetuple()) * 1000,
@@ -761,7 +808,8 @@ class MFRProcesedView(View):
             # If no result is available for a processed_key put its value zero for (day.month, day.year)
             for key in processed_keys:
                 processed_key_dict[key].append({
-                    "color": processed_key_color[key],
+                    # "color": processed_key_color[key],
+                    "color": '',
                     "y": 0,
                     "name": key,
                     "x": calendar.timegm(day.timetuple()) * 1000,
@@ -772,7 +820,12 @@ class MFRProcesedView(View):
 
         area_chart_series = []
         for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
+            area_chart_series.append({
+                'name': key,
+                'data': value,
+                # 'color': processed_key_color[key]
+                'color': ''
+            })
 
         # get the chart_data for the area chart.
         response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
@@ -1995,27 +2048,37 @@ class GetRfNetworkAvailData(View):
 
                 tech_wise_dict = get_technology_wise_data_dict(rf_avail_queryset=rf_availability_data_dict)
 
+                avail_chart_color = {
+                    'PMP' : '#70AFC4',
+                    'WiMAX' : '#A9FF96',
+                    'PTP-BH' : '#95CEFF'
+                }
+
+                unavail_chart_color = {
+                    'PMP' : '#FF193B',
+                    'WiMAX' : '#F7A35C',
+                    'PTP-BH' : '#434348'
+                }
+
                 # Loop all technologies
                 for tech in tech_wise_dict:
-                    avail_chart_color = color_picker()
                     avail_chart_dict = {
                         "type": "column",
                         "valuesuffix": " ",
                         "stack": tech,
                         "name": "Availability(" + tech + ")",
                         "valuetext": "Availability (" + tech + ")",
-                        "color": avail_chart_color,
+                        "color": avail_chart_color[tech],
                         "data": list()
                     }
 
-                    unavail_chart_color = color_picker()
                     unavail_chart_dict = {
                         "type": "column",
                         "valuesuffix": " ",
                         "stack": tech,
                         "name": "Unavailability(" + tech + ")",
                         "valuetext": "Unavailability (" + tech + ")",
-                        "color": unavail_chart_color,
+                        "color": unavail_chart_color[tech],
                         "data": list()
                     }
 
@@ -2028,7 +2091,7 @@ class GetRfNetworkAvailData(View):
                     while month_before < datetime.date.today():
 
                         avail_day_data = {
-                            "color": avail_chart_color,
+                            "color": avail_chart_color[tech],
                             "y": 0,
                             "name": "Availability(" + tech + ")",
                             "x": calendar.timegm(month_before.timetuple()) * 1000,
@@ -2036,7 +2099,7 @@ class GetRfNetworkAvailData(View):
                         }
 
                         unavail_day_data = {
-                            "color": unavail_chart_color,
+                            "color": unavail_chart_color[tech],
                             "y": 0,
                             "name": "Unavailability(" + tech + ")",
                             "x": calendar.timegm(month_before.timetuple()) * 1000,
