@@ -1063,8 +1063,8 @@ class Inventory_Device_Status(View):
                         bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                 if technology.name.lower() in ['ptp', 'p2p']:
-                    table_values = []
-                    table_values.append([
+
+                    table_values = [
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1101,13 +1101,13 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ])
+                    ]
 
-                    result['data']['objects']['values'] = table_values
+                    result['data']['objects']['values'].append(table_values)
 
                 elif technology.name.lower() in ['wimax']:
-                    table_values = []
-                    table_values.append([
+                    # table_values = []
+                    table_values = [
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1148,8 +1148,9 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ])
-                    # result['data']['objects']['values'].append(table_values)
+                    ]
+
+                    result['data']['objects']['values'].append(table_values)
 
                     # result['data']['objects']['values'].append([display_bs_name,
                     #                                             sector_id,
@@ -1166,7 +1167,7 @@ class Inventory_Device_Status(View):
                     if dr_ip:
                         dr_ip += " (DR) "
 
-                        table_values.append([
+                        table_values = [
                             {
                                 "val" : display_bs_name,
                                 "url" : bs_name_url
@@ -1207,9 +1208,9 @@ class Inventory_Device_Status(View):
                                 "val" : frequency,
                                 "url" : frequency_url
                             }
-                        ])
+                        ]
 
-                    result['data']['objects']['values'] = table_values
+                        result['data']['objects']['values'].append(table_values)
 
                     #     result['data']['objects']['values'].append([display_bs_name,
                     #                                             sector_id,
@@ -1225,8 +1226,7 @@ class Inventory_Device_Status(View):
                     # ])
 
                 else:
-                    table_values = []
-                    table_values.append([
+                    table_values = [
                         {
                             "val" : display_bs_name,
                             "url" : bs_name_url
@@ -1263,9 +1263,9 @@ class Inventory_Device_Status(View):
                             "val" : frequency,
                             "url" : frequency_url
                         }
-                    ])
+                    ]
                     
-                    result['data']['objects']['values'] = table_values
+                    result['data']['objects']['values'].append(table_values)
 
                     # result['data']['objects']['values'].append([display_bs_name,
                     #                                             sector_id,

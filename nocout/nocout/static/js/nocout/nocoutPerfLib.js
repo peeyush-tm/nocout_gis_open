@@ -158,9 +158,16 @@ function nocoutPerfLib() {
                         
                         for (var i = 0; i < device_status.values.length; i++) {
                             status_val += "<tr>";
-                            for (var j = 0; j < device_status.values[i].length; j++) {
-                                var val = device_status.values[i][j]["val"] ? device_status.values[i][j]["val"] : "",
-                                    url = device_status.values[i][j]["url"] ? device_status.values[i][j]["url"] : "",
+
+                            var device_status_data_row = device_status.values[i];
+
+                            if(device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
+                                device_status_data_row = device_status_data_row[0];
+                            }
+
+                            for (var j = 0; j < device_status_data_row.length; j++) {
+                                var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
+                                    url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
                                     display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
 
                                 status_val += '<td>'+display_txt+'</td>';
