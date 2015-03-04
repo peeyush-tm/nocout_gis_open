@@ -1,6 +1,6 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 from celery import task, group
-
+import math
 from django.db.models import Avg
 
 # nocout utils import
@@ -650,7 +650,7 @@ def calculate_rf_network_availability(technology=None):
     availability = 0
     for rf_network_avail_data in complete_rf_network_avail_data:
         try:
-            availability += rf_network_avail_data['Availability']
+            availability += float(rf_network_avail_data['Availability'])
             machine_count += 1
         except Exception as e:
             logger.exception(e)
@@ -658,14 +658,16 @@ def calculate_rf_network_availability(technology=None):
 
     try:
         availability = availability/machine_count
-        unavailability = 100 - availability
     except Exception as e:
         logger.exception(e)
         return False
 
+    av = math.floor(availability)
+    unav = math.ceil(100 - float(av))
+
     # Call function to get the count & % wise availability
     resultant_dict = insert_network_avail_result(
-        resultant_data=[availability, unavailability],
+        resultant_data=[av, unav],
         tech_id=tech_object
     )
 
