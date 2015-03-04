@@ -740,13 +740,54 @@ class MFRProcesedView(View):
         year_before = datetime.date.today() - datetime.timedelta(days=365)
         year_before = datetime.date(year_before.year, year_before.month, 1)
 
+        # colors_list = [
+        #     "#2b908f",
+        #     "#90ee7e",
+        #     "#f45b5b",
+        #     "#7798BF",
+        #     "#aaeeee",
+        #     "#ff0066",
+        #     "#eeaaee",
+        #     "#55BF3B",
+        #     "#DF5353",
+        #     '#008B8B',
+        #     '#556B2F',
+        #     '#8FBC8F',
+        #     '#00CED1',
+        #     '#FFA07A',
+        #     '#663399',
+        #     '#6A5ACD',
+        #     '#8470FF',
+        #     '#00C5CD',
+        #     '#FF7F24',
+        #     '#7ec0ee',
+        #     '#6495ed'
+        # ]
+
         mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
             'processed_key', 'processed_value', 'processed_for__process_for')
 
         day = year_before
         # area_chart_categories = []
         processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-        processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
+        # processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
+
+
+        # # MFR PROCESS KEYS LIST
+        # mfr_process_keys = mfr_processed_results.values_list('processed_key', flat=True)
+        # # Numeric counter used to get the color from specific list index 
+        # processed_key_color = {}
+        # color_counter = 0
+        # for key in mfr_process_keys:
+        #     if key not in processed_key_color: 
+        #         processed_key_color[key] = ""
+
+        #     processed_key_color[key] = ''
+        #     # Increment the color index counter
+        #     color_counter += 1
+
+
+
         while day <= datetime.date.today():
             #area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
 
@@ -755,7 +796,8 @@ class MFRProcesedView(View):
                 result_date = result['processed_for__process_for']
                 if result_date.year == day.year and result_date.month == day.month:
                     processed_key_dict[result['processed_key']].append({
-                        "color": processed_key_color[result['processed_key']],
+                        # "color": processed_key_color[result['processed_key']],
+                        "color": '',
                         "y": int(result['processed_value']),
                         "name": result['processed_key'],
                         "x": calendar.timegm(day.timetuple()) * 1000,
@@ -766,7 +808,8 @@ class MFRProcesedView(View):
             # If no result is available for a processed_key put its value zero for (day.month, day.year)
             for key in processed_keys:
                 processed_key_dict[key].append({
-                    "color": processed_key_color[key],
+                    # "color": processed_key_color[key],
+                    "color": '',
                     "y": 0,
                     "name": key,
                     "x": calendar.timegm(day.timetuple()) * 1000,
@@ -777,7 +820,12 @@ class MFRProcesedView(View):
 
         area_chart_series = []
         for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
+            area_chart_series.append({
+                'name': key,
+                'data': value,
+                # 'color': processed_key_color[key]
+                'color': ''
+            })
 
         # get the chart_data for the area chart.
         response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
