@@ -539,7 +539,7 @@ def prepare_network_alert(organization,
     processed_for = processed_for
     technology_id = None
 
-    if not technology:
+    if technology:
         try:
             latency_technology = eval(technology)
             technology_id = latency_technology.ID
