@@ -1,5 +1,8 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 from celery import task, group
+import math
+from django.db.models import Avg
+
 # nocout utils import
 from nocout.utils.util import fetch_raw_result
 # performance views import
@@ -182,7 +185,7 @@ def get_all_sector_devices(technology):
 
     # Format UL issue data
     if len(complete_ul_issue_data) > 0:
-        complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='device_name')
+        complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='sector_id')
 
     # Call function to create resultant data from the calculated data
     resultant_data = get_spot_dashboard_result(
@@ -278,7 +281,7 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
     in_string = lambda x: "'" + str(x) + "'"
 
     ul_issue_raw_query = '''
-                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, device_name
+                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, device_name, refer as sector_id
                          FROM {0}
                          WHERE
                             device_name IN ( {1} )
@@ -286,6 +289,7 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
                             data_source IN ( {2} )
                             AND
                             severity IN ( 'warning', 'critical' )
+                            AND isnull(refer) = false
                          '''.format(
                                     table_name,
                                     (",".join(map(in_string, devices_names))),
@@ -335,12 +339,14 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
 
     # Get Last Six Month List
     last_six_months_list, \
-    months_list = perf_views.getLastXMonths(6);
+    months_list = perf_views.getLastXMonths(6)
 
     # loop sectors list
-    for i in range(len(sectors_list)):
-        sector_id = str(sectors_list[i]['id'])
-        device_name = sectors_list[i]['sector_configured_on__device_name']
+    for sector in sectors_list:
+
+        sector_id = str(sector['id'])
+        sector_sector_id = str(sector['sector_id'])
+        # device_name = refered_sector['sector_configured_on__device_name']
 
         augment_data = []
         ul_issue_data = []
@@ -348,10 +354,8 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
         if sector_id in augmentation_list:
             augment_data = augmentation_list[sector_id]
 
-        if device_name in ul_issues_list:
-            ul_issue_data = ul_issues_list[device_name]
-
-        # for x in range(1):
+        if sector_sector_id in ul_issues_list:
+            ul_issue_data = ul_issues_list[sector_sector_id]
 
         # Reverse the list to get the current month at first index
         last_six_months_list.reverse()
@@ -359,24 +363,24 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
 
         augment_key = 'augment_1'
 
-        if augment_key not in sectors_list[i]:
-            sectors_list[i][augment_key] = ""
+        if augment_key not in sector:
+            sector[augment_key] = ""
 
         try:
             if month_num in augment_data:
-                sectors_list[i][augment_key] = 1
+                sector[augment_key] = 1
         except Exception, e:
-            sectors_list[i][augment_key] = 0
+            sector[augment_key] = 0
 
         ul_issue_key = 'ul_issue_1'
-        if ul_issue_key not in sectors_list[i]:
-            sectors_list[i][ul_issue_key] = ""
+        if ul_issue_key not in sector:
+            sector[ul_issue_key] = ""
 
         try:
             if month_num in ul_issue_data:
-                sectors_list[i][ul_issue_key] = 1
+                sector[ul_issue_key] = 1
         except Exception as e:
-            sectors_list[i][ul_issue_key] = 0
+            sector[ul_issue_key] = 0
     #logger.debug(sectors_list)
     return sectors_list
 
@@ -399,7 +403,7 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         #current_row = calculated_data[i]
         try:
             # Foreign Keys
-            sector_id = Sector.objects.get(pk=current_row['id'])
+            sector_id = Sector.objects.prefetch_related('sector_configured_on').get(pk=current_row['id'])
             device_id = sector_id.sector_configured_on #Device.objects.filter(pk=current_row['sector_configured_on'])[0]
 
             # Sector Details
@@ -413,8 +417,6 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
             # Augmentation for current month
             augment_1 = current_row['augment_1']
 
-            logger.debug(current_row)
-
         except Exception as e:
             logger.exception(e)
             continue
@@ -426,8 +428,7 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         try:
             sector_object = SpotDashboard.objects.get(
                 sector_sector_id=sector_sector_id,
-                sector=sector_id,
-                device=device_id
+                sector=sector_id
             )
 
             sector_object.sector_sector_configured_on = sector_sector_configured_on
@@ -598,17 +599,21 @@ def calculate_rf_network_availability(technology=None):
         return False
 
     try:
-        tech_id = DeviceTechnology.objects.get(name=technology).id
+        tech_object = DeviceTechnology.objects.get(name=technology)
+        tech_id = tech_object.id
     except Exception as e:
         return False
 
-    inventory_devices = inventory_utils.organization_network_devices(organizations, tech_id)
-
-    if not len(inventory_devices):
-        return False
+    organization_devices = inventory_utils.filter_devices(
+        organizations=organizations,
+        data_tab=technology,
+        page_type="network",
+        required_value_list=['id', 'machine__name', 'device_name', 'ip_address'],
+        other_bh=False
+    )
 
     # Get machine wise data
-    machine_wise_devices = rf_getMachineWiseData(inventory_devices)
+    machine_wise_devices = inventory_utils.prepare_machines(organization_devices, machine_key='machine_name')
 
     # Model used to collect data from distributed databases
     availability_model = NetworkAvailabilityDaily
@@ -622,72 +627,54 @@ def calculate_rf_network_availability(technology=None):
 
     # initialize complete availability data variable
     complete_rf_network_avail_data = list()
-    total_devices_count = 0
 
-    for machine_name in machine_wise_devices:
-        current_row = machine_wise_devices[machine_name]
+    # the devices filtered are present int organization devices
+    total_devices_count = len(organization_devices)
+
+    machine_count = 0
+
+    for machine in machine_wise_devices:
+
         # List of device_name on current machine
-        device_names = current_row['device_name']
-        # If any devices present then proceed forward
-        if len(device_names) > 0:
-            total_devices_count += len(device_names)
-            # Call 'get_network_availability_data' to get the network availability data per machine
-            complete_rf_network_avail_data += get_network_availability_data(
-                devices_names=device_names,
-                service_name_list=services_list,
-                ds_name_list=data_source_list,
-                machine=machine_name,
-                avail_model=availability_model
-            )
+        device_names = machine_wise_devices[machine]
 
-    if len(complete_rf_network_avail_data) and total_devices_count > 0:
-        # Call function to get the count & % wise availability
-        resultant_dict = insert_network_avail_result(
-            resultant_data=complete_rf_network_avail_data,
-            devices_count=total_devices_count,
-            tech_id=tech_id
+        # Call 'get_network_availability_data' to get the network availability data per machine
+        complete_rf_network_avail_data += get_network_availability_data(
+            devices_names=device_names,
+            service_name_list=services_list,
+            ds_name_list=data_source_list,
+            machine=machine,
+            avail_model=availability_model
         )
 
-    return True
-
-
-def rf_getMachineWiseData(devices_list):
-    """
-    This function returns dict of devices list as per machines
-    :param devices_list: Object of devices from device.models
-    :return: dictionary of machines
-    """
-    machines_wise_dict = {}
-
-    for device in devices_list:
+    availability = 0
+    for rf_network_avail_data in complete_rf_network_avail_data:
         try:
-            machine_name = device.machine.name
-        except Exception, e:
-            machine_name = ''
-        # If any machine is present then proceed
-        if machine_name:
-            # if new machine then add key else append details of that machine 
-            if machine_name not in machines_wise_dict:
-                # initialize machine name dict with the device elements
-                machines_wise_dict[machine_name] = {
-                    "device_name": list(),
-                    "ip_address": list()
-                }
-            try:
-                # IF device name not present then append
-                if device.device_name and device.device_name not in machines_wise_dict[machine_name]["device_name"]:
-                    machines_wise_dict[machine_name]["device_name"].append(device.device_name)
+            availability += float(rf_network_avail_data['Availability'])
+            machine_count += 1
+        except Exception as e:
+            logger.exception(e)
+            continue
 
-                # IF IP adress not present then append
-                if device.ip_address and device.ip_address not in machines_wise_dict[machine_name]["ip_address"]:
-                    machines_wise_dict[machine_name]["ip_address"].append(device.ip_address)
-            except Exception as e:
-                continue
+    try:
+        availability = availability/machine_count
+    except Exception as e:
+        logger.exception(e)
+        return False
 
-    return machines_wise_dict
+    av = math.floor(availability)
+    unav = math.ceil(100 - float(av))
+
+    # Call function to get the count & % wise availability
+    resultant_dict = insert_network_avail_result(
+        resultant_data=[av, unav],
+        tech_id=tech_object
+    )
+
+    return resultant_dict
 
 
-def get_network_availability_data(devices_names=[], service_name_list=["availability"], ds_name_list=["availability"], machine='', avail_model=''):
+def get_network_availability_data(devices_names, machine, avail_model, service_name_list, ds_name_list):
     """
     :This function fetch availability data as per given params
     :param devices_names: It contains list of device names
@@ -702,9 +689,7 @@ def get_network_availability_data(devices_names=[], service_name_list=["availabi
     
     # Columns required to be fetched
     required_values = [
-        'device_name',
-        'current_value',
-        'sys_timestamp'
+        'data_source'
     ]
 
     # If no model present then return blank list
@@ -719,13 +704,13 @@ def get_network_availability_data(devices_names=[], service_name_list=["availabi
         end_time = datetime.datetime(tdy.year, tdy.month, tdy.day, 0, 0)
 
         # this is the start time today's 00:00:00
-        start_time = end_time +  datetime.timedelta(days = -1)
+        start_time = end_time + datetime.timedelta(days=-1)
 
         # start time in UNIX TIME
-        start_time = float( format ( start_time , 'U' ))
+        start_time = float(format(start_time, 'U'))
 
         # end time in UNIX TIME
-        end_time = float( format ( end_time , 'U' ))
+        end_time = float(format(end_time, 'U'))
 
         # Fetch data from given model
         polled_data_list = avail_model.objects.filter(
@@ -734,15 +719,18 @@ def get_network_availability_data(devices_names=[], service_name_list=["availabi
             data_source__in=ds_name_list,
             sys_timestamp__gte=start_time,
             sys_timestamp__lte=end_time
-        ).using(machine).values(*required_values)
+        ).using(machine).values(*required_values).annotate(
+            Availability=Avg('current_value')  # average of all the availablity of the devices. group by data_source
+        )
+        # output = ['data_source': 'availability', 'Availability': <value>]
 
-        return polled_data_list
+    except Exception as e:
+        logger.exception(e)
 
-    except Exception, e:
-        return polled_data_list
+    return polled_data_list
 
 
-def insert_network_avail_result(resultant_data=[], devices_count=0, tech_id=''):
+def insert_network_avail_result(resultant_data, tech_id):
     """
     :This function calcultes the availability & unavailability of devices as per the fetched result
     :param resultant_data: It contains the list of data fetched from distributed databases
@@ -750,29 +738,13 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech_id=''):
     g_jobs = list()
     ret = False
 
-    if not len(resultant_data) or devices_count == 0:
-        return False
-
-    total_current_val = 0
-    devices_list = []
-
-    for val in resultant_data:
-        current_row = resultant_data[val]
-        if current_row:
-            try:
-                device_name = current_row.device_name
-                current_value = current_row.current_value
-            except Exception, e:
-                device_name = ''
-                current_value = 0
-
-            if device_name and device_name not in devices_list:
-                devices_list.append(device_name)
-                total_current_val += current_value
-
     # Calculate the percentage availability
-    avg_avail = total_current_val / devices_count
-    avg_unavail = 100 - avg_avail
+    try:
+        avg_avail = resultant_data[0]
+        avg_unavail = resultant_data[1]
+    except Exception as e:
+        logger.exception(e)
+        return ret
 
     try:
         current_date_time = int((datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%s'))
@@ -817,4 +789,3 @@ def insert_network_avail_result(resultant_data=[], devices_count=0, tech_id=''):
 
 
 ################## Task for RF Main Dashboard Network Availability Calculation - End ###################
-

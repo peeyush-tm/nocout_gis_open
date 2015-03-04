@@ -84,7 +84,6 @@ def live_query_rici_dl_util_kpi(hostname,site,war,crit,qos):
 				warn_flag = 1
 			else:
 				normal_flag = 1
-
 	if crit_flag:
                 state =2
                 state_string = "critical"

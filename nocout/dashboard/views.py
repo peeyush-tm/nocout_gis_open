@@ -4,9 +4,10 @@ import calendar
 from dateutil import relativedelta
 import time
 
+from django.utils.dateformat import format
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.db.models import Q, Count, Sum
-from django.db.models.query import ValuesQuerySet
+
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
 from django.views.generic import ListView, DetailView, TemplateView
@@ -15,7 +16,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP
+from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG
 
 from nocout.utils import logged_in_user_organizations
 # from nocout.utils.util import convert_utc_to_local_timezone
@@ -671,8 +672,13 @@ class MainDashboard(View):
         """
         context = {
             "isOther": 0,
-            "page_title": "Main Dashboard"
+            "page_title": "Main Dashboard",
+            "debug" : 0
         }
+
+        if DEBUG:
+            context['debug'] = 1
+        
         if 'isOther' in self.request.GET:
             context['isOther'] = self.request.GET['isOther']
             context['page_title'] = "RF Main Dashboard"
@@ -734,13 +740,54 @@ class MFRProcesedView(View):
         year_before = datetime.date.today() - datetime.timedelta(days=365)
         year_before = datetime.date(year_before.year, year_before.month, 1)
 
+        # colors_list = [
+        #     "#2b908f",
+        #     "#90ee7e",
+        #     "#f45b5b",
+        #     "#7798BF",
+        #     "#aaeeee",
+        #     "#ff0066",
+        #     "#eeaaee",
+        #     "#55BF3B",
+        #     "#DF5353",
+        #     '#008B8B',
+        #     '#556B2F',
+        #     '#8FBC8F',
+        #     '#00CED1',
+        #     '#FFA07A',
+        #     '#663399',
+        #     '#6A5ACD',
+        #     '#8470FF',
+        #     '#00C5CD',
+        #     '#FF7F24',
+        #     '#7ec0ee',
+        #     '#6495ed'
+        # ]
+
         mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
             'processed_key', 'processed_value', 'processed_for__process_for')
 
         day = year_before
         # area_chart_categories = []
         processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-        processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
+        # processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
+
+
+        # # MFR PROCESS KEYS LIST
+        # mfr_process_keys = mfr_processed_results.values_list('processed_key', flat=True)
+        # # Numeric counter used to get the color from specific list index 
+        # processed_key_color = {}
+        # color_counter = 0
+        # for key in mfr_process_keys:
+        #     if key not in processed_key_color: 
+        #         processed_key_color[key] = ""
+
+        #     processed_key_color[key] = ''
+        #     # Increment the color index counter
+        #     color_counter += 1
+
+
+
         while day <= datetime.date.today():
             #area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
 
@@ -749,7 +796,8 @@ class MFRProcesedView(View):
                 result_date = result['processed_for__process_for']
                 if result_date.year == day.year and result_date.month == day.month:
                     processed_key_dict[result['processed_key']].append({
-                        "color": processed_key_color[result['processed_key']],
+                        # "color": processed_key_color[result['processed_key']],
+                        "color": '',
                         "y": int(result['processed_value']),
                         "name": result['processed_key'],
                         "x": calendar.timegm(day.timetuple()) * 1000,
@@ -760,7 +808,8 @@ class MFRProcesedView(View):
             # If no result is available for a processed_key put its value zero for (day.month, day.year)
             for key in processed_keys:
                 processed_key_dict[key].append({
-                    "color": processed_key_color[key],
+                    # "color": processed_key_color[key],
+                    "color": '',
                     "y": 0,
                     "name": key,
                     "x": calendar.timegm(day.timetuple()) * 1000,
@@ -771,7 +820,12 @@ class MFRProcesedView(View):
 
         area_chart_series = []
         for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
+            area_chart_series.append({
+                'name': key,
+                'data': value,
+                # 'color': processed_key_color[key]
+                'color': ''
+            })
 
         # get the chart_data for the area chart.
         response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
@@ -1258,6 +1312,92 @@ class DashboardDeviceStatus(View):
 # *************************Dashboard Monthly Data
 
 
+def view_severity_status_monthly(dashboard_name, organizations):
+    """
+
+    :param dashboard_name:
+    :param organizations:
+    :return:
+    """
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+
+    chart_data = list()
+
+    dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(
+        select={'processed_month': "date(processed_for)"}
+    ).values(
+        'processed_month',
+        'dashboard_name'
+    ).filter(
+        processed_for__gte=month_before,
+        dashboard_name=dashboard_name,
+        organization__in=organizations
+    ).annotate(
+        Normal=Sum('ok'),
+        Needs_Augmentation=Sum('warning'),
+        Stop_Provisioning=Sum('critical'),
+        Unknown=Sum('unknown')
+    ).order_by('processed_month')
+
+    item_color = ['rgb(0, 255, 0)', 'rgb(255, 153, 0)', 'rgb(255, 0, 0)', '#d3d3d3']
+
+    trend_items = [
+        {
+            "id": "Normal",
+            "title": "Normal",
+            "color": item_color[0]
+        },
+        {
+            "id": "Needs_Augmentation",
+            "title": "Needs Augmentation",
+            "color": item_color[1]
+        },
+        {
+            "id": "Stop_Provisioning",
+            "title": "Stop Provisioning",
+            "color": item_color[2]
+        },
+        {
+            "id": "Unknown",
+            "title": "Unknown",
+            "color": item_color[3]
+        }
+    ]
+
+    for item in trend_items:
+
+        data_dict = {
+            "type": "column",
+            "valuesuffix": " ",
+            "name": item['title'].title(),
+            "valuetext": " ",
+            "color": item['color'],
+            "data": list(),
+        }
+
+        for var in dashboard_status_dict:
+
+            processed_date = var['processed_month']  # this is date object of date time
+            js_time = float(format(datetime.datetime(processed_date.year,
+                                                     processed_date.month,
+                                                     processed_date.day,
+                                                     0,
+                                                     0), 'U'))
+            # Preparation of final Dict for all days in One month
+            data_dict['data'].append({
+                "color": item['color'],
+                "y": var[item['title']],
+                "name": item['title'],
+                "x": js_time * 1000,
+                # Multiply by 1000 to return correct GMT+05:30 timestamp
+            })
+            # Increment Date by One
+            # month_before += relativedelta.relativedelta(days=1)
+        chart_data.append(data_dict)
+
+    return chart_data
+
+
 def get_severity_status_dict_monthly(dashboard_name, devices_list):
     '''
     '''
@@ -1268,7 +1408,8 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
     # Exceptional handling case
     try:
         has_data = True
-        # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+        # Query Set with filter, annotate(for summation of data),
+        # extra parameter to make a new column of only date from datetime column for using group by of only date
         dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(
             select={'processed_month': "date(processed_for)"}).values('processed_month').filter(
             processed_for__gte=month_before,
@@ -1483,13 +1624,139 @@ def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_arg
     return {'chart_data': chart_data, 'color': colors}
 
 
+def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=None):
+    """
+
+    :param dashboard_name:
+    :param organizations:
+    :param dashboard_settings:
+    :return:
+    """
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+    dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
+        select={'processed_month': "date(processed_for)"}
+    ).values(
+        'processed_month',
+        'dashboard_name'
+        # 'organization'
+    ).filter(
+        dashboard_name=dashboard_name,
+        organization__in=organizations,
+        processed_for__gte=month_before
+    ).annotate(
+        range1=Sum('range1'),
+        range2=Sum('range2'),
+        range3=Sum('range3'),
+        range4=Sum('range4'),
+        range5=Sum('range5'),
+        range6=Sum('range6'),
+        range7=Sum('range7'),
+        range8=Sum('range8'),
+        range9=Sum('range9'),
+        range10=Sum('range10'),
+        unknown=Sum('unknown')
+    ).order_by('processed_month')
+
+    chart_data = list()
+    if dashboard_settings:
+        trend_items = [
+            {
+                "id": "range1_start-range1_end",
+                "title": "range1"
+            },
+            {
+                "id": "range2_start-range2_end",
+                "title": "range2"
+            },
+            {
+                "id": "range3_start-range3_end",
+                "title": "range3"
+            },
+            {
+                "id": "range4_start-range4_end",
+                "title": "range4"
+            },
+            {
+                "id": "range5_start-range5_end",
+                "title": "range5"
+            },
+            {
+                "id": "range6_start-range6_end",
+                "title": "range6"
+            },
+            {
+                "id": "range7_start-range7_end",
+                "title": "range7"
+            },
+            {
+                "id": "range8_start-range8_end",
+                "title": "range8"
+            },
+            {
+                "id": "range9_start-range9_end",
+                "title": "range9"
+            },
+            {
+                "id": "range10_start-range10_end",
+                "title": "range10"
+            },
+            {
+                "id": "unknown",
+                "title": "unknown"
+            }
+        ]
+        # Accessing every element of trend items
+        for item in trend_items:
+
+            if item['title'] != 'unknown':
+                count_color = getattr(dashboard_settings, '%s_color_hex_value' % item['title'])
+
+            else:
+                # Color for Unknown range
+                count_color = '#CED5DB'
+
+            data_dict = {
+                "type": "column",
+                "valuesuffix": " ",
+                "name": item['title'].title(),
+                "valuetext": " ",
+                "color": count_color,
+                "data": list(),
+            }
+
+            for var in dashboard_status_dict:
+
+                processed_date = var['processed_month']  # this is date object of date time
+                js_time = float(format(datetime.datetime(processed_date.year,
+                                                         processed_date.month,
+                                                         processed_date.day,
+                                                         0,
+                                                         0), 'U'))
+                # Preparation of final Dict for all days in One month
+                data_dict['data'].append({
+                    "color": count_color,
+                    "y": var[item['title']],
+                    "name": item['title'],
+                    "x": js_time * 1000,
+                    # Multiply by 1000 to return correct GMT+05:30 timestamp
+                })
+                # Increment Date by One
+                # month_before += relativedelta.relativedelta(days=1)
+
+            chart_data.append(data_dict)
+        return chart_data
+
+    return dashboard_status_dict
+
+
 def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_list):
     '''
     '''
     # Start Calculations for Monthly Trend Sector
     # Last 30 Days
     month_before = datetime.date.today() - datetime.timedelta(days=30)
-    # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
+    # Query Set with filter, annotate(for summation of data),
+    # extra parameter to make a new column of only date from datetime column for using group by of only date
     dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
         select={'processed_month': "date(processed_for)"}).values('processed_month').filter(
         device_name__in=sector_devices_list,
@@ -1534,20 +1801,20 @@ class MonthlyTrendBackhaulMixin(object):
         })
 
         if technology:
-            # Get Backhauls Devices of User's Organizations.
-            user_backhaul = organization_backhaul_devices(organization, technology=technology)
-            # Get Device name list of User's Backhaul.
-            backhaul_devices_list = user_backhaul.values_list('device_name', flat=True)
+
             # Creating Dashboard Name
             dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
             # Get the status of the dashboard.
-            dashboard_status_dict = get_severity_status_dict_monthly(dashboard_name, backhaul_devices_list)
-            chart_series = []
+            dashboard_status_dict = view_severity_status_monthly(dashboard_name, organizations=organization)
+
             chart_series = dashboard_status_dict
 
             response = get_highchart_response(
-                dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
-                            'name': '%s Backhaul Capacity' % tech_name.upper(), 'valuetext': ''})
+                dictionary={'type': 'column',
+                            'valuesuffix': '',
+                            'chart_series': chart_series,
+                            'name': '%s Backhaul Capacity' % tech_name.upper(),
+                            'valuetext': ''})
 
         return HttpResponse(response)
 
@@ -1579,22 +1846,18 @@ class MonthlyTrendSectorMixin(object):
     def get(self, request):
         tech_name = self.tech_name
         organization = logged_in_user_organizations(self)
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-
-        user_sector = organization_sectors(organization,
-                                           technology=technology)  #Sector for that user corresponding to organization and technology
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
-                                                    is_added_to_nms=1)
-        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Function call for calculating no. of hosts in different states on different days
-        processed_key_dict = get_severity_status_dict_monthly(dashboard_name, sector_devices_list)
+        processed_key_dict = view_severity_status_monthly(dashboard_name=dashboard_name,
+                                                          organizations=organization)
 
         chart_series = []
         chart_series = processed_key_dict
 
-        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
+        response = get_highchart_response(dictionary={'type': 'column',
+                                                      'valuesuffix': '',
+                                                      'chart_series': chart_series,
                                                       'name': '%s Sector Capacity' % tech_name.upper(),
                                                       'valuetext': ''})
 
@@ -1656,12 +1919,15 @@ class MonthlyTrendSalesMixin(object):
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
-        dashboard_status_dict = get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard_setting)
+        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_name,
+                                                          organizations=organization,
+                                                          dashboard_settings=dashboard_setting)
 
-        chart_series = []
         chart_series = dashboard_status_dict
         # Sending Final response
-        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
+        response = get_highchart_response(dictionary={'type': 'column',
+                                                      'valuesuffix': '',
+                                                      'chart_series': chart_series,
                                                       'name': '%s Sales Opportunity' % tech_name.upper(),
                                                       'valuetext': ''})
 
@@ -1719,14 +1985,10 @@ class MonthlyTrendDashboardDeviceStatus(View):
             dashboard_status_name = dashboard_status_name.replace('-wimax', '')
         # Finding Organization of user   
         organizations = logged_in_user_organizations(self)
-        # Get Device of User's Organizations. [and are Sub Station]
-        user_devices = organization_network_devices(organizations, technology)
-        sector_devices = user_devices.filter(sector_configured_on__isnull=False)
-        # Get Device Name list.
-        sector_devices = sector_devices.values_list('device_name', flat=True)
-        # Getting Dashboard Settings
+
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard',
+            dashboard_setting = DashboardSetting.objects.get(technology=technology,
+                                                             page_name='main_dashboard',
                                                              name=dashboard_name, is_bh=False)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
@@ -1736,112 +1998,12 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = get_range_status_dict_monthly_devicestatus(dashboard_status_name, sector_devices)
-        chart_series = []
+        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_status_name,
+                                                          organizations=organizations,
+                                                          dashboard_settings=dashboard_setting)
+        chart_series = dashboard_status_dict
         # Trend Items for matching range
-        trend_items = [
-            {
-                "id": "range1_start-range1_end",
-                "title": "range1"
-            },
-            {
-                "id": "range2_start-range2_end",
-                "title": "range2"
-            },
-            {
-                "id": "range3_start-range3_end",
-                "title": "range3"
-            },
-            {
-                "id": "range4_start-range4_end",
-                "title": "range4"
-            },
-            {
-                "id": "range5_start-range5_end",
-                "title": "range5"
-            },
-            {
-                "id": "range6_start-range6_end",
-                "title": "range6"
-            },
-            {
-                "id": "range7_start-range7_end",
-                "title": "range7"
-            },
-            {
-                "id": "range8_start-range8_end",
-                "title": "range8"
-            },
-            {
-                "id": "range9_start-range9_end",
-                "title": "range9"
-            },
-            {
-                "id": "range10_start-range10_end",
-                "title": "range10"
-            },
-            {
-                "id": "unknown",
-                "title": "unknown"
-            }
-        ]
-        # Accessing every element of trend items
-        for i in range(len(trend_items)):
 
-            if trend_items[i]['title'] != 'unknown':
-                count_color = getattr(dashboard_setting, '%s_color_hex_value' % trend_items[i]['title'])
-
-            else:
-                # Color for Unknown range
-                count_color = '#CED5DB'
-
-            data_dict = {
-                "type": "column",
-                "valuesuffix": " ",
-                "name": trend_items[i]['title'].title(),
-                "valuetext": " ",
-                "color": count_color,
-                "data": list(),
-            }
-
-            # Getting date of 30days before from Today
-            month_before = datetime.date.today() - datetime.timedelta(days=30)
-            # Loop for getting complete month Data
-            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
-            while month_before < datetime.date.today():
-                count = 0
-                if trend_items[i]['title'] != 'unknown':
-                    count_color = getattr(dashboard_setting, '%s_color_hex_value' % trend_items[i]['title'])
-                else:
-                    count_color = '#CED5DB'
-
-                for var in dashboard_status_dict:
-                    # Condition for further processing
-                    if var['processed_month'] == month_before:
-                        # Sum all ranges for particular Date
-                        count = sum(value for key, value in var.iteritems() if key != 'processed_month')
-                        # Get the range from the dashbaord setting in which the count falls.
-                        range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
-                        # Get the name of the range.
-                        count_range = range_status_dct['range_count']
-                        if count_range != trend_items[i]['title']:
-                            count = 0
-                        elif count_range == 'unknown':
-                            count_color = '#CED5DB'
-
-                # Preparation of final Dict for all days in One month 
-                data_dict['data'].append({
-                    "color": count_color,
-                    "y": count,
-                    "name": trend_items[i]['title'],
-                    "x": calendar.timegm(month_before.timetuple()) * 1000,
-                    # Multiply by 1000 to return correct GMT+05:30 timestamp
-                })
-                # Increment Date by One
-                month_before += relativedelta.relativedelta(days=1)
-
-            chart_series.append(data_dict)
-            # Getting Final response pattern
         response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
                                                       'name': dashboard_name, 'valuetext': ''})
 
@@ -1886,27 +2048,37 @@ class GetRfNetworkAvailData(View):
 
                 tech_wise_dict = get_technology_wise_data_dict(rf_avail_queryset=rf_availability_data_dict)
 
+                avail_chart_color = {
+                    'PMP' : '#70AFC4',
+                    'WiMAX' : '#A9FF96',
+                    'PTP-BH' : '#95CEFF'
+                }
+
+                unavail_chart_color = {
+                    'PMP' : '#FF193B',
+                    'WiMAX' : '#F7A35C',
+                    'PTP-BH' : '#434348'
+                }
+
                 # Loop all technologies
                 for tech in tech_wise_dict:
-                    avail_chart_color = color_picker()
                     avail_chart_dict = {
                         "type": "column",
                         "valuesuffix": " ",
                         "stack": tech,
                         "name": "Availability(" + tech + ")",
                         "valuetext": "Availability (" + tech + ")",
-                        "color": avail_chart_color,
+                        "color": avail_chart_color[tech],
                         "data": list()
                     }
 
-                    unavail_chart_color = color_picker()
                     unavail_chart_dict = {
                         "type": "column",
                         "valuesuffix": " ",
                         "stack": tech,
                         "name": "Unavailability(" + tech + ")",
                         "valuetext": "Unavailability (" + tech + ")",
-                        "color": unavail_chart_color,
+                        "color": unavail_chart_color[tech],
                         "data": list()
                     }
 
@@ -1919,7 +2091,7 @@ class GetRfNetworkAvailData(View):
                     while month_before < datetime.date.today():
 
                         avail_day_data = {
-                            "color": avail_chart_color,
+                            "color": avail_chart_color[tech],
                             "y": 0,
                             "name": "Availability(" + tech + ")",
                             "x": calendar.timegm(month_before.timetuple()) * 1000,
@@ -1927,7 +2099,7 @@ class GetRfNetworkAvailData(View):
                         }
 
                         unavail_day_data = {
-                            "color": unavail_chart_color,
+                            "color": unavail_chart_color[tech],
                             "y": 0,
                             "name": "Unavailability(" + tech + ")",
                             "x": calendar.timegm(month_before.timetuple()) * 1000,

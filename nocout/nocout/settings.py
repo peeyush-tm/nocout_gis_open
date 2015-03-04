@@ -212,7 +212,7 @@ AUTHENTICATION_BACKENDS = (
 ##TODO: dynamically populate cache
 #
 # def get_cache():
-#     import os
+# import os
 #
 #     try:
 #         os.environ['MEMCACHE_SERVERS'] = os.environ['MEMCACHIER_SERVERS'].replace(',', ';')
@@ -276,7 +276,7 @@ CACHES = {
 
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
-    ]
+]
 
 import djcelery
 
@@ -327,7 +327,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'wimax-topology-site-wise': {
         'task': 'inventory.tasks.topology_site_wise',
-        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
         'args': ['WiMAX']
     },
     # END Topology Updates
@@ -346,19 +346,19 @@ CELERYBEAT_SCHEDULE = {
     # Calculations start at 2nd minute for Backhual
     'gather_backhaul_status': {
         'task': 'capacity_management.tasks.gather_backhaul_status',
-        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
     },
     # Sector Capacity Caclucations
     # Calculations start at 2nd minute for PMP
     'gather_sector_status-pmp': {
         'task': 'capacity_management.tasks.gather_sector_status',
-        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
         'args': ['PMP']
     },
     # Calculations start at 3rd minute for WiMAX
     'gather_sector_status-wimax': {
         'task': 'capacity_management.tasks.gather_sector_status',
-        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
         'args': ['WiMAX']
     },
     # END Calculations for Capacity
@@ -367,23 +367,50 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_speedometer_dashboards',
         'schedule': crontab(minute='*/5'),
     },
-    'calculate_range_dashboards-ALL': {
+    # 'calculate_range_dashboards-ALL': {
+    #     'task': 'dashboard.tasks.calculate_range_dashboards',
+    #     'schedule': crontab(minute='*/5'),
+    # },
+    # BEGIN: Range Dashboards
+    'calculate_range_dashboards-PMP': {
         'task': 'dashboard.tasks.calculate_range_dashboards',
-        'schedule': crontab(minute='*/5'),
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP', 'type': 'sector'}
     },
+    'calculate_range_dashboards-WiMAX': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX', 'type': 'sector'}
+    },
+    'calculate_range_dashboards-PMP-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP', 'type': 'backhaul'}
+    },
+    'calculate_range_dashboards-WiMAX-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX', 'type': 'backhaul'}
+    },
+    'calculate_range_dashboards-TCLPOP-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'TCLPOP', 'type': 'backhaul'}
+    },
+    # END: Range Dashboards
     'calculate_status_dashboards-PMP': {
         'task': 'dashboard.tasks.calculate_status_dashboards',
-        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'PMP'}
     },
     'calculate_status_dashboards-WiMAX': {
         'task': 'dashboard.tasks.calculate_status_dashboards',
-        'schedule': crontab(minute='2,7,12,17,22,27,32,37,42,47,52,57'),  # timedelta(seconds=300),
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'WiMAX'}
     },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
-        'schedule': crontab(minute='5')
+        'schedule': crontab(minute='5', hour='*')
     },
     'daily-main-dashboard': {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
@@ -454,23 +481,22 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute=3, hour='*/6'),  # per 6 hours delete all cache
     },
     # RF Network Availability Job - PTP-BH
-    'calculate_rf_network_availability-PTP-BH' : {
-        'task' : 'performance.tasks.calculate_rf_network_availability',
-        'kwargs': {'technology': 'PTP-BH'},
+    'calculate_rf_network_availability-PTP-BH': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'P2P'},  # PTP BH is not a tachnology, P2P is
         'schedule': crontab(minute=05, hour=0)
-        
     },
     # RF Network Availability Job - PMP
-    'calculate_rf_network_availability-PMP' : {
-        'task' : 'performance.tasks.calculate_rf_network_availability',
+    'calculate_rf_network_availability-PMP': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'PMP'},
-        'schedule': crontab(minute=20, hour=0)
+        'schedule': crontab(minute=15, hour=0)
     },
     # RF Network Availability Job - WiMAX
-    'calculate_rf_network_availability-WiMAX' : {
-        'task' : 'performance.tasks.calculate_rf_network_availability',
+    'calculate_rf_network_availability-WiMAX': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
         'kwargs': {'technology': 'WiMAX'},
-        'schedule': crontab(minute=35, hour=0)
+        'schedule': crontab(minute=25, hour=0)
     }
 }
 
@@ -491,12 +517,12 @@ LOGGING = {
             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
             'datefmt': "%d/%b/%Y %H:%M:%S"
         },
-        },
+    },
     'handlers': {
         'sentry': {
             'level': 'ERROR',
             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-            },
+        },
         'console': {
             'level': 'ERROR',
             'class': 'logging.StreamHandler',
@@ -509,31 +535,31 @@ LOGGING = {
             'maxBytes': 1048576,
             'backupCount': 100,
             'formatter': 'verbose',
-            },
-
         },
+
+    },
     'loggers': {
         'django.db.backends': {
             'level': 'ERROR',
             'handlers': ['sentry'],
             'propagate': False,
-            },
+        },
         'raven': {
             'level': 'ERROR',
             'handlers': ['sentry'],
             'propagate': False,
-            },
+        },
         'sentry.errors': {
             'level': 'ERROR',
             'handlers': ['console'],
             'propagate': False,
-            },
+        },
         '': {
             'handlers': ['logfile'],
             'level': 'INFO',
-            },
         },
-    }
+    },
+}
 
 # #FOR MULTI PROC data analysis
 MULTI_PROCESSING_ENABLED = False
@@ -561,7 +587,6 @@ PMP = DEVICE_TECHNOLOGY('PMP', '4')
 Switch = DEVICE_TECHNOLOGY('Switch', '7')
 TCLPTPPOP = DEVICE_TECHNOLOGY('TCLPTPPOP', '9')
 TCLPOP = DEVICE_TECHNOLOGY('TCLPOP', '8')
-
 
 MPTT_TREE = namedtuple('MPTT_TREE', 'lft rght level')
 

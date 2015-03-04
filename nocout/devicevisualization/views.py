@@ -2267,12 +2267,17 @@ class GISPerfData(View):
                 except Exception as e:
                     pass
 
-                # pe ip
-                pe_ip = ""
+                # base station alias
                 base_station_alias = ""
                 try:
-                    pe_ip = circuit.sector.base_station.backhaul.pe_ip
                     base_station_alias = circuit.sector.base_station.alias
+                except Exception, e:
+                    pass
+
+                # pe ip
+                pe_ip = ""
+                try:
+                    pe_ip = circuit.sector.base_station.backhaul.pe_ip
                 except Exception as e:
                     pass
 

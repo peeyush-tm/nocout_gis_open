@@ -127,6 +127,13 @@
         /*Grid headers object*/
         // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
         var ajax_url = '{% url "SectorStatusListingClass" %}';
+        // ******************************* TEMPORARY CODE START *******************************//
+        // By Default remove sorting from all datatables
+        for(var i=0;i<headers_list.length;i++) {
+            var header = headers_list[i];
+            header['bSortable'] = false;
+        }
+        // ******************************* TEMPORARY CODE END *******************************//
         $("#sectorStatusTable").DataTable({
             bAutoWidth: false,
             bDestroy : true,
