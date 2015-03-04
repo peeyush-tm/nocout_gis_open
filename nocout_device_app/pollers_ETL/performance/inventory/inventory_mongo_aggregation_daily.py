@@ -40,7 +40,7 @@ def main(**configs):
     values_list = []
     docs = []
     end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=1440)
+    start_time = end_time - timedelta(minutes=1480)
     start_epoch = int(time.mktime(start_time.timetuple()))
     end_epoch = int(time.mktime(end_time.timetuple()))
 
@@ -94,11 +94,12 @@ def build_data(doc):
 	"""
 	values_list = []
 	machine = doc['site_name'][:-8]
-    sys_timestamp = datetime.fromtimestamp(float(doc.get('sys_timestamp')))
-    sys_timestamp = sys_timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
-    # pivot the time to next day
-    sys_timestamp += timedelta(days=1)
-    sys_timestamp = sys_timestamp.strftime('%s')
+
+	sys_timestamp = datetime.fromtimestamp(float(doc.get('sys_timestamp')))
+        sys_timestamp = sys_timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+	# pivot the time to next day
+	sys_timestamp += timedelta(days=1)
+	sys_timestamp = sys_timestamp.strftime('%s')
         t = (
         doc.get('device_name'),
         doc.get('service_name'),
@@ -113,7 +114,7 @@ def build_data(doc):
         doc.get('avg_value'),
         doc.get('warning_threshold'),
         doc.get('critical_threshold'),
-        doc.get('sys_timestamp'),
+        sys_timestamp,
         doc.get('check_timestamp'),
         )
 	values_list.append(t)
