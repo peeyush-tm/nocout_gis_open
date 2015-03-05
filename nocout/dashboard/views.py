@@ -2051,13 +2051,15 @@ class GetRfNetworkAvailData(View):
                 avail_chart_color = {
                     'PMP' : '#70AFC4',
                     'WiMAX' : '#A9FF96',
-                    'PTP-BH' : '#95CEFF'
+                    'PTP-BH' : '#95CEFF',
+                    'P2P' : '#95CEFF'
                 }
 
                 unavail_chart_color = {
                     'PMP' : '#FF193B',
                     'WiMAX' : '#F7A35C',
-                    'PTP-BH' : '#434348'
+                    'PTP-BH' : '#434348',
+                    'P2P' : '#434348'
                 }
 
                 # Loop all technologies

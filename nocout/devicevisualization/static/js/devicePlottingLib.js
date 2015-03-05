@@ -4448,7 +4448,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		var yaxisLabel = $("<div class='axisLabel yaxisLabel'></div>").text("Height (m)").appendTo("#chart_div");
-		var xaxisLabel = $("<div class='axisLabel xaxisLabel'></div>").text("Distance (m)").appendTo("#chart_div");
+		var xaxisLabel = $("<div class='axisLabel xaxisLabel'></div>").text("Distance (km)").appendTo("#chart_div");
 		// yaxisLabel.css("margin-top", yaxisLabel.width() / 2 - 20);
 
 		/*Graph Click Event End*/
@@ -8456,6 +8456,10 @@ function devicePlottingClass_gmap() {
 
             // searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)));
             searchResultData = gmap_self.updateStateCounter_gmaps(true);
+
+            // Set Perf calling Flag
+			isPerfCallStopped = 0;
+			isPerfCallStarted = 0;
 
         });
 
