@@ -201,8 +201,8 @@ def check_device_status():
             # if there is actually an escalation object defined
             # if there is none dont worry & return True & relax
             device_type_list = required_objects.values_list('device_type__id', flat=True)
-            service_list = required_objects.values_list('service__name', flat=True)
-            service_data_source_list = required_objects.values_list('service_data_source__name', flat=True)
+            service_list = set(required_objects.values_list('service__name', flat=True))
+            service_data_source_list = set(required_objects.values_list('service_data_source__name', flat=True))
 
             # exclude the devices which is in downtime scheduling today.
             device_list_qs = Device.objects.filter(organization__in=[org],
@@ -213,12 +213,16 @@ def check_device_status():
             machine_dict = prepare_machines(device_list_qs)
 
             for machine_name, device_list in machine_dict.items():
+                print(device_list)
+                print(service_list)
+                print(service_data_source_list)
                 service_status_list = ServiceStatus.objects.filter(
                     device_name__in=device_list,
                     service_name__in=service_list,
                     data_source__in=service_data_source_list,
                     ip_address__isnull=False
                 ).using(alias=machine_name)
+                print(service_status_list)
 
                 if service_status_list.exists():
                     raise_alarms.delay(service_status_list, org)
