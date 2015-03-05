@@ -18,8 +18,9 @@ import imp
 import time
 import socket
 import json
-from itertools import groupby
 import sys
+from itertools import groupby
+
 try:
         import nocout_settings
         from nocout_settings import _LIVESTATUS, _DATABASES
@@ -34,7 +35,7 @@ network_data_values = []
 service_data_values = []
 network_update_list = []
 service_update_list = []
-
+device_first_down_list = []
 
 def load_file(file_path):
     #Reset the global vars
@@ -68,7 +69,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global service_data_values
 	global network_update_list
 	global service_update_list
-
+	global device_first_down_list
         age = None
 	rt_min, rt_max = None, None
 	rta_dict = {}
@@ -83,10 +84,13 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		"age": None
 	}
 	matching_criteria ={}
+	refer = ''
 	threshold_values = {}
 	severity = 'unknown'
 	host_severity = 'unknown'
+	device_first_down_entry =[]
 	host_state = "unknown"
+	device_first_down ={}
 #	db = mongo_module.mongo_conn(
 #	    host=mongo_host,
 #	    port=int(mongo_port),
@@ -96,6 +100,11 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
         nw_qry_output = network_result
 	file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
 	host_var = load_file(file_path)
+	host_list = [str(index[0]) for index in nw_qry_output]
+	if db:
+		cur = db.device_first_down.find()
+		for dict_entry in cur:
+			device_first_down_list.append(dict_entry)		
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -139,6 +148,31 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 						host_severity = "warning"
 					else:
 						host_severity = "down"
+
+				try:
+					try:	
+						device_first_down_entry = filter(lambda x: str(entry[0]) == x['host'],device_first_down_list)
+					except Exception,e:
+						pass	
+					if device_first_down_entry:
+						device_first_down=device_first_down_entry[0]
+					if device_first_down == {} and ds_values['cur'] == '100':
+						device_first_down['host'] = str(entry[0])
+						device_first_down['severity']="down"
+						device_first_down['time']=local_timestamp
+						device_first_down_list.append(device_first_down)
+					elif device_first_down and str(entry[0]) ==  device_first_down['host'] and \
+						ds_values['cur'] != '100':
+						device_first_down['severity']="up"
+					elif device_first_down and str(entry[0]) == device_first_down['host'] and \
+						device_first_down['severity'] == "up" \
+						and ds_values['cur'] == '100':
+						device_first_down['severity']="down"
+						device_first_down['time']=local_timestamp
+					if device_first_down['time']:
+						refer = device_first_down['time']
+				except Exception,e:
+					refer = ''
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			if ds == 'rta':
 				try:
@@ -173,7 +207,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				'data': data_values,
 				'meta': ds_values,
 				'check_time': check_time,
-				'local_timestamp': local_timestamp 
+				'local_timestamp': local_timestamp ,
+				'refer':refer
 				})
 			matching_criteria.update({
 				'host': str(entry[0]),
@@ -187,7 +222,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			data_dict = {}
 			host_severity = host_state
 			matching_criteria = {}
+		
+		refer = ''
+		device_first_down = {}
 	after = int(time.time())
+	#print len(device_first_down_list)
+	#print len(first_down_crit_list)
 	elapsed = after -current
 	data_dict = {}
 	current1 = int(time.time())
@@ -224,7 +264,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			if str(entry[0]) in original_dr_host_list:
 				dr_flag = 1
 		
-		if str(entry[0]) in s_device_down_list and  not dr_flag :
+		if str(entry[0]) in s_device_down_list and not dr_flag :
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
@@ -361,13 +401,13 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	#	print e.message
 
 
-def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
+def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_first_down_list,db):
 	#db = mongo_module.mongo_conn(
 	#    host=mongo_host,
 	#    port=int(mongo_port),
 	#    db_name=mongo_db
 	#)
-
+	match_dict = {}
 	try:
 		for index3 in range(len(net_values)):
 			mongo_module.mongo_db_update(db,net_update[index3], net_values[index3], 'network_perf_data')
@@ -378,6 +418,9 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 		print e.message
 	index1 = 0
 	index2 = min(1000,len(net_values))
+	#print len(net_values)
+	#print len(serv_values)
+	#print device_first_down_list
 	try:
 		while(index2 <= len(net_values)):
 			mongo_module.mongo_db_insert(db, net_values[index1:index2], 'network_perf_data')
@@ -410,7 +453,16 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 		print 'Insert error in Serv values'
 		print e.message
 
-
+	try:
+		index3 =0
+		for index3 in range(len(device_first_down_list)):
+			match_dict = {'host':device_first_down_list[index3]['host']}
+			mongo_module.mongo_db_update(db,match_dict, device_first_down_list[index3], 
+			'device_first_down')
+			
+	except Exception,e:
+		print e
+		
 def calculate_severity(severity_bit):
 	"""
 	Function to compute host service states
@@ -993,5 +1045,5 @@ if __name__ == '__main__':
     get_host_services_name(
     site_name=site,db=db
     )
-    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,db)
+    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_list,db)
 
