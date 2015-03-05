@@ -1072,11 +1072,11 @@ function GisPerformance() {
                                 }
                                 
                                 var fetched_ss_val = ss_marker_data.data.perf_value;
-                                if(typeof fetched_ss_val == 'object') {
+                                if(fetched_ss_val && typeof fetched_ss_val == 'object') {
                                     fetched_ss_val = fetched_ss_val[0];
                                 }
 
-                                if(typeof sector_perf_val == 'object') {
+                                if(sector_perf_val && typeof sector_perf_val == 'object') {
                                     sector_perf_val = sector_perf_val[0];
                                 }
 
