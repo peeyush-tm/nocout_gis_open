@@ -100,9 +100,9 @@ def raise_alarms(service_status_list, org):
                     setattr(obj, 'l%d_email_status' % level.name, 0)
                     setattr(obj, 'l%d_phone_status' % level.name, 0)
 
-            # Send the mail and sms for good performance to that level's users.
-            alert_emails_for_good_performance.delay(obj, escalation_level_list)
-            alert_phones_for_good_performance.delay(obj, escalation_level_list)
+                # Send the mail and sms for good performance to that level's users.
+                alert_emails_for_good_performance.delay(obj, level)
+                alert_phones_for_good_performance.delay(obj, level)
 
         # Notify for bad status of device to level according to alarm age.
         elif obj.new_status == 0:
