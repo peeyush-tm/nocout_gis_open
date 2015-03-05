@@ -11,12 +11,12 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.shortcuts import render_to_response
+
 
 from organization.models import Organization
 from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource
 from performance.models import ServiceStatus
-from alarm_escalation.models import EscalationStatus
+from alarm_escalation.models import EscalationStatus, EscalationLevel
 
 from inventory.utils import util as inventory_utils
 from scheduling_management.views import get_today_event_list
@@ -43,29 +43,40 @@ def raise_alarms(service_status_list, org):
         device = Device.objects.get(device_name=service_status.device_name)
         # get the DeviceType object of that device.
         device_type = DeviceType.objects.get(id=device.device_type)
-        # Get or create the EscalationStatus table for that device, device_type, service(get from service_status) and service_data_source(get from service_status).
-        obj, created = EscalationStatus.objects.get_or_create(organization=org,
-                device_name=service_status.device_name,
-                device_type=device_type.name,
-                service=service_status.service_name,
-                service_data_source=service_status.data_source,
-                defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status,
-                    'status_since': (timezone.now() - timezone.timedelta(seconds=service_status.age)), 'ip': service_status.ip_address,
-                }
+        # Get or create the EscalationStatus table for that
+        # device, device_type, service(get from service_status) and service_data_source(get from service_status).
+        obj, created = EscalationStatus.objects.get_or_create(
+            organization=org,
+            device_name=service_status.device_name,
+            device_type=device_type.name,
+            service=service_status.service_name,
+            service_data_source=service_status.data_source,
+            defaults={
+                'severity': service_status.severity,
+                'old_status': old_status,
+                'new_status': new_status,
+                'status_since': (timezone.now() - timezone.timedelta(seconds=service_status.age)),
+                'ip': service_status.ip_address,
+            }
         )
 
-        # if object is get not created, then update the severity and ip_address of object as per the severity and ip_address of service_status.
+        # if object is get not created,
+        # then update the severity and ip_address of object as per the severity and ip_address of service_status.
         if not created:
             obj.severity = service_status.severity
             obj.ip = service_status.ip_address
 
         # Get relative levels to inform
-        # Get the list of levels of EscalationStatus object after filtering the escalationLevel table on the basis of device_type, service and service_data_source.
-        level_list = obj.organization.escalationlevel_set.filter(device_type__name=obj.device_type,
-                service__name=obj.service, service_data_source__name=obj.service_data_source)
+        # Get the list of levels of EscalationStatus object after filtering the escalationLevel table
+        # on the basis of device_type, service and service_data_source.
+        level_list = obj.organization.escalationlevel_set.filter(
+            device_type__name=obj.device_type,
+            service__name=obj.service,
+            service_data_source__name=obj.service_data_source)
 
         # Get current status of device {'good': 1, 'bad': 0}
-        # In case of object is not created but get. Update the severity of object as per the severity of service_status.
+        # In case of object is not created but get.
+        # Update the severity of object as per the severity of service_status.
         if service_status.severity == 'ok':
             obj.new_status = 1
         else:
@@ -81,7 +92,9 @@ def raise_alarms(service_status_list, org):
             # Notify to only levels which has been previously notfied for bad status.
             escalation_level_list = []
             for level in level_list:
-                # Get the levels from level_list Which has email_status 'Sent', for sending the Good performance message. And Update that level's status to 'Pending'.
+                # Get the levels from level_list
+                # Which has email_status 'Sent', for sending the Good performance message.
+                # And Update that level's status to 'Pending'.
                 if getattr(obj, 'l%d_email_status' % level.name) == 1:
                     escalation_level_list.append(level)
                     setattr(obj, 'l%d_email_status' % level.name, 0)
@@ -135,7 +148,6 @@ def alert_emails_for_bad_performance(alarm, level):
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
 
 
-
 @task
 def alert_phones_for_bad_performance(alarm, level):
     """
@@ -148,13 +160,11 @@ def alert_phones_for_bad_performance(alarm, level):
 
 
 @task
-def alert_emails_for_good_performance(alarm, escalation_level_list):
+def alert_emails_for_good_performance(alarm, level):
     """
     Sends Emails for good performance.
     """
-    emails = list()
-    for level in escalation_level_list:
-        emails += (level.get_emails())
+    emails = level.get_emails()
     context_dict = {'alarm' : alarm}
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
@@ -185,18 +195,35 @@ def check_device_status():
     #get the device list which is in downtime scheduling today.
     device_id_list = get_today_event_list()['device_ids']
     for org in Organization.objects.all():
+        # get the objects which require escalation
+        required_objects = EscalationLevel.objects.filter(organization__in=[org])
+        if required_objects.exists():
+            # if there is actually an escalation object defined
+            # if there is none dont worry & return True & relax
+            device_type_list = required_objects.values_list('device_type__id', flat=True)
+            service_list = required_objects.values_list('service__name', flat=True)
+            service_data_source_list = required_objects.values_list('service_data_source__name', flat=True)
 
-        #exclude the devices which is in downtime scheduling today.
-        device_list_qs = inventory_utils.organization_network_devices([org]).exclude(id__in=device_id_list)
-        machine_dict = prepare_machines(device_list_qs)
-        service_list = prepare_services(device_list_qs)
-        service_data_source_list = prepare_service_data_sources(service_list)
-        for machine_name, device_list in machine_dict.items():
-            service_status_list = ServiceStatus.objects.filter(device_name__in=device_list, service_name__in=service_list,
-                    data_source__in=service_data_source_list, ip_address__isnull=False).using(machine_name)
+            # exclude the devices which is in downtime scheduling today.
+            device_list_qs = Device.objects.filter(organization__in=[org],
+                                                   device_type__in=device_type_list,
+                                                   is_added_to_nms=1
+            ).exclude(id__in=device_id_list)
 
-            if service_status_list:
-                raise_alarms.delay(service_status_list, org)
+            machine_dict = prepare_machines(device_list_qs)
+
+            for machine_name, device_list in machine_dict.items():
+                service_status_list = ServiceStatus.objects.filter(
+                    device_name__in=device_list,
+                    service_name__in=service_list,
+                    data_source__in=service_data_source_list,
+                    ip_address__isnull=False
+                ).using(alias=machine_name)
+
+                if service_status_list.exists():
+                    raise_alarms.delay(service_status_list, org)
+
+    return True
 
 
 def prepare_machines(device_list_qs):

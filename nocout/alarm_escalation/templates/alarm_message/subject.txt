@@ -1,1 +1,1 @@
-Alert: {{ alarm.technology.alias }}-{{ level.device_type.alias }}-{{ level.organization.alias }}-{{ level.organization.city }}-{{ alarm.base_station.alias }}-{{ alarm.ip }}-{{ alarm.alert_description }}.
+Alert: {{ alarm.ip }} : {{ level.device_type.alias }}-{{ level.organization.alias }}-{{ level.organization.city }}-{{ alarm.severity|upper }}
