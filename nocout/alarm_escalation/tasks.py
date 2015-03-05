@@ -200,7 +200,7 @@ def check_device_status():
         if required_objects.exists():
             # if there is actually an escalation object defined
             # if there is none dont worry & return True & relax
-            device_type_list = required_objects.values_list('device_type__id', flat=True)
+            device_type_list = set(required_objects.values_list('device_type__id', flat=True))
             service_list = set(required_objects.values_list('service__name', flat=True))
             service_data_source_list = set(required_objects.values_list('service_data_source__name', flat=True))
 
