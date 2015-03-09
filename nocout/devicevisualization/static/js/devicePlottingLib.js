@@ -2346,11 +2346,12 @@ function devicePlottingClass_gmap() {
 				for(var k=sector_child.length;k--;) {
 
 					var ss_marker_obj = sector_child[k],
-						ss_item_info_index = ss_marker_obj.data.item_index > -1 ? ss_marker_obj.data.item_index : k,
+						ss_item_info_index = ss_marker_obj.data.item_index > -1 ? ss_marker_obj.data.item_index : 0,
+						ss_info_dict = ss_marker_obj.data.item_index > -1 ? ss_infoWindow_content : ss_marker_obj.data.param.sub_station,
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
-						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_infoWindow_content,"antenna_height",true,ss_item_info_index),
-						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
-						ss_ip_address = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"ss_ip",true,ss_item_info_index),
+						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_info_dict,"antenna_height",true,ss_item_info_index),
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_info_index),
+						ss_ip_address = gisPerformanceClass.getKeyValue(ss_info_dict,"ss_ip",true,ss_item_info_index),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
@@ -2373,7 +2374,7 @@ function devicePlottingClass_gmap() {
 				    	oldIcon 		 : 	ss_icon_obj,
 				    	clusterIcon 	 : 	ss_icon_obj,
 				    	pointType	     : 	"sub_station",
-				    	dataset 	     : 	ss_infoWindow_content,
+				    	dataset 	     : 	ss_info_dict,
 				    	item_index 		 :  ss_item_info_index,
 				    	bhInfo 			 : 	[],
 				    	poll_info 		 :  [],
@@ -2486,7 +2487,7 @@ function devicePlottingClass_gmap() {
 					ssLonArray.push(ss_marker_obj.data.lon);
 
 					var ss_info = {
-							"info" : ss_infoWindow_content,
+							"info" : ss_info_dict,
 							"antenna_height" : ss_antenna_height,
 							"ss_item_index" : ss_item_info_index
 						},
@@ -5427,7 +5428,9 @@ function devicePlottingClass_gmap() {
 
 			    			for(var k=0;k<sub_stations.length;k++) {
 			    				var ss_ip = sub_stations[k].data.substation_device_ip_address ? sub_stations[k].data.substation_device_ip_address : "",
-			    					ckt_id = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,k),
+			    					ss_item_index = sub_stations[k].data.item_index ? sub_stations[k].data.item_index : 0,
+			    					ss_info_dict = sub_stations_info.length > 0 ? sub_stations_info : sub_stations[k].data.param.sub_station,
+			    					ckt_id = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_index),
 			    					ss_circuit_id = ckt_id ? $.trim(ckt_id.toLowerCase()) : "";
 
 			    				// If any IP address or Circuit ID is searched
@@ -8972,7 +8975,7 @@ function devicePlottingClass_gmap() {
     		url : base_url+"/inventory/export_selected_bs_inventory/",
     		type : "POST",
     		data : {
-    			"base_stations" : inventory_bs_ids
+    			"base_stations" : JSON.stringify(inventory_bs_ids)
     		},
     		success : function(response) {
     			
