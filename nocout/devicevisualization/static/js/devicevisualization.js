@@ -1966,7 +1966,8 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
         dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
         device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
         href_val = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
-        block_id = href_val.length > 1 ? href_val[1] : "";
+        block_id = href_val.length > 1 ? href_val[1] : "",
+        selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
 
     if(dom_id && point_type && current_device_id) {
         // Show Spinner
@@ -1981,7 +1982,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 
             // Make AJAX Call
             periodic_tooltip_call = $.ajax({
-                url: base_url+'/device_polled_info/?device_id='+current_device_id,
+                url: base_url+'/device_polled_info/?device_id='+current_device_id+"&ts="+selected_thematics+"&freeze_time=" + freezedAt,
                 type : "GET",
                 success : function(response) {
 
