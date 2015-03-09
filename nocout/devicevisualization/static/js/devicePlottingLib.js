@@ -2388,6 +2388,7 @@ function devicePlottingClass_gmap() {
 				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
 				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 				    	device_name 	 : 	ss_marker_obj.device_name,
+				    	ss_device_id 	 : 	ss_marker_obj.device_id,
 				    	ss_ip 	 		 : 	ss_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
 				    	cktId 			 :  ckt_id_val,
@@ -3338,7 +3339,18 @@ function devicePlottingClass_gmap() {
 			infoTable =  "",
 			perfContent = "",
 			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "",
-			direct_val_keys = ['pos_link1','pos_link2'];
+			direct_val_keys = ['pos_link1','pos_link2'],
+			device_id = "";
+
+		if(clickedType == 'sector_Marker' || clickedType == 'sector') {
+			device_id = gisPerformanceClass.getKeyValue(contentObject.deviceInfo, 'device_id', true, 0);
+		} else if(clickedType == 'sub_station') {
+			device_id = contentObject.ss_device_id ? contentObject.ss_device_id : "";
+		}
+		
+		var device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
+
+
 
 
 		// Tabs Structure HTML
@@ -3346,8 +3358,13 @@ function devicePlottingClass_gmap() {
 		infoTable += '<div class="tabbable">';
 		/*Tabs Creation Start*/
 		infoTable += '<ul class="nav nav-tabs">';
-		infoTable += '<li class="active"><a href="#static_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>';
-		infoTable += '<li class=""><a href="#polled_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> Polled Info</a></li>';
+		infoTable += '<li class="active"><a href="#static_block" data-toggle="tab">\
+					  <i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>';
+		infoTable += '<li class=""><a href="#polled_block" data-toggle="tab" id="polled_tab" \
+					  device_id="'+device_id+'" point_type="'+clickedType+'" device_tech="'+device_tech+'">\
+					  <i class="fa fa-arrow-circle-o-right"></i> Polled Info \
+					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
+					  </li>';
 		infoTable += '</ul>';
 		/*Tabs Creation Ends*/
 
@@ -3594,7 +3611,7 @@ function devicePlottingClass_gmap() {
 			infoTable += '</div>';
 			/*Static Tab Content End*/
 
-			if(contentObject['poll_info'] != undefined) {
+			if(contentObject['poll_info']) {
 
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;
@@ -3728,7 +3745,7 @@ function devicePlottingClass_gmap() {
 			infoTable += '</div>';
 			/*Static Tab Content End*/
 
-			if(contentObject['poll_info'] != undefined) {
+			if(contentObject['poll_info']) {
 
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;

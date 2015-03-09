@@ -535,6 +535,7 @@ function GisPerformance() {
                                     bs_sector_device :  sector_device,
                                     filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
                                     device_name      :  ss_marker_data.device_name,
+                                    ss_device_id     :  ss_marker_data.device_id,
                                     ss_ip            :  ss_ip_address,
                                     sector_ip        :  sector_ip,
                                     cktId            :  ckt_id_val,
