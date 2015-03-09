@@ -240,10 +240,12 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
                 continue
             else:
                 alert_emails_for_good_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_email_status' % level.name, 0)
         elif getattr(alarm_object, 'l%d_email_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
                 alert_emails_for_bad_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_email_status' % level.name, 1)
             else:
                 continue
         if getattr(alarm_object, 'l%d_sms_status' % level.name) == 1:
@@ -252,14 +254,17 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
                 continue
             else:
                 alert_phones_for_good_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_sms_status' % level.name, 0)
         elif getattr(alarm_object, 'l%d_sms_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
                 alert_phones_for_bad_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_sms_status' % level.name, 1)
             else:
                 continue
         else:
             continue
+    alarm_object.save()
     return True
 
 
