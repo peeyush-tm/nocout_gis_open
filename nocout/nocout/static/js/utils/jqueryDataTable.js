@@ -34,10 +34,10 @@ function ourDataTableWidget()
        
         // ******************************* TEMPORARY CODE START *******************************//
         // By Default remove sorting from all datatables
-        for(var i=0;i<tableheaders.length;i++) {
-            var header = tableheaders[i];
-            header['bSortable'] = false;
-        }
+        //for(var i=0;i<tableheaders.length;i++) {
+        //    var header = tableheaders[i];
+        //    header['bSortable'] = false;
+        //}
         // ******************************* TEMPORARY CODE END *******************************//
 
         $("#"+tableId).DataTable({

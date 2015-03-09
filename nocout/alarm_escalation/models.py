@@ -30,7 +30,13 @@ class EscalationLevel(models.Model):
     alarm_age = models.IntegerField('Alarm Age')
 
     def __unicode__(self):
-        return '%s' % (self.get_name_display())
+        return 'Level: {0} - Organization: {1} - Device Type: {2} - Service {3} - Data Source: {4}'.format(
+            self.get_name_display(),
+            self.organization.alias,
+            self.device_type.alias,
+            self.service.alias,
+            self.service_data_source.alias
+        )
 
     def get_phones(self):
         phones = self.phones.replace(' ','')
