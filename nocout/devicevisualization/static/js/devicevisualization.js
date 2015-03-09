@@ -7,7 +7,8 @@ var mapPageType = "",
     tools_line = ""
     base_url = "",
     last_selected_label = "",
-    current_icon_size = "medium";
+    current_icon_size = "medium",
+    periodic_tooltip_call = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -1955,4 +1956,134 @@ function removeSSParamLabel() {
 $('input[type=radio][name=thematic_type]').change(function(e) {
     // Call function to restart perf calling
     networkMapInstance.restartPerfCalling();
+});
+
+// 
+$("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
+
+    var current_device_id = evt.currentTarget.attributes.device_id ? evt.currentTarget.attributes.device_id.value : "",
+        point_type = evt.currentTarget.attributes.point_type ? evt.currentTarget.attributes.point_type.value : "",
+        dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
+        device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
+        href_val = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
+        block_id = href_val.length > 1 ? href_val[1] : "";
+
+    if(dom_id && point_type && current_device_id) {
+        // Show Spinner
+        if(dom_id == 'polled_tab') {
+            if($("a#"+dom_id+" .fa-spinner").hasClass("hide")) {
+                $("a#"+dom_id+" .fa-spinner").removeClass("hide");
+            }
+
+            if(periodic_tooltip_call) {
+                periodic_tooltip_call.abort();
+            }
+
+            // Make AJAX Call
+            periodic_tooltip_call = $.ajax({
+                url: base_url+'/device_polled_info/?device_id='+current_device_id,
+                type : "GET",
+                success : function(response) {
+
+                    var result = "",
+                        polled_data_html = "";
+                    // Type check for response
+                    if(typeof response == 'string') {
+                        result = JSON.parse(response);
+                    } else {
+                        result = response;
+                    }
+
+                    if(result.success == 1) {
+
+                        // Clear the polled block HTML
+                        $("#"+block_id).html('<div class="divide-10"></div>');
+
+                        var fetched_polled_info = result.data.objects.info ? result.data.objects.info : "",
+                            tooltip_info_dict = "";
+
+                        if(clickedType == 'sector_Marker' || clickedType == 'sector') {
+                            
+                            if(ptp_tech_list.indexOf(device_tech) > -1) {
+                                tooltip_info_dict = rearrangeTooltipArray(ptp_sector_toolTip_polled,fetched_polled_info);
+                            } else if(device_tech == 'wimax') {
+                                tooltip_info_dict = rearrangeTooltipArray(wimax_sector_toolTip_polled,fetched_polled_info);
+                            } else if(device_tech == 'pmp') {
+                                tooltip_info_dict = rearrangeTooltipArray(pmp_sector_toolTip_polled,fetched_polled_info);
+                            } else {
+                                // pass
+                            }
+                        } else if(clickedType == 'sub_station') {
+                            if(ptp_tech_list.indexOf(ss_tech) > -1) {
+                                tooltip_info_dict = rearrangeTooltipArray(ptp_ss_toolTip_polled,fetched_polled_info);
+                            } else if(ss_tech == 'wimax') {
+                                tooltip_info_dict = rearrangeTooltipArray(wimax_ss_toolTip_polled,fetched_polled_info);
+                            } else if(ss_tech == 'pmp') {
+                                tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled,fetched_polled_info);
+                            } else {
+                                // pass
+                            }
+                        } else {
+                            // pass
+                        }
+
+                        polled_data_html = "";
+                        polled_data_html += "<table class='table table-bordered table-hover'><tbody>";
+
+                        /*Poll Parameter Info*/
+                        for(var i=0; i< tooltip_info_dict.length; i++) {
+                            var url = "",
+                                text_class = "";
+                            if(tooltip_info_dict[i]["show"]) {
+                                // Url
+                                url = tooltip_info_dict[i]["url"] ? tooltip_info_dict[i]["url"] : "";
+                                text_class = "text-primary";
+
+                                polled_data_html += "<tr><td class='"+text_class+"' url='"+url+"'>"+tooltip_info_dict[i]['title']+"</td>\
+                                                     <td>"+tooltip_info_dict[i]['value']+"</td></tr>";
+                            }
+                        }
+
+                        polled_data_html += "</tbody></table>";
+
+                        $("#"+block_id).append(polled_data_html);
+
+                    } else {
+                        $.gritter.add({
+                            title: "Polled Info",
+                            text: result.message,
+                            sticky: false,
+                            time : 1000
+                        });
+                    }
+                },
+                error : function(err) {
+                    
+                    //----------------------------- TEMPORARY COMMENTED -----------------------------//
+
+                    // if(err.statusText != 'abort') {
+                    //     $.gritter.add({
+                    //         title: "Polled Info",
+                    //         text: err.statusText,
+                    //         sticky: false,
+                    //         time : 1000
+                    //     });
+                    // }
+                },
+                complete : function() {
+                    if(!$("a#"+dom_id+" .fa-spinner").hasClass("hide")) {
+                        $("a#"+dom_id+" .fa-spinner").addClass("hide");
+                    }       
+                }
+            });
+
+        }
+    } else {
+        if(periodic_tooltip_call) {
+            periodic_tooltip_call.abort();
+        }
+        if(!$(".nav-tabs li a:last-child .fa-spinner").hasClass("hide")) {
+            $(".nav-tabs li a:last-child .fa-spinner").addClass("hide");
+        }
+    }
 });

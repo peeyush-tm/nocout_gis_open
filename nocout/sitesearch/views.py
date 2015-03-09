@@ -803,7 +803,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                             'id': circuit['SSID'],
                             'name': circuit['SS_NAME'],
                             'device_name': circuit['SSDEVICENAME'],
-                            # 'device_id' : circuit['SS_DEVICE_ID'],
+                            'device_id' : circuit['SS_DEVICE_ID'],
                             'data': {
                                 "lat": circuit['SS_LATITUDE'],
                                 "lon": circuit['SS_LONGITUDE'],
