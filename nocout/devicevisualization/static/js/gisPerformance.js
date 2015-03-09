@@ -260,6 +260,8 @@ function GisPerformance() {
             var apiResponse = data,
                 sectorArray = apiResponse.param.sector ? apiResponse.param.sector : [],
                 bs_name = apiResponse.bs_name ? apiResponse.bs_name : "",
+                bs_maintenance_status = apiResponse.maintenance_status ? apiResponse.maintenance_status : false,
+                maintenance_icon = apiResponse.maintenance_status_icon ? apiResponse.maintenance_status_icon : false,
                 perf_bh_info = apiResponse.bh_info ? apiResponse.bh_info : [],
                 perf_bh_severity = apiResponse.bhSeverity ? apiResponse.bhSeverity : "",
                 bs_marker = "",
@@ -273,11 +275,18 @@ function GisPerformance() {
                 bs_marker = allMarkersObject_gmap['base_station']['bs_'+bs_name];
             }
 
-            // Update BH polled info to bs marker tooltip.
+            // Update BS & BH polled info to bs marker tooltip.
             if(bs_marker) {
                 try {
                     bs_marker['bhInfo_polled'] = perf_bh_info;
                     bs_marker['bhSeverity'] = perf_bh_severity;
+                    if(bs_maintenance_status) {
+                        bs_marker['maintenance_status'] = bs_maintenance_status;
+                    }
+
+                    if(maintenance_icon) {
+                        perf_self.updateMarkerIcon(bs_marker, maintenance_icon, 'base_station');
+                    }
                 } catch(e) {
                     // console.log(e);
                 }
@@ -328,7 +337,7 @@ function GisPerformance() {
                     var sector_pl = perf_self.getKeyValue(sector_perf_info,"pl",true),
                         sector_rta = perf_self.getKeyValue(sector_perf_info,"rta",true);
                     if(sector_icon) {
-                        perf_self.updateMarkerIcon(sector_marker,sector_icon);
+                        perf_self.updateMarkerIcon(sector_marker, sector_icon, 'other');
                     }
 
                     // Update the pl & rta values in sector marker object
@@ -1234,6 +1243,20 @@ function GisPerformance() {
             }
 
             bs_object.data.param.sector = connected_sectors;
+
+            // Update the maintenance status of BS
+            try {
+                if(bs_maintenance_status) {
+                    bs_object.data.maintenance_status = bs_maintenance_status;
+                }
+
+                if(maintenance_icon) {
+                    bs_object.data.markerUrl = maintenance_icon;
+                }
+            } catch(e) {
+                // pass
+            }
+
             // Update Loki Object
             all_devices_loki_db.update(bs_object);
 
@@ -1255,14 +1278,20 @@ function GisPerformance() {
      * @param marker {Object}, It contains the map marker object.
      * @param icon {String}, It contains the marker icon url string
      */
-    this.updateMarkerIcon = function(marker,new_icon) {
+    this.updateMarkerIcon = function(marker, new_icon, marker_type) {
+
+        var iconUrl = base_url+"/"+new_icon,
+            old_icon_obj = iconUrl,
+            hidden_icon_instance = hiddenIconObj;
+
+        if(marker_type == 'base_station') {
+            hidden_icon_instance = old_icon_obj;
+        }
 
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-            var iconUrl = base_url+"/"+new_icon,
-                old_icon_obj = iconUrl;
 
             try {
-                marker['clusterIcon'] = hiddenIconObj;
+                marker['clusterIcon'] = hidden_icon_instance;
                 marker['oldIcon'] = old_icon_obj;
             } catch(e) {
                 // console.log(e);
@@ -1271,15 +1300,13 @@ function GisPerformance() {
             updateGoogleEarthPlacemark(marker, old_icon_obj);
         } else if (window.location.pathname.indexOf("white_background") > -1) {
 
-            var iconUrl = base_url+"/"+new_icon,
-                old_icon_obj = iconUrl,
-                other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
+            var other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
                 other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
                 other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height;
 
             // Update sector marker icon
-            marker.attributes.icon = hiddenIconObj;
-            marker.attributes.clusterIcon = hiddenIconObj;
+            marker.attributes.icon = hidden_icon_instance;
+            marker.attributes.clusterIcon = hidden_icon_instance;
             marker.attributes.oldIcon = old_icon_obj;
             marker.oldIcon = old_icon_obj;
             marker.style['externalGraphic'] = old_icon_obj;
@@ -1288,11 +1315,11 @@ function GisPerformance() {
             var sectorMarkerLayer = marker.layer ? marker.layer : marker.layerReference;
             sectorMarkerLayer.redraw();
         } else {
-            var sector_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+new_icon,"other");
+            var sector_icon_obj = gmap_self.getMarkerImageBySize(old_icon_obj, marker_type);
             // Update sector marker icon
             marker.setOptions({
-                "icon" : hiddenIconObj,
-                "clusterIcon" : hiddenIconObj,
+                "icon" : hidden_icon_instance,
+                "clusterIcon" : hidden_icon_instance,
                 "oldIcon" : sector_icon_obj,
             });
         }
