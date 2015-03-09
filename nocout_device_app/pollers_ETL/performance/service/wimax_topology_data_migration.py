@@ -180,30 +180,31 @@ def insert_data(table, data_values, **kwargs):
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
 	insert_dict = {'0':[],'1':[]}
+	processed_bs= []
 	db = mysql_connection(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
-		query = "SELECT * FROM %s " % table +\
-                	"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])
-		cursor = db.cursor()
-        	try:
-                	cursor.execute(query)
-			result = cursor.fetchone()
-		except mysql.connector.Error as err:
-        		raise mysql.connector.Error, err
-
-
-		if result:
+		if str(data_values[i][0]) not in processed_bs:
 			query = "DELETE FROM %s " % table +\
-                	"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])
+                		"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])
         		try:
+    				cursor = db.cursor()
                 		cursor.execute(query)
 			except mysql.connector.Error as err:
         			raise mysql.connector.Error, err
     			db.commit()
-    			cursor.close()
-                        insert_dict['0'].append(data_values[i])
-                else:
-                        insert_dict['0'].append(data_values[i])
+			cursor.close()
+			processed_bs.append(str(data_values[i][0]))
+
+		query = "DELETE FROM %s " % table +\
+                	"WHERE `connected_device_ip`='%s'" %(str(data_values[i][9]))
+        	try:
+    			cursor = db.cursor()
+                	cursor.execute(query)
+		except mysql.connector.Error as err:
+        		raise mysql.connector.Error, err
+		db.commit()
+		cursor.close()
+		insert_dict['0'].append(data_values[i])
 
 	if len(insert_dict['0']):		
 		query = "INSERT INTO `%s`" % table

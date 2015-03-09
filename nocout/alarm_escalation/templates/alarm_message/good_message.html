@@ -2,15 +2,35 @@
     <head>
     </head>
     <body>
-        <p> Hi this is alarm message for:-
-         Technology is {{ alarm.technology.alias }}<br>
-         Device Type is {{ level.device_type.alias }}<br>
-         Region is {{ level.organization.alias }}<br>
-         City is {{ level.organization.city }}<br>
-         BS Name is {{ alarm.base_station.alias }}<br>
-         IP is {{ alarm.ip }}<br>
-         Alert Description is {{ alarm.alert_description }}
-         Now Device is working well.
-        </p>
+    <table>
+        <thead>
+            <tr>
+                <th>IP Address</th>
+                <th>Device Type</th>
+                <th>Service</th>
+                <th>Data Source</th>
+                <th>Region</th>
+                <th>State</th>
+                <th>City</th>
+                <th>Severity</th>
+                <th>Status Since</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ alarm.ip }}</td>
+                <td>{{ level.device_type.alias }}</td>
+                <td>{{ level.service.alias }}</td>
+                <td>{{ level.service_data_source.aliasd }}</td>
+                <td>{{ level.organization.alias }}</td>
+                <td>{{ level.organization.state }}</td>
+                <td>{{ level.organization.city }}</td>
+                <td>{{ alarm.severity|upper }}</td>
+                <td>{{ alarm.status_since }}</td>
+                <td>Device has recovered</td>
+            </tr>
+        </tbody>
+    </table>
     </body>
 </html>

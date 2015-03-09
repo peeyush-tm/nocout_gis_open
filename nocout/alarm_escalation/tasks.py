@@ -6,27 +6,87 @@ Provide celery tasks for Alarm Escalation.
     check_device_status.delay()
 """
 
-from celery import task
+from celery import task, group
 from django.utils import timezone
+from django.utils.dateformat import format
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.shortcuts import render_to_response
+import datetime
 
 from organization.models import Organization
-from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource
+from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource, DeviceTechnology
+from service.models import Service, ServiceDataSource, ServiceSpecificDataSource
 from performance.models import ServiceStatus
-from alarm_escalation.models import EscalationStatus
+from alarm_escalation.models import EscalationStatus, EscalationLevel
 
 from inventory.utils import util as inventory_utils
 from scheduling_management.views import get_today_event_list
 
 
+status_dict = {
+    'changed_good': {
+        'old': 0,
+        'new': 1
+    },
+    'alarm_status_changed': {
+        'old': 1,
+        'new': 0
+    },
+    'unchanged_good': {
+        'old': 1,
+        'new': 1
+    },
+    'unchanged_bad': {
+        'old': 0,
+        'new': 0
+    },
+
+}
+
+
+def status_change(old_status, new_status):
+    """
+
+    :param old_status:
+    :param new_status:
+    :return:
+    """
+
+    if old_status == 0 and new_status == 0:
+        # that is the old status was bad
+        # that is the new status is bad itself
+        return status_dict['unchanged_bad']
+
+    elif old_status == 0 and new_status == 1:
+        # that is the device has recovered
+        return status_dict['changed_good']
+
+    elif old_status == 1 and new_status == 0:
+        return status_dict['changed_bad']
+
+    elif old_status == 1 and new_status == 1:
+        return status_dict['unchanged_good']
+
+    else:
+        return -1
+
 @task
-def raise_alarms(service_status_list, org):
+def raise_alarms(service_status_list, org, required_levels):
     """
     Raise alarms for bad performance or good performance of device for a particular organization.
     """
+    # bulky_update = list()  # list of escalation objects we want to update
+    # bulky_create = list()  # list of escalation objects we want to create
+
+    g_jobs = list()
+    ret = False
+
+    s_sds = ServiceSpecificDataSource.objects.prefetch_related(
+        'service_data_sources',
+        'service'
+    ).all()
+
     for service_status in service_status_list:
 
         # Get EscalationStatus to process.
@@ -41,84 +101,171 @@ def raise_alarms(service_status_list, org):
 
         # get the device of service_status.
         device = Device.objects.get(device_name=service_status.device_name)
-        # get the DeviceType object of that device.
-        device_type = DeviceType.objects.get(id=device.device_type)
-        # Get or create the EscalationStatus table for that device, device_type, service(get from service_status) and service_data_source(get from service_status).
-        obj, created = EscalationStatus.objects.get_or_create(organization=org,
-                device_name=service_status.device_name,
-                device_type=device_type.name,
-                service=service_status.service_name,
-                service_data_source=service_status.data_source,
-                defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status,
-                    'status_since': (timezone.now() - timezone.timedelta(seconds=service_status.age)), 'ip': service_status.ip_address,
-                }
+        # get the service - service data source mapping
+        service_service_data_source = s_sds.get(
+            service__name=service_status.service_name,
+            service_data_sources__name=service_status.data_source
         )
-
-        # if object is get not created, then update the severity and ip_address of object as per the severity and ip_address of service_status.
-        if not created:
-            obj.severity = service_status.severity
-            obj.ip = service_status.ip_address
+        # get the service object
+        service = service_service_data_source.service
+        # get the service data source object
+        service_data_source = service_service_data_source.service_data_sources
 
         # Get relative levels to inform
-        # Get the list of levels of EscalationStatus object after filtering the escalationLevel table on the basis of device_type, service and service_data_source.
-        level_list = obj.organization.escalationlevel_set.filter(device_type__name=obj.device_type,
-                service__name=obj.service, service_data_source__name=obj.service_data_source)
+        # Get the list of levels of EscalationStatus object after filtering the escalationLevel table
+        # on the basis of device_type, service and service_data_source.
+        service_level_list = required_levels.filter(
+            service=service_status.service,
+            service_data_source=service_status.service_data_source
+        )
 
-        # Get current status of device {'good': 1, 'bad': 0}
-        # In case of object is not created but get. Update the severity of object as per the severity of service_status.
-        if service_status.severity == 'ok':
-            obj.new_status = 1
+        time_now = float(format(datetime.datetime.now(), 'U'))  # in unixtime
+        time_since = float(service_status.age)  # already in unixtime
+        changed_time = time_now - time_since  # in seconds the time since the status has changed
+
+        if service_level_list.exists():  # if there are actually a level corrosponding to this alarm - lets talk
+            # device, device_type, service(get from service_status) and service_data_source(get from service_status).
+            obj, created = EscalationStatus.objects.get_or_create(
+                device=device,
+                service=service,
+                service_data_source=service_data_source,
+                defaults={
+                    'severity': service_status.severity,
+                    'old_status': old_status,
+                    'new_status': new_status,
+                    'status_since': datetime.datetime.fromtimestamp(float(service_status.age)),
+                    'ip': service_status.ip_address,
+                    'organization': org
+                }
+            )
+
+            # if object is get & not created,
+            # then update the severity and ip_address of object as per the severity and ip_address of service_status.
+            if not created:
+                obj.severity = service_status.severity
+                obj.ip = service_status.ip_address
+                obj.organization = org
+
+                old_status = obj.old_status
+                if service_status.severity == 'ok':
+                    new_status = 1
+                else:
+                    new_status = 0
+
+                # if there is a status change
+                if status_change(old_status, new_status) != -1:
+                    if status_change(old_status, new_status) == status_dict['unchanged_bad']:
+                        level_list = service_level_list.filter(
+                            alarm_age__lte=changed_time
+                        )  # this should exists to raise any alarm
+                        if level_list.exists():
+                            g_jobs.append(
+                                alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
+                            )
+                    elif status_change(old_status, new_status) == status_dict['unchanged_good']:
+                        continue  # everything is fine # keep on going
+                    elif status_change(old_status, new_status) == status_dict['changed_bad']:
+                        level_list = service_level_list.filter(
+                            alarm_age__lte=changed_time
+                        )  # this should exists to raise any alarm
+                        if level_list.exists():
+                            g_jobs.append(
+                                alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
+                            )
+                    elif status_change(old_status, new_status) == status_dict['changed_good']:
+                        level_list = service_level_list
+                        if level_list.exists():
+                            g_jobs.append(
+                                alarm_status_changed.s(
+                                    alarm_object=obj,
+                                    levels=level_list,
+                                    is_bad=False
+                                )
+                            )  # append the task
+                    else:
+                        continue  # don't know what just happened
+
+                obj.old_status = new_status
+                obj.new_status = old_status
+                obj.save()
+
+            elif created:  # the object has been created for the first time
+                # if the object has been just created
+                # check for the current status as in good or bad
+                # check the levels to be notified
+                if status_change(old_status, new_status) == status_dict['unchanged_bad'] \
+                   or \
+                   status_change(old_status, new_status) == status_dict['changed_bad']:
+                    # this calls for a check for levels
+                    level_list = service_level_list.filter(alarm_age__lte=changed_time)
+                    # this should exists to raise any alarm
+                    if level_list.exists():
+                        g_jobs.append(
+                            alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
+                        )
+
+            else:  # don't know what this means
+                continue
+
+
+
         else:
-            obj.new_status = 0
+            continue
 
-        # Notify for good status of device, if it has started performing good from bad.
-        if obj.new_status == 1 and obj.old_status == 0:
-            # Update the old_status from 'Bad' to 'Good'.
-            obj.old_status = 1
-            # Update the status_since.
-            obj.status_since = timezone.now() - timezone.timedelta(seconds=service_status.age)
+    if len(g_jobs):
+        job = group(g_jobs)
+        result = job.apply_async()
+        for r in result.get():
+            ret |= r
 
-            # Notify to only levels which has been previously notfied for bad status.
-            escalation_level_list = []
-            for level in level_list:
-                # Get the levels from level_list Which has email_status 'Sent', for sending the Good performance message. And Update that level's status to 'Pending'.
-                if getattr(obj, 'l%d_email_status' % level.name) == 1:
-                    escalation_level_list.append(level)
-                    setattr(obj, 'l%d_email_status' % level.name, 0)
-                    setattr(obj, 'l%d_phone_status' % level.name, 0)
+        return ret
 
-            # Send the mail and sms for good performance to that level's users.
-            alert_emails_for_good_performance.delay(obj, escalation_level_list)
-            alert_phones_for_good_performance.delay(obj, escalation_level_list)
+    return True
 
-        # Notify for bad status of device to level according to alarm age.
-        elif obj.new_status == 0:
 
-            # Get level to notify.
-            escalation_level = None
-            for level in level_list:
-                age = timezone.now() - obj.status_since
-                # Get the level which should be notified for Bad performance.
-                if age.seconds >= level.alarm_age:
-                    escalation_level = level
+@task()
+def alarm_status_changed(alarm_object, levels, is_bad=True):
+    """
 
-            # Notify only if escalation level has previously not been notified.
-            if escalation_level is not None and getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
-                # If old_status was good.
-                if obj.old_status == 1:
-                    # Update old_status from Good to Bad.
-                    obj.old_status = 0
-                    # Update status_since.
-                    obj.status_since = timezone.now() - timezone.timedelta(seconds=service_status.age)
 
-                # Send email and sms for bad performance.
-                alert_emails_for_bad_performance.delay(obj, escalation_level)
-                alert_phones_for_bad_performance.delay(obj, escalation_level)
-                # Set the email_status and phone_status from "Pending" to "Sent".
-                setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
-                setattr(obj, 'l%d_phone_status' % escalation_level.name, 1)
-
-        obj.save()
+    :param is_bad: is a good alarm or a bad alarm ?
+    :param alarm_object:
+    :param levels:
+    :return:
+    """
+    for level in levels:
+        if getattr(alarm_object, 'l%d_email_status' % level.name) == 1:
+            # this level has been notified
+            if is_bad:
+                continue
+            else:
+                alert_emails_for_good_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_email_status' % level.name, 0)
+        elif getattr(alarm_object, 'l%d_email_status' % level.name) == 0:
+            # this level is not notified
+            if is_bad:
+                alert_emails_for_bad_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_email_status' % level.name, 1)
+            else:
+                continue
+        if getattr(alarm_object, 'l%d_sms_status' % level.name) == 1:
+            # this level has been notified
+            if is_bad:
+                continue
+            else:
+                alert_phones_for_good_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_sms_status' % level.name, 0)
+        elif getattr(alarm_object, 'l%d_sms_status' % level.name) == 0:
+            # this level is not notified
+            if is_bad:
+                alert_phones_for_bad_performance.delay(alarm=alarm_object, level=level)
+                setattr(alarm_object, 'l%d_sms_status' % level.name, 1)
+            else:
+                continue
+        else:
+            continue
+    alarm_object.save()
+    return True
 
 
 @task
@@ -135,7 +282,6 @@ def alert_emails_for_bad_performance(alarm, level):
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
 
 
-
 @task
 def alert_phones_for_bad_performance(alarm, level):
     """
@@ -148,13 +294,11 @@ def alert_phones_for_bad_performance(alarm, level):
 
 
 @task
-def alert_emails_for_good_performance(alarm, escalation_level_list):
+def alert_emails_for_good_performance(alarm, level):
     """
     Sends Emails for good performance.
     """
-    emails = list()
-    for level in escalation_level_list:
-        emails += (level.get_emails())
+    emails = level.get_emails()
     context_dict = {'alarm' : alarm}
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
@@ -179,24 +323,57 @@ def check_device_status():
     """
     Will check the status of devices of organizations.
     """
+    g_jobs = list()
+    ret = False
+
     service_list = []
     service_data_source_list = []
 
     #get the device list which is in downtime scheduling today.
     device_id_list = get_today_event_list()['device_ids']
     for org in Organization.objects.all():
+        # get the objects which require escalation
+        required_objects = EscalationLevel.objects.filter(organization__in=[org])
+        if required_objects.exists():
+            # if there is actually an escalation object defined
+            # if there is none dont worry & return True & relax
+            device_type_list = set(required_objects.values_list('device_type__id', flat=True))
+            service_list = set(required_objects.values_list('service__name', flat=True))
+            service_data_source_list = set(required_objects.values_list('service_data_source__name', flat=True))
 
-        #exclude the devices which is in downtime scheduling today.
-        device_list_qs = inventory_utils.organization_network_devices([org]).exclude(id__in=device_id_list)
-        machine_dict = prepare_machines(device_list_qs)
-        service_list = prepare_services(device_list_qs)
-        service_data_source_list = prepare_service_data_sources(service_list)
-        for machine_name, device_list in machine_dict.items():
-            service_status_list = ServiceStatus.objects.filter(device_name__in=device_list, service_name__in=service_list,
-                    data_source__in=service_data_source_list, ip_address__isnull=False).using(machine_name)
+            # exclude the devices which is in downtime scheduling today.
+            device_list_qs = Device.objects.filter(organization__in=[org],
+                                                   device_type__in=device_type_list,
+                                                   is_added_to_nms=1
+            ).exclude(id__in=device_id_list)
 
-            if service_status_list:
-                raise_alarms.delay(service_status_list, org)
+            machine_dict = prepare_machines(device_list_qs)
+
+            for machine_name, device_list in machine_dict.items():
+                service_status_list = ServiceStatus.objects.filter(
+                    device_name__in=device_list,
+                    service_name__in=service_list,
+                    data_source__in=service_data_source_list,
+                    ip_address__isnull=False
+                ).using(alias=machine_name)
+
+                if service_status_list.exists():
+                    g_jobs.append(
+                        raise_alarms.s(service_status_list=service_status_list,
+                                       org=org,
+                                       required_levels=required_objects
+                        )
+                    )
+
+    if not len(g_jobs):
+        return ret
+
+    job = group(g_jobs)
+    result = job.apply_async()
+    for r in result.get():
+        ret |= r
+
+    return True
 
 
 def prepare_machines(device_list_qs):
