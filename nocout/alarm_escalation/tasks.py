@@ -63,7 +63,7 @@ def status_change(old_status, new_status):
         return status_dict['changed_good']
 
     elif old_status == 1 and new_status == 0:
-        return status_dict['alarm_status_changed']
+        return status_dict['changed_bad']
 
     elif old_status == 1 and new_status == 1:
         return status_dict['unchanged_good']
@@ -164,7 +164,7 @@ def raise_alarms(service_status_list, org, required_levels):
                             )
                     elif status_change(old_status, new_status) == status_dict['unchanged_good']:
                         continue  # everything is fine # keep on going
-                    elif status_change(old_status, new_status) == status_dict['alarm_status_changed']:
+                    elif status_change(old_status, new_status) == status_dict['changed_bad']:
                         level_list = service_level_list.filter(
                             alarm_age__lte=changed_time
                         )  # this should exists to raise any alarm
@@ -185,13 +185,17 @@ def raise_alarms(service_status_list, org, required_levels):
                     else:
                         continue  # don't know what just happened
 
+                obj.old_status = new_status
+                obj.new_status = old_status
+                obj.save()
+
             elif created:  # the object has been created for the first time
                 # if the object has been just created
                 # check for the current status as in good or bad
                 # check the levels to be notified
                 if status_change(old_status, new_status) == status_dict['unchanged_bad'] \
                    or \
-                   status_change(old_status, new_status) == status_dict['alarm_status_changed']:
+                   status_change(old_status, new_status) == status_dict['changed_bad']:
                     # this calls for a check for levels
                     level_list = service_level_list.filter(alarm_age__lte=changed_time)
                     # this should exists to raise any alarm
@@ -199,13 +203,11 @@ def raise_alarms(service_status_list, org, required_levels):
                         g_jobs.append(
                             alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
                         )
-                else:
-                    continue
 
             else:  # don't know what this means
                 continue
 
-            obj.save()
+
 
         else:
             continue
