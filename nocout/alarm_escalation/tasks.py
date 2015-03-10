@@ -115,8 +115,8 @@ def raise_alarms(service_status_list, org, required_levels):
         # Get the list of levels of EscalationStatus object after filtering the escalationLevel table
         # on the basis of device_type, service and service_data_source.
         service_level_list = required_levels.filter(
-            service=service_status.service,
-            service_data_source=service_status.service_data_source
+            service=service,
+            service_data_source=service_data_source
         )
 
         time_now = float(format(datetime.datetime.now(), 'U'))  # in unixtime
