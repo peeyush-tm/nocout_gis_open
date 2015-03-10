@@ -129,6 +129,8 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 					db.network_event_status.update(matching_criteria, event_dict, upsert=True)
 				elif flag == 'service_event_status':
 					db.service_event_status.update(matching_criteria, event_dict, upsert=True)
+				elif flag == 'device_first_down':
+					db.device_first_down.update(matching_criteria, event_dict, upsert=True)
 				return success
 			except (Exception, ReferenceError):
 					print "Mongodb updation failed"
