@@ -308,11 +308,11 @@ def alert_emails_for_good_performance(alarm, level):
 
 
 @task
-def alert_phones_for_good_performance(alarm, level_list):
+def alert_phones_for_good_performance(alarm, level):
     """
-    Sends sms to phones for good performance.
+    Sends sms to phones for bad performance.
     """
-    # phones = level.get_phones()
+    phones = level.get_phones()
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
