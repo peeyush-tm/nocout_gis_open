@@ -317,6 +317,9 @@ from celery import crontab
 #=time zone for celery periodic tasks
 CELERY_TIMEZONE = 'Asia/Calcutta'
 CELERY_ENABLE_UTC = False
+CELERYD_TASK_TIME_LIMIT = 300
+CELERY_IGNORE_RESULT = True
+
 
 CELERYBEAT_SCHEDULE = {
     # BEGIN Topology Updates
@@ -363,14 +366,14 @@ CELERYBEAT_SCHEDULE = {
     },
     # END Calculations for Capacity
     # Dashboards Calculations start at 5th minute of the hour
-    'calculate_speedometer_dashboards-ALL': {
-        'task': 'dashboard.tasks.calculate_speedometer_dashboards',
+    'calculate_speedometer_dashboards-NW': {
+        'task': 'dashboard.tasks.network_speedometer_dashboards',
         'schedule': crontab(minute='*/5'),
     },
-    # 'calculate_range_dashboards-ALL': {
-    #     'task': 'dashboard.tasks.calculate_range_dashboards',
-    #     'schedule': crontab(minute='*/5'),
-    # },
+    'calculate_speedometer_dashboards-TEMP': {
+        'task': 'dashboard.tasks.temperature_speedometer_dashboards',
+        'schedule': crontab(minute='*/5'),
+    },
     # BEGIN: Range Dashboards
     'calculate_range_dashboards-PMP': {
         'task': 'dashboard.tasks.calculate_range_dashboards',

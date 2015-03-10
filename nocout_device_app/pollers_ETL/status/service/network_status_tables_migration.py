@@ -77,31 +77,33 @@ def main(**configs):
     for conf, options in configs1.items():
 	machine_name = options.get('machine')
     for doc in docs:
-        local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
-        check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
+	local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+	check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
+	refer = utility_module.get_epoch_time(doc.get('refer'))
 	if doc.get('ds') == 'rta':
 		rtmin = doc.get('data')[0].get('min_value')
 		rtmax = doc.get('data')[0].get('max_value')
 	else:
 		rtmin=rtmax=doc.get('data')[0].get('value')
 	t = (
-            #uuid,
-            doc.get('host'),
-            doc.get('service'),
-            machine_name,
-            doc.get('site'),
-            doc.get('ds'),
-            doc.get('data')[0].get('value'),
-	    rtmin,
-            rtmax,
-            doc.get('data')[0].get('value'),
-            doc.get('meta').get('war'),
-            doc.get('meta').get('cric'),
-            local_time_epoch,
-            check_time_epoch,
-            doc.get('ip_address'),
-            doc.get('severity'),
-            doc.get('age')
+	#uuid,
+	doc.get('host'),
+    	doc.get('service'),
+    	machine_name,
+	doc.get('site'),
+	doc.get('ds'),
+	doc.get('data')[0].get('value'),
+	rtmin,
+	rtmax,
+	doc.get('data')[0].get('value'),
+	doc.get('meta').get('war'),
+	doc.get('meta').get('cric'),
+	local_time_epoch,
+	check_time_epoch,
+	doc.get('ip_address'),
+	doc.get('severity'),
+	doc.get('age'),
+	refer
 	)
 	data_values.append(t)
 	t=()
@@ -175,11 +177,11 @@ def insert_data(table, data_values,**kwargs):
 		query += """SET `machine_name`=%s,`site_name`=%s, `current_value`=%s,
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
-		`ip_address`=%s,`severity`=%s,`age`=%s
+		`ip_address`=%s,`severity`=%s,`age`=%s, `refer`=%s
 		WHERE `device_name`=%s AND `service_name`=%s AND `data_source`=%s
 		"""
 		try:
-			data_values = map(lambda x: ( x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]) + (x[0],x[1],x[4]),
+			data_values = map(lambda x: ( x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15],x[16]) + (x[0],x[1],x[4]),
 					 insert_dict.get('1'))
 
                 	cursor.executemany(query, data_values)
@@ -193,8 +195,8 @@ def insert_data(table, data_values,**kwargs):
  		query+= """(device_name, service_name, machine_name, 
             	site_name, data_source, current_value, min_value, 
             	max_value, avg_value, warning_threshold, 
-            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity,age) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s,%s)
+            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity,age,refer) 
+           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s,%s,%s)
 		"""
     		cursor = db.cursor()
     		try:

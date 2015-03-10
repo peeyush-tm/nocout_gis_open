@@ -83,6 +83,7 @@ def getCustomerAlertDetail(request):
 
     other_headers = [
         {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+        {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
         {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': False}
     ]
@@ -506,6 +507,7 @@ def getNetworkAlertDetail(request):
 
     other_headers = [
         {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+        {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
         {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': False}
     ]
@@ -1400,6 +1402,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                     "ip_address",
                     "service_name",
                     "machine_name",
+                    "site_name",
                     "service_name",
                     "severity",
                     "current_value",
@@ -1500,6 +1503,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "ip_address",
                 "service_name",
                 "machine_name",
+                "site_name",
                 "service_name",
                 "severity",
                 "current_value",

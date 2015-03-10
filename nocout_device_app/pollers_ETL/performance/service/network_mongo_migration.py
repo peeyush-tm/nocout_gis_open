@@ -123,6 +123,7 @@ def read_data(start_time, end_time, **kwargs):
             # Advancing local_timestamp/sys_timestamp to next 5 mins time frame
        	    #local_time_epoch = check_time_epoch + 300
             local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+            refer = utility_module.get_epoch_time(doc.get('refer'))
             if doc.get('ds') == 'rta':
                 rtmin = doc.get('data')[0].get('min_value')
                 rtmax = doc.get('data')[0].get('max_value')
@@ -130,21 +131,22 @@ def read_data(start_time, end_time, **kwargs):
                 rtmin=rtmax=doc.get('data')[0].get('value')
             t = (
             #uuid,
-            doc.get('host'),
-            doc.get('service'),
-            machine_name,
-            doc.get('site'),
-            doc.get('ds'),
-            doc.get('data')[0].get('value'),
-            rtmin,
-            rtmax,
-            doc.get('data')[0].get('value'),
-            doc.get('meta').get('war'),
-            doc.get('meta').get('cric'),
-            local_time_epoch,
-            check_time_epoch,
-            doc.get('ip_address'),
-            doc.get('severity')
+		doc.get('host'),
+		doc.get('service'),
+		machine_name,
+		doc.get('site'),
+		doc.get('ds'),
+		doc.get('data')[0].get('value'),
+		rtmin,
+		rtmax,
+		doc.get('data')[0].get('value'),
+		doc.get('meta').get('war'),
+		doc.get('meta').get('cric'),
+		local_time_epoch,
+		check_time_epoch,
+		doc.get('ip_address'),
+		doc.get('severity'),
+		refer
             )
             docs.append(t)
 	    t =()
@@ -220,8 +222,8 @@ def insert_data(table, data_values, **kwargs):
             (device_name, service_name, machine_name, 
             site_name, data_source, current_value, min_value, 
             max_value, avg_value, warning_threshold, 
-            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s)
+            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity,refer) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s,%s)
             """
     cursor = db.cursor()
     try:
