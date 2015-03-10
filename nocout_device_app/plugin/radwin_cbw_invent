@@ -43,9 +43,10 @@ def check_radwin_cbw_invent(item, _no_params, info):
     cbw=None
     try:
         if info[0][0]:
-            cbw = int(info[0][0])
-            state = 0
-            infotext = "%d" % cbw
+		cbw = int(info[0][0])
+		state = 0
+		cbw= float(cbw)/1000.0
+		infotext = "%.3f" % cbw
     except ValueError:
         infotext = "type_mismatch_value"
     except:
