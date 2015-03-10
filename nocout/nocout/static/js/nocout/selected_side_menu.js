@@ -50,6 +50,11 @@ if(router_splitted_list.length >= 6) {
     }
 }
 
+// for Device Type Wizard
+if(currentRouter.indexOf('wizard/device-type') > -1) {
+    currentRouter = 'type';
+}
+
 /*By default all the sub-sub menu panel will be collapsed*/
 $(".has-sub-sub > ul.sub-sub").hide();
 
@@ -62,7 +67,6 @@ for(var i = 0; i < sideMenu.length; i++) {
             menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1)),
             menuLink = $.trim(menuLinkString.replace(/,/g,"/")),
             menu_link_last_text = menuLink.split("/")[menuLink.split("/").length-1];
-
         /*Parent Element(li) Classname*/
         var activeClass = $.trim(sideMenu[i].parentElement.className);
         
@@ -78,7 +82,7 @@ for(var i = 0; i < sideMenu.length; i++) {
             menuLink = new_url_splitted_list.join("/");
         }
 
-        if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
+        if(currentRouter.indexOf(menuLink) == 0 && menuLink != "") {
             applySelectedClasses(sideMenu[i]);
         }
     }
