@@ -1300,10 +1300,6 @@ function GisPerformance() {
             old_icon_obj = iconUrl,
             hidden_icon_instance = hiddenIconObj;
 
-        if(marker_type == 'base_station') {
-            hidden_icon_instance = old_icon_obj;
-        }
-
         if(window.location.pathname.indexOf("googleEarth") > -1) {
 
             try {
@@ -1331,13 +1327,23 @@ function GisPerformance() {
             var sectorMarkerLayer = marker.layer ? marker.layer : marker.layerReference;
             sectorMarkerLayer.redraw();
         } else {
-            var sector_icon_obj = gmap_self.getMarkerImageBySize(old_icon_obj, marker_type);
-            // Update sector marker icon
-            marker.setOptions({
-                "icon" : hidden_icon_instance,
-                "clusterIcon" : hidden_icon_instance,
-                "oldIcon" : sector_icon_obj,
-            });
+            var marker_icon_obj = gmap_self.getMarkerImageBySize(old_icon_obj, marker_type);
+
+            if(marker_type == 'base_station') {
+                // Update BS marker icon
+                marker.setOptions({
+                    "icon" : marker_icon_obj,
+                    "clusterIcon" : marker_icon_obj,
+                    "oldIcon" : marker_icon_obj,
+                });
+            } else {
+                // Update sector marker icon
+                marker.setOptions({
+                    "icon" : hidden_icon_instance,
+                    "clusterIcon" : hidden_icon_instance,
+                    "oldIcon" : marker_icon_obj,
+                });
+            }
         }
     };
 
