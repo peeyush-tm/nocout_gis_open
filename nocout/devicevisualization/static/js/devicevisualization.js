@@ -1967,7 +1967,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
         device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
         href_val = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
         block_id = href_val.length > 1 ? href_val[1] : "",
-        selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
+        device_pl = evt.currentTarget.attributes.pl_value ? evt.currentTarget.attributes.pl_value.value : "";
 
     if(dom_id && point_type && current_device_id) {
         // Show Spinner
@@ -1982,7 +1982,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 
             // Make AJAX Call
             periodic_tooltip_call = $.ajax({
-                url: base_url+'/device_polled_info/?device_id='+current_device_id+"&ts="+selected_thematics+"&freeze_time=" + freezedAt,
+                url: base_url+'/network_maps/perf_info/?device_id='+current_device_id+"&device_pl="+device_pl,
                 type : "GET",
                 success : function(response) {
 
@@ -1995,15 +1995,12 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                         result = response;
                     }
 
-                    if(result.success == 1) {
+                    if(result && result.length > 0) {
 
-                        // Clear the polled block HTML
-                        $("#"+block_id).html('<div class="divide-10"></div>');
+                        var fetched_polled_info = result,
+                            tooltip_info_dict = [];
 
-                        var fetched_polled_info = result.data.objects.info ? result.data.objects.info : "",
-                            tooltip_info_dict = "";
-
-                        if(clickedType == 'sector_Marker' || clickedType == 'sector') {
+                        if(point_type == 'sector_Marker' || point_type == 'sector') {
                             
                             if(ptp_tech_list.indexOf(device_tech) > -1) {
                                 tooltip_info_dict = rearrangeTooltipArray(ptp_sector_toolTip_polled,fetched_polled_info);
@@ -2014,12 +2011,12 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                             } else {
                                 // pass
                             }
-                        } else if(clickedType == 'sub_station') {
-                            if(ptp_tech_list.indexOf(ss_tech) > -1) {
+                        } else if(point_type == 'sub_station') {
+                            if(ptp_tech_list.indexOf(device_tech) > -1) {
                                 tooltip_info_dict = rearrangeTooltipArray(ptp_ss_toolTip_polled,fetched_polled_info);
-                            } else if(ss_tech == 'wimax') {
+                            } else if(device_tech == 'wimax') {
                                 tooltip_info_dict = rearrangeTooltipArray(wimax_ss_toolTip_polled,fetched_polled_info);
-                            } else if(ss_tech == 'pmp') {
+                            } else if(device_tech == 'pmp') {
                                 tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled,fetched_polled_info);
                             } else {
                                 // pass
@@ -2047,29 +2044,31 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 
                         polled_data_html += "</tbody></table>";
 
+                        // Clear the polled block HTML
+                        $("#"+block_id).html('<div class="divide-10"></div>');
+
+                        // Append the polled data info
                         $("#"+block_id).append(polled_data_html);
 
                     } else {
                         $.gritter.add({
                             title: "Polled Info",
-                            text: result.message,
+                            text: "Please try again later.",
                             sticky: false,
                             time : 1000
                         });
                     }
                 },
                 error : function(err) {
-                    
-                    //----------------------------- TEMPORARY COMMENTED -----------------------------//
 
-                    // if(err.statusText != 'abort') {
-                    //     $.gritter.add({
-                    //         title: "Polled Info",
-                    //         text: err.statusText,
-                    //         sticky: false,
-                    //         time : 1000
-                    //     });
-                    // }
+                    if(err.statusText != 'abort') {
+                        $.gritter.add({
+                            title: "Polled Info",
+                            text: err.statusText,
+                            sticky: false,
+                            time : 1000
+                        });
+                    }
                 },
                 complete : function() {
                     if(!$("a#"+dom_id+" .fa-spinner").hasClass("hide")) {
