@@ -1674,8 +1674,9 @@ class Get_Service_Status(View):
         #check when was the element last down
 
 
-        severity, age = device_current_status(device_object=device)
-        last_down_time = device_last_down_time(device_object=device)
+        severity, a = device_current_status(device_object=device)
+        last_down_time = a['refer']
+        age = a['age']
 
         if age:
             age = datetime.datetime.fromtimestamp(float(age)).strftime(DATE_TIME_FORMAT)
@@ -2372,7 +2373,9 @@ class Get_Service_Type_Performance_Data(View):
                 continue
 
         #last time down results
-        age = device_last_down_time(device_object=ss_device_object)
+        severity, a = device_current_status(device_object=ss_device_object)
+        age = a['refer']
+        down = a['down']
         #last time pl = 100 results
         if age:
             status_since = datetime.datetime.fromtimestamp(float(age)
@@ -3183,7 +3186,7 @@ def get_higher_severity(severity_dict):
 
     return s, a
 
-@nocout_utils.cache_for(120) #just for 2 minutes cache this. short running query
+@nocout_utils.cache_for(120)  # just for 2 minutes cache this. short running query
 def device_current_status(device_object):
     """
     Device UP Status
@@ -3191,50 +3194,46 @@ def device_current_status(device_object):
     #get the current status
     #if the current status is OK
     #check when was the element last down
+
+    severity = dict()
+    pl_value = None
+    pl_age = {'age': 0, 'down': 0}
+
+    required_fields = ['age', 'severity', 'current_value', 'sys_timestamp', 'data_source', 'refer']
+
     inventory_device_name = device_object.device_name
     inventory_device_machine_name = device_object.machine.name
-
-    severity = {}
 
     device_nms_uptime_query_set = NetworkStatus.objects.filter(
         device_name=inventory_device_name,
         service_name='ping',
         data_source__in=['pl', 'rta']
-    ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
+    ).using(alias=inventory_device_machine_name).values(*required_fields)
 
     device_nms_uptime = device_nms_uptime_query_set
-    #nocout_utils.nocout_query_results(
-    #    query_set=device_nms_uptime_query_set,
-    #    using=inventory_device_machine_name
-    #)
-    pl_value = None
-    pl_age = None
 
     if device_nms_uptime:
         for data in device_nms_uptime:
-            severity[data['severity']] = data['age']
+            severity[data['severity']] = {'age': data['age'], 'down': data['refer']}
             if data['data_source'].strip().lower() == 'pl':
                 pl_value = data['current_value']
-                pl_age = data['age']
+                pl_age['age'] = data['age']  # refer field holds the last down time
+                pl_age['down'] = data['refer']  # refer field holds the last down time
             else:
                 continue
     else:
         return None, None
 
-    try:
-        if pl_value and float(pl_value) == 100:
-            return 'down', pl_age
+    if pl_value and float(pl_value) == 100:  # if PL = 100 that means AGE = AGE since PL was 100
+        return 'down', pl_age
+    else:
+        s, a = get_higher_severity(severity_dict=severity)
+        if s and s.strip().lower() == 'down':
+            s = 'critical'
+            return s, a
         else:
-            s, a = get_higher_severity(severity_dict=severity)
-            if s and s.strip().lower() == 'down':
-                s = 'critical'
-                return s, a
-            else:
-                return get_higher_severity(severity_dict=severity)
-    except:
-        pass
+            return get_higher_severity(severity_dict=severity)
 
-    return get_higher_severity(severity_dict=severity)
 
 
 @nocout_utils.cache_for(300) #for 5 minutes cache this. long running query
@@ -3244,48 +3243,7 @@ def device_last_down_time(device_object):
     :param device_object:
     :return:
     """
-    inventory_device_name = device_object.device_name
-    inventory_device_machine_name = device_object.machine.name
-
-    age = None
-
     #first check the current PL state of the device
     s, a = device_current_status(device_object=device_object)
-    if s == 'down':
-        return a
-    #if the current status id down, return down
 
-    device_last_down_query_set = PerformanceNetwork.objects.filter(
-                sys_timestamp__lt=float(format(datetime.datetime.now(), 'U')),
-                device_name=inventory_device_name,
-                service_name='ping',
-                data_source='pl',
-                current_value=100,
-                severity__in=['down']
-            ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp')
-
-    device_last_down = device_last_down_query_set
-            #nocout_utils.nocout_query_results(
-            #    query_set=device_last_down_query_set,
-            #    using=inventory_device_machine_name
-            #)
-
-    if device_last_down and device_last_down.count():
-        last_down_data = device_last_down[0]
-        age = float(last_down_data['sys_timestamp'])
-
-    if not age:
-        #device has never gone down
-        #we need to gather the first time ever
-        #it was monitored
-        try:
-            always_up = PerformanceNetwork.objects.filter(
-                    device_name=inventory_device_name,
-                    service_name='ping',
-                    data_source='pl',
-                ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')[0]
-            age = float(always_up.sys_timestamp)
-        except:
-            pass
-
-    return age
+    return a['down']  # return the last down time of the device
