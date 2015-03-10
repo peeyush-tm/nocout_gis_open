@@ -53,7 +53,7 @@ def prepare_raw_result(bs_dict = []):
 class DeviceStatsApi(View):
 
     raw_result = prepare_raw_result(cached_all_gis_inventory(monitored_only=True))
-
+    
     # @time_it()
     def get(self, request):
 
