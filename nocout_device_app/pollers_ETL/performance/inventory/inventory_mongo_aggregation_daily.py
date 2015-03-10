@@ -40,7 +40,7 @@ def main(**configs):
     values_list = []
     docs = []
     end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=1480)
+    start_time = end_time - timedelta(minutes=1440)
     start_epoch = int(time.mktime(start_time.timetuple()))
     end_epoch = int(time.mktime(end_time.timetuple()))
 
