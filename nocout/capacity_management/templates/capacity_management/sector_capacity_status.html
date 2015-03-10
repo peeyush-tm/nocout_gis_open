@@ -52,13 +52,13 @@
                             <th class="hide" style="width:auto;" aria-label="severity">severity</th>
                             <th class="hide" style="width:auto;" aria-label="age">age</th>
                             <th class="hide" style="width:auto;" aria-label="organization">organization</th>
-                            <th class="hide" style="width:auto;" aria-label="Technology">Technology</th>
 
                             <th style="width:auto;" aria-label="Sector ID">Sector ID</th>
                             <th style="width:auto;" aria-label="BS Name">BS Name</th>
                             <th style="width:auto;" aria-label="City">City</th>
                             <th style="width:auto;" aria-label="State">State</th>
                             <th style="width:auto;" aria-label="IP">IP</th>
+                            <th style="width:auto;" aria-label="Technology">Technology</th>
                             <th style="width:auto;" aria-label="Capacity">Capacity</th>
 
                             <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
@@ -102,12 +102,12 @@
             {'mData': 'severity', 'sClass' : 'hide'},
             {'mData': 'age', 'sClass' : 'hide'},
             {'mData': 'organization__alias', 'sClass' : 'hide'},
-            {'mData': 'sector__sector_configured_on__device_technology', 'sClass' : 'hide'},
             {'mData': 'sector_sector_id'},
             {'mData': 'sector__base_station__alias'},
             {'mData': 'sector__base_station__city__city_name'},
             {'mData': 'sector__base_station__state__state_name'},
             {'mData': 'sector__sector_configured_on__ip_address'},
+            {'mData': 'sector__sector_configured_on__device_technology'},
             {'mData': 'sector_capacity'},
             {'mData': 'current_in_per'},
             {'mData': 'current_in_val'},
@@ -129,10 +129,10 @@
         var ajax_url = '{% url "SectorStatusListingClass" %}';
         // ******************************* TEMPORARY CODE START *******************************//
         // By Default remove sorting from all datatables
-        //for(var i=0;i<headers_list.length;i++) {
-        //   var header = headers_list[i];
-        //    header['bSortable'] = false;
-        //}
+        // for(var i=0;i<headers_list.length;i++) {
+        //     var header = headers_list[i];
+        //     header['bSortable'] = false;
+        // }
         // ******************************* TEMPORARY CODE END *******************************//
         $("#sectorStatusTable").DataTable({
             bAutoWidth: false,
