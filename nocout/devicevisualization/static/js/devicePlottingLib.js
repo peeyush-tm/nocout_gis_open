@@ -6473,12 +6473,13 @@ function devicePlottingClass_gmap() {
     this.startDevicePolling_gmap = function() {
     	if(remainingPollCalls > 0) {
 			if(isPollingPaused == 0) {
+				var timeout_time = pollingInterval*1000;
 				// Call function to fetch polled data for selected devices
 				gmap_self.getPollingData_gmap(function(response) {
 					pollCallingTimeout = setTimeout(function() {
 						remainingPollCalls--;
 						gmap_self.startDevicePolling_gmap();
-					},pollingInterval);
+					},timeout_time);
 				});
 			} else {
 				if($("#play_btn").hasClass("disabled")) {
