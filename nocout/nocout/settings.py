@@ -438,46 +438,46 @@ CELERYBEAT_SCHEDULE = {
     },
     # END sector spot dashboard jobs
     # For caching the Data for Last down time : per 5 minutes
-    'device_last_down_time_CanopyPM100AP': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['CanopyPM100AP']
-    },
-    'device_last_down_time_CanopyPM100SS': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['CanopyPM100SS']
-    },
-    'device_last_down_time_CanopySM100AP': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['CanopySM100AP']
-    },
-    'device_last_down_time_CanopySM100SS': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['CanopySM100SS']
-    },
-    'device_last_down_time_Radwin2KBS': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['Radwin2KBS']
-    },
-    'device_last_down_time_Radwin2KSS': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['Radwin2KSS']
-    },
-    'device_last_down_time_StarmaxIDU': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['StarmaxIDU']
-    },
-    'device_last_down_time_StarmaxSS': {
-        'task': 'performance.tasks.device_last_down_time_task',
-        'schedule': timedelta(seconds=300),
-        'args': ['StarmaxSS']
-    },
+    # 'device_last_down_time_CanopyPM100AP': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['CanopyPM100AP']
+    # },
+    # 'device_last_down_time_CanopyPM100SS': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['CanopyPM100SS']
+    # },
+    # 'device_last_down_time_CanopySM100AP': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['CanopySM100AP']
+    # },
+    # 'device_last_down_time_CanopySM100SS': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['CanopySM100SS']
+    # },
+    # 'device_last_down_time_Radwin2KBS': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['Radwin2KBS']
+    # },
+    # 'device_last_down_time_Radwin2KSS': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['Radwin2KSS']
+    # },
+    # 'device_last_down_time_StarmaxIDU': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['StarmaxIDU']
+    # },
+    # 'device_last_down_time_StarmaxSS': {
+    #     'task': 'performance.tasks.device_last_down_time_task',
+    #     'schedule': timedelta(seconds=300),
+    #     'args': ['StarmaxSS']
+    # },
     # Remove all caching per 6 hours
     'cache_clear_task': {
         'task': 'nocout.tasks.cache_clear_task',
