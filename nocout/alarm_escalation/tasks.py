@@ -29,7 +29,7 @@ status_dict = {
         'old': 0,
         'new': 1
     },
-    'alarm_status_changed': {
+    'changed_bad': {
         'old': 1,
         'new': 0
     },
@@ -248,18 +248,18 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
                 setattr(alarm_object, 'l%d_email_status' % level.name, 1)
             else:
                 continue
-        if getattr(alarm_object, 'l%d_sms_status' % level.name) == 1:
+        if getattr(alarm_object, 'l%d_phone_status' % level.name) == 1:
             # this level has been notified
             if is_bad:
                 continue
             else:
                 alert_phones_for_good_performance.delay(alarm=alarm_object, level=level)
-                setattr(alarm_object, 'l%d_sms_status' % level.name, 0)
-        elif getattr(alarm_object, 'l%d_sms_status' % level.name) == 0:
+                setattr(alarm_object, 'l%d_phone_status' % level.name, 0)
+        elif getattr(alarm_object, 'l%d_phone_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
                 alert_phones_for_bad_performance.delay(alarm=alarm_object, level=level)
-                setattr(alarm_object, 'l%d_sms_status' % level.name, 1)
+                setattr(alarm_object, 'l%d_phone_status' % level.name, 1)
             else:
                 continue
         else:
