@@ -3186,14 +3186,15 @@ def get_higher_severity(severity_dict):
 
     return s, a
 
+
 @nocout_utils.cache_for(120)  # just for 2 minutes cache this. short running query
 def device_current_status(device_object):
     """
     Device UP Status
     """
-    #get the current status
-    #if the current status is OK
-    #check when was the element last down
+    # get the current status
+    # if the current status is OK
+    # check when was the element last down
 
     severity = dict()
     pl_value = None
@@ -3233,7 +3234,6 @@ def device_current_status(device_object):
             return s, a
         else:
             return get_higher_severity(severity_dict=severity)
-
 
 
 @nocout_utils.cache_for(300) #for 5 minutes cache this. long running query
