@@ -1,6 +1,6 @@
 from django.db import models
 from organization.models import Organization
-from device.models import DeviceType, DeviceTechnology
+from device.models import DeviceType, DeviceTechnology, Device
 from service.models import Service, ServiceDataSource
 from inventory.models import BaseStation
 
@@ -70,10 +70,13 @@ class EscalationStatus(models.Model):
     )
 
     organization = models.ForeignKey(Organization)
-    device_name = models.CharField(max_length=100, db_index=True)
-    device_type = models.CharField(max_length=100, db_index=True)
-    service = models.CharField(max_length=100, db_index=True)
-    service_data_source =  models.CharField(max_length=100, db_index=True)
+    device = models.ForeignKey(Device)
+    service = models.ForeignKey(Service)
+    service_data_source = models.ForeignKey(ServiceDataSource)
+    # device_name = models.CharField(max_length=100, null=True, blank=True)
+    # device_type = models.CharField(max_length=100, null=True, blank=True)
+    # service = models.CharField(max_length=100, null=True, blank=True)
+    # service_data_source =  models.CharField(max_length=100, null=True, blank=True)
     ip = models.IPAddressField()
     l1_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
     l1_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)

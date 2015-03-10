@@ -2346,11 +2346,12 @@ function devicePlottingClass_gmap() {
 				for(var k=sector_child.length;k--;) {
 
 					var ss_marker_obj = sector_child[k],
-						ss_item_info_index = ss_marker_obj.data.item_index > -1 ? ss_marker_obj.data.item_index : k,
+						ss_item_info_index = ss_marker_obj.data.item_index > -1 ? ss_marker_obj.data.item_index : 0,
+						ss_info_dict = ss_marker_obj.data.item_index > -1 ? ss_infoWindow_content : ss_marker_obj.data.param.sub_station,
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
-						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_infoWindow_content,"antenna_height",true,ss_item_info_index),
-						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
-						ss_ip_address = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"ss_ip",true,ss_item_info_index),
+						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_info_dict,"antenna_height",true,ss_item_info_index),
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_info_index),
+						ss_ip_address = gisPerformanceClass.getKeyValue(ss_info_dict,"ss_ip",true,ss_item_info_index),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
@@ -2373,7 +2374,7 @@ function devicePlottingClass_gmap() {
 				    	oldIcon 		 : 	ss_icon_obj,
 				    	clusterIcon 	 : 	ss_icon_obj,
 				    	pointType	     : 	"sub_station",
-				    	dataset 	     : 	ss_infoWindow_content,
+				    	dataset 	     : 	ss_info_dict,
 				    	item_index 		 :  ss_item_info_index,
 				    	bhInfo 			 : 	[],
 				    	poll_info 		 :  [],
@@ -2387,6 +2388,7 @@ function devicePlottingClass_gmap() {
 				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
 				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 				    	device_name 	 : 	ss_marker_obj.device_name,
+				    	ss_device_id 	 : 	ss_marker_obj.device_id,
 				    	ss_ip 	 		 : 	ss_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
 				    	cktId 			 :  ckt_id_val,
@@ -2486,7 +2488,7 @@ function devicePlottingClass_gmap() {
 					ssLonArray.push(ss_marker_obj.data.lon);
 
 					var ss_info = {
-							"info" : ss_infoWindow_content,
+							"info" : ss_info_dict,
 							"antenna_height" : ss_antenna_height,
 							"ss_item_index" : ss_item_info_index
 						},
@@ -3337,7 +3339,18 @@ function devicePlottingClass_gmap() {
 			infoTable =  "",
 			perfContent = "",
 			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "",
-			direct_val_keys = ['pos_link1','pos_link2'];
+			direct_val_keys = ['pos_link1','pos_link2'],
+			device_id = "";
+
+		if(clickedType == 'sector_Marker' || clickedType == 'sector') {
+			device_id = gisPerformanceClass.getKeyValue(contentObject.deviceInfo, 'device_id', true, 0);
+		} else if(clickedType == 'sub_station') {
+			device_id = contentObject.ss_device_id ? contentObject.ss_device_id : "";
+		}
+		
+		var device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
+
+
 
 
 		// Tabs Structure HTML
@@ -3345,8 +3358,13 @@ function devicePlottingClass_gmap() {
 		infoTable += '<div class="tabbable">';
 		/*Tabs Creation Start*/
 		infoTable += '<ul class="nav nav-tabs">';
-		infoTable += '<li class="active"><a href="#static_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>';
-		infoTable += '<li class=""><a href="#polled_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> Polled Info</a></li>';
+		infoTable += '<li class="active"><a href="#static_block" data-toggle="tab">\
+					  <i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>';
+		infoTable += '<li class=""><a href="#polled_block" data-toggle="tab" id="polled_tab" \
+					  device_id="'+device_id+'" point_type="'+clickedType+'" device_tech="'+device_tech+'">\
+					  <i class="fa fa-arrow-circle-o-right"></i> Polled Info \
+					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
+					  </li>';
 		infoTable += '</ul>';
 		/*Tabs Creation Ends*/
 
@@ -3593,7 +3611,7 @@ function devicePlottingClass_gmap() {
 			infoTable += '</div>';
 			/*Static Tab Content End*/
 
-			if(contentObject['poll_info'] != undefined) {
+			if(contentObject['poll_info']) {
 
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;
@@ -3727,7 +3745,7 @@ function devicePlottingClass_gmap() {
 			infoTable += '</div>';
 			/*Static Tab Content End*/
 
-			if(contentObject['poll_info'] != undefined) {
+			if(contentObject['poll_info']) {
 
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;
@@ -5287,7 +5305,8 @@ function devicePlottingClass_gmap() {
     	if(isSearched > 0) {
 	    	var bounds_lat_lon = "",
 	    		folder= "",
-	    		folderBoundArray=[];
+	    		folderBoundArray=[],
+	    		searched_flag = false;
 
     		search_element_bs_id = [];
 
@@ -5313,6 +5332,7 @@ function devicePlottingClass_gmap() {
 		    			city_condition = selected_bs_city.indexOf(city_val.toLowerCase()) > -1;
 
 		    		if(city_condition) {
+		    			searched_flag = true;
 			    		if(window.location.pathname.indexOf("googleEarth") > -1) {
 							folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
 				    	} else if (window.location.pathname.indexOf("white_background") > -1) {
@@ -5331,6 +5351,7 @@ function devicePlottingClass_gmap() {
 		    			
 
 		    			if(alias_condition) {
+		    				searched_flag = true;
 		    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 		    					folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
 					    	} else if (window.location.pathname.indexOf("white_background") > -1) {
@@ -5399,6 +5420,7 @@ function devicePlottingClass_gmap() {
 		    				if(selected_ip_address.length > 0) {
 				    			var sector_ip_condition = selected_ip_address.indexOf(sector_ip) > -1 ? true : false;
 				    			if(sector_ip_condition) {
+				    				searched_flag = true;
 				    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 				    					folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
 				    				} else if (window.location.pathname.indexOf("white_background") > -1) {
@@ -5427,7 +5449,9 @@ function devicePlottingClass_gmap() {
 
 			    			for(var k=0;k<sub_stations.length;k++) {
 			    				var ss_ip = sub_stations[k].data.substation_device_ip_address ? sub_stations[k].data.substation_device_ip_address : "",
-			    					ckt_id = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,k),
+			    					ss_item_index = sub_stations[k].data.item_index > -1 ? sub_stations[k].data.item_index : 0,
+			    					ss_info_dict = sub_stations[k].data.item_index > -1 ? ss_infoWindow_content : sub_stations[k].data.param.sub_station,
+			    					ckt_id = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_index),
 			    					ss_circuit_id = ckt_id ? $.trim(ckt_id.toLowerCase()) : "";
 
 			    				// If any IP address or Circuit ID is searched
@@ -5435,6 +5459,7 @@ function devicePlottingClass_gmap() {
 					    			var ss_ip_condition = selected_ip_address.indexOf(ss_ip) > -1,
 					    				ss_circuit_condition = selected_circuit_id.indexOf(ss_circuit_id) > -1;
 					    			if(ss_ip_condition || ss_circuit_condition) {
+					    				searched_flag = true;
 					    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					    					folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: data_to_plot[k].data.lon});
 					    					folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: sub_stations[k].data.lon});
@@ -5472,53 +5497,68 @@ function devicePlottingClass_gmap() {
 		    	}
 		    }
 
-		    if(data_to_plot.length > 0) {
+		    if(searched_flag) {
+			    if(data_to_plot.length > 0) {
 
-		    	if(window.location.pathname.indexOf("googleEarth") > -1) {
-		    		
-					showGoogleEarthInBounds(folderBoundArray, function() {
+			    	if(window.location.pathname.indexOf("googleEarth") > -1) {
+			    		
+						showGoogleEarthInBounds(folderBoundArray, function() {
 
-						if(AltToZoom(getEarthZoomLevel()) > 15) {
-							setEarthZoomLevel(ZoomToAlt(15));
-						}
+							if(AltToZoom(getEarthZoomLevel()) > 15) {
+								setEarthZoomLevel(ZoomToAlt(15));
+							}
+
+							// Show search marker after some timeout
+							setTimeout(function() {
+								for(var i=0;i<searchMarkers_global.length;i++) {
+
+									// Add the searchMarker to Earth.
+									ge.getFeatures().appendChild(searchMarkers_global[i]);
+								}
+							},350);
+						});
+
+			    	} else if (window.location.pathname.indexOf("white_background") > -1) {
+			    		//Zoom in to selected state
+			    		ccpl_map.zoomToExtent(bounds_lat_lon);
+			    		if(ccpl_map.getZoom() > 12) {
+			                ccpl_map.zoomTo(12);
+			            }
+			    	} else {
+				    	//Zoom in to selected state
+						mapInstance.fitBounds(bounds_lat_lon);
+						var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
+							if(mapInstance.getZoom() > 15) {
+				                mapInstance.setZoom(15);
+				            }
+				            google.maps.event.removeListener(listener);
+			            });
 
 						// Show search marker after some timeout
 						setTimeout(function() {
 							for(var i=0;i<searchMarkers_global.length;i++) {
-
-								// Add the searchMarker to Earth.
-								ge.getFeatures().appendChild(searchMarkers_global[i]);
-							}
+						    	searchMarkers_global[i].setMap(mapInstance);
+						    }
 						},350);
-					});
+			    	}
 
-		    	} else if (window.location.pathname.indexOf("white_background") > -1) {
-		    		//Zoom in to selected state
-		    		ccpl_map.zoomToExtent(bounds_lat_lon);
-		    		if(ccpl_map.getZoom() > 12) {
-		                ccpl_map.zoomTo(12);
-		            }
-		    	} else {
-			    	//Zoom in to selected state
-					mapInstance.fitBounds(bounds_lat_lon);
-					var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
-						if(mapInstance.getZoom() > 15) {
-			                mapInstance.setZoom(15);
-			            }
-			            google.maps.event.removeListener(listener);
-		            });
+			    	// Set Perf calling Flag
+	    			isPerfCallStopped = 0;
+	    			isPerfCallStarted = 0;
+	    		}
+    		} else {
+    			$.gritter.add({
+	        		// (string | mandatory) the heading of the notification
+	                title: 'GIS : Advance Search',
+	                // (string | mandatory) the text inside the notification
+	                text: 'No data available for applied search.',
+	                // (bool | optional) if you want it to fade out on its own or just sit there
+	                sticky: false,
+	                // Time in ms after which the gritter will dissappear.
+	                time : 1000
+	            });
 
-					// Show search marker after some timeout
-					setTimeout(function() {
-						for(var i=0;i<searchMarkers_global.length;i++) {
-					    	searchMarkers_global[i].setMap(mapInstance);
-					    }
-					},350);
-		    	}
-
-		    	// Set Perf calling Flag
-    			isPerfCallStopped = 0;
-    			isPerfCallStarted = 0;
+	            advJustSearch.removeSearchMarkers();
     		}
 	    } else {
 	    	$.gritter.add({
@@ -8972,7 +9012,7 @@ function devicePlottingClass_gmap() {
     		url : base_url+"/inventory/export_selected_bs_inventory/",
     		type : "POST",
     		data : {
-    			"base_stations" : inventory_bs_ids
+    			"base_stations" : JSON.stringify(inventory_bs_ids)
     		},
     		success : function(response) {
     			
