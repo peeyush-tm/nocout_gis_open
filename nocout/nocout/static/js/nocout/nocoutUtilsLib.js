@@ -69,25 +69,30 @@ function populateDeviceStatus_nocout(domElement,info) {
  */
 function populateServiceStatus_nocout(domElement,info) {
     
-    if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
+    /********** Service Status Without Live Polling  - START     ********************/
+    // if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
         
-        var last_updated = info.last_updated ? info.last_updated : "N/A",
-            perf = info.perf ? info.perf : "N/A",
-            inner_status_html = '';
+    //     var last_updated = info.last_updated ? info.last_updated : "N/A",
+    //         perf = info.perf ? info.perf : "N/A",
+    //         inner_status_html = '';
 
-        inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-        inner_status_html += '<tr>';
-        inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-        inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
-        inner_status_html += '</tr>';
-        inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+    //     inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
+    //     inner_status_html += '<tr>';
+    //     inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
+    //     inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
+    //     inner_status_html += '</tr>';
+    //     inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
 
-        $("#"+domElement).html(inner_status_html);
-    } else {
-        $("#"+domElement).html("");
-    }
+    //     $("#"+domElement).html(inner_status_html);
+    // } else {
+    //     $("#"+domElement).html("");
+    // }
+
+    /********** Service Status Without Live Polling  - END     ********************/
+
+
     /********** LIVE POLLING CODE  - START     ********************/
-    /*
+
     // Clear status block when we are on utilization or availablility tabs
     if(domElement.indexOf('availability') > -1 || domElement.indexOf('utilization_top') > -1 || domElement.indexOf('topology') > -1) {
 
@@ -133,7 +138,6 @@ function populateServiceStatus_nocout(domElement,info) {
 
         $("#"+domElement).html(inner_status_html);
     }
-    */
     /********** LIVE POLLING CODE  - END     ********************/
 }
 

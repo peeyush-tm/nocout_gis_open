@@ -175,7 +175,7 @@ function GisPerformance() {
 
         //Ajax Request
         gis_perf_call_instance = $.ajax({
-            url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&ts='+selected_thematics+'&freeze_time=' + freezedAt,
+            url: base_url + '/network_maps/static_info/?base_stations=['+bs_id+']&ts='+selected_thematics+'&freeze_time=' + freezedAt,
             // url: base_url + '/static/new_perf_ptp.json',
             type: 'GET',
             dataType: 'json',
@@ -194,7 +194,7 @@ function GisPerformance() {
                 //If data is there
                 if(data) {
                     //Store data in gisData
-                    if(data.bs_id) {
+                    if(data.id) {
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
@@ -212,7 +212,7 @@ function GisPerformance() {
                             // If map Zoom level is greater than 11 then proceed.
                             if(mapInstance.getZoom() > 11) {
                                 /*Check that the bsname is present in current bounds or not*/
-                                if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
+                                if (current_bs_in_bound.indexOf(data.id) > -1) {
                                     //Update Map with the data
                                     perf_self.updateMap(data,function(response) {
                                         //Send Request for the next counter
@@ -256,16 +256,22 @@ function GisPerformance() {
     this.updateMap = function (data,callback) {
 
         if(data) {
+            var apiResponse = data;
+            if(data.constructor == Array) {
+                apiResponse = data[0]
+            }
+
             //Step no. 1 => Find BS Station First
-            var apiResponse = data,
-                sectorArray = apiResponse.param.sector ? apiResponse.param.sector : [],
-                bs_name = apiResponse.bs_name ? apiResponse.bs_name : "",
-                bs_maintenance_status = apiResponse.maintenance_status ? apiResponse.maintenance_status : false,
-                maintenance_icon = apiResponse.maintenance_status_icon ? apiResponse.maintenance_status_icon : false,
+            var sectorArray = apiResponse.data.param.sector ? apiResponse.data.param.sector : [],
+                bs_name = apiResponse.name ? apiResponse.name : "",
+                bs_maintenance_status = apiResponse.data.maintenance_status ? apiResponse.data.maintenance_status : false,
+                maintenance_icon = apiResponse.data.markerUrl ? apiResponse.data.markerUrl : false,
                 perf_bh_info = apiResponse.bh_info ? apiResponse.bh_info : [],
                 perf_bh_severity = apiResponse.bhSeverity ? apiResponse.bhSeverity : "",
                 bs_marker = "",
-                show_ss_len = $("#showAllSS:checked").length;
+                show_ss_len = $("#showAllSS:checked").length,
+                bs_lat = apiResponse.data.lat,
+                bs_lon = apiResponse.data.lon;
 
             if(window.location.pathname.indexOf("googleEarth") > -1) {
                 bs_marker = allMarkersObject_earth['base_station']['bs_'+bs_name];
@@ -295,26 +301,25 @@ function GisPerformance() {
             // BH info addition ended.
 
             var bs_loki_obj = all_devices_loki_db.where(function(obj) {
-                    return obj.originalId == apiResponse.bs_id
+                    return obj.originalId == apiResponse.id
                 }),
                 bs_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : [],
                 connected_sectors = bs_object.data.param.sector,
-                new_plotted_ss = [],
-                bs_lat = bs_object.data.lat,
-                bs_lon = bs_object.data.lon;
+                new_plotted_ss = [];
+                
 
             // Loop for Sectors
             for(var i=0;i<sectorArray.length;i++) {
 
                 var current_sector = sectorArray[i],
-                    sector_ip = current_sector.ip_address,
+                    sector_ip = current_sector.sector_configured_on,
                     sector_id = current_sector.sector_id,
                     sector_perf_info = current_sector.perf_info ? current_sector.perf_info : [],
-                    sector_device = current_sector.device_name,
-                    sector_icon = current_sector.icon ? current_sector.icon : "",
+                    sector_device = current_sector.sector_configured_on_device,
+                    sector_icon = current_sector.markerUrl ? current_sector.markerUrl : "",
                     sector_perf_val = current_sector.perf_value ? current_sector.perf_value : 0,
                     sub_station = current_sector.sub_station ? current_sector.sub_station : [],
-                    sector_tech = "",
+                    sector_tech = current_sector.technology,
                     sector_marker = "",
                     sector_polygon = "",
                     startEndObj = {};
@@ -333,9 +338,9 @@ function GisPerformance() {
 
                 // If sector marker exist then update it with new icon
                 if(sector_marker) {
-                    sector_tech = sector_marker['technology'] ? sector_marker['technology'] : "";
-                    var sector_pl = perf_self.getKeyValue(sector_perf_info,"pl",true),
-                        sector_rta = perf_self.getKeyValue(sector_perf_info,"rta",true);
+                    var sector_pl = current_sector.pl ? current_sector.pl : "",
+                        sector_rta = current_sector.rta ? current_sector.rta : "";
+
                     if(sector_icon) {
                         perf_self.updateMarkerIcon(sector_marker, sector_icon, 'other');
                     }
@@ -358,13 +363,16 @@ function GisPerformance() {
 
                 } else if(sector_polygon) {
 
-                    sector_tech = sector_polygon['technology'] ? sector_polygon['technology'] : "";
-
-                    var azimuth_angle = current_sector.azimuth_angle && current_sector.azimuth_angle != 'NA' ? current_sector.azimuth_angle : 10,
-                        beam_width = current_sector.beam_width && current_sector.beam_width != 'NA' ? current_sector.beam_width : 10,
-                        radius = current_sector.radius && current_sector.radius != 'NA' ? current_sector.radius : 0.5,
-                        sector_color = current_sector.color && current_sector.color != 'NA' ? current_sector.color : 'rgba(74,72,94,0.58)',
-                        orientation = current_sector.polarization ? current_sector.polarization : sector_polygon.polarisation;
+                    var fetched_azimuth = current_sector.azimuth_angle,
+                        fetched_beamWidth = current_sector.beam_width,
+                        fetched_radius = current_sector.radius,
+                        fetched_color = current_sector.color,
+                        azimuth_angle = fetched_azimuth && fetched_azimuth != 'NA' ? fetched_azimuth : 10,
+                        beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
+                        radius = fetched_radius && fetched_radius != 'NA' ? fetched_radius : 0.5,
+                        sector_color = fetched_color && fetched_color != 'NA' ? fetched_color : 'rgba(74,72,94,0.58)',
+                        ss_infoWindow_content = current_sector.ss_info_list ? current_sector.ss_info_list : [],
+                        orientation = current_sector.orientation ? current_sector.orientation : sector_polygon.polarisation;
 
                     gmap_self.createSectorData(bs_lat,bs_lon,radius,azimuth_angle,beam_width,orientation,function(pointsArray) {
 
@@ -414,9 +422,8 @@ function GisPerformance() {
                                 sector_polygon["polarisation"] = orientation;;
                                 sector_polygon["radius"] = radius;
                             } catch(e) {
-                                // console.log(e.name);
-                                // console.log(e.message);
                                 // console.debug(e);
+                                // pass
                             }
 
                         } else if(window.location.pathname.indexOf("white_background") > -1) {
@@ -468,6 +475,8 @@ function GisPerformance() {
                         // Add polled info to sector polygon object
                         try {
                             sector_polygon['poll_info'] = sector_perf_info;
+                            sector_polygon['pl'] = sector_pl;
+                            sector_polygon['rta'] = sector_rta;
                         } catch(e) {
                             // console.log(e);
                         }
@@ -482,16 +491,16 @@ function GisPerformance() {
                     // If any ss exist in response then clear old ss & their connection lines from map
                     if(sub_station.length > 0) {
                         // Loop to remove ss,line & label for current sector from map.
-                        for(var xxx=0;xxx<connected_sectors.length;xxx++) {
-                            if(sectorArray[i].sub_station && sectorArray[i].sub_station.length > 0) {
-                                var condition1 = connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name;
-                                    condition2 = connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address;
-                                    condition3 = connected_sectors[xxx].sector_id == sectorArray[i].sector_id;
+                        for(var a=0;a<connected_sectors.length;a++) {
+                            if(sub_station && sub_station.length > 0) {
+                                var condition1 = connected_sectors[a].sector_configured_on_device == sector_device;
+                                    condition2 = connected_sectors[a].sector_configured_on == sector_ip;
+                                    condition3 = connected_sectors[a].sector_id == sector_id;
+
                                 if(condition1 && condition2 && condition3) {
-                                    var connected_sub_stations = sectorArray[i].sub_station;
-                                    for(var key=0; key< connected_sub_stations.length; key++) {
-                                        var ss_name = connected_sub_stations[key]['name'] ? connected_sub_stations[key]['name'] : "";
-                                        if(connected_sub_stations[key] && ss_name) {
+                                    for(var b=0; b< sub_station.length; b++) {
+                                        var ss_name = sub_station[b]['name'] ? sub_station[b]['name'] : "";
+                                        if(sub_station[b] && ss_name) {
                                             perf_self.removeOldSS(ss_name);
                                         }
                                     }
@@ -506,26 +515,27 @@ function GisPerformance() {
                             for(var j=0;j<sub_station.length;j++) {
 
                                 var ss_marker_data = sub_station[j],
-                                    ss_static_info = ss_marker_data.data.param.sub_station,
-                                    ss_polled_info = ss_marker_data.data.param.polled_info,
-                                    ss_tooltip_info = JSON.parse(JSON.stringify(ss_static_info)).concat(JSON.parse(JSON.stringify(ss_polled_info))),
-                                    ss_pl = perf_self.getKeyValue(ss_tooltip_info,"pl",true),
-                                    ss_rta = perf_self.getKeyValue(ss_tooltip_info,"rta",true),
-                                    ckt_id_val = perf_self.getKeyValue(ss_tooltip_info,"cktid",true),
-                                    ss_ip_address = perf_self.getKeyValue(ss_tooltip_info,"ss_ip",true),
+                                    ss_item_info_index = ss_marker_data.data.item_index > -1 ? ss_marker_data.data.item_index : 0,
+                                    ss_polled_info = [],
+                                    ss_pl = ss_marker_data.data.pl ? ss_marker_data.data.pl : "",
+                                    ss_rta = ss_marker_data.data.rta ? ss_marker_data.data.rta : "",
+                                    ckt_id_val = perf_self.getKeyValue(ss_infoWindow_content, "cktid", true, ss_item_info_index),
+                                    ss_ip_address = perf_self.getKeyValue(ss_infoWindow_content, "ss_ip", true, ss_item_info_index),
                                     ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
-                                    ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "";
+                                    ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "",
+                                    ss_antenna_height = perf_self.getKeyValue(ss_infoWindow_content, "antenna_height", true, ss_item_info_index);
 
                                 // var ss_marker_object = {};
                                 var ss_marker_object = {
                                     ptLat            :  ss_marker_data.data.lat,
                                     ptLon            :  ss_marker_data.data.lon,
                                     pointType        :  "sub_station",
-                                    dataset          :  ss_static_info,
+                                    dataset          :  ss_infoWindow_content,
                                     bhInfo           :  [],
                                     poll_info        :  ss_polled_info,
                                     pl               :  ss_pl,
                                     rta              :  ss_rta,
+                                    item_index       :  ss_item_info_index,
                                     antenna_height   :  ss_marker_data.data.antenna_height,
                                     name             :  ss_marker_data.name,
                                     technology       :  sector_tech,
@@ -698,7 +708,10 @@ function GisPerformance() {
                                     }
                                 } else {
 
-                                    var ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_data.data.markerUrl,"other");
+                                    var ss_icon_obj = gmap_self.getMarkerImageBySize(
+                                        base_url+"/"+ss_marker_data.data.markerUrl,
+                                        "other"
+                                    );
 
                                     ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon);
                                     ss_marker_object['map'] = null;
@@ -810,12 +823,12 @@ function GisPerformance() {
                                 }
 
                                 var ss_info = {
-                                        "info" : ss_marker_data.data.param.sub_station ? ss_marker_data.data.param.sub_station : [],
-                                        "antenna_height" : ss_marker_data.data.antenna_height
+                                        "info" : ss_infoWindow_content ? ss_infoWindow_content : [],
+                                        "antenna_height" : ss_antenna_height
                                     },
                                     base_info = {
-                                        "info" : bs_object.data.param.base_station ? bs_object.data.param.base_station : [],
-                                        "antenna_height" : bs_object.data.antenna_height
+                                        "info" : apiResponse.data.param.base_station ? apiResponse.data.param.base_station : [],
+                                        "antenna_height" : apiResponse.data.antenna_height
                                     },
                                     sect_height = sector_marker ? sector_marker.antenna_height : sector_polygon.antenna_height;
 
@@ -976,17 +989,18 @@ function GisPerformance() {
                                         sect_height,
                                         sector_ip,
                                         ss_marker_data.name,
-                                        bs_object.name,
-                                        bs_object.originalId,
+                                        apiResponse.name,
+                                        apiResponse.id,
                                         sector_id
                                     );
+
                                     ssLinkArray.push(ss_link_line);
                                     ssLinkArray_filtered = ssLinkArray;
 
+                                    allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
+
                                     if(isLineChecked > 0) {
                                         ss_link_line.setMap(mapInstance);
-                                    } else {
-                                        ss_link_line.setMap(null);
                                     }
 
                                     // This is to show "X"(Cross) on line if pl is 100%
@@ -1043,9 +1057,6 @@ function GisPerformance() {
                                             // console.log(e);
                                         }
                                     }
-                                    
-                                    allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
-                                    // allMarkersArray_gmap.push(ss_link_line);
                                 }
 
                                 // if(ss_marker_data.data.perf_value || sector_perf_val) {
@@ -1158,13 +1169,15 @@ function GisPerformance() {
                         var ss_marker_obj = "",
                             ss_name_array = [];
 
-                        for(var xxx=0;xxx<connected_sectors.length;xxx++) {
-                            if(sectorArray[i].sub_station && sectorArray[i].sub_station.length > 0) {
-                                if((connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name) && (connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address)) {
-                                    var connected_sub_stations = sectorArray[i].sub_station;
-                                    for(var key=0; key< connected_sub_stations.length; key++) {
-                                        var ss = connected_sub_stations[key]['name'] ? connected_sub_stations[key]['name'] : "";
-                                        if(connected_sub_stations[key] && ss) {
+                        for(var a=0;a<connected_sectors.length;a++) {
+                            var connected_sub_stations = sectorArray[i].sub_station;
+                            if(connected_sub_stations && connected_sub_stations.length > 0) {
+                                var condition1 = connected_sectors[a].sector_configured_on_device == sector_device;
+                                    condition2 = connected_sectors[a].sector_configured_on == sector_ip;
+                                if(condition1 && condition2) {
+                                    for(var b=0; b< connected_sub_stations.length; b++) {
+                                        var ss = connected_sub_stations[b]['name'] ? connected_sub_stations[b]['name'] : "";
+                                        if(connected_sub_stations[b] && ss) {
                                             if(window.location.pathname.indexOf("googleEarth") > -1) {
                                                 // Remove Line from map & array
                                                 if(allMarkersObject_earth['path']['line_'+ss]) {
@@ -1225,14 +1238,16 @@ function GisPerformance() {
             // Update loki db object start
             old_sector_loop:
             for(var i=0;i<connected_sectors.length;i++) {
+
                 var condition1 = "",
                     condition2 = "",
                     condition3 = "";
                 new_sector_loop:
                 for(var j=0;j<sectorArray.length;j++) {
                     if(sectorArray[j].sub_station && sectorArray[j].sub_station.length > 0) {
-                        condition1 = connected_sectors[i].sector_configured_on_device == sectorArray[j].device_name;
-                        condition2 = connected_sectors[i].sector_configured_on == sectorArray[j].ip_address;
+
+                        condition1 = connected_sectors[i].sector_configured_on_device == sectorArray[j].sector_configured_on_device;
+                        condition2 = connected_sectors[i].sector_configured_on == sectorArray[j].sector_configured_on;
                         condition3 = connected_sectors[i].sector_id == sectorArray[j].sector_id;
                         if(condition1 && condition2 && condition3) {
                             // bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
@@ -1285,10 +1300,6 @@ function GisPerformance() {
             old_icon_obj = iconUrl,
             hidden_icon_instance = hiddenIconObj;
 
-        if(marker_type == 'base_station') {
-            hidden_icon_instance = old_icon_obj;
-        }
-
         if(window.location.pathname.indexOf("googleEarth") > -1) {
 
             try {
@@ -1316,13 +1327,23 @@ function GisPerformance() {
             var sectorMarkerLayer = marker.layer ? marker.layer : marker.layerReference;
             sectorMarkerLayer.redraw();
         } else {
-            var sector_icon_obj = gmap_self.getMarkerImageBySize(old_icon_obj, marker_type);
-            // Update sector marker icon
-            marker.setOptions({
-                "icon" : hidden_icon_instance,
-                "clusterIcon" : hidden_icon_instance,
-                "oldIcon" : sector_icon_obj,
-            });
+            var marker_icon_obj = gmap_self.getMarkerImageBySize(old_icon_obj, marker_type);
+
+            if(marker_type == 'base_station') {
+                // Update BS marker icon
+                marker.setOptions({
+                    "icon" : marker_icon_obj,
+                    "clusterIcon" : marker_icon_obj,
+                    "oldIcon" : marker_icon_obj,
+                });
+            } else {
+                // Update sector marker icon
+                marker.setOptions({
+                    "icon" : hidden_icon_instance,
+                    "clusterIcon" : hidden_icon_instance,
+                    "oldIcon" : marker_icon_obj,
+                });
+            }
         }
     };
 
@@ -1513,8 +1534,8 @@ function GisPerformance() {
             // Loop all bs sectors
             for(var i=0;i<connected_sectors.length;i++) {
                 if(!isPlottable) {    
-                    var condition1 = connected_sectors[i].sector_configured_on_device == current_sector.device_name,
-                        condition2 = connected_sectors[i].sector_configured_on == current_sector.ip_address;
+                    var condition1 = connected_sectors[i].sector_configured_on_device == current_sector.sector_configured_on_device,
+                        condition2 = connected_sectors[i].sector_configured_on == current_sector.sector_configured_on;
                     // If both condition satisfied
                     if(condition1 && condition2) {
                         var sector_tech = connected_sectors[i].technology ? $.trim(connected_sectors[i].technology.toLowerCase()) : "",
