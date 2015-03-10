@@ -28,6 +28,7 @@ from django.core.urlresolvers import reverse_lazy
 import re, ast
 from activity_stream.models import UserAction
 from nocout.utils.util import non_cached_all_gis_inventory
+from device.api import prepare_raw_result
 from sitesearch.views import prepare_raw_bs_result
 
 #formulaes
@@ -4009,6 +4010,11 @@ class GISStaticInfo(View):
 
                 # get raw bs inventory
                 bs_result = non_cached_all_gis_inventory(bs_id=bs_id)
+
+                # we need to prepare bs wise list # this would cache static data for 300 seconds
+                # bs_id_wise_result = prepare_raw_result(bs_result)
+                # this would prepare the results for the bs id we are interested in cached for 300 seconds
+                # inventory = prepare_raw_bs_result(bs_id_wise_result[bs_id])
 
                 # get formatted bs inventory
                 inventory = prepare_raw_bs_result(bs_result)
