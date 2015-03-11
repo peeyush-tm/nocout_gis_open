@@ -786,9 +786,9 @@ Function is used to Disable Advance Search, Advance Filter Button when Call for 
 When call is completed, we use the same function to enable Button by passing 'no' in parameter.
  */
 function disableAdvanceButton(status) {
-    var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap'];
-    var selectBoxes= ['technology', 'vendor', 'state', 'city'];
-    var textBoxes= ['google_loc_search','lat_lon_search'];
+    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'];
+    var selectBoxes = ['technology', 'vendor', 'state', 'city'];
+    var textBoxes = ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
     if(!status) {
         disablingBit= true;
