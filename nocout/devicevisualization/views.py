@@ -4036,6 +4036,20 @@ class GISStaticInfo(View):
 
                 complete_performance = get_complete_performance(machine_dict)
 
+                # ********************************* BACKHAUL PERF INFO (START) ***********************************
+                bh_device = None
+                for d in inventory['data']['param']['backhual']:
+                    if 'bh_configured_on' in d['name']:
+                        bh_device = Device.objects.get(ip_address=d['value'].rstrip('|'))
+                if bh_device:
+                    backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
+                    inventory['data']['param']['bh_polled_info'] = backhaul_data[
+                        'bh_info'] if 'bh_info' in backhaul_data else []
+                    inventory['data']['param']['bhSeverity'] = backhaul_data[
+                        'bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+
+                # ********************************** BACKHAUL PERF INFO (END) ************************************
+
                 # ******************************** GET DEVICE MACHINE MAPPING (END) ******************************
 
                 for sector in inventory['data']['param']['sector']:
@@ -4161,6 +4175,79 @@ class GISStaticInfo(View):
             pass
         result = inventory
         return HttpResponse(json.dumps(result))
+
+    def get_backhaul_info(self, bh_device, network_perf_data):
+        """ Get Sector performance info
+
+            Parameters:
+                - bh_device (<class 'device.models.Device'>) - backhaul device for e.g. 10.175.102.3
+
+            Returns:
+               - backhaul_data (dictionary) - dictionary containing backhaul performance data
+                                                {
+                                                    'bhSeverity': 'NA',
+                                                    'bh_info': [
+                                                        {
+                                                            'title': 'PacketDrop',
+                                                            'name': 'pl',
+                                                            'value': 'NA',
+                                                            'show': 1
+                                                        },
+                                                        {
+                                                            'title': 'Latency',
+                                                            'name': 'rta',
+                                                            'value': 'NA',
+                                                            'show': 1
+                                                        }
+                                                    ]
+                                                }
+        """
+
+        # backhaul data
+        backhaul_data = dict()
+        backhaul_data['bh_info'] = list()
+        backhaul_data['bhSeverity'] = "NA"
+
+        # backhaul pl dictionary
+        pl_dict = dict()
+        pl_dict['name'] = "pl"
+        pl_dict['show'] = 1
+        pl_dict['title'] = "Packet Drop"
+
+        # backhaul rta dictionary
+        rta_dict = dict()
+        rta_dict['name'] = "rta"
+        rta_dict['show'] = 1
+        rta_dict['title'] = "Latency"
+
+        # pl
+        try:
+            pl_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+                                d['data_source'] == 'pl'][0]['current_value']
+        except Exception as e:
+            pl_dict['value'] = "NA"
+
+        # rta
+        try:
+            rta_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+                                 d['data_source'] == 'pl'][0]['current_value']
+        except Exception as e:
+            rta_dict['value'] = "NA"
+
+        # bh severity
+        try:
+            backhaul_data['bhSeverity'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+                                           d['data_source'] == 'pl'][0]['severity']
+        except Exception as e:
+            backhaul_data['bhSeverity'] = 'unknown'
+
+        # append 'pl_dict' to 'bh_info' list
+        backhaul_data['bh_info'].append(pl_dict)
+
+        # append 'rta_dict' to 'bh_info' list
+        backhaul_data['bh_info'].append(rta_dict)
+
+        return backhaul_data
 
     def get_extra_info(self,
                        perf_payload,
@@ -4486,7 +4573,6 @@ class GISStaticInfo(View):
                 device_frequency = [d for d in inventory_perf_data if d['device_name'] == device_name and
                                     d['data_source'] == 'frequency']
 
-            print "**************************** device_frequency - ", device_frequency
             if device_frequency:
                 try:
                     device_frequency = device_frequency[0]['current_value']
@@ -4812,6 +4898,9 @@ class GISPerfInfo(View):
             - device_id (unicode) - device id for e.g 10170
             - device_pl (unicode) - device pl value for e.g. 0
 
+        URL:
+            - "/network_maps/perf_info/?device_id=11254&device_pl=0"
+
         Returns:
             - perf_info (list) - list of dictionaries containing device performance info for e.g.
                     [
@@ -4955,6 +5044,11 @@ class GISPerfInfo(View):
                                                         device_id=device_id,
                                                         processed=processed
                 )
+
+            for d in perf_info:
+                if '_mac_' in d['name']:
+                    d['name'] = d['value'].upper()
+
         return HttpResponse(json.dumps(perf_info))
 
     def collect_performance(self, performance, device_id, processed):
