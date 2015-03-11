@@ -4020,9 +4020,19 @@ class GISStaticInfo(View):
                 inventory = prepare_raw_bs_result(bs_result)
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
+                bh_device = None
+                bh_device_ip = ""
+                for d in inventory['data']['param']['backhual']:
+                    if 'bh_configured_on' in d['name']:
+                        bh_device_ip = d['value'].rstrip('|')
+                        bh_device = Device.objects.get(ip_address=bh_device_ip)
+
                 devices_ip_address_list = list()
                 for sector in inventory['data']['param']['sector']:
                     devices_ip_address_list.append(sector['sector_configured_on'])
+                    # append backhaul device ip address
+                    if bh_device_ip:
+                        devices_ip_address_list.append(bh_device_ip)
                     for sub_station in sector['sub_station']:
                         devices_ip_address_list.append(sub_station['data']['substation_device_ip_address'])
 
@@ -4037,10 +4047,6 @@ class GISStaticInfo(View):
                 complete_performance = get_complete_performance(machine_dict)
 
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
-                bh_device = None
-                for d in inventory['data']['param']['backhual']:
-                    if 'bh_configured_on' in d['name']:
-                        bh_device = Device.objects.get(ip_address=d['value'].rstrip('|'))
                 if bh_device:
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
                     inventory['data']['param']['bh_polled_info'] = backhaul_data[
@@ -4219,6 +4225,9 @@ class GISStaticInfo(View):
         rta_dict['name'] = "rta"
         rta_dict['show'] = 1
         rta_dict['title'] = "Latency"
+
+        print "********************* - ", [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+                                d['data_source'] == 'pl'][0]
 
         # pl
         try:
@@ -5211,18 +5220,15 @@ def get_complete_performance(machine_dict):
 
         # device network info
         device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
         ).order_by().using(alias=machine_name)
 
         network_perf_data.extend(list(device_network_info))
 
         # device performance info
-        performance_network_info = PerformanceStatus.objects.filter(
-            device_name__in=devices_list).values('device_name',
-                                                 'service_name',
-                                                 'data_source',
-                                                 'current_value',
-                                                 'sys_timestamp').order_by().using(alias=machine_name)
+        performance_network_info = PerformanceStatus.objects.filter(device_name__in=devices_list).values(
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+        ).order_by().using(alias=machine_name)
 
         performance_perf_data.extend(list(performance_network_info))
 
