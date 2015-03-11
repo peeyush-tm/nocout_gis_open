@@ -319,7 +319,8 @@ function GisPerformance() {
                     sector_icon = current_sector.markerUrl ? current_sector.markerUrl : "",
                     sector_perf_val = current_sector.perf_value ? current_sector.perf_value : 0,
                     sub_station = current_sector.sub_station ? current_sector.sub_station : [],
-                    sector_tech = current_sector.technology,
+                    sector_tech = current_sector.technology ?current_sector.technology : "",
+                    ss_infoWindow_content = current_sector.ss_info_list ? current_sector.ss_info_list : [],
                     sector_marker = "",
                     sector_polygon = "",
                     startEndObj = {};
@@ -371,7 +372,6 @@ function GisPerformance() {
                         beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
                         radius = fetched_radius && fetched_radius != 'NA' ? fetched_radius : 0.5,
                         sector_color = fetched_color && fetched_color != 'NA' ? fetched_color : 'rgba(74,72,94,0.58)',
-                        ss_infoWindow_content = current_sector.ss_info_list ? current_sector.ss_info_list : [],
                         orientation = current_sector.orientation ? current_sector.orientation : sector_polygon.polarisation;
 
                     gmap_self.createSectorData(bs_lat,bs_lon,radius,azimuth_angle,beam_width,orientation,function(pointsArray) {
@@ -541,9 +541,9 @@ function GisPerformance() {
                                     technology       :  sector_tech,
                                     perf_url         :  ss_perf_url,
                                     inventory_url    :  ss_inventory_url,
-                                    bs_name          :  apiResponse.bs_name,
+                                    bs_name          :  apiResponse.name,
                                     bs_sector_device :  sector_device,
-                                    filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
+                                    filter_data      :  {"bs_name" : apiResponse.name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.id, "sector_id" : sector_id},
                                     device_name      :  ss_marker_data.device_name,
                                     ss_device_id     :  ss_marker_data.device_id,
                                     ss_ip            :  ss_ip_address,
@@ -823,12 +823,14 @@ function GisPerformance() {
                                 }
 
                                 var ss_info = {
-                                        "info" : ss_infoWindow_content ? ss_infoWindow_content : [],
-                                        "antenna_height" : ss_antenna_height
+                                        "info" : ss_infoWindow_content,
+                                        "antenna_height" : ss_antenna_height,
+                                        "ss_item_index" : ss_item_info_index
                                     },
                                     base_info = {
                                         "info" : apiResponse.data.param.base_station ? apiResponse.data.param.base_station : [],
-                                        "antenna_height" : apiResponse.data.antenna_height
+                                        "antenna_height" : apiResponse.data.antenna_height,
+                                        "bs_item_index" : 0
                                     },
                                     sect_height = sector_marker ? sector_marker.antenna_height : sector_polygon.antenna_height;
 
@@ -859,7 +861,7 @@ function GisPerformance() {
                                         sect_height,
                                         sector_ip,
                                         ss_marker_data.name,
-                                        bs_object.name,
+                                        apiResponse.name,
                                         bs_object.originalId,
                                         sector_id
                                     );
