@@ -13209,15 +13209,14 @@ def get_topology(technology, rf_type=None, site_name=None):
     if len(save_ss_list):
         g_jobs.append(bulk_update_create.s(bulky=save_ss_list, action='update'))
 
+    if not len(g_jobs):
+        return False
+
     job = group(g_jobs)
-
     result = job.apply_async()
-    ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
