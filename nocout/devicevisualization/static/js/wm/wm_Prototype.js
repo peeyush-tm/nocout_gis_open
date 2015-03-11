@@ -485,7 +485,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	var panel = new OpenLayers.Control.Panel();
 
 	//Add Full Screen Control Panel to it
-	panel.addControls([new OpenLayers.Control.FullScreen()]);
+	// panel.addControls([new OpenLayers.Control.FullScreen()]);
 	
 	//Show Panel on the map.
 	ccpl_map.addControl(panel);
