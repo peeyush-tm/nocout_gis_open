@@ -1756,15 +1756,15 @@ function devicePlottingClass_gmap() {
         tooltipInfoLabel = {};
 
         // Clear base-stations
-        gmap_self.toggleSpecifixMarkers_gmap('base_station',null);
+        gmap_self.toggleSpecificMarkers_gmap('base_station',null);
         // Clear sector device
-        gmap_self.toggleSpecifixMarkers_gmap('sector_device',null);
+        gmap_self.toggleSpecificMarkers_gmap('sector_device',null);
         // Clear sector polygon
-        gmap_self.toggleSpecifixMarkers_gmap('sector_polygon',null);
+        gmap_self.toggleSpecificMarkers_gmap('sector_polygon',null);
         // Clear sub-stations
-        gmap_self.toggleSpecifixMarkers_gmap('sub_station',null);
+        gmap_self.toggleSpecificMarkers_gmap('sub_station',null);
         // Clear link line
-        gmap_self.toggleSpecifixMarkers_gmap('path',null);
+        gmap_self.toggleSpecificMarkers_gmap('path',null);
 
 		// Reset Variables
 		allMarkersArray_gmap = [];
@@ -2179,7 +2179,7 @@ function devicePlottingClass_gmap() {
 					sector_color = fetched_color,
 					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
 					sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
-					sector_item_index = sector_array[j].item_index > -1 ? sector_array[j].item_index : j,
+					sector_item_index = sector_array[j].item_index > -1 ? sector_array[j].item_index : 0,
 					sectorInfo = {
 						"info" : sector_infoWindow_content,
 						"bs_name" : bs_ss_devices[i].name,
@@ -3348,10 +3348,8 @@ function devicePlottingClass_gmap() {
 			device_id = contentObject.ss_device_id ? contentObject.ss_device_id : "";
 		}
 		
-		var device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
-
-
-
+		var device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "",
+			device_pl = contentObject.pl ? contentObject.pl : "";
 
 		// Tabs Structure HTML
 		/*Tabbale Start*/
@@ -3361,7 +3359,8 @@ function devicePlottingClass_gmap() {
 		infoTable += '<li class="active"><a href="#static_block" data-toggle="tab">\
 					  <i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>';
 		infoTable += '<li class=""><a href="#polled_block" data-toggle="tab" id="polled_tab" \
-					  device_id="'+device_id+'" point_type="'+clickedType+'" device_tech="'+device_tech+'">\
+					  device_id="'+device_id+'" point_type="'+clickedType+'" \
+					  pl_value = "'+device_pl+'" device_tech="'+device_tech+'">\
 					  <i class="fa fa-arrow-circle-o-right"></i> Polled Info \
 					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
 					  </li>';
@@ -5774,7 +5773,7 @@ function devicePlottingClass_gmap() {
 			if(window.location.pathname.indexOf("googleEarth") > -1) {
 				/*Clear all the elements from google earth*/
 		        earth_instance.clearEarthElements();
-				earth_self.clearStateCounters();
+				earth_instance.clearStateCounters();
 			} else if (window.location.pathname.indexOf("white_background") > -1) { 
 				whiteMapClass.clearStateCounters_wmaps();			
 			}else {
@@ -5925,7 +5924,9 @@ function devicePlottingClass_gmap() {
 		}
 		var copiedObj = "";
 
-		copiedObj = JSON.parse(JSON.stringify(originalObj));
+		if(originalObj) {
+			copiedObj = JSON.parse(JSON.stringify(originalObj));
+		}
 
 		if(isDebug) {
     		var time_diff = (new Date().getTime() - start_date_deep_copy.getTime())/1000;
@@ -6473,12 +6474,13 @@ function devicePlottingClass_gmap() {
     this.startDevicePolling_gmap = function() {
     	if(remainingPollCalls > 0) {
 			if(isPollingPaused == 0) {
+				var timeout_time = pollingInterval*1000;
 				// Call function to fetch polled data for selected devices
 				gmap_self.getPollingData_gmap(function(response) {
 					pollCallingTimeout = setTimeout(function() {
 						remainingPollCalls--;
 						gmap_self.startDevicePolling_gmap();
-					},pollingInterval);
+					},timeout_time);
 				});
 			} else {
 				if($("#play_btn").hasClass("disabled")) {
@@ -8513,15 +8515,15 @@ function devicePlottingClass_gmap() {
 	this.hide_all_elements_gmap = function() {
 
 		// Clear base-stations
-        gmap_self.toggleSpecifixMarkers_gmap('base_station',null);
+        gmap_self.toggleSpecificMarkers_gmap('base_station',null);
         // Clear sector device
-        gmap_self.toggleSpecifixMarkers_gmap('sector_device',null);
+        gmap_self.toggleSpecificMarkers_gmap('sector_device',null);
         // Clear sector polygon
-        gmap_self.toggleSpecifixMarkers_gmap('sector_polygon',null);
+        gmap_self.toggleSpecificMarkers_gmap('sector_polygon',null);
         // Clear sub-stations
-        gmap_self.toggleSpecifixMarkers_gmap('sub_station',null);
+        gmap_self.toggleSpecificMarkers_gmap('sub_station',null);
         // Clear link line
-        gmap_self.toggleSpecifixMarkers_gmap('path',null);
+        gmap_self.toggleSpecificMarkers_gmap('path',null);
 
 		/*Clear all everything from map*/
 		// $.grep(allMarkersArray_gmap,function(marker) {
@@ -8566,15 +8568,15 @@ function devicePlottingClass_gmap() {
 	this.show_all_elements_gmap = function() {
 
 		// Clear base-stations
-        gmap_self.toggleSpecifixMarkers_gmap('base_station',mapInstance);
+        gmap_self.toggleSpecificMarkers_gmap('base_station',mapInstance);
         // Clear sector device
-        gmap_self.toggleSpecifixMarkers_gmap('sector_device',mapInstance);
+        gmap_self.toggleSpecificMarkers_gmap('sector_device',mapInstance);
         // Clear sector polygon
-        gmap_self.toggleSpecifixMarkers_gmap('sector_polygon',mapInstance);
+        gmap_self.toggleSpecificMarkers_gmap('sector_polygon',mapInstance);
         // Clear sub-stations
-        gmap_self.toggleSpecifixMarkers_gmap('sub_station',mapInstance);
+        gmap_self.toggleSpecificMarkers_gmap('sub_station',mapInstance);
         // Clear link line
-        gmap_self.toggleSpecifixMarkers_gmap('path',mapInstance);
+        gmap_self.toggleSpecificMarkers_gmap('path',mapInstance);
 
 		/*Show everything on map except connection line*/
 		// $.grep(allMarkersArray_gmap,function(marker) {
@@ -8743,17 +8745,17 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function show/hide markers or elements of given key from global object
-	 * @method toggleSpecifixMarkers_gmap
+	 * @method toggleSpecificMarkers_gmap
 	 * @param key {String}, It contains one of the key from global object which are to be shown or hide
 	 * @param map {null or Object}, It contains null to hide marker & map object to show markers
 	 */
-	this.toggleSpecifixMarkers_gmap = function(key,map) {
+	this.toggleSpecificMarkers_gmap = function(key,map) {
 		var markers = allMarkersObject_gmap[key];
 		if(markers) {
 			var marker_keys = Object.keys(markers);
 			// Loop object key to show/hide markers
 			for(var i=marker_keys.length;i--;) {
-				if(markers[marker_keys[i]]) {
+				if(markers[marker_keys[i]] && markers[marker_keys[i]].map) {
 					markers[marker_keys[i]].setMap(map);
 				}
 			}

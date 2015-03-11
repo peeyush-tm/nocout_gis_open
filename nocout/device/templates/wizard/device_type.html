@@ -10,7 +10,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS WIZARD: DEVICE TYPE</h4>
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {{ object.alias }} (DEVICE TYPE)</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
@@ -81,10 +81,10 @@
             });
 
             // Changing labels of form fields
-            $("label[for=id_rta_warning]").text('Latency Warning');
-            $("label[for=id_rta_critical]").text('Latency Critical');
-            $("label[for=id_pl_warning]").text('PD % Warning');
-            $("label[for=id_pl_critical]").text('PD % Critical');
+            $("label[for=id_rta_warning]").text('Latency Warning (ms)');
+            $("label[for=id_rta_critical]").text('Latency Critical (ms)');
+            $("label[for=id_pl_warning]").text('PD Warning (%)');
+            $("label[for=id_pl_critical]").text('PD Critical (%)');
             $("label[for=id_packets]").text('Packet Count');
             $("label[for=id_timeout]").text('Timeout (ms)');
 
