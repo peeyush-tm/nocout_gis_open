@@ -13256,12 +13256,17 @@ def bulk_update_create(bulky, action='update', model=None):
     logger.debug(bulky)
     if bulky and len(bulky):
         if action == 'update':
-            for update_this in bulky:
-                try:
-                    update_this.save()
-                except Exception as e:
-                    logger.exception(e)
-                    continue
+            try:
+                bulk_update_internal_no_save(bulky)
+            except Exception as e:
+                logger.exception(e)
+                return False
+            # for update_this in bulky:
+            #     try:
+            #         update_this.save()
+            #     except Exception as e:
+            #         logger.exception(e)
+            #         continue
             return True
 
         elif action == 'create':
@@ -13273,4 +13278,50 @@ def bulk_update_create(bulky, action='update', model=None):
                     return False
             return True
 
+    return True
+
+
+# for updating in bulk we would use transactions
+from django.db import transaction
+
+
+@transaction.atomic()
+def bulk_update_decorated(bulky):
+    """
+
+    :param bulky: model object list
+    :return: True
+    """
+    sid = None
+    for update_this in bulky:
+        update_this.save()            # transaction is having an element
+        sid = transaction.savepoint()
+    transaction.savepoint_commit(sid)  # on loop exit commit
+    return True
+
+
+def bulk_update_internal(bulky):
+    """
+
+    :param bulky: model object list
+    :return: True
+    """
+    sid = None
+    with transaction.atomic():
+        for update_this in bulky:
+            update_this.save()
+            sid = transaction.savepoint()
+        transaction.savepoint_commit(sid)  # on loop exit commit
+    return True
+
+
+def bulk_update_internal_no_save(bulky):
+    """
+
+    :param bulky: model object list
+    :return: True
+    """
+    with transaction.atomic():
+        for update_this in bulky:
+            update_this.save()
     return True
