@@ -509,7 +509,8 @@
             gisPerformanceClass = "",
             gmap_self = "",
             deviceName = "",
-            is_super_admin = "";
+            is_super_admin = "",
+            default_polling = true;
 
         google.load("earth", "1");
 
@@ -519,6 +520,17 @@
                 deviceName = "{{ device_name }}";
                 // Is user super admin or admin
                 is_super_admin = '{{ is_admin }}';
+                // Live polling Configuration
+                live_poll_config = $.parseJSON('{{ live_poll_config|safe }}');
+                // Periodic polling parallel processes count
+                periodic_poll_process_count = '{{ periodic_poll_process_count }}';
+                periodic_poll_process_count = periodic_poll_process_count ? Number(periodic_poll_process_count) : 1;
+
+                default_polling = live_poll_config['maps_default'] ? live_poll_config['maps_default'] : false;
+
+                if(!default_polling) {
+                    $("#createPolygonBtn").parent().remove();
+                }
             } catch(e) {
                 // pass
             }

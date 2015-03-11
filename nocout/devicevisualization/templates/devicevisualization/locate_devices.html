@@ -510,7 +510,8 @@
             advSearch = "",
             advJustSearch= "",
             is_super_admin = "",
-            deviceName = "";
+            deviceName = "",
+            default_polling = true;
 
         $(document).ready(function (e) {
             
@@ -523,6 +524,13 @@
                 // Periodic polling parallel processes count
                 periodic_poll_process_count = '{{ periodic_poll_process_count }}';
                 periodic_poll_process_count = periodic_poll_process_count ? Number(periodic_poll_process_count) : 1;
+
+                default_polling = live_poll_config['maps_default'] ? live_poll_config['maps_default'] : false;
+
+                if(!default_polling) {
+                    $("#createPolygonBtn").parent().remove();
+                }
+
             } catch(e) {
                 // pass
                 // console.error(e);

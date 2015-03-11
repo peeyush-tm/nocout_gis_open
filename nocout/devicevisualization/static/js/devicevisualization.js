@@ -10,7 +10,8 @@ var mapPageType = "",
     current_icon_size = "medium",
     periodic_tooltip_call = "",
     live_poll_config = {},
-    periodic_poll_process_count = 1;
+    periodic_poll_process_count = 1,
+    is_tooltip_polled_used = false;
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -1438,11 +1439,14 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
         } else if(window.location.pathname.indexOf("white_background") > -1) {
             // pass
         } else {
-            var closed_marker = allMarkersObject_gmap[marker_type][marker_key];
-            if(closed_marker) {
-                closed_marker.setOptions({
-                    "icon" : closed_marker.oldIcon
-                })
+            if(is_tooltip_polled_used) {
+                var closed_marker = allMarkersObject_gmap[marker_type][marker_key];
+                if(closed_marker) {
+                    closed_marker.setOptions({
+                        "icon" : closed_marker.oldIcon
+                    });
+                    is_tooltip_polled_used = false;
+                }
             }
         }
     }
@@ -2151,7 +2155,7 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                 });
         } else {
             $.gritter.add({
-                title: "Google Maps",
+                title: "Live Polling",
                 text: "Please try again later.",
                 sticky: false,
                 time : 1000
@@ -2251,14 +2255,25 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
                                     "icon" : marker_img_object
                                 });
 
+                                is_tooltip_polled_used = true;
                             }
 
                         } else {
-
+                            $.gritter.add({
+                                title: "Live Polling",
+                                text: result.message,
+                                sticky: false,
+                                time : 1000
+                            });
                         }
                     },
                     error : function(err) {
-                        console.log(err.statusText);
+                        $.gritter.add({
+                            title: "Live Polling",
+                            text: err.statusText,
+                            sticky: false,
+                            time : 1000
+                        });
                     },
                     complete : function() {
                         // enable the button
