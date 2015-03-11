@@ -111,7 +111,7 @@ def read_data(start_time, end_time, **kwargs):
 		start_time = end_time - timedelta(minutes=15)
 		cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
 	else:
-		cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
+		cur = db.device_service_status.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
     	configs = config_module.parse_config_obj()
     	for config, options in configs.items():
 	    machine_name = options.get('machine')
@@ -136,7 +136,8 @@ def read_data(start_time, end_time, **kwargs):
                 local_time_epoch,
                 check_time_epoch,
                 doc.get('ip_address'),
-                doc.get('severity')
+		doc.get('severity'),
+		doc.get('age')
             	)
 		docs.append(t)
 		t =()
@@ -204,8 +205,8 @@ def insert_data(table, data_values, **kwargs):
             (device_name, service_name, machine_name, 
             site_name, data_source, current_value, min_value, 
             max_value, avg_value, warning_threshold, 
-            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
+            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity,age) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s,%s)
             """
     cursor = db.cursor()
     try:

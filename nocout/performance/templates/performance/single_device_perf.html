@@ -235,11 +235,8 @@
             device_technology = "",
             live_poll_condition1 = "",
             live_poll_condition2 = "",
-            ptp_tech_list = [
-                'ptp',
-                'p2p',
-                'ptp bh'
-            ];
+            ptp_tech_list = ['ptp','p2p','ptp bh'],
+            is_perf_polling_enabled = false;
 
 
         $(document).ready(function (e) {
@@ -247,6 +244,10 @@
             var url_array = window.location.href.split("/"),
                 page_type_val = "",
                 base_url = "";
+
+            is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
+
+            is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
 
             /*Set the base url of application for ajax calls*/
             if (window.location.origin) {
@@ -602,14 +603,17 @@
                     $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
 
                     // Call function to fetch live polling data
-                    perfInstance.livePollCurrentDevice(
+                    nocout_livePollCurrentDevice(
+                        service_name,
+                        ds_name,
+                        [device_name],
                         container_id,
                         sparkline_dom_id,
                         hidden_input_dom_id,
                         polled_val_shown_dom_id,
-                        service_name,
-                        ds_name,
-                        [device_name]
+                        function(response) {
+                            // console.log(response);
+                        }
                     );
                 }
             }

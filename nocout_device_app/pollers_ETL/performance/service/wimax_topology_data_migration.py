@@ -180,10 +180,10 @@ def insert_data(table, data_values, **kwargs):
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
 	insert_dict = {'0':[],'1':[]}
-	processed_bs= []
+	procesed_bs= []
 	db = mysql_connection(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
-		if str(data_values[i][0]) not in processed_bs:
+		if str(data_values[i][0]) not in procesed_bs:
 			query = "DELETE FROM %s " % table +\
                 		"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])
         		try:
@@ -193,7 +193,7 @@ def insert_data(table, data_values, **kwargs):
         			raise mysql.connector.Error, err
     			db.commit()
 			cursor.close()
-			processed_bs.append(str(data_values[i][0]))
+			procesed_bs.append(str(data_values[i][0]))
 
 		query = "DELETE FROM %s " % table +\
                 	"WHERE `connected_device_ip`='%s'" %(str(data_values[i][9]))

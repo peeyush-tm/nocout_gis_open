@@ -44,7 +44,7 @@ def live_query_for_session_uptime(host_name,mac,site):
                 query_string = "GET services\nColumns: plugin_output\nFilter: " + \
                                 "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_bs_ss_params",host_name)
 
-                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,nagios_user,machine_name).strip())
+                query_output = eval(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
                 if query_output[0][0]:
                         plugin_output = str(query_output[0][0].split('OK -')[1])
                         plugin_output = [entry for entry in plugin_output.split(' ')]

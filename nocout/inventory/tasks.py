@@ -10,6 +10,7 @@ from device.models import State, City
 from nocout.settings import MEDIA_ROOT
 from nocout.tasks import cache_clear_task
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Status
+from performance.formulae import display_time
 from IPy import IP
 import ipaddr
 from decimal import *
@@ -11063,7 +11064,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                          service_name='radwin_uptime',
                                                          data_source='uptime').using(
                     alias=bs_machine_name)[0].current_value
-                ptp_row['BS Uptime'] = datetime.datetime.fromtimestamp(float(bs_uptime)).strftime('%Y-%m-%d %H:%M:%S')
+                ptp_row['BS Uptime'] = display_time(bs_uptime)
             except Exception as e:
                 logger.info("BS Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -11366,7 +11367,7 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                     service_name='radwin_uptime',
                                                                     data_source='uptime').using(
                                                                     alias=ss_machine_name)[0].current_value
-                ptp_row['SS Uptime'] = datetime.datetime.fromtimestamp(float(ss_uptime)).strftime('%Y-%m-%d %H:%M:%S')
+                ptp_row['SS Uptime'] = display_time(ss_uptime)
             except Exception as e:
                 logger.info("SS Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -11793,7 +11794,7 @@ def get_selected_pmp_inventory(base_station, sector):
                 sector_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                            data_source='uptime').using(
                                                                            alias=bs_machine_name)[0].current_value
-                pmp_bs_row['Sector Uptime'] = datetime.datetime.fromtimestamp(float(sector_uptime)).strftime('%Y-%m-%d %H:%M:%S')
+                pmp_bs_row['Sector Uptime'] = display_time(sector_uptime)
             except Exception as e:
                 logger.info("Sector Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12024,7 +12025,7 @@ def get_selected_pmp_inventory(base_station, sector):
                 session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='uptime').using(
                                                                             alias=ss_machine_name)[0].current_value
-                pmp_bs_row['Session Uptime'] = datetime.datetime.fromtimestamp(float(session_uptime)).strftime('%Y-%m-%d %H:%M:%S')
+                pmp_bs_row['Session Uptime'] = display_time(session_uptime)
             except Exception as e:
                 logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -12481,7 +12482,7 @@ def get_selected_wimax_inventory(base_station, sector):
                 system_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                              data_source='bs_uptime').using(
                                                                              alias=bs_machine_name)[0].current_value
-                wimax_bs_row['System Uptime'] = datetime.datetime.fromtimestamp(float(system_uptime)).strftime('%Y-%m-%d %H:%M:%S')
+                wimax_bs_row['System Uptime'] = display_time(system_uptime)
             except Exception as e:
                 logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12728,7 +12729,7 @@ def get_selected_wimax_inventory(base_station, sector):
                 system_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                               data_source='session_uptime').using(
                                                               alias=ss_machine_name)[0].current_value
-                wimax_ss_row['Session Uptime'] = datetime.datetime.fromtimestamp(float(system_uptime)).strftime('%Y-%m-%d %H:%M:%S')
+                wimax_ss_row['Session Uptime'] = display_time(system_uptime)
             except Exception as e:
                 logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -12737,7 +12738,7 @@ def get_selected_wimax_inventory(base_station, sector):
                 device_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                           data_source='uptime').using(
                                                           alias=ss_machine_name)[0].current_value
-                wimax_ss_row['Device Uptime'] = datetime.datetime.fromtimestamp(float(device_uptime)).strftime('%Y-%m-%d %H:%M:%S')
+                wimax_ss_row['Device Uptime'] = display_time(device_uptime)
             except Exception as e:
                 logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
 
