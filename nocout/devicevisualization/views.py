@@ -4096,6 +4096,7 @@ class GISStaticInfo(View):
                         sector['radius'] = sector_extra_info['radius']
                         sector['perf_value'] = sector_extra_info['perf_value']
                         sector['pl'] = sector_extra_info['pl']
+                        sector['rta'] = sector_extra_info['rta']
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
 
@@ -4148,13 +4149,14 @@ class GISStaticInfo(View):
                                                                             substation_device_type,
                                                                             user_thematics,
                                                                             complete_performance)
-
                                 sub_station['data']['markerUrl'] = substation_extra_info['markerUrl']
                                 if substation_extra_info['color']:
                                     sub_station['data']['link_color'] = substation_extra_info['color']
                                 else:
                                     sub_station['data']['link_color'] = sector_extra_info['color']
                                 sub_station['data']['perf_value'] = substation_extra_info['perf_value']
+                                sub_station['data']['pl'] = substation_extra_info['pl']
+                                sub_station['data']['rta'] = substation_extra_info['rta']
         except Exception as e:
             pass
         result = inventory
@@ -4219,8 +4221,17 @@ class GISStaticInfo(View):
                                        network_perf_data,
                                        freeze_time)
 
+        # device rta
+        device_rta = self.get_device_rta(perf_payload['device_name'],
+                                         perf_payload['machine_name'],
+                                         network_perf_data,
+                                         freeze_time)
+
         # update device pl
         result['pl'] = device_pl
+
+        # update device rta
+        result['rta'] = device_rta
 
         # device link/frequency color
         device_link_color = self.get_frequency_color_and_radius(device_frequency, device_pl)[0]
@@ -4531,6 +4542,50 @@ class GISStaticInfo(View):
             logger.exception(e)
 
         return device_pl
+
+    def get_device_rta(self,
+                       device_name,
+                       machine_name,
+                       network_perf_data,
+                       freeze_time):
+        """ Get device rta
+            Parameters:
+                - device_name (unicode) - device name
+                - machine_name (unicode) - machine name
+                - freeze_time (str) - freeze time i.e. '0'
+            Returns:
+               - device_frequency (str) - device frequency, e.g. "34525"
+        """
+
+        # device packet loss
+        device_rta = ""
+
+        end_time = float(freeze_time) / 1000
+        start_time = end_time - 300
+
+        try:
+            if int(freeze_time):
+                device_rta = PerformanceNetwork.objects.filter(device_name=device_name,
+                                                              service_name='ping',
+                                                              data_source='rta',
+                                                              sys_timestamp__gte=start_time,
+                                                              sys_timestamp__lte=end_time).order_by().using(
+                    alias=machine_name).values('current_value')
+
+            else:
+                device_rta = [d for d in network_perf_data if d['device_name'] == device_name and
+                             d['service_name'] == 'ping' and
+                             d['data_source'] == 'rta']
+
+            if device_rta:
+                device_rta = device_rta[0]['current_value']
+            else:
+                device_rta = ""
+
+        except Exception as e:
+            logger.exception(e)
+
+        return device_rta
 
     def get_frequency_color_and_radius(self, device_frequency, device_pl):
         """ Get device pl
