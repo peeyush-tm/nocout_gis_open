@@ -3335,16 +3335,29 @@ function devicePlottingClass_gmap() {
 			perfContent = "",
 			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "",
 			direct_val_keys = ['pos_link1','pos_link2'],
-			device_id = "";
+			device_id = "",
+			device_name = "",
+			marker_key = "",
+			maps_single_service_poll_flag = live_poll_config ? live_poll_config['maps_single_service'] : "",
+			maps_themetics_poll_flag = live_poll_config ? live_poll_config['maps_themetics'] : "",
+			single_service_polling = maps_single_service_poll_flag ? maps_single_service_poll_flag : false,
+			themetics_polling = maps_themetics_poll_flag ? maps_themetics_poll_flag : false;
 
 		if(clickedType == 'sector_Marker' || clickedType == 'sector') {
 			device_id = gisPerformanceClass.getKeyValue(contentObject.deviceInfo, 'device_id', true, 0);
+			if(clickedType == 'sector_Marker') {
+				marker_key = "sector_"+contentObject.filter_data.sector_name;
+			} else {
+				marker_key = "poly_"+contentObject.sectorName+"_"+contentObject.filter_data.sector_id;
+			}
 		} else if(clickedType == 'sub_station') {
 			device_id = contentObject.ss_device_id ? contentObject.ss_device_id : "";
+			marker_key = "ss_"+contentObject.name;
 		}
 		
 		var device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "",
-			device_pl = contentObject.pl ? contentObject.pl : "";
+			device_pl = contentObject.pl ? contentObject.pl : "",
+			device_name = contentObject.device_name ? contentObject.device_name : "";
 
 		// Tabs Structure HTML
 		/*Tabbale Start*/
@@ -3359,6 +3372,13 @@ function devicePlottingClass_gmap() {
 					  <i class="fa fa-arrow-circle-o-right"></i> Polled Info \
 					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
 					  </li>';
+		if(single_service_polling && (clickedType == 'sector_Marker' || clickedType == 'sub_station')) {
+			infoTable += '<li class=""><a href="#poll_now_block" data-toggle="tab" id="poll_now_tab" \
+						  device_id="'+device_id+'" point_type="'+clickedType+'" \
+						  <i class="fa fa-arrow-circle-o-right"></i> Poll Now \
+						  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
+						  </li>';
+		}
 		infoTable += '</ul>';
 		/*Tabs Creation Ends*/
 
@@ -3508,10 +3528,38 @@ function devicePlottingClass_gmap() {
 
 				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+									  <div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> \
+									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
+									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
+									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
+									  <button class='btn btn-sm btn-info' \
+									  onClick='gmap_self.claculateFresnelZone(\
+									  	"+contentObject.nearLat+",\
+									  	"+contentObject.nearLon+",\
+									  	"+contentObject.ss_lat+",\
+									  	"+contentObject.ss_lon+",\
+									  	"+contentObject.bs_height+",\
+									  	"+contentObject.ss_height+",\
+									  	"+sector_ss_name+");'>Fresnel Zone</button>\
+									  </li>"+report_download_btn+"</ul></div></div></div>";
 				} else {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+									  <div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> \
+									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
+									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
+									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
+									  <button class='btn btn-sm btn-info' \
+									  onClick='gmap_self.claculateFresnelZone(\
+									  	"+contentObject.ss_lat+",\
+									  	"+contentObject.ss_lon+",\
+									  	"+contentObject.nearLat+",\
+									  	"+contentObject.nearLon+",\
+									  	"+contentObject.ss_height+",\
+									  	"+contentObject.bs_height+",\
+									  	"+sector_ss_name+");'>Fresnel Zone</button>\
+									  </li>"+report_download_btn+"</ul></div></div></div>";
 				}
 
 			} catch(e) {
@@ -3643,16 +3691,86 @@ function devicePlottingClass_gmap() {
 
 				infoTable += '</div>';
 				/*Polled Tab Content End*/
+
+				// IF PTP(i.e Only in case of PTP sector. Not for PMP & Wimax)
+				if(single_service_polling && ptp_tech_list.indexOf(sector_tech) > -1) {
+
+					/*Poll Now Tab Content Start*/
+					infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
+
+					infoTable += "<table class='table table-bordered table-hover'><tbody>";
+					
+					// Space for Poll Now Content
+					infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
+								  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
+								  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
+								  <span id='fetched_val_container'></span>\
+								  <span class='divide-10'></span>\
+								  <span id='sparkline_container'></span>\
+								  </td></tr>";
+
+					/*Polled Parameter Info*/
+					for(var i=0; i< actual_polled_info.length; i++) {
+						var url = "",
+							text_class = "",
+							service_name = "",
+							ds_name = "";
+						if(actual_polled_info[i]["show"]) {
+
+							// Url
+							url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
+							text_class = "text-primary";
+							service_name = actual_polled_info[i]["service_name"] ? actual_polled_info[i]["service_name"] : "";
+							ds_name = actual_polled_info[i]["ds"] ? actual_polled_info[i]["ds"] : "";
+
+
+							infoTable += "<tr>";
+							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td>";
+							infoTable += "<td style='width:35px;max-width:50px;'>\
+										 <button class='btn btn-primary btn-xs perf_poll_now'\
+										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
+			                             title='Poll Now' data-complete-text='<i class=\"fa fa-hand-o-right\"></i>' \
+			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
+			                             class='fa fa-hand-o-right'></i>\
+			                             </button></td>";
+
+							infoTable += "<td>"+actual_polled_info[i]['value']+"</td>\
+										 </tr>";
+						}
+					}
+					infoTable += "</tbody></table>";
+					/*BS-Sector Info End*/
+
+					infoTable += '</div>';
+					/*Poll Now Tab Content End*/
+				}
 			}
 
 			infoTable += '</div>';
 			/*Tab-content */
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
-			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window'><i class='fa fa-times text-danger' title='Close'></i></a></div></div>";
-			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
-			windowContent += "</div></div>";
+
+			windowContent += "<div class='windowContainer' style='z-index: 300;position:relative;'>\
+							  <div class='box border'><div class='box-title'>\
+							  <h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4>";
+
+			// If enabled from settings.py only then show Poll Now Button.
+			if(maps_themetics_poll_flag && ptp_tech_list.indexOf(sector_tech) > -1) {
+				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
+								  data-complete-text='<i class=\"fa fa-hand-o-right\"></i> Poll Now' \
+								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
+								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sector_device'>\
+								  <i class='fa fa-hand-o-right'></i> Poll Now</button>";
+			}
+
+			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' title='Close' marker_type='sector_device' marker_key='"+marker_key+"'>\
+							  <i class='fa fa-times text-danger' title='Close'></i></a>\
+							  </div></div>\
+							  <div class='box-body'>\
+							  <div class='' align='center'>"+infoTable+"</div>\
+							  <div class='clearfix'></div><div class='pull-right'></div>\
+							  <div class='clearfix'></div></div></div></div>";
 
 		} else if(clickedType == 'sub_station') {
 
@@ -3776,6 +3894,59 @@ function devicePlottingClass_gmap() {
 
 				infoTable += '</div>';
 				/*Polled Tab Content End*/
+
+				// IF enabled from settings.py
+				if(single_service_polling) {
+
+					/*Poll Now Tab Content Start*/
+					infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
+
+					infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
+					// Space for Poll Now Content
+					infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
+								  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
+								  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
+								  <span id='fetched_val_container'></span>\
+								  <span class='divide-10'></span>\
+								  <span id='sparkline_container'></span>\
+								  </td></tr>";
+
+					/*Polled Parameter Info*/
+					for(var i=0; i< actual_polled_info.length; i++) {
+						var url = "",
+							text_class = "",
+							service_name = "",
+							ds_name = "";
+						if(actual_polled_info[i]["show"]) {
+
+							// Url
+							url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
+							text_class = "text-primary";
+							service_name = actual_polled_info[i]["service_name"] ? actual_polled_info[i]["service_name"] : "";
+							ds_name = actual_polled_info[i]["ds"] ? actual_polled_info[i]["ds"] : "";
+
+
+							infoTable += "<tr>";
+							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td>";
+							infoTable += "<td style='width:35px;max-width:50px;'>\
+										 <button class='btn btn-primary btn-xs perf_poll_now'\
+										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
+			                             title='Poll Now' data-complete-text='<i class=\"fa fa-hand-o-right\"></i>' \
+			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
+			                             class='fa fa-hand-o-right'></i>\
+			                             </button></td>";
+
+							infoTable += "<td>"+actual_polled_info[i]['value']+"</td>\
+										 </tr>";
+						}
+					}
+					infoTable += "</tbody></table>";
+					/*BS-Sector Info End*/
+
+					infoTable += '</div>';
+					/*Poll Now Tab Content End*/
+				}
 			}
 
 			/*Tab-content End*/
@@ -3784,10 +3955,23 @@ function devicePlottingClass_gmap() {
 			
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
-			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
-			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
-			windowContent += "</div></div>";
+			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+							  <div class='box border'><div class='box-title'>\
+							  <h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4>";
+			// If enabled from settings.py only then show Poll Now Button.
+			if(maps_themetics_poll_flag) {
+				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
+								  data-complete-text='<i class=\"fa fa-hand-o-right\"></i> Poll Now' \
+								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait' \
+								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sub_station'>\
+								  <i class='fa fa-hand-o-right'></i> Poll Now</button>";
+			}
+
+			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' marker_type='sub_station' marker_key='"+marker_key+"' title='Close'>\
+							  <i class='fa fa-times text-danger'></i></a></div></div>\
+							  <div class='box-body'><div class='' align='center'>"+infoTable+"</div>\
+							  <div class='clearfix'></div><div class='pull-right'></div>\
+							  <div class='clearfix'></div></div></div></div>";
 		} else {
 			// If base station then reset tabs html string
 			infoTable = "";
@@ -3876,10 +4060,13 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
-			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'><a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
-			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
-			windowContent += "</div></div>";
+			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+							  <div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  \
+							  "+BsSsWindowTitle+"</h4><div class='tools'><a class='close_info_window' title='Close'>\
+							  <i class='fa fa-times text-danger'></i></a></div></div>\
+							  <div class='box-body'><div align='center'>"+infoTable+"</div>\
+							  <div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'>\
+							  </div></div></div></div>";
 		}
 
 
@@ -6105,34 +6292,6 @@ function devicePlottingClass_gmap() {
 	 * @return device_count {Number}, It contains the number of BS & SS in fetched data
 	 */
 	this.getCountryWiseCount = function() {
-
-		// var complete_filtering_data = gmap_self.getSelectedFilteringItems(),
-		// 	technology_filter = complete_filtering_data["advance"]["technology"],
-		// 	vendor_filter = complete_filtering_data["advance"]["vendor"],
-		// 	city_filter = complete_filtering_data["advance"]["city"],
-		// 	state_filter = complete_filtering_data["advance"]["state"],
-		// 	frequency_filter = complete_filtering_data["advance"]["frequency"],
-		// 	polarization_filter = complete_filtering_data["advance"]["polarization"],
-		// 	filterObj = complete_filtering_data["basic"],
-		// 	isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-		// 	isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0,
-		// 	basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
-		// 	advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-		// 	filtered_data_1 = [],
-		// 	data_to_plot_1 = [],
-		// 	devices_count = 0;
-
-		// if(isAdvanceFilterApplied || isBasicFilterApplied) {
-		// 	filtered_data_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredData_gmap());
-		// } else {
-		// 	filtered_data_1 = gmap_self.objDeepCopy_nocout(all_devices_loki_db.data);
-		// }
-
-		// if(advance_filter_condition || basic_filter_condition) {
-  //       	data_to_plot_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredBySectors(filtered_data_1));
-  //   	} else {
-  //   		data_to_plot_1 = filtered_data_1;
-  //   	}
 
     	var data_to_plot_1 = gmap_self.updateStateCounter_gmaps(true),
     		devices_count = 0;

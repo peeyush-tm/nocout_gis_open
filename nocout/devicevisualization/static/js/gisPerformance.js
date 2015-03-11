@@ -266,8 +266,8 @@ function GisPerformance() {
                 bs_name = apiResponse.name ? apiResponse.name : "",
                 bs_maintenance_status = apiResponse.data.maintenance_status ? apiResponse.data.maintenance_status : false,
                 maintenance_icon = apiResponse.data.markerUrl ? apiResponse.data.markerUrl : false,
-                perf_bh_info = apiResponse.bh_info ? apiResponse.bh_info : [],
-                perf_bh_severity = apiResponse.bhSeverity ? apiResponse.bhSeverity : "",
+                perf_bh_info = apiResponse.data.param.bh_polled_info ? apiResponse.data.param.bh_polled_info : [],
+                perf_bh_severity = apiResponse.data.param.bhSeverity ? apiResponse.data.param.bhSeverity : "",
                 bs_marker = "",
                 show_ss_len = $("#showAllSS:checked").length,
                 bs_lat = apiResponse.data.lat,
@@ -284,12 +284,16 @@ function GisPerformance() {
             // Update BS & BH polled info to bs marker tooltip.
             if(bs_marker) {
                 try {
+                    // Update BH polled info & severity value
                     bs_marker['bhInfo_polled'] = perf_bh_info;
                     bs_marker['bhSeverity'] = perf_bh_severity;
+
+                    // If we have BS maintenance status then update it in Bs marker
                     if(bs_maintenance_status) {
                         bs_marker['maintenance_status'] = bs_maintenance_status;
                     }
 
+                    // If we have new BS icon then update it in Bs marker
                     if(maintenance_icon) {
                         perf_self.updateMarkerIcon(bs_marker, maintenance_icon, 'base_station');
                     }

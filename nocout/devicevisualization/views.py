@@ -8,7 +8,7 @@ from django.template import RequestContext
 import logging
 from zipfile import ZipFile
 import glob
-from nocout.settings import MEDIA_ROOT, MEDIA_URL
+from nocout.settings import MEDIA_ROOT, MEDIA_URL, LIVE_POLLING_CONFIGURATION, PERIODIC_POLL_PROCESS_COUNT
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -64,7 +64,9 @@ def locate_devices(request , device_name = "default_device_name"):
     template_data = {
         'username' : request.user.username,
         'device_name' : device_name,
-        'is_admin' : is_admin
+        'is_admin' : is_admin,
+        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
+        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
     }
 
     return render_to_response('devicevisualization/locate_devices.html',
@@ -90,7 +92,9 @@ def load_google_earth(request, device_name = "default_device_name"):
     template_data = {
         'username' : request.user.username,
         'device_name' : device_name,
-        'is_admin' : is_admin
+        'is_admin' : is_admin,
+        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
+        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
     }
 
     return render_to_response('devicevisualization/google_earth_template.html',
@@ -115,7 +119,9 @@ def load_earth(request, device_name = "default_device_name"):
     template_data = {
         'username' : request.user.username,
         'device_name' : device_name,
-        'is_admin' : is_admin
+        'is_admin' : is_admin,
+        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
+        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
     }
 
     return render_to_response('devicevisualization/locate_devices_earth.html',
@@ -141,7 +147,9 @@ def load_white_background(request , device_name = "default_device_name"):
     template_data = {
         'username' : request.user.username,
         'device_name' : device_name,
-        'is_admin' : is_admin
+        'is_admin' : is_admin,
+        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
+        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
     }
 
     return render_to_response('devicevisualization/locate_devices_white_map.html',
