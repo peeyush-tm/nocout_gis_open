@@ -803,7 +803,7 @@ def calculate_hourly_severity_status(now, then):
         'dashboard_name',
         'organization'
     ).annotate(
-        Normal=Sum('ok'),
+        Normal=Avg('ok'),
         Needs_Augmentation=Avg('warning'),
         Stop_Provisioning=Avg('critical'),
         Down=Avg('down'),
