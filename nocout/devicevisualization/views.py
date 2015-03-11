@@ -4226,9 +4226,6 @@ class GISStaticInfo(View):
         rta_dict['show'] = 1
         rta_dict['title'] = "Latency"
 
-        print "********************* - ", [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
-                                d['data_source'] == 'pl'][0]
-
         # pl
         try:
             pl_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
