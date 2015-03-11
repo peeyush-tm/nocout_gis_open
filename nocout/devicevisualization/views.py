@@ -4020,9 +4020,19 @@ class GISStaticInfo(View):
                 inventory = prepare_raw_bs_result(bs_result)
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
+                bh_device = None
+                bh_device_ip = ""
+                for d in inventory['data']['param']['backhual']:
+                    if 'bh_configured_on' in d['name']:
+                        bh_device_ip = d['value'].rstrip('|')
+                        bh_device = Device.objects.get(ip_address=bh_device_ip)
+
                 devices_ip_address_list = list()
                 for sector in inventory['data']['param']['sector']:
                     devices_ip_address_list.append(sector['sector_configured_on'])
+                    # append backhaul device ip address
+                    if bh_device_ip:
+                        devices_ip_address_list.append(bh_device_ip)
                     for sub_station in sector['sub_station']:
                         devices_ip_address_list.append(sub_station['data']['substation_device_ip_address'])
 
@@ -4035,6 +4045,16 @@ class GISStaticInfo(View):
                 machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
 
                 complete_performance = get_complete_performance(machine_dict)
+
+                # ********************************* BACKHAUL PERF INFO (START) ***********************************
+                if bh_device:
+                    backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
+                    inventory['data']['param']['bh_polled_info'] = backhaul_data[
+                        'bh_info'] if 'bh_info' in backhaul_data else []
+                    inventory['data']['param']['bhSeverity'] = backhaul_data[
+                        'bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
+
+                # ********************************** BACKHAUL PERF INFO (END) ************************************
 
                 # ******************************** GET DEVICE MACHINE MAPPING (END) ******************************
 
@@ -4096,67 +4116,144 @@ class GISStaticInfo(View):
                         sector['radius'] = sector_extra_info['radius']
                         sector['perf_value'] = sector_extra_info['perf_value']
                         sector['pl'] = sector_extra_info['pl']
+                        sector['rta'] = sector_extra_info['rta']
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
-                        sector['color'] = sector_extra_info['color']
 
-                    for sub_station in sector['sub_station']:
-                        substation_device = [d for d in bs_devices if
-                                             d['ip_address'] == sub_station['data']['substation_device_ip_address']][0]
+                        for sub_station in sector['sub_station']:
+                            substation_device = [d for d in bs_devices if
+                                                 d['ip_address'] == sub_station['data']['substation_device_ip_address']][0]
 
-                        try:
-                            substation_device_type = DeviceType.objects.get(id=substation_device['device_type'])
-                        except Exception as e:
-                            substation_device_type = None
+                            try:
+                                substation_device_type = DeviceType.objects.get(id=substation_device['device_type'])
+                            except Exception as e:
+                                substation_device_type = None
 
-                        try:
-                            substation_device_tech = DeviceTechnology.objects.get(
-                                id=substation_device['device_technology'])
-                        except Exception as e:
-                            substation_device_tech = None
+                            try:
+                                substation_device_tech = DeviceTechnology.objects.get(
+                                    id=substation_device['device_technology'])
+                            except Exception as e:
+                                substation_device_tech = None
 
-                        # thematic settings for current user
-                        user_thematics = self.get_thematic_settings(substation_device_tech)
+                            # thematic settings for current user
+                            user_thematics = self.get_thematic_settings(substation_device_tech)
 
-                        # service & data source
-                        service = ""
-                        data_source = ""
-                        try:
-                            if ts_type == "normal":
-                                service = user_thematics.thematic_template.threshold_template.live_polling_template.\
-                                    service.name
-                                data_source = user_thematics.thematic_template.threshold_template.\
-                                    live_polling_template.data_source.name
-                            elif ts_type == "ping":
-                                service = user_thematics.thematic_template.service
-                                data_source = user_thematics.thematic_template.data_source
-                        except Exception as e:
-                            pass
+                            # service & data source
+                            service = ""
+                            data_source = ""
+                            try:
+                                if ts_type == "normal":
+                                    service = user_thematics.thematic_template.threshold_template.live_polling_template.\
+                                        service.name
+                                    data_source = user_thematics.thematic_template.threshold_template.\
+                                        live_polling_template.data_source.name
+                                elif ts_type == "ping":
+                                    service = user_thematics.thematic_template.service
+                                    data_source = user_thematics.thematic_template.data_source
+                            except Exception as e:
+                                pass
 
-                        if service and data_source:
-                            # performance value
-                            perf_payload = {
-                                'device_name': substation_device['device_name'],
-                                'machine_name': substation_device['machine__name'],
-                                'freeze_time': freeze_time,
-                                'device_service_name': service,
-                                'device_service_data_source': data_source
-                            }
+                            if service and data_source:
+                                # performance value
+                                perf_payload = {
+                                    'device_name': substation_device['device_name'],
+                                    'machine_name': substation_device['machine__name'],
+                                    'freeze_time': freeze_time,
+                                    'device_service_name': service,
+                                    'device_service_data_source': data_source
+                                }
 
-                            substation_extra_info = self.get_extra_info(perf_payload,
-                                                                        freeze_time,
-                                                                        ts_type,
-                                                                        substation_device_type,
-                                                                        user_thematics,
-                                                                        complete_performance)
-
-                            sub_station['data']['markerUrl'] = substation_extra_info['markerUrl']
-                            sub_station['data']['link_color'] = substation_extra_info['color']
-                            sub_station['data']['perf_value'] = substation_extra_info['perf_value']
+                                substation_extra_info = self.get_extra_info(perf_payload,
+                                                                            freeze_time,
+                                                                            ts_type,
+                                                                            substation_device_type,
+                                                                            user_thematics,
+                                                                            complete_performance)
+                                sub_station['data']['markerUrl'] = substation_extra_info['markerUrl']
+                                if substation_extra_info['color']:
+                                    sub_station['data']['link_color'] = substation_extra_info['color']
+                                else:
+                                    sub_station['data']['link_color'] = sector_extra_info['color']
+                                sub_station['data']['perf_value'] = substation_extra_info['perf_value']
+                                sub_station['data']['pl'] = substation_extra_info['pl']
+                                sub_station['data']['rta'] = substation_extra_info['rta']
         except Exception as e:
             pass
         result = inventory
         return HttpResponse(json.dumps(result))
+
+    def get_backhaul_info(self, bh_device, network_perf_data):
+        """ Get Sector performance info
+
+            Parameters:
+                - bh_device (<class 'device.models.Device'>) - backhaul device for e.g. 10.175.102.3
+
+            Returns:
+               - backhaul_data (dictionary) - dictionary containing backhaul performance data
+                                                {
+                                                    'bhSeverity': 'NA',
+                                                    'bh_info': [
+                                                        {
+                                                            'title': 'PacketDrop',
+                                                            'name': 'pl',
+                                                            'value': 'NA',
+                                                            'show': 1
+                                                        },
+                                                        {
+                                                            'title': 'Latency',
+                                                            'name': 'rta',
+                                                            'value': 'NA',
+                                                            'show': 1
+                                                        }
+                                                    ]
+                                                }
+        """
+
+        # backhaul data
+        backhaul_data = dict()
+        backhaul_data['bh_info'] = list()
+        backhaul_data['bhSeverity'] = "NA"
+
+        # backhaul pl dictionary
+        pl_dict = dict()
+        pl_dict['name'] = "pl"
+        pl_dict['show'] = 1
+        pl_dict['title'] = "Packet Drop"
+
+        # backhaul rta dictionary
+        rta_dict = dict()
+        rta_dict['name'] = "rta"
+        rta_dict['show'] = 1
+        rta_dict['title'] = "Latency"
+
+        # pl
+        try:
+            pl_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+                                d['data_source'] == 'pl'][0]['current_value']
+        except Exception as e:
+            pl_dict['value'] = "NA"
+
+        # rta
+        try:
+            rta_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+                                 d['data_source'] == 'pl'][0]['current_value']
+        except Exception as e:
+            rta_dict['value'] = "NA"
+
+        # bh severity
+        try:
+            backhaul_data['bhSeverity'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+                                           d['data_source'] == 'pl'][0]['severity']
+        except Exception as e:
+            backhaul_data['bhSeverity'] = 'unknown'
+
+        # append 'pl_dict' to 'bh_info' list
+        backhaul_data['bh_info'].append(pl_dict)
+
+        # append 'rta_dict' to 'bh_info' list
+        backhaul_data['bh_info'].append(rta_dict)
+
+        return backhaul_data
 
     def get_extra_info(self,
                        perf_payload,
@@ -4217,8 +4314,17 @@ class GISStaticInfo(View):
                                        network_perf_data,
                                        freeze_time)
 
+        # device rta
+        device_rta = self.get_device_rta(perf_payload['device_name'],
+                                         perf_payload['machine_name'],
+                                         network_perf_data,
+                                         freeze_time)
+
         # update device pl
         result['pl'] = device_pl
+
+        # update device rta
+        result['rta'] = device_rta
 
         # device link/frequency color
         device_link_color = self.get_frequency_color_and_radius(device_frequency, device_pl)[0]
@@ -4472,6 +4578,7 @@ class GISStaticInfo(View):
             else:
                 device_frequency = [d for d in inventory_perf_data if d['device_name'] == device_name and
                                     d['data_source'] == 'frequency']
+
             if device_frequency:
                 try:
                     device_frequency = device_frequency[0]['current_value']
@@ -4527,6 +4634,50 @@ class GISStaticInfo(View):
             logger.exception(e)
 
         return device_pl
+
+    def get_device_rta(self,
+                       device_name,
+                       machine_name,
+                       network_perf_data,
+                       freeze_time):
+        """ Get device rta
+            Parameters:
+                - device_name (unicode) - device name
+                - machine_name (unicode) - machine name
+                - freeze_time (str) - freeze time i.e. '0'
+            Returns:
+               - device_frequency (str) - device frequency, e.g. "34525"
+        """
+
+        # device packet loss
+        device_rta = ""
+
+        end_time = float(freeze_time) / 1000
+        start_time = end_time - 300
+
+        try:
+            if int(freeze_time):
+                device_rta = PerformanceNetwork.objects.filter(device_name=device_name,
+                                                              service_name='ping',
+                                                              data_source='rta',
+                                                              sys_timestamp__gte=start_time,
+                                                              sys_timestamp__lte=end_time).order_by().using(
+                    alias=machine_name).values('current_value')
+
+            else:
+                device_rta = [d for d in network_perf_data if d['device_name'] == device_name and
+                             d['service_name'] == 'ping' and
+                             d['data_source'] == 'rta']
+
+            if device_rta:
+                device_rta = device_rta[0]['current_value']
+            else:
+                device_rta = ""
+
+        except Exception as e:
+            logger.exception(e)
+
+        return device_rta
 
     def get_frequency_color_and_radius(self, device_frequency, device_pl):
         """ Get device pl
@@ -4753,6 +4904,9 @@ class GISPerfInfo(View):
             - device_id (unicode) - device id for e.g 10170
             - device_pl (unicode) - device pl value for e.g. 0
 
+        URL:
+            - "/network_maps/perf_info/?device_id=11254&device_pl=0"
+
         Returns:
             - perf_info (list) - list of dictionaries containing device performance info for e.g.
                     [
@@ -4896,6 +5050,11 @@ class GISPerfInfo(View):
                                                         device_id=device_id,
                                                         processed=processed
                 )
+
+            for d in perf_info:
+                if '_mac_' in d['name']:
+                    d['name'] = d['value'].upper()
+
         return HttpResponse(json.dumps(perf_info))
 
     def collect_performance(self, performance, device_id, processed):
@@ -5058,18 +5217,15 @@ def get_complete_performance(machine_dict):
 
         # device network info
         device_network_info = NetworkStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
         ).order_by().using(alias=machine_name)
 
         network_perf_data.extend(list(device_network_info))
 
         # device performance info
-        performance_network_info = PerformanceStatus.objects.filter(
-            device_name__in=devices_list).values('device_name',
-                                                 'service_name',
-                                                 'data_source',
-                                                 'current_value',
-                                                 'sys_timestamp').order_by().using(alias=machine_name)
+        performance_network_info = PerformanceStatus.objects.filter(device_name__in=devices_list).values(
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+        ).order_by().using(alias=machine_name)
 
         performance_perf_data.extend(list(performance_network_info))
 
