@@ -334,12 +334,16 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
     :param ul_issues_list:
     :return:
     """
-    if len(sectors_list) < 1:
-        return []
+    # if len(sectors_list) < 1:
+    #     return []
 
     # Get Last Six Month List
     last_six_months_list, \
     months_list = perf_views.getLastXMonths(6)
+
+    # Reverse the list to get the current month at first index
+    last_six_months_list.reverse()
+    month_num = int(last_six_months_list[0][1])
 
     # loop sectors list
     for sector in sectors_list:
@@ -356,10 +360,6 @@ def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_l
 
         if sector_sector_id in ul_issues_list:
             ul_issue_data = ul_issues_list[sector_sector_id]
-
-        # Reverse the list to get the current month at first index
-        last_six_months_list.reverse()
-        month_num = int(last_six_months_list[0][1])
 
         augment_key = 'augment_1'
 
@@ -405,7 +405,7 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
         #current_row = calculated_data[i]
         try:
             # Foreign Keys
-            sector_id = Sector.objects.prefetch_related('sector_configured_on').get(pk=current_row['id'])
+            sector_id = Sector.objects.select_related('sector_configured_on').get(pk=current_row['id'])
             device_id = sector_id.sector_configured_on #Device.objects.filter(pk=current_row['sector_configured_on'])[0]
 
             # Sector Details
