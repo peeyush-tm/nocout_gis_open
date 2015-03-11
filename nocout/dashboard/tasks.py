@@ -780,7 +780,7 @@ def calculate_hourly_main_dashboard():
     now = timezone.now()
     buffer_now = now + datetime.timedelta(minutes=-5)
     then = now + datetime.timedelta(hours=-1)
-    calculate_hourly_range_status(now=buffer_now, then=then)
+    calculate_hourly_severity_status(now=buffer_now, then=then)
     calculate_hourly_range_status(now=buffer_now, then=then)
     return True
 
