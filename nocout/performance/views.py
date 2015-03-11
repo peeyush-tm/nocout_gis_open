@@ -37,7 +37,7 @@ from performance.utils import util as perf_utils
 
 from service.utils.util import service_data_sources
 
-from nocout.settings import DATE_TIME_FORMAT
+from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION
 
 from performance.formulae import display_time, rta_null
 from nocout.mixins.permissions import PermissionsRequiredMixin
@@ -550,7 +550,8 @@ class Get_Perfomance(View):
                 kwargs={'page_type': page_type, 'device_id' : device_id, 'service_name' : 'ping'},
                 current_app='alert_center'
             ),
-            'page_type': page_type
+            'page_type': page_type,
+            'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
