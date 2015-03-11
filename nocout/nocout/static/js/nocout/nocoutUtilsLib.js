@@ -553,17 +553,16 @@ function nocout_livePollCurrentDevice(
             if(result.success == 1) {
 
                 var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
+                var shown_val = "",
+                    current_val_html = "",
+                    dateObj = new Date(),
+                    current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+                    fetched_data = true;
                 if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
                     
                     if(typeof fetched_val == 'object') {
                         fetched_val = fetched_val[0];
                     }
-
-                    var shown_val = "",
-                        current_val_html = "",
-                        dateObj = new Date(),
-                        current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
-                        fetched_data = true;
 
                     // If call is from single device page then proceed else return data
                     if(container_dom_id) {
@@ -609,8 +608,14 @@ function nocout_livePollCurrentDevice(
                         };
                     }
 
-                    callback(fetched_data);
+
+                } else {
+                    fetched_data = {
+                        "val" : fetched_val,
+                        "time" : current_time
+                    };
                 }
+                callback(fetched_data);
             } else {
                 $.gritter.add({
                     // (string | mandatory) the heading of the notification
