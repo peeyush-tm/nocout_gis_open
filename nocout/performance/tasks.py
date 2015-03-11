@@ -481,14 +481,15 @@ def update_spot_dashboard_data(calculated_data=[], technology=''):
             )
         )
     # Start create & update jobs parallely
+    if not len(g_jobs):
+        return False
+
     job = group(g_jobs)
-    result = job.apply_async()
     ret = False
-    
-    for r in result.get():
-        ret |= r
-    
-    return ret
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -573,14 +574,15 @@ def update_spot_dashboard_monthly(technology=None):
                 )
             )
         # Start create & update jobs parallely
+        if not len(g_jobs):
+            return False
+
         job = group(g_jobs)
-        result = job.apply_async()
         ret = False
-        
-        for r in result.get():
-            ret |= r
-        
-        return ret
+        result = job.apply_async()  # start the jobs
+        # for r in result.get():
+        #     ret |= r
+        return True
     else:
         return True
 
@@ -780,22 +782,20 @@ def insert_network_avail_result(resultant_data, tech_id):
             )
 
         # If any g_jobs exists
-        if len(g_jobs):
-            # Start create jobs parallely
-            job = group(g_jobs)
-            result = job.apply_async()
-            ret = False
-            
-            for r in result.get():
-                ret |= r
-            
-            return ret
+        # Start create & update jobs parallely
+        if not len(g_jobs):
+            return False
+
+        job = group(g_jobs)
+        ret = False
+        result = job.apply_async()  # start the jobs
+        # for r in result.get():
+        #     ret |= r
+        return True
         
     except Exception as e:
         logger.exception(e)
         return False
-
-    return True
 
 
 ################## Task for RF Main Dashboard Network Availability Calculation - End ###################
