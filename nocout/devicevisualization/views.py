@@ -4092,61 +4092,63 @@ class GISStaticInfo(View):
                         sector['pl'] = sector_extra_info['pl']
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
-                        sector['color'] = sector_extra_info['color']
 
-                    for sub_station in sector['sub_station']:
-                        substation_device = [d for d in bs_devices if
-                                             d['ip_address'] == sub_station['data']['substation_device_ip_address']][0]
+                        for sub_station in sector['sub_station']:
+                            substation_device = [d for d in bs_devices if
+                                                 d['ip_address'] == sub_station['data']['substation_device_ip_address']][0]
 
-                        try:
-                            substation_device_type = DeviceType.objects.get(id=substation_device['device_type'])
-                        except Exception as e:
-                            substation_device_type = None
+                            try:
+                                substation_device_type = DeviceType.objects.get(id=substation_device['device_type'])
+                            except Exception as e:
+                                substation_device_type = None
 
-                        try:
-                            substation_device_tech = DeviceTechnology.objects.get(
-                                id=substation_device['device_technology'])
-                        except Exception as e:
-                            substation_device_tech = None
+                            try:
+                                substation_device_tech = DeviceTechnology.objects.get(
+                                    id=substation_device['device_technology'])
+                            except Exception as e:
+                                substation_device_tech = None
 
-                        # thematic settings for current user
-                        user_thematics = self.get_thematic_settings(substation_device_tech)
+                            # thematic settings for current user
+                            user_thematics = self.get_thematic_settings(substation_device_tech)
 
-                        # service & data source
-                        service = ""
-                        data_source = ""
-                        try:
-                            if ts_type == "normal":
-                                service = user_thematics.thematic_template.threshold_template.live_polling_template.\
-                                    service.name
-                                data_source = user_thematics.thematic_template.threshold_template.\
-                                    live_polling_template.data_source.name
-                            elif ts_type == "ping":
-                                service = user_thematics.thematic_template.service
-                                data_source = user_thematics.thematic_template.data_source
-                        except Exception as e:
-                            pass
+                            # service & data source
+                            service = ""
+                            data_source = ""
+                            try:
+                                if ts_type == "normal":
+                                    service = user_thematics.thematic_template.threshold_template.live_polling_template.\
+                                        service.name
+                                    data_source = user_thematics.thematic_template.threshold_template.\
+                                        live_polling_template.data_source.name
+                                elif ts_type == "ping":
+                                    service = user_thematics.thematic_template.service
+                                    data_source = user_thematics.thematic_template.data_source
+                            except Exception as e:
+                                pass
 
-                        if service and data_source:
-                            # performance value
-                            perf_payload = {
-                                'device_name': substation_device['device_name'],
-                                'machine_name': substation_device['machine__name'],
-                                'freeze_time': freeze_time,
-                                'device_service_name': service,
-                                'device_service_data_source': data_source
-                            }
+                            if service and data_source:
+                                # performance value
+                                perf_payload = {
+                                    'device_name': substation_device['device_name'],
+                                    'machine_name': substation_device['machine__name'],
+                                    'freeze_time': freeze_time,
+                                    'device_service_name': service,
+                                    'device_service_data_source': data_source
+                                }
 
-                            substation_extra_info = self.get_extra_info(perf_payload,
-                                                                        freeze_time,
-                                                                        ts_type,
-                                                                        substation_device_type,
-                                                                        user_thematics,
-                                                                        complete_performance)
+                                substation_extra_info = self.get_extra_info(perf_payload,
+                                                                            freeze_time,
+                                                                            ts_type,
+                                                                            substation_device_type,
+                                                                            user_thematics,
+                                                                            complete_performance)
 
-                            sub_station['data']['markerUrl'] = substation_extra_info['markerUrl']
-                            sub_station['data']['link_color'] = substation_extra_info['color']
-                            sub_station['data']['perf_value'] = substation_extra_info['perf_value']
+                                sub_station['data']['markerUrl'] = substation_extra_info['markerUrl']
+                                if substation_extra_info['color']:
+                                    sub_station['data']['link_color'] = substation_extra_info['color']
+                                else:
+                                    sub_station['data']['link_color'] = sector_extra_info['color']
+                                sub_station['data']['perf_value'] = substation_extra_info['perf_value']
         except Exception as e:
             pass
         result = inventory
@@ -4466,6 +4468,8 @@ class GISStaticInfo(View):
             else:
                 device_frequency = [d for d in inventory_perf_data if d['device_name'] == device_name and
                                     d['data_source'] == 'frequency']
+
+            print "**************************** device_frequency - ", device_frequency
             if device_frequency:
                 try:
                     device_frequency = device_frequency[0]['current_value']
