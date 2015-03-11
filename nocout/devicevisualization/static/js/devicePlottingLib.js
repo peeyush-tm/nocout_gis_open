@@ -464,6 +464,9 @@ function devicePlottingClass_gmap() {
 	 */
 	this.createMap = function(domElement) {
 
+		//display advance search, filter etc button when call is going on.
+		disableAdvanceButton();
+
 		/*If no internet access*/
 		if(typeof google != "undefined") {
 			var mapObject = {};
@@ -500,9 +503,6 @@ function devicePlottingClass_gmap() {
 			/*Initialize markercluster*/
          	masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
 
-         	//display advance search, filter etc button when call is going on.
-			disableAdvanceButton();
-
 			/*style for state wise counter label*/
 			counter_div_style = "margin-left:-30px;margin-top:-30px;cursor:pointer;background:url("+base_url+"/static/js/OpenLayers/img/state_cluster.png) top center no-repeat;text-align:center;width:65px;height:65px;";
 
@@ -517,7 +517,7 @@ function devicePlottingClass_gmap() {
 			$("#loadingIcon").show();
 
 			/*Disable the refresh button*/
-			$("#resetFilters").button("loading");
+			// $("#resetFilters").button("loading");
 
 
             // Google maps mousemove event, triggers when map mouse move on google maps
@@ -976,9 +976,7 @@ function devicePlottingClass_gmap() {
 	            // (string | mandatory) the text inside the notification
 	            text: 'No Internet Access',
 	            // (bool | optional) if you want it to fade out on its own or just sit there
-	            sticky: false,
-	            // Time in ms after which the gritter will dissappear.
-                time : 1000
+	            sticky: true
 	        });
 		}
 	};
@@ -1081,7 +1079,7 @@ function devicePlottingClass_gmap() {
 					$("#loadingIcon").hide();
 
 					/*Enable the refresh button*/
-					$("#resetFilters").button("complete");
+					// $("#resetFilters").button("complete");
 
 					/*Recall the server after particular timeout if system is not freezed*/
 					setTimeout(function(e){
@@ -1273,7 +1271,7 @@ function devicePlottingClass_gmap() {
 			$("#loadingIcon").hide();
 
 			/*Enable the refresh button*/
-			$("#resetFilters").button("complete");
+			// $("#resetFilters").button("complete");
 			
 			if(isFirstTime == 1) {
 				/*Load data for basic filters*/
@@ -1415,12 +1413,13 @@ function devicePlottingClass_gmap() {
 			// console.log("Filter By Sector Start Time :- "+ start_date_sector_filter.toLocaleString());
 		}
 
-		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
-			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
-			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
-			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
-			// dataset_clone = JSON.parse(JSON.stringify(dataset));
-			dataset_clone = dataset;
+		var complete_filtering_data = gmap_self.getSelectedFilteringItems(),
+			technology_filter = complete_filtering_data["advance"]["technology"],
+			vendor_filter = complete_filtering_data["advance"]["vendor"],
+			frequency_filter = complete_filtering_data["advance"]["frequency"],
+			polarization_filter = complete_filtering_data["advance"]["polarization"];
+
+		var dataset_clone = dataset;
 		// Remove unmatched sectors
 		for(var x=0;x<dataset_clone.length;x++) {
 			var bs_sectors = dataset_clone[x].data.param.sector,
@@ -1529,18 +1528,14 @@ function devicePlottingClass_gmap() {
 			// console.log("Filter Data Start Time :- "+ start_date_filtered.toLocaleString());
 		}
 
-		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
-			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
-			city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').toLowerCase().split(',') : [],
-			state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').toLowerCase().split(',') : [],
-			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
-			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
-			filterObj = {
-				"technology" : $.trim($("#technology option:selected").text()),
-				"vendor" : $.trim($("#vendor option:selected").text()),
-				"state" : $.trim($("#state option:selected").text()),
-				"city" : $.trim($("#city option:selected").text())
-			},
+		var complete_filtering_data = gmap_self.getSelectedFilteringItems(),
+			technology_filter = complete_filtering_data["advance"]["technology"],
+			vendor_filter = complete_filtering_data["advance"]["vendor"],
+			city_filter = complete_filtering_data["advance"]["city"],
+			state_filter = complete_filtering_data["advance"]["state"],
+			frequency_filter = complete_filtering_data["advance"]["frequency"],
+			polarization_filter = complete_filtering_data["advance"]["polarization"],
+			filterObj = complete_filtering_data["basic"],
 			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
 			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0;
 
@@ -2560,7 +2555,7 @@ function devicePlottingClass_gmap() {
 			$("#loadingIcon").hide();
 
 			/*Enable the refresh button*/
-			$("#resetFilters").button("complete");
+			// $("#resetFilters").button("complete");
 
 
 			var oms_bs_markers = oms.getMarkers(),
@@ -3340,16 +3335,29 @@ function devicePlottingClass_gmap() {
 			perfContent = "",
 			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "",
 			direct_val_keys = ['pos_link1','pos_link2'],
-			device_id = "";
+			device_id = "",
+			device_name = "",
+			marker_key = "",
+			maps_single_service_poll_flag = live_poll_config ? live_poll_config['maps_single_service'] : "",
+			maps_themetics_poll_flag = live_poll_config ? live_poll_config['maps_themetics'] : "",
+			single_service_polling = maps_single_service_poll_flag ? maps_single_service_poll_flag : false,
+			themetics_polling = maps_themetics_poll_flag ? maps_themetics_poll_flag : false;
 
 		if(clickedType == 'sector_Marker' || clickedType == 'sector') {
 			device_id = gisPerformanceClass.getKeyValue(contentObject.deviceInfo, 'device_id', true, 0);
+			if(clickedType == 'sector_Marker') {
+				marker_key = "sector_"+contentObject.filter_data.sector_name;
+			} else {
+				marker_key = "poly_"+contentObject.sectorName+"_"+contentObject.filter_data.sector_id;
+			}
 		} else if(clickedType == 'sub_station') {
 			device_id = contentObject.ss_device_id ? contentObject.ss_device_id : "";
+			marker_key = "ss_"+contentObject.name;
 		}
 		
 		var device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "",
-			device_pl = contentObject.pl ? contentObject.pl : "";
+			device_pl = contentObject.pl ? contentObject.pl : "",
+			device_name = contentObject.device_name ? contentObject.device_name : "";
 
 		// Tabs Structure HTML
 		/*Tabbale Start*/
@@ -3364,6 +3372,13 @@ function devicePlottingClass_gmap() {
 					  <i class="fa fa-arrow-circle-o-right"></i> Polled Info \
 					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
 					  </li>';
+		if(single_service_polling && (clickedType == 'sector_Marker' || clickedType == 'sub_station')) {
+			infoTable += '<li class=""><a href="#poll_now_block" data-toggle="tab" id="poll_now_tab" \
+						  device_id="'+device_id+'" point_type="'+clickedType+'" \
+						  <i class="fa fa-arrow-circle-o-right"></i> Poll Now \
+						  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
+						  </li>';
+		}
 		infoTable += '</ul>';
 		/*Tabs Creation Ends*/
 
@@ -3513,10 +3528,38 @@ function devicePlottingClass_gmap() {
 
 				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+									  <div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> \
+									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
+									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
+									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
+									  <button class='btn btn-sm btn-info' \
+									  onClick='gmap_self.claculateFresnelZone(\
+									  	"+contentObject.nearLat+",\
+									  	"+contentObject.nearLon+",\
+									  	"+contentObject.ss_lat+",\
+									  	"+contentObject.ss_lon+",\
+									  	"+contentObject.bs_height+",\
+									  	"+contentObject.ss_height+",\
+									  	"+sector_ss_name+");'>Fresnel Zone</button>\
+									  </li>"+report_download_btn+"</ul></div></div></div>";
 				} else {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+									  <div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> \
+									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
+									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
+									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
+									  <button class='btn btn-sm btn-info' \
+									  onClick='gmap_self.claculateFresnelZone(\
+									  	"+contentObject.ss_lat+",\
+									  	"+contentObject.ss_lon+",\
+									  	"+contentObject.nearLat+",\
+									  	"+contentObject.nearLon+",\
+									  	"+contentObject.ss_height+",\
+									  	"+contentObject.bs_height+",\
+									  	"+sector_ss_name+");'>Fresnel Zone</button>\
+									  </li>"+report_download_btn+"</ul></div></div></div>";
 				}
 
 			} catch(e) {
@@ -3648,16 +3691,86 @@ function devicePlottingClass_gmap() {
 
 				infoTable += '</div>';
 				/*Polled Tab Content End*/
+
+				// IF PTP(i.e Only in case of PTP sector. Not for PMP & Wimax)
+				if(single_service_polling && ptp_tech_list.indexOf(sector_tech) > -1) {
+
+					/*Poll Now Tab Content Start*/
+					infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
+
+					infoTable += "<table class='table table-bordered table-hover'><tbody>";
+					
+					// Space for Poll Now Content
+					infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
+								  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
+								  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
+								  <span id='fetched_val_container'></span>\
+								  <span class='divide-10'></span>\
+								  <span id='sparkline_container'></span>\
+								  </td></tr>";
+
+					/*Polled Parameter Info*/
+					for(var i=0; i< actual_polled_info.length; i++) {
+						var url = "",
+							text_class = "",
+							service_name = "",
+							ds_name = "";
+						if(actual_polled_info[i]["show"]) {
+
+							// Url
+							url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
+							text_class = "text-primary";
+							service_name = actual_polled_info[i]["service_name"] ? actual_polled_info[i]["service_name"] : "";
+							ds_name = actual_polled_info[i]["ds"] ? actual_polled_info[i]["ds"] : "";
+
+
+							infoTable += "<tr>";
+							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td>";
+							infoTable += "<td style='width:35px;max-width:50px;'>\
+										 <button class='btn btn-primary btn-xs perf_poll_now'\
+										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
+			                             title='Poll Now' data-complete-text='<i class=\"fa fa-hand-o-right\"></i>' \
+			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
+			                             class='fa fa-hand-o-right'></i>\
+			                             </button></td>";
+
+							infoTable += "<td>"+actual_polled_info[i]['value']+"</td>\
+										 </tr>";
+						}
+					}
+					infoTable += "</tbody></table>";
+					/*BS-Sector Info End*/
+
+					infoTable += '</div>';
+					/*Poll Now Tab Content End*/
+				}
 			}
 
 			infoTable += '</div>';
 			/*Tab-content */
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
-			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window'><i class='fa fa-times text-danger' title='Close'></i></a></div></div>";
-			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
-			windowContent += "</div></div>";
+
+			windowContent += "<div class='windowContainer' style='z-index: 300;position:relative;'>\
+							  <div class='box border'><div class='box-title'>\
+							  <h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4>";
+
+			// If enabled from settings.py only then show Poll Now Button.
+			if(maps_themetics_poll_flag && ptp_tech_list.indexOf(sector_tech) > -1) {
+				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
+								  data-complete-text='<i class=\"fa fa-hand-o-right\"></i> Poll Now' \
+								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
+								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sector_device'>\
+								  <i class='fa fa-hand-o-right'></i> Poll Now</button>";
+			}
+
+			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' title='Close' marker_type='sector_device' marker_key='"+marker_key+"'>\
+							  <i class='fa fa-times text-danger' title='Close'></i></a>\
+							  </div></div>\
+							  <div class='box-body'>\
+							  <div class='' align='center'>"+infoTable+"</div>\
+							  <div class='clearfix'></div><div class='pull-right'></div>\
+							  <div class='clearfix'></div></div></div></div>";
 
 		} else if(clickedType == 'sub_station') {
 
@@ -3781,6 +3894,59 @@ function devicePlottingClass_gmap() {
 
 				infoTable += '</div>';
 				/*Polled Tab Content End*/
+
+				// IF enabled from settings.py
+				if(single_service_polling) {
+
+					/*Poll Now Tab Content Start*/
+					infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
+
+					infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
+					// Space for Poll Now Content
+					infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
+								  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
+								  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
+								  <span id='fetched_val_container'></span>\
+								  <span class='divide-10'></span>\
+								  <span id='sparkline_container'></span>\
+								  </td></tr>";
+
+					/*Polled Parameter Info*/
+					for(var i=0; i< actual_polled_info.length; i++) {
+						var url = "",
+							text_class = "",
+							service_name = "",
+							ds_name = "";
+						if(actual_polled_info[i]["show"]) {
+
+							// Url
+							url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
+							text_class = "text-primary";
+							service_name = actual_polled_info[i]["service_name"] ? actual_polled_info[i]["service_name"] : "";
+							ds_name = actual_polled_info[i]["ds"] ? actual_polled_info[i]["ds"] : "";
+
+
+							infoTable += "<tr>";
+							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td>";
+							infoTable += "<td style='width:35px;max-width:50px;'>\
+										 <button class='btn btn-primary btn-xs perf_poll_now'\
+										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
+			                             title='Poll Now' data-complete-text='<i class=\"fa fa-hand-o-right\"></i>' \
+			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
+			                             class='fa fa-hand-o-right'></i>\
+			                             </button></td>";
+
+							infoTable += "<td>"+actual_polled_info[i]['value']+"</td>\
+										 </tr>";
+						}
+					}
+					infoTable += "</tbody></table>";
+					/*BS-Sector Info End*/
+
+					infoTable += '</div>';
+					/*Poll Now Tab Content End*/
+				}
 			}
 
 			/*Tab-content End*/
@@ -3789,10 +3955,23 @@ function devicePlottingClass_gmap() {
 			
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
-			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
-			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
-			windowContent += "</div></div>";
+			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+							  <div class='box border'><div class='box-title'>\
+							  <h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4>";
+			// If enabled from settings.py only then show Poll Now Button.
+			if(maps_themetics_poll_flag) {
+				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
+								  data-complete-text='<i class=\"fa fa-hand-o-right\"></i> Poll Now' \
+								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait' \
+								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sub_station'>\
+								  <i class='fa fa-hand-o-right'></i> Poll Now</button>";
+			}
+
+			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' marker_type='sub_station' marker_key='"+marker_key+"' title='Close'>\
+							  <i class='fa fa-times text-danger'></i></a></div></div>\
+							  <div class='box-body'><div class='' align='center'>"+infoTable+"</div>\
+							  <div class='clearfix'></div><div class='pull-right'></div>\
+							  <div class='clearfix'></div></div></div></div>";
 		} else {
 			// If base station then reset tabs html string
 			infoTable = "";
@@ -3881,10 +4060,13 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
-			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'><a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
-			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
-			windowContent += "</div></div>";
+			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
+							  <div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  \
+							  "+BsSsWindowTitle+"</h4><div class='tools'><a class='close_info_window' title='Close'>\
+							  <i class='fa fa-times text-danger'></i></a></div></div>\
+							  <div class='box-body'><div align='center'>"+infoTable+"</div>\
+							  <div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'>\
+							  </div></div></div></div>";
 		}
 
 
@@ -5260,22 +5442,185 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
+	 * This function returns select2 selected values array as per given param
+	 * @method prepareSelect2Array
+	 * @param data_list {Array}, It contains the select2 selected values JSON array
+	 * @return
+	 */
+	this.prepareSelect2Array = function(data_list) {
+		var values_list = []
+		
+		if(data_list && data_list.length > 0) {
+			for(var i=0;i<data_list.length;i++) {
+				if(data_list[i] && data_list[i].value) {
+					var selected_val = $.trim(String(data_list[i].value)).toLowerCase();
+					if(values_list.indexOf(selected_val) == -1) {
+						values_list.push(selected_val);
+					}
+				}
+			}
+		}
+
+		return values_list;
+	};
+
+	/**
+     * This function return selected filtering(Basic + Advance) items array
+     * @method getSelectedFilteringItems
+     * @return selected_filtering_array {JSON Object}, It contains selected filtering(Basic + Advance) items JSON list.
+     */
+	this.getSelectedFilteringItems = function() {
+
+		var has_technology = $("#filter_technology").select2('val').length > 0,
+			has_vendor = $("#filter_vendor").select2('val').length > 0,
+			has_city_filter = $("#filter_city").select2('val').length > 0,
+			has_state = $("#filter_state").select2('val').length > 0,
+			has_frequency = $("#filter_frequency").select2('val').length > 0,
+			has_polarization = $("#filter_polarization").select2('val').length > 0,
+			technology_data = $("#filter_technology").select2('data'),
+			vendor_data = $("#filter_vendor").select2('data'),
+			city_filter_data = $("#filter_city").select2('data'),
+			state_data = $("#filter_state").select2('data'),
+			frequency_data = $("#filter_frequency").select2('data'),
+			polarization_data = $("#filter_polarization").select2('data'),
+			technology_filter = [],
+			vendor_filter = [],
+			city_filter = [],
+			state_filter = [],
+			frequency_filter = [],
+			polarization_filter = [],
+			selected_filters_data = {
+				"basic" : {
+					"technology" : $.trim($("#technology option:selected").text()),
+					"vendor" : $.trim($("#vendor option:selected").text()),
+					"state" : $.trim($("#state option:selected").text()),
+					"city" : $.trim($("#city option:selected").text())
+				},
+				"advance" : {
+					"technology" : [],
+					"vendor" : [],
+					"city" : [],
+					"state" : [],
+					"frequency" : [],
+					"polarization" : []
+				}
+			};
+
+
+		// If any technology filter is applied the get selected technology
+		if(has_technology && technology_data.length > 0) {
+			technology_filter = gmap_self.prepareSelect2Array(technology_data);
+		}
+
+		// If any vendor filter is applied the get selected vendores
+		if(has_vendor && vendor_data.length > 0) {
+			vendor_filter = gmap_self.prepareSelect2Array(vendor_data);
+		}
+
+		// If any city filter is applied the get selected cities
+		if(has_city_filter && city_filter_data.length > 0) {
+			city_filter = gmap_self.prepareSelect2Array(city_filter_data);
+		}
+
+		// If any state filter is applied the get selected states
+		if(has_state && state_data.length > 0) {
+			state_filter = gmap_self.prepareSelect2Array(state_data);
+		}
+
+		// If any frequency filter is applied the get selected frequencies
+		if(has_frequency && frequency_data.length > 0) {
+			frequency_filter = gmap_self.prepareSelect2Array(frequency_data);
+		}
+
+		// If any polarization filter is applied the get selected polarization
+		if(has_polarization && polarization_data.length > 0) {
+			polarization_filter = gmap_self.prepareSelect2Array(polarization_data);
+		}
+
+		selected_filters_data["advance"]["technology"] = technology_filter;
+		selected_filters_data["advance"]["vendor"] = vendor_filter;
+		selected_filters_data["advance"]["city"] = city_filter;
+		selected_filters_data["advance"]["state"] = state_filter;
+		selected_filters_data["advance"]["frequency"] = frequency_filter;
+		selected_filters_data["advance"]["polarization"] = polarization_filter;
+
+		return selected_filters_data;
+
+	};
+
+	/**
+     * This function return selected search items array
+     * @method getSelectedSearchItems
+     * @return selected_search_array {JSON Object}, It contains the bs alias, ip address, circuit id & city selected values JSON list.
+     */
+	this.getSelectedSearchItems = function() {
+
+		var has_bs_alias = $("#search_name").select2('val').length > 0,
+			has_ip_address = $("#search_sector_configured_on").select2('val').length > 0,
+			has_circuit_id = $("#search_circuit_ids").select2('val').length > 0,
+			has_city = $("#search_city").select2('val').length > 0,
+			bs_alias_data = $("#search_name").select2('data'),
+			ip_address_data = $("#search_sector_configured_on").select2('data'),
+			circuit_id_data = $("#search_circuit_ids").select2('data'),
+			city_data = $("#search_city").select2('data'),
+			selected_bs_alias = [],
+			selected_ip_address = [],
+			selected_circuit_id = [],
+			selected_bs_city = [],
+			selected_search_array = {
+				"bs_alias" : [],
+				"ip_address" : [],
+				"circuit_id" : [],
+				"city" : []
+			};
+
+		// If any bs search is applied the get selected bs alias
+		if(has_bs_alias && bs_alias_data.length > 0) {
+			selected_bs_alias = gmap_self.prepareSelect2Array(bs_alias_data);
+		}
+
+		// If any IP address search is applied the get selected IP addresses
+		if(has_ip_address && ip_address_data.length > 0) {
+			selected_ip_address = gmap_self.prepareSelect2Array(ip_address_data);
+		}
+
+		// If any circuit_id search is applied the get selected circuit_ids
+		if(has_circuit_id && circuit_id_data.length > 0) {
+			selected_circuit_id = gmap_self.prepareSelect2Array(circuit_id_data);
+		}
+
+		// If any city search is applied the get selected cities
+		if(has_city && city_data.length > 0) {
+			selected_bs_city = gmap_self.prepareSelect2Array(city_data);
+		}
+
+		selected_search_array["bs_alias"] = selected_bs_alias;
+		selected_search_array["ip_address"] = selected_ip_address;
+		selected_search_array["circuit_id"] = selected_circuit_id;
+		selected_search_array["city"] = selected_bs_city;
+
+		return selected_search_array;
+
+	};
+
+	/**
      * This function search data as per the applied search creteria
      * @method advanceSearchFunc
      */
 	this.advanceSearchFunc = function() {
 
-  		var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').toLowerCase().split(',') : [],
-			selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').toLowerCase().split(',') : [],
-			selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').toLowerCase().split(',') : [],
-			selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').toLowerCase().split(',') : [],
-  			isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0,
-  			// plottable_data = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true))),
-  			plottable_data = gmap_self.updateStateCounter_gmaps(true),
-  			data_to_plot = plottable_data ? plottable_data : [];
+		var selected_search_items = gmap_self.getSelectedSearchItems(),
+			selected_bs_alias = selected_search_items['bs_alias'] ? selected_search_items['bs_alias'] : [],
+			selected_ip_address = selected_search_items['ip_address'] ? selected_search_items['ip_address'] : [],
+			selected_circuit_id = selected_search_items['circuit_id'] ? selected_search_items['circuit_id'] : [],
+			selected_bs_city = selected_search_items['city'] ? selected_search_items['city'] : [];
 
-		var plotted_search_markers = [],
+  		var isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0,
+  			plottable_data = gmap_self.updateStateCounter_gmaps(true),
+  			data_to_plot = plottable_data ? plottable_data : [],
+  			plotted_search_markers = [],
 			isSearched = 0;
+
 		// Just to check that any data is present regarding search or not.
     	for(var i=data_to_plot.length;i--;) {
     		if(isSearched > 0) {
@@ -5776,17 +6121,20 @@ function devicePlottingClass_gmap() {
 				earth_instance.clearStateCounters();
 			} else if (window.location.pathname.indexOf("white_background") > -1) { 
 				whiteMapClass.clearStateCounters_wmaps();			
-			}else {
+			} else {
 				gmap_self.clearStateCounters();
 			}
 		}
 
-		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
-			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
-			city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').toLowerCase().split(',') : [],
-			state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').toLowerCase().split(',') : [],
-			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
-			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
+
+		var complete_filtering_data = gmap_self.getSelectedFilteringItems(),
+			technology_filter = complete_filtering_data["advance"]["technology"],
+			vendor_filter = complete_filtering_data["advance"]["vendor"],
+			city_filter = complete_filtering_data["advance"]["city"],
+			state_filter = complete_filtering_data["advance"]["state"],
+			frequency_filter = complete_filtering_data["advance"]["frequency"],
+			polarization_filter = complete_filtering_data["advance"]["polarization"],
+			filterObj = complete_filtering_data["basic"],
 			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
 			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0,
 			basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
@@ -5795,17 +6143,12 @@ function devicePlottingClass_gmap() {
 			data_to_plot_1 = [];
 
 		if(isAdvanceFilterApplied || isBasicFilterApplied) {
-			// filtered_data_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredData_gmap()));
-			// filtered_data_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredData_gmap());
 			filtered_data_1 = gmap_self.getFilteredData_gmap();
 		} else {
-			// filtered_data_1 = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 			filtered_data_1 = gmap_self.objDeepCopy_nocout(all_devices_loki_db.data);
 		}
 
 		if(advance_filter_condition || basic_filter_condition) {
-        	// data_to_plot_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(filtered_data_1)));
-        	// data_to_plot_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredBySectors(filtered_data_1));
         	data_to_plot_1 = gmap_self.getFilteredBySectors(filtered_data_1);
     	} else {
     		data_to_plot_1 = filtered_data_1;
@@ -5824,12 +6167,15 @@ function devicePlottingClass_gmap() {
 
     		return response;
     	} else {
+
+    		var selected_search_items = gmap_self.getSelectedSearchItems(),
+				selected_bs_alias = selected_search_items['bs_alias'] ? selected_search_items['bs_alias'] : [],
+				selected_ip_address = selected_search_items['ip_address'] ? selected_search_items['ip_address'] : [],
+				selected_circuit_id = selected_search_items['circuit_id'] ? selected_search_items['circuit_id'] : [],
+				selected_bs_city = selected_search_items['city'] ? selected_search_items['city'] : [];
+
     		// If any search is applied then reset it
-    		var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').toLowerCase().split(',') : [],
-				selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').toLowerCase().split(',') : [],
-				selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').toLowerCase().split(',') : [],
-				selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').toLowerCase().split(',') : [],
-	  			isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
+    		var isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
 
     		if(isSearchApplied) {
     			resetAdvanceSearch();
@@ -5886,8 +6232,6 @@ function devicePlottingClass_gmap() {
 					gmap_self.showStateWiseData_gmap(data_to_plot_1);
 				}
 			} else {
-				/*Enable the refresh button*/
-        		$("#resetFilters").button("complete");
 				$.gritter.add({
 	        		// (string | mandatory) the heading of the notification
 	                title: 'GIS : Filters',
@@ -5899,6 +6243,8 @@ function devicePlottingClass_gmap() {
 	                time : 1000
 	            });
 			}
+			/*Enable the refresh button*/
+    		$("#resetFilters").button("complete");
     	}
 
     	if(isDebug) {
@@ -5947,36 +6293,10 @@ function devicePlottingClass_gmap() {
 	 */
 	this.getCountryWiseCount = function() {
 
-		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
-			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
-			city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').toLowerCase().split(',') : [],
-			state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').toLowerCase().split(',') : [],
-			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
-			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
-			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0,
-			basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
-			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			filtered_data_1 = [],
-			data_to_plot_1 = [],
-			devices_count = 0;
+    	var data_to_plot_1 = gmap_self.updateStateCounter_gmaps(true),
+    		devices_count = 0;
 
-		if(isAdvanceFilterApplied || isBasicFilterApplied) {
-			// filtered_data_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredData_gmap()));
-			filtered_data_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredData_gmap());
-		} else {
-			// filtered_data_1 = JSON.parse(JSON.stringify(all_devices_loki_db.data));
-			filtered_data_1 = gmap_self.objDeepCopy_nocout(all_devices_loki_db.data);
-		}
-
-		if(advance_filter_condition || basic_filter_condition) {
-        	// data_to_plot_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(filtered_data_1)));
-        	data_to_plot_1 = gmap_self.objDeepCopy_nocout(gmap_self.getFilteredBySectors(filtered_data_1));
-    	} else {
-    		data_to_plot_1 = filtered_data_1;
-    	}
-
-		if(data_to_plot_1.length > 0) {
+		if(data_to_plot_1 && data_to_plot_1.length > 0) {
 			for(var i=data_to_plot_1.length;i--;) {
 				var sectors_data = data_to_plot_1[i].data.param.sector;
 				// Increment the counter by 1
@@ -8841,20 +9161,15 @@ function devicePlottingClass_gmap() {
 					
 				var bs_id_array = [],
 					bs_obj_array = [],
-        			states_array = [];
-
-				var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
-					vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
-					city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').toLowerCase().split(',') : [],
-					state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').toLowerCase().split(',') : [],
-					frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
-					polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
-					filterObj = {
-						"technology" : $.trim($("#technology option:selected").text()),
-						"vendor" : $.trim($("#vendor option:selected").text()),
-						"state" : $.trim($("#state option:selected").text()),
-						"city" : $.trim($("#city option:selected").text())
-					},
+        			states_array = [],
+        			complete_filtering_data = gmap_self.getSelectedFilteringItems(),
+					technology_filter = complete_filtering_data["advance"]["technology"],
+					vendor_filter = complete_filtering_data["advance"]["vendor"],
+					city_filter = complete_filtering_data["advance"]["city"],
+					state_filter = complete_filtering_data["advance"]["state"],
+					frequency_filter = complete_filtering_data["advance"]["frequency"],
+					polarization_filter = complete_filtering_data["advance"]["polarization"],
+					filterObj = complete_filtering_data["basic"],
 					isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
 					isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
 

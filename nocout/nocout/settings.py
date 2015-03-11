@@ -689,6 +689,17 @@ EMAIL_FILE_PATH = '/nocout/tmp/app-messages'  # change this to a proper location
 # ### Special Calculation Mechanism for Capacity Management
 CAPACITY_SPECIFIC_TIME = 0
 
+####################### Live Polling Configuration #######################
+LIVE_POLLING_CONFIGURATION = {
+    'maps_default' : True,
+    'maps_themetics' : True,
+    'maps_single_service' : True,
+    'performance' : False
+}
+
+####################### Periodic Polling Parallel Processes Count #######################
+PERIODIC_POLL_PROCESS_COUNT = 2
+
 # Import the local_settings.py file to override global settings
 
 try:

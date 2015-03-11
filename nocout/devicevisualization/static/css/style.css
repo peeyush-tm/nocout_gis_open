@@ -482,3 +482,6 @@ iframe {
 #pin-points-container {
     margin-top: 25px;
 }
+#infoWindowContainer .nav > li > a {
+    padding: 8px 9px;
+}
