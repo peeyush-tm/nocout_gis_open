@@ -4661,6 +4661,7 @@ class GisWizardPTPListingTable(SectorListingTable):
     order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
             'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
             'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    search_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',]
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
