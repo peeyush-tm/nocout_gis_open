@@ -1,7 +1,7 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 from celery import task, group
 import math
-from django.db.models import Avg, F
+from django.db.models import Avg, F, Q
 
 # nocout utils import
 from nocout.utils.util import fetch_raw_result
@@ -104,6 +104,12 @@ def get_all_sector_devices(technology):
     :param technology:
     :return:
     """
+    ret = False
+    g_jobs = list()
+
+    bulky_create = list()
+    bulky_update = list()
+
     if not technology:
         return False
 
@@ -126,19 +132,38 @@ def get_all_sector_devices(technology):
 
     sector_objects = inventory_utils.organization_sectors(organization=organizations, technology=tech)
 
-    sector_devices_list = sector_objects.values(*sector_values)
+    if not sector_objects.exists():
+        return False
+
+    spot_objects = SpotDashboard.objects.select_related(
+        'sector',
+        'device'
+    ).filter(
+        Q(ul_issue_1=False)
+        |
+        Q(augment_1=False),  # if any of these is False only then we should process
+        sector__in=sector_objects
+    )
+
+    existing_sectors = spot_objects.values_list('sector', flat=True)
+
+    # the sectors we want to manipulate are the existing sectors
+    # rest of the sectors we would want to create if not exists
+    # or skip completely
+
+    sector_devices_list = sector_objects.filter(
+        sector__in=existing_sectors
+    ).values(*sector_values)
 
     # Get machine wise seperated devices,sectors list
-    machine_wise_data,\
-    sectors_id_list = get_machines_wise_devices(sectorObject=sector_devices_list)
+    machine_wise_data, sectors_id_list = get_machines_wise_devices(sectorObject=sector_devices_list)
 
     # Machine by machine loop
     complete_augmentation_data = list()
     complete_ul_issue_data = list()
 
-    #list of services
+    # list of services
     service_list = list()
-
 
     # datasources technology wise
     data_source_tech = {
@@ -187,19 +212,76 @@ def get_all_sector_devices(technology):
     if len(complete_ul_issue_data) > 0:
         complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='sector_id')
 
-    # Call function to create resultant data from the calculated data
-    resultant_data = get_spot_dashboard_result(
-        sectors_list=sector_devices_list,
-        augmentation_list=complete_augmentation_data,
-        ul_issues_list=complete_ul_issue_data
-    )
+    # Reverse the list to get the current month at first index
+    last_six_months_list, months_list = perf_views.getLastXMonths(6)
+    last_six_months_list.reverse()
+    month_num = int(last_six_months_list[0][1])
 
-    # This function insert or update resultant data in SpotDashboard model
-    update_spot_dashboard_data(
-        calculated_data=resultant_data,
-        technology=technology
-    )
+    for sector in sector_objects:
+        try:
+            spot_object = spot_objects.get(
+                sector_sector_id=sector.sector_id,
+                sector=sector
+            )
+            sector_id = sector.id
+            sector_sector_id = sector.sector_id
 
+            update_this = False
+
+            if sector_id in complete_augmentation_data:
+                augment_data = complete_augmentation_data[sector_id]
+                if (month_num in augment_data) and not spot_object.augment_1:
+                    spot_object.augment_1 = 1
+                    update_this = True
+
+            if sector_sector_id in complete_ul_issue_data:
+                ul_issue_data = complete_ul_issue_data[sector_sector_id]
+                if (month_num in ul_issue_data) and not spot_object.ul_issue_data:
+                    spot_object.ul_issue_1 = 1
+                    update_this = True
+
+            if update_this:
+                bulky_update.append(spot_object)
+
+        except:
+            bulky_create.append(
+                SpotDashboard(
+                    sector_sector_id=sector.sector_id,
+                    sector=sector,
+                    device=sector.sector_configured_on,
+                    sector_device_technology=technology,
+                    sector_sector_configured_on=sector.sector_configured_on.ip_address
+                )
+            )
+
+    # If any create item exist then start bulk create job
+    if len(bulky_create):
+        g_jobs.append(
+            inventory_tasks.bulk_update_create.s(
+                bulky=bulky_create,
+                action='create',
+                model=SpotDashboard
+            )
+        )
+
+    # If any update item exist then start bulk update job
+    if len(bulky_update):
+        g_jobs.append(
+            inventory_tasks.bulk_update_create.s(
+                bulky=bulky_update,
+                action='update',
+                model=SpotDashboard
+            )
+        )
+    # Start create & update jobs parallely
+    if not len(g_jobs):
+        return False
+
+    job = group(g_jobs)
+    ret = False
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
     return True
 
 
@@ -324,172 +406,6 @@ def format_polled_data(data=[], key_column_name=''):
             resultant_dict[current_key].append(current_timestamp_month)
     #logger.debug(resultant_dict)
     return resultant_dict
-
-
-def get_spot_dashboard_result(sectors_list=[], augmentation_list={}, ul_issues_list={}):
-    """
-    # This function creates resultant data from the calculated data & sectors list
-    :param sectors_list:
-    :param augmentation_list:
-    :param ul_issues_list:
-    :return:
-    """
-    # if len(sectors_list) < 1:
-    #     return []
-
-    # Get Last Six Month List
-    last_six_months_list, \
-    months_list = perf_views.getLastXMonths(6)
-
-    # Reverse the list to get the current month at first index
-    last_six_months_list.reverse()
-    month_num = int(last_six_months_list[0][1])
-
-    # loop sectors list
-    for sector in sectors_list:
-
-        sector_id = str(sector['id'])
-        sector_sector_id = str(sector['sector_id'])
-        # device_name = refered_sector['sector_configured_on__device_name']
-
-        augment_data = []
-        ul_issue_data = []
-
-        if sector_id in augmentation_list:
-            augment_data = augmentation_list[sector_id]
-
-        if sector_sector_id in ul_issues_list:
-            ul_issue_data = ul_issues_list[sector_sector_id]
-
-        augment_key = 'augment_1'
-
-        if augment_key not in sector:
-            sector[augment_key] = ""
-
-        try:
-            if month_num in augment_data:
-                sector[augment_key] = 1
-        except Exception, e:
-            sector[augment_key] = 0
-
-        ul_issue_key = 'ul_issue_1'
-        if ul_issue_key not in sector:
-            sector[ul_issue_key] = ""
-
-        try:
-            if month_num in ul_issue_data:
-                sector[ul_issue_key] = 1
-        except Exception as e:
-            sector[ul_issue_key] = 0
-    #logger.debug(sectors_list)
-    return sectors_list
-
-
-def update_spot_dashboard_data(calculated_data=[], technology=''):
-    """
-    # This function insert or update SpotDashboard data as per the calculated data.
-    :param calculated_data:
-    :param technology:
-    """
-    
-    g_jobs = list()
-    bulky_update = list()
-    bulky_create = list()
-
-    is_updated = False
-
-    #counter_val = len(calculated_data)
-
-    for current_row in calculated_data:
-
-        #current_row = calculated_data[i]
-        try:
-            # Foreign Keys
-            sector_id = Sector.objects.select_related('sector_configured_on').get(pk=current_row['id'])
-            device_id = sector_id.sector_configured_on #Device.objects.filter(pk=current_row['sector_configured_on'])[0]
-
-            # Sector Details
-            sector_sector_id = current_row['sector_id']
-            sector_sector_configured_on = current_row['sector_configured_on__ip_address']
-            sector_device_technology = technology
-
-            # UL Issues for current month
-            ul_issue_1 = current_row['ul_issue_1']
-
-            # Augmentation for current month
-            augment_1 = current_row['augment_1']
-
-        except Exception as e:
-            logger.exception(e)
-            continue
-
-        #bulk operations
-        sector_object = None
-    
-    
-        try:
-            sector_object = SpotDashboard.objects.get(
-                sector_sector_id=sector_sector_id,
-                sector=sector_id
-            )
-
-            # sector_object.sector_sector_configured_on = sector_sector_configured_on
-            # sector_object.sector_device_technology=sector_device_technology
-
-            if (not sector_object.ul_issue_1) or (not sector_object.augment_1):
-                is_updated = True
-
-            if not sector_object.ul_issue_1:
-                sector_object.ul_issue_1 = ul_issue_1
-
-            if not sector_object.augment_1:
-                sector_object.augment_1 = augment_1
-
-            if is_updated:
-                bulky_update.append(sector_object)
-    
-        except Exception as e:
-            sector_object = SpotDashboard(
-                sector=sector_id,
-                device=device_id,
-                sector_sector_id=sector_sector_id,
-                sector_sector_configured_on=sector_sector_configured_on,
-                sector_device_technology=sector_device_technology,
-                ul_issue_1=ul_issue_1,
-                augment_1=augment_1
-            )
-            bulky_create.append(sector_object)
-    
-
-    # If any create item exist then start bulk create job
-    if len(bulky_create):
-        g_jobs.append(
-            inventory_tasks.bulk_update_create.s(
-                bulky=bulky_create,
-                action='create',
-                model=SpotDashboard
-            )
-        )
-    
-    # If any update item exist then start bulk update job
-    if len(bulky_update):
-        g_jobs.append(
-            inventory_tasks.bulk_update_create.s(
-                bulky=bulky_update,
-                action='update',
-                model=SpotDashboard
-            )
-        )
-    # Start create & update jobs parallely
-    if not len(g_jobs):
-        return False
-
-    job = group(g_jobs)
-    ret = False
-    result = job.apply_async()  # start the jobs
-    # for r in result.get():
-    #     ret |= r
-    return True
 
 
 @task()
