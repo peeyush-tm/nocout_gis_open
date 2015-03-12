@@ -29,7 +29,7 @@ status_dict = {
         'old': 0,
         'new': 1
     },
-    'alarm_status_changed': {
+    'changed_bad': {
         'old': 1,
         'new': 0
     },
@@ -115,8 +115,8 @@ def raise_alarms(service_status_list, org, required_levels):
         # Get the list of levels of EscalationStatus object after filtering the escalationLevel table
         # on the basis of device_type, service and service_data_source.
         service_level_list = required_levels.filter(
-            service=service_status.service,
-            service_data_source=service_status.service_data_source
+            service=service,
+            service_data_source=service_data_source
         )
 
         time_now = float(format(datetime.datetime.now(), 'U'))  # in unixtime
@@ -248,18 +248,18 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
                 setattr(alarm_object, 'l%d_email_status' % level.name, 1)
             else:
                 continue
-        if getattr(alarm_object, 'l%d_sms_status' % level.name) == 1:
+        if getattr(alarm_object, 'l%d_phone_status' % level.name) == 1:
             # this level has been notified
             if is_bad:
                 continue
             else:
                 alert_phones_for_good_performance.delay(alarm=alarm_object, level=level)
-                setattr(alarm_object, 'l%d_sms_status' % level.name, 0)
-        elif getattr(alarm_object, 'l%d_sms_status' % level.name) == 0:
+                setattr(alarm_object, 'l%d_phone_status' % level.name, 0)
+        elif getattr(alarm_object, 'l%d_phone_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
                 alert_phones_for_bad_performance.delay(alarm=alarm_object, level=level)
-                setattr(alarm_object, 'l%d_sms_status' % level.name, 1)
+                setattr(alarm_object, 'l%d_phone_status' % level.name, 1)
             else:
                 continue
         else:
@@ -308,11 +308,11 @@ def alert_emails_for_good_performance(alarm, level):
 
 
 @task
-def alert_phones_for_good_performance(alarm, level_list):
+def alert_phones_for_good_performance(alarm, level):
     """
-    Sends sms to phones for good performance.
+    Sends sms to phones for bad performance.
     """
-    # phones = level.get_phones()
+    phones = level.get_phones()
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass

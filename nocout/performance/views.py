@@ -37,7 +37,7 @@ from performance.utils import util as perf_utils
 
 from service.utils.util import service_data_sources
 
-from nocout.settings import DATE_TIME_FORMAT
+from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION
 
 from performance.formulae import display_time, rta_null
 from nocout.mixins.permissions import PermissionsRequiredMixin
@@ -550,7 +550,8 @@ class Get_Perfomance(View):
                 kwargs={'page_type': page_type, 'device_id' : device_id, 'service_name' : 'ping'},
                 current_app='alert_center'
             ),
-            'page_type': page_type
+            'page_type': page_type,
+            'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -1675,7 +1676,7 @@ class Get_Service_Status(View):
 
 
         severity, a = device_current_status(device_object=device)
-        last_down_time = a['refer']
+        last_down_time = a['down']
         age = a['age']
 
         if age:
@@ -2374,7 +2375,7 @@ class Get_Service_Type_Performance_Data(View):
 
         #last time down results
         severity, a = device_current_status(device_object=ss_device_object)
-        age = a['refer']
+        age = a['age']
         down = a['down']
         #last time pl = 100 results
         if age:

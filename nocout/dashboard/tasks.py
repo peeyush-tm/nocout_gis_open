@@ -103,11 +103,10 @@ def network_speedometer_dashboards():
         return ret
 
     job = group(g_jobs)
-    result = job.apply_async()
-    for r in result.get():
-        ret |= r
-
-    return ret
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -152,11 +151,10 @@ def temperature_speedometer_dashboards():
         return ret
 
     job = group(g_jobs)
-    result = job.apply_async()
-    for r in result.get():
-        ret |= r
-
-    return ret
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -226,12 +224,14 @@ def calculate_status_dashboards(technology):
                     )
                 )
 
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
-    return ret
+    if not len(g_jobs):
+        return ret
+
+    job = group(g_jobs)
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -282,13 +282,14 @@ def calculate_range_dashboards(technology, type):
     else:
         return False
 
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
+    if not len(g_jobs):
+        return ret
 
-    return ret
+    job = group(g_jobs)
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -588,13 +589,14 @@ def prepare_network_alert(organization,
         )
     )
 
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
+    if not len(g_jobs):
+        return ret
 
-    return ret
+    job = group(g_jobs)
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -661,13 +663,14 @@ def calculate_timely_temperature(organization, processed_for, machine_dict, char
         )
     )
 
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
+    if not len(g_jobs):
+        return ret
 
-    return ret
+    job = group(g_jobs)
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -777,7 +780,7 @@ def calculate_hourly_main_dashboard():
     now = timezone.now()
     buffer_now = now + datetime.timedelta(minutes=-5)
     then = now + datetime.timedelta(hours=-1)
-    calculate_hourly_range_status(now=buffer_now, then=then)
+    calculate_hourly_severity_status(now=buffer_now, then=then)
     calculate_hourly_range_status(now=buffer_now, then=then)
     return True
 
@@ -800,7 +803,7 @@ def calculate_hourly_severity_status(now, then):
         'dashboard_name',
         'organization'
     ).annotate(
-        Normal=Sum('ok'),
+        Normal=Avg('ok'),
         Needs_Augmentation=Avg('warning'),
         Stop_Provisioning=Avg('critical'),
         Down=Avg('down'),

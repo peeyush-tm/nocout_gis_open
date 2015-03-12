@@ -8,7 +8,10 @@ var mapPageType = "",
     base_url = "",
     last_selected_label = "",
     current_icon_size = "medium",
-    periodic_tooltip_call = "";
+    periodic_tooltip_call = "",
+    live_poll_config = {},
+    periodic_poll_process_count = 1,
+    is_tooltip_polled_used = false;
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -786,9 +789,9 @@ Function is used to Disable Advance Search, Advance Filter Button when Call for 
 When call is completed, we use the same function to enable Button by passing 'no' in parameter.
  */
 function disableAdvanceButton(status) {
-    var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap'];
-    var selectBoxes= ['technology', 'vendor', 'state', 'city'];
-    var textBoxes= ['google_loc_search','lat_lon_search'];
+    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'];
+    var selectBoxes = ['technology', 'vendor', 'state', 'city'];
+    var textBoxes = ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
     if(!status) {
         disablingBit= true;
@@ -1425,6 +1428,29 @@ $("#point_icons_container li").click(function(e) {
 
 /*Close info window when close button is clicked*/
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
+
+    var current_target_attr = e.currentTarget.attributes,
+        marker_key = current_target_attr['marker_key'] ? current_target_attr['marker_key'].value : "",
+        marker_type = current_target_attr['marker_type'] ? current_target_attr['marker_type'].value : "";
+
+    if(marker_key && marker_type) {
+        if(window.location.pathname.indexOf('googleEarth') > -1) {
+            // pass
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            // pass
+        } else {
+            if(is_tooltip_polled_used) {
+                var closed_marker = allMarkersObject_gmap[marker_type][marker_key];
+                if(closed_marker) {
+                    closed_marker.setOptions({
+                        "icon" : closed_marker.oldIcon
+                    });
+                    is_tooltip_polled_used = false;
+                }
+            }
+        }
+    }
+
     $('#infoWindowContainer').html("");
     if(!$('#infoWindowContainer').hasClass("hide")) {
         $('#infoWindowContainer').addClass("hide");
@@ -2086,4 +2112,175 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
             $(".nav-tabs li a:last-child .fa-spinner").addClass("hide");
         }
     }
+});
+
+// It triggers when Live polling button in Sector & SS tooltip rows clicked
+$('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
+
+    var current_target_attr = e.currentTarget.attributes,
+        current_table_childrens = $(e.currentTarget).parent().parent().children(),
+        last_td_container = current_table_childrens[current_table_childrens.length - 1],
+        service_name = current_target_attr['service_name'] ? current_target_attr['service_name'].value : "",
+        ds_name = current_target_attr['ds_name'] ? current_target_attr['ds_name'].value : "",
+        device_name = current_target_attr['device_name'] ? [current_target_attr['device_name'].value] : "",
+        false_param = false;
+
+        if(service_name && ds_name && device_name) {
+            // Disable all poll now buttons
+            $(e.currentTarget).button('loading');
+
+            // Call function to fetch live polling data
+            nocout_livePollCurrentDevice(
+                service_name,
+                ds_name,
+                device_name,
+                false_param,
+                false_param,
+                false_param,
+                false_param,
+                function(live_polled_dict) {
+                    if(live_polled_dict) {
+                        var live_polled_html = "";
+
+                        live_polled_html = "<span style='display:none;'>"+val_icon+" "+live_polled_dict["val"]+"<br/>\
+                                           "+time_icon+" "+live_polled_dict["time"]+"</span>";
+
+                        $(last_td_container).html(live_polled_html);
+                        $(last_td_container).children().slideDown('slow')
+                    } else {
+                        $(last_td_container).html("");
+                    }
+                    // Disable all poll now buttons
+                    $(e.currentTarget).button('complete');
+                });
+        } else {
+            $.gritter.add({
+                title: "Live Polling",
+                text: "Please try again later.",
+                sticky: false,
+                time : 1000
+            });
+        }
+
+});
+
+// It triggers when Poll Now button on top of Sector & SS tooltip clicked
+$('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) {
+
+    var current_target_attr = e.currentTarget.attributes,
+        device_name = current_target_attr['device_name'] ? [current_target_attr['device_name'].value] : "",
+        marker_key = current_target_attr['marker_key'] ? current_target_attr['marker_key'].value : "",
+        marker_type = current_target_attr['marker_type'] ? current_target_attr['marker_type'].value : "";
+
+    var themetics_radio = $("input:radio[name=thematic_type]"),
+        checked_themetics_radio = $("input:radio[name=thematic_type]"),
+        selected_thematics = themetics_radio.length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
+
+        if(device_name && marker_key && marker_type) {
+
+            var selected_marker = allMarkersObject_gmap[marker_type][marker_key];
+
+            if(selected_marker.device_name == device_name) {
+                // disable the button
+                $(e.currentTarget).button('loading');
+
+                // Make Ajax Call to Fetch Live Poll Data For opened device.
+                $.ajax({
+                    url : base_url+"/"+"device/lp_bulk_data/?devices="+JSON.stringify(device_name)+"&ts_type="+selected_thematics,
+                    type : "GET",
+                    success : function(response) {
+                        var result = "";
+                        // Type check of response
+                        if(typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        if(result.success == 1) {
+
+                            var device_data_dict = result['data']['devices'][device_name[0]],
+                                fetched_icon = device_data_dict && device_data_dict['icon'] ? device_data_dict['icon'] : "",
+                                fetched_val = device_data_dict && device_data_dict['value'] ? device_data_dict['value'] : "",
+                                polled_data_html = "",
+                                dateObj = new Date(),
+                                current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds();
+
+                            if(fetched_val  && fetched_val != "NA") {
+
+                                // If value is array then use first index val
+                                if(typeof fetched_val == 'object') {
+                                    fetched_val = fetched_val[0];
+                                }
+
+                                if(!isNaN(Number(fetched_val))) {
+                                    var existing_val = $("#infoWindowContainer #sparkline_val_input").val(),
+                                        new_values_list = "";
+
+                                    if(existing_val) {
+                                        new_values_list = existing_val+","+fetched_val;
+                                    } else {
+                                        new_values_list = fetched_val;
+                                    }
+                                    
+                                    // Update the value in input field
+                                    $("#infoWindowContainer #sparkline_val_input").val(new_values_list);
+
+                                    // Make array of values from "," comma seperated string
+                                    var new_chart_data = new_values_list.split(",");
+
+                                    /*Plot sparkline chart with the fetched polling value*/
+                                    $("#infoWindowContainer #sparkline_container").sparkline(new_chart_data, {
+                                        type: "line",
+                                        lineColor: "blue",
+                                        spotColor : "orange",
+                                        defaultPixelsPerValue : 10
+                                    });
+                                }
+                            }
+
+                            polled_data_html += '<span style="display:none;">'+val_icon+' '+fetched_val;
+                            polled_data_html += '<br/>'+time_icon+' '+current_time+'</span>';
+
+                            $("#infoWindowContainer #fetched_val_container").html(polled_data_html);
+
+                            $("#infoWindowContainer #fetched_val_container span").slideDown('slow');
+
+                            // If has icon then update marker with fetched icon.
+                            if(fetched_icon) {
+                                var marker_img_object = gmap_self.getMarkerImageBySize(base_url+"/"+fetched_icon,"other");
+
+                                // Update Marker Icon
+                                selected_marker.setOptions({
+                                    "icon" : marker_img_object
+                                });
+
+                                is_tooltip_polled_used = true;
+                            }
+
+                        } else {
+                            $.gritter.add({
+                                title: "Live Polling",
+                                text: result.message,
+                                sticky: false,
+                                time : 1000
+                            });
+                        }
+                    },
+                    error : function(err) {
+                        $.gritter.add({
+                            title: "Live Polling",
+                            text: err.statusText,
+                            sticky: false,
+                            time : 1000
+                        });
+                    },
+                    complete : function() {
+                        // enable the button
+                        $(e.currentTarget).button('complete');
+                    }
+                });
+
+            }
+        }
 });
