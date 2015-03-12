@@ -152,7 +152,7 @@ def get_all_sector_devices(technology):
     # or skip completely
 
     sector_devices_list = sector_objects.filter(
-        sector__in=existing_sectors
+        id__in=existing_sectors
     ).values(*sector_values)
 
     # Get machine wise seperated devices,sectors list
