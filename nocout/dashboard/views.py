@@ -6,7 +6,7 @@ import time
 
 from django.utils.dateformat import format
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.db.models import Q, Count, Sum
+from django.db.models import Q, Count, Sum, Avg
 
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
@@ -1386,7 +1386,7 @@ def view_severity_status_monthly(dashboard_name, organizations):
             # Preparation of final Dict for all days in One month
             data_dict['data'].append({
                 "color": item['color'],
-                "y": var[item['title']],
+                "y": var[item['id']],
                 "name": item['title'],
                 "x": js_time * 1000,
                 # Multiply by 1000 to return correct GMT+05:30 timestamp
