@@ -1592,6 +1592,27 @@ class WizardBaseStationForm(BaseStationForm):
             'infra_provider', 'gps_type', 'tag1', 'tag2', 'description',
         )
 
+    def clean(self):
+        """
+        Validations for base station form
+        """
+        alias = re.compile(r'[^\w]').sub("_", self.cleaned_data['alias'])
+        city = self.cleaned_data['city'].city_name[:3]
+        state = self.cleaned_data['state'].state_name[:3]
+        name = (alias + "_" + city + "_" + state).lower()
+        names = BaseStation.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            self._errors['alias'] = ErrorList(
+                [u"This name already in use."])
+        return self.cleaned_data
+
+
+
 
 class WizardBackhaulForm(BackhaulForm):
     """
@@ -1613,6 +1634,22 @@ class WizardBackhaulForm(BackhaulForm):
                 'aggregator_port_name', 'aggregator_port', 'pe_hostname', 'pe_ip', 'bh_connectivity', 'bh_circuit_id',
                 'bh_capacity', 'ttsl_circuit_id', 'dr_site',
         )
+
+    def clean(self):
+        """
+        Validations for base station form
+        """
+        name = self.cleaned_data['bh_configured_on'].ip_address
+        names = Backhaul.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            self._errors['bh_configured_on'] = ErrorList(
+                [u"This name already in use."])
+        return self.cleaned_data
 
 
 class WizardSectorForm(SectorForm):
