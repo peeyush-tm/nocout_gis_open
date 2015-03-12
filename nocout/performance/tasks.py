@@ -558,9 +558,6 @@ def update_spot_dashboard_monthly(technology=None):
 
         )
 
-
-
-
     return True
 
 ################## Task for Sector Spot Dashboard Calculation - End ###################
