@@ -1676,7 +1676,7 @@ class Get_Service_Status(View):
 
 
         severity, a = device_current_status(device_object=device)
-        last_down_time = a['refer']
+        last_down_time = a['down']
         age = a['age']
 
         if age:
@@ -2375,7 +2375,7 @@ class Get_Service_Type_Performance_Data(View):
 
         #last time down results
         severity, a = device_current_status(device_object=ss_device_object)
-        age = a['refer']
+        age = a['age']
         down = a['down']
         #last time pl = 100 results
         if age:

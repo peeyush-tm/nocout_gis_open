@@ -770,14 +770,11 @@ def update_backhaul_status(basestations, kpi, val):
         return False
 
     job = group(g_jobs)
-
-    result = job.apply_async()
     ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -1324,11 +1321,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         return False
 
     job = group(g_jobs)
-
-    result = job.apply_async()
     ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
