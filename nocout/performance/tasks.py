@@ -1,7 +1,7 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 from celery import task, group
 import math
-from django.db.models import Avg
+from django.db.models import Avg, F
 
 # nocout utils import
 from nocout.utils.util import fetch_raw_result
@@ -531,60 +531,37 @@ def update_spot_dashboard_monthly(technology=None):
     if technology:
         # Get all rows with the given technology
         spot_dashboard_data = SpotDashboard.objects.filter(sector_device_technology=technology)
+        spot_dashboard_data.update(
+            ul_issue_6=F('ul_issue_5'),
+            augment_6=F('augment_5'),
+            sia_6=F('sia_5'),
+        )
+        spot_dashboard_data.update(
+            ul_issue_5=F('ul_issue_4'),
+            augment_5=F('augment_4'),
+            sia_5=F('sia_4'),
+        )
+        spot_dashboard_data.update(
+            ul_issue_4=F('ul_issue_3'),
+            augment_4=F('augment_3'),
+            sia_4=F('sia_3'),
+        )
+        spot_dashboard_data.update(
+            ul_issue_3=F('ul_issue_2'),
+            augment_3=F('augment_2'),
+            sia_3=F('sia_2'),
+        )
+        spot_dashboard_data.update(
+            ul_issue_2=F('ul_issue_1'),
+            augment_2=F('augment_1'),
+            sia_2=F('sia_1'),
 
-        total_records = len(spot_dashboard_data)
+        )
 
-        bulky_update = list()
-        g_jobs = list()
 
-        for i in range(total_records):
-            
-            current_row = spot_dashboard_data[i]
 
-            # current_row.ul_issue_1 = False
-            current_row.ul_issue_2 = current_row.ul_issue_1
-            current_row.ul_issue_3 = current_row.ul_issue_2
-            current_row.ul_issue_4 = current_row.ul_issue_3
-            current_row.ul_issue_5 = current_row.ul_issue_4
-            current_row.ul_issue_6 = current_row.ul_issue_5
 
-            # current_row.augment_1 = False
-            current_row.augment_2 = current_row.augment_1
-            current_row.augment_3 = current_row.augment_2
-            current_row.augment_4 = current_row.augment_3
-            current_row.augment_5 = current_row.augment_4
-            current_row.augment_6 = current_row.augment_5
-
-            # current_row.sia_1 = False
-            current_row.sia_2 = current_row.sia_1
-            current_row.sia_3 = current_row.sia_2
-            current_row.sia_4 = current_row.sia_3
-            current_row.sia_5 = current_row.sia_4
-            current_row.sia_6 = current_row.sia_5
-
-            bulky_update.append(current_row)
-
-        # If any update item exist then start bulk update job
-        if len(bulky_update):
-            g_jobs.append(
-                inventory_tasks.bulk_update_create.s(
-                    bulky=bulky_update,
-                    action='update',
-                    model=SpotDashboard
-                )
-            )
-        # Start create & update jobs parallely
-        if not len(g_jobs):
-            return False
-
-        job = group(g_jobs)
-        ret = False
-        result = job.apply_async()  # start the jobs
-        # for r in result.get():
-        #     ret |= r
-        return True
-    else:
-        return True
+    return True
 
 ################## Task for Sector Spot Dashboard Calculation - End ###################
 
