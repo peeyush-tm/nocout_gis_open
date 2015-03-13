@@ -21,10 +21,11 @@ var recallPerf = "",
         color         : "black",
         padding       : '2px',
         borderRadius  : "5px",
-        width         : '90px'
+        width         : '60px'
     },
     callsInProcess = false,
-    gis_perf_call_instance = "";
+    gis_perf_call_instance = "",
+    calls_completed = 0;
 
 if(!base_url) {
     var base_url = "";
@@ -135,7 +136,6 @@ function GisPerformance() {
         if (isPollingActive == 0  && isPerfCallStopped == 0) {
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
                 callsInProcess = true;
-                //Call waitAndSend function with BS Json Data and counter value
                 perf_self.waitAndSend(perf_self.bsNamesList[counter], counter);
             } else {
                 callsInProcess = false;
@@ -162,8 +162,6 @@ function GisPerformance() {
 
         counter++;
 
-        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
-
         if(gis_perf_call_instance) {
             try {
                 gis_perf_call_instance.abort()
@@ -172,6 +170,26 @@ function GisPerformance() {
                 // pass
             }
         }
+
+        var current_chunk = bs_id;
+        while(current_chunk && current_chunk.length > 0) {
+            var bs_id = current_chunk.splice(0,1)[0];
+            if(bs_id) {
+                //Call waitAndSend function with BS Json Data and counter value
+                perf_self.makePeriodicAjaxCall(bs_id,counter);
+            }
+        }
+
+    }
+
+    /**
+     * This function makes periodic polling ajax call with given base station id
+     * @method makePeriodicAjaxCall
+     * @param bs_id {Number}, It contains the base station unique id
+     */
+    this.makePeriodicAjaxCall = function(bs_id,counter) {
+
+        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
 
         //Ajax Request
         gis_perf_call_instance = $.ajax({
@@ -198,43 +216,58 @@ function GisPerformance() {
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
-                                //Send Request for the next counter
-                                perf_self.sendRequest(counter);
+                                calls_completed++;
+                                if(calls_completed >= periodic_poll_process_count) {
+                                    // Reset Calls Completed Counter
+                                    calls_completed = 0;
+
+                                    //Send Request for the next counter
+                                    perf_self.sendRequest(counter);
+                                }
                             });
                         } else if(window.location.pathname.indexOf("googleEarth") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
-                                //Send Request for the next counter
-                                perf_self.sendRequest(counter);
+                                calls_completed++;
+                                if(calls_completed >= periodic_poll_process_count) {
+                                    // Reset Calls Completed Counter
+                                    calls_completed = 0;
+
+                                    //Send Request for the next counter
+                                    perf_self.sendRequest(counter);
+                                }
                             });
                         } else {
-                            var current_bs_in_bound = getMarkerInCurrentBound();
+                            var current_bs_in_bound = getMarkerInCurrentBound(true);
                             // If map Zoom level is greater than 11 then proceed.
                             if(mapInstance.getZoom() > 11) {
                                 /*Check that the bsname is present in current bounds or not*/
                                 if (current_bs_in_bound.indexOf(data.id) > -1) {
                                     //Update Map with the data
                                     perf_self.updateMap(data,function(response) {
-                                        //Send Request for the next counter
-                                        perf_self.sendRequest(counter);
+                                        calls_completed++;
+                                        if(calls_completed >= periodic_poll_process_count) {
+                                            // Reset Calls Completed Counter
+                                            calls_completed = 0;
+
+                                            //Send Request for the next counter
+                                            perf_self.sendRequest(counter);
+                                        }
                                     });
-                                } else {
-                                    //Send Request for the next counter
-                                    perf_self.sendRequest(counter);
                                 }
                             }
                         }
                     } else {
-                        if(window.location.pathname.indexOf("white_background") > -1 || window.location.pathname.indexOf("googleEarth") > -1) {
-                            //Send Request for the next counter
-                            perf_self.sendRequest(counter);
-                        } else {
-                            // If map Zoom level is greater than 11 then proceed.
-                            if(mapInstance && mapInstance.getZoom() > 11) {
-                                //Send Request for the next counter
-                                perf_self.sendRequest(counter);
-                            }
-                        }
+                        // if(window.location.pathname.indexOf("white_background") > -1 || window.location.pathname.indexOf("googleEarth") > -1) {
+                        //     //Send Request for the next counter
+                        //     perf_self.sendRequest(counter);
+                        // } else {
+                        //     // If map Zoom level is greater than 11 then proceed.
+                        //     if(mapInstance && mapInstance.getZoom() > 11) {
+                        //         //Send Request for the next counter
+                        //         perf_self.sendRequest(counter);
+                        //     }
+                        // }
                     }
                 }
 
@@ -242,10 +275,10 @@ function GisPerformance() {
             //On Error, do nothing
             error: function (err) {
                 //Send Request for the next counter
-                perf_self.sendRequest(counter);
+                // perf_self.sendRequest(counter);
             }
         });
-    }
+    };
 
     /*
      Here we update Google Map from gisData
@@ -254,7 +287,6 @@ function GisPerformance() {
      Then we fetch various google map elements like lineColor or sectorColor and update those components using values from GisPerformanceData.
      */
     this.updateMap = function (data,callback) {
-
         if(data) {
             var apiResponse = data;
             if(data.constructor == Array) {
@@ -689,11 +721,15 @@ function GisPerformance() {
                                         if(labelHtml) {
                                             var toolTip_infobox = new OpenLayers.Popup('ss_'+ss_marker.name,
                                                 new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-                                                new OpenLayers.Size(110,25),
+                                                new OpenLayers.Size(110,18),
                                                 labelHtml,
                                                 false
                                             );
                                             ccpl_map.addPopup(toolTip_infobox);
+
+                                            // Remove height prop from div's
+                                            $('.olPopupContent').css('height','');
+                                            $('.olPopup').css('height','');
 
                                             tooltipInfoLabel['ss_'+ss_marker.name] = toolTip_infobox;
 
@@ -1134,11 +1170,15 @@ function GisPerformance() {
                                     } else if (window.location.pathname.indexOf("white_background") > -1) {
                                        var perfLabel_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
                                             new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-                                            new OpenLayers.Size(90,25),
+                                            new OpenLayers.Size(80,18),
                                             perf_val,
                                             false
                                         );
                                         ccpl_map.addPopup(perfLabel_infobox);
+
+                                        // Remove height prop from div's
+                                        $('.olPopupContent').css('height','');
+                                        $('.olPopup').css('height','');
 
                                         if($("#perfLabel_"+ss_marker.name).length > 0) {
                                             // Left Position in PX
@@ -1318,9 +1358,18 @@ function GisPerformance() {
             updateGoogleEarthPlacemark(marker, old_icon_obj);
         } else if (window.location.pathname.indexOf("white_background") > -1) {
 
-            var other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
+            isBaseStation = false;
+            if(marker_type == 'base_station') {
+                isBaseStation = true;
+            }
+
+            var other_size_obj = whiteMapClass.getMarkerSize_wmap(isBaseStation),
                 other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
                 other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height;
+
+            if(isBaseStation) {
+                hidden_icon_instance = old_icon_obj;
+            }
 
             // Update sector marker icon
             marker.attributes.icon = hidden_icon_instance;

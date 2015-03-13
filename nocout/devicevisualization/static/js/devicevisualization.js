@@ -1335,19 +1335,6 @@ $("#show_hide_label").click(function(e) {
             }
         } else {
             labelsArray[x].setVisible(e.currentTarget.checked);
-            // var move_listener_obj = labelsArray[x].moveListener_;
-            // if(move_listener_obj) {
-            //     var keys_array = Object.keys(move_listener_obj);
-            //     for(var z=0;z<keys_array.length;z++) {
-            //         if(typeof move_listener_obj[keys_array[z]] == 'object') {
-            //            if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-            //                 if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
-            //                     labelsArray[x].setVisible(e.currentTarget.checked);
-            //                 }
-            //            }
-            //         }
-            //     }
-            // }
         }
 
     }
@@ -1359,26 +1346,24 @@ $("#show_hide_label").click(function(e) {
         } else if(window.location.pathname.indexOf("white_background") > -1) {
             if(e.currentTarget.checked) {
                 tooltipInfoLabel[key].show();
-                // If label changed then update the size as per new content.
-                tooltipInfoLabel[key].updateSize();
             } else {
                 tooltipInfoLabel[key].hide();
             }
+
+            // Draw the popup to apply show/hide
+            tooltipInfoLabel[key].draw();
+
+            if(e.currentTarget.checked) {
+                // Set SS prop label to left side of marker
+                if($("#"+key).length > 0) {
+                    // Shift label to left side of marker
+                    var current_left = $("#"+key).position().left;
+                    current_left = current_left - 125;
+                    $("#"+key).css("left",current_left+"px");
+                }
+            }
         } else {
             tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
-            // var move_listener_obj = tooltipInfoLabel[key].moveListener_;
-            // if(move_listener_obj) {
-            //     var keys_array = Object.keys(move_listener_obj);
-            //     for(var z=0;z<keys_array.length;z++) {
-            //         if(typeof move_listener_obj[keys_array[z]] == 'object') {
-            //            if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-            //                 if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
-            //                     tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
-            //                 }
-            //            }
-            //         }
-            //     }
-            // }
         }
     }
 });
@@ -2176,111 +2161,111 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
         checked_themetics_radio = $("input:radio[name=thematic_type]"),
         selected_thematics = themetics_radio.length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
 
-        if(device_name && marker_key && marker_type) {
+    if(device_name && marker_key && marker_type) {
 
-            var selected_marker = allMarkersObject_gmap[marker_type][marker_key];
+        var selected_marker = allMarkersObject_gmap[marker_type][marker_key];
 
-            if(selected_marker.device_name == device_name) {
-                // disable the button
-                $(e.currentTarget).button('loading');
+        if(selected_marker.device_name == device_name) {
+            // disable the button
+            $(e.currentTarget).button('loading');
 
-                // Make Ajax Call to Fetch Live Poll Data For opened device.
-                $.ajax({
-                    url : base_url+"/"+"device/lp_bulk_data/?devices="+JSON.stringify(device_name)+"&ts_type="+selected_thematics,
-                    type : "GET",
-                    success : function(response) {
-                        var result = "";
-                        // Type check of response
-                        if(typeof response == 'string') {
-                            result = JSON.parse(response);
-                        } else {
-                            result = response;
-                        }
+            // Make Ajax Call to Fetch Live Poll Data For opened device.
+            $.ajax({
+                url : base_url+"/"+"device/lp_bulk_data/?devices="+JSON.stringify(device_name)+"&ts_type="+selected_thematics,
+                type : "GET",
+                success : function(response) {
+                    var result = "";
+                    // Type check of response
+                    if(typeof response == 'string') {
+                        result = JSON.parse(response);
+                    } else {
+                        result = response;
+                    }
 
-                        if(result.success == 1) {
+                    if(result.success == 1) {
 
-                            var device_data_dict = result['data']['devices'][device_name[0]],
-                                fetched_icon = device_data_dict && device_data_dict['icon'] ? device_data_dict['icon'] : "",
-                                fetched_val = device_data_dict && device_data_dict['value'] ? device_data_dict['value'] : "",
-                                polled_data_html = "",
-                                dateObj = new Date(),
-                                current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds();
+                        var device_data_dict = result['data']['devices'][device_name[0]],
+                            fetched_icon = device_data_dict && device_data_dict['icon'] ? device_data_dict['icon'] : "",
+                            fetched_val = device_data_dict && device_data_dict['value'] ? device_data_dict['value'] : "",
+                            polled_data_html = "",
+                            dateObj = new Date(),
+                            current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds();
 
-                            if(fetched_val  && fetched_val != "NA") {
+                        if(fetched_val  && fetched_val != "NA") {
 
-                                // If value is array then use first index val
-                                if(typeof fetched_val == 'object') {
-                                    fetched_val = fetched_val[0];
-                                }
-
-                                if(!isNaN(Number(fetched_val))) {
-                                    var existing_val = $("#infoWindowContainer #sparkline_val_input").val(),
-                                        new_values_list = "";
-
-                                    if(existing_val) {
-                                        new_values_list = existing_val+","+fetched_val;
-                                    } else {
-                                        new_values_list = fetched_val;
-                                    }
-                                    
-                                    // Update the value in input field
-                                    $("#infoWindowContainer #sparkline_val_input").val(new_values_list);
-
-                                    // Make array of values from "," comma seperated string
-                                    var new_chart_data = new_values_list.split(",");
-
-                                    /*Plot sparkline chart with the fetched polling value*/
-                                    $("#infoWindowContainer #sparkline_container").sparkline(new_chart_data, {
-                                        type: "line",
-                                        lineColor: "blue",
-                                        spotColor : "orange",
-                                        defaultPixelsPerValue : 10
-                                    });
-                                }
+                            // If value is array then use first index val
+                            if(typeof fetched_val == 'object') {
+                                fetched_val = fetched_val[0];
                             }
 
-                            polled_data_html += '<span style="display:none;">'+val_icon+' '+fetched_val;
-                            polled_data_html += '<br/>'+time_icon+' '+current_time+'</span>';
+                            if(!isNaN(Number(fetched_val))) {
+                                var existing_val = $("#infoWindowContainer #sparkline_val_input").val(),
+                                    new_values_list = "";
 
-                            $("#infoWindowContainer #fetched_val_container").html(polled_data_html);
+                                if(existing_val) {
+                                    new_values_list = existing_val+","+fetched_val;
+                                } else {
+                                    new_values_list = fetched_val;
+                                }
+                                
+                                // Update the value in input field
+                                $("#infoWindowContainer #sparkline_val_input").val(new_values_list);
 
-                            $("#infoWindowContainer #fetched_val_container span").slideDown('slow');
+                                // Make array of values from "," comma seperated string
+                                var new_chart_data = new_values_list.split(",");
 
-                            // If has icon then update marker with fetched icon.
-                            if(fetched_icon) {
-                                var marker_img_object = gmap_self.getMarkerImageBySize(base_url+"/"+fetched_icon,"other");
-
-                                // Update Marker Icon
-                                selected_marker.setOptions({
-                                    "icon" : marker_img_object
+                                /*Plot sparkline chart with the fetched polling value*/
+                                $("#infoWindowContainer #sparkline_container").sparkline(new_chart_data, {
+                                    type: "line",
+                                    lineColor: "blue",
+                                    spotColor : "orange",
+                                    defaultPixelsPerValue : 10
                                 });
-
-                                is_tooltip_polled_used = true;
                             }
-
-                        } else {
-                            $.gritter.add({
-                                title: "Live Polling",
-                                text: result.message,
-                                sticky: false,
-                                time : 1000
-                            });
                         }
-                    },
-                    error : function(err) {
+
+                        polled_data_html += '<span style="display:none;">'+val_icon+' '+fetched_val;
+                        polled_data_html += '<br/>'+time_icon+' '+current_time+'</span>';
+
+                        $("#infoWindowContainer #fetched_val_container").html(polled_data_html);
+
+                        $("#infoWindowContainer #fetched_val_container span").slideDown('slow');
+
+                        // If has icon then update marker with fetched icon.
+                        if(fetched_icon) {
+                            var marker_img_object = gmap_self.getMarkerImageBySize(base_url+"/"+fetched_icon,"other");
+
+                            // Update Marker Icon
+                            selected_marker.setOptions({
+                                "icon" : marker_img_object
+                            });
+
+                            is_tooltip_polled_used = true;
+                        }
+
+                    } else {
                         $.gritter.add({
                             title: "Live Polling",
-                            text: err.statusText,
+                            text: result.message,
                             sticky: false,
                             time : 1000
                         });
-                    },
-                    complete : function() {
-                        // enable the button
-                        $(e.currentTarget).button('complete');
                     }
-                });
+                },
+                error : function(err) {
+                    $.gritter.add({
+                        title: "Live Polling",
+                        text: err.statusText,
+                        sticky: false,
+                        time : 1000
+                    });
+                },
+                complete : function() {
+                    // enable the button
+                    $(e.currentTarget).button('complete');
+                }
+            });
 
-            }
         }
+    }
 });

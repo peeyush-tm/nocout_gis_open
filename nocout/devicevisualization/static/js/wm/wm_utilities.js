@@ -685,3 +685,41 @@ WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
     //else return false
     return false;
 }
+
+function createPLRtaLabel(clicked_feature) {
+
+    var condition1 = ($.trim(clicked_feature.pl) && $.trim(clicked_feature.pl) != 'N/A'),
+        condition2 = ($.trim(clicked_feature.rta) && $.trim(clicked_feature.rta) != 'N/A');
+
+    var condition1 = "NA",
+        condition2 = "NA";
+
+    if(condition1 || condition2) {
+        var pl = $.trim(clicked_feature.pl) ? clicked_feature.pl : "N/A",
+            rta = $.trim(clicked_feature.rta) ? clicked_feature.rta : "N/A",
+            info_html = '';
+
+        // Create hover infowindow html content
+        info_html += '<table class="table table-responsive table-bordered table-hover">';
+        info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+        info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
+        info_html += '</table>';
+
+        var open_location_lat = clicked_feature.ptLat,
+            open_location_lon = clicked_feature.ptLon;
+
+        if(clicked_feature.pointType == 'sector_Marker') {
+            open_location_lat = clicked_feature.new_lat ? clicked_feature.new_lat : open_location_lat;
+            open_location_lon = clicked_feature.new_lon ? clicked_feature.new_lon : open_location_lon;
+        }
+
+        pl_rta_popup = new OpenLayers.Popup('ss_perf_'+clicked_feature.name,
+            new OpenLayers.LonLat(open_location_lon,open_location_lat),
+            new OpenLayers.Size(135,75),
+            info_html,
+            false
+        );
+
+        ccpl_map.addPopup(pl_rta_popup);
+    }
+}

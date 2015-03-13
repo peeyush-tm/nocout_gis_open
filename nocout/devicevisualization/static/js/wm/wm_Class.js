@@ -177,8 +177,7 @@ function WhiteMapClass() {
 										xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
 									}
 									
-								}					
-
+								}
 								var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat),
 									start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat),
 									end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
@@ -187,6 +186,8 @@ function WhiteMapClass() {
 									[new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]
 								);
 								ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
+								sectorMarker["new_lat"] = xyDirection.lat;
+								sectorMarker["new_lon"] = xyDirection.lon;
 								sectorMarker.move(finalLatLong);
 								sectorMarker.style.externalGraphic = sectorMarker.pollingIcon ? sectorMarker.pollingIcon : sectorMarker.oldIcon;
 							}
@@ -2233,15 +2234,18 @@ function WhiteMapClass() {
 								
 							   var toolTip_infobox = new OpenLayers.Popup('ss_'+ss_marker_obj.name,
 			            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-			            	    	null,
+			            	    	new OpenLayers.Size(110,18),
 			            	    	labelHtml,
 			            	    	false
 			        	    	);
 								ccpl_map.addPopup(toolTip_infobox);
-			        	    	toolTip_infobox.autoSize = true;
-			        	    	// toolTip_infobox.updateSize();
+			        	    	
+			        	    	// Remove height prop from div's
+			        	    	$('.olPopupContent').css('height','');
+			        	    	$('.olPopup').css('height','');
 
 		                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = toolTip_infobox;
+
 					    	}
 					    }
 
