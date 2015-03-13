@@ -1,3 +1,7 @@
+// Global Variables
+var maintenance_popup = "",
+	pl_rta_popup = "";
+
 /**
  * This function creates a Open Layer Map and loads it in dom. Return callback when map is finished creating.
  * @param  {Function} callback Return function when completed.
@@ -43,6 +47,20 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	ccpl_map.addControl(mapClick);
 	//Activate Click
 	mapClick.activate();
+
+	ccpl_map.events.register("click", ccpl_map, function(e) {
+		// Remove BS maintenance popup if exists
+		if(maintenance_popup) {
+			ccpl_map.removePopup(maintenance_popup);
+			maintenance_popup = "";
+		}
+
+		// Remove SS or Sector (PL,RTA) popup if exists
+		if(pl_rta_popup) {
+			ccpl_map.removePopup(pl_rta_popup);
+			pl_rta_popup = "";
+		}
+	});
 
 	//Map moveend event(Used for pan & zoom both cases)
 	ccpl_map.events.register("moveend", ccpl_map, function(e) {
@@ -492,6 +510,49 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	
 	//Map set Extend to our bounds
 	ccpl_map.zoomToExtent(new OpenLayers.Bounds(whiteMapSettings.initial_bounds));
+
+	// Bind Right click of White Map
+	ccpl_map.div.oncontextmenu = function noContextMenu(e) {
+		// In Case Of IE
+		if(!e) {
+		    var e = window.event;
+		    e.returnValue = false;
+		}
+
+		// Remove BS maintenance popup if exists
+		if(maintenance_popup) {
+			ccpl_map.removePopup(maintenance_popup);
+			maintenance_popup = "";
+		}
+
+		// Remove SS or Sector (PL,RTA) popup if exists
+		if(pl_rta_popup) {
+			ccpl_map.removePopup(pl_rta_popup);
+			pl_rta_popup = "";
+		}
+
+		var clicked_feature = ccpl_map.getLayersByName('Markers')[0].getFeatureFromEvent(e),
+			sector_feature =  ccpl_map.getLayersByName('Devices')[0].getFeatureFromEvent(e),
+			clicked_point_type = clicked_feature ? clicked_feature.pointType : false;
+
+		if(clicked_feature || sector_feature) {
+
+			if(!clicked_point_type) {
+				clicked_point_type = sector_feature.pointType;
+			}
+
+			// In case of base station continue with maintenance status functionality
+			if(clicked_point_type == 'base_station') {
+				gmap_self.startBsMaintenanceFunction(clicked_feature);
+			} else if(clicked_point_type == 'sub_station') {
+				createPLRtaLabel(clicked_feature);
+			} else if(clicked_point_type == 'sector_Marker') {
+				createPLRtaLabel(sector_feature);
+			}
+		}
+
+		e.preventDefault()
+	}
 
 	//return
 	callback();
