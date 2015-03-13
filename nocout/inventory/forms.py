@@ -140,6 +140,8 @@ class AntennaForm(forms.ModelForm):
         ('Normal', 'Normal'),
         ('Narrow Beam', 'Narrow Beam'),
         ('Lens', 'Lens'),
+        ('Internal', 'Internal'),
+        ('External', 'External')
     )
 
     antenna_type = forms.TypedChoiceField(choices=ANTENNA_TYPE, required=False)
@@ -1708,6 +1710,19 @@ class WizardAntennaForm(AntennaForm):
     Class Based View Antenna Model form to update and create.
     """
 
+    ANTENNA_TYPE = (
+        ('', 'Select'),
+        ('Normal', 'Normal'),
+        ('Narrow Beam', 'Narrow Beam'),
+        ('Lens', 'Lens')
+    )
+
+    PTP_ANTENNA_TYPE = (
+        ('', 'Select'),
+        ('Internal', 'Internal'),
+        ('External', 'External')
+    )
+
     def __init__(self, *args, **kwargs):
         self.technology = kwargs.pop('technology')
 
@@ -1715,8 +1730,12 @@ class WizardAntennaForm(AntennaForm):
 
         # Organization is used from base station.
         self.fields.pop('organization')
+        self.fields['antenna_type'] = forms.TypedChoiceField(choices=WizardAntennaForm.ANTENNA_TYPE, required=False)
+        self.fields['antenna_type'].widget.attrs['class'] = 'col-md-12 select2select'
 
         if self.technology == 'P2P':
+            self.fields['antenna_type'] = forms.TypedChoiceField(choices=WizardAntennaForm.PTP_ANTENNA_TYPE, required=False)
+            self.fields['antenna_type'].widget.attrs['class'] = 'col-md-12 select2select'
             self.fields.pop('tilt')
             self.fields.pop('gain')
             self.fields.pop('beam_width')
