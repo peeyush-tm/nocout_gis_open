@@ -3832,7 +3832,7 @@ class GisWizardBaseStationMixin(object):
         alias = re.compile(r'[^\w]').sub("_", form.cleaned_data['alias'])
         city = form.cleaned_data['city'].city_name[:3]
         state = form.cleaned_data['state'].state_name[:3]
-        form.instance.name = alias + "_" + city + "_" + state
+        form.instance.name = (alias + "_" + city + "_" + state).lower()
         return super(GisWizardBaseStationMixin, self).form_valid(form)
 
 

@@ -13126,10 +13126,7 @@ def get_topology(technology, rf_type=None, site_name=None):
     sector_list = []
     for sector in all_sectors:
         sector_list.append(sector['sector_id'])
-
-    #rather than looping ourselves
-    #lets do .values('', flat=True)
-    #device_list = network_devices.values
+    sector_list = set(sector_list)  # unique sector ids
 
     #topology is now synced at the central database only. no need to creating topology
     topology = Topology.objects.filter(sector_id__in=sector_list)
