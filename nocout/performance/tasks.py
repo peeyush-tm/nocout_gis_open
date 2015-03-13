@@ -184,9 +184,6 @@ def get_all_sector_devices(technology):
     # If any sectors present then proceed forward
     if len(sectors_id_list) > 0:
         complete_augmentation_data = get_sector_augmentation_data(sector_ids=sectors_id_list)
-    else:
-        logger.exception('sectors_id_list is empty')
-        return False
 
     # Machine wise data calculation for performance utilization status
     for machine_name in machine_wise_data:

@@ -160,8 +160,9 @@ def gather_backhaul_status():
     if len(g_jobs):
         job = group(g_jobs)
         result = job.apply_async()
-        for r in result.get():
-            ret |= r
+        # for r in result.get():
+        #     ret |= r
+        return True
 
     return ret
 
@@ -274,8 +275,9 @@ def gather_sector_status(technology):
     if len(g_jobs):
         job = group(g_jobs)
         result = job.apply_async()
-        for r in result.get():
-            ret |= r
+        # for r in result.get():
+        #     ret |= r
+        return True
 
     return ret
 
