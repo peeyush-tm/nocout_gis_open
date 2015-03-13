@@ -3832,7 +3832,7 @@ class GisWizardBaseStationMixin(object):
         alias = re.compile(r'[^\w]').sub("_", form.cleaned_data['alias'])
         city = form.cleaned_data['city'].city_name[:3]
         state = form.cleaned_data['state'].state_name[:3]
-        form.instance.name = alias + "_" + city + "_" + state
+        form.instance.name = (alias + "_" + city + "_" + state).lower()
         return super(GisWizardBaseStationMixin, self).form_valid(form)
 
 
@@ -4661,6 +4661,9 @@ class GisWizardPTPListingTable(SectorListingTable):
     order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
             'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
             'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    search_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
+            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country__country_name',
+            'sector_configured_on__state__state_name', 'sector_configured_on__city__city_name', 'description']
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()

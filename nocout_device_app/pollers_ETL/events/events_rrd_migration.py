@@ -83,6 +83,7 @@ def service_perf_data_live_query(site, log_split, service_events_data, service_e
 
     host_ip = log_split[12]
     description=log_split[11]
+    description_current_value = description[(description.find('-')+2):description.find(':')]
     # calculating the perf_data for all services except for inventory services as they do not have performance data
     #if 'invent' not in log_split[5]:
     #    query = "GET services\nColumns: service_last_state_change service_perf_data\n"+\
@@ -184,10 +185,19 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
 
     host_ip = log_split[11]
     description=log_split[10]
+    description_based_values = {'pl': None, 'rta': None}
+    current_value_pl, current_value_rta = None, None
+    # use values present in description field, at first priority
+    # since only ips are included, we can use `ms` also, as our criteria
+    if 'rta' in description and 'ms' in description and 'lost' in description:
+	current_value_pl = description[description.find('lost')+5:-1]
+	current_value_rta = description[description.find('rta')+4:description.find('ms')]
+    description_based_values.update({'pl': current_value_pl, 'rta': current_value_rta})
     for ds in host_perf_data.iterkeys():
         if ds == 'rtmin' or ds == 'rtmax':
             continue
-        host_cur =host_perf_data.get(ds).get('cur')
+        cur = host_perf_data.get(ds).get('cur')
+        host_cur = description_based_values[ds] if description_based_values[ds] else cur
         host_war =host_perf_data.get(ds).get('war')
         host_crit =host_perf_data.get(ds).get('cric')
         if ds == 'pl':
@@ -319,8 +329,10 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 
     # Bulk insert the events data into Mongodb
     if network_events_data:
+	print 'Host events entries %s for time %s -- %s' % (len(network_events_data), start_time, end_time)
         mongo_module.mongo_db_insert(db, network_events_data, 'host_event')
     if service_events_data:
+	print 'Service events entries %s for time %s -- %s' % (len(service_events_data), start_time, end_time)
         mongo_module.mongo_db_insert(db, service_events_data, 'serv_event')
         
 if __name__ == '__main__':

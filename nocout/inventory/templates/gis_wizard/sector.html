@@ -255,9 +255,10 @@
         });
             // Changing labels of form fields
         {% if selected_technology == '2' %}
-            $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End IP');
+            $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End Device');
         {% endif %}
             $("label[for=id_sector_id]").text('Sector ID');
+            $("label[for=id_frequency]").text('Planned Frequency');
             $("label[for=id_mrc]").text('MRC');
             $("label[for=id_tx_power]").text('TX Power');
             $("label[for=id_rx_power]").text('RX Power');
@@ -271,7 +272,7 @@
             });
 
             $("#id_sector_configured_on").select2({
-                placeholder: "Search for a sector config on.",
+                placeholder: "Search for a near end device.",
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper

@@ -10,7 +10,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> EDIT DEVICE TYPE : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i> EDIT DEVICE TYPE : {{ object.alias }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
@@ -76,14 +76,6 @@
     {% endblock %}
     <script>
         $(document).ready(function(){
-            // Changing labels of form fields
-            $("label[for=id_rta_warning]").text('Latency Warning');
-            $("label[for=id_rta_critical]").text('Latency Critical');
-            $("label[for=id_pl_warning]").text('PD % Warning');
-            $("label[for=id_pl_critical]").text('PD % Critical');
-            $("label[for=id_packets]").text('Packet Count');
-            $("label[for=id_timeout]").text('Timeout (ms)');
-
             // modify image upload field
             var device_icon = "#id_device_icon";
             var device_gmap_icon = "#id_device_gmap_icon";
@@ -94,7 +86,7 @@
 
             // Initialize the select2 selectbox.
             $(".select2select").select2();
-        })
+        });
         counter = -1
         var dts_value = []
         var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"][value]')
@@ -273,6 +265,16 @@
         }
     </script>
     <script type="text/javascript">
+
+        alert("")
+        // Changing labels of form fields
+        $("label[for=id_rta_warning]").text('Latency Warning (ms)');
+        $("label[for=id_rta_critical]").text('Latency Critical (ms)');
+        $("label[for=id_pl_warning]").text('PD Warning (%)');
+        $("label[for=id_pl_critical]").text('PD Critical (%)');
+        $("label[for=id_packets]").text('Packet Count');
+        $("label[for=id_timeout]").text('Timeout (ms)');
+
        $(function() {
            $(".inline.{{ device_type_service_form.prefix }}").formset({
                prefix: "{{ device_type_service_form.prefix }}",

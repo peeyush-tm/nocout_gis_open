@@ -7,7 +7,11 @@ var mapPageType = "",
     tools_line = ""
     base_url = "",
     last_selected_label = "",
-    current_icon_size = "medium";
+    current_icon_size = "medium",
+    periodic_tooltip_call = "",
+    live_poll_config = {},
+    periodic_poll_process_count = 1,
+    is_tooltip_polled_used = false;
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -110,10 +114,6 @@ city_options = []
 /*This event trigger when state dropdown value is changes*/
 $("#state").change(function(e) {
 
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
 
     var state_id = $(this).val(),
@@ -128,7 +128,9 @@ $("#state").change(function(e) {
 
     var city_option = "<option value=''> Select City</option>";
     for(var i=0;i<city_array.length;i++) {
-        city_option += "<option value='"+ i+1 +"'> "+city_array[i]+"</option>";
+        if(city_array[i]) {
+            city_option += "<option value='"+ i+1 +"'> "+city_array[i]+"</option>";
+        }
     }
 
     $("#city").html(city_option);
@@ -138,20 +140,12 @@ $("#state").change(function(e) {
 
 /*This event trigger when city dropdown value is changes*/
 $("#city").change(function(e) {
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
 /*This event trigger when vendor dropdown value is changes*/
 $("#vendor").change(function(e) {
-
-//     if(window.location.pathname.indexOf("white_background") > -1) {
-//         return;
-// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -173,7 +167,9 @@ $("#technology").change(function(e) {
     var vendor_option = "<option value=''> Select Vendor</option>";
     if(vendor_array) {
         for(var i=0;i<vendor_array.length;i++) {
-            vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+            if(vendor_array[i]) {
+                vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+            }
         }
     }
 
@@ -294,6 +290,18 @@ $("#resetFilters").click(function(e) {
         lastSearchedPt = {};
     }
 
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        try {
+            var lat_lon_search_layer = ccpl_map.getLayersByName('SearchMarkers');
+            if(lat_lon_search_layer && lat_lon_search_layer.length > 0) {
+                lat_lon_search_layer[0].clearMarkers();
+                lat_lon_search_layer[0].destroy();
+            }
+        } catch(e) {
+            // pass
+        }
+    }
+
     if($("#google_loc_search").val()) {
         $("#google_loc_search").val("");
     }
@@ -404,32 +412,16 @@ $("#resetSearchForm").click(function(e) {
         ccpl_map.getLayersByName("Search Layer")[0].setVisibility(false);
     }
 
-    try {
-        // Reset Search data variable
-        searchResultData = []
-    } catch(e) {
-        // pass
-    }
+    // Reset Search data variable
+    searchResultData = []
+    search_element_bs_id = [];
 
     // Reset Advance Search Flag
     isAdvanceSearch = 0;
-    // if (window.location.pathname.indexOf("white_background") > -1) {
-    //     $("form#searchInfoModal_form").find('select').each(function(i, el) {
-    //         $(el).select2("val", [])
-    //         if(i== $("form#searchInfoModal_form").find('select').length-1) {
-    //             //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-    //             //     $("#advSearchContainerBlock").addClass("hide");
-    //             // } 
-    //         }
-    //     });
-    // } else {
-    //     // Reset Search Fields
-    // }
+
 
     advJustSearch.removeSearchMarkers();
     advJustSearch.resetVariables();
-    // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-    // mapInstance.setZoom(5);
     advJustSearch.hideNotification();
 
     if(isDebug) {
@@ -606,40 +598,36 @@ $("#play_btn").click(function(e) {
         $(".play_pause_btns").removeClass("disabled");
     }
 
-    // if(window.location.pathname.indexOf("googleEarth") > -1) {
-        
-    // } else {
-        if(polygonSelectedDevices && (polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "")) {
-            if(!$("#play_btn").hasClass("disabled")) {
-                $("#play_btn").addClass("disabled");
-            }
-
-            if(!($("#fetch_polling").hasClass("disabled"))) {
-                $("#fetch_polling").addClass("disabled");
-            }
-
-            /*Disable poll interval & max interval dropdown*/
-            $("#poll_interval").attr("disabled","disabled");
-            $("#poll_maxInterval").attr("disabled","disabled");
-
-            pollCallingTimeout = "";
-            pollingInterval = $("#poll_interval").val() ? +($("#poll_interval").val()) : 10;
-            pollingMaxInterval = $("#poll_maxInterval").val() ? +($("#poll_maxInterval").val()) : 1;
-            remainingPollCalls = Math.floor((60*pollingMaxInterval)/pollingInterval);
-            isPollingPaused = 0;
-
-            if(window.location.pathname.indexOf("googleEarth") > -1) {
-                earth_instance.startDevicePolling_earth();
-            } else if(window.location.pathname.indexOf("white_background") > -1) {
-                whiteMapClass.startDevicePolling_wmap();
-            } else {
-                networkMapInstance.startDevicePolling_gmap();
-            }
-
-        } else {
-            bootbox.alert("Please select devices & polling template first.");
+    if(polygonSelectedDevices && (polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "")) {
+        if(!$("#play_btn").hasClass("disabled")) {
+            $("#play_btn").addClass("disabled");
         }
-    // }
+
+        if(!($("#fetch_polling").hasClass("disabled"))) {
+            $("#fetch_polling").addClass("disabled");
+        }
+
+        /*Disable poll interval & max interval dropdown*/
+        $("#poll_interval").attr("disabled","disabled");
+        $("#poll_maxInterval").attr("disabled","disabled");
+
+        pollCallingTimeout = "";
+        pollingInterval = $("#poll_interval").val() ? +($("#poll_interval").val()) : 10;
+        pollingMaxInterval = $("#poll_maxInterval").val() ? +($("#poll_maxInterval").val()) : 1;
+        remainingPollCalls = Math.floor((60*pollingMaxInterval)/pollingInterval);
+        isPollingPaused = 0;
+
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
+            earth_instance.startDevicePolling_earth();
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            whiteMapClass.startDevicePolling_wmap();
+        } else {
+            networkMapInstance.startDevicePolling_gmap();
+        }
+
+    } else {
+        bootbox.alert("Please select devices & polling template first.");
+    }
 });
 
 $("#pause_btn").click(function(e) {
@@ -801,9 +789,9 @@ Function is used to Disable Advance Search, Advance Filter Button when Call for 
 When call is completed, we use the same function to enable Button by passing 'no' in parameter.
  */
 function disableAdvanceButton(status) {
-    var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap'];
-    var selectBoxes= ['technology', 'vendor', 'state', 'city'];
-    var textBoxes= ['google_loc_search','lat_lon_search'];
+    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'];
+    var selectBoxes = ['technology', 'vendor', 'state', 'city'];
+    var textBoxes = ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
     if(!status) {
         disablingBit= true;
@@ -858,14 +846,14 @@ function isLatLon(e) {
                 $("#lat_lon_search").val("");
             } else {
                 
-                var lat = +(entered_txt.split(",")[0]),
-                    lng = +(entered_txt.split(",")[1]),
-                    lat_check = (lat >= -90 && lat < 90),
-                    lon_check = (lat >= -180 && lat < 180),
+                var lat = $.trim(entered_txt.split(",")[0]),
+                    lng = $.trim(entered_txt.split(",")[1]),
+                    lat_check = (+(lat) >= -90 && +(lat) < 90),
+                    lon_check = (+(lng) >= -180 && +(lng) < 180),
                     dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['':]?\s?(?:(\d+(?:\.\d+)?)["?]?)?)?\s?([NSEW])?/i;
                     dms_regex = new RegExp(dms_pattern);
                 
-                if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
+                if((lat_check && lon_check) || (dms_regex.exec(lat) && dms_regex.exec(lng))) {
                     if((lat_check && lon_check)) {
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(entered_txt);
@@ -875,8 +863,8 @@ function isLatLon(e) {
                             networkMapInstance.pointToLatLon(entered_txt);
                         }
                     } else {
-                        var converted_lat = dmsToDegree(dms_regex.exec(entered_txt.split(",")[0]));
-                        var converted_lng = dmsToDegree(dms_regex.exec(entered_txt.split(",")[1]));
+                        var converted_lat = dmsToDegree(dms_regex.exec(lat));
+                        var converted_lng = dmsToDegree(dms_regex.exec(lng));
                         
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(String(converted_lat)+","+String(converted_lng));
@@ -1206,6 +1194,8 @@ $("#point_select").click(function(e) {
 
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
+        // Change map cursor
+        mapInstance.setOptions({'draggableCursor' : 'default'});
         networkMapInstance.addPointTool_gmap();
     }
 });
@@ -1226,6 +1216,8 @@ $("#close_points_icon").click(function(e) {
 
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
+        // Change map cursor
+        mapInstance.setOptions({'draggableCursor' : ''});
     }
 });
 
@@ -1436,6 +1428,29 @@ $("#point_icons_container li").click(function(e) {
 
 /*Close info window when close button is clicked*/
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
+
+    var current_target_attr = e.currentTarget.attributes,
+        marker_key = current_target_attr['marker_key'] ? current_target_attr['marker_key'].value : "",
+        marker_type = current_target_attr['marker_type'] ? current_target_attr['marker_type'].value : "";
+
+    if(marker_key && marker_type) {
+        if(window.location.pathname.indexOf('googleEarth') > -1) {
+            // pass
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            // pass
+        } else {
+            if(is_tooltip_polled_used) {
+                var closed_marker = allMarkersObject_gmap[marker_type][marker_key];
+                if(closed_marker) {
+                    closed_marker.setOptions({
+                        "icon" : closed_marker.oldIcon
+                    });
+                    is_tooltip_polled_used = false;
+                }
+            }
+        }
+    }
+
     $('#infoWindowContainer').html("");
     if(!$('#infoWindowContainer').hasClass("hide")) {
         $('#infoWindowContainer').addClass("hide");
@@ -1470,7 +1485,7 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
     if(ckt_id) {
 
         $.ajax({
-            url: base_url+'/network_maps/l2_report/'+ckt_id+'/',
+            url: base_url+'/network_maps/l2_report/'+encodeURIComponent(ckt_id)+'/',
             type : "GET",
             success : function(response) {
 
@@ -1967,4 +1982,305 @@ function removeSSParamLabel() {
 $('input[type=radio][name=thematic_type]').change(function(e) {
     // Call function to restart perf calling
     networkMapInstance.restartPerfCalling();
+});
+
+// 
+$("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
+
+    var current_device_id = evt.currentTarget.attributes.device_id ? evt.currentTarget.attributes.device_id.value : "",
+        point_type = evt.currentTarget.attributes.point_type ? evt.currentTarget.attributes.point_type.value : "",
+        dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
+        device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
+        href_val = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
+        block_id = href_val.length > 1 ? href_val[1] : "",
+        device_pl = evt.currentTarget.attributes.pl_value ? evt.currentTarget.attributes.pl_value.value : "";
+
+    if(dom_id && point_type && current_device_id) {
+        // Show Spinner
+        if(dom_id == 'polled_tab') {
+            if($("a#"+dom_id+" .fa-spinner").hasClass("hide")) {
+                $("a#"+dom_id+" .fa-spinner").removeClass("hide");
+            }
+
+            if(periodic_tooltip_call) {
+                periodic_tooltip_call.abort();
+            }
+
+            // Make AJAX Call
+            periodic_tooltip_call = $.ajax({
+                url: base_url+'/network_maps/perf_info/?device_id='+current_device_id+"&device_pl="+device_pl,
+                type : "GET",
+                success : function(response) {
+
+                    var result = "",
+                        polled_data_html = "";
+                    // Type check for response
+                    if(typeof response == 'string') {
+                        result = JSON.parse(response);
+                    } else {
+                        result = response;
+                    }
+
+                    if(result && result.length > 0) {
+
+                        var fetched_polled_info = result,
+                            tooltip_info_dict = [];
+
+                        if(point_type == 'sector_Marker' || point_type == 'sector') {
+                            
+                            if(ptp_tech_list.indexOf(device_tech) > -1) {
+                                tooltip_info_dict = rearrangeTooltipArray(ptp_sector_toolTip_polled,fetched_polled_info);
+                            } else if(device_tech == 'wimax') {
+                                tooltip_info_dict = rearrangeTooltipArray(wimax_sector_toolTip_polled,fetched_polled_info);
+                            } else if(device_tech == 'pmp') {
+                                tooltip_info_dict = rearrangeTooltipArray(pmp_sector_toolTip_polled,fetched_polled_info);
+                            } else {
+                                // pass
+                            }
+                        } else if(point_type == 'sub_station') {
+                            if(ptp_tech_list.indexOf(device_tech) > -1) {
+                                tooltip_info_dict = rearrangeTooltipArray(ptp_ss_toolTip_polled,fetched_polled_info);
+                            } else if(device_tech == 'wimax') {
+                                tooltip_info_dict = rearrangeTooltipArray(wimax_ss_toolTip_polled,fetched_polled_info);
+                            } else if(device_tech == 'pmp') {
+                                tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled,fetched_polled_info);
+                            } else {
+                                // pass
+                            }
+                        } else {
+                            // pass
+                        }
+
+                        polled_data_html = "";
+                        polled_data_html += "<table class='table table-bordered table-hover'><tbody>";
+
+                        /*Poll Parameter Info*/
+                        for(var i=0; i< tooltip_info_dict.length; i++) {
+                            var url = "",
+                                text_class = "";
+                            if(tooltip_info_dict[i]["show"]) {
+                                // Url
+                                url = tooltip_info_dict[i]["url"] ? tooltip_info_dict[i]["url"] : "";
+                                text_class = "text-primary";
+
+                                polled_data_html += "<tr><td class='"+text_class+"' url='"+url+"'>"+tooltip_info_dict[i]['title']+"</td>\
+                                                     <td>"+tooltip_info_dict[i]['value']+"</td></tr>";
+                            }
+                        }
+
+                        polled_data_html += "</tbody></table>";
+
+                        // Clear the polled block HTML
+                        $("#"+block_id).html('<div class="divide-10"></div>');
+
+                        // Append the polled data info
+                        $("#"+block_id).append(polled_data_html);
+
+                    } else {
+                        $.gritter.add({
+                            title: "Polled Info",
+                            text: "Please try again later.",
+                            sticky: false,
+                            time : 1000
+                        });
+                    }
+                },
+                error : function(err) {
+
+                    if(err.statusText != 'abort') {
+                        $.gritter.add({
+                            title: "Polled Info",
+                            text: err.statusText,
+                            sticky: false,
+                            time : 1000
+                        });
+                    }
+                },
+                complete : function() {
+                    if(!$("a#"+dom_id+" .fa-spinner").hasClass("hide")) {
+                        $("a#"+dom_id+" .fa-spinner").addClass("hide");
+                    }       
+                }
+            });
+
+        }
+    } else {
+        if(periodic_tooltip_call) {
+            periodic_tooltip_call.abort();
+        }
+        if(!$(".nav-tabs li a:last-child .fa-spinner").hasClass("hide")) {
+            $(".nav-tabs li a:last-child .fa-spinner").addClass("hide");
+        }
+    }
+});
+
+// It triggers when Live polling button in Sector & SS tooltip rows clicked
+$('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
+
+    var current_target_attr = e.currentTarget.attributes,
+        current_table_childrens = $(e.currentTarget).parent().parent().children(),
+        last_td_container = current_table_childrens[current_table_childrens.length - 1],
+        service_name = current_target_attr['service_name'] ? current_target_attr['service_name'].value : "",
+        ds_name = current_target_attr['ds_name'] ? current_target_attr['ds_name'].value : "",
+        device_name = current_target_attr['device_name'] ? [current_target_attr['device_name'].value] : "",
+        false_param = false;
+
+        if(service_name && ds_name && device_name) {
+            // Disable all poll now buttons
+            $(e.currentTarget).button('loading');
+
+            // Call function to fetch live polling data
+            nocout_livePollCurrentDevice(
+                service_name,
+                ds_name,
+                device_name,
+                false_param,
+                false_param,
+                false_param,
+                false_param,
+                function(live_polled_dict) {
+                    if(live_polled_dict) {
+                        var live_polled_html = "";
+
+                        live_polled_html = "<span style='display:none;'>"+val_icon+" "+live_polled_dict["val"]+"<br/>\
+                                           "+time_icon+" "+live_polled_dict["time"]+"</span>";
+
+                        $(last_td_container).html(live_polled_html);
+                        $(last_td_container).children().slideDown('slow')
+                    } else {
+                        $(last_td_container).html("");
+                    }
+                    // Disable all poll now buttons
+                    $(e.currentTarget).button('complete');
+                });
+        } else {
+            $.gritter.add({
+                title: "Live Polling",
+                text: "Please try again later.",
+                sticky: false,
+                time : 1000
+            });
+        }
+
+});
+
+// It triggers when Poll Now button on top of Sector & SS tooltip clicked
+$('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) {
+
+    var current_target_attr = e.currentTarget.attributes,
+        device_name = current_target_attr['device_name'] ? [current_target_attr['device_name'].value] : "",
+        marker_key = current_target_attr['marker_key'] ? current_target_attr['marker_key'].value : "",
+        marker_type = current_target_attr['marker_type'] ? current_target_attr['marker_type'].value : "";
+
+    var themetics_radio = $("input:radio[name=thematic_type]"),
+        checked_themetics_radio = $("input:radio[name=thematic_type]"),
+        selected_thematics = themetics_radio.length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
+
+        if(device_name && marker_key && marker_type) {
+
+            var selected_marker = allMarkersObject_gmap[marker_type][marker_key];
+
+            if(selected_marker.device_name == device_name) {
+                // disable the button
+                $(e.currentTarget).button('loading');
+
+                // Make Ajax Call to Fetch Live Poll Data For opened device.
+                $.ajax({
+                    url : base_url+"/"+"device/lp_bulk_data/?devices="+JSON.stringify(device_name)+"&ts_type="+selected_thematics,
+                    type : "GET",
+                    success : function(response) {
+                        var result = "";
+                        // Type check of response
+                        if(typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        if(result.success == 1) {
+
+                            var device_data_dict = result['data']['devices'][device_name[0]],
+                                fetched_icon = device_data_dict && device_data_dict['icon'] ? device_data_dict['icon'] : "",
+                                fetched_val = device_data_dict && device_data_dict['value'] ? device_data_dict['value'] : "",
+                                polled_data_html = "",
+                                dateObj = new Date(),
+                                current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds();
+
+                            if(fetched_val  && fetched_val != "NA") {
+
+                                // If value is array then use first index val
+                                if(typeof fetched_val == 'object') {
+                                    fetched_val = fetched_val[0];
+                                }
+
+                                if(!isNaN(Number(fetched_val))) {
+                                    var existing_val = $("#infoWindowContainer #sparkline_val_input").val(),
+                                        new_values_list = "";
+
+                                    if(existing_val) {
+                                        new_values_list = existing_val+","+fetched_val;
+                                    } else {
+                                        new_values_list = fetched_val;
+                                    }
+                                    
+                                    // Update the value in input field
+                                    $("#infoWindowContainer #sparkline_val_input").val(new_values_list);
+
+                                    // Make array of values from "," comma seperated string
+                                    var new_chart_data = new_values_list.split(",");
+
+                                    /*Plot sparkline chart with the fetched polling value*/
+                                    $("#infoWindowContainer #sparkline_container").sparkline(new_chart_data, {
+                                        type: "line",
+                                        lineColor: "blue",
+                                        spotColor : "orange",
+                                        defaultPixelsPerValue : 10
+                                    });
+                                }
+                            }
+
+                            polled_data_html += '<span style="display:none;">'+val_icon+' '+fetched_val;
+                            polled_data_html += '<br/>'+time_icon+' '+current_time+'</span>';
+
+                            $("#infoWindowContainer #fetched_val_container").html(polled_data_html);
+
+                            $("#infoWindowContainer #fetched_val_container span").slideDown('slow');
+
+                            // If has icon then update marker with fetched icon.
+                            if(fetched_icon) {
+                                var marker_img_object = gmap_self.getMarkerImageBySize(base_url+"/"+fetched_icon,"other");
+
+                                // Update Marker Icon
+                                selected_marker.setOptions({
+                                    "icon" : marker_img_object
+                                });
+
+                                is_tooltip_polled_used = true;
+                            }
+
+                        } else {
+                            $.gritter.add({
+                                title: "Live Polling",
+                                text: result.message,
+                                sticky: false,
+                                time : 1000
+                            });
+                        }
+                    },
+                    error : function(err) {
+                        $.gritter.add({
+                            title: "Live Polling",
+                            text: err.statusText,
+                            sticky: false,
+                            time : 1000
+                        });
+                    },
+                    complete : function() {
+                        // enable the button
+                        $(e.currentTarget).button('complete');
+                    }
+                });
+
+            }
+        }
 });

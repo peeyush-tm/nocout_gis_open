@@ -144,6 +144,24 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                         is_added_to_nms=1,
                                         is_deleted=0,
                                         organization__in=organizations)
+
+    elif (not technology) and (not specify_ptp_bh_type):
+        devices = Device.objects.filter(Q(
+                                            device_technology=int(PMP.ID),
+                                            sector_configured_on__isnull=False,
+                                            sector_configured_on__sector_id__isnull=False
+                                        )
+                                        |
+                                        Q(
+                                            device_technology=int(WiMAX.ID),
+                                            sector_configured_on__isnull=False,
+                                            sector_configured_on__sector_id__isnull=False
+                                        )
+                                        ,
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in=organizations)
+
     else:
         if int(technology) == int(P2P.ID):
             if specify_ptp_bh_type in ['ss', 'bs']:
@@ -269,19 +287,22 @@ def filter_devices(organizations=[],
 
 
 @cache_for(300)
-def prepare_machines(device_list):
+def prepare_machines(device_list, machine_key='device_machine'):
     """
 
+
+    :param device_list:
+    :param machine_key:
     :return:
     """
     # Unique machine from the device_list
-    unique_device_machine_list = {device['device_machine']: True for device in device_list}.keys()
+    unique_device_machine_list = {device[machine_key]: True for device in device_list}.keys()
 
     machine_dict = {}
     #Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
         machine_dict[machine] = [device['device_name'] for device in device_list if
-                                 device['device_machine'] == machine]
+                                 device[machine_key] == machine]
 
     return machine_dict
 
@@ -294,17 +315,18 @@ def organization_sectors(organization, technology=0):
     :param technology:
     :return list of sector
     """
-    sector_objects = Sector.objects.prefetch_related(
+    sector_objects = Sector.objects.select_related(
             'sector_configured_on',
             'sector_configured_on__machine',
-            'sector_configured_on__site_instance'
+            'sector_configured_on__site_instance',
+            'organization',
         ).filter(
         sector_configured_on__is_added_to_nms=1,
         sector_configured_on__isnull=False
     )
 
     if organization:
-        sector_objects = sector_objects.prefetch_related('organization').filter(organization__in=organization)
+        sector_objects = sector_objects.filter(organization__in=organization)
 
     if int(technology) == int(PMP.ID):
         sector_list = sector_objects.filter(
@@ -314,7 +336,7 @@ def organization_sectors(organization, technology=0):
             ).annotate(total_sector=Count('sector_id'))
 
     elif int(technology) == int(WiMAX.ID):
-        sector_list = sector_objects.prefetch_related(
+        sector_list = sector_objects.select_related(
             'sector_configured_on_port'
         ).filter(
             sector_id__isnull=False,
@@ -323,9 +345,11 @@ def organization_sectors(organization, technology=0):
         ).annotate(total_sector=Count('sector_id'))
 
     elif int(technology) == int(P2P.ID):
-        sector_list = Sector.objects.prefetch_related(
+        sector_list = Sector.objects.select_related(
             'sector_configured_on',
-            'sector_configured_on__machine'
+            'sector_configured_on__machine',
+            'sector_configured_on__site_instance',
+            'organization',
         ).filter(
             sector_configured_on__device_technology=technology,
         ).annotate(total_sector=Count('id'))

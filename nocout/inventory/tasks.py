@@ -10,6 +10,7 @@ from device.models import State, City
 from nocout.settings import MEDIA_ROOT
 from nocout.tasks import cache_clear_task
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Status
+from performance.formulae import display_time
 from IPy import IP
 import ipaddr
 from decimal import *
@@ -11059,10 +11060,11 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # bs uptime
             try:
-                ptp_row['BS Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                    service_name='radwin_uptime',
-                                                                    data_source='uptime').using(
-                                                                    alias=bs_machine_name)[0].current_value
+                bs_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                         service_name='radwin_uptime',
+                                                         data_source='uptime').using(
+                    alias=bs_machine_name)[0].current_value
+                ptp_row['BS Uptime'] = display_time(bs_uptime)
             except Exception as e:
                 logger.info("BS Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -11361,10 +11363,11 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # ss uptime
             try:
-                ptp_row['SS Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                ss_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                     service_name='radwin_uptime',
                                                                     data_source='uptime').using(
                                                                     alias=ss_machine_name)[0].current_value
+                ptp_row['SS Uptime'] = display_time(ss_uptime)
             except Exception as e:
                 logger.info("SS Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -11788,9 +11791,10 @@ def get_selected_pmp_inventory(base_station, sector):
 
             # uptime
             try:
-                pmp_bs_row['Sector Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                sector_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                            data_source='uptime').using(
                                                                            alias=bs_machine_name)[0].current_value
+                pmp_bs_row['Sector Uptime'] = display_time(sector_uptime)
             except Exception as e:
                 logger.info("Sector Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12018,9 +12022,10 @@ def get_selected_pmp_inventory(base_station, sector):
 
             # uptime
             try:
-                pmp_sm_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='uptime').using(
                                                                             alias=ss_machine_name)[0].current_value
+                pmp_bs_row['Session Uptime'] = display_time(session_uptime)
             except Exception as e:
                 logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -12179,6 +12184,12 @@ def get_selected_wimax_inventory(base_station, sector):
                 wimax_bs_row['Address'] = base_station.address
             except Exception as e:
                 logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
+
+            # address
+            try:
+                wimax_bs_row['Site ID'] = base_station.bs_site_id
+            except Exception as e:
+                logger.info("Site ID not exist for base station ({}).".format(base_station.name, e.message))
 
             # bs name
             try:
@@ -12468,9 +12479,10 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # system uptime
             try:
-                wimax_bs_row['System Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                system_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                              data_source='bs_uptime').using(
                                                                              alias=bs_machine_name)[0].current_value
+                wimax_bs_row['System Uptime'] = display_time(system_uptime)
             except Exception as e:
                 logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12714,17 +12726,19 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # session uptime
             try:
-                wimax_ss_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                          data_source='session_uptime').using(
-                                                                          alias=ss_machine_name)[0].current_value
+                system_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                              data_source='session_uptime').using(
+                                                              alias=ss_machine_name)[0].current_value
+                wimax_ss_row['Session Uptime'] = display_time(system_uptime)
             except Exception as e:
                 logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
             # device uptime
             try:
-                wimax_ss_row['Device Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                          data_source='uptime').using(
-                                                                          alias=ss_machine_name)[0].current_value
+                device_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                          data_source='uptime').using(
+                                                          alias=ss_machine_name)[0].current_value
+                wimax_ss_row['Device Uptime'] = display_time(device_uptime)
             except Exception as e:
                 logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -13112,10 +13126,7 @@ def get_topology(technology, rf_type=None, site_name=None):
     sector_list = []
     for sector in all_sectors:
         sector_list.append(sector['sector_id'])
-
-    #rather than looping ourselves
-    #lets do .values('', flat=True)
-    #device_list = network_devices.values
+    sector_list = set(sector_list)  # unique sector ids
 
     #topology is now synced at the central database only. no need to creating topology
     topology = Topology.objects.filter(sector_id__in=sector_list)
@@ -13196,15 +13207,14 @@ def get_topology(technology, rf_type=None, site_name=None):
     if len(save_ss_list):
         g_jobs.append(bulk_update_create.s(bulky=save_ss_list, action='update'))
 
+    if not len(g_jobs):
+        return False
+
     job = group(g_jobs)
-
     result = job.apply_async()
-    ret = False
-
-    for r in result.get():
-        ret |= r
-
-    return ret
+    # for r in result.get():
+    #     ret |= r
+    return True
 
 
 @task()
@@ -13244,12 +13254,17 @@ def bulk_update_create(bulky, action='update', model=None):
     logger.debug(bulky)
     if bulky and len(bulky):
         if action == 'update':
-            for update_this in bulky:
-                try:
-                    update_this.save()
-                except Exception as e:
-                    logger.exception(e)
-                    continue
+            try:
+                bulk_update_internal_no_save(bulky)
+            except Exception as e:
+                logger.exception(e)
+                return False
+            # for update_this in bulky:
+            #     try:
+            #         update_this.save()
+            #     except Exception as e:
+            #         logger.exception(e)
+            #         continue
             return True
 
         elif action == 'create':
@@ -13261,4 +13276,50 @@ def bulk_update_create(bulky, action='update', model=None):
                     return False
             return True
 
+    return True
+
+
+# for updating in bulk we would use transactions
+from django.db import transaction
+
+
+@transaction.atomic()
+def bulk_update_decorated(bulky):
+    """
+
+    :param bulky: model object list
+    :return: True
+    """
+    sid = None
+    for update_this in bulky:
+        update_this.save()            # transaction is having an element
+        sid = transaction.savepoint()
+    transaction.savepoint_commit(sid)  # on loop exit commit
+    return True
+
+
+def bulk_update_internal(bulky):
+    """
+
+    :param bulky: model object list
+    :return: True
+    """
+    sid = None
+    with transaction.atomic():
+        for update_this in bulky:
+            update_this.save()
+            sid = transaction.savepoint()
+        transaction.savepoint_commit(sid)  # on loop exit commit
+    return True
+
+
+def bulk_update_internal_no_save(bulky):
+    """
+
+    :param bulky: model object list
+    :return: True
+    """
+    with transaction.atomic():
+        for update_this in bulky:
+            update_this.save()
     return True

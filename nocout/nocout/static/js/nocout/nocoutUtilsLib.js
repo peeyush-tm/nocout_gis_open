@@ -15,7 +15,8 @@ var green_color = "#468847",
     left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;background:#FFF;",
     right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;",
     val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
-    time_icon = '<i class="fa fa-clock-o"></i>';
+    time_icon = '<i class="fa fa-clock-o"></i>',
+    perf_page_live_polling_call = "";
 
 
 /**
@@ -68,73 +69,78 @@ function populateDeviceStatus_nocout(domElement,info) {
  * @param info {Object}, It contains the latest status object
  */
 function populateServiceStatus_nocout(domElement,info) {
-    
-    if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
-        
-        var last_updated = info.last_updated ? info.last_updated : "N/A",
-            perf = info.perf ? info.perf : "N/A",
-            inner_status_html = '';
 
-        inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-        inner_status_html += '<tr>';
-        inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-        inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
-        inner_status_html += '</tr>';
-        inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+    if(!is_perf_polling_enabled) {
+        /********** Service Status Without Live Polling  - START     ********************/
+        if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
+            
+            var last_updated = info.last_updated ? info.last_updated : "N/A",
+                perf = info.perf ? info.perf : "N/A",
+                inner_status_html = '';
 
-        $("#"+domElement).html(inner_status_html);
+            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
+            inner_status_html += '<tr>';
+            inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
+            inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
+            inner_status_html += '</tr>';
+            inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+
+            $("#"+domElement).html(inner_status_html);
+        } else {
+            $("#"+domElement).html("");
+        }
+
+        /********** Service Status Without Live Polling  - END     ********************/
     } else {
-        $("#"+domElement).html("");
+        /********** LIVE POLLING CODE  - START     ********************/
+
+        // Clear status block when we are on utilization or availablility tabs
+        if(domElement.indexOf('availability') > -1 || domElement.indexOf('utilization_top') > -1 || domElement.indexOf('topology') > -1) {
+
+            $("#"+domElement).html("");
+
+        } else {
+
+            var last_updated = info.last_updated ? info.last_updated : "N/A",
+                perf = info.perf ? info.perf : "N/A",
+                inner_status_html = '';
+
+            // Create Table for service polled value & live polling --- START
+            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
+            inner_status_html += '<tr>';
+            
+            inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
+                                '+val_icon+' '+perf+'<br/>\
+                                '+time_icon+' '+last_updated+'</td>';
+            
+            inner_status_html += '<td style="width:5%;vertical-align: middle;">\
+                                 <button class="btn btn-primary btn-xs perf_poll_now"\
+                                 title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
+                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
+                                 class="fa fa-hand-o-right"></i></button>\
+                                 </td>';
+
+            inner_status_html += '<td style="width:47.5%;">\
+                                 <b>Poll Output :</b> \
+                                 <span id="perf_live_poll_chart"></span><br/>\
+                                 <ul id="perf_live_poll_vals" class="list-unstyled"></ul>\
+                                 </td>';
+            
+
+            inner_status_html += '</tr>';
+            inner_status_html += '</table>';
+            // Create Table for service polled value & live polling --- END
+
+            // Create hidden input field to store polling values --- START
+            inner_status_html += '<input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">';
+            // Create hidden input field to store polling values --- END
+
+            inner_status_html += '<div class="clearfix"></div><div class="divide-20"></div>';
+
+            $("#"+domElement).html(inner_status_html);
+        }
+        /********** LIVE POLLING CODE  - END     ********************/
     }
-    /********** LIVE POLLING CODE  - START     ********************/
-    /*
-    // Clear status block when we are on utilization or availablility tabs
-    if(domElement.indexOf('availability') > -1 || domElement.indexOf('utilization_top') > -1 || domElement.indexOf('topology') > -1) {
-
-        $("#"+domElement).html("");
-
-    } else {
-
-        var last_updated = info.last_updated ? info.last_updated : "N/A",
-            perf = info.perf ? info.perf : "N/A",
-            inner_status_html = '';
-
-        // Create Table for service polled value & live polling --- START
-        inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-        inner_status_html += '<tr>';
-        
-        inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
-                            '+val_icon+' '+perf+'<br/>\
-                            '+time_icon+' '+last_updated+'</td>';
-        
-        inner_status_html += '<td style="width:5%;vertical-align: middle;">\
-                             <button class="btn btn-primary btn-xs perf_poll_now"\
-                             title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
-                             data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
-                             class="fa fa-hand-o-right"></i></button>\
-                             </td>';
-
-        inner_status_html += '<td style="width:47.5%;">\
-                             <b>Poll Output :</b> \
-                             <span id="perf_live_poll_chart"></span><br/>\
-                             <ul id="perf_live_poll_vals" class="list-unstyled"></ul>\
-                             </td>';
-        
-
-        inner_status_html += '</tr>';
-        inner_status_html += '</table>';
-        // Create Table for service polled value & live polling --- END
-
-        // Create hidden input field to store polling values --- START
-        inner_status_html += '<input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">';
-        // Create hidden input field to store polling values --- END
-
-        inner_status_html += '<div class="clearfix"></div><div class="divide-20"></div>';
-
-        $("#"+domElement).html(inner_status_html);
-    }
-    */
-    /********** LIVE POLLING CODE  - END     ********************/
 }
 
 
@@ -393,12 +399,19 @@ function createHighChart_nocout(chartConfig,dom_id,text_color,need_extra_config)
             title : {
                 text : chartConfig.valuetext
             },
-            max : need_extra_config ? 100 : "",
             reversed : is_y_inverted
         },
-        series: chartConfig.chart_data,
-        plotOptions : need_extra_config ? {series: {stacking: 'normal'}} : {}
+        series: chartConfig.chart_data
     };
+
+    try {
+        if(need_extra_config) {
+            chart_options["yAxis"]["max"] = 100;
+            chart_options["plotOptions"] = {series: {stacking: 'normal'}};
+        }
+    } catch(e) {
+        // pass
+    }
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
 }
@@ -500,4 +513,143 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
     data_in_table += '</table>';
 
     return data_in_table;
+}
+
+/**
+ * This function triggers when live poll button is clicked. It fetched the live polled value & create or update sparkline chart
+ * @method nocout_livePollCurrentDevice
+ * @param service_name {String}, It is the name of current service
+ * @param ds_name {String}, It is the name of current data source
+ * @param device_name {Array}, It is the list of device names(right now we have only one device name)
+ * @param container_dom_id {String}, It is the dom id in of last updated block div in which the chart is to be prepared.
+ * @param sparkline_dom_id {String}, It is the dom id in which sparkline chart is to be created
+ * @param hidden_input_dom_id {String}, It is the dom id(input element) in which sparkline chart data is to be saved
+ * @param polled_val_shown_dom_id {String}, It is the dom id in which the latest polled value is to be shown.
+ */
+function nocout_livePollCurrentDevice(
+    service_name,
+    ds_name,
+    device_name,
+    container_dom_id,
+    sparkline_dom_id,
+    hidden_input_dom_id,
+    polled_val_shown_dom_id,
+    callback
+) {
+    // Make Ajax Call
+    perf_page_live_polling_call = $.ajax({
+        url : base_url+"/"+"device/lp_bulk_data/?service_name="+service_name+"&devices="+JSON.stringify(device_name)+"&ds_name="+ds_name,
+        type : "GET",
+        success : function(response) {
+            
+            var result = "";
+            // Type check of response
+            if(typeof response == 'string') {
+                result = JSON.parse(response);
+            } else {
+                result = response;
+            }
+
+            if(result.success == 1) {
+
+                var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
+                var shown_val = "",
+                    current_val_html = "",
+                    dateObj = new Date(),
+                    current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+                    fetched_data = true;
+                if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
+                    
+                    if(typeof fetched_val == 'object') {
+                        fetched_val = fetched_val[0];
+                    }
+
+                    // If call is from single device page then proceed else return data
+                    if(container_dom_id) {
+                        // Create Fetched val html with time stamp
+                        current_val_html += '<li style="display:none;">'+val_icon+' '+fetched_val;
+                        current_val_html += '<br/>'+time_icon+' '+current_time+'</li>';
+                        
+                        // Prepend new fetched val & time li
+                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals").html(current_val_html);
+                        // Animation effect to added li
+                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals li").slideDown('slow');
+
+
+                        /******************** Create Sparkline Chart for numeric values ********************/
+                        if(!isNaN(Number(fetched_val))) {
+                            var existing_val = $("#"+container_dom_id+" #"+hidden_input_dom_id).val(),
+                                new_values_list = "";
+
+                            if(existing_val) {
+                                new_values_list = existing_val+","+fetched_val;
+                            } else {
+                                new_values_list = fetched_val;
+                            }
+                            
+                            // Update the value in input field
+                            $("#"+container_dom_id+" #"+hidden_input_dom_id).val(new_values_list);
+
+                            // Make array of values from "," comma seperated string
+                            var new_chart_data = new_values_list.split(",");
+
+                            /*Plot sparkline chart with the fetched polling value*/
+                            $("#"+container_dom_id+" #"+sparkline_dom_id).sparkline(new_chart_data, {
+                                type: "line",
+                                lineColor: "blue",
+                                spotColor : "orange",
+                                defaultPixelsPerValue : 10
+                            });
+                        }
+                    } else {
+                        fetched_data = {
+                            "val" : fetched_val,
+                            "time" : current_time
+                        };
+                    }
+
+
+                } else {
+                    fetched_data = {
+                        "val" : fetched_val,
+                        "time" : current_time
+                    };
+                }
+                callback(fetched_data);
+            } else {
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Live Polling',
+                    // (string | mandatory) the text inside the notification
+                    text: result.message,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false
+                });
+                
+                callback(false);
+            }
+        },
+        error : function(err) {
+            if($.trim(err.statusText) != 'abort') {    
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Live Polling',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false
+                });
+
+                // If call is not from single device page then proceed
+                callback(false);
+            }
+        },
+        complete : function() {
+            // If call is from single device page then proceed else return data
+            if(container_dom_id) {
+                // Enable the "Poll Now" button
+                $("#"+container_dom_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("complete");
+            }
+        }
+    });
 }

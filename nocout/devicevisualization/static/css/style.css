@@ -464,3 +464,24 @@ iframe {
 .text-bold {
     font-weight: bold;
 }
+#chart_div .yaxisLabel {
+    z-index: 99999;
+    transform: rotate(270deg);
+    float: left;
+    position: absolute;
+    top: 52%;
+    left: -8%;
+}
+#chart_div .xaxisLabel {
+    z-index: 99999;
+    position: absolute;
+    top: 100%;
+    left: 43%;
+    margin-top: 15px;
+}
+#pin-points-container {
+    margin-top: 25px;
+}
+#infoWindowContainer .nav > li > a {
+    padding: 8px 9px;
+}

@@ -50,6 +50,11 @@ if(router_splitted_list.length >= 6) {
     }
 }
 
+// for Device Type Wizard
+if(currentRouter.indexOf('wizard/device-type') > -1) {
+    currentRouter = 'type';
+}
+
 /*By default all the sub-sub menu panel will be collapsed*/
 $(".has-sub-sub > ul.sub-sub").hide();
 
@@ -62,7 +67,6 @@ for(var i = 0; i < sideMenu.length; i++) {
             menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1)),
             menuLink = $.trim(menuLinkString.replace(/,/g,"/")),
             menu_link_last_text = menuLink.split("/")[menuLink.split("/").length-1];
-
         /*Parent Element(li) Classname*/
         var activeClass = $.trim(sideMenu[i].parentElement.className);
         
@@ -78,7 +82,7 @@ for(var i = 0; i < sideMenu.length; i++) {
             menuLink = new_url_splitted_list.join("/");
         }
 
-        if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
+        if(currentRouter.indexOf(menuLink) == 0 && menuLink != "") {
             applySelectedClasses(sideMenu[i]);
         }
     }
@@ -557,6 +561,12 @@ var isNewForm = window.location.href.indexOf('new'),
     isEditForm = window.location.href.indexOf('edit'),
     isUpdateForm = window.location.href.indexOf('update'),
     isModifyForm = window.location.href.indexOf('modify'),
+    splitted_url_list = window.location.pathname.split("/"),
+    wizard_condition_1 = window.location.href.indexOf('wizard/device-type') > -1, // Temporary commented
+    wizard_condition_2 = !isNaN(splitted_url_list[splitted_url_list.length-1]),
+    wizard_condition_3 = splitted_url_list.indexOf('gis-wizard') > -1,
+    // isWizardForm =  wizard_condition_2 && wizard_condition_3,
+    isWizardForm =  (wizard_condition_1) || (wizard_condition_2 && wizard_condition_3),
     page_title = "",
     module_name = "",
     isFormSubmit = 0;
@@ -565,30 +575,40 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
     
     page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
     module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
-} else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+} else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
 
-    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ");
-    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+    page_title = $(".formContainer .box .box-title h4")[0] ? $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ") : "";
+    if(page_title) {
+        module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+    } else {
+        module_name = "";
+    }
 
     if(isFormSubmit === 0) {
-        var oldFieldsArray = $("form input").serializeArray(),
+        var oldFieldsArray = $("form input:not(:hidden)").serializeArray(),
             select_boxes = $("form select");
 
         setTimeout(function() {
             for(var i=0;i<select_boxes.length;i++) {
                 var select_id = select_boxes[i].attributes["id"].value,
-                    values_array = $("#"+select_id).select2("data"),
+                    isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
+                    values_array = isSelect2 ? $("#"+select_id).select2("data") : $("#"+select_id+" option:selected").text(),
                     selected_values = "";
-                if(values_array && values_array.length) {
+
+                if(values_array && values_array.constructor == Array) {
                     $.grep(values_array,function(data){
                         if(selected_values.length > 0) {
-                            selected_values +=  data.text ? ","+data.text : "";
+                            selected_values +=  data.text ? ","+data.text() : "";
                         } else {
-                            selected_values += data.text ? data.text : "";
+                            selected_values += data.text ? data.text() : "";
                         }
                     });
                 } else {
-                    selected_values = values_array ? values_array.text : "";
+                    if(typeof values_array == 'object') {
+                        selected_values = values_array ? values_array.text : "";
+                    } else {
+                        selected_values = values_array;
+                    }
                 }
 
                 var data_obj = {
@@ -648,28 +668,34 @@ $("form").submit(function(e) {
             return true;
         }
     /*Edit case*/
-    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
         /*When first time form submitted*/
         if(isFormSubmit === 0) {
 
-            var newFieldsArray = $("form input").serializeArray(),
+            var newFieldsArray = $("form input:not(:hidden)").serializeArray(),
                 select_boxes = $("form select"),
                 modifiedFieldsStr = "[";
             /*Get New Fields*/
             for(var i=0;i<select_boxes.length;i++) {
                 var select_id = select_boxes[i].attributes["id"] ? select_boxes[i].attributes["id"].value : "",
-                    values_array = select_id ? $("#"+select_id).select2("data") : "",
+                    isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
+                    values_array = isSelect2 ? $("#"+select_id).select2("data") : $("#"+select_id+" option:selected").text(),
                     selected_values = "";
-                if(values_array.length) {
+
+                if(values_array && values_array.constructor == Array) {
                     $.grep(values_array,function(data){
                         if(selected_values.length > 0) {
-                            selected_values += data.text ? ","+data.text : "";
+                            selected_values +=  data.text ? ","+data.text() : "";
                         } else {
-                            selected_values += data.text ? data.text : "";
+                            selected_values += data.text ? data.text() : "";
                         }
                     });
                 } else {
-                    selected_values = values_array ? values_array.text : "";
+                    if(typeof values_array == 'object') {
+                        selected_values = values_array ? values_array.text : "";
+                    } else {
+                        selected_values = values_array;
+                    }
                 }
 
                 var data_obj = {
@@ -684,7 +710,7 @@ $("form").submit(function(e) {
             for(var j=0;j<oldFieldsArray.length;j++) {
                 var old_field = oldFieldsArray[j],
                     new_field = newFieldsArray[j];
-                if(old_field && new_field) {
+                if(old_field && old_field.value && new_field && new_field.value) {
                     if($.trim(old_field.value) != $.trim(new_field.value) && old_field.name.indexOf('password') === -1) {
                         var new_val = new_field.value.toLowerCase() != 'select' ? new_field.value : "",
                             old_val = old_field.value.toLowerCase() != 'select' ? old_field.value : "",

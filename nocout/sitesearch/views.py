@@ -308,6 +308,7 @@ def prepare_raw_sector(sectors):
     all_sector_pe_ip = ""
     all_sector_qos_bandwidth = ""
     all_sector_hssu_used = ""
+    all_sector_hssu_port = ""
     all_sector_bh_bso = ""
     all_sector_antenna_height = ""
     all_sector_antenna_polarization = ""
@@ -398,6 +399,7 @@ def prepare_raw_sector(sectors):
                 all_sector_pe_ip += unicode(format_value(format_this=sector['BH_PE_IP']))+"|"
                 all_sector_qos_bandwidth += unicode(format_value(format_this=sector['QOS']))+"|"
                 all_sector_hssu_used += unicode(format_value(format_this=sector['BSHSSUUSED']))+"|"
+                all_sector_hssu_port += unicode(format_value(format_this=sector['BSHSSUPORT']))+"|"
                 all_sector_bh_bso += unicode(format_value(format_this=sector['BSBHBSO']))+"|"
                 all_sector_antenna_height += unicode(format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT']))+"|"
                 all_sector_antenna_polarization += unicode(format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION']))+"|"
@@ -518,7 +520,12 @@ def prepare_raw_sector(sectors):
           'show': 1,
           'value': all_sector_hssu_used
         },
-
+        {
+          'name': 'hssu_port',
+          'title': 'HSSU Port',
+          'show': 1,
+          'value': all_sector_hssu_port
+        },
         {
           'name': 'bh_bso',
           'title': 'BH BSO',
@@ -753,9 +760,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                         circuit_ids.append(circuit_id)
 
                     techno_to_append = circuit['SS_TECH']
-                    # Base stattion name of SS
-                    if not base_station_alias:
-                        base_station_alias = circuit['BSALIAS']
 
                     if circuit['CIRCUIT_TYPE'] and circuit['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
                         techno_to_append = 'PTP BH'
@@ -773,6 +777,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                         substation_ip.append(circuit['SSIP'])
 
                     # Appending SS Infowindow Content
+                    base_station_alias += unicode(format_value(circuit['BSALIAS']))+"|"
                     all_ckt_ids += unicode(format_value(circuit['CCID']))+"|"
                     all_customer_alias += unicode(format_value(circuit['CUST']))+"|"
                     all_ss_ip +=  unicode(format_value(circuit['SSIP']))+"|"
@@ -798,7 +803,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                             'id': circuit['SSID'],
                             'name': circuit['SS_NAME'],
                             'device_name': circuit['SSDEVICENAME'],
-                            # 'device_id' : circuit['SS_DEVICE_ID'],
+                            'device_id' : circuit['SS_DEVICE_ID'],
                             'data': {
                                 "lat": circuit['SS_LATITUDE'],
                                 "lon": circuit['SS_LONGITUDE'],

@@ -69,19 +69,15 @@
                         Selection
                     </button>
                 </li>
-                {% for group in user.groups.all %}
-                    {% if group.name == 'group_admin' or group.name == 'group_operator' %}
-                        <li>
-                            <button type="button" id="showToolsBtn" class="btn btn-sm btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
-                            data-loading-text="Please Wait...">
-                                <i class='fa fa-cog'></i> Show Tools
-                            </button>
-                            <button type="button" id="removeToolsBtn" class="btn btn-sm btn-danger hide" onclick="removetoolsPanel();">
-                                <i class='fa fa-times'></i> Hide Tools
-                            </button>
-                        </li>
-                    {% endif %}
-                {% endfor %}
+                <li>
+                    <button type="button" id="showToolsBtn" class="btn btn-sm btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                    data-loading-text="Please Wait...">
+                        <i class='fa fa-cog'></i> Show Tools
+                    </button>
+                    <button type="button" id="removeToolsBtn" class="btn btn-sm btn-danger hide" onclick="removetoolsPanel();">
+                        <i class='fa fa-times'></i> Hide Tools
+                    </button>
+                </li>
             </ul>
         </div>
     </span>
@@ -222,25 +218,25 @@
         <div id="toolsContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
             <ul class="list-unstyled list-inline">               
-                <li>
+                <!-- <li>
                     <button type="button" id="ruler_select" class="btn btn-sm btn-info">Select Ruler</button>
                     <button type="button" id="ruler_remove" class="btn btn-sm btn-danger hide">Remove Ruler</button>
-                </li>
-                <li>
-                    <button type="button" id="point_select" class="btn btn-sm btn-info">Add Point</button>
+                </li> -->
+                <!-- <li> -->
+                    <!-- <button type="button" id="point_select" class="btn btn-sm btn-info">Add Point</button> -->
                     <!-- <button type="button" id="point_remove" class="btn btn-sm btn-danger hide">Remove Points</button> -->
-                    <ul class="list-unstyled list-inline hide" id="point_icons_container">
+                    <!-- <ul class="list-unstyled list-inline hide" id="point_icons_container"> -->
                     <!-- If loggedin user is super admin then only show maintainance icon -->
-                        {% if user.is_superuser %}
-                            <li class="selected_icon"><img src="../../static/img/icons/tools/point/caution.png"/></li>
-                        {% endif %}
-                        <li><img src="../../static/img/icons/tools/point/icon1.png"/></li>
+                        <!-- {% if user.is_superuser %} -->
+                            <!-- <li class="selected_icon"><img src="../../static/img/icons/tools/point/caution.png"/></li> -->
+                        <!-- {% endif %} -->
+                        <!-- <li><img src="../../static/img/icons/tools/point/icon1.png"/></li>
                         <li><img src="../../static/img/icons/tools/point/icon2.png"/></li>
                         <li><img src="../../static/img/icons/tools/point/icon3.png"/></li>
                         <li><img src="../../static/img/icons/tools/point/icon4.png"/></li>
                         <li class="close_box"><i class="fa fa-times" id="close_points_icon"> </i> </li>
-                    </ul>
-                </li>
+                    </ul> -->
+                <!-- </li> -->
                 <!-- <li>
                     <button type="button" id="line_select" class="btn btn-sm btn-info">Select Line</button>
                     <button type="button" id="line_remove" class="btn btn-sm btn-danger hide">Remove Line</button>
@@ -353,7 +349,7 @@
 
             <!--Info Window Content Container START-->
 
-            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:999;"></div>
+            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:9999;"></div>
 
             <!--Info Window Content Container END-->
 
@@ -428,8 +424,8 @@
                                 </div>
                                 <div class="divide-10"></div>
                                 <div class="">
-                                    <button type="button" class="btn btn-primary hide" data-complete-text="Fetch" data-loading-text="Please Wait... <i class='fa fa-spinner fa fa-spin'> </i>" id="fetch_polling" title="Fetch">
-                                        Fetch
+                                    <button type="button" class="btn btn-primary hide" data-complete-text="Poll Now" data-loading-text="Please Wait... <i class='fa fa-spinner fa fa-spin'> </i>" id="fetch_polling" title="Poll Now">
+                                        Poll Now
                                     </button>
                                     <div class="pull-right">
                                         <button class="btn btn-success play_pause_btns hide" data-complete-text="<i class='fa fa-play'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Play" id="play_btn">
@@ -525,7 +521,8 @@
             whiteMapClass = "",
             networkMapInstance= "",
             is_super_admin = "",
-            deviceName = '';
+            deviceName = '',
+            default_polling = true;
 
         $(document).ready(function (e) {
 
@@ -533,6 +530,17 @@
                 deviceName = "{{ device_name }}";
                 // Is user super admin or admin
                 is_super_admin = '{{ is_admin }}';
+                // Live polling Configuration
+                live_poll_config = $.parseJSON('{{ live_poll_config|safe }}');
+                // Periodic polling parallel processes count
+                periodic_poll_process_count = '{{ periodic_poll_process_count }}';
+                periodic_poll_process_count = periodic_poll_process_count ? Number(periodic_poll_process_count) : 1;
+
+                default_polling = live_poll_config['maps_default'] ? live_poll_config['maps_default'] : false;
+
+                if(!default_polling) {
+                    $("#createPolygonBtn").parent().remove();
+                }
             } catch(e) {
                 // pass
             }
