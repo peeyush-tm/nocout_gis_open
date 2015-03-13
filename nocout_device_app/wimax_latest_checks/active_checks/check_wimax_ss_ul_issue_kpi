@@ -33,7 +33,7 @@ except Exception as exp:
 
 def extract_wimax_ss_state(hostname,site):
     state = 3
-    ul_issue = ''
+    ul_issue =0
     perf = ''
     plugin_message = ''
     DB = None
@@ -52,26 +52,24 @@ def extract_wimax_ss_state(hostname,site):
     	sys.exit((state))
 
     end_time = datetime.now()
-    ul_issue =1
     start_time = end_time - timedelta(minutes=10)
-    cur = db.service_perf.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
-	"$or":[{"service":"wimax_ul_intrf"},{"service":"wimax_ul_cinr"}]})
-   
-    service_state_out = []
-    service_state_type = ["warning","critical"]
     try:
+    	cur = db.service_perf.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
+	"$or":[{"service":"wimax_ul_intrf"},{"service":"wimax_ul_cinr"}]})
+    	service_state_out = []
+    	service_state_type = ["warning","critical"]
         for doc in cur:
 		if doc.get('service') == 'wimax_ul_intrf':
 			service_state_out.append(doc.get('severity'))
 		if doc.get('service') == 'wimax_ul_cinr':
 			service_state_out.append(doc.get('severity'))
 		
-	
 	if len(service_state_out) == 4:
 		state_string = "ok"
     		state = 0
 		for entry in service_state_out:
 			if str(entry) in service_state_type:
+				ul_issue=1
 				continue
 			else:
 				ul_issue = 0
@@ -91,6 +89,7 @@ def  main():
 
     state_string = "unknown"
     ul_issue=''
+    plugin_message= ''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]

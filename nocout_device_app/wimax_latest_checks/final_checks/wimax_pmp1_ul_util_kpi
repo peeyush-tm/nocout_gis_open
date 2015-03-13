@@ -12,6 +12,8 @@ def check_wimax_pmp1_ul_util_kpi_arguments(params):
         args += '%s ' % settings['war']
     if "crit" in settings:
         args += '%s ' % settings['crit']
+    if 'dr_slave' in settings:
+        args += '%s ' % quote_shell_string(settings['dr_slave'])
 
     return args
 

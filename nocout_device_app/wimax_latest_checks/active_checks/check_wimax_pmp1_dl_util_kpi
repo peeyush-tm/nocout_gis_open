@@ -52,7 +52,7 @@ def extract_pmp1_bw_from_live(hostname,site):
 
         return pmp_bw
 
-def extract_pmp1_dl_util_from_live(hostname,site):
+def extract_pmp1_dl_util_from_live(hostname,site,dr_slave):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
@@ -60,9 +60,11 @@ def extract_pmp1_dl_util_from_live(hostname,site):
     
         """
 	pmp1_dl = None
+	dr_dl = None
 	query = "GET services\nColumns: service_perf_data\n" + \
 		"Filter: service_description = wimax_pmp1_dl_util_bgp\n" + \
-		"Filter: host_name = %s\nOutputFormat: python\n" % (hostname)
+		"Filter: host_name = %s\nFilter: host_name = %s\nOr: 2\nOutputFormat: python\n" % (hostname,dr_slave)
+		
 	try:
         	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		socket_path = "/omd/sites/%s/tmp/run/live" % site
@@ -72,36 +74,48 @@ def extract_pmp1_dl_util_from_live(hostname,site):
         	query_output = s.recv(100000000)
         	query_output.strip("\n")
 		query_output = eval(query_output)
-        	if query_output[0][0]:
-			try:
+		try:
+        		if query_output[0][0]:
 				pmp1_dl = query_output[0][0].split('=')[1].split(';',1)[0]
-			except:
-				pmp1_dl = None
+		except:
+			pmp1_dl = None
+		try:
+			if dr_slave and query_output[1][0]:
+					dr_dl = query_output[1][0].split('=')[1].split(';',1)[0]
+		except:
+			dr_dl = None
+			
 	except Exception ,e:
 		pmp1_dl=None
+		dr_dl=None
 
-        return pmp1_dl
+        return pmp1_dl,dr_dl
 
 
-def live_query_pmp1_dl_util_kpi(hostname,site,war,crit):
+def live_query_pmp1_dl_util_kpi(hostname,site,war,crit,dr_slave):
     state = 3
     status_list = [] 
     pmp1_dl_kpi = ''
     perf = ''
     plugin_message = ''
+    total_dl = None
     state_string = "unknown"
     try:
 	pmp1_bw = extract_pmp1_bw_from_live(hostname,site)
-	pmp1_dl= extract_pmp1_dl_util_from_live(hostname,site)
-	pmp1_dl = eval(pmp1_dl)
-
+	pmp1_dl,dr_dl= extract_pmp1_dl_util_from_live(hostname,site,dr_slave)
+	if pmp1_dl and dr_dl:
+		total_dl = eval(pmp1_dl) + eval(dr_dl)
+	elif pmp1_dl:
+		total_dl = eval(pmp1_dl)
+	elif dr_dl:
+		total_dl = eval(dr_dl)
 	if pmp1_bw:
 		pmp1_bw = eval(pmp1_bw)
-	if pmp1_bw and pmp1_dl:
+	if pmp1_bw and total_dl:
 		if pmp1_bw <= 3:
-			pmp1_dl_kpi = (pmp1_dl/4) *100
+			pmp1_dl_kpi = (total_dl/4) *100
 		elif pmp1_bw  > 3:
-			pmp1_dl_kpi = (pmp1_dl/8) *100
+			pmp1_dl_kpi = (total_dl/8) *100
 		else:
 			pmp1_dl_kpi = ''
 	
@@ -134,12 +148,13 @@ def  main():
         site = sys.argv[2]
         war = sys.argv[3]
         crit = sys.argv[4]
+	dr_slave = sys.argv[5]
     except:
         perf =''
         plugin_message += "wimax_pmp1_dl_util_kpi %s - %s|%s" % (state_string,pmp1_dl,perf)
         sys.exit((3))
 
-    live_query_pmp1_dl_util_kpi(host_name,site,float(war),float(crit))
+    live_query_pmp1_dl_util_kpi(host_name,site,float(war),float(crit),dr_slave)
 	
 
 if __name__ == '__main__':
