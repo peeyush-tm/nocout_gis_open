@@ -107,34 +107,16 @@ def calculate_status_dashboards(technology):
         "down-{0}".format(technology),
     ]
 
-    # for dashboard in dashboards:
-    for organization in user_organizations:
-        g_jobs.append(
-            calculate_timely_latency.s(
-                organization=organization,
-                dashboard_name=dashboards[0],
-                processed_for=processed_for,
-                technology=technology
+    for dashboard in dashboards:
+        for organization in user_organizations:
+            g_jobs.append(
+                calculate_timely_latency.s(
+                    organization=organization,
+                    dashboard_name=dashboard,
+                    processed_for=processed_for,
+                    technology=technology
+                )
             )
-        )
-
-        g_jobs.append(
-            calculate_timely_packet_drop.s(
-                organization=organization,
-                dashboard_name=dashboards[1],
-                processed_for=processed_for,
-                technology=technology
-            )
-        )
-
-        g_jobs.append(
-            calculate_timely_down_status.s(
-                organization=organization,
-                dashboard_name=dashboards[2],
-                processed_for=processed_for,
-                technology=technology
-            )
-        )
 
     if len(g_jobs):
         job = group(g_jobs)
