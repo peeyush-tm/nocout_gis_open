@@ -2225,7 +2225,7 @@ function devicePlottingClass_gmap() {
 				    			-120,
 				    			-10,
 				    			ss_marker.getPosition(),
-				    			hide_flag
+				    			false
 			    			);
 	                        perf_infobox.open(mapInstance, ss_marker);
 	                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = perf_infobox;
@@ -9233,9 +9233,9 @@ function devicePlottingClass_gmap() {
      */
 	this.updateTooltipLabel_gmap = function() {
 
-		var hide_flag = !$("#show_hide_label")[0].checked;
-
-		var allMarkersObject = {};
+		// var hide_flag = !$("#show_hide_label")[0].checked;
+		var hide_flag = false,
+			allMarkersObject = {};
 
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
         	allMarkersObject = allMarkersObject_earth;

@@ -702,7 +702,6 @@ function GisPerformance() {
                                     markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
                                     markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
                                     allMarkersObject_wmap['sub_station']['ss_'+ss_marker_data.name] = ss_marker;
-                                    // allMarkersArray_wmap.push(ss_marker);
                                     /*Push SS marker to pollableDevices array*/
                                     pollableDevices.push(ss_marker)
 
@@ -711,12 +710,16 @@ function GisPerformance() {
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
                                     if(last_selected_label && $.trim(last_selected_label)) {
-                                        var labelHtml = "";
-                                        for(var z=ss_marker.dataset.length;z--;) {
-                                            if($.trim(ss_marker.dataset[z]['name']) == $.trim(last_selected_label)) {
-                                                labelHtml += "("+$.trim(ss_marker.dataset[z]['value'])+")";
-                                            }
+
+                                        var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
+                                            labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
+                                            labelHtml = "";
+
+                                        if(labelInfoObject) {
+                                            var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                                            labelHtml += shownVal;
                                         }
+
                                         // If any html created then show label on ss
                                         if(labelHtml) {
                                             var toolTip_infobox = new OpenLayers.Popup('ss_'+ss_marker.name,
@@ -741,9 +744,9 @@ function GisPerformance() {
                                             }
 
                                             // If show/hide checkbox is unchecked then hide label
-                                            if(hide_flag) {
-                                                toolTip_infobox.hide();
-                                            }
+                                            // if(hide_flag) {
+                                            //     toolTip_infobox.hide();
+                                            // }
                                         }
                                     }
                                 } else {
@@ -813,7 +816,7 @@ function GisPerformance() {
                                                 -120,
                                                 -10,
                                                 ss_marker.getPosition(),
-                                                hide_flag
+                                                false
                                             );
                                             toolTip_infobox.open(mapInstance, ss_marker);
                                             tooltipInfoLabel['ss_'+ss_marker_data.name] = toolTip_infobox;
@@ -848,18 +851,6 @@ function GisPerformance() {
                                             }
                                         }
                                     });
-
-                                    // Mouseout event on sub-station marker
-                                    // google.maps.event.addListener(ss_marker, 'mouseout', function() {
-                                    //     var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                                    //         condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-                                    //     if(condition1 || condition2) {
-                                    //         if(infowindow) {
-                                    //             infowindow.close();
-                                    //         }
-                                    //     }
-                                    // });
                                 }
 
                                 var ss_info = {

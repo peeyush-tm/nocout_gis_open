@@ -1340,32 +1340,32 @@ $("#show_hide_label").click(function(e) {
     }
 
     // Show/Hide tooltip info label
-    for (key in tooltipInfoLabel) {
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
+    // for (key in tooltipInfoLabel) {
+    //     if(window.location.pathname.indexOf("googleEarth") > -1) {
             
-        } else if(window.location.pathname.indexOf("white_background") > -1) {
-            if(e.currentTarget.checked) {
-                tooltipInfoLabel[key].show();
-            } else {
-                tooltipInfoLabel[key].hide();
-            }
+    //     } else if(window.location.pathname.indexOf("white_background") > -1) {
+    //         if(e.currentTarget.checked) {
+    //             tooltipInfoLabel[key].show();
+    //         } else {
+    //             tooltipInfoLabel[key].hide();
+    //         }
 
-            // Draw the popup to apply show/hide
-            tooltipInfoLabel[key].draw();
+    //         // Draw the popup to apply show/hide
+    //         tooltipInfoLabel[key].draw();
 
-            if(e.currentTarget.checked) {
-                // Set SS prop label to left side of marker
-                if($("#"+key).length > 0) {
-                    // Shift label to left side of marker
-                    var current_left = $("#"+key).position().left;
-                    current_left = current_left - 125;
-                    $("#"+key).css("left",current_left+"px");
-                }
-            }
-        } else {
-            tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
-        }
-    }
+    //         if(e.currentTarget.checked) {
+    //             // Set SS prop label to left side of marker
+    //             if($("#"+key).length > 0) {
+    //                 // Shift label to left side of marker
+    //                 var current_left = $("#"+key).position().left;
+    //                 current_left = current_left - 125;
+    //                 $("#"+key).css("left",current_left+"px");
+    //             }
+    //         }
+    //     } else {
+    //         tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
+    //     }
+    // }
 });
 
 /**
