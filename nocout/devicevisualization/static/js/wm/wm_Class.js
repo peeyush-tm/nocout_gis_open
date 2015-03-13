@@ -1692,18 +1692,34 @@ function WhiteMapClass() {
 			console.log("Show/Hide SS Start Time :- "+ new Date().toLocaleString());
 		}
 
-		var isSSChecked = $("#showAllSS:checked").length;
-
+		var isSSChecked = $("#showAllSS:checked").length,
+			layer_name = '';
 		/*Unchecked case*/
 		if(isSSChecked == 0) {
 			for(key in allMarkersObject_wmap['sub_station']) {
-				hideOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
+				var current_ss = allMarkersObject_wmap['sub_station'][key];
+				hideOpenLayerFeature(current_ss);
+				if(!layer_name) {
+					layer_name = current_ss.layerReference ? current_ss.layerReference : current_ss.layer;
+				}
 			}
 
 		} else {
 			for(key in allMarkersObject_wmap['sub_station']) {
-				showOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
+				var current_ss = allMarkersObject_wmap['sub_station'][key];
+				showOpenLayerFeature(current_ss);
+				if(!layer_name) {
+					layer_name = current_ss.layerReference ? current_ss.layerReference : current_ss.layer;
+				}
 			}
+		}
+		
+		// Redraw The layer
+		if(layer_name) {
+			layer_name.redraw()
+		} else {
+			// Redraw Lines layer to apply updates(Hide Lines)
+			ccpl_map.getLayersByName('Markers')[0].redraw();
 		}
 
 		if(isDebug) {
