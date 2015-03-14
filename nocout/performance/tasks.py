@@ -216,6 +216,7 @@ def get_all_sector_devices(technology):
     month_num = int(last_six_months_list[0][1])
 
     for sector in sector_objects:
+        spot_object = None
         try:
             spot_object = spot_objects.get(
                 sector_sector_id=sector.sector_id,
@@ -226,31 +227,33 @@ def get_all_sector_devices(technology):
 
             update_this = False
 
-            if sector_id in complete_augmentation_data:
-                augment_data = complete_augmentation_data[sector_id]
+            if sector_sector_id in complete_ul_issue_data:
+                augment_data = complete_augmentation_data[sector_sector_id]
                 if (month_num in augment_data) and not spot_object.augment_1:
                     spot_object.augment_1 = 1
                     update_this = True
 
             if sector_sector_id in complete_ul_issue_data:
                 ul_issue_data = complete_ul_issue_data[sector_sector_id]
-                if (month_num in ul_issue_data) and not spot_object.ul_issue_data:
+                if (month_num in ul_issue_data) and not spot_object.ul_issue_1:
                     spot_object.ul_issue_1 = 1
                     update_this = True
 
             if update_this:
                 bulky_update.append(spot_object)
 
-        except:
-            bulky_create.append(
-                SpotDashboard(
-                    sector_sector_id=sector.sector_id,
-                    sector=sector,
-                    device=sector.sector_configured_on,
-                    sector_device_technology=technology,
-                    sector_sector_configured_on=sector.sector_configured_on.ip_address
+        except Exception as e:
+            logger.exception(e)
+            if not spot_object:
+                bulky_create.append(
+                    SpotDashboard(
+                        sector_sector_id=sector.sector_id,
+                        sector=sector,
+                        device=sector.sector_configured_on,
+                        sector_device_technology=technology,
+                        sector_sector_configured_on=sector.sector_configured_on.ip_address
+                    )
                 )
-            )
 
     # If any create item exist then start bulk create job
     if len(bulky_create):
@@ -332,7 +335,7 @@ def get_sector_augmentation_data(sector_ids=[]):
     in_string = lambda x: "'" + str(x) + "'"
 
     augmentation_raw_query = '''
-                            SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_id
+                            SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
                             FROM {0}
                             WHERE
                               sector_id IN ( {1} )
