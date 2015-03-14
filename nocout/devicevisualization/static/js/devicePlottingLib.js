@@ -6668,7 +6668,7 @@ function devicePlottingClass_gmap() {
 
     	$.ajax({
 			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
-			// url : base_url+"/"+"static/services.json",
+			// url : base_url+"/"+"static/services.json?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 			success : function(response) {
 				
 				var result = "";
@@ -6714,13 +6714,18 @@ function devicePlottingClass_gmap() {
 							}
 
 							var dateObj = new Date(),
+								current_day = dateObj.getDate(),
+								current_month = dateObj.getMonth() + 1,
+								current_year = dateObj.getFullYear(),
+								today_day = current_day+"-"+current_month+"-"+current_year,
 								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(), //+":"+dateObj.getMilliseconds(),
+								shown_datetime = today_day+" "+current_time,
 								final_chart_data = [];
 							
 							if($("#pollVal_"+new_device_name+" li").length == 0) {
 
 								var fetchValString = "";
-								fetchValString += "<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")  <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
+								fetchValString += "<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> (<i class='fa fa-clock-o'></i> "+shown_datetime+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")  <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
 
 								$("#pollVal_"+new_device_name).append(fetchValString);
 								/*Sparkline Chart Data*/
@@ -6739,7 +6744,7 @@ function devicePlottingClass_gmap() {
 								    return parseInt(item, 10);
 								});
 
-								$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
+								$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+shown_datetime+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
 								/*Sparkline Chart Data*/
 								final_chart_data = chart_data;
 							}
@@ -6784,7 +6789,7 @@ function devicePlottingClass_gmap() {
 								marker_polling_obj = {
 									"device_name" : allSSIds[i],
 									"polling_icon" : newIcon,
-									"polling_time" : current_time,
+									"polling_time" : shown_datetime,
 									"polling_value" : result.data.devices[allSSIds[i]].value,
 									"ip": ""
 								};

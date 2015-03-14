@@ -743,12 +743,13 @@ function WhiteMapClass() {
 	    this.startDevicePolling_wmap = function() {
 	    	if(remainingPollCalls > 0) {
 				if(isPollingPaused == 0) {
+					var timeout_val = Number(pollingInterval) * 1000;
 					// Call function to fetch polled data for selected devices
 					gmap_self.getPollingData_gmap(function(response) {
 						pollCallingTimeout = setTimeout(function() {
 							remainingPollCalls--;
 							whiteMapClass.startDevicePolling_wmap();
-						},pollingInterval);
+						},timeout_val);
 					});
 				} else {
 					if($("#play_btn").hasClass("disabled")) {
@@ -2253,8 +2254,6 @@ function WhiteMapClass() {
 				    	markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
 
 				    	allMarkersObject_wmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
-
-				    	// allMarkersArray_wmap.push(ss_marker);
 
 					    /*Push SS marker to pollableDevices array*/
 						pollableDevices.push(ss_marker)
