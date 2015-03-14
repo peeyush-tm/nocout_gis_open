@@ -859,7 +859,7 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
         else:
             # we have raw query results which are
             # list of dictionatry
-            if query_set:
+            if len(query_set):
                 try:
                     for qs in query_set:
                         index = tuple(qs[x] for x in indexes)
@@ -869,5 +869,8 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
                 except Exception as e:
                     log.exception(e)
                     return False
+            else:
+                return False
+            return indexed_result[index].append(qs)
     else:
         return False

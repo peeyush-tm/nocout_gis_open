@@ -1054,7 +1054,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value'],
         )
-    
+
     if kpi.exists() and val.exists():
         indexed_kpi = indexed_query_set(
             query_set=kpi,
