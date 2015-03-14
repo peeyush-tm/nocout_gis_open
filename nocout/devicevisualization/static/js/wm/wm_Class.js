@@ -2216,7 +2216,7 @@ function WhiteMapClass() {
 					    	hideOpenLayerFeature(ss_marker);
 				    	}
 
-					    if($.trim(last_selected_label)) {
+				    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
 					    	var labelInfoObject = gisPerformanceClass.getKeyValue(
 					    			ss_marker.dataset,
 					    			last_selected_label,
@@ -2325,7 +2325,40 @@ function WhiteMapClass() {
 
 		    	allMarkersObject_wmap['base_station']['bs_'+bs_ss_devices[i].name] = bs_marker;
 
-		    	// allMarkersArray_wmap.push(bs_marker);
+		    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) > -1) {
+
+			    	var labelInfoObject = gisPerformanceClass.getKeyValue(
+			    			bs_marker.bsInfo,
+			    			last_selected_label,
+			    			false,
+			    			bs_marker.item_index
+		    			),
+			    		labelHtml = "";
+
+			    	if(labelInfoObject) {
+                		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                        labelHtml += shownVal;
+                    }
+
+			    	// If any html created then show label on ss
+			    	if(labelHtml) {
+						
+					   var toolTip_infobox = new OpenLayers.Popup('bs_'+bs_ss_devices[i].name,
+	            	    	new OpenLayers.LonLat(bs_marker.ptLon,bs_marker.ptLat),
+	            	    	new OpenLayers.Size(110,18),
+	            	    	labelHtml,
+	            	    	false
+	        	    	);
+						ccpl_map.addPopup(toolTip_infobox);
+	        	    	
+	        	    	// Remove height prop from div's
+	        	    	$('.olPopupContent').css('height','');
+	        	    	$('.olPopup').css('height','');
+
+                        tooltipInfoLabel['bs_'+bs_ss_devices[i].name] = toolTip_infobox;
+
+			    	}
+			    }
 
 		    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 				markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
@@ -2348,8 +2381,6 @@ function WhiteMapClass() {
 					/*Load data for basic filters*/
 					gmap_self.getBasicFilters();
 				}
-
-				// global_this.updateMarkersSize('medium');
 			}
 
 			if(bs_ss_markers.length> 0) {

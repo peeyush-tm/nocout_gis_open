@@ -693,8 +693,8 @@ WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
  */
 function createPLRtaLabel(clicked_feature) {
 
-    var condition1 = (clicked_feature.pl || clicked_feature.pl == 0) && $.trim(clicked_feature.pl) != 'N/A'),
-        condition2 = (clicked_feature.rta || clicked_feature.rta == 0) && $.trim(clicked_feature.rta) != 'N/A');
+    var condition1 = (clicked_feature.pl || clicked_feature.pl == 0) && $.trim(clicked_feature.pl) != 'N/A',
+        condition2 = (clicked_feature.rta || clicked_feature.rta == 0) && $.trim(clicked_feature.rta) != 'N/A';
 
     if(condition1 || condition2) {
         var pl = (clicked_feature.pl || clicked_feature.pl == 0) ? clicked_feature.pl : "N/A",

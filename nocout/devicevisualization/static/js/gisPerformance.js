@@ -21,7 +21,7 @@ var recallPerf = "",
         color         : "black",
         padding       : '2px',
         borderRadius  : "5px",
-        width         : '60px'
+        maxWidth      : '120px'
     },
     callsInProcess = false,
     gis_perf_call_instance = "",
@@ -709,7 +709,7 @@ function GisPerformance() {
 
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
-                                    if(last_selected_label && $.trim(last_selected_label)) {
+                                    if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
 
                                         var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
                                             labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
@@ -742,11 +742,6 @@ function GisPerformance() {
                                                 current_left = current_left - 125;
                                                 $("#ss_"+ss_marker.name).css("left",current_left+"px");
                                             }
-
-                                            // If show/hide checkbox is unchecked then hide label
-                                            // if(hide_flag) {
-                                            //     toolTip_infobox.hide();
-                                            // }
                                         }
                                     }
                                 } else {
@@ -798,7 +793,7 @@ function GisPerformance() {
 
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
-                                    if(last_selected_label) {
+                                    if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
                                         // var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
                                         var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
                                             labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index),
@@ -808,6 +803,7 @@ function GisPerformance() {
                                             var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
                                             labelHtml += shownVal;
                                         }
+
                                         // If any html created then show label on ss
                                         if(labelHtml) {
                                             var toolTip_infobox = perf_self.createInfoboxLabel(
@@ -1194,8 +1190,13 @@ function GisPerformance() {
                                             hide_flag
                                         );
 
+                                        
                                         perf_infobox.open(mapInstance, ss_marker);
                                         labelsArray.push(perf_infobox);
+                                        // Remove width property of infobox
+                                        setTimeout(function() {
+                                            $('.infoBox').css('width','');
+                                        },100);
                                     }
                                 }
                                 // }
