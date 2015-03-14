@@ -14,7 +14,7 @@ var bs_toolTip_static = [
         'url'   : ''
     },
     {
-        'name'  : 'alias',
+        'name'  : 'base_station_alias',
         'title' : 'BS Name',
         'show'  : 1,
         'value' : '',

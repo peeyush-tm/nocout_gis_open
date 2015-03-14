@@ -112,7 +112,8 @@ var main_devices_data_gmaps = [],
         color 		  : "black",
         padding 	  : '2px',
         borderRadius  : "5px",
-        width  		  : '110px'
+        width  		  : '110px',
+        maxWidth  	  : '110px'
     },
     country_label = {
     	"india" : ""
@@ -2097,18 +2098,21 @@ function devicePlottingClass_gmap() {
 					google.maps.event.addListener(sector_Marker, 'rightclick', function(e) {
 						
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A'),
+							condition3 = ($.trim(this.pl_timestamp) && $.trim(this.pl_timestamp) != 'N/A');
 
-						if(condition1 || condition2) {
+						if(condition1 || condition2 || condition3) {
 							var pl = $.trim(this.pl) ? this.pl : "N/A",
 								rta = $.trim(this.rta) ? this.rta : "N/A",
+								pl_timestamp = $.trim(this.pl_timestamp) ? this.pl_timestamp : "N/A",
 								info_html = '';
 
 							// Create hover infowindow html content
-							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-							info_html += '</table>';
+							info_html += '<table class="table table-responsive table-bordered table-hover">\
+										  <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
+									  	  <tr><td>Latency</td><td>'+rta+'</td></tr>\
+									  	  <tr><td>Timestamp</td><td>'+pl_timestamp+'</td></tr>\
+									  	  </table>';
 
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
@@ -2158,7 +2162,10 @@ function devicePlottingClass_gmap() {
 						ckt_id_val = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_info_index),
 						ss_ip_address = gisPerformanceClass.getKeyValue(ss_info_dict,"ss_ip",true,ss_item_info_index),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
-						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
+						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "",
+						ss_pl = ss_marker_obj.data.pl ? ss_marker_obj.data.pl : "",
+                        ss_rta = ss_marker_obj.data.rta ? ss_marker_obj.data.rta : "",
+                        ss_pl_rta_timestamp = ss_marker_obj.data.pl_timestamp ? ss_marker_obj.data.pl_timestamp : "";
 
 					// Set the ckt id to sector marker object (only in case of PTP)
 					if(ptp_tech_list.indexOf(sector_tech) > -1) {
@@ -2183,8 +2190,9 @@ function devicePlottingClass_gmap() {
 				    	item_index 		 :  ss_item_info_index,
 				    	bhInfo 			 : 	[],
 				    	poll_info 		 :  [],
-				    	pl 				 :  "",
-						rta				 :  "",
+				    	pl               :  ss_pl,
+                        rta              :  ss_rta,
+                        pl_timestamp     :  ss_pl_rta_timestamp,
 						perf_url 		 :  ss_perf_url,
 						inventory_url 	 :  ss_inventory_url,
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
@@ -2206,7 +2214,7 @@ function devicePlottingClass_gmap() {
 				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
-				    if($.trim(last_selected_label)) {
+			    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
 				    	// var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 			    		var item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
 				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false, item_index),
@@ -2235,18 +2243,21 @@ function devicePlottingClass_gmap() {
 				    // Right click event on sub-station marker
 					google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A'),
+							condition3 = ($.trim(this.pl_timestamp) && $.trim(this.pl_timestamp) != 'N/A');
 
-						if(condition1 || condition2) {
+						if(condition1 || condition2 || condition3) {
 							var pl = $.trim(this.pl) ? this.pl : "N/A",
 								rta = $.trim(this.rta) ? this.rta : "N/A",
+								pl_timestamp = $.trim(this.pl_timestamp) ? this.pl_timestamp : "N/A",
 								info_html = '';
 
 							// Create hover infowindow html content
-							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-							info_html += '</table>';
+							info_html += '<table class="table table-responsive table-bordered table-hover">\
+										  <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
+										  <tr><td>Latency</td><td>'+rta+'</td></tr>\
+										  <tr><td>Timestamp</td><td>'+pl_timestamp+'</td></tr>\
+										  </table>';
 
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
@@ -2258,16 +2269,6 @@ function devicePlottingClass_gmap() {
 							infowindow.open(mapInstance);
 						}
 					});
-
-					// Mouseout event on sub-station marker
-					// google.maps.event.addListener(ss_marker, 'mouseout', function() {
-					// 	var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-					// 		condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-					// 	if(condition1 || condition2) {
-					//     	infowindow.close();
-					//     }
-					// });
 
 				    /*Add BS Marker To Cluster*/
 					masterClusterInstance.addMarker(ss_marker);
@@ -2345,7 +2346,32 @@ function devicePlottingClass_gmap() {
 
 	    	allMarkersObject_gmap['base_station']['bs_'+bs_ss_devices[i].name] = bs_marker;
 
-	    	// allMarkersArray_gmap.push(bs_marker);
+	    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) > -1) {
+
+	    		var item_index = bs_marker.item_index > -1 ? bs_marker.item_index : 0,
+		    		labelInfoObject = gisPerformanceClass.getKeyValue(bs_marker.bsInfo,last_selected_label,false, item_index),
+                	labelHtml = "";
+
+            	if(labelInfoObject) {
+            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                    labelHtml += shownVal;
+                }
+
+		    	// If any html created then show label on ss
+		    	if(labelHtml) {
+		    		var perf_infobox = gisPerformanceClass.createInfoboxLabel(
+		    			labelHtml,
+		    			ssParamLabelStyle,
+		    			-120,
+		    			-10,
+		    			bs_marker.getPosition(),
+		    			false
+	    			);
+
+                    perf_infobox.open(mapInstance, bs_marker);
+                    tooltipInfoLabel['bs_'+bs_ss_devices[i].name] = perf_infobox;
+		    	}
+		    }
 
 	    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 			markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
@@ -6668,7 +6694,7 @@ function devicePlottingClass_gmap() {
 
     	$.ajax({
 			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
-			// url : base_url+"/"+"static/services.json",
+			// url : base_url+"/"+"static/services.json?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 			success : function(response) {
 				
 				var result = "";
@@ -6714,13 +6740,18 @@ function devicePlottingClass_gmap() {
 							}
 
 							var dateObj = new Date(),
+								current_day = dateObj.getDate(),
+								current_month = dateObj.getMonth() + 1,
+								current_year = dateObj.getFullYear(),
+								today_day = current_day+"-"+current_month+"-"+current_year,
 								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(), //+":"+dateObj.getMilliseconds(),
+								shown_datetime = today_day+" "+current_time,
 								final_chart_data = [];
 							
 							if($("#pollVal_"+new_device_name+" li").length == 0) {
 
 								var fetchValString = "";
-								fetchValString += "<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")  <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
+								fetchValString += "<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> (<i class='fa fa-clock-o'></i> "+shown_datetime+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")  <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
 
 								$("#pollVal_"+new_device_name).append(fetchValString);
 								/*Sparkline Chart Data*/
@@ -6739,7 +6770,7 @@ function devicePlottingClass_gmap() {
 								    return parseInt(item, 10);
 								});
 
-								$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
+								$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+shown_datetime+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
 								/*Sparkline Chart Data*/
 								final_chart_data = chart_data;
 							}
@@ -6784,7 +6815,7 @@ function devicePlottingClass_gmap() {
 								marker_polling_obj = {
 									"device_name" : allSSIds[i],
 									"polling_icon" : newIcon,
-									"polling_time" : current_time,
+									"polling_time" : shown_datetime,
 									"polling_value" : result.data.devices[allSSIds[i]].value,
 									"ip": ""
 								};
@@ -9228,6 +9259,45 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
+	 * This function removes SS or BS prop labels as per given param
+	 * @method removeExistingLabels_gmap
+	 * @param element_type {String}, It contains the string value as 'base_station' or 'sub_station'
+	 */
+	this.removeExistingLabels_gmap = function(element_type) {
+
+		var elements_object = {};
+		if(!element_type) {
+			return true;
+		}
+
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+        	return true;
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+        	elements_object = allMarkersObject_wmap[element_type];
+        } else {
+        	elements_object = allMarkersObject_gmap[element_type];
+        }
+
+        for(key in elements_object) {
+        	// If label exists
+        	if(tooltipInfoLabel && tooltipInfoLabel[key]) {
+
+        		if(window.location.pathname.indexOf("googleEarth") > -1) {
+		        	return true;
+		        } else if(window.location.pathname.indexOf("white_background") > -1) {
+		        	tooltipInfoLabel[key].destroy();
+		        } else {
+		        	tooltipInfoLabel[key].close();
+		        }
+
+		        // Delete the label from glabal variable
+		        delete tooltipInfoLabel[key];
+        	}
+    	}
+
+	};
+
+	/**
      * This function create/update selected tooltip value label from/on ss marker
      * @method updateTooltipLabel_gmap
      */
@@ -9235,7 +9305,22 @@ function devicePlottingClass_gmap() {
 
 		// var hide_flag = !$("#show_hide_label")[0].checked;
 		var hide_flag = false,
-			allMarkersObject = {};
+			allMarkersObject = {},
+			elements_type = 'sub_station',
+			dataset_key = 'dataset',
+			remove_element_keys = 'base_station',
+			param_label_gritter_title = 'SS Parameter Label';
+
+		// In case of BS label
+		if(not_ss_param_labels.indexOf(last_selected_label) > -1) {
+			elements_type = 'base_station';
+			remove_element_keys = 'sub_station';
+			dataset_key = 'bsInfo';
+			param_label_gritter_title = 'BS Parameter Label';
+		}
+
+		// remove all BS or SS labels
+		gmap_self.removeExistingLabels_gmap(remove_element_keys);
 
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
         	allMarkersObject = allMarkersObject_earth;
@@ -9245,97 +9330,39 @@ function devicePlottingClass_gmap() {
         	allMarkersObject = allMarkersObject_gmap;
         }
 
-		var ss_list = allMarkersObject['sub_station'];
+		var markers_list = allMarkersObject[elements_type];
 
 		// If any tooltip label exist
 		if(Object.keys(tooltipInfoLabel).length < 1) {
 
-			for(key in ss_list) {
+			for(key in markers_list) {
 
-				var ss_marker = ss_list[key],
-					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
+				var marker = markers_list[key],
 					labelHtml = "",
-					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false,item_index);
+					item_index = marker.item_index > -1 ? marker.item_index : 0,
+					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false,item_index);
 
             	if(labelInfoObject) {
             		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
                     labelHtml += shownVal;
                 }
 
-                var toolTip_infobox = "";
+                // If labelHtml
+                if(labelHtml) {
 
-                if(window.location.pathname.indexOf("googleEarth") > -1) {
-	            	
-	            } else if(window.location.pathname.indexOf("white_background") > -1) {
-            	    toolTip_infobox = new OpenLayers.Popup(key,
-            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-            	    	new OpenLayers.Size(110,18),
-            	    	labelHtml,
-            	    	false
-        	    	);
-					
+	                var toolTip_infobox = "";
 
-					ccpl_map.addPopup(toolTip_infobox);
-
-					if(hide_flag) {
-						toolTip_infobox.hide();
-					}
-
-					// Remove height prop from div's
-        	    	$('.olPopupContent').css('height','');
-        	    	$('.olPopup').css('height','');
-
-					if($("#"+key).length > 0) {
-						// Shift label to left side of marker
-	                    var current_left = $("#"+key).position().left;
-	                    current_left = current_left - 125;
-	                    $("#"+key).css("left",current_left+"px");
-					}
-	            } else {
-	            	toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
-                        labelHtml,
-                        ssParamLabelStyle,
-                        -120,
-                        -10,
-                        ss_marker.getPosition(),
-                        hide_flag
-                    );
-
-	                toolTip_infobox.open(mapInstance, ss_marker);
-	            }
-
-                tooltipInfoLabel[key] = toolTip_infobox;
-			}
-		} else {
-
-			for(key in ss_list) {
-				var ss_marker = ss_list[key],
-					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
-					labelHtml = "",
-					item_index = ss_marker.item_index > -1 ? ss_marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false, item_index);
-
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
-                }
-
-                if(window.location.pathname.indexOf("googleEarth") > -1) {
-	            	
-	            } else if(window.location.pathname.indexOf("white_background") > -1) {
-	            	// If label exist for current ss
-	                if(tooltipInfoLabel[key]) {
-	                	tooltipInfoLabel[key].setContentHTML(labelHtml);
-	                } else {
-		            	var toolTip_infobox = new OpenLayers.Popup(key,
-	            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+	                if(window.location.pathname.indexOf("googleEarth") > -1) {
+		            	// pass
+		            } else if(window.location.pathname.indexOf("white_background") > -1) {
+	            	    
+	            	    toolTip_infobox = new OpenLayers.Popup(key,
+	            	    	new OpenLayers.LonLat(marker.ptLon,marker.ptLat),
 	            	    	new OpenLayers.Size(110,18),
 	            	    	labelHtml,
 	            	    	false
 	        	    	);
-
-						tooltipInfoLabel[key] = toolTip_infobox;
+						
 
 						ccpl_map.addPopup(toolTip_infobox);
 
@@ -9349,35 +9376,100 @@ function devicePlottingClass_gmap() {
 
 						if($("#"+key).length > 0) {
 							// Shift label to left side of marker
-	                        var current_left = $("#"+key).position().left;
-	                        current_left = current_left - 125;
-	                        $("#"+key).css("left",current_left+"px");
-                        }
-	                        
-					}
-	            } else {
-	                // If label exist for current ss
-	                if(tooltipInfoLabel[key]) {
-	                	tooltipInfoLabel[key].setContent(labelHtml);
-	                } else {
-	                	var toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
+		                    var current_left = $("#"+key).position().left;
+		                    current_left = current_left - 125;
+		                    $("#"+key).css("left",current_left+"px");
+						}
+		            } else {
+		            	toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
 	                        labelHtml,
 	                        ssParamLabelStyle,
 	                        -120,
 	                        -10,
-	                        ss_marker.getPosition(),
+	                        marker.getPosition(),
 	                        hide_flag
 	                    );
 
-		                toolTip_infobox.open(mapInstance, ss_marker);
-		                tooltipInfoLabel[key] = toolTip_infobox;
+		                toolTip_infobox.open(mapInstance, marker);
+		            }
+
+	                tooltipInfoLabel[key] = toolTip_infobox;
+            	}
+			}
+		} else {
+
+			for(key in markers_list) {
+				var marker = markers_list[key],
+					labelHtml = "",
+					item_index = marker.item_index > -1 ? marker.item_index : 0,
+					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false, item_index);
+
+            	if(labelInfoObject) {
+            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                    labelHtml += shownVal;
+                }
+
+                // if labelHtml
+                if(labelHtml) {
+
+	                if(window.location.pathname.indexOf("googleEarth") > -1) {
+		            	// pass
+		            } else if(window.location.pathname.indexOf("white_background") > -1) {
+		            	// If label exist for current ss
+		                if(tooltipInfoLabel[key]) {
+		                	tooltipInfoLabel[key].setContentHTML(labelHtml);
+		                } else {
+			            	var toolTip_infobox = new OpenLayers.Popup(key,
+		            	    	new OpenLayers.LonLat(marker.ptLon,marker.ptLat),
+		            	    	new OpenLayers.Size(110,18),
+		            	    	labelHtml,
+		            	    	false
+		        	    	);
+
+							tooltipInfoLabel[key] = toolTip_infobox;
+
+							ccpl_map.addPopup(toolTip_infobox);
+
+							if(hide_flag) {
+								toolTip_infobox.hide();
+							}
+
+							// Remove height prop from div's
+		        	    	$('.olPopupContent').css('height','');
+		        	    	$('.olPopup').css('height','');
+
+							if($("#"+key).length > 0) {
+								// Shift label to left side of marker
+		                        var current_left = $("#"+key).position().left;
+		                        current_left = current_left - 125;
+		                        $("#"+key).css("left",current_left+"px");
+	                        }
+		                        
+						}
+		            } else {
+		                // If label exist for current ss
+		                if(tooltipInfoLabel[key]) {
+		                	tooltipInfoLabel[key].setContent(labelHtml);
+		                } else {
+		                	var toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
+		                        labelHtml,
+		                        ssParamLabelStyle,
+		                        -120,
+		                        -10,
+		                        marker.getPosition(),
+		                        hide_flag
+		                    );
+
+			                toolTip_infobox.open(mapInstance, marker);
+			                tooltipInfoLabel[key] = toolTip_infobox;
+		                }
 	                }
                 }
 			}
 		}
 
 		$.gritter.add({
-            title: "SS Parameter Label",
+            title: param_label_gritter_title,
             text: $.trim($("#static_label option:selected").text())+" - Label Applied Successfully.",
             sticky: false,
             time : 1000
