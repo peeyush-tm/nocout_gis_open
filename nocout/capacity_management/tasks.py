@@ -226,6 +226,7 @@ def gather_sector_status(technology):
     #we need the machines
 
     technology_object = DeviceTechnology.objects.get(name__icontains=technology)
+    technology_low = technology.strip().lower()
 
     network_devices = get_devices(technology)
     device_list = []
@@ -247,7 +248,7 @@ def gather_sector_status(technology):
     g_jobs = list()
 
     for machine in machine_dict:
-        if technology.lower() == 'wimax':
+        if technology_low == 'wimax':
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
                 sector_configured_on__is_added_to_nms=1,
@@ -263,7 +264,7 @@ def gather_sector_status(technology):
                 ).annotate(Count('sector_id')
             )
 
-        elif technology.lower() == 'pmp':
+        elif technology_low == 'pmp':
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
                 sector_configured_on__is_added_to_nms=1,
@@ -281,13 +282,13 @@ def gather_sector_status(technology):
         else:
             return False
 
-        if technology.lower() == 'pmp':
+        if technology_low == 'pmp':
             cbw = None
-        elif technology.lower() == 'wimax':
+        elif technology_low == 'wimax':
             cbw = get_sectors_cbw_val_kpi(
                 devices=machine_dict[machine],
-                service_name=tech_model_service[technology.lower()]['cbw']['service_name'],
-                data_source=tech_model_service[technology.lower()]['cbw']['data_source'],
+                service_name=tech_model_service[technology_low]['cbw']['service_name'],
+                data_source=tech_model_service[technology_low]['cbw']['data_source'],
                 machine=machine,
                 getit='cbw'
             )
@@ -298,8 +299,8 @@ def gather_sector_status(technology):
         # values for current utilization
         sector_val = get_sectors_cbw_val_kpi(
             devices=machine_dict[machine],
-            service_name=tech_model_service[technology.lower()]['val']['service_name'],
-            data_source=tech_model_service[technology.lower()]['val']['data_source'],
+            service_name=tech_model_service[technology_low]['val']['service_name'],
+            data_source=tech_model_service[technology_low]['val']['data_source'],
             machine=machine,
             getit='val'
         )
@@ -307,8 +308,8 @@ def gather_sector_status(technology):
         # values for current Percentage KPIs
         sector_kpi = get_sectors_cbw_val_kpi(
             devices=machine_dict[machine],
-            service_name=tech_model_service[technology.lower()]['per']['service_name'],
-            data_source=tech_model_service[technology.lower()]['per']['data_source'],
+            service_name=tech_model_service[technology_low]['per']['service_name'],
+            data_source=tech_model_service[technology_low]['per']['data_source'],
             machine=machine,
             getit='per'
         )
@@ -319,16 +320,16 @@ def gather_sector_status(technology):
         if calc_util_last_day():
             avg_max_val = get_avg_max_sector_util(
                 devices=machine_dict[machine],
-                services=tech_model_service[technology.lower()]['per']['service_name'],
-                data_sources=tech_model_service[technology.lower()]['per']['data_source'],
+                services=tech_model_service[technology_low]['val']['service_name'],
+                data_sources=tech_model_service[technology_low]['val']['data_source'],
                 machine=machine,
                 getit='val'
             )
 
             avg_max_per = get_avg_max_sector_util(
                 devices=machine_dict[machine],
-                services=tech_model_service[technology.lower()]['per']['service_name'],
-                data_sources=tech_model_service[technology.lower()]['per']['data_source'],
+                services=tech_model_service[technology_low]['per']['service_name'],
+                data_sources=tech_model_service[technology_low]['per']['data_source'],
                 machine=machine,
                 getit='per'
             )
@@ -530,7 +531,7 @@ def get_sectors_cbw_val_kpi(devices, service_name, data_source, machine, getit):
         return None
 
 
-def get_avg_max_sector_util(devices, services, data_sources, machine, getit='val'):
+def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
     """
 
     :param devices: device list for the object
