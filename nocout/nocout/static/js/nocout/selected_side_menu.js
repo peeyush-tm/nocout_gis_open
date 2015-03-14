@@ -574,14 +574,27 @@ var isNewForm = window.location.href.indexOf('new'),
 if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
     
     page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
-    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+
+    try {
+        module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+    } catch(e) {
+        module_name = page_title.join(' ');
+    }
+    // module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+
 } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
 
     page_title = $(".formContainer .box .box-title h4")[0] ? $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ") : "";
-    if(page_title) {
-        module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
-    } else {
-        module_name = "";
+    // if(page_title) {
+    //     module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+    // } else {
+    //     module_name = "";
+    // }
+    
+    try {
+        module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+    } catch(e) {
+        module_name = page_title.join(' ');
     }
 
     if(isFormSubmit === 0) {

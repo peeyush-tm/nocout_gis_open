@@ -73,7 +73,7 @@ def prepare_raw_basestation(base_station=None):
     if base_station:
         base_station_info = [
             {
-                'name': 'alias',
+                'name': 'base_station_alias',
                 'title': 'Base-Station Name',
                 'show': 1,
                 'value': unicode(format_value(base_station['BSALIAS']))+"|"
