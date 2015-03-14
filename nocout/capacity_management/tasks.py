@@ -1228,13 +1228,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     try:
                         # average value in/out
-                        avg_in_val = indexed_avg_max_val(in_value_index)[0]['avg_val']
+                        avg_in_val = indexed_avg_max_val[in_value_index][0]['avg_val']
                         # peak value in/out
-                        peak_in_val = indexed_avg_max_val(in_value_index)[0]['max_val']
+                        peak_in_val = indexed_avg_max_val[in_value_index][0]['max_val']
                         # average value in/out
-                        avg_out_val = indexed_avg_max_val(out_value_index)[0]['avg_val']
+                        avg_out_val = indexed_avg_max_val[out_value_index][0]['avg_val']
                         # peak value in/out
-                        peak_out_val = indexed_avg_max_val(out_value_index)[0]['max_val']
+                        peak_out_val = indexed_avg_max_val[out_value_index][0]['max_val']
 
                     except Exception as e:
                         logger.exception(e)
@@ -1342,13 +1342,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     try:
                         # average value in/out
-                        avg_in_val = indexed_avg_max_val(in_value_index)[0]['avg_val']
+                        avg_in_val = indexed_avg_max_val[in_value_index][0]['avg_val']
                         # peak value in/out
-                        peak_in_val = indexed_avg_max_val(in_value_index)[0]['max_val']
+                        peak_in_val = indexed_avg_max_val[in_value_index][0]['max_val']
                         # average value in/out
-                        avg_out_val = indexed_avg_max_val(out_value_index)[0]['avg_val']
+                        avg_out_val = indexed_avg_max_val[out_value_index][0]['avg_val']
                         # peak value in/out
-                        peak_out_val = indexed_avg_max_val(out_value_index)[0]['max_val']
+                        peak_out_val = indexed_avg_max_val[out_value_index][0]['max_val']
 
                     except Exception as e:
                         logger.exception(e)
@@ -1549,13 +1549,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             if calc_util_last_day():
                 try:
                     # average value in/out
-                    avg_in_val = indexed_avg_max_val(in_value_index)[0]['avg_val']
+                    avg_in_val = indexed_avg_max_val[in_value_index][0]['avg_val']
                     # peak value in/out
-                    peak_in_val = indexed_avg_max_val(in_value_index)[0]['max_val']
+                    peak_in_val = indexed_avg_max_val[in_value_index][0]['max_val']
                     # average value in/out
-                    avg_out_val = indexed_avg_max_val(out_value_index)[0]['avg_val']
+                    avg_out_val = indexed_avg_max_val[out_value_index][0]['avg_val']
                     # peak value in/out
-                    peak_out_val = indexed_avg_max_val(out_value_index)[0]['max_val']
+                    peak_out_val = indexed_avg_max_val[out_value_index][0]['max_val']
 
                 except Exception as e:
                     logger.exception(e)
