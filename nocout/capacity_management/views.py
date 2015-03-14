@@ -85,6 +85,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'sector_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
 
+            {'mData': 'sector_capacity_in', 'sTitle': 'Capacity DL', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -93,6 +94,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
 
+            {'mData': 'sector_capacity_out', 'sTitle': 'Capacity UL', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_out_per', 'sTitle': 'UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -130,6 +132,8 @@ class SectorStatusListing(BaseDatatableView):
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
         'sector_capacity',
+        'sector_capacity_in',
+        'sector_capacity_out',
         'current_in_per',
         'current_in_val',
         'avg_in_per',
