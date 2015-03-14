@@ -177,8 +177,7 @@ function WhiteMapClass() {
 										xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
 									}
 									
-								}					
-
+								}
 								var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat),
 									start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat),
 									end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
@@ -187,6 +186,8 @@ function WhiteMapClass() {
 									[new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]
 								);
 								ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
+								sectorMarker["new_lat"] = xyDirection.lat;
+								sectorMarker["new_lon"] = xyDirection.lon;
 								sectorMarker.move(finalLatLong);
 								sectorMarker.style.externalGraphic = sectorMarker.pollingIcon ? sectorMarker.pollingIcon : sectorMarker.oldIcon;
 							}
@@ -1692,18 +1693,34 @@ function WhiteMapClass() {
 			console.log("Show/Hide SS Start Time :- "+ new Date().toLocaleString());
 		}
 
-		var isSSChecked = $("#showAllSS:checked").length;
-
+		var isSSChecked = $("#showAllSS:checked").length,
+			layer_name = '';
 		/*Unchecked case*/
 		if(isSSChecked == 0) {
 			for(key in allMarkersObject_wmap['sub_station']) {
-				hideOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
+				var current_ss = allMarkersObject_wmap['sub_station'][key];
+				hideOpenLayerFeature(current_ss);
+				if(!layer_name) {
+					layer_name = current_ss.layerReference ? current_ss.layerReference : current_ss.layer;
+				}
 			}
 
 		} else {
 			for(key in allMarkersObject_wmap['sub_station']) {
-				showOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
+				var current_ss = allMarkersObject_wmap['sub_station'][key];
+				showOpenLayerFeature(current_ss);
+				if(!layer_name) {
+					layer_name = current_ss.layerReference ? current_ss.layerReference : current_ss.layer;
+				}
 			}
+		}
+		
+		// Redraw The layer
+		if(layer_name) {
+			layer_name.redraw()
+		} else {
+			// Redraw Lines layer to apply updates(Hide Lines)
+			ccpl_map.getLayersByName('Markers')[0].redraw();
 		}
 
 		if(isDebug) {
@@ -2217,15 +2234,18 @@ function WhiteMapClass() {
 								
 							   var toolTip_infobox = new OpenLayers.Popup('ss_'+ss_marker_obj.name,
 			            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-			            	    	null,
+			            	    	new OpenLayers.Size(110,18),
 			            	    	labelHtml,
 			            	    	false
 			        	    	);
 								ccpl_map.addPopup(toolTip_infobox);
-			        	    	toolTip_infobox.autoSize = true;
-			        	    	// toolTip_infobox.updateSize();
+			        	    	
+			        	    	// Remove height prop from div's
+			        	    	$('.olPopupContent').css('height','');
+			        	    	$('.olPopup').css('height','');
 
 		                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = toolTip_infobox;
+
 					    	}
 					    }
 
