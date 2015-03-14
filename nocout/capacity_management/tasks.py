@@ -55,7 +55,7 @@ CAPACTIY_MODELS = {
 
 CAPACTIY_TABLES = {
     'cbw': 'performance_inventorystatus',
-    'val': 'performance_servicestatus',
+    'val': 'performance_performanceservice',
     'per': 'performance_utilization',
     'kpi': 'performance_utilization'
 }
