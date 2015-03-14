@@ -327,7 +327,7 @@ class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
         }
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='ss')
+        devices_method_kwargs = dict(specify_ptp_type='all')
         is_bh = False
         return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 
@@ -351,7 +351,7 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
         }
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_network_devices
-        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
+        devices_method_kwargs = dict(specify_ptp_bh_type='all')
         is_bh = True
         return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 

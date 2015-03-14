@@ -1954,200 +1954,10 @@ function devicePlottingClass_gmap() {
 			// Right click event on sector marker
 			google.maps.event.addListener(bs_marker, 'rightclick', function(e) {
 
-				// If user is admin then proceed else do nothing
-				if(is_super_admin && admin_val_list.indexOf(is_super_admin) > -1) {
-					// Close infowindow if any exists
-					infowindow.close()
+				// Close infowindow if any exists
+				infowindow.close()
 
-					var base_station_id = this.filter_data.bs_id;
-
-					var current_maintenance_status = this.maintenance_status ? this.maintenance_status : "No",
-						maintenance_html_str = '';
-
-					var isChecked = current_maintenance_status == 'Yes' ? "Checked" : "";
-
-					maintenance_html_str += '<div align="center">';
-
-					maintenance_html_str += '<strong>Maintenance Status</strong><div class="make-switch switch-small">\
-											<input type="checkbox" value="'+base_station_id+'" id="yes_no" '+isChecked+'>\
-											</div>';
-					maintenance_html_str += '<div class="clearfix"></div>';
-					maintenance_html_str += '<div class="divide-10"></div><div>';
-					maintenance_html_str += '<input type="hidden" name="previous_maintenance_val" id="previous_maintenance_val" \
-											value="'+current_maintenance_status+'"/>';
-					maintenance_html_str += '<button class="btn btn-xs btn-info" id="change_maintenance_status_btn" \
-											title="Update Maintenance Status">Update</button>';
-					maintenance_html_str += '</div>';
-					maintenance_html_str += '<div class="clearfix"></div>';
-					maintenance_html_str += '</div>';
-
-
-					infowindow.setContent(maintenance_html_str);
-					
-					/*Set The Position for InfoWindow*/
-					infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
-
-					/*Shift the window little up*/
-					infowindow.setOptions({pixelOffset: new google.maps.Size(-10, -25)});
-
-					infowindow.open(mapInstance);
-
-					$("#yes_no").bootstrapSwitch({
-						"size" : "small",
-						"animate" : true,
-						"onText" : "Yes",
-						"offText" : "No",
-						"onColor" : "danger",
-						"offColor" : "primary",
-						"disabled" : false
-					});
-
-
-					$("#deviceMap").undelegate('click').delegate('#change_maintenance_status_btn','click',function(e) {
-
-						var updated_maintenance_status = "No",
-							current_bs_id = $("#yes_no").val(),
-							previous_status = $.trim($("#previous_maintenance_val").val());
-
-						if($("#yes_no")[0].checked) {
-							updated_maintenance_status = "Yes"
-						}
-
-						// If updated value & previous value are not same then proceed
-						if(previous_status != updated_maintenance_status) {
-							// If we have status & bs id
-							if(String(current_bs_id).length > 0 && String(updated_maintenance_status).length > 0) {
-
-								// Disable update button
-								$(this).addClass("disabled");
-								$(this).html("Updating...");
-
-								// Disable bootstrap switch
-								$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
-
-								var get_param_str = "?bs_id="+current_bs_id+"&maintenance_status="+updated_maintenance_status;
-
-								// Make AJAX Call
-								$.ajax({
-									url : base_url+"/network_maps/update_maintenance_status/"+get_param_str,
-									type : "GET",
-									success : function(response) {
-										var result = "";
-						                // Type check for response
-						                if(typeof response == 'string') {
-						                    result = JSON.parse(response);
-						                } else {
-						                    result = response;
-						                }
-
-						                if(result.success == 1) {
-						                	var new_status = result.data.maintenance_status ? $.trim(result.data.maintenance_status) : false,
-						                		bs_id = result.data.bs_id ? $.trim(result.data.bs_id) : false,
-						                		new_icon_url = result.data.icon ? $.trim(result.data.icon) : false;
-
-					                		// If API returns BS ID, Updated Status & Marker URL the proceed
-					                		if(new_status && bs_id && new_icon_url) {
-
-					                			// Update new status in input field
-					                			$("#previous_maintenance_val").val(new_status);
-
-					                			// Fetch BS data object from loki object
-					                			var bs_loki_obj = all_devices_loki_db.where(function(obj) {
-									                    return obj.originalId == bs_id
-									                }),
-									                bs_data_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : false,
-									                bs_name = bs_data_object ? bs_data_object.name : false
-									                bs_marker = bs_name ? allMarkersObject_gmap['base_station']['bs_'+bs_name] : false;
-
-								                if(bs_data_object) {
-								                	bs_data_object['data']['markerUrl'] = new_icon_url;
-								                	bs_data_object['data']['maintenance_status'] = new_status;
-								                	
-								                	// Update Loki Object
-		        									all_devices_loki_db.update(bs_data_object);
-		        									if(bs_marker) {
-		        										var new_bs_icon_obj = gmap_self.getMarkerImageBySize(
-															base_url+"/"+new_icon_url,
-															"base_station"
-														);
-		        										bs_marker.setOptions({
-		        											"icon" : new_bs_icon_obj,
-															"oldIcon" : new_bs_icon_obj,
-															"clusterIcon" : new_bs_icon_obj,
-															"maintenance_status" : new_status
-		        										});
-		        									}
-								                }
-					                		} else {
-
-					                			// Revert bootstrap switch status
-												$("#yes_no").bootstrapSwitch('toggleState',true);
-
-												$.gritter.add({
-									        		// (string | mandatory) the heading of the notification
-									                title: 'Base Station Maintenance Status',
-									                // (string | mandatory) the text inside the notification
-									                text: "Maintenance status not updated. Please try again later.",
-									                // (bool | optional) if you want it to fade out on its own or just sit there
-									                sticky: false,
-									                // Time in ms after which the gritter will dissappear.
-									                time : 1000
-									            });
-					                		}
-
-					                	} else {
-
-					                		// Revert bootstrap switch status
-											$("#yes_no").bootstrapSwitch('toggleState',true);
-
-					                		$.gritter.add({
-								        		// (string | mandatory) the heading of the notification
-								                title: 'Base Station Maintenance Status',
-								                // (string | mandatory) the text inside the notification
-								                text: result.message,
-								                // (bool | optional) if you want it to fade out on its own or just sit there
-								                sticky: false,
-								                // Time in ms after which the gritter will dissappear.
-								                time : 1000
-								            });
-					                	}
-									},
-									error : function(err) {
-
-										$.gritter.add({
-							        		// (string | mandatory) the heading of the notification
-							                title: 'Base Station Maintenance Status',
-							                // (string | mandatory) the text inside the notification
-							                text: err.statusText,
-							                // (bool | optional) if you want it to fade out on its own or just sit there
-							                sticky: false,
-							                // Time in ms after which the gritter will dissappear.
-							                time : 1000
-							            });
-									},
-									complete : function(e) {
-
-										// Enable bootstrap switch
-										$("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
-
-										if(e.status != 200) {
-											// Revert bootstrap switch status
-											$("#yes_no").bootstrapSwitch('toggleState',true);
-										}
-
-										// Enable Update Button
-										$("#change_maintenance_status_btn").removeClass("disabled");
-										$("#change_maintenance_status_btn").html("Update")
-
-									}
-								});
-							}
-						} else {
-							bootbox.alert("Please Change The Status");
-						}
-						return false;
-					});
-				}
+				gmap_self.startBsMaintenanceFunction(this);
 			});
 
 			/*Add BS Marker To Cluster*/
@@ -2415,7 +2225,7 @@ function devicePlottingClass_gmap() {
 				    			-120,
 				    			-10,
 				    			ss_marker.getPosition(),
-				    			hide_flag
+				    			false
 			    			);
 	                        perf_infobox.open(mapInstance, ss_marker);
 	                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = perf_infobox;
@@ -9423,9 +9233,9 @@ function devicePlottingClass_gmap() {
      */
 	this.updateTooltipLabel_gmap = function() {
 
-		var hide_flag = !$("#show_hide_label")[0].checked;
-
-		var allMarkersObject = {};
+		// var hide_flag = !$("#show_hide_label")[0].checked;
+		var hide_flag = false,
+			allMarkersObject = {};
 
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
         	allMarkersObject = allMarkersObject_earth;
@@ -9460,19 +9270,27 @@ function devicePlottingClass_gmap() {
 	            } else if(window.location.pathname.indexOf("white_background") > -1) {
             	    toolTip_infobox = new OpenLayers.Popup(key,
             	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-            	    	new OpenLayers.Size(110,25),
+            	    	new OpenLayers.Size(110,18),
             	    	labelHtml,
             	    	false
         	    	);
-        	    	
+					
+
 					ccpl_map.addPopup(toolTip_infobox);
+
+					if(hide_flag) {
+						toolTip_infobox.hide();
+					}
+
+					// Remove height prop from div's
+        	    	$('.olPopupContent').css('height','');
+        	    	$('.olPopup').css('height','');
 
 					if($("#"+key).length > 0) {
 						// Shift label to left side of marker
 	                    var current_left = $("#"+key).position().left;
 	                    current_left = current_left - 125;
 	                    $("#"+key).css("left",current_left+"px");
-	        	    	// toolTip_infobox.updateSize();
 					}
 	            } else {
 	            	toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
@@ -9512,7 +9330,7 @@ function devicePlottingClass_gmap() {
 	                } else {
 		            	var toolTip_infobox = new OpenLayers.Popup(key,
 	            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-	            	    	new OpenLayers.Size(110,25),
+	            	    	new OpenLayers.Size(110,18),
 	            	    	labelHtml,
 	            	    	false
 	        	    	);
@@ -9520,6 +9338,15 @@ function devicePlottingClass_gmap() {
 						tooltipInfoLabel[key] = toolTip_infobox;
 
 						ccpl_map.addPopup(toolTip_infobox);
+
+						if(hide_flag) {
+							toolTip_infobox.hide();
+						}
+
+						// Remove height prop from div's
+	        	    	$('.olPopupContent').css('height','');
+	        	    	$('.olPopup').css('height','');
+
 						if($("#"+key).length > 0) {
 							// Shift label to left side of marker
 	                        var current_left = $("#"+key).position().left;
@@ -9848,248 +9675,229 @@ function devicePlottingClass_gmap() {
 
         gmap_self.removeExtraPerformanceBoxes();
 	};
-}
 
-
-// function prepare_data_for_filter() {
-
-//     var filter_data_bs_city_collection=[];
-//         filter_data_bs_state_collection=[];
-//         filter_data_sector_ss_technology_collection=[];
-//         filter_data_sector_ss_vendor_collection=[],
-//     	current_data = [];
-
-//     if(window.location.pathname.indexOf("googleEarth") > -1) {
-// 		current_data = main_devices_data_earth;
-// 	} else if(window.location.pathname.indexOf("white_background") > -1) {
-// 		current_data = main_devices_data_wmap;
-// 	} else {
-// 		current_data = main_devices_data_gmaps;
-// 	}
-
-//     if (current_data.length > 0) {
-//     		var city_array = [],
-//     			state_array = [];
-//             for (i=0; i< current_data.length; i++) {
-
-//             	filter_data_bs_state_collection.push({ 'id': current_data[i].id, 'value': current_data[i].data.state });
-//             	filter_data_bs_city_collection.push({ 'id': current_data[i].id, 'value': current_data[i].data.city});
-
-// 				/*Sector Devices Array*/
-// 				var sector_device = current_data[i].data.param.sector;
-
-// 				/*Reset technology & vendor Array*/
-// 				filter_data_sector_ss_technology_value = [];
-// 				filter_data_sector_ss_vendor_value = [];
-// 				tech_for_vendor = []
-
-// 				for(var j=0;j<sector_device.length;j++) {
-					
-// 					if(filter_data_sector_ss_technology_value.indexOf(sector_device[j].technology) == -1) {
-// 						filter_data_sector_ss_technology_value.push(sector_device[j].technology);
-// 					}
-
-// 					if(filter_data_sector_ss_vendor_value.indexOf(sector_device[j].vendor) == -1) {
-// 						filter_data_sector_ss_vendor_value.push(sector_device[j].vendor);
-// 						tech_for_vendor.push(sector_device[j].technology);
-// 					}
-// 				}
-
-// 				filter_data_sector_ss_technology_collection.push({ 'id': current_data[i].id , 'value':filter_data_sector_ss_technology_value });
-
-// 				filter_data_sector_ss_vendor_collection.push({ 'id':current_data[i].id, 'value':filter_data_sector_ss_vendor_value , 'parent_name' : tech_for_vendor});
-//             }
-
-//             filter_data_bs_state_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_state_collection);
-//             filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
-//             filter_data_sector_ss_technology_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_technology_collection,'technology');
-//             filter_data_sector_ss_vendor_collection = unique_values_field_and_with_base_station_ids(filter_data_sector_ss_vendor_collection,'vendor');
-
-
-//             var filter_data=[
-//                 {
-// 	                'element_type':'multiselect',
-// 	                'field_type':'string',
-// 	                'key':'technology',
-// 	                'title':'Technology',
-// 	                'values':filter_data_sector_ss_technology_collection
-//                 },
-//                 {
-// 	                'element_type':'multiselect',
-// 	                'field_type':'string',
-// 	                'key':'vendor',
-// 	                'title':'Vendor',
-// 	                'values':filter_data_sector_ss_vendor_collection
-//                 },
-//                 {
-// 	                'element_type':'multiselect',
-// 	                'field_type':'string',
-// 	                'key':'state',
-// 	                'title':'BS State',
-// 	                'values':filter_data_bs_state_collection
-//                 },
-//                 {
-// 	                'element_type':'multiselect',
-// 	                'field_type':'string',
-// 	                'key':'city',
-// 	                'title':'BS City',
-// 	                'values':filter_data_bs_city_collection
-//                 }
-//             ];
-//     }//if condition closed
-//     return filter_data
-
-// }//function closed
-
-
-// function getDataForAdvanceSearch() {
-// 	//extra form elements that will be showing in Advance Search. We will get other Elements like City, Vendor, Technology from prepare_data_for_filter();
-// 	var filter_data_bs_name_collection=[],
-// 		filter_data_sector_configured_on_collection=[],
-// 		filter_data_sector_circuit_ids_collection=[],
-// 		filter_data_bs_city_collection=[],
-// 		current_data = [];
-
-// 	if(window.location.pathname.indexOf("googleEarth") > -1) {
-// 		current_data = main_devices_data_earth;
-// 	} else if(window.location.pathname.indexOf("white_background") > -1) {		
-// 		current_data = main_devices_data_wmap;
-// 	} else {
-// 		current_data = main_devices_data_gmaps;
-// 	}
-
-//     if(current_data.length >0) {
-//     	for (i=0; i< current_data.length; i++) {
-//     		if (current_data[i].data.city != 'N/A'){
-//     			filter_data_bs_city_collection.push({ 'id': current_data[i].id,
-//     				'value': current_data[i].data.city });
-//     		}
-
-
-//     		filter_data_bs_name_collection.push({ 'id':[current_data[i].id], 'value':current_data[i].name, 'alias':current_data[i].alias  });
-
-//     		filter_data_sector_configured_on_value= current_data[i].sector_configured_on_devices.split('|').filter(function (n) { return n != ""});
-
-//     		for (var k=0;k<filter_data_sector_configured_on_value.length;k++) {
-//     			filter_data_sector_configured_on_collection.push({ 'id':[current_data[i].id], 'value':filter_data_sector_configured_on_value[k] });
-//     		}
-
-//     		filter_data_sector_circuit_ids_values= current_data[i].circuit_ids.split('|').filter(function (n) { return n != ""});
-
-//     		for (var k=0;k<filter_data_sector_circuit_ids_values.length;k++){
-//     			filter_data_sector_circuit_ids_collection.push({ 'id':[current_data[i].id], 'value':filter_data_sector_circuit_ids_values[k] });
-//     		}
-//     	}
-//     	filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
-
-//     	var advanceSearchFilterData= []; //prepare_data_for_filter();
-
-//     	advanceSearchFilterData.push({
-// 			'element_type':'multiselect',
-// 			'field_type':'string',
-// 			'key':'name',
-// 			'title':'BS Name',
-// 			'values':filter_data_bs_name_collection
-// 		});
-
-// 		advanceSearchFilterData.push({
-// 			'element_type':'multiselect',
-// 			'field_type':'string',
-// 			'key':'sector_configured_on',
-// 			'title':'IP',
-// 			'values':filter_data_sector_configured_on_collection
-// 		});
-
-// 		advanceSearchFilterData.push({
-// 			'element_type':'multiselect',
-// 			'field_type':'string',
-// 			'key':'circuit_ids',
-// 			'title':'Circuit Id',
-// 			'values':filter_data_sector_circuit_ids_collection
-// 		});
+	this.startBsMaintenanceFunction = function(clicked_bs) {
 		
-// 		advanceSearchFilterData.push({
-//             'element_type':'multiselect',
-//             'field_type':'string',
-//             'key':'city',
-//             'title':'BS City',
-//             'values':filter_data_bs_city_collection
-//         });
-//     }//if condition closed
-//     return advanceSearchFilterData;
-// }
+		// If user is admin then proceed else do nothing
+		if(is_super_admin && admin_val_list.indexOf(is_super_admin) > -1) {
+
+			var base_station_id = clicked_bs.filter_data.bs_id,
+				current_maintenance_status = clicked_bs.maintenance_status ? clicked_bs.maintenance_status : "No",
+				isChecked = current_maintenance_status == 'Yes' ? "Checked" : "",
+				maintenance_html_str = '';
+
+			maintenance_html_str = '<div align="center">\
+										<strong>Maintenance Status</strong>\
+										<div class="make-switch switch-small">\
+											<input type="checkbox" value="'+base_station_id+'" id="yes_no" '+isChecked+'>\
+										<div class="clearfix"></div></div>\
+										<div class="divide-10"></div>\
+										<div>\
+											<input type="hidden" name="previous_maintenance_val" id="previous_maintenance_val" \
+											value="'+current_maintenance_status+'"/>\
+											<button class="btn btn-xs btn-info" id="change_maintenance_status_btn" \
+											title="Update Maintenance Status" onClick="gmap_self.updateBSMaintenanceStatus()"\
+											>Update</button>\
+										</div><div class="clearfix"></div>\
+									</div>';
+
+			if(window.location.pathname.indexOf("googleEarth") > -1) {
+		        // pass
+		    } else if(window.location.pathname.indexOf("white_background") > -1) {
+		        maintenance_popup = new OpenLayers.Popup('bs_main_popup',
+		            new OpenLayers.LonLat(clicked_bs.ptLon,clicked_bs.ptLat),
+		            new OpenLayers.Size(125,80),
+		            maintenance_html_str,
+		            false
+		        );
+
+		        ccpl_map.addPopup(maintenance_popup);
+
+		        // Remove height prop from div's
+    	    	$('.olPopupContent').css('height','');
+    	    	$('.olPopup').css('height','');
+		    } else {
+				// Set Infowindow content
+				infowindow.setContent(maintenance_html_str);
+				/*Set The Position for InfoWindow*/
+				infowindow.setPosition(new google.maps.LatLng(clicked_bs.ptLat,clicked_bs.ptLon));
+				/*Shift the window little up*/
+				infowindow.setOptions({pixelOffset: new google.maps.Size(-10, -25)});
+				// Open infowindow on map
+				infowindow.open(mapInstance);       
+		    }
+
+		    $("#yes_no").bootstrapSwitch({
+				"size" : "small",
+				"animate" : true,
+				"onText" : "Yes",
+				"offText" : "No",
+				"onColor" : "danger",
+				"offColor" : "primary",
+				"disabled" : false
+			});
+    	}
+	};
+
+	/**
+	 * This function triggers when 'Update' button on maintenance status popup clicked. It updates the new maintenance status in DB
+	 * @method updateBSMaintenanceStatus
+	 */
+	this.updateBSMaintenanceStatus = function() {
+
+		var updated_maintenance_status = "No",
+	        current_bs_id = $("#yes_no").val(),
+	        previous_status = $.trim($("#previous_maintenance_val").val());
+
+	    if($("#yes_no")[0].checked) {
+	        updated_maintenance_status = "Yes"
+	    }
+
+	    // If updated value & previous value are not same then proceed
+	    if(previous_status != updated_maintenance_status) {
+	        // If we have status & bs id
+	        if(String(current_bs_id).length > 0 && String(updated_maintenance_status).length > 0) {
+
+	            // Disable update button
+	            $(this).addClass("disabled");
+	            $(this).html("Updating...");
+
+	            // Disable bootstrap switch
+	            $("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
+
+	            var get_param_str = "?bs_id="+current_bs_id+"&maintenance_status="+updated_maintenance_status;
+
+	            // Make AJAX Call
+	            $.ajax({
+	                url : base_url+"/network_maps/update_maintenance_status/"+get_param_str,
+	                type : "GET",
+	                success : function(response) {
+	                    var result = "";
+	                    // Type check for response
+	                    if(typeof response == 'string') {
+	                        result = JSON.parse(response);
+	                    } else {
+	                        result = response;
+	                    }
+
+	                    if(result.success == 1) {
+	                        var new_status = result.data.maintenance_status ? $.trim(result.data.maintenance_status) : false,
+	                            bs_id = result.data.bs_id ? $.trim(result.data.bs_id) : false,
+	                            new_icon_url = result.data.icon ? $.trim(result.data.icon) : false;
+
+	                        // If API returns BS ID, Updated Status & Marker URL the proceed
+	                        if(new_status && bs_id && new_icon_url) {
+
+	                            // Update new status in input field
+	                            $("#previous_maintenance_val").val(new_status);
+
+	                            // Fetch BS data object from loki object
+	                            var bs_loki_obj = all_devices_loki_db.where(function(obj) {
+	                                    return obj.originalId == bs_id
+	                                }),
+	                                bs_data_object = bs_loki_obj.length > 0 ? JSON.parse(JSON.stringify(bs_loki_obj[0])) : false,
+	                                bs_name = bs_data_object ? bs_data_object.name : false,
+	                                bs_marker = "";
 
 
-// function unique_values_field_and_with_base_station_ids(filter_data_collection, type){
-//     /*Unique mappper names.*/
+	                            if(window.location.pathname.indexOf("googleEarth") > -1) {
+	                                // pass
+	                            } else if(window.location.pathname.indexOf("white_background") > -1) {
+	                                bs_marker = bs_name ? allMarkersObject_wmap['base_station']['bs_'+bs_name] : false;
+	                            } else {
+	                                bs_marker = bs_name ? allMarkersObject_gmap['base_station']['bs_'+bs_name] : false;
+	                            }
 
-//     /*Incase of technology and vendor the two values can appear for the sector_configured_on device as well as in  Substation.*/
-//     var unique_names={};
-//     if (type=='technology' || type=='vendor'){
+	                            if(bs_data_object) {
+	                                bs_data_object['data']['markerUrl'] = new_icon_url;
+	                                bs_data_object['data']['maintenance_status'] = new_status;
+	                                // Update Loki Object
+	                                all_devices_loki_db.update(bs_data_object);
+	                                // If bs marker exist then update 
+	                                if(bs_marker) {
+	                                    bs_marker['maintenance_status'] = new_status;
+	                                    gisPerformanceClass.updateMarkerIcon(bs_marker, new_icon_url, 'base_station');
+	                                }
+	                            }
+	                        } else {
 
-//         for (var i=0;i< filter_data_collection.length; i++)
-//         {
-//             if (filter_data_collection[i].value.length>1)
-//             {
-//                 for(var j=0;j< filter_data_collection[i].value.length; j++)
-//                 {
-//                     unique_names[filter_data_collection[i].value[j]]=true
-//                 }
-//             }
-//             else {
+	                            // Revert bootstrap switch status
+	                            $("#yes_no").bootstrapSwitch('toggleState',true);
 
-//                 unique_names[filter_data_collection[i].value]=true
-//             }
-//         }
-//     } else {
-//         for (var i=0;i< filter_data_collection.length; i++)
-//         {
-//             unique_names[filter_data_collection[i].value]=true
-//         }
-//     }
+	                            $.gritter.add({
+	                                // (string | mandatory) the heading of the notification
+	                                title: 'Base Station Maintenance Status',
+	                                // (string | mandatory) the text inside the notification
+	                                text: "Maintenance status not updated. Please try again later.",
+	                                // (bool | optional) if you want it to fade out on its own or just sit there
+	                                sticky: false,
+	                                // Time in ms after which the gritter will dissappear.
+	                                time : 1000
+	                            });
+	                        }
 
-//     unique_names= Object.keys(unique_names);
-//     /*All the devices_ids w.r.t to the mappers*/
-//     var result_bs_collection=[];
-//     for (var i=0;i< unique_names.length; i++) {
+	                    } else {
 
-//             var unique_device_ids=[],
-//             	parent_name = [];
+	                        // Revert bootstrap switch status
+	                        $("#yes_no").bootstrapSwitch('toggleState',true);
 
-//             for(var j=0;j< filter_data_collection.length; j++) {
+	                        $.gritter.add({
+	                            // (string | mandatory) the heading of the notification
+	                            title: 'Base Station Maintenance Status',
+	                            // (string | mandatory) the text inside the notification
+	                            text: result.message,
+	                            // (bool | optional) if you want it to fade out on its own or just sit there
+	                            sticky: false,
+	                            // Time in ms after which the gritter will dissappear.
+	                            time : 1000
+	                        });
+	                    }
+	                },
+	                error : function(err) {
 
-//                 if (type=='technology' || type=='vendor') {
-//                     if (filter_data_collection[j].value.length>1) {
+	                    $.gritter.add({
+	                        // (string | mandatory) the heading of the notification
+	                        title: 'Base Station Maintenance Status',
+	                        // (string | mandatory) the text inside the notification
+	                        text: err.statusText,
+	                        // (bool | optional) if you want it to fade out on its own or just sit there
+	                        sticky: false,
+	                        // Time in ms after which the gritter will dissappear.
+	                        time : 1000
+	                    });
+	                },
+	                complete : function(e) {
 
-//                        for(var k=0;k< filter_data_collection[j].value.length; k++) {
+	                    // Enable bootstrap switch
+	                    $("#yes_no").bootstrapSwitch('toggleDisabled',true,true);
 
-//                           if(unique_names[i]== filter_data_collection[j].value[k]) {
-//                             unique_device_ids.push(filter_data_collection[j].id)
-//                           }
-//                        }                       
-//                     }
-//                     else {
-//                         if(unique_names[i]== filter_data_collection[j].value[0]) {
-//                             unique_device_ids.push(filter_data_collection[j].id)
-//                         }
-//                     }
-//                 } else {
-//                         if (unique_names[i]== filter_data_collection[j].value) {
-//                             unique_device_ids.push(filter_data_collection[j].id)
-//                         }
-//                 }
-//             }            
-//         result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i]});
-//         }
-//     return result_bs_collection
-// }
+	                    if(e.status != 200) {
+	                        // Revert bootstrap switch status
+	                        $("#yes_no").bootstrapSwitch('toggleState',true);
+	                    }
+
+	                    // Enable Update Button
+	                    $("#change_maintenance_status_btn").removeClass("disabled");
+	                    $("#change_maintenance_status_btn").html("Update")
+
+	                }
+	            });
+	        }
+	    } else {
+	        bootbox.alert("Please Change The Status");
+	    }
+	    return false;
+	};
+
+}
 
 /**
  * This function returns the in bound BS id's list
  * @method getMarkerInCurrentBound
+ * @param only_bs_ids {Boolean}, If conatins the boolean flag, either to sent bs ids chunk or single array
  * @return {Array}, List of in bound base stations id
  */
-function getMarkerInCurrentBound() {
+function getMarkerInCurrentBound(only_bs_ids) {
 
     var bsMarkersInBound = [],
     	allBSObject = {};
@@ -10127,5 +9935,19 @@ function getMarkerInCurrentBound() {
 	    bsMarkersInBound = bsMarkersInBound.concat(unsearched_bs_ids);
     }
 
-    return bsMarkersInBound;
+    var chunk_size = periodic_poll_process_count,
+    	returned_bs_array  = [];
+
+    if(!only_bs_ids) {
+
+	    if(bsMarkersInBound && bsMarkersInBound.length > 0) {
+	    	while (bsMarkersInBound.length > 0) {
+	    		returned_bs_array .push(bsMarkersInBound.splice(0, chunk_size));
+	    	}
+	    }
+    } else {
+    	returned_bs_array = bsMarkersInBound;
+    }
+
+    return returned_bs_array ;
 }
