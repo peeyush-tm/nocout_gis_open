@@ -291,20 +291,7 @@ def gather_sector_status(technology):
                 machine=machine,
                 getit='cbw'
             )
-            # if tech_model_service[technology.lower()]['cbw']['values_list']:
-            #     cbw = cbw.values_list(
-            #         *tech_model_service[technology.lower()]['cbw']['values_list'],
-            #         flat=True
-            #     )
-            # elif tech_model_service[technology.lower()]['cbw']['values']:
-            #     cbw = cbw.values(
-            #         *tech_model_service[technology.lower()]['cbw']['values']
-            #     )
-            # else:
-            #     cbw = cbw.values_list(
-            #         'current_value',
-            #         flat=True
-            #     )
+
         else:
             return False
 
@@ -316,20 +303,6 @@ def gather_sector_status(technology):
             machine=machine,
             getit='val'
         )
-        # if tech_model_service[technology.lower()]['val']['values_list']:
-        #         sector_val = sector_val.values_list(
-        #             *tech_model_service[technology.lower()]['val']['values_list'],
-        #             flat=True
-        #         )
-        # elif tech_model_service[technology.lower()]['val']['values']:
-        #     sector_val = sector_val.values(
-        #         *tech_model_service[technology.lower()]['val']['values']
-        #     )
-        # else:
-        #     sector_val = sector_val.values_list(
-        #         'current_value',
-        #         flat=True
-        #     )
 
         # values for current Percentage KPIs
         sector_kpi = get_sectors_cbw_val_kpi(
@@ -339,17 +312,6 @@ def gather_sector_status(technology):
             machine=machine,
             getit='per'
         )
-        # if tech_model_service[technology.lower()]['per']['values_list']:
-        #         sector_kpi = sector_kpi.values_list(
-        #             *tech_model_service[technology.lower()]['per']['values_list'],
-        #             flat=True
-        #         )
-        # elif tech_model_service[technology.lower()]['per']['values']:
-        #     sector_kpi = sector_kpi.values(
-        #         *tech_model_service[technology.lower()]['per']['values']
-        #     )
-        # else:
-        #     sector_kpi = sector_kpi.values()
 
         avg_max_val = None
         avg_max_per = None
@@ -585,25 +547,6 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit='val
     start_date, end_date = get_time()
 
     try:
-        # perf = CAPACTIY_MODELS[getit].objects.order_by(
-        #
-        # ).extra(
-        #
-        # ).filter(
-        #     device_name__in=devices,
-        #     service_name__in=services,
-        #     data_source__in=data_sources,
-        #     sys_timestamp__gte=start_date,
-        #     sys_timestamp__lte=end_date
-        # ).values(
-        #     'device_name',
-        #     'service_name',
-        #     'data_source'
-        # ).annotate(
-        #     # min_val=Min('current_value'),
-        #     max_val=Max('current_value'),
-        #     avg_val=Avg('current_value')
-        # ).using(alias=machine)
         in_string = lambda x: "'" + str(x) + "'"
         query = """
         SELECT
@@ -1072,24 +1015,24 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
     bulk_update_scs = []
     bulk_create_scs = []
-    sector_capacity = None
-    current_in_per = None
-    current_in_val = None
+    sector_capacity = 0
+    current_in_per = 0
+    current_in_val = 0
 
-    avg_in_per = None
-    avg_in_val = None
-    peak_in_per = None
-    peak_in_val = None
-    peak_in_timestamp = None
+    avg_in_per = 0
+    avg_in_val = 0
+    peak_in_per = 0
+    peak_in_val = 0
+    peak_in_timestamp = 0
 
-    current_out_per = None
-    current_out_val = None
+    current_out_per = 0
+    current_out_val = 0
 
-    avg_out_per = None
-    avg_out_val = None
-    peak_out_per = None
-    peak_out_val = None
-    peak_out_timestamp = None
+    avg_out_per = 0
+    avg_out_val = 0
+    peak_out_per = 0
+    peak_out_val = 0
+    peak_out_timestamp = 0
 
     sys_timestamp = 0
     organization = get_default_org()
@@ -1125,6 +1068,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
         )
     else:
         return False
+
     if avg_max_val and avg_max_per:
         indexed_avg_max_val = indexed_query_set(
             query_set=avg_max_val,
