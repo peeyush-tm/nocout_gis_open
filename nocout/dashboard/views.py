@@ -6,7 +6,7 @@ import time
 
 from django.utils.dateformat import format
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.db.models import Q, Count, Sum
+from django.db.models import Q, Count, Sum, Avg
 
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
@@ -327,7 +327,7 @@ class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
         }
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='ss')
+        devices_method_kwargs = dict(specify_ptp_type='all')
         is_bh = False
         return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 
@@ -351,7 +351,7 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
         }
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_network_devices
-        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
+        devices_method_kwargs = dict(specify_ptp_bh_type='all')
         is_bh = True
         return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 
@@ -1386,7 +1386,7 @@ def view_severity_status_monthly(dashboard_name, organizations):
             # Preparation of final Dict for all days in One month
             data_dict['data'].append({
                 "color": item['color'],
-                "y": var[item['title']],
+                "y": var[item['id']],
                 "name": item['title'],
                 "x": js_time * 1000,
                 # Multiply by 1000 to return correct GMT+05:30 timestamp
