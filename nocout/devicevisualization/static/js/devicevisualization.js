@@ -11,7 +11,8 @@ var mapPageType = "",
     periodic_tooltip_call = "",
     live_poll_config = {},
     periodic_poll_process_count = 1,
-    is_tooltip_polled_used = false;
+    is_tooltip_polled_used = false,
+    not_ss_param_labels = ['base_station_alias'];
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -1865,7 +1866,12 @@ $("#static_label").change(function(e) {
  */
 $("#apply_label").click(function(e) {
     var selected_val = $.trim($("#static_label").val()),
-        selected_text = $.trim($("#static_label option:selected").text());
+        selected_text = $.trim($("#static_label option:selected").text()),
+        param_label_gritter_title = 'SS Parameter Label';
+
+    if(not_ss_param_labels.indexOf(selected_val) > -1) {
+        param_label_gritter_title = 'BS Parameter Label';
+    }
 
     if(last_selected_label != "" && selected_val == "" && selected_text == 'Select Label') {
         // Call Function to remove ss param label from map & updates button and dropdown
@@ -1885,17 +1891,16 @@ $("#apply_label").click(function(e) {
 
             // Save selected value to global variable
             last_selected_label = selected_val;
-            // Update cookie value with the selected value.
-            $.cookie("tooltipLabel", last_selected_label, {path: '/', secure : true});
 
             if(window.location.pathname.indexOf("googleEarth") > -1) {
                 // Pass
+                return true;
             } else if(window.location.pathname.indexOf("white_background") > -1) {
                 if(ccpl_map && ccpl_map.getZoom() >= 4) {
                     networkMapInstance.updateTooltipLabel_gmap();
                 } else {
                     $.gritter.add({
-                        title: "SS Parameter Label",
+                        title: param_label_gritter_title,
                         text: $.trim($("#static_label option:selected").text())+" - Label Applied Successfully.",
                         sticky: false,
                         time : 1000
@@ -1907,13 +1912,16 @@ $("#apply_label").click(function(e) {
                     networkMapInstance.updateTooltipLabel_gmap();
                 } else {
                     $.gritter.add({
-                        title: "SS Parameter Label",
+                        title: param_label_gritter_title,
                         text: $.trim($("#static_label option:selected").text())+" - Label Applied Successfully.",
                         sticky: false,
                         time : 1000
                     });
                 }
             }
+
+            // Update cookie value with the selected value.
+            $.cookie("tooltipLabel", last_selected_label, {path: '/', secure : true});
         } else {
             if($.trim($("#apply_label").html()) == 'Remove Label') {
                 // Call Function to remove ss param label from map & updates button and dropdown

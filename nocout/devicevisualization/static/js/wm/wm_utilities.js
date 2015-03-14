@@ -686,24 +686,26 @@ WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
     return false;
 }
 
+/**
+ * This function creates PL-RTA labels on SS & sectors(PTP) when right clicked on them for "White Map"
+ * @method createPLRtaLabel
+ * @param clicked_feature {Object}, It contains the right clicked openlayers feature(Sector or SS).
+ */
 function createPLRtaLabel(clicked_feature) {
 
-    var condition1 = ($.trim(clicked_feature.pl) && $.trim(clicked_feature.pl) != 'N/A'),
-        condition2 = ($.trim(clicked_feature.rta) && $.trim(clicked_feature.rta) != 'N/A');
-
-    var condition1 = "NA",
-        condition2 = "NA";
+    var condition1 = (clicked_feature.pl || clicked_feature.pl == 0) && $.trim(clicked_feature.pl) != 'N/A',
+        condition2 = (clicked_feature.rta || clicked_feature.rta == 0) && $.trim(clicked_feature.rta) != 'N/A';
 
     if(condition1 || condition2) {
-        var pl = $.trim(clicked_feature.pl) ? clicked_feature.pl : "N/A",
-            rta = $.trim(clicked_feature.rta) ? clicked_feature.rta : "N/A",
+        var pl = (clicked_feature.pl || clicked_feature.pl == 0) ? clicked_feature.pl : "N/A",
+            rta = (clicked_feature.rta || clicked_feature.rta == 0) ? clicked_feature.rta : "N/A",
             info_html = '';
 
         // Create hover infowindow html content
-        info_html += '<table class="table table-responsive table-bordered table-hover">';
-        info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-        info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-        info_html += '</table>';
+        info_html += '<table class="table table-responsive table-bordered table-hover">\
+                      <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
+                      <tr><td>Latency</td><td>'+rta+'</td></tr>\
+                      </table>';
 
         var open_location_lat = clicked_feature.ptLat,
             open_location_lon = clicked_feature.ptLon;
