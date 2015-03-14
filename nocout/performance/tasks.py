@@ -184,25 +184,23 @@ def get_all_sector_devices(technology):
     # If any sectors present then proceed forward
     if len(sectors_id_list) > 0:
         complete_augmentation_data = get_sector_augmentation_data(sector_ids=sectors_id_list)
-    else:
-        logger.exception('sectors_id_list is empty')
-        return False
-
-    # Machine wise data calculation for performance utilization status
-    for machine_name in machine_wise_data:
-        current_row = machine_wise_data[machine_name]
-        # List of sector_id on current machine
-        sector_ids = current_row['sector_id']
-        # List of device_name on current machine
-        device_names = current_row['device_name']
-        # If any devices present then proceed forward
-        if len(device_names) > 0:
-            # Call 'get_sector_ul_issue_data' to get the sector UL issue data per machine
-            complete_ul_issue_data += get_sector_ul_issue_data(
-                devices_names=device_names,
-                ds_list=data_source_list,
-                machine=machine_name
-            )
+    # If any sectors present then proceed forward
+    if len(sectors_id_list) > 0:
+        # Machine wise data calculation for performance utilization status
+        for machine_name in machine_wise_data:
+            current_row = machine_wise_data[machine_name]
+            # List of sector_id on current machine
+            sector_ids = current_row['sector_id']
+            # List of device_name on current machine
+            device_names = current_row['device_name']
+            # If any devices present then proceed forward
+            if len(device_names) > 0:
+                # Call 'get_sector_ul_issue_data' to get the sector UL issue data per machine
+                complete_ul_issue_data += get_sector_ul_issue_data(
+                    devices_names=device_names,
+                    ds_list=data_source_list,
+                    machine=machine_name
+                )
 
     # Format augmentation data
     if len(complete_augmentation_data) > 0:
@@ -218,6 +216,7 @@ def get_all_sector_devices(technology):
     month_num = int(last_six_months_list[0][1])
 
     for sector in sector_objects:
+        spot_object = None
         try:
             spot_object = spot_objects.get(
                 sector_sector_id=sector.sector_id,
@@ -228,31 +227,33 @@ def get_all_sector_devices(technology):
 
             update_this = False
 
-            if sector_id in complete_augmentation_data:
-                augment_data = complete_augmentation_data[sector_id]
+            if sector_sector_id in complete_augmentation_data:
+                augment_data = complete_augmentation_data[sector_sector_id]
                 if (month_num in augment_data) and not spot_object.augment_1:
                     spot_object.augment_1 = 1
                     update_this = True
 
             if sector_sector_id in complete_ul_issue_data:
                 ul_issue_data = complete_ul_issue_data[sector_sector_id]
-                if (month_num in ul_issue_data) and not spot_object.ul_issue_data:
+                if (month_num in ul_issue_data) and not spot_object.ul_issue_1:
                     spot_object.ul_issue_1 = 1
                     update_this = True
 
             if update_this:
                 bulky_update.append(spot_object)
 
-        except:
-            bulky_create.append(
-                SpotDashboard(
-                    sector_sector_id=sector.sector_id,
-                    sector=sector,
-                    device=sector.sector_configured_on,
-                    sector_device_technology=technology,
-                    sector_sector_configured_on=sector.sector_configured_on.ip_address
+        except Exception as e:
+            logger.exception(e)
+            if not spot_object:
+                bulky_create.append(
+                    SpotDashboard(
+                        sector_sector_id=sector.sector_id,
+                        sector=sector,
+                        device=sector.sector_configured_on,
+                        sector_device_technology=technology,
+                        sector_sector_configured_on=sector.sector_configured_on.ip_address
+                    )
                 )
-            )
 
     # If any create item exist then start bulk create job
     if len(bulky_create):
@@ -334,7 +335,7 @@ def get_sector_augmentation_data(sector_ids=[]):
     in_string = lambda x: "'" + str(x) + "'"
 
     augmentation_raw_query = '''
-                            SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_id
+                            SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
                             FROM {0}
                             WHERE
                               sector_id IN ( {1} )
