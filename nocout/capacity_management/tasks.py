@@ -56,8 +56,8 @@ CAPACTIY_MODELS = {
 CAPACTIY_TABLES = {
     'cbw': 'performance_inventorystatus',
     'val': 'performance_servicestatus',
-    'per': 'performance_utilizationstatus',
-    'kpi': 'performance_utilizationstatus'
+    'per': 'performance_utilization',
+    'kpi': 'performance_utilization'
 }
 
 tech_model_service = {
@@ -557,9 +557,9 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit='val
             AVG(CAST(`current_value` AS SIGNED)) AS `avg_val`
         FROM {0}
         WHERE
-            `sys_timestamp` <= {4}
+            `sys_timestamp` >= {4}
             AND
-            `sys_timestamp` >= {5}
+            `sys_timestamp` <= {5}
             AND
             `device_name`  IN ({1})
             AND
