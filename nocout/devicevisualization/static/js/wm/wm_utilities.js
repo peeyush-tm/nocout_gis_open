@@ -694,17 +694,20 @@ WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
 function createPLRtaLabel(clicked_feature) {
 
     var condition1 = (clicked_feature.pl || clicked_feature.pl == 0) && $.trim(clicked_feature.pl) != 'N/A',
-        condition2 = (clicked_feature.rta || clicked_feature.rta == 0) && $.trim(clicked_feature.rta) != 'N/A';
+        condition2 = (clicked_feature.rta || clicked_feature.rta == 0) && $.trim(clicked_feature.rta) != 'N/A',
+        condition3 = clicked_feature.pl_timestamp && $.trim(clicked_feature.pl_timestamp) != 'N/A';
 
-    if(condition1 || condition2) {
+    if(condition1 || condition2 || condition3) {
         var pl = (clicked_feature.pl || clicked_feature.pl == 0) ? clicked_feature.pl : "N/A",
             rta = (clicked_feature.rta || clicked_feature.rta == 0) ? clicked_feature.rta : "N/A",
+            pl_timestamp = clicked_feature.pl_timestamp ? clicked_feature.pl_timestamp : "N/A",
             info_html = '';
 
         // Create hover infowindow html content
         info_html += '<table class="table table-responsive table-bordered table-hover">\
                       <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
                       <tr><td>Latency</td><td>'+rta+'</td></tr>\
+                      <tr><td>Timestamp</td><td>'+pl_timestamp+'</td></tr>\
                       </table>';
 
         var open_location_lat = clicked_feature.ptLat,

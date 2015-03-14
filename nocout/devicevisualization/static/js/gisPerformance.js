@@ -373,10 +373,12 @@ function GisPerformance() {
                 }
 
 
+                var sector_pl = current_sector.pl ? current_sector.pl : "",
+                    sector_rta = current_sector.rta ? current_sector.rta : "",
+                    sector_pl_timestamp = current_sector.pl_timestamp ? current_sector.pl_timestamp : "";
+
                 // If sector marker exist then update it with new icon
                 if(sector_marker) {
-                    var sector_pl = current_sector.pl ? current_sector.pl : "",
-                        sector_rta = current_sector.rta ? current_sector.rta : "";
 
                     if(sector_icon) {
                         perf_self.updateMarkerIcon(sector_marker, sector_icon, 'other');
@@ -387,6 +389,7 @@ function GisPerformance() {
                         sector_marker['poll_info'] = sector_perf_info;
                         sector_marker['pl'] = sector_pl;
                         sector_marker['rta'] = sector_rta;
+                        sector_marker['pl_timestamp'] = sector_pl_timestamp;
                     } catch(e) {
                         // console.log(e);
                     }
@@ -513,6 +516,7 @@ function GisPerformance() {
                             sector_polygon['poll_info'] = sector_perf_info;
                             sector_polygon['pl'] = sector_pl;
                             sector_polygon['rta'] = sector_rta;
+                            sector_polygon['pl_timestamp'] = sector_pl_timestamp;
                         } catch(e) {
                             // console.log(e);
                         }
@@ -555,6 +559,7 @@ function GisPerformance() {
                                     ss_polled_info = [],
                                     ss_pl = ss_marker_data.data.pl ? ss_marker_data.data.pl : "",
                                     ss_rta = ss_marker_data.data.rta ? ss_marker_data.data.rta : "",
+                                    ss_pl_rta_timestamp = ss_marker_data.data.pl_timestamp ? ss_marker_data.data.pl_timestamp : "",
                                     ckt_id_val = perf_self.getKeyValue(ss_infoWindow_content, "cktid", true, ss_item_info_index),
                                     ss_ip_address = perf_self.getKeyValue(ss_infoWindow_content, "ss_ip", true, ss_item_info_index),
                                     ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
@@ -571,6 +576,7 @@ function GisPerformance() {
                                     poll_info        :  ss_polled_info,
                                     pl               :  ss_pl,
                                     rta              :  ss_rta,
+                                    pl_timestamp     :  ss_pl_rta_timestamp,
                                     item_index       :  ss_item_info_index,
                                     antenna_height   :  ss_marker_data.data.antenna_height,
                                     name             :  ss_marker_data.name,
@@ -822,18 +828,21 @@ function GisPerformance() {
                                     // Right click event on sub-station marker
                                     google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
                                         var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                                            condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+                                            condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A'),
+                                            condition3 = ($.trim(this.pl_timestamp) && $.trim(this.pl_timestamp) != 'N/A');;
 
-                                        if(condition1 || condition2) {
+                                        if(condition1 || condition2 || condition3) {
                                             var pl = $.trim(this.pl) ? this.pl : "N/A",
                                                 rta = $.trim(this.rta) ? this.rta : "N/A",
+                                                pl_timestamp = $.trim(this.pl_timestamp) ? this.pl_timestamp : "N/A",
                                                 info_html = '';
 
                                             // Create hover infowindow html content
-                                            info_html += '<table class="table table-responsive table-bordered table-hover">';
-                                            info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-                                            info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-                                            info_html += '</table>';
+                                            info_html += '<table class="table table-responsive table-bordered table-hover">\
+                                                          <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
+                                                          <tr><td>Latency</td><td>'+rta+'</td></tr>\
+                                                          <tr><td>Timestamp</td><td>'+pl_timestamp+'</td></tr>\
+                                                          </table>';
 
                                             if(infowindow) {
                                                 /*Set the content for infowindow*/
