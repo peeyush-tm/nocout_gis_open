@@ -743,12 +743,13 @@ function WhiteMapClass() {
 	    this.startDevicePolling_wmap = function() {
 	    	if(remainingPollCalls > 0) {
 				if(isPollingPaused == 0) {
+					var timeout_val = Number(pollingInterval) * 1000;
 					// Call function to fetch polled data for selected devices
 					gmap_self.getPollingData_gmap(function(response) {
 						pollCallingTimeout = setTimeout(function() {
 							remainingPollCalls--;
 							whiteMapClass.startDevicePolling_wmap();
-						},pollingInterval);
+						},timeout_val);
 					});
 				} else {
 					if($("#play_btn").hasClass("disabled")) {
@@ -2215,7 +2216,7 @@ function WhiteMapClass() {
 					    	hideOpenLayerFeature(ss_marker);
 				    	}
 
-					    if($.trim(last_selected_label)) {
+				    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) == -1) {
 					    	var labelInfoObject = gisPerformanceClass.getKeyValue(
 					    			ss_marker.dataset,
 					    			last_selected_label,
@@ -2253,8 +2254,6 @@ function WhiteMapClass() {
 				    	markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
 
 				    	allMarkersObject_wmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
-
-				    	// allMarkersArray_wmap.push(ss_marker);
 
 					    /*Push SS marker to pollableDevices array*/
 						pollableDevices.push(ss_marker)
@@ -2326,7 +2325,40 @@ function WhiteMapClass() {
 
 		    	allMarkersObject_wmap['base_station']['bs_'+bs_ss_devices[i].name] = bs_marker;
 
-		    	// allMarkersArray_wmap.push(bs_marker);
+		    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) > -1) {
+
+			    	var labelInfoObject = gisPerformanceClass.getKeyValue(
+			    			bs_marker.bsInfo,
+			    			last_selected_label,
+			    			false,
+			    			bs_marker.item_index
+		    			),
+			    		labelHtml = "";
+
+			    	if(labelInfoObject) {
+                		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                        labelHtml += shownVal;
+                    }
+
+			    	// If any html created then show label on ss
+			    	if(labelHtml) {
+						
+					   var toolTip_infobox = new OpenLayers.Popup('bs_'+bs_ss_devices[i].name,
+	            	    	new OpenLayers.LonLat(bs_marker.ptLon,bs_marker.ptLat),
+	            	    	new OpenLayers.Size(110,18),
+	            	    	labelHtml,
+	            	    	false
+	        	    	);
+						ccpl_map.addPopup(toolTip_infobox);
+	        	    	
+	        	    	// Remove height prop from div's
+	        	    	$('.olPopupContent').css('height','');
+	        	    	$('.olPopup').css('height','');
+
+                        tooltipInfoLabel['bs_'+bs_ss_devices[i].name] = toolTip_infobox;
+
+			    	}
+			    }
 
 		    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 				markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
@@ -2349,8 +2381,6 @@ function WhiteMapClass() {
 					/*Load data for basic filters*/
 					gmap_self.getBasicFilters();
 				}
-
-				// global_this.updateMarkersSize('medium');
 			}
 
 			if(bs_ss_markers.length> 0) {
