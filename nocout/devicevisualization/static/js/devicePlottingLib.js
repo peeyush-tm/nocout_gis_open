@@ -112,7 +112,8 @@ var main_devices_data_gmaps = [],
         color 		  : "black",
         padding 	  : '2px',
         borderRadius  : "5px",
-        width  		  : '110px'
+        width  		  : '110px',
+        maxWidth  	  : '110px'
     },
     country_label = {
     	"india" : ""
