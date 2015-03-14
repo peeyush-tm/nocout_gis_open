@@ -184,22 +184,23 @@ def get_all_sector_devices(technology):
     # If any sectors present then proceed forward
     if len(sectors_id_list) > 0:
         complete_augmentation_data = get_sector_augmentation_data(sector_ids=sectors_id_list)
-
-    # Machine wise data calculation for performance utilization status
-    for machine_name in machine_wise_data:
-        current_row = machine_wise_data[machine_name]
-        # List of sector_id on current machine
-        sector_ids = current_row['sector_id']
-        # List of device_name on current machine
-        device_names = current_row['device_name']
-        # If any devices present then proceed forward
-        if len(device_names) > 0:
-            # Call 'get_sector_ul_issue_data' to get the sector UL issue data per machine
-            complete_ul_issue_data += get_sector_ul_issue_data(
-                devices_names=device_names,
-                ds_list=data_source_list,
-                machine=machine_name
-            )
+    # If any sectors present then proceed forward
+    if len(sectors_id_list) > 0:
+        # Machine wise data calculation for performance utilization status
+        for machine_name in machine_wise_data:
+            current_row = machine_wise_data[machine_name]
+            # List of sector_id on current machine
+            sector_ids = current_row['sector_id']
+            # List of device_name on current machine
+            device_names = current_row['device_name']
+            # If any devices present then proceed forward
+            if len(device_names) > 0:
+                # Call 'get_sector_ul_issue_data' to get the sector UL issue data per machine
+                complete_ul_issue_data += get_sector_ul_issue_data(
+                    devices_names=device_names,
+                    ds_list=data_source_list,
+                    machine=machine_name
+                )
 
     # Format augmentation data
     if len(complete_augmentation_data) > 0:
