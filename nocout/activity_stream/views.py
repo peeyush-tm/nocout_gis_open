@@ -100,7 +100,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             offset = start + limit
             qs += UserAction.objects.filter(user_id__in=user_id_list,
                                             logged_at__range=(enddate.strftime("%Y-%m-%d 00:00:00"),
-                                                              startdate.strftime("%Y-%m-%d 00:00:00"))
+                                                              startdate.strftime("%Y-%m-%d %H:%M:%S"))
             ).values("id", "logged_at")[start:offset]
             start += limit
 
