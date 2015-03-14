@@ -227,7 +227,7 @@ def get_all_sector_devices(technology):
 
             update_this = False
 
-            if sector_sector_id in complete_ul_issue_data:
+            if sector_sector_id in complete_augmentation_data:
                 augment_data = complete_augmentation_data[sector_sector_id]
                 if (month_num in augment_data) and not spot_object.augment_1:
                     spot_object.augment_1 = 1
