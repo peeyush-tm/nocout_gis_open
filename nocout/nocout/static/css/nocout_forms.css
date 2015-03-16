@@ -86,3 +86,13 @@
     margin-right:30px;
     height: 24px;
 }
+.tooltip {
+    position: relative;
+}
+.tooltip-inner {
+    position: absolute;
+    top: -10px;
+    left: 5px;
+    text-align: left;
+    max-width: 100%;
+}

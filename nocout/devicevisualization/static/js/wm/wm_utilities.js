@@ -726,5 +726,9 @@ function createPLRtaLabel(clicked_feature) {
         );
 
         ccpl_map.addPopup(pl_rta_popup);
+
+        // Remove height prop from div's
+        $('.olPopupContent').css('height','');
+        $('.olPopup').css('height','');
     }
 }
