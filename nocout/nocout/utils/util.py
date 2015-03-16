@@ -850,7 +850,7 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
                         indexed_result[index].append(qs)
             else:
                 return False
-        
+
         else:
             # we have raw query results which are
             # list of dictionatry

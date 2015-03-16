@@ -46,12 +46,21 @@ CAPACITY_SETTINGS = {
     }
 }
 
-CAPACTIY_MODELS = {
+CAPACTIY_STATUS_MODELS = {
     'cbw': InventoryStatus,
     'val': ServiceStatus,
     'per': UtilizationStatus,
     'kpi': UtilizationStatus
 }
+
+
+CAPACTIY_MODELS = {
+    'cbw': InventoryStatus,
+    'val': PerformanceService,
+    'per': Utilization,
+    'kpi': Utilization
+}
+
 
 CAPACTIY_TABLES = {
     'cbw': 'performance_inventorystatus',
@@ -518,7 +527,7 @@ def get_sectors_cbw_val_kpi(devices, service_name, data_source, machine, getit):
     :return:
     """
     try:
-        performance = CAPACTIY_MODELS[getit].objects.order_by(
+        performance = CAPACTIY_STATUS_MODELS[getit].objects.order_by(
 
         ).filter(
             device_name__in=devices,
@@ -614,7 +623,7 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
         logger.exception(e)
         return 0, 0
 
-    if perf and len(perf):
+    if perf and perf.exists():
         return float(perf[0]['current_value']), float(perf[0]['sys_timestamp'])
     else:
         return 0, 0
