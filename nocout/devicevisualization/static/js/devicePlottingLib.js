@@ -10034,7 +10034,7 @@ function getMarkerInCurrentBound(only_bs_ids) {
 
 	    if(bsMarkersInBound && bsMarkersInBound.length > 0) {
 	    	while (bsMarkersInBound.length > 0) {
-	    		returned_bs_array .push(bsMarkersInBound.splice(0, chunk_size));
+	    		returned_bs_array.push(bsMarkersInBound.splice(0, chunk_size));
 	    	}
 	    }
     } else {

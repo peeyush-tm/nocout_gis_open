@@ -16,7 +16,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG
+from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG, PERIODIC_POLL_PROCESS_COUNT
 
 from nocout.utils import logged_in_user_organizations
 # from nocout.utils.util import convert_utc_to_local_timezone
@@ -673,7 +673,8 @@ class MainDashboard(View):
         context = {
             "isOther": 0,
             "page_title": "Main Dashboard",
-            "debug" : 0
+            "debug" : 0,
+            "process_count" : PERIODIC_POLL_PROCESS_COUNT
         }
 
         if DEBUG:
