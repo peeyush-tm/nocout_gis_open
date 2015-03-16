@@ -4258,10 +4258,10 @@ class GisWizardSectorMixin(object):
         self.object.name = sector_configured_on.ip_address
 
         # Alias: the IP address of the device for P2P; FOR PMP and WIMAX this would be Sector ID.
-        if int(technology) == 2:
-            self.object.alias = sector_configured_on.ip_address
-        else:
-            self.object.alias = form_kwargs['data']['sector_id']
+        # if int(technology) == 2:
+        #     self.object.alias = sector_configured_on.ip_address
+        # else:
+        #     self.object.alias = form_kwargs['data']['sector_id']
         self.object.bs_technology_id = technology
         self.object.organization = base_station.organization
         self.object.base_station = base_station
