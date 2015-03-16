@@ -701,7 +701,7 @@ $("form").submit(function(e) {
                     $("form button[type='submit']").removeClass("disabled");
                 }
             }
-            return true;
+            // return true;
         }
     /*Edit case*/
     } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
@@ -760,7 +760,7 @@ $("form").submit(function(e) {
             for(var j=0;j<oldFieldsArray.length;j++) {
                 var old_field = oldFieldsArray[j],
                     new_field = newFieldsArray[j];
-                if(old_field && old_field.value && new_field && new_field.value) {
+                if(old_field && old_field.value != undefined && new_field && new_field.value != undefined) {
                     if($.trim(old_field.value) != $.trim(new_field.value) && old_field.name.indexOf('password') === -1) {
                         var new_val = new_field.value.toLowerCase() != 'select' ? new_field.value : "",
                             old_val = old_field.value.toLowerCase() != 'select' ? old_field.value : "",
@@ -773,7 +773,7 @@ $("form").submit(function(e) {
                     }
                 }
             }
-            console.log(modifiedFieldsStr);
+            
             /*If any changes done then save user action else return.*/
             if($.trim(modifiedFieldsStr) != '[') {
                 
@@ -803,7 +803,7 @@ $("form").submit(function(e) {
                         $("form button[type='submit']").removeClass("disabled");
                     }
                 }
-                return true;
+                // return true;
             }
         } else {
             // Enable submit button
@@ -812,7 +812,7 @@ $("form").submit(function(e) {
                     $("form button[type='submit']").removeClass("disabled");
                 }
             }
-            return true;
+            // return true;
         }
     } else {
         // Enable submit button
@@ -821,7 +821,7 @@ $("form").submit(function(e) {
                 $("form button[type='submit']").removeClass("disabled");
             }
         }
-        return true;
+        // return true;
     }
 
     return false;
