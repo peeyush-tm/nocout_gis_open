@@ -1581,7 +1581,8 @@ class WizardBaseStationForm(BaseStationForm):
 
     def __init__(self, *args, **kwargs):
         super(WizardBaseStationForm, self).__init__(*args, **kwargs)
-
+        self.fields['alias'].widget = forms.TextInput(attrs={'placeholder': 'Enter Base Station Name',
+                                                             'class': ' col-md-12 form-control'})
         self.fields.pop('backhaul')
 
     class Meta:
@@ -1790,6 +1791,8 @@ class WizardCustomerForm(CustomerForm):
     def __init__(self, *args, **kwargs):
         kwargs.pop('technology')
         super(WizardCustomerForm, self).__init__(*args, **kwargs)
+        self.fields['alias'].widget = forms.TextInput(attrs={'placeholder': 'Enter Customer Name',
+                                                             'class': ' col-md-12 form-control'})
         self.fields.pop('name')
         self.fields.pop('organization')
         self.fields.pop('description')
