@@ -139,7 +139,10 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
         "trends_url" : "",
         "text" : "MFR Processed"
       }
-    };
+    },
+    all_charts_array = [],
+    charts_info_list_chunks = [],
+    dashboard_call_counter = 0;
 
 /**
  * This function initialize main dashboard & it is recursive function
@@ -148,18 +151,16 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
 function initDashboard() {
 
     // Initialize all speedometer(solid gauge) charts
-    initSpeedometerCharts_dashboard();
-
-    // Initialize all pie charts
-    initPieCharts_dashboard();
-
-    // Initialize all area charts
-    initAreaCharts_dashboard();
-
-    // Recursive calling after 5 min.
-    setTimeout(function() {
-        initDashboard();
-    },300000);
+    initSpeedometerCharts_dashboard(function(response) {
+        // Initialize all pie charts
+        initPieCharts_dashboard(function(response) {
+            // Initialize all area charts
+            initAreaCharts_dashboard(function(response) {
+                // Start Server calling with the created list of charts
+                createChartAPIChunks_dashboard(all_charts_array);
+            });
+        });
+    });
 }
 
 
@@ -167,77 +168,236 @@ function initDashboard() {
  * This function initialize all the solid gauge chart
  * @method initSpeedometerCharts_dashboard
  */
-function initSpeedometerCharts_dashboard() {
+function initSpeedometerCharts_dashboard(callback) {
     // Initialize all the speedometer(solid gauge) charts
     for(var i=0;i<solid_gauge_chart_ids.length;i++) {
         if($("#"+solid_gauge_chart_ids[i]).length > 0 && solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"]) {
             // Get chart
-            get_speedometer_chart(
-                solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"],
-                "#"+solid_gauge_chart_ids[i],
-                solid_gauge_url_obj[solid_gauge_chart_ids[i]]["text"]
+            // get_speedometer_chart(
+            //     solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"],
+            //     "#"+solid_gauge_chart_ids[i],
+            //     solid_gauge_url_obj[solid_gauge_chart_ids[i]]["text"]
 
-            );
+            // );
+            if(solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"]) {
+                all_charts_array.push({
+                    "url"  : solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"],
+                    "id"   : "#"+solid_gauge_chart_ids[i],
+                    "text" : solid_gauge_url_obj[solid_gauge_chart_ids[i]]["text"],
+                    "type" : 'speedometer'
+                });
+            }
         }
     }
+
+    callback(true);
 }
 
 /**
  * This function initialize all the pie chart
  * @method initPieCharts_dashboard
  */
-function initPieCharts_dashboard() {
+function initPieCharts_dashboard(callback) {
     // Initialize all the speedometer(solid gauge) charts
     for(var i=0;i<pie_chart_ids.length;i++) {
         if($("#"+pie_chart_ids[i]).length > 0 && pie_chart_url_obj[pie_chart_ids[i]]["url"]) {
             // Get chart
-            highcharts_piechart(
-                pie_chart_url_obj[pie_chart_ids[i]]["url"],
-                "#"+pie_chart_ids[i],
-                pie_chart_url_obj[pie_chart_ids[i]]["text"]
-            );
+            // highcharts_piechart(
+            //     pie_chart_url_obj[pie_chart_ids[i]]["url"],
+            //     "#"+pie_chart_ids[i],
+            //     pie_chart_url_obj[pie_chart_ids[i]]["text"]
+            // );
+            if(pie_chart_url_obj[pie_chart_ids[i]]["url"]) {
+                all_charts_array.push({
+                    "url"  : pie_chart_url_obj[pie_chart_ids[i]]["url"],
+                    "id"   : "#"+pie_chart_ids[i],
+                    "text" : pie_chart_url_obj[pie_chart_ids[i]]["text"],
+                    "type" : 'pie'
+                });
+            }
         }
     }
+
+    callback(true);
 }
 
 /**
  * This function initialize all the area or areaspline chart
  * @method initAreaCharts_dashboard
  */
-function initAreaCharts_dashboard() {
+function initAreaCharts_dashboard(callback) {
     // Initialize all the speedometer(solid gauge) charts
     for(var i=0;i<area_chart_ids.length;i++) {
         if($("#"+area_chart_ids[i]).length > 0 && area_chart_url_obj[area_chart_ids[i]]["url"]) {
             // Get chart for latency of wimax.
-            highcharts_areachart(
-                area_chart_url_obj[area_chart_ids[i]]["url"],
-                "#"+area_chart_ids[i],
-                area_chart_url_obj[area_chart_ids[i]]["text"]
-            );
+            // highcharts_areachart(
+            //     area_chart_url_obj[area_chart_ids[i]]["url"],
+            //     "#"+area_chart_ids[i],
+            //     area_chart_url_obj[area_chart_ids[i]]["text"]
+            // );
+            if(area_chart_url_obj[area_chart_ids[i]]["url"]) {
+                all_charts_array.push({
+                    "url"  : area_chart_url_obj[area_chart_ids[i]]["url"],
+                    "id"   : "#"+area_chart_ids[i],
+                    "text" : area_chart_url_obj[area_chart_ids[i]]["text"],
+                    "type" : 'area'
+                });
+            }
         }
+    }
+
+    callback(true);
+}
+
+/**
+ * This function makes parallel ajax call for charts
+ * @method createChartAPIChunks_dashboard
+ * @param charts_info_list {Array}, It contains the json object array of all dashboard charts
+ */
+function createChartAPIChunks_dashboard(charts_info_list) {
+    var chunk_size = process_count ? process_count : 1;
+
+    if(charts_info_list && charts_info_list.length > 0) {
+        while (charts_info_list.length > 0) {
+            charts_info_list_chunks.push(charts_info_list.splice(0, chunk_size));
+        }
+    }
+
+    var chunk_counter = 0;
+
+    if(charts_info_list_chunks[0]) {
+        startChunksAjaxCall(chunk_counter);
     }
 }
 
-// Method for pie Chart
-function highcharts_piechart(url, domElement,chart_title) {
+/**
+ * This function loops the given counter chunk to start their ajax calls by calling further functions
+ * @method startChunksAjaxCall
+ * @param counter {Number}, It contains the integer value for charts_info_list_chunks index to be used
+ */
+function startChunksAjaxCall(counter) {
+    
+    var current_chunk = charts_info_list_chunks[counter];
+
+    if(current_chunk && current_chunk.length > 0) {
+
+        for(var j=0;j<current_chunk.length;j++) {
+
+            var current_chart = current_chunk[j],
+                chart_type = current_chart.type,
+                url = current_chart.url,
+                dom_id = current_chart.id,
+                text = current_chart.text;
+
+            if(url && dom_id) {
+                makeDashboardAjaxCall(url, dom_id, text, chart_type, counter);
+            }
+        }
+    } else {
+        // Recursive calling after 5 min.
+        setTimeout(function() {
+            initDashboard();
+        },300000);
+    }
+}
+
+/**
+ * This function makes ajax call as per given params & calls further functions to create charts
+ * @method makeDashboardAjaxCall
+ * @param url {String}, It contains the url on which ajax request is to be sent
+ * @param domElement {String}, It contains the dom element id on which the chart is to be created
+ * @param chart_title {String}, It contains the text shown on top of chart
+ * @param chart_type {String}, It contains the type of chart which is to be created.
+   It used to call different functions for different charts
+ */
+function makeDashboardAjaxCall(url, domElement, chart_title, chart_type, calling_counter) {
+
+    // Increment the chunks counter
+    calling_counter++;
+
+    var extra_data = "";
+
+    if(chart_type == 'speedometer') {
+        extra_data = {
+            'dashboard_name': domElement
+        };
+    }
+
     $.ajax({
         url : url,
+        data : extra_data,
         type : "GET",
         success : function(result) {
+            
             var response = "";
+            
             if(typeof result == 'string') {
                 response = JSON.parse(result);
             } else {
                 response = result;
             }
+
             if(response.success == 1) {
-                updatePieChart(response.data.objects,domElement);
-            }else{
-                $(domElement).html("<h5>Dashboard Setting is not available.</h5>");
+                if(chart_type == 'speedometer') {
+                        
+                    updateSpeedometerChart(response.data.objects, domElement, chart_title, function(status) {
+                        dashboard_call_counter++;
+
+                        if(dashboard_call_counter >= process_count) {
+                            dashboard_call_counter = 0;
+
+                            startChunksAjaxCall(calling_counter);
+                        }
+
+                    });
+
+                } else if(chart_type == 'area') {
+                    
+                    // If rf network availability url then call 
+                    if(url.indexOf('rf_network_availability') > -1) {
+
+                        var chart_prename = domElement.split("#")[1].split("_chart")[0];
+
+                        // Create Chart
+                        createHighChart_nocout(response.data.objects,chart_prename,'#333333',true, function(status) {
+                            dashboard_call_counter++;
+
+                            if(dashboard_call_counter >= process_count) {
+                                dashboard_call_counter = 0;
+
+                                startChunksAjaxCall(calling_counter);
+                            }
+                        });
+                    } else {
+                        updateAreaChart(response.data.objects,domElement, function(status) {
+                            dashboard_call_counter++;
+
+                            if(dashboard_call_counter >= process_count) {
+                                dashboard_call_counter = 0;
+
+                                startChunksAjaxCall(calling_counter);
+                            }
+                        });
+                    }
+
+                } else if(chart_type == 'pie') {
+
+                    updatePieChart(response.data.objects,domElement, function(status) {
+                        dashboard_call_counter++;
+                        if(dashboard_call_counter >= process_count) {
+                            dashboard_call_counter = 0;
+
+                            startChunksAjaxCall(calling_counter);
+                        }
+                    });
+
+                } else {
+                    // pass
+                }
             }
         },
         error : function(err) {
-            hideSpinner();
+            // hideSpinner();
             $.gritter.add({
                 // (string | mandatory) the heading of the notification
                 title: chart_title,
@@ -248,16 +408,23 @@ function highcharts_piechart(url, domElement,chart_title) {
                 // Time in ms after which the gritter will dissappear.
                 time : 1500
             });
+
+            dashboard_call_counter++;
+
+            if(dashboard_call_counter >= process_count) {
+                dashboard_call_counter = 0;
+
+                startChunksAjaxCall(calling_counter);
+            }
         }
-    }); // ajax
+    });
 }
-/* End of method pie Chart */
 
 /**
  * This function creates or update area chart highchart as per given param
  * @method updateAreaChart
  */
-function updatePieChart(chartData, domElement) {
+function updatePieChart(chartData, domElement, callback) {
     // Pie Chart Color(Use default colors if API doesn't pass any color list)
     var default_chart_colors = window.Highcharts.getOptions().colors,
         colors_list = chartData.chart_data[0].color ? chartData.chart_data[0].color : default_chart_colors;
@@ -331,64 +498,15 @@ function updatePieChart(chartData, domElement) {
             },
         });
     }
+
+    callback(true);
 }
-
-/* method for Area Spline Chart
-highcharts_areachart(url, domElement); */
-function highcharts_areachart(url, domElement, chart_title) {
-    $.ajax({
-        url : url,
-        type : "GET",
-        success : function(result) {
-            var response = "";
-            if(typeof result == 'string') {
-                response = JSON.parse(result);
-            } else {
-                response = result;
-            }
-
-            if(response.success == 1) {
-                // If rf network availability url then call 
-                if(url.indexOf('rf_network_availability') > -1) {
-
-                    var chart_prename = domElement.split("#")[1].split("_chart")[0];
-
-                    // Create Chart
-                    createHighChart_nocout(
-                        response.data.objects,
-                        chart_prename,
-                        '#333333',
-                        true
-                    );
-                } else {
-                    updateAreaChart(response.data.objects,domElement);
-                }
-            } else {
-                $(domElement).html("<h5>Dashboard Setting is not available.</h5>");
-            }
-        },
-        error : function(err) {
-            hideSpinner();
-            $.gritter.add({
-                // (string | mandatory) the heading of the notification
-                title: chart_title,
-                // (string | mandatory) the text inside the notification
-                text: err.statusText,
-                // (bool | optional) if you want it to fade out on its own or just sit there
-                sticky: false,
-                // Time in ms after which the gritter will dissappear.
-                time : 1500
-            });
-        }
-    });
-}
-/* End of method Area Spline Chart */
 
 /**
  * This function creates or update area chart highchart as per given param
  * @method updateAreaChart
  */
-function updateAreaChart(chartData, domElement) {
+function updateAreaChart(chartData, domElement, callback) {
     // In case of update
     if($(domElement).highcharts()) {
 
@@ -467,45 +585,7 @@ function updateAreaChart(chartData, domElement) {
             },
         });
     }
-}
-
-
-// function for getting speedometer charts through ajax request.
-function get_speedometer_chart(ajax_url, div_id, chart_title){
-
-    $.ajax({
-        url : ajax_url,
-        type : "GET",
-        data : {
-            'dashboard_name': div_id,
-        },
-        success : function(result) {
-            var response = "";
-            if(typeof result == 'string') {
-                response = JSON.parse(result);
-            } else {
-                response = result;
-            }
-            if(response.success == 1) {
-                updateSpeedometerChart(response.data.objects, div_id, chart_title);
-            } else {
-                $(div_id).html("<h5>Dashboard Setting is not available.</h5>");
-            }
-        },
-        error : function(err) {
-            hideSpinner();
-            $.gritter.add({
-                // (string | mandatory) the heading of the notification
-                title: chart_title,
-                // (string | mandatory) the text inside the notification
-                text: err.statusText,
-                // (bool | optional) if you want it to fade out on its own or just sit there
-                sticky: false,
-                // Time in ms after which the gritter will dissappear.
-                time : 1500
-            });
-        }
-    });
+    callback(true);
 }
 
 
@@ -513,7 +593,7 @@ function get_speedometer_chart(ajax_url, div_id, chart_title){
  * This function creates or update solid gauge highchart as per given param
  * @method updateSpeedometerChart
  */
-function updateSpeedometerChart(chartData, div_id, div_text) {
+function updateSpeedometerChart(chartData, div_id, div_text, callback) {
 
     var val_count = chartData.chart_data[0].data[0].count,
         val_color = chartData.chart_data[0].data[0].color,
@@ -601,6 +681,8 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
             }
         }]
     }));
+
+    callback(true);
 }
 
 
@@ -667,7 +749,9 @@ $("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .b
                         $(".modal-dialog").css("width","90%");
                         
                         // Create Chart
-                        createHighChart_nocout(useful_data,'trends','#333333');
+                        createHighChart_nocout(useful_data,'trends','#333333', false, function(status) {
+                            // 
+                        });
 
                         try {
                             setTimeout(function() {

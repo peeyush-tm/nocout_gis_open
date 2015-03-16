@@ -54,6 +54,12 @@ $(document).ready(function (e) {
             sticky: true
         });
     }
+
+    // Initialize forms tooltip
+    $(".tip-focus").tooltip({
+        "html" : true,
+        "trigger" : "focus"
+    });
 });
 
 /*It removes the error class from fields if exists*/

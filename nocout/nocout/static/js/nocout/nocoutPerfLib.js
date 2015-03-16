@@ -668,7 +668,9 @@ function nocoutPerfLib() {
                             // If any data available then plot chart & table
                             if(chart_config.chart_data.length > 0) {
                                 if(!$('#'+service_id+'_chart').highcharts()) {
-                                    createHighChart_nocout(chart_config,service_id);
+                                    createHighChart_nocout(chart_config,service_id, false, false, function(status) {
+                                        // 
+                                    });
                                     initChartDataTable_nocout("perf_data_table", chart_config.chart_data,service_id);
                                 } else {
                                     addPointsToChart_nocout(chart_config.chart_data,service_id);
