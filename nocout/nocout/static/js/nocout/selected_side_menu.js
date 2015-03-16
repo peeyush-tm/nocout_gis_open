@@ -571,67 +571,85 @@ var isNewForm = window.location.href.indexOf('new'),
     module_name = "",
     isFormSubmit = 0;
 
-if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
-    
-    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
+// If formContainer class present then proceed
+if($(".formContainer").length) {
 
-    try {
-        module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
-    } catch(e) {
-        module_name = page_title.join(' ');
-    }
-    // module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+    if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
+        
+        page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
 
-} else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
+        try {
+            module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+        } catch(e) {
+            module_name = page_title.join(' ');
+        }
+        // module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
 
-    page_title = $(".formContainer .box .box-title h4")[0] ? $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ") : "";
-    // if(page_title) {
-    //     module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
-    // } else {
-    //     module_name = "";
-    // }
-    
-    try {
-        module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
-    } catch(e) {
-        module_name = page_title.join(' ');
-    }
+    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
 
-    if(isFormSubmit === 0) {
-        var oldFieldsArray = $("form input:not(:hidden)").serializeArray(),
-            select_boxes = $("form select");
+        page_title = $(".formContainer .box .box-title h4")[0] ? $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ") : "";
+        // if(page_title) {
+        //     module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+        // } else {
+        //     module_name = "";
+        // }
+        
+        try {
+            module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+        } catch(e) {
+            module_name = page_title.join(' ');
+        }
 
-        setTimeout(function() {
-            for(var i=0;i<select_boxes.length;i++) {
-                var select_id = select_boxes[i].attributes["id"].value,
-                    isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
-                    values_array = isSelect2 ? $("#"+select_id).select2("data") : $("#"+select_id+" option:selected").text(),
-                    selected_values = "";
+        if(isFormSubmit === 0) {
+            var oldFieldsArray = $("form input:not(:hidden)").serializeArray(),
+                select_boxes = $("form select"),
+                text_area_fields = $("form textarea");
 
-                if(values_array && values_array.constructor == Array) {
-                    $.grep(values_array,function(data){
-                        if(selected_values.length > 0) {
-                            selected_values +=  data.text ? ","+data.text() : "";
-                        } else {
-                            selected_values += data.text ? data.text() : "";
-                        }
-                    });
-                } else {
-                    if(typeof values_array == 'object') {
-                        selected_values = values_array ? values_array.text : "";
+            setTimeout(function() {
+                for(var i=0;i<select_boxes.length;i++) {
+                    var select_id = select_boxes[i].attributes["id"].value,
+                        isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
+                        values_array = isSelect2 ? $("#"+select_id).select2("data") : $("#"+select_id+" option:selected").text(),
+                        selected_values = "";
+
+                    if(values_array && values_array.constructor == Array) {
+                        $.grep(values_array,function(data){
+                            if(selected_values.length > 0) {
+                                selected_values +=  data.text ? ","+data.text() : "";
+                            } else {
+                                selected_values += data.text ? data.text() : "";
+                            }
+                        });
                     } else {
-                        selected_values = values_array;
+                        if(typeof values_array == 'object') {
+                            selected_values = values_array ? values_array.text : "";
+                        } else {
+                            selected_values = values_array;
+                        }
                     }
+
+                    var data_obj = {
+                        "name" : select_boxes[i].attributes["name"].value,
+                        "value" : selected_values
+                    };
+                    oldFieldsArray.push(data_obj);
                 }
 
-                var data_obj = {
-                    "name" : select_boxes[i].attributes["name"].value,
-                    "value" : selected_values
-                };
-                oldFieldsArray.push(data_obj);
-            }
-        },600);
-    } 
+                for(var i=0;i<text_area_fields.length;i++) {
+                    var textarea_name = text_area_fields[i].attributes["name"].value,
+                        textarea_id = text_area_fields[i].attributes["id"].value;
+                    if(textarea_name && textarea_id) {
+                        var data_obj = {
+                            "name" : textarea_name,
+                            "value" : $("#"+textarea_id).val()
+                        };
+
+                        oldFieldsArray.push(data_obj);
+                    }
+                }
+            },600);
+        } 
+    }
 }
 
 /*Form Submit Event*/
@@ -649,9 +667,14 @@ $("form").submit(function(e) {
         if(isFormSubmit === 0) {
 
             var alias = $("form input[name*='alias']").val(),
-                shown_val = alias ? alias : $("form input[name*='name']").val(),
-                action = "A new "+module_name.toLowerCase()+" is created - "+shown_val,
-                action_response = "";
+                shown_val = alias ? alias : $("form input[name*='name']").val();
+            
+            if(!shown_val) {
+                shown_val = "";
+            }
+
+            var action = "A new "+module_name.toLowerCase()+" is created - "+shown_val,
+            action_response = "";
 
             /*Call function to save user action*/
             save_user_action(module_name,action,function(result) {
@@ -687,8 +710,9 @@ $("form").submit(function(e) {
 
             var newFieldsArray = $("form input:not(:hidden)").serializeArray(),
                 select_boxes = $("form select"),
+                text_area_fields = $("form textarea"),
                 modifiedFieldsStr = "[";
-            /*Get New Fields*/
+            /*Get New Select Fields*/
             for(var i=0;i<select_boxes.length;i++) {
                 var select_id = select_boxes[i].attributes["id"] ? select_boxes[i].attributes["id"].value : "",
                     isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
@@ -719,6 +743,19 @@ $("form").submit(function(e) {
                 newFieldsArray.push(data_obj);
             }
 
+            for(var i=0;i<text_area_fields.length;i++) {
+                var textarea_name = text_area_fields[i].attributes["name"].value,
+                    textarea_id = text_area_fields[i].attributes["id"].value;
+                if(textarea_name && textarea_id) {
+                    var data_obj = {
+                        "name" : textarea_name,
+                        "value" : $("#"+textarea_id).val()
+                    };
+
+                    newFieldsArray.push(data_obj);
+                }
+            }
+
             /*Get Modified Fields*/
             for(var j=0;j<oldFieldsArray.length;j++) {
                 var old_field = oldFieldsArray[j],
@@ -736,6 +773,7 @@ $("form").submit(function(e) {
                     }
                 }
             }
+            console.log(modifiedFieldsStr);
             /*If any changes done then save user action else return.*/
             if($.trim(modifiedFieldsStr) != '[') {
                 
