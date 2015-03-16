@@ -5,34 +5,37 @@
 ## Live Mongodb --> Historical Mongodb
 
 # Bihourly scripts
-*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly > /dev/null 2>&1
-*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly > /dev/null 2>&1       
+*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly  > /dev/null 2>&1
+*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly  > /dev/null 2>&1
 
 # Daily scripts
-0 23 * * * /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily > /dev/null 2>&1   
-0 23 * * * /usr/bin/python nocout/performance/inventory/inventory_mongo_aggregation_daily.py > /dev/null 2>&1
+0 23 * * * /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily  > /dev/null 2>&1
+35 23 * * * /usr/bin/python nocout/performance/inventory/inventory_mongo_aggregation_daily.py  > /dev/null 2>&1
 
 # Weekly scripts
-0 23 * * 0 /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 168 -f weekly -s nocout_inventory_service_perf_data -d inventory_perf_weekly > /dev/null 2>&1
-
+0 23 * * 0 /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 168 -f weekly -s nocout_inventory_service_perf_data -d inventory_perf_weekly  > /dev/null 2>&1
 
 ## Historical Mongodb --> Historical Mysql
 
 # Daily Migration
-5 23 * * * /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 24 -s interface_perf_daily -d performance_performancestatusdaily > /dev/null 2>&1
+25 23 * * * /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 24 -s interface_perf_daily -d performance_performancestatusdaily  > /dev/null 2>&1
 
 # Weekly Migration
-5 23 * * 0 /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly > /dev/null 2>&1
+35 23 * * 0 /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly  > /dev/null 2>&1
 
 ## Events Migration
 
 # Daily Migration
-5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_host_event_log -d performance_eventnetworkdaily > /dev/null 2>&1
-#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily > /dev/null 2>&1
+#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_host_event_log -d performance_eventnetworkdaily  > /dev/null 2>&1
+#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily  > /dev/null 2>&1
 
 ## Utilization
 
 # Bi-hourly
-*/30 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mongodb -t 0.5 -f half_hourly -s kpi_data -d performance_utilizationbihourly > /dev/null 2>&1
+*/30 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mongodb -t 0.5 -f half_hourly -s kpi_data -d performance_utilizationbihourly  > /dev/null 2>&1
 
+## Device Availability
+
+# Daily
+35 23 * * * /usr/bin/python nocout/performance/service/device_availability_aggregation.py -r mongodb -t 24 -f daily -s device_availability -d performance_networkavailabilitydaily  > /dev/null 2>&1
 #-------------------------------------------------------------------------------------------------------

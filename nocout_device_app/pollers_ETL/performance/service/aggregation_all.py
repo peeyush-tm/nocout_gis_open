@@ -140,6 +140,10 @@ def quantify_perf_data(host_specific_data):
         elif read_from == 'mongodb':
             war, cric = doc.get('meta').get('war'), doc.get('meta').get('cric')
             current_value = doc.get('meta').get('cur')
+	try:
+	    current_value = eval(current_value)
+	except:
+	    current_value = current_value
 
         if time_frame == 'half_hourly':
             if time.minute < 30:
@@ -173,6 +177,7 @@ def quantify_perf_data(host_specific_data):
             time = time.replace(month=12, day=31, hour=23, minute=55,
                     second=0, microsecond=0)
 
+	# convert values from string, since these are stored as str in mysql
         aggr_data = {
                 'host': host,
                 'service': service,
@@ -184,14 +189,17 @@ def quantify_perf_data(host_specific_data):
                 'severity': severity,
                 'war': war,
                 'cric': cric,
-		'refer': doc.get('refer'),
                 'check_time': check_time
                 }
         if read_from == 'mysql':
+	    try:
+	        mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
+	    except:
+	        mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
             aggr_data.update({
-                'min': doc.get('min_value'),
-                'max': doc.get('max_value'),
-                'avg': doc.get('avg_value'),
+                'min': mn,
+                'max': mx,
+                'avg': ag,
             })
         elif read_from == 'mongodb':
             aggr_data.update({
@@ -268,7 +276,7 @@ def usage():
 if __name__ == '__main__':
     final_data_values = prepare_data()
     if final_data_values:
-        db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
+	db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
         mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)
     print 'Length of Data Inserted'
     print len(final_data_values)
