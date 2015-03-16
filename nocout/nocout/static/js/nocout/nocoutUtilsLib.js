@@ -340,8 +340,10 @@ function addPointsToChart_nocout(pointArray, dom_id) {
  * @method createHighChart_nocout
  * @param chartConfig {Array}, It contains configuration & data to initialize highcharts
  * @param dom_id {String}, It contains the chart dom element ID
+ * @param text_color {String}, It contains the color of text of chart
+ * @param need_extra_config {Boolean}, It contains the boolean flag either to add extra config or not.
  */
-function createHighChart_nocout(chartConfig,dom_id,text_color,need_extra_config) {
+function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_config, callback) {
 
     // Is the y axis should be reversed or not
     var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false,
@@ -414,6 +416,8 @@ function createHighChart_nocout(chartConfig,dom_id,text_color,need_extra_config)
     }
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
+
+    callback(true);
 }
 
 /**
