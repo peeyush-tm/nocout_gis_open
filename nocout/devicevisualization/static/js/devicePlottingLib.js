@@ -2098,18 +2098,21 @@ function devicePlottingClass_gmap() {
 					google.maps.event.addListener(sector_Marker, 'rightclick', function(e) {
 						
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A'),
+							condition3 = ($.trim(this.pl_timestamp) && $.trim(this.pl_timestamp) != 'N/A');
 
-						if(condition1 || condition2) {
+						if(condition1 || condition2 || condition3) {
 							var pl = $.trim(this.pl) ? this.pl : "N/A",
 								rta = $.trim(this.rta) ? this.rta : "N/A",
+								pl_timestamp = $.trim(this.pl_timestamp) ? this.pl_timestamp : "N/A",
 								info_html = '';
 
 							// Create hover infowindow html content
-							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-							info_html += '</table>';
+							info_html += '<table class="table table-responsive table-bordered table-hover">\
+										  <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
+									  	  <tr><td>Latency</td><td>'+rta+'</td></tr>\
+									  	  <tr><td>Timestamp</td><td>'+pl_timestamp+'</td></tr>\
+									  	  </table>';
 
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
@@ -2159,7 +2162,10 @@ function devicePlottingClass_gmap() {
 						ckt_id_val = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_info_index),
 						ss_ip_address = gisPerformanceClass.getKeyValue(ss_info_dict,"ss_ip",true,ss_item_info_index),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
-						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
+						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "",
+						ss_pl = ss_marker_obj.data.pl ? ss_marker_obj.data.pl : "",
+                        ss_rta = ss_marker_obj.data.rta ? ss_marker_obj.data.rta : "",
+                        ss_pl_rta_timestamp = ss_marker_obj.data.pl_timestamp ? ss_marker_obj.data.pl_timestamp : "";
 
 					// Set the ckt id to sector marker object (only in case of PTP)
 					if(ptp_tech_list.indexOf(sector_tech) > -1) {
@@ -2184,8 +2190,9 @@ function devicePlottingClass_gmap() {
 				    	item_index 		 :  ss_item_info_index,
 				    	bhInfo 			 : 	[],
 				    	poll_info 		 :  [],
-				    	pl 				 :  "",
-						rta				 :  "",
+				    	pl               :  ss_pl,
+                        rta              :  ss_rta,
+                        pl_timestamp     :  ss_pl_rta_timestamp,
 						perf_url 		 :  ss_perf_url,
 						inventory_url 	 :  ss_inventory_url,
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
@@ -2236,18 +2243,21 @@ function devicePlottingClass_gmap() {
 				    // Right click event on sub-station marker
 					google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A'),
+							condition3 = ($.trim(this.pl_timestamp) && $.trim(this.pl_timestamp) != 'N/A');
 
-						if(condition1 || condition2) {
+						if(condition1 || condition2 || condition3) {
 							var pl = $.trim(this.pl) ? this.pl : "N/A",
 								rta = $.trim(this.rta) ? this.rta : "N/A",
+								pl_timestamp = $.trim(this.pl_timestamp) ? this.pl_timestamp : "N/A",
 								info_html = '';
 
 							// Create hover infowindow html content
-							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-							info_html += '</table>';
+							info_html += '<table class="table table-responsive table-bordered table-hover">\
+										  <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
+										  <tr><td>Latency</td><td>'+rta+'</td></tr>\
+										  <tr><td>Timestamp</td><td>'+pl_timestamp+'</td></tr>\
+										  </table>';
 
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);

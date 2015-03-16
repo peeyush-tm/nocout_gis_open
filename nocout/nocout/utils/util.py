@@ -826,3 +826,48 @@ def convert_utc_to_local_timezone(datetime_obj=None):
         return datetime_obj.strftime(DATE_TIME_FORMAT)
 
     return output
+
+
+def indexed_query_set(query_set, indexes, values, is_raw=False):
+    """
+    # since query sets are not evaluated by default, we will evaluate the query set
+    # index the query set on a few attributes
+    # and return a disctionary if indexes
+    :param query_set: the original query set and subclasses : Query set must be complete and must be having a db
+    :param indexes: required indexes for indexing the query set
+    :param values: required values of the query set
+    :return: indexed results
+    """
+    if set(indexes).issubset(values):
+        indexed_result = dict()
+        if not is_raw:
+            if query_set.exists():
+                try:
+                    if query_set.values(*indexes).exists():  # check if the desired indexes exists
+                        for qs in query_set.values(*values):  # check if the desired values exists
+                            index = tuple(qs[x] for x in indexes)
+                            if index not in indexed_result:
+                                indexed_result[index] = list()
+                            indexed_result[index].append(qs)
+                except Exception as e:
+                    log.exception(e)
+                    return False
+            else:
+                return False
+            return indexed_result
+
+        else:
+            # we have raw query results which are
+            # list of dictionatry
+            if query_set:
+                try:
+                    for qs in query_set:
+                        index = tuple(qs[x] for x in indexes)
+                        if index not in indexed_result:
+                            indexed_result[index] = list()
+                        indexed_result[index].append(qs)
+                except Exception as e:
+                    log.exception(e)
+                    return False
+    else:
+        return False
