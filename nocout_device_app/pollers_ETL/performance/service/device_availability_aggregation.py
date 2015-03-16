@@ -119,6 +119,10 @@ def quantify_utilization_data(host_specific_data):
 			check_time = datetime.fromtimestamp(check_time)
 		current_value = doc.get('current_value')
 		war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
+		try:
+		    current_value = eval(current_value)
+		except:
+		    current_value = current_value
 
 		if time_frame == 'half_hourly':
 			if time.minute < 30:
@@ -170,10 +174,14 @@ def quantify_utilization_data(host_specific_data):
 				}
 
 		if read_from == 'mysql':
+			try:
+			    mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
+			except:
+			    mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
             		aggr_data.update({
-                	'min': doc.get('min_value'),
-                	'max': doc.get('max_value'),
-                	'avg': doc.get('avg_value'),
+                	'min': mn,
+                	'max': mx,
+                	'avg': ag,
             		})
         	elif read_from == 'mongodb':
             		aggr_data.update({
