@@ -1687,7 +1687,7 @@ class WizardSectorForm(SectorForm):
         Meta Information
         """
         model = Sector
-        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+        fields = ('alias', 'sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
 
     def clean_sector_id(self):
         """
