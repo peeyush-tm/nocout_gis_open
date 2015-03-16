@@ -61,7 +61,7 @@ def mysql_main():
 	# Range to read data from mongo historical
 	end_time = datetime.now()
 	start_time = end_time - timedelta(hours=hours)
-	start_time, end_time = start_time - timedelta(minutes=1), end_time + timedelta(minutes=1)
+	start_time, end_time = start_time + timedelta(hours=1), end_time + timedelta(hours=1)
 	# First read data from historical mongo database
 	docs = read_historical_mongo_data(start_time, end_time, configs=mongo_configs)
 	print '-- Doc Length --'
