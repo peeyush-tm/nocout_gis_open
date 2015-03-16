@@ -305,14 +305,15 @@ def gather_sector_status(technology):
         else:
             return False
 
+        sector_val = None
         # values for current utilization
-        sector_val = get_sectors_cbw_val_kpi(
-            devices=machine_dict[machine],
-            service_name=tech_model_service[technology_low]['val']['service_name'],
-            data_source=tech_model_service[technology_low]['val']['data_source'],
-            machine=machine,
-            getit='val'
-        )
+        # sector_val = get_sectors_cbw_val_kpi(
+        #     devices=machine_dict[machine],
+        #     service_name=tech_model_service[technology_low]['val']['service_name'],
+        #     data_source=tech_model_service[technology_low]['val']['data_source'],
+        #     machine=machine,
+        #     getit='val'
+        # )
 
         # values for current Percentage KPIs
         sector_kpi = get_sectors_cbw_val_kpi(
