@@ -11,7 +11,7 @@ class Command(BaseCommand):
         try:
             #nocout cache clear
             cache.clear()
-            cache._cache.flush_all()
+            # cache._cache.flush_all()
             #nocout cache clear
             #mysql cache clear
             query = "RESET QUERY CACHE; "
