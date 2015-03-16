@@ -1075,17 +1075,17 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             values=['device_name', 'service_name', 'data_source', 'current_value'],
         )
 
-    if kpi.exists() and val.exists():
+    if kpi.exists():  # and val.exists():
         indexed_kpi = indexed_query_set(
             query_set=kpi,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
         )
-        indexed_val = indexed_query_set(
-            query_set=val,
-            indexes=['device_name', 'service_name', 'data_source'],
-            values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
-        )
+        # indexed_val = indexed_query_set(
+        #     query_set=val,
+        #     indexes=['device_name', 'service_name', 'data_source'],
+        #     values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
+        # )
     else:
         return False
 
@@ -1163,14 +1163,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     continue
 
                 try:
-                    # time of update
-                    sys_timestamp = indexed_val[in_value_index][0]['sys_timestamp']
-
-                    # current in/out values
-                    current_in_val = indexed_val[in_value_index][0]['current_value']
-
-                    # current in/out values
-                    current_out_val = indexed_val[out_value_index][0]['current_value']
 
                     # current in/out percentages
                     current_in_per = indexed_kpi[in_per_index][0]['current_value']
@@ -1185,6 +1177,15 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     }
 
                     severity, age = get_higher_severity(severity_s)
+
+                    # time of update
+                    sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
+
+                    # current in/out values
+                    current_in_val = current_in_per * sector_capacity_in
+
+                    # current in/out values
+                    current_out_val = current_out_per * sector_capacity_out
 
                 except Exception as e:
                     logger.exception(e)
@@ -1279,15 +1280,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     continue
 
                 try:
-                    # time of update
-                    sys_timestamp = indexed_val[in_value_index][0]['sys_timestamp']
-
-                    # current in/out values
-                    current_in_val = indexed_val[in_value_index][0]['current_value']
-
-                    # current in/out values
-                    current_out_val = indexed_val[out_value_index][0]['current_value']
-
                     # current in/out percentages
                     current_in_per = indexed_kpi[in_per_index][0]['current_value']
 
@@ -1301,6 +1293,15 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     }
 
                     severity, age = get_higher_severity(severity_s)
+
+                    # time of update
+                    sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
+
+                    # current in/out values
+                    current_in_val = current_in_per * sector_capacity_in
+
+                    # current in/out values
+                    current_out_val = current_out_per * sector_capacity_out
 
                 except Exception as e:
                     logger.exception(e)
@@ -1476,15 +1477,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 continue
 
             try:
-                # time of update
-                sys_timestamp = indexed_val[in_value_index][0]['sys_timestamp']
-
-                # current in/out values
-                current_in_val = indexed_val[in_value_index][0]['current_value']
-
-                # current in/out values
-                current_out_val = indexed_val[out_value_index][0]['current_value']
-
                 # current in/out percentages
                 current_in_per = indexed_kpi[in_per_index][0]['current_value']
 
@@ -1498,6 +1490,15 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 }
 
                 severity, age = get_higher_severity(severity_s)
+
+                # time of update
+                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
+
+                # current in/out values
+                current_in_val = current_in_per * sector_capacity_in
+
+                # current in/out values
+                current_out_val = current_out_per * sector_capacity_out
 
             except Exception as e:
                 logger.exception(e)
