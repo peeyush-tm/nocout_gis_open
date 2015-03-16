@@ -22,6 +22,8 @@ class SectorCapacityStatus(models.Model):
 
     #polled information to be updated
     sector_capacity = models.FloatField('Sector Capacity',  default=0)
+    sector_capacity_in = models.FloatField('IN Sector Capacity',  default=0)  # in is DL
+    sector_capacity_out = models.FloatField('OUT Sector Capacity',  default=0)  # out is UL
     #polled information to be updated
     current_in_per = models.FloatField('IN Current Utilization Percentage',  default=0)
     current_in_val = models.FloatField('IN Current Utilization Value',  default=0)

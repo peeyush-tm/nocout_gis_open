@@ -33,6 +33,7 @@
                 <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="sectorStatusTable">
                     <thead>
                         <tr>
+
                             <th colspan="5" class="hide" style="width:auto;" aria-label=""></th>
 
                             <th colspan="7" style="text-align: center;">SECTOR</th>
@@ -44,6 +45,7 @@
                             <th colspan="2" style="text-align: center;" aria-label="">Current UL</th>
 
                             <th colspan="5" style="text-align: center;">UL (Last Day)</th>
+
                         </tr>
                         <tr>
                             <th class="hide" style="width:auto;" aria-label="Device ID">Device ID</th>
@@ -60,6 +62,7 @@
                             <th style="width:auto;" aria-label="Technology">Technology</th>
                             <th style="width:auto;" aria-label="Capacity">Capacity (mbps)</th>
 
+                            <th style="width:auto;" aria-label="Capacity DL">Capacity DL</th>
                             <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
                             <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
                             <th style="width:auto;" aria-label="AVG DL (%)">AVG DL (%)</th>
@@ -67,7 +70,8 @@
                             <th style="width:auto;" aria-label="PEAK DL (%)">PEAK DL (%)</th>
                             <th style="width:auto;" aria-label="PEAK DL (mbps)">PEAK DL (mbps)</th>
                             <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
-                            
+
+                            <th style="width:auto;" aria-label="Capacity UL">Capacity UL</th>
                             <th style="width:auto;" aria-label="UL (%)">UL (%)</th>
                             <th style="width:auto;" aria-label="UL (mbps)">UL (mbps)</th>
                             <th style="width:auto;" aria-label="AVG UL (%)">AVG UL (%)</th>
@@ -108,6 +112,7 @@
             {'mData': 'sector__sector_configured_on__ip_address'},
             {'mData': 'sector__sector_configured_on__device_technology'},
             {'mData': 'sector_capacity'},
+            {'mData': 'sector_capacity_in'},
             {'mData': 'current_in_per'},
             {'mData': 'current_in_val'},
             {'mData': 'avg_in_per'},
@@ -115,6 +120,7 @@
             {'mData': 'peak_in_per'},
             {'mData': 'peak_in_val'},
             {'mData': 'peak_in_timestamp'},
+            {'mData': 'sector_capacity_out'},
             {'mData': 'current_out_per'},
             {'mData': 'current_out_val'},
             {'mData': 'avg_out_per'},

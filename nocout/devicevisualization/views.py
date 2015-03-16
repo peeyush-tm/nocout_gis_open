@@ -4125,6 +4125,7 @@ class GISStaticInfo(View):
                         sector['perf_value'] = sector_extra_info['perf_value']
                         sector['pl'] = sector_extra_info['pl']
                         sector['rta'] = sector_extra_info['rta']
+                        sector['pl_timestamp'] = sector_extra_info['pl_timestamp']
                         sector['color'] = sector_extra_info['color']
                         sector['polled_frequency'] = sector_extra_info['polled_frequency']
 
@@ -4184,10 +4185,13 @@ class GISStaticInfo(View):
                                     sub_station['data']['link_color'] = sector_extra_info['color']
                                 sub_station['data']['perf_value'] = substation_extra_info['perf_value']
                                 sub_station['data']['pl'] = substation_extra_info['pl']
+                                sub_station['data']['pl_timestamp'] = substation_extra_info['pl_timestamp']
                                 sub_station['data']['rta'] = substation_extra_info['rta']
         except Exception as e:
             pass
+
         result = inventory
+
         return HttpResponse(json.dumps(result))
 
     def get_backhaul_info(self, bh_device, network_perf_data):
@@ -4316,11 +4320,13 @@ class GISStaticInfo(View):
         # update device frequency
         result['polled_frequency'] = device_frequency
 
-        # device pl
-        device_pl = self.get_device_pl(perf_payload['device_name'],
+        # pl result
+        pl_result = self.get_device_pl(perf_payload['device_name'],
                                        perf_payload['machine_name'],
                                        network_perf_data,
                                        freeze_time)
+        # device pl
+        device_pl = pl_result[0]
 
         # device rta
         device_rta = self.get_device_rta(perf_payload['device_name'],
@@ -4345,11 +4351,15 @@ class GISStaticInfo(View):
 
         result['radius'] = radius
 
-        # device pl
-        device_pl = self.get_device_pl(perf_payload['device_name'],
-                                       perf_payload['machine_name'],
-                                       network_perf_data,
-                                       freeze_time)
+        # pl timstamp
+        pl_timestamp = ""
+        try:
+            pl_timestamp = datetime.datetime.fromtimestamp(pl_result[1]).strftime('%d-%b-%Y at %H:%M:%S')
+        except Exception as e:
+            pass
+
+        # update device pl timstamp
+        result['pl_timestamp'] = pl_timestamp
 
         if device_pl != "100":
             performance_value = self.get_performance_value(perf_payload,
@@ -4616,32 +4626,36 @@ class GISStaticInfo(View):
         # device packet loss
         device_pl = ""
 
+        # pl timestamp
+        pl_timestamp = ""
+
         end_time = float(freeze_time) / 1000
         start_time = end_time - 300
 
         try:
             if int(freeze_time):
-                device_pl = PerformanceNetwork.objects.filter(device_name=device_name,
+                result = PerformanceNetwork.objects.filter(device_name=device_name,
                                                               service_name='ping',
                                                               data_source='pl',
                                                               sys_timestamp__gte=start_time,
                                                               sys_timestamp__lte=end_time).order_by().using(
-                    alias=machine_name).values('current_value')
+                    alias=machine_name).values('current_value', 'sys_timestamp')
 
             else:
-                device_pl = [d for d in network_perf_data if d['device_name'] == device_name and
+                result = [d for d in network_perf_data if d['device_name'] == device_name and
                              d['service_name'] == 'ping' and
                              d['data_source'] == 'pl']
-
-            if device_pl:
-                device_pl = device_pl[0]['current_value']
+            if result:
+                device_pl = result[0]['current_value']
+                pl_timestamp = result[0]['sys_timestamp']
             else:
                 device_pl = ""
+                pl_timestamp = ""
 
         except Exception as e:
             logger.exception(e)
 
-        return device_pl
+        return [device_pl, pl_timestamp]
 
     def get_device_rta(self,
                        device_name,
