@@ -608,16 +608,23 @@ def get_peak_sectors_util(device, service, data_source, machine, max_value, geti
     """
     start_date, end_date = get_time()
 
+    if not max_value:
+        return 0, 0
+
+    where_clause = ' current_value >= {0} '.format(max_value)
+
     try:
         perf = CAPACTIY_MODELS[getit].objects.order_by(
 
+        ).extra(
+            where=[where_clause]
         ).filter(
             sys_timestamp__gte=start_date,
             sys_timestamp__lte=end_date,
             device_name=device,
             service_name=service,
             data_source=data_source,
-            current_value=max_value
+            # current_value=max_value
         ).using(alias=machine).values('current_value', 'sys_timestamp')
     except Exception as e:
         logger.exception(e)
