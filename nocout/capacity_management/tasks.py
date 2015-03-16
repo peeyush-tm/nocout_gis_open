@@ -1056,12 +1056,26 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
                     # peak percentage in/out
                     peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
+
+                    # average percentage in/out
+                    avg_in_val = float(indexed_avg_max_val[in_val_index][0]['avg_val'])
+                    # peak percentage in/out
+                    peak_in_val = float(indexed_avg_max_val[in_val_index][0]['max_val'])
+                    # average percentage in/out
+                    avg_out_val = float(indexed_avg_max_val[out_val_index][0]['avg_val'])
+                    # peak percentage in/out
+                    peak_out_val = float(indexed_avg_max_val[out_val_index][0]['max_val'])
+
                 except Exception as e:
                     logger.exception(e)
                     avg_in_per = 0
                     peak_in_per = None
                     avg_out_per = 0
                     peak_out_per = None
+                    avg_in_val = 0
+                    avg_out_val = 0
+                    avg_in_val = 0
+                    peak_in_val = 0
 
                 peak_in_per, peak_in_timestamp = get_peak_sectors_util(
                     device=bs.backhaul.bh_configured_on.device_name,
