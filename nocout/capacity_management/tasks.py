@@ -1103,7 +1103,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
             is_raw=True
         )
 
-
     for sector in sectors:
         # deduplication of the sector on the basis of sector ID
         if sector.sector_id in processed_sectors:
@@ -1165,10 +1164,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 try:
 
                     # current in/out percentages
-                    current_in_per = indexed_kpi[in_per_index][0]['current_value']
+                    current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 
                     # current in/out percentages
-                    current_out_per = indexed_kpi[out_per_index][0]['current_value']
+                    current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
 
                     # severity for KPI services
                     severity_s = {
@@ -1182,10 +1181,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
                     # current in/out values
-                    current_in_val = current_in_per * sector_capacity_in
+                    current_in_val = current_in_per * sector_capacity_in / 100.00
 
                     # current in/out values
-                    current_out_val = current_out_per * sector_capacity_out
+                    current_out_val = current_out_per * sector_capacity_out / 100.00
 
                 except Exception as e:
                     logger.exception(e)
@@ -1195,13 +1194,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     try:
                         # average percentage in/out
-                        avg_in_per = indexed_avg_max_per[in_per_index][0]['avg_val']
+                        avg_in_per = float(indexed_avg_max_per[in_per_index][0]['avg_val'])
                         # peak percentage in/out
-                        peak_in_per = indexed_avg_max_per[in_per_index][0]['max_val']
+                        peak_in_per = float(indexed_avg_max_per[in_per_index][0]['max_val'])
                         # average percentage in/out
-                        avg_out_per = indexed_avg_max_per[out_per_index][0]['avg_val']
+                        avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
                         # peak percentage in/out
-                        peak_out_per = indexed_avg_max_per[out_per_index][0]['max_val']
+                        peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
                     except Exception as e:
                         logger.exception(e)
                         avg_in_per = 0
@@ -1229,13 +1228,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     try:
                         # average value in/out
-                        avg_in_val = avg_in_per * sector_capacity_in
+                        avg_in_val = avg_in_per * sector_capacity_in / 100.00
                         # peak value in/out
-                        peak_in_val = peak_in_per * sector_capacity_in
+                        peak_in_val = peak_in_per * sector_capacity_in / 100.00
                         # average value in/out
-                        avg_out_val = avg_out_per * sector_capacity_out
+                        avg_out_val = avg_out_per * sector_capacity_out / 100.00
                         # peak value in/out
-                        peak_out_val = peak_out_per * sector_capacity_out
+                        peak_out_val = peak_out_per * sector_capacity_out / 100.00
 
                     except Exception as e:
                         logger.exception(e)
@@ -1281,10 +1280,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 try:
                     # current in/out percentages
-                    current_in_per = indexed_kpi[in_per_index][0]['current_value']
+                    current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 
                     # current in/out percentages
-                    current_out_per = indexed_kpi[out_per_index][0]['current_value']
+                    current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
 
                     # severity for KPI services
                     severity_s = {
@@ -1298,10 +1297,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
                     # current in/out values
-                    current_in_val = current_in_per * sector_capacity_in
+                    current_in_val = current_in_per * sector_capacity_in / 100.00
 
                     # current in/out values
-                    current_out_val = current_out_per * sector_capacity_out
+                    current_out_val = current_out_per * sector_capacity_out / 100.00
 
                 except Exception as e:
                     logger.exception(e)
@@ -1311,13 +1310,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     try:
                         # average percentage in/out
-                        avg_in_per = indexed_avg_max_per[in_per_index][0]['avg_val']
+                        avg_in_per = float(indexed_avg_max_per[in_per_index][0]['avg_val'])
                         # peak percentage in/out
-                        peak_in_per = indexed_avg_max_per[in_per_index][0]['max_val']
+                        peak_in_per = float(indexed_avg_max_per[in_per_index][0]['max_val'])
                         # average percentage in/out
-                        avg_out_per = indexed_avg_max_per[out_per_index][0]['avg_val']
+                        avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
                         # peak percentage in/out
-                        peak_out_per = indexed_avg_max_per[out_per_index][0]['max_val']
+                        peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
                     except Exception as e:
                         logger.exception(e)
                         avg_in_per = 0
@@ -1345,13 +1344,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     try:
                         # average value in/out
-                        avg_in_val = avg_in_per * sector_capacity_in
+                        avg_in_val = avg_in_per * sector_capacity_in / 100.00
                         # peak value in/out
-                        peak_in_val = peak_in_per * sector_capacity_in
+                        peak_in_val = peak_in_per * sector_capacity_in / 100.00
                         # average value in/out
-                        avg_out_val = avg_out_per * sector_capacity_out
+                        avg_out_val = avg_out_per * sector_capacity_out / 100.00
                         # peak value in/out
-                        peak_out_val = peak_out_per * sector_capacity_out
+                        peak_out_val = peak_out_per * sector_capacity_out / 100.00
 
                     except Exception as e:
                         logger.exception(e)
@@ -1478,10 +1477,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
             try:
                 # current in/out percentages
-                current_in_per = indexed_kpi[in_per_index][0]['current_value']
+                current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 
                 # current in/out percentages
-                current_out_per = indexed_kpi[out_per_index][0]['current_value']
+                current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
 
                 # severity for KPI services
                 severity_s = {
@@ -1495,10 +1494,10 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
                 # current in/out values
-                current_in_val = current_in_per * sector_capacity_in
+                current_in_val = current_in_per * sector_capacity_in / 100.00
 
                 # current in/out values
-                current_out_val = current_out_per * sector_capacity_out
+                current_out_val = current_out_per * sector_capacity_out / 100.00
 
             except Exception as e:
                 logger.exception(e)
@@ -1516,13 +1515,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 try:
                     # average percentage in/out
-                    avg_in_per = indexed_avg_max_per[in_per_index][0]['avg_val']
+                    avg_in_per = float(indexed_avg_max_per[in_per_index][0]['avg_val'])
                     # peak percentage in/out
-                    peak_in_per = indexed_avg_max_per[in_per_index][0]['max_val']
+                    peak_in_per = float(indexed_avg_max_per[in_per_index][0]['max_val'])
                     # average percentage in/out
-                    avg_out_per = indexed_avg_max_per[out_per_index][0]['avg_val']
+                    avg_out_per = float(indexed_avg_max_per[out_per_index][0]['avg_val'])
                     # peak percentage in/out
-                    peak_out_per = indexed_avg_max_per[out_per_index][0]['max_val']
+                    peak_out_per = float(indexed_avg_max_per[out_per_index][0]['max_val'])
                 except Exception as e:
                     logger.exception(e)
                     avg_in_per = 0
@@ -1550,13 +1549,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 try:
                     # average value in/out
-                    avg_in_val = avg_in_per * sector_capacity_in
+                    avg_in_val = avg_in_per * sector_capacity_in / 100.00
                     # peak value in/out
-                    peak_in_val = peak_in_per * sector_capacity_in
+                    peak_in_val = peak_in_per * sector_capacity_in / 100.00
                     # average value in/out
-                    avg_out_val = avg_out_per * sector_capacity_out
+                    avg_out_val = avg_out_per * sector_capacity_out / 100.00
                     # peak value in/out
-                    peak_out_val = peak_out_per * sector_capacity_out
+                    peak_out_val = peak_out_per * sector_capacity_out / 100.00
 
                 except Exception as e:
                     logger.exception(e)
