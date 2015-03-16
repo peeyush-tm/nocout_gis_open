@@ -327,13 +327,13 @@ def gather_sector_status(technology):
         avg_max_per = None
 
         if calc_util_last_day():
-            avg_max_val = get_avg_max_sector_util(
-                devices=machine_dict[machine],
-                services=tech_model_service[technology_low]['val']['service_name'],
-                data_sources=tech_model_service[technology_low]['val']['data_source'],
-                machine=machine,
-                getit='val'
-            )
+            # avg_max_val = get_avg_max_sector_util(
+            #     devices=machine_dict[machine],
+            #     services=tech_model_service[technology_low]['val']['service_name'],
+            #     data_sources=tech_model_service[technology_low]['val']['data_source'],
+            #     machine=machine,
+            #     getit='val'
+            # )
 
             avg_max_per = get_avg_max_sector_util(
                 devices=machine_dict[machine],
@@ -1032,7 +1032,11 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
     bulk_update_scs = []
     bulk_create_scs = []
+
     sector_capacity = 0
+    sector_capacity_in = 0
+    sector_capacity_out = 0
+
     current_in_per = 0
     current_in_val = 0
 
@@ -1085,13 +1089,13 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     else:
         return False
 
-    if avg_max_val and avg_max_per:
-        indexed_avg_max_val = indexed_query_set(
-            query_set=avg_max_val,
-            indexes=['device_name', 'service_name', 'data_source'],
-            values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
-            is_raw=True
-        )
+    if avg_max_per:
+        # indexed_avg_max_val = indexed_query_set(
+        #     query_set=avg_max_val,
+        #     indexes=['device_name', 'service_name', 'data_source'],
+        #     values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
+        #     is_raw=True
+        # )
         indexed_avg_max_per = indexed_query_set(
             query_set=avg_max_per,
             indexes=['device_name', 'service_name', 'data_source'],
@@ -1151,6 +1155,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 try:
                     sector_capacity = indexed_cbw[cbw_index][0]['current_value']
+                    sector_capacity_in = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['dl']
+                    sector_capacity_out = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['ul']
                 except Exception as e:
                     # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
                     logger.exception(e)
@@ -1185,23 +1191,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     continue  # we dont have any current values with us
 
                 if calc_util_last_day():
-
-                    try:
-                        # average value in/out
-                        avg_in_val = indexed_avg_max_val[in_value_index][0]['avg_val']
-                        # peak value in/out
-                        peak_in_val = indexed_avg_max_val[in_value_index][0]['max_val']
-                        # average value in/out
-                        avg_out_val = indexed_avg_max_val[out_value_index][0]['avg_val']
-                        # peak value in/out
-                        peak_out_val = indexed_avg_max_val[out_value_index][0]['max_val']
-
-                    except Exception as e:
-                        logger.exception(e)
-                        avg_in_val = 0
-                        peak_in_val = 0
-                        avg_out_val = 0
-                        peak_out_val = 0
 
                     try:
                         # average percentage in/out
@@ -1237,6 +1226,23 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         getit='per'
                     )
 
+                    try:
+                        # average value in/out
+                        avg_in_val = avg_in_per * sector_capacity_in
+                        # peak value in/out
+                        peak_in_val = peak_in_per * sector_capacity_in
+                        # average value in/out
+                        avg_out_val = avg_out_per * sector_capacity_out
+                        # peak value in/out
+                        peak_out_val = peak_out_per * sector_capacity_out
+
+                    except Exception as e:
+                        logger.exception(e)
+                        avg_in_val = 0
+                        peak_in_val = 0
+                        avg_out_val = 0
+                        peak_out_val = 0
+
             elif 'pmp2' in sector.sector_configured_on_port.name.lower():
                 # index for cbw value
                 cbw_index = (sector.sector_configured_on.device_name, 'wimax_pmp_bw_invent', 'pmp2_bw')
@@ -1265,6 +1271,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 try:
                     sector_capacity = indexed_cbw[cbw_index][0]['current_value']
+                    sector_capacity_in = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['dl']
+                    sector_capacity_out = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['ul']
                 except Exception as e:
                     # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
                     logger.exception(e)
@@ -1301,23 +1309,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 if calc_util_last_day():
 
                     try:
-                        # average value in/out
-                        avg_in_val = indexed_avg_max_val[in_value_index][0]['avg_val']
-                        # peak value in/out
-                        peak_in_val = indexed_avg_max_val[in_value_index][0]['max_val']
-                        # average value in/out
-                        avg_out_val = indexed_avg_max_val[out_value_index][0]['avg_val']
-                        # peak value in/out
-                        peak_out_val = indexed_avg_max_val[out_value_index][0]['max_val']
-
-                    except Exception as e:
-                        logger.exception(e)
-                        avg_in_val = 0
-                        peak_in_val = 0
-                        avg_out_val = 0
-                        peak_out_val = 0
-
-                    try:
                         # average percentage in/out
                         avg_in_per = indexed_avg_max_per[in_per_index][0]['avg_val']
                         # peak percentage in/out
@@ -1350,6 +1341,23 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         max_value=peak_out_per,
                         getit='per'
                     )
+
+                    try:
+                        # average value in/out
+                        avg_in_val = avg_in_per * sector_capacity_in
+                        # peak value in/out
+                        peak_in_val = peak_in_per * sector_capacity_in
+                        # average value in/out
+                        avg_out_val = avg_out_per * sector_capacity_out
+                        # peak value in/out
+                        peak_out_val = peak_out_per * sector_capacity_out
+
+                    except Exception as e:
+                        logger.exception(e)
+                        avg_in_val = 0
+                        peak_in_val = 0
+                        avg_out_val = 0
+                        peak_out_val = 0
 
             else:
                 # no port specified
@@ -1436,11 +1444,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 pass
                 # logger.exception(e)
 
-            sector_capacity = 7  # fixed for PMP
-
-            # index for cbw value
-            cbw_index = 7
-
             # index for dl values
             in_value_index = (sector.sector_configured_on.device_name,
                               'cambium_dl_utilization',
@@ -1465,6 +1468,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
             try:
                 sector_capacity = 7
+                sector_capacity_in = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['dl']
+                sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
             except Exception as e:
                 # logger.debug("we dont want to store any data till we get a CBW for : {0}".format(sector.sector_id))
                 logger.exception(e)
@@ -1507,22 +1512,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 continue
 
             if calc_util_last_day():
-                try:
-                    # average value in/out
-                    avg_in_val = indexed_avg_max_val[in_value_index][0]['avg_val']
-                    # peak value in/out
-                    peak_in_val = indexed_avg_max_val[in_value_index][0]['max_val']
-                    # average value in/out
-                    avg_out_val = indexed_avg_max_val[out_value_index][0]['avg_val']
-                    # peak value in/out
-                    peak_out_val = indexed_avg_max_val[out_value_index][0]['max_val']
-
-                except Exception as e:
-                    logger.exception(e)
-                    avg_in_val = 0
-                    peak_in_val = 0
-                    avg_out_val = 0
-                    peak_out_val = 0
 
                 try:
                     # average percentage in/out
@@ -1557,6 +1546,23 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     max_value=peak_out_per,
                     getit='per'
                 )
+
+                try:
+                    # average value in/out
+                    avg_in_val = avg_in_per * sector_capacity_in
+                    # peak value in/out
+                    peak_in_val = peak_in_per * sector_capacity_in
+                    # average value in/out
+                    avg_out_val = avg_out_per * sector_capacity_out
+                    # peak value in/out
+                    peak_out_val = peak_out_per * sector_capacity_out
+
+                except Exception as e:
+                    logger.exception(e)
+                    avg_in_val = 0
+                    peak_in_val = 0
+                    avg_out_val = 0
+                    peak_out_val = 0
 
             if scs:
                 # update the scs
