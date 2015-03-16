@@ -842,32 +842,26 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
         indexed_result = dict()
         if not is_raw:
             if query_set.exists():
-                try:
-                    if query_set.values(*indexes).exists():  # check if the desired indexes exists
-                        for qs in query_set.values(*values):  # check if the desired values exists
-                            index = tuple(qs[x] for x in indexes)
-                            if index not in indexed_result:
-                                indexed_result[index] = list()
-                            indexed_result[index].append(qs)
-                except Exception as e:
-                    log.exception(e)
-                    return False
-            else:
-                return False
-            return indexed_result
-
-        else:
-            # we have raw query results which are
-            # list of dictionatry
-            if query_set:
-                try:
-                    for qs in query_set:
+                if query_set.values(*indexes).exists():  # check if the desired indexes exists
+                    for qs in query_set.values(*values):  # check if the desired values exists
                         index = tuple(qs[x] for x in indexes)
                         if index not in indexed_result:
                             indexed_result[index] = list()
                         indexed_result[index].append(qs)
-                except Exception as e:
-                    log.exception(e)
-                    return False
+            else:
+                return False
+
+        else:
+            # we have raw query results which are
+            # list of dictionatry
+            if len(query_set):
+                for qs in query_set:
+                    index = tuple(qs[x] for x in indexes)
+                    if index not in indexed_result:
+                        indexed_result[index] = list()
+                    indexed_result[index].append(qs)
+            else:
+                return False
+        return indexed_result
     else:
         return False
