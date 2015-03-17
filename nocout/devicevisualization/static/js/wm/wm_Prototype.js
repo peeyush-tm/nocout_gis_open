@@ -60,6 +60,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			ccpl_map.removePopup(pl_rta_popup);
 			pl_rta_popup = "";
 		}
+
+		that.unSpiderifyWmapMarker()
 	});
 
 	//Map moveend event(Used for pan & zoom both cases)
@@ -177,6 +179,12 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Sectors Layer to the Map
 		ccpl_map.addLayer(layers.sectorsLayer);
+
+		//Create a Vector Layer which will hold Sectors
+		layers.spider_ss_lines = new OpenLayers.Layer.Vector('Spider_SS_Lines');
+
+		//Add Sectors Layer to the Map
+		ccpl_map.addLayer(layers.spider_ss_lines);
 	/*
 	End of OpenLayer Layer Vector For Showing Wimax-PMP Sectors Polygon
 	 */

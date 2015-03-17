@@ -86,8 +86,6 @@ var main_devices_data_gmaps = [],
 	all_cities_array = [],
 	bsLatArray = [],
 	bsLonArray = [],
-	ssLatArray = [],
-	ssLonArray = [],
 	masterMarkersObj = [],
 	labelsArray = [],
 	labelsArray_filtered = [],
@@ -2281,17 +2279,11 @@ function devicePlottingClass_gmap() {
 
 			    	allMarkersObject_gmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
 
-			    	// allMarkersArray_gmap.push(ss_marker);
-
 			    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
 				    oms_ss.addMarker(ss_marker);
 
 				    /*Push SS marker to pollableDevices array*/
 					pollableDevices.push(ss_marker)
-
-				    /*Push All SS Lat & Lon*/
-		    	    ssLatArray.push(ss_marker_obj.data.lat);
-					ssLonArray.push(ss_marker_obj.data.lon);
 
 					var ss_info = {
 							"info" : ss_info_dict,
@@ -2390,28 +2382,6 @@ function devicePlottingClass_gmap() {
 			/*Hide The loading Icon*/
 			$("#loadingIcon").hide();
 
-			/*Enable the refresh button*/
-			// $("#resetFilters").button("complete");
-
-
-			var oms_bs_markers = oms.getMarkers(),
-				oms_ss_markers = oms_ss.getMarkers();			
-
-			/*Loop to change the icon for same location BS markers(to cluster icon)*/
-			for(var k=oms_bs_markers.length;k--;) {
-				
-				if(oms_bs_markers[k] != undefined) {
-	
-					/*if two BS or SS on same position*/
-					var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === oms_bs_markers[k].ptLat;}).length;
-					var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === oms_bs_markers[k].ptLon;}).length;
-
-					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
-						oms_bs_markers[k].setOptions({"icon" : oms_bs_markers[k].icon});
-					}
-				}
-			}
-			
 			if(isFirstTime == 1) {
 				/*Load data for basic filters*/
 				gmap_self.getBasicFilters();

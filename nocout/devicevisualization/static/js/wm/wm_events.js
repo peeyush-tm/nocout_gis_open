@@ -456,15 +456,28 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	} else {
 		//If clicked feature was not base setation
 		if(feature && feature.pointType !== "base_station") {
-			//Show Info Window for it
-			showInfoWindow(feature);
-			//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
-			if(feature && feature.pointType == 'path') {
-				setTimeout(function() {
-					//remove freshnel zone button
-					$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
-				}, 10);
+
+			var lat_lon_key = String(feature.ptLat)+"_"+String(feature.ptLon);
+
+			if(feature.pointType == 'sub_station' && overlapping_ss[lat_lon_key]) {
+				// If marker is spiderified then show infowindow
+				if(feature.isMarkerSpiderfied) {
+					showInfoWindow(feature);
+				} else {
+					this.spiderifyWmapMarker(overlapping_ss[lat_lon_key]);
+				}
+			} else {
+				//Show Info Window for it
+				showInfoWindow(feature);
+				//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
+				if(feature.pointType == 'path') {
+					setTimeout(function() {
+						//remove freshnel zone button
+						$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
+					}, 10);
+				}
 			}
+
 		//Else if base station was clicked
 		} else {
 			//First spiderify base station is not spiderfied, else open Info Window for it.
