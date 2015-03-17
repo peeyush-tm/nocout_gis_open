@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models.signals import post_save
+from django.utils.safestring import mark_safe
 
 from machine.models import Machine
 from organization.models import Organization
@@ -161,8 +162,17 @@ class Device(MPTTModel, models.Model):
         (low, 'Low')
     )
 
+    device_alias_help_text = '<ul><li>PTP <ul><li>Near End : Circuit ID_NE</li>\
+<li>Far End : Circuit ID</li></ul>\
+</li><li>PMP<ul><li>ODU : AP IP_Color Code { Eg: AP IP \
+= 10.11.12.13 Color Code=11  =>  Sector ID - 10111213_11}</li>\
+<li>SM : Circuit ID</li></ul></li><li>WiMAX<ul><li>IDU : Sector \
+ID of PMP1 or PMP2</li><li>IDU DR : Sector ID of PMP1 or \
+PMP2</li><li>SS : Circuit ID</li></ul></li>\
+<li>Converter : IP</li><li>Switch : IP</li></ul>'
+
     device_name = models.CharField('Name', max_length=200, unique=True)
-    device_alias = models.CharField('Alias', max_length=200)
+    device_alias = models.CharField('Alias', max_length=200, help_text=device_alias_help_text)
     machine = models.ForeignKey(Machine, null=True, blank=True)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     organization = models.ForeignKey(Organization)

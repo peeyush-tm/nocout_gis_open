@@ -52,6 +52,11 @@ $(document).ready(function (e) {
             sticky: true
         });
     }
+
+    $(".tip-focus").tooltip({
+        "html" : true,
+        "trigger" : "focus"
+    });
 });
 
 /*It removes the error class from fields if exists*/

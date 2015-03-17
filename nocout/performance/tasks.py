@@ -243,8 +243,10 @@ def get_all_sector_devices(technology):
                 bulky_update.append(spot_object)
 
         except Exception as e:
-            logger.exception(e)
-            if not spot_object:
+            if not spot_object and not (SpotDashboard.objects.filter(
+                sector_sector_id=sector.sector_id,
+                sector=sector
+            ).exists()):
                 bulky_create.append(
                     SpotDashboard(
                         sector_sector_id=sector.sector_id,

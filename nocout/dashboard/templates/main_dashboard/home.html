@@ -297,12 +297,16 @@
 
 <script type="text/javascript">
 
+    var process_count = 1;
+
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
 
         var isOther = "{{ isOther }}" ? Number("{{ isOther }}") : 0,
             isDebug = "{{ debug }}" ? Number("{{ debug }}") : 0;
+
+        process_count = "{{ process_count }}" ? Number("{{ process_count }}") : 1;
 
         var hidden_ids = [];
         if(isOther == 1) {

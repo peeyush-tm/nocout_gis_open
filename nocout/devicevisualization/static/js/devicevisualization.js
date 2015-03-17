@@ -1595,7 +1595,9 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         });
                         if(chartConfig.length > 0) {
                             // Create Chart
-                            createHighChart_nocout(result.data.objects,'perf');
+                            createHighChart_nocout(result.data.objects,'perf', false, false, function(status) {
+                                // 
+                            });
                         }
                     }
                 }

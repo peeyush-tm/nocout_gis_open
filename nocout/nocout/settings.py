@@ -209,6 +209,74 @@ AUTHENTICATION_BACKENDS = (
     'session_management.backends.TokenAuthBackend',
 )
 
+# Celery Settings
+
+import djcelery
+
+djcelery.setup_loader()
+
+# MongoDB configuration for django-celery
+# CELERY_RESULT_BACKEND = "mongodb"
+# CELERY_MONGODB_BACKEND_SETTINGS = {
+#     "host": "10.133.12.163",
+#     "port": 27163,
+#     "database": "nocout_celery_db",  # mongodb database for django-celery
+#     "taskmeta_collection": "c_queue"  # collection name to use for task output
+# }
+# BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
+
+# REDIS
+REDIS_HOST = "localhost"
+REDIS_PORT = 6379
+REDIS_DB = 0
+# celery result backend configuration
+CELERY_RESULT_BACKEND = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB)
+
+REDIS_CONNECT_RETRY = True
+BROKER_HOST = REDIS_HOST  # Maps to redis host.
+BROKER_PORT = REDIS_PORT  # Maps to redis port.
+BROKER_VHOST = (REDIS_DB + 1)   # Maps to database number.
+# celery broker configuration
+BROKER_URL = 'redis://' + str(BROKER_HOST) + ':' + str(BROKER_PORT) + '/' + str(BROKER_VHOST)
+
+
+# MEMCACHED
+# CELERY_CACHE_BACKEND = 'memory'
+# CELERY_RESULT_BACKEND = 'cache+memcached://127.0.0.1:11211/'
+
+# USE WITH PYLIB MC
+# CELERY_CACHE_BACKEND_OPTIONS = {'binary': True,
+#                                 'behaviors': {'tcp_nodelay': True}}
+
+from celery import crontab
+
+#=time zone for celery periodic tasks
+CELERY_TIMEZONE = 'Asia/Calcutta'
+CELERY_ENABLE_UTC = False
+CELERYD_TASK_TIME_LIMIT = 300
+CELERY_IGNORE_RESULT = True
+
+
+REDIS_CACHE_HOST = REDIS_HOST
+REDIS_CACHE_PORT = REDIS_PORT
+REDIS_CACHE_DB = (REDIS_DB + 2)
+REDIS_CACHE_URL = 'redis://' + str(REDIS_CACHE_HOST) + ':' + str(REDIS_CACHE_PORT) + '/' + str(REDIS_CACHE_DB)
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_CACHE_URL,
+        'TIMEOUT': 60,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            'MAX_ENTRIES': 1000,
+            "COMPRESS_MIN_LEN": 10,
+            "IGNORE_EXCEPTIONS": True,
+        }
+    }
+}
+
+
 ##TODO: dynamically populate cache
 #
 # def get_cache():
@@ -237,16 +305,16 @@ AUTHENTICATION_BACKENDS = (
 # CACHES = get_cache()
 
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',
-        'TIMEOUT': 300,
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000
-        }
-    }
-}
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+#         'LOCATION': '127.0.0.1:11211',
+#         'TIMEOUT': 300,
+#         'OPTIONS': {
+#             'MAX_ENTRIES': 1000
+#         }
+#     }
+# }
 
 #if pylibmc is isntalled
 
@@ -274,51 +342,13 @@ CACHES = {
 #     }
 # }
 
+# 16th March 2016 : Using Redis Server as Cache Server instead of much performant Memcached
+
+
+
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
 ]
-
-import djcelery
-
-djcelery.setup_loader()
-
-# MongoDB configuration for django-celery
-CELERY_RESULT_BACKEND = "mongodb"
-CELERY_MONGODB_BACKEND_SETTINGS = {
-    "host": "10.133.12.163",
-    "port": 27163,
-    "database": "nocout_celery_db",  # mongodb database for django-celery
-    "taskmeta_collection": "c_queue"  # collection name to use for task output
-}
-BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
-
-# REDIS
-# REDIS_HOST = "localhost"
-# REDIS_PORT = 6379
-# REDIS_DB = 0
-# CELERY_RESULT_BACKEND = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB)
-# REDIS_CONNECT_RETRY = True
-# BROKER_HOST = REDIS_HOST  # Maps to redis host.
-# BROKER_PORT = REDIS_PORT  # Maps to redis port.
-# BROKER_VHOST = REDIS_DB   # Maps to database number.
-# BROKER_URL = 'redis://' + str(BROKER_HOST) + ':' + str(BROKER_PORT) + '/' + str(BROKER_VHOST)
-
-
-# MEMCACHED
-# CELERY_CACHE_BACKEND = 'memory'
-# CELERY_RESULT_BACKEND = 'cache+memcached://127.0.0.1:11211/'
-
-# USE WITH PYLIB MC
-# CELERY_CACHE_BACKEND_OPTIONS = {'binary': True,
-#                                 'behaviors': {'tcp_nodelay': True}}
-
-from celery import crontab
-
-#=time zone for celery periodic tasks
-CELERY_TIMEZONE = 'Asia/Calcutta'
-CELERY_ENABLE_UTC = False
-CELERYD_TASK_TIME_LIMIT = 300
-CELERY_IGNORE_RESULT = True
 
 
 CELERYBEAT_SCHEDULE = {

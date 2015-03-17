@@ -315,14 +315,19 @@
             var sector_antenna_form = document.getElementById("id_sector_antenna_form");
             bind_sector_antenna_select2();
             {% if sector_antenna_id %}
-                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: {{ sector_antenna_id }}}, function (data) {sector_antenna_form.innerHTML=data}, 'html');
+                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: {{ sector_antenna_id }}}, function (data) {
+                        sector_antenna_form.innerHTML=data;
+                        $("#id_sector_antenna_form .select2select").select2();
+                    }, 'html');
             {% endif %}
 
             $("input:radio[name=sector_antenna_radio]").change(function (){
                 var sector_antenna_selected = $(this).val();
                 if (sector_antenna_selected == 'new') {
                     $("#id_sector_antenna").select2('destroy');
-                    $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}}, function (data) {sector_antenna_form.innerHTML=data}, 'html');
+                    $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}}, function (data) {sector_antenna_form.innerHTML=data;
+                        $("#id_sector_antenna_form .select2select").select2();
+                    }, 'html');
                 } else { // existing
                     bind_sector_antenna_select2();
                     sector_antenna_form.innerHTML = '';
@@ -338,7 +343,11 @@
             var sub_station_form = document.getElementById("id_sub_station_form");
             bind_sub_station_select2();
             {% if sub_station_id %}
-                $.get('/gis-wizard/get-form/', {model: 'sub_station', technology: {{ selected_technology }}, pk: {{ sub_station_id }}}, function (data) {sub_station_form.innerHTML=data; bind_device_select2(); bind_region_select2();}, 'html');
+                $.get('/gis-wizard/get-form/', {model: 'sub_station', technology: {{ selected_technology }}, pk: {{ sub_station_id }}}, function (data) {
+                        sub_station_form.innerHTML=data;
+                        bind_device_select2();
+                        bind_region_select2();
+                    }, 'html');
             {% endif %}
 
             $("input:radio[name=sub_station_radio]").change(function (){
@@ -364,14 +373,20 @@
             var sub_station_antenna_form = document.getElementById("id_sub_station_antenna_form");
             bind_sub_station_antenna_select2();
             {% if sub_station_antenna_id %}
-                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: {{ sub_station_antenna_id }}}, function (data) {sub_station_antenna_form.innerHTML=data}, 'html');
+                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: {{ sub_station_antenna_id }}}, function (data) {
+                    sub_station_antenna_form.innerHTML=data;
+                    $("#id_sub_station_antenna_form .select2select").select2();
+                }, 'html');
             {% endif %}
 
             $("input:radio[name=sub_station_antenna_radio]").change(function (){
                 var sub_station_antenna_selected = $(this).val();
                 if (sub_station_antenna_selected == 'new') {
                     $("#id_sub_station_antenna").select2('destroy');
-                    $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', {}, function (data) {sub_station_antenna_form.innerHTML=data}, 'html');
+                    $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', {}, function (data) {
+                        sub_station_antenna_form.innerHTML=data;
+                        $("#id_sub_station_antenna_form .select2select").select2();
+                    }, 'html');
                 } else { // existing
                     bind_sub_station_antenna_select2();
                     sub_station_antenna_form.innerHTML = '';
@@ -618,7 +633,9 @@
                 formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
             }).on("select2-selecting", function(el) {
                 var sector_antenna_form = document.getElementById("id_sector_antenna_form");
-                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: el.val}, function (data) {sector_antenna_form.innerHTML=data}, 'html');
+                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: el.val}, function (data) {sector_antenna_form.innerHTML = data;
+                    $("#id_sector_antenna_form .select2select").select2();
+                }, 'html');
             });
         }
 
@@ -725,7 +742,10 @@
                 formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
             }).on("select2-selecting", function(el) {
                 var sub_station_antenna_form = document.getElementById("id_sub_station_antenna_form");
-                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: el.val}, function (data) {sub_station_antenna_form.innerHTML=data}, 'html');
+                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: el.val}, function (data) {
+                    sub_station_antenna_form.innerHTML=data;
+                    $("#id_sub_station_antenna_form .select2select").select2();
+                }, 'html');
             });
         }
         {% endif %}
@@ -900,25 +920,27 @@
                 Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
             }
 
-    // update 'states' on selecting 'country'
-        $("#id_country").change(function () {
-            if ($("#id_country").val() != "") {
-                Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
-                $("#id_city").empty();
-            }
-            else {
-                $("#id_state").select2("val","");
-                $("#id_state").empty();
-                $("#id_city").select2("val","");
-                $("#id_city").empty();
-            }
-        });
+            // update 'states' on selecting 'country'
+            $("#id_country").change(function () {
+                if ($("#id_country").val() != "") {
+                    Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
+                    $("#id_city").empty();
+                }
+                else {
+                    $("#id_state").select2("val","");
+                    $("#id_state").empty();
+                    $("#id_city").select2("val","");
+                    $("#id_city").empty();
+                }
+            });
 
-        // update 'cities' on selecting 'state'
-        $("#id_state").change(function () {
-            $("#id_city").select2("val","");
-            Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
-        });
+            // update 'cities' on selecting 'state'
+            $("#id_state").change(function () {
+                $("#id_city").select2("val","");
+                Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
+            });
+            $("#id_country, #id_state, #id_city, #id_ethernet_extender").select2();
+            
         }
 
         function repoDeviceFormatResult(device) {
