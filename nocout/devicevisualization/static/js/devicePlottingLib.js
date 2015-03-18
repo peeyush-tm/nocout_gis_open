@@ -775,7 +775,7 @@ function devicePlottingClass_gmap() {
 	                			current_bs_list = current_bs_list.concat(new_bs_chunks);
 	                			// Update bsNamesList data
 	                			gisPerformanceClass.bsNamesList = current_bs_list;
-	                			console.log(last_counter_val);
+	                			last_counter_val += 1
 	                			// sendRequest with last_counter_val
 	                			gisPerformanceClass.sendRequest(last_counter_val);
 	                		}

@@ -146,6 +146,7 @@ function GisPerformance() {
      */
     this.sendRequest = function (counter) {
         if (isPollingActive == 0  && isPerfCallStopped == 0) {
+            console.log(perf_self.bsNamesList[counter]);
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
                 last_counter_val = counter;
                 if(!callsInProcess) {
@@ -191,7 +192,7 @@ function GisPerformance() {
             }
         }
 
-        var current_chunk = bs_id;
+        var current_chunk = JSON.parse(JSON.stringify(bs_id));
 
         while(current_chunk && current_chunk.length > 0) {
             var bs_id = current_chunk.splice(0,1)[0];
