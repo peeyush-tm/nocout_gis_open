@@ -1,0 +1,74 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+#~ Author: Silvio Knizek
+#~ License: GPLv2
+#~ Version: 1.0
+
+import sys
+from telnetlib import Telnet
+import socket
+
+def connection_telnet(hostname, port):
+	"""
+    	Connects to a socket, checks for the WELCOME-MSG and closes the
+    	connection.
+    	Returns nothing.
+    
+    	"""
+	try:
+    		tn = Telnet(hostname,port,timeout=3)
+	except socket.timeout:
+		exit_value = 3
+		sys.stdout.write("host timeout")
+		sys.exit((exit_value))
+    	tn.read_until("Login:")
+    	tn.write("admin" + "\r\n")
+    	tn.read_until("Password:")
+    	tn.write("admin" + "\r\n")
+    	tn.write("show interface wimax config\r\n")
+    	tn.write("exit\r\n")
+    	data = tn.read_all()
+    	plugin_message= ""
+    	exit_value = 3
+
+
+	wimax_pmp2_stc_mrc_invent_state = "UNKNOWN- "
+	try:
+		if data:
+			params =[row for row in data.split("\n")]
+			pmp2_mrc =params[22]
+			pmp2_mrc  = pmp2_mrc.split(':')[1]
+			pmp2_stc=params[25]
+			pmp2_stc  = pmp2_stc.split(':')[1]
+			exit_value = 0
+			wimax_pmp2_stc_mrc_invent_state = "OK- "
+		else:
+			exit_value = 2
+			wimax_pmp2_stc_mrc_invent_state = "CRITICAL- "
+	except:
+		exit_value = 3		
+	plugin_message += "%s=%s %s=%s " %("mrc",pmp2_mrc,"stc",pmp2_stc)
+	plugin_message = wimax_pmp2_stc_mrc_invent_state +plugin_message
+	sys.stdout.write(plugin_message)  
+	sys.exit((exit_value))
+
+def main():
+    """
+    Parses the time it needs to got the WELCOME-MSG and returns:
+    0:  all got well
+    1:  connection is slow
+    2:  nio connection at all (or really slow)
+    3:  something really bad happend
+    
+    """
+    exit_value =3
+    try:
+	host_name = sys.argv[1]
+        connection_telnet(host_name, 23)
+    except socket.error, message:
+        sys.stdout.write("Could not open socket: " + message) 
+        sys.exit((exit_value))
+
+
+if __name__ == '__main__':
+    main()

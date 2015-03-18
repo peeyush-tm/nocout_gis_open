@@ -1,0 +1,121 @@
+#!/usr/bin/python
+
+import sys
+from telnetlib import Telnet
+import socket
+import json
+import os
+
+"""
+operating Frequency of ss device  Poller script.
+
+This is part of device application. 
+Poller script determines the operating ptx of device. 
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.1.2.0 from snmp agent of device at specific interval.
+Device on which Frequency operating is sent to device application 
+
+"""
+# ######################################################################
+# Function: check_rici_port_values
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+
+def connection_telnet_for_rici_port_state(hostip, port,num_port):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+	try:
+		tn = Telnet(hostip,port,timeout=3)
+	except socket.timeout:
+		plugin_message = ""
+		return plugin_message
+	tn.read_until("USER NAME")
+	tn.write("su" + "\r\n")
+	tn.read_until("PASSWORD")
+	tn.write("1234" + "\r\n")
+	tn.write("3\r\n")
+	tn.write("2\r\n")
+	tn.write("1\r\n")
+	tn.write("1\r\n")
+	tn.write("1\r\n")
+	tn.write("2\r\n")
+	tn.write("1\r\n")
+	tn.write("3\r\n")
+	tn.write("1\r\n")
+	tn.write("4\r\n")
+	data1=tn.read_until('(Eth%s)'% num_port)
+	tn.write("%s\r\n" % chr(24))
+	pattern= re.compile(r'\x1b\[((?:[0-9]*;?)+)([A-Za-z])')
+	data1 = pattern.sub('',data1)
+	output = re.findall('(?<=Speed and Duplex\()[\w ]*',data1)
+	plugin_message = ""
+	index = 0
+	try:
+		for entry in output:
+			index = index+1
+			port_duplex = entry.split(' ')[0]
+			port_speed = entry.split(' ')[1] + "_" + entry.split(' ')[2]
+			plugin_message += "%s=%s,%s " % (index,port_duplex,port_speed) 
+	except:
+		plugin_message = ""
+	return plugin_message
+                                
+
+def check_rici_port_values(item, _no_params, info):
+    """
+            check_rici_port_values function calcdlates the operating ptx
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter resdlts
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 5835
+
+                    Raises:
+                            ValueError ,Exception
+    """
+    state = 3
+    infotext = "unknown_value"
+    try:
+	ip= lookup_ipaddress(g_hostname)
+	num_port = filter(lambda x: x != '' ,info[0])
+	num_port = len(num_port)	
+	if ip:
+		plugin_message =connection_telnet_for_rici_port_state(ip, 23,num_port)
+		if plugin_message:
+			infotext = "%s" % (plugin_message)
+			state = 0
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext)
+
+
+check_info["rici_port_values"] = {
+    'check_function': check_rici_port_values,
+    'service_description': 'rici_port_values',
+}
+
+#########################################################################
+#	SNMP OID for the operating ptx
+#########################################################################
+snmp_info["rici_port_values"] = ( ".1.3.6.1.2.1.2.2.1.8", ["21","22","23","24","25","26","27","28"] )
