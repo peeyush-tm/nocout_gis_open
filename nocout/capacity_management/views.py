@@ -83,7 +83,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sector_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector_capacity', 'sTitle': 'Cbw (MHz)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
 
             {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -304,6 +304,8 @@ class SectorAugmentationAlertsHerders(ListView):
             {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
@@ -336,6 +338,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
         'organization__alias',
+        'current_out_per',
+        'current_in_per',
         'severity',
         'sys_timestamp',
         'age'
@@ -480,7 +484,7 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'basestation__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'backhaul_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
 
             {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -499,7 +503,9 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
 
-        datatable_headers = hidden_headers
+        datatable_headers = []
+
+        datatable_headers += hidden_headers
 
         datatable_headers += common_headers
 

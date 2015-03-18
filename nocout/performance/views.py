@@ -1292,6 +1292,7 @@ class Inventory_Device_Status(View):
                                                     # 'Tower Height',
                                                     'City',
                                                     'State',
+                                                    'Near End IP',
                                                     'IP Address',
                                                     'MAC Address',
                                                     # 'Planned Frequency',
@@ -1313,11 +1314,15 @@ class Inventory_Device_Status(View):
                     sector = circuit.sector
                     base_station = 'N/A'
                     planned_frequency = 'N/A'
+                    near_end_ip = 'N/A'
+                    near_end_ip_url = ''
                     frequency = 'N/A'
                     frequency_url = ''
 
                     if sector:
                         base_station = sector.base_station
+                        near_end_ip = sector.sector_configured_on.ip_address
+                        near_end_ip_url = reverse('device_edit', kwargs={'pk': sector.sector_configured_on.id}, current_app='device')
                         planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
                         frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                         planned_frequency = ",".join(planned_frequency)
@@ -1422,6 +1427,10 @@ class Inventory_Device_Status(View):
                         {
                             "val" : state_name,
                             "url" : state_url
+                        },
+                        {
+                            "val" : near_end_ip,
+                            "url" : near_end_ip_url
                         },
                         {
                             "val" : device.ip_address,

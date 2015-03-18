@@ -49,7 +49,6 @@ var bsLatArray = [],
 	ssLinkArray_filtered = [];
 var sectorMarkerConfiguredOn_earth = [], sector_MarkersArray= [], pollableDevices= [], sectorMarkersMasterObj= {};
 var counter_div_style = "",
-	state_lat_lon_db= [],
 	bs_loki_db = [],
     ss_loki_db = [],
     sector_loki_db = [],

@@ -94,111 +94,23 @@
 
 
 {% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 <script type="text/javascript">
+
     var dataTableInstance = "";
     $(document).ready(function(e) {
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
         /*Show the spinner*/
         showSpinner();
-        var headers_list = [
-            {'mData': 'id', 'sClass' : 'hide'},
-            {'mData': 'sector__sector_id', 'sClass' : 'hide'},
-            {'mData': 'severity', 'sClass' : 'hide'},
-            {'mData': 'age', 'sClass' : 'hide'},
-            {'mData': 'organization__alias', 'sClass' : 'hide'},
-            {'mData': 'sector_sector_id'},
-            {'mData': 'sector__base_station__alias'},
-            {'mData': 'sector__base_station__city__city_name'},
-            {'mData': 'sector__base_station__state__state_name'},
-            {'mData': 'sector__sector_configured_on__ip_address'},
-            {'mData': 'sector__sector_configured_on__device_technology'},
-            {'mData': 'sector_capacity'},
-            {'mData': 'current_in_per'},
-            {'mData': 'current_in_val'},
-            {'mData': 'sector_capacity_in'},
-            {'mData': 'avg_in_per'},
-            {'mData': 'avg_in_val'},
-            {'mData': 'peak_in_per'},
-            {'mData': 'peak_in_val'},
-            {'mData': 'peak_in_timestamp'},
-            {'mData': 'current_out_per'},
-            {'mData': 'current_out_val'},
-            {'mData': 'sector_capacity_out'},
-            {'mData': 'avg_out_per'},
-            {'mData': 'avg_out_val'},
-            {'mData': 'peak_out_per'},
-            {'mData': 'peak_out_val'},
-            {'mData': 'peak_out_timestamp'}
-        ];
-        /*Grid headers object*/
-        // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-        var ajax_url = '{% url "SectorStatusListingClass" %}';
-        // ******************************* TEMPORARY CODE START *******************************//
-        // By Default remove sorting from all datatables
-        // for(var i=0;i<headers_list.length;i++) {
-        //     var header = headers_list[i];
-        //     header['bSortable'] = false;
-        // }
-        // ******************************* TEMPORARY CODE END *******************************//
-        $("#sectorStatusTable").DataTable({
-            bAutoWidth: false,
-            bDestroy : true,
-            bPaginate: true,
-            bProcessing : true,
-            bServerSide: true,
-            sAjaxSource: ajax_url,
-            aoColumns : headers_list,
-            /*This is the callback funtion for data ajax call*/
-            fnInitComplete: function(oSettings) {
-                /*Hide the spinner*/
-                hideSpinner();
-            },
-            sPaginationType: "full_numbers",
-            aaSorting:[],
-            bStateSave:false
-        });
-        // dataTableInstance.createDataTable("sectorStatusTable", [], ajax_url);
-    })
 
-    function nw_alert_showFilters() {
+        /*Grid headers object & ajax url*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+            ajax_url = '{% url "SectorStatusListingClass" %}';
 
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        }
-
-        bootbox.dialog({
-            message: "Advance Filters Block",
-            title: '<i class="fa fa-filter">&nbsp;</i> Advance Filters',
-            buttons: {
-                success: {
-                    label: "Search",
-                    className: "btn-success",
-                    callback: function() {
-
-                    }
-                },
-                danger: {
-                    label: "Cancel",
-                    className: "btn-danger",
-                    callback: function() {
-
-                    }
-                }
-            }
-        });
-
-    }
-
-    function nw_alert_removeFilters() {
-
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        } else {
-
-            $("#removeNwDetailFilterBtn").addClass("hide");
-        }
-    }
+        dataTableInstance.createDataTable("sectorStatusTable", gridHeadersObj, ajax_url);
+    });
 
 </script>
 {% endblock %}
