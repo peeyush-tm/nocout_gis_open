@@ -24,7 +24,6 @@ var bs_loki_db = [],
     red_status_array = ['critical','down'],
     orange_status_array = ['warning'],
     ptp_tech_list = ['ptp','p2p','ptp bh'],
-	state_lat_lon_db= [],
 	searchResultData= [],
 	state_wise_device_labels= {},
 	allMarkersObject_wmap= {
@@ -40,10 +39,9 @@ var bs_loki_db = [],
 	sector_MarkersArray= [],
 	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}, 'backhaul' : {}},
 	masterMarkersObj= [],
-	bsLatArray = [],
-	bsLonArray = [],
-	ssLatArray = [],
-	ssLonArray = [],
+	ssLatArray = {},
+	ssLonArray = {},
+	overlapping_ss = {},
 	ssLinkArray_filtered = [],
 	isFirstTime= 1,
 	isExportDataActive= 0,
@@ -74,14 +72,15 @@ var allSSIds = [],
 	complete_polled_devices_icon = {},
 	total_polled_occurence = 0,
 	nav_click_counter = 0,
-	polled_device_count = {};
-var pollableDevices = [];
-var polled_devices_names= [];
+	polled_device_count = {},
+	pollableDevices = [],
+	polled_devices_names= [];
 
-var bs_ss_markers = [];
-var bs_obj= {};
-var isCallCompleted;
-var gisPerformanceClass = "";
+var bs_ss_markers = [],
+	bs_obj= {},
+	isCallCompleted,
+	gisPerformanceClass = "",
+	spiderified_ss = [];
 
 function WhiteMapClass() {
 
@@ -95,10 +94,13 @@ function WhiteMapClass() {
 	 *
 	 * Private Variables
 	*/	
-		var total_count = 0, device_count= 0, limit= 0, loop_count = 0;
+		var total_count = 0,
+			device_count = 0,
+			limit = 0,
+			loop_count = 0;
 
-		/*
-		Marker Spidifier For BS
+		/**
+		 * Marker Spidifier For BS
 		 */
 
 		var markerSpiderfied= "";
@@ -169,9 +171,9 @@ function WhiteMapClass() {
 								} else {
 									if(ccpl_map.getZoom() >= 12) {
 										if(ccpl_map.getZoom() >= 14) {
-											xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);		
+											xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);
 										} else {
-											xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);		
+											xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);
 										}
 									} else {
 										xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
@@ -211,6 +213,100 @@ function WhiteMapClass() {
 			}
 		}
 
+
+	/**
+	 * This function unspiderify features present in global array
+	 * @method unSpiderifyWmapMarker
+	 */
+	this.unSpiderifyWmapMarker = function() {
+		if(spiderified_ss.length) {
+			for(var x=0;x<spiderified_ss.length;x++) {
+				var feature = spiderified_ss[x],
+					feature_position_obj = new OpenLayers.LonLat(feature.ptLon, feature.ptLat);
+
+				feature['isMarkerSpiderfied'] = false;
+
+				feature.move(feature_position_obj);
+			}
+
+			ccpl_map.getLayersByName("Spider_SS_Lines")[0].removeAllFeatures();
+
+			spiderified_ss = [];
+		}		
+	};
+
+	/**
+	 * This function spiderify features as per given features id list
+	 * @method spiderifyWmapMarker
+	 * @param features_id_list {Array}, It contains the id's of features which are to be spiderify
+	 */
+	this.spiderifyWmapMarker = function(features_id_list) {
+
+		if(spiderified_ss.length) {
+			global_this.unSpiderifyWmapMarker();
+		}
+
+		var isSpiderfied = false,
+			currentAngle = 0,
+			distance = 1;
+
+		// Set distance between the markers as per zoom levels
+		if(ccpl_map.getZoom() > 12) {
+			if(ccpl_map.getZoom() > 13) {
+				distance = 0.08;
+			} else {
+				distance = 0.3;
+			}
+		}
+
+		for(var i=0;i<features_id_list.length;i++) {
+			var current_features = allMarkersObject_wmap['sub_station'][features_id_list[i]];
+			if(current_features && current_features['isMarkerSpiderfied']) {
+				break;
+			} else {
+				isSpiderfied = true;
+
+				current_features['isMarkerSpiderfied'] = true;
+
+				var new_lat_lon = "";
+
+				var start_point = new OpenLayers.Geometry.Point(current_features.ptLon,current_features.ptLat),
+					end_point = "";
+
+				if(current_features['new_lat'] && current_features['new_lon']) {
+					new_lat_lon = new OpenLayers.LonLat(current_features['new_lon'], current_features['new_lat']);
+					end_point = new OpenLayers.Geometry.Point(current_features['new_lon'],current_features['new_lat'])
+				} else {
+					// Get new position lat lon dict
+					var xyDirection = getAtXYDirection(currentAngle, distance, current_features.ptLon, current_features.ptLat);
+
+					new_lat_lon = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
+					end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat)
+
+					// Update the new location lat,lon to feature object
+					current_features['new_lat'] = xyDirection.lat;
+					current_features['new_lon'] = xyDirection.lon;
+
+					// Update the angle between the markers as per total markers count
+					currentAngle = currentAngle+(360/(features_id_list.length+1));
+				}
+
+				if(new_lat_lon) {
+					// Move feature to new location
+					current_features.move(new_lat_lon);
+
+					spiderified_ss.push(current_features);
+
+					// Create Line between the new location n original location of feature
+					ccpl_map.getLayersByName("Spider_SS_Lines")[0].addFeatures(
+						[new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]
+					);
+				}
+
+			}
+		}
+		return isSpiderfied;
+	};
 
 	/**
 	 * 
@@ -2166,37 +2262,38 @@ function WhiteMapClass() {
 
 						/*Create SS Marker Object*/
 						var ss_marker_object = {
-							position 		 : 	{lat: ss_marker_obj.data.lat, lon: ss_marker_obj.data.lon},
-					    	ptLat 			 : 	ss_marker_obj.data.lat,
-					    	ptLon 			 : 	ss_marker_obj.data.lon,
-					    	technology 		 : 	ss_marker_obj.data.technology,
-					    	map 			 : 	'current',
-					    	icon 			 : 	base_url+"/"+ss_marker_obj.data.markerUrl,
-					    	oldIcon 		 : 	base_url+"/"+ss_marker_obj.data.markerUrl,
-					    	clusterIcon 	 : 	base_url+"/"+ss_marker_obj.data.markerUrl,
-					    	pointType	     : 	"sub_station",
-					    	dataset 	     : 	ss_infoWindow_content,
-					    	item_index 		 :  ss_item_info_index,
-					    	bhInfo 			 : 	[],
-					    	poll_info 		 :  [],
-					    	pl 				 :  "",
-							rta				 :  "",
-							perf_url 		 :  ss_perf_url,
-							inventory_url 	 :  ss_inventory_url,
-					    	antenna_height   : 	ss_marker_obj.data.antenna_height,
-					    	name 		 	 : 	ss_marker_obj.name,
-					    	bs_name 		 :  bs_ss_devices[i].name,
-					    	bs_sector_device :  sector_array[j].sector_configured_on_device,
-					    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
-					    	device_name 	 : 	ss_marker_obj.device_name,
-					    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
-					    	sector_ip 		 :  sector_array[j].sector_configured_on,
-					    	zIndex 			 : 	200,
-					    	hasPerf 		 :  0,
-					    	optimized 		 : 	false,
-					    	isActive 		 :  1,
-					    	layerReference   :  ccpl_map.getLayersByName("Markers")[0],
-					    	layer     		 : 	ccpl_map.getLayersByName("Markers")[0]
+							position 		 	:  {lat: ss_marker_obj.data.lat, lon: ss_marker_obj.data.lon},
+					    	ptLat 			 	:  ss_marker_obj.data.lat,
+					    	ptLon 			 	:  ss_marker_obj.data.lon,
+					    	technology 		 	:  ss_marker_obj.data.technology,
+					    	map 			 	:  'current',
+					    	icon 			 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
+					    	oldIcon 		 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
+					    	clusterIcon 	 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
+					    	pointType	     	:  "sub_station",
+					    	dataset 	     	:  ss_infoWindow_content,
+					    	item_index 		 	:  ss_item_info_index,
+					    	bhInfo 			 	:  [],
+					    	poll_info 		 	:  [],
+					    	pl 				 	:  "",
+							rta				 	:  "",
+							perf_url 		 	:  ss_perf_url,
+							inventory_url 	 	:  ss_inventory_url,
+					    	antenna_height   	:  ss_marker_obj.data.antenna_height,
+					    	name 		 	 	:  ss_marker_obj.name,
+					    	bs_name 		 	:  bs_ss_devices[i].name,
+					    	bs_sector_device 	:  sector_array[j].sector_configured_on_device,
+					    	filter_data 	 	:  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
+					    	device_name 	 	:  ss_marker_obj.device_name,
+					    	ss_ip 	 		 	:  ss_marker_obj.data.substation_device_ip_address,
+					    	sector_ip 		 	:  sector_array[j].sector_configured_on,
+					    	zIndex 			 	:  200,
+					    	hasPerf 		 	:  0,
+					    	optimized 		 	:  false,
+					    	isActive 		 	:  1,
+					    	isMarkerSpiderfied  :  false,
+					    	layerReference   	:  ccpl_map.getLayersByName("Markers")[0],
+					    	layer     		 	:  ccpl_map.getLayersByName("Markers")[0]
 					    };
 
 					    /*Create SS Marker*/
@@ -2207,7 +2304,9 @@ function WhiteMapClass() {
 					    	ss_marker_object.ptLat,
 					    	ss_marker_object
 				    	);
+
 					    bs_ss_markers.push(ss_marker);
+
 					    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
 					    var show_ss_len = $("#showAllSS:checked").length;
 
@@ -2259,8 +2358,17 @@ function WhiteMapClass() {
 						pollableDevices.push(ss_marker)
 
 					    /*Push All SS Lat & Lon*/
-			    	    ssLatArray.push(ss_marker_obj.data.lat);
-						ssLonArray.push(ss_marker_obj.data.lon);
+					    if(!ssLatArray[String(ss_marker_obj.data.lat)+"_"+String(ss_marker_obj.data.lon)]) {
+					    	ssLatArray[String(ss_marker_obj.data.lat)+"_"+String(ss_marker_obj.data.lon)] = 0;
+					    }
+
+					    ssLatArray[String(ss_marker_obj.data.lat)+"_"+String(ss_marker_obj.data.lon)] += 1;
+
+					    // if(!ssLonArray[String(ss_marker_obj.data.lon)]) {
+					    // 	ssLonArray[String(ss_marker_obj.data.lon)] = 0;
+					    // }
+
+					    // ssLonArray[String(ss_marker_obj.data.lon)] += 1;
 
 						var ss_info = {
 								"info" : ss_infoWindow_content,
@@ -2363,10 +2471,6 @@ function WhiteMapClass() {
 		    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 				markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
 				markersMasterObj['BSNamae'][String(bs_ss_devices[i].name)]= bs_marker;
-
-			    /*Push All BS Lat & Lon*/
-				bsLatArray.push(bs_ss_devices[i].data.lat);
-				bsLonArray.push(bs_ss_devices[i].data.lon);
 			}
 
 			if(isCallCompleted == 1) {
@@ -2375,7 +2479,37 @@ function WhiteMapClass() {
 				$("#loadingIcon").hide();
 
 				/*Enable the refresh button*/
-				$("#resetFilters").button("complete");
+				// $("#resetFilters").button("complete");
+
+				var ss_markers_object = allMarkersObject_wmap['sub_station'],
+					ss_markers_obj_keys = Object.keys(allMarkersObject_wmap['sub_station']);
+
+				overlapping_ss = {};
+
+				for(var k = ss_markers_obj_keys.length;k--;) {
+					var key = ss_markers_obj_keys[k],
+						lat = ss_markers_object[key].ptLat,
+						lon = ss_markers_object[key].ptLon;
+
+					if(key && ss_markers_object[key]) {
+
+						var lat_lon_key = String(lat)+"_"+String(lon),
+							ssLatLonOccurence = ssLatArray[lat_lon_key] ? ssLatArray[lat_lon_key] : 0;
+
+						if(ssLatLonOccurence > 1) {
+							
+							if(!overlapping_ss[lat_lon_key]) {
+								overlapping_ss[lat_lon_key] = [];
+							}
+
+							if(overlapping_ss[lat_lon_key].indexOf(key) == -1) {
+								overlapping_ss[lat_lon_key].push(key);
+							}
+						}
+					}
+				}
+
+
 				
 				if(isFirstTime == 1) {
 					/*Load data for basic filters*/
@@ -2627,56 +2761,13 @@ function WhiteMapClass() {
 		/*style for state wise counter label*/
 		counter_div_style = "margin-left:-30px;margin-top:-30px;cursor:pointer;background:url("+base_url+"/static/js/OpenLayers/img/state_cluster.png) top center no-repeat;text-align:center;width:65px;height:65px;";
 
+		gisPerformanceClass= new GisPerformance();
+
 		/*Initialize Loki db for bs,ss,sector,line,polygon*/
 		// Create the database:
 		var db = new loki('loki.json');
-
-		// Create a collection:
-		bs_loki_db = db.addCollection('base_station')
-		ss_loki_db = db.addCollection('sub_station')
-		sector_loki_db = db.addCollection('sector_device')
-		polygon_loki_db = db.addCollection('sector_polygon')
-		line_loki_db = db.addCollection('path')
+		// Create new collection for All Map data
 		all_devices_loki_db = db.addCollection('allDevices');
-
-		state_lat_lon_db = db.addCollection('state_lat_lon');
-
-		state_lat_lon_db.insert({"name" : "Andhra Pradesh","lat" : 16.50,"lon" : 80.64});
-		state_lat_lon_db.insert({"name" : "Arunachal Pradesh","lat" : 27.06,"lon" : 93.37});
-		state_lat_lon_db.insert({"name" : "Assam","lat" : 26.14,"lon" : 91.77});
-		state_lat_lon_db.insert({"name" : "Bihar","lat" : 25.37,"lon" : 85.13});
-		state_lat_lon_db.insert({"name" : "Chhattisgarh","lat" : 21.27,"lon" : 81.60});
-		state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.61,"lon" : 77.23});
-		state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
-		state_lat_lon_db.insert({"name" : "Gujrat","lat" : 23.2167,"lon" : 72.6833});
-		state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
-		state_lat_lon_db.insert({"name" : "Himachal Pradesh","lat" : 31.1033,"lon" : 77.1722});
-		state_lat_lon_db.insert({"name" : "Jammu and Kashmir","lat" : 33.45,"lon" : 76.24});
-		state_lat_lon_db.insert({"name" : "Jharkhand","lat" : 23.3500,"lon" : 85.3300});
-		state_lat_lon_db.insert({"name" : "Karnataka","lat" : 12.9702,"lon" : 77.5603});
-		state_lat_lon_db.insert({"name" : "Kerala","lat" : 8.5074,"lon" : 76.9730});
-		state_lat_lon_db.insert({"name" : "Madhya Pradesh","lat" : 23.2500,"lon" : 77.4170});
-		state_lat_lon_db.insert({"name" : "Maharashtra","lat" : 18.9600,"lon" : 72.8200});
-		state_lat_lon_db.insert({"name" : "Manipur","lat" : 24.8170,"lon" : 93.9500});
-		state_lat_lon_db.insert({"name" : "Meghalaya","lat" : 25.5700,"lon" : 91.8800});
-		state_lat_lon_db.insert({"name" : "Mizoram","lat" : 23.3600,"lon" : 92.0000});
-		state_lat_lon_db.insert({"name" : "Nagaland","lat" : 25.6700,"lon" : 94.1200});
-		state_lat_lon_db.insert({"name" : "Orissa","lat" : 20.1500,"lon" : 85.5000});
-		state_lat_lon_db.insert({"name" : "Punjab","lat" : 30.7900,"lon" : 76.7800});
-		state_lat_lon_db.insert({"name" : "Rajasthan","lat" : 26.5727,"lon" : 73.8390});
-		state_lat_lon_db.insert({"name" : "Sikkim","lat" : 27.3300,"lon" : 88.6200});
-		state_lat_lon_db.insert({"name" : "Tamil Nadu","lat" : 13.0900,"lon" : 80.2700});
-		state_lat_lon_db.insert({"name" : "Tripura","lat" : 23.8400,"lon" : 91.2800});
-		state_lat_lon_db.insert({"name" : "Uttarakhand","lat" : 30.3300,"lon" : 78.0600});
-		state_lat_lon_db.insert({"name" : "Uttar Pradesh","lat" : 26.8500,"lon" : 80.9100});
-		state_lat_lon_db.insert({"name" : "West Bengal","lat" : 22.5667,"lon" : 88.3667});
-		state_lat_lon_db.insert({"name" : "Andaman and Nicobar Islands","lat" : 11.6800,"lon" : 92.7700});
-		state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
-		state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
-		state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
-
-		gisPerformanceClass= new GisPerformance();
-
 		//Call prototype method createOpenLayerMap() to create White Map and in the callback. Start Ajax Request to get Data.
 		this.createOpenLayerMap(function() {
 			//start ajax request

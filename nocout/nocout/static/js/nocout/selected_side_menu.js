@@ -701,7 +701,7 @@ $("form").submit(function(e) {
                     $("form button[type='submit']").removeClass("disabled");
                 }
             }
-            // return true;
+            return true;
         }
     /*Edit case*/
     } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
@@ -803,7 +803,7 @@ $("form").submit(function(e) {
                         $("form button[type='submit']").removeClass("disabled");
                     }
                 }
-                // return true;
+                return true;
             }
         } else {
             // Enable submit button
@@ -812,7 +812,7 @@ $("form").submit(function(e) {
                     $("form button[type='submit']").removeClass("disabled");
                 }
             }
-            // return true;
+            return true;
         }
     } else {
         // Enable submit button
@@ -821,7 +821,7 @@ $("form").submit(function(e) {
                 $("form button[type='submit']").removeClass("disabled");
             }
         }
-        // return true;
+        return true;
     }
 
     return false;

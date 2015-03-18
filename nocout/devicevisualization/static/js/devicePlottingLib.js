@@ -11,7 +11,6 @@ var mapInstance = "",
 	masterClusterInstance = "",
 	base_url = "",
 	defaultIconSize = 'medium',
-	state_lat_lon_db = [],
 	counter_div_style = "",
 	green_status_array = ['ok','success','up'],
     red_status_array = ['critical','down'],
@@ -86,8 +85,6 @@ var main_devices_data_gmaps = [],
 	all_cities_array = [],
 	bsLatArray = [],
 	bsLonArray = [],
-	ssLatArray = [],
-	ssLonArray = [],
 	masterMarkersObj = [],
 	labelsArray = [],
 	labelsArray_filtered = [],
@@ -548,29 +545,43 @@ function devicePlottingClass_gmap() {
 								event.latLng,
 							];
 							temp_line.setPath(line_path);
-						}	
+						}
 					}
 	        	}
             });
 
             // Google maps dragend event, triggers when map drags
-            google.maps.event.addListener(mapInstance, 'dragend', function () {
-                if(mapInstance.getZoom() > 11 && isPerfCallStarted == 1) {
-                	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-                	if(new_bs.length > 0) {
-                		if(!callsInProcess) {
-                			// Clear performance calling timeout
-							if(recallPerf != "") {
-		            			clearTimeout(recallPerf);
-		            			recallPerf = "";
-		            		}
-                			gisPerformanceClass.start(new_bs);
-                		} else {
-                			current_bs_list = current_bs_list.concat(new_bs);
-                		}
-                	}
-                }
-            });
+       //      google.maps.event.addListener(mapInstance, 'dragend', function () {
+       //          if(mapInstance.getZoom() > 11 && isPerfCallStarted == 1) {
+
+       //          	var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
+       //          		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
+
+       //          	if(new_bs.length > 0) {
+       //          		var chunk_size = periodic_poll_process_count,
+       //          			new_bs_chunks = createArrayChunks(new_bs, chunk_size);
+
+       //          		if(!callsInProcess) {
+       //          			// Clear performance calling timeout
+							// if(recallPerf != "") {
+		     //        			clearTimeout(recallPerf);
+		     //        			recallPerf = "";
+		     //        		}
+       //          			gisPerformanceClass.start(new_bs_chunks);
+       //          		} else {
+       //          			// Create Exisiting ids chunks
+       //          			current_bs_list = createArrayChunks(existing_bs_ids,chunk_size);
+       //          			// Concat new bs id with the existings
+       //          			current_bs_list = current_bs_list.concat(new_bs_chunks);
+       //          			// Update bsNamesList data
+       //          			gisPerformanceClass.bsNamesList = current_bs_list;
+       //          			console.log(last_counter_val);
+       //          			// sendRequest with last_counter_val
+       //          			gisPerformanceClass.sendRequest(last_counter_val);
+       //          		}
+       //          	}
+       //          }
+       //      });
 
             // Google maps idle event
             google.maps.event.addListener(mapInstance, 'idle', function() {
@@ -586,25 +597,7 @@ function devicePlottingClass_gmap() {
             	/* When zoom level is greater than 8 show lines */
             	if(mapInstance.getZoom() > 7) {
 
-            		// If zoom level is greate than 13 then start perf calling
-            		if(mapInstance.getZoom() > 13) {
-	            		// Reset Perf calling Flag
-            			isPerfCallStopped = 0;
-        			} else {
-        				// Set Perf calling Flag
-            			isPerfCallStopped = 1;
-            			isPerfCallStarted = 0;
-
-            			// If any periodic polling ajax call is in process then abort it
-            			try {
-		    				if(gis_perf_call_instance) {
-				                gis_perf_call_instance.abort()
-				                gis_perf_call_instance = "";
-				        	}
-			            } catch(e) {
-			                // pass
-			            }
-        			}
+            		isPerfCallStopped = 0;
 
         			var states_with_bounds = state_lat_lon_db.where(function(obj) {
             			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
@@ -728,8 +721,7 @@ function devicePlottingClass_gmap() {
 										});
 									});
 								});
-								// gmap_self.showBackhaulDevicesInBounds();
-								
+								// gmap_self.showBackhaulDevicesInBounds();								
 							}
 	            		}
 	            		// Show points line if exist
@@ -760,6 +752,34 @@ function devicePlottingClass_gmap() {
 		            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
 		            		gisPerformanceClass.start(bs_id_list);
 		            	}
+            		} else {
+        			// also used in case of panning
+            			var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
+	                		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
+
+	                	if(new_bs.length > 0) {
+	                		var chunk_size = periodic_poll_process_count,
+	                			new_bs_chunks = createArrayChunks(new_bs, chunk_size);
+
+	                		if(!callsInProcess) {
+	                			// Clear performance calling timeout
+								if(recallPerf != "") {
+			            			clearTimeout(recallPerf);
+			            			recallPerf = "";
+			            		}
+	                			gisPerformanceClass.start(new_bs_chunks);
+	                		} else {
+	                			// Create Exisiting ids chunks
+	                			current_bs_list = createArrayChunks(existing_bs_ids,chunk_size);
+	                			// Concat new bs id with the existings
+	                			current_bs_list = current_bs_list.concat(new_bs_chunks);
+	                			// Update bsNamesList data
+	                			gisPerformanceClass.bsNamesList = current_bs_list;
+	                			last_counter_val += 1
+	                			// sendRequest with last_counter_val
+	                			gisPerformanceClass.sendRequest(last_counter_val);
+	                		}
+	                	}
             		}
 
 	            } else if(mapInstance.getZoom() <= 7) {
@@ -2281,17 +2301,11 @@ function devicePlottingClass_gmap() {
 
 			    	allMarkersObject_gmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
 
-			    	// allMarkersArray_gmap.push(ss_marker);
-
 			    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
 				    oms_ss.addMarker(ss_marker);
 
 				    /*Push SS marker to pollableDevices array*/
 					pollableDevices.push(ss_marker)
-
-				    /*Push All SS Lat & Lon*/
-		    	    ssLatArray.push(ss_marker_obj.data.lat);
-					ssLonArray.push(ss_marker_obj.data.lon);
 
 					var ss_info = {
 							"info" : ss_info_dict,
@@ -2390,28 +2404,6 @@ function devicePlottingClass_gmap() {
 			/*Hide The loading Icon*/
 			$("#loadingIcon").hide();
 
-			/*Enable the refresh button*/
-			// $("#resetFilters").button("complete");
-
-
-			var oms_bs_markers = oms.getMarkers(),
-				oms_ss_markers = oms_ss.getMarkers();			
-
-			/*Loop to change the icon for same location BS markers(to cluster icon)*/
-			for(var k=oms_bs_markers.length;k--;) {
-				
-				if(oms_bs_markers[k] != undefined) {
-	
-					/*if two BS or SS on same position*/
-					var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === oms_bs_markers[k].ptLat;}).length;
-					var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === oms_bs_markers[k].ptLon;}).length;
-
-					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
-						oms_bs_markers[k].setOptions({"icon" : oms_bs_markers[k].icon});
-					}
-				}
-			}
-			
 			if(isFirstTime == 1) {
 				/*Load data for basic filters*/
 				gmap_self.getBasicFilters();
@@ -10010,12 +10002,16 @@ function getMarkerInCurrentBound(only_bs_ids) {
         		var earthBounds = getCurrentEarthBoundPolygon();
         		markerVisible =  isPointInPoly(earthBounds, {lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
         	} else if(window.location.pathname.indexOf("white_background") > -1) {
-        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon})
+        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
         	} else {
 				markerVisible = mapInstance.getBounds().contains(allBSObject[key].getPosition());
+				// If marker is present in bounds but not visible then set markerVisible to false
+				if(markerVisible && !allBSObject[key].map) {
+					markerVisible = false;
+				}
         	}
             if(markerVisible) {
-        		bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
+    			bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
             }
         }
     }
@@ -10031,15 +10027,50 @@ function getMarkerInCurrentBound(only_bs_ids) {
     	returned_bs_array  = [];
 
     if(!only_bs_ids) {
-
-	    if(bsMarkersInBound && bsMarkersInBound.length > 0) {
-	    	while (bsMarkersInBound.length > 0) {
-	    		returned_bs_array.push(bsMarkersInBound.splice(0, chunk_size));
-	    	}
-	    }
+	    returned_bs_array = createArrayChunks(bsMarkersInBound, chunk_size);
     } else {
     	returned_bs_array = bsMarkersInBound;
     }
 
-    return returned_bs_array ;
+    return returned_bs_array;
+}
+
+/**
+ * This function creates chunks of given array as per given chunk size
+ * @method createArrayChunks
+ * @param data_array {Array}, It is the items array
+ * @param chunk_size {Number}, It is the size of chunks to be created
+ */
+function createArrayChunks(data_array, chunk_size) {
+
+	var chunks_array = [];
+	
+	var non_null_array = convertChunksToNormalArray(data_array);
+
+	if(non_null_array && non_null_array.length > 0) {
+    	while (non_null_array.length > 0) {
+    		chunks_array.push(non_null_array.splice(0, chunk_size));
+    	}
+    }
+
+    return chunks_array;
+}
+
+/**
+ * This function creates non null normal array from given chunks or normal array
+ * @method convertChunksToNormalArray
+ * @param data_array {Array}, It is the items chunks array
+ * @param chunk_size {Number}, It is the size of chunks to be created
+ */
+function convertChunksToNormalArray(chunks_array) {
+	var simple_array = chunks_array.join(',').split(','),
+		non_null_array = [];
+
+	for(var i=0;i<simple_array.length;i++) {
+		if(simple_array[i] && non_null_array.indexOf(simple_array[i]) == -1)  {
+			non_null_array.push(simple_array[i]);
+		}
+	}
+
+	return non_null_array;
 }

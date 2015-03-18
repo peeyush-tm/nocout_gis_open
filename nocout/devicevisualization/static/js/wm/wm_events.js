@@ -247,19 +247,30 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			            		gisPerformanceClass.start(bs_id_list);
 			            	}
 	            		} else {
-	            			var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-					    	if(new_bs.length > 0) {
-					    		if(!callsInProcess) {
-					    			// Clear performance calling timeout
+	            			var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
+		                		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
+
+		                	if(new_bs.length > 0) {
+		                		var chunk_size = periodic_poll_process_count,
+		                			new_bs_chunks = createArrayChunks(new_bs, chunk_size);
+		                		if(!callsInProcess) {
+		                			// Clear performance calling timeout
 									if(recallPerf != "") {
-					        			clearTimeout(recallPerf);
-					        			recallPerf = "";
-					        		}
-					    			gisPerformanceClass.start(new_bs);
-					    		} else {
-					    			current_bs_list = current_bs_list.concat(new_bs);
-					    		}
-					    	}
+				            			clearTimeout(recallPerf);
+				            			recallPerf = "";
+				            		}
+		                			gisPerformanceClass.start(new_bs_chunks);
+		                		} else {
+		                			// Create Exisiting ids chunks
+		                			current_bs_list = createArrayChunks(existing_bs_ids,chunk_size);
+		                			// Concat new bs id with the existings
+		                			current_bs_list = current_bs_list.concat(new_bs_chunks);
+		                			// Update bsNamesList data
+		                			gisPerformanceClass.bsNamesList = current_bs_list;
+		                			// sendRequest with last_counter_val
+		                			gisPerformanceClass.sendRequest(last_counter_val);
+		                		}
+		                	}
 	            		}
 					}
         		}
@@ -289,25 +300,36 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				whiteMapClass.showSubStaionsInBounds();
 
 				if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
-						var bs_id_list = getMarkerInCurrentBound();
-		            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
-		            		gisPerformanceClass.start(bs_id_list);
-		            	}
-            		} else {
-            			var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-				    	if(new_bs.length > 0) {
-				    		if(!callsInProcess) {
-				    			// Clear performance calling timeout
-								if(recallPerf != "") {
-				        			clearTimeout(recallPerf);
-				        			recallPerf = "";
-				        		}
-				    			gisPerformanceClass.start(new_bs);
-				    		} else {
-				    			current_bs_list = current_bs_list.concat(new_bs);
-				    		}
-				    	}
-            		}
+					var bs_id_list = getMarkerInCurrentBound();
+	            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
+	            		gisPerformanceClass.start(bs_id_list);
+	            	}
+        		} else {
+        			var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
+                		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
+
+                	if(new_bs.length > 0) {
+                		var chunk_size = periodic_poll_process_count,
+                			new_bs_chunks = createArrayChunks(new_bs, chunk_size);
+                		if(!callsInProcess) {
+                			// Clear performance calling timeout
+							if(recallPerf != "") {
+		            			clearTimeout(recallPerf);
+		            			recallPerf = "";
+		            		}
+                			gisPerformanceClass.start(new_bs_chunks);
+                		} else {
+                			// Create Exisiting ids chunks
+                			current_bs_list = createArrayChunks(existing_bs_ids,chunk_size);
+                			// Concat new bs id with the existings
+                			current_bs_list = current_bs_list.concat(new_bs_chunks);
+                			// Update bsNamesList data
+                			gisPerformanceClass.bsNamesList = current_bs_list;
+                			// sendRequest with last_counter_val
+                			gisPerformanceClass.sendRequest(last_counter_val);
+                		}
+                	}
+        		}
     		}
         } else {
 
@@ -456,15 +478,28 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	} else {
 		//If clicked feature was not base setation
 		if(feature && feature.pointType !== "base_station") {
-			//Show Info Window for it
-			showInfoWindow(feature);
-			//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
-			if(feature && feature.pointType == 'path') {
-				setTimeout(function() {
-					//remove freshnel zone button
-					$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
-				}, 10);
+
+			var lat_lon_key = String(feature.ptLat)+"_"+String(feature.ptLon);
+
+			if(feature.pointType == 'sub_station' && overlapping_ss[lat_lon_key]) {
+				// If marker is spiderified then show infowindow
+				if(feature.isMarkerSpiderfied) {
+					showInfoWindow(feature);
+				} else {
+					this.spiderifyWmapMarker(overlapping_ss[lat_lon_key]);
+				}
+			} else {
+				//Show Info Window for it
+				showInfoWindow(feature);
+				//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
+				if(feature.pointType == 'path') {
+					setTimeout(function() {
+						//remove freshnel zone button
+						$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
+					}, 10);
+				}
 			}
+
 		//Else if base station was clicked
 		} else {
 			//First spiderify base station is not spiderfied, else open Info Window for it.
