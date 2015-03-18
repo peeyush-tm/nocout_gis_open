@@ -296,7 +296,7 @@ def gather_backhaul_status():
         if calc_util_last_day():
             avg_max_val = get_avg_max_sector_util(
                 devices=machine_bh_devices,
-                services=kpi_services,
+                services=val_services,
                 data_sources=data_sources,
                 machine=machine,
                 getit='val'
@@ -547,7 +547,7 @@ def check_item_is_list(items):
     if type(items) == type(list()):
         return items
     elif type(items) == type(set()):
-        return items
+        return list(items)
     else:
         return [items]
 
