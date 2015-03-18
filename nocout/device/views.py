@@ -3610,8 +3610,21 @@ def list_schedule_device(request):
         device_list = device_list.filter(device_alias__icontains=sSearch)
     # if scheduling type is device type, then filter the devices on the basis of device type.
     elif scheduling_type == 'dety':
-        device_list = device_list.filter(device_type__in=DeviceType.objects.\
-                    filter(alias__icontains=sSearch).values_list('id', flat=True))
+        # device_list = device_list.filter(device_type__in=DeviceType.objects.\
+        #
+
+        device_list = DeviceType.objects.filter(alias__icontains=sSearch)
+
+        resultant_data = []
+        for key in device_list:
+            resultant_data.append({
+                "id" : key.id,
+                "value" : key.alias,
+                "text" : key.alias
+            })
+
+        # device_list = device_list.values_list('id', 'alias')
+
     # if scheduling type is customer, then filter the devices from organization_customer_devices.
     elif scheduling_type == 'cust':
         device_list = organization_customer_devices(organizations=[org], technology = technology_id, specify_ptp_type='all').\
@@ -3627,13 +3640,20 @@ def list_schedule_device(request):
     else:   # if no schedling type is available
         device_list = device_list.filter(device_alias__icontains=sSearch)
 
+    if scheduling_type != 'dety':
     # excule the overlapping devices.
-    device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias')
+        device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias')
+        total_count = device.count()
+        device_items = list(device)
+    else:
+        device = resultant_data
+        total_count = len(device)
+        device_items = device
 
     return HttpResponse(json.dumps({
-        "total_count": device.count(),
+        "total_count": total_count,
         "incomplete_results": False,
-        "items": list(device)
+        "items": device_items
     }))
 
 def select_schedule_device(request):
@@ -3644,7 +3664,12 @@ def select_schedule_device(request):
     :return json:
     """
     ids = request.GET['ids']
-    device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(','))]
+    scheduling_type = request.GET['scheduling_type'] if 'scheduling_type' in request.GET else ""
+
+    if scheduling_type and scheduling_type == 'dety':
+        device_result = [{'id': dev.id, 'text': dev.alias } for dev in DeviceType.objects.filter(id__in=ids.split(','))]
+    else:
+        device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(','))]
     return HttpResponse(json.dumps({
         'device_result': device_result
         }) )
