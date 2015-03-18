@@ -40,10 +40,9 @@ var bs_loki_db = [],
 	sector_MarkersArray= [],
 	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}, 'backhaul' : {}},
 	masterMarkersObj= [],
-	bsLatArray = [],
-	bsLonArray = [],
-	ssLatArray = [],
-	ssLonArray = [],
+	ssLatArray = {},
+	ssLonArray = {},
+	overlapping_ss = {},
 	ssLinkArray_filtered = [],
 	isFirstTime= 1,
 	isExportDataActive= 0,
@@ -74,14 +73,15 @@ var allSSIds = [],
 	complete_polled_devices_icon = {},
 	total_polled_occurence = 0,
 	nav_click_counter = 0,
-	polled_device_count = {};
-var pollableDevices = [];
-var polled_devices_names= [];
+	polled_device_count = {},
+	pollableDevices = [],
+	polled_devices_names= [];
 
-var bs_ss_markers = [];
-var bs_obj= {};
-var isCallCompleted;
-var gisPerformanceClass = "";
+var bs_ss_markers = [],
+	bs_obj= {},
+	isCallCompleted,
+	gisPerformanceClass = "",
+	spiderified_ss = [];
 
 function WhiteMapClass() {
 
@@ -95,10 +95,13 @@ function WhiteMapClass() {
 	 *
 	 * Private Variables
 	*/	
-		var total_count = 0, device_count= 0, limit= 0, loop_count = 0;
+		var total_count = 0,
+			device_count = 0,
+			limit = 0,
+			loop_count = 0;
 
-		/*
-		Marker Spidifier For BS
+		/**
+		 * Marker Spidifier For BS
 		 */
 
 		var markerSpiderfied= "";
@@ -169,9 +172,9 @@ function WhiteMapClass() {
 								} else {
 									if(ccpl_map.getZoom() >= 12) {
 										if(ccpl_map.getZoom() >= 14) {
-											xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);		
+											xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);
 										} else {
-											xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);		
+											xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);
 										}
 									} else {
 										xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
@@ -211,6 +214,100 @@ function WhiteMapClass() {
 			}
 		}
 
+
+	/**
+	 * This function unspiderify features present in global array
+	 * @method unSpiderifyWmapMarker
+	 */
+	this.unSpiderifyWmapMarker = function() {
+		if(spiderified_ss.length) {
+			for(var x=0;x<spiderified_ss.length;x++) {
+				var feature = spiderified_ss[x],
+					feature_position_obj = new OpenLayers.LonLat(feature.ptLon, feature.ptLat);
+
+				feature['isMarkerSpiderfied'] = false;
+
+				feature.move(feature_position_obj);
+			}
+
+			ccpl_map.getLayersByName("Spider_SS_Lines")[0].removeAllFeatures();
+
+			spiderified_ss = [];
+		}		
+	};
+
+	/**
+	 * This function spiderify features as per given features id list
+	 * @method spiderifyWmapMarker
+	 * @param features_id_list {Array}, It contains the id's of features which are to be spiderify
+	 */
+	this.spiderifyWmapMarker = function(features_id_list) {
+
+		if(spiderified_ss.length) {
+			global_this.unSpiderifyWmapMarker();
+		}
+
+		var isSpiderfied = false,
+			currentAngle = 0,
+			distance = 1;
+
+		// Set distance between the markers as per zoom levels
+		if(ccpl_map.getZoom() > 12) {
+			if(ccpl_map.getZoom() > 13) {
+				distance = 0.08;
+			} else {
+				distance = 0.3;
+			}
+		}
+
+		for(var i=0;i<features_id_list.length;i++) {
+			var current_features = allMarkersObject_wmap['sub_station'][features_id_list[i]];
+			if(current_features && current_features['isMarkerSpiderfied']) {
+				break;
+			} else {
+				isSpiderfied = true;
+
+				current_features['isMarkerSpiderfied'] = true;
+
+				var new_lat_lon = "";
+
+				var start_point = new OpenLayers.Geometry.Point(current_features.ptLon,current_features.ptLat),
+					end_point = "";
+
+				if(current_features['new_lat'] && current_features['new_lon']) {
+					new_lat_lon = new OpenLayers.LonLat(current_features['new_lon'], current_features['new_lat']);
+					end_point = new OpenLayers.Geometry.Point(current_features['new_lon'],current_features['new_lat'])
+				} else {
+					// Get new position lat lon dict
+					var xyDirection = getAtXYDirection(currentAngle, distance, current_features.ptLon, current_features.ptLat);
+
+					new_lat_lon = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
+					end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat)
+
+					// Update the new location lat,lon to feature object
+					current_features['new_lat'] = xyDirection.lat;
+					current_features['new_lon'] = xyDirection.lon;
+
+					// Update the angle between the markers as per total markers count
+					currentAngle = currentAngle+(360/(features_id_list.length+1));
+				}
+
+				if(new_lat_lon) {
+					// Move feature to new location
+					current_features.move(new_lat_lon);
+
+					spiderified_ss.push(current_features);
+
+					// Create Line between the new location n original location of feature
+					ccpl_map.getLayersByName("Spider_SS_Lines")[0].addFeatures(
+						[new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]
+					);
+				}
+
+			}
+		}
+		return isSpiderfied;
+	};
 
 	/**
 	 * 
@@ -2166,37 +2263,38 @@ function WhiteMapClass() {
 
 						/*Create SS Marker Object*/
 						var ss_marker_object = {
-							position 		 : 	{lat: ss_marker_obj.data.lat, lon: ss_marker_obj.data.lon},
-					    	ptLat 			 : 	ss_marker_obj.data.lat,
-					    	ptLon 			 : 	ss_marker_obj.data.lon,
-					    	technology 		 : 	ss_marker_obj.data.technology,
-					    	map 			 : 	'current',
-					    	icon 			 : 	base_url+"/"+ss_marker_obj.data.markerUrl,
-					    	oldIcon 		 : 	base_url+"/"+ss_marker_obj.data.markerUrl,
-					    	clusterIcon 	 : 	base_url+"/"+ss_marker_obj.data.markerUrl,
-					    	pointType	     : 	"sub_station",
-					    	dataset 	     : 	ss_infoWindow_content,
-					    	item_index 		 :  ss_item_info_index,
-					    	bhInfo 			 : 	[],
-					    	poll_info 		 :  [],
-					    	pl 				 :  "",
-							rta				 :  "",
-							perf_url 		 :  ss_perf_url,
-							inventory_url 	 :  ss_inventory_url,
-					    	antenna_height   : 	ss_marker_obj.data.antenna_height,
-					    	name 		 	 : 	ss_marker_obj.name,
-					    	bs_name 		 :  bs_ss_devices[i].name,
-					    	bs_sector_device :  sector_array[j].sector_configured_on_device,
-					    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
-					    	device_name 	 : 	ss_marker_obj.device_name,
-					    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
-					    	sector_ip 		 :  sector_array[j].sector_configured_on,
-					    	zIndex 			 : 	200,
-					    	hasPerf 		 :  0,
-					    	optimized 		 : 	false,
-					    	isActive 		 :  1,
-					    	layerReference   :  ccpl_map.getLayersByName("Markers")[0],
-					    	layer     		 : 	ccpl_map.getLayersByName("Markers")[0]
+							position 		 	:  {lat: ss_marker_obj.data.lat, lon: ss_marker_obj.data.lon},
+					    	ptLat 			 	:  ss_marker_obj.data.lat,
+					    	ptLon 			 	:  ss_marker_obj.data.lon,
+					    	technology 		 	:  ss_marker_obj.data.technology,
+					    	map 			 	:  'current',
+					    	icon 			 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
+					    	oldIcon 		 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
+					    	clusterIcon 	 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
+					    	pointType	     	:  "sub_station",
+					    	dataset 	     	:  ss_infoWindow_content,
+					    	item_index 		 	:  ss_item_info_index,
+					    	bhInfo 			 	:  [],
+					    	poll_info 		 	:  [],
+					    	pl 				 	:  "",
+							rta				 	:  "",
+							perf_url 		 	:  ss_perf_url,
+							inventory_url 	 	:  ss_inventory_url,
+					    	antenna_height   	:  ss_marker_obj.data.antenna_height,
+					    	name 		 	 	:  ss_marker_obj.name,
+					    	bs_name 		 	:  bs_ss_devices[i].name,
+					    	bs_sector_device 	:  sector_array[j].sector_configured_on_device,
+					    	filter_data 	 	:  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
+					    	device_name 	 	:  ss_marker_obj.device_name,
+					    	ss_ip 	 		 	:  ss_marker_obj.data.substation_device_ip_address,
+					    	sector_ip 		 	:  sector_array[j].sector_configured_on,
+					    	zIndex 			 	:  200,
+					    	hasPerf 		 	:  0,
+					    	optimized 		 	:  false,
+					    	isActive 		 	:  1,
+					    	isMarkerSpiderfied  :  false,
+					    	layerReference   	:  ccpl_map.getLayersByName("Markers")[0],
+					    	layer     		 	:  ccpl_map.getLayersByName("Markers")[0]
 					    };
 
 					    /*Create SS Marker*/
@@ -2207,7 +2305,9 @@ function WhiteMapClass() {
 					    	ss_marker_object.ptLat,
 					    	ss_marker_object
 				    	);
+
 					    bs_ss_markers.push(ss_marker);
+
 					    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
 					    var show_ss_len = $("#showAllSS:checked").length;
 
@@ -2259,8 +2359,17 @@ function WhiteMapClass() {
 						pollableDevices.push(ss_marker)
 
 					    /*Push All SS Lat & Lon*/
-			    	    ssLatArray.push(ss_marker_obj.data.lat);
-						ssLonArray.push(ss_marker_obj.data.lon);
+					    if(!ssLatArray[String(ss_marker_obj.data.lat)+"_"+String(ss_marker_obj.data.lon)]) {
+					    	ssLatArray[String(ss_marker_obj.data.lat)+"_"+String(ss_marker_obj.data.lon)] = 0;
+					    }
+
+					    ssLatArray[String(ss_marker_obj.data.lat)+"_"+String(ss_marker_obj.data.lon)] += 1;
+
+					    // if(!ssLonArray[String(ss_marker_obj.data.lon)]) {
+					    // 	ssLonArray[String(ss_marker_obj.data.lon)] = 0;
+					    // }
+
+					    // ssLonArray[String(ss_marker_obj.data.lon)] += 1;
 
 						var ss_info = {
 								"info" : ss_infoWindow_content,
@@ -2363,10 +2472,6 @@ function WhiteMapClass() {
 		    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 				markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
 				markersMasterObj['BSNamae'][String(bs_ss_devices[i].name)]= bs_marker;
-
-			    /*Push All BS Lat & Lon*/
-				bsLatArray.push(bs_ss_devices[i].data.lat);
-				bsLonArray.push(bs_ss_devices[i].data.lon);
 			}
 
 			if(isCallCompleted == 1) {
@@ -2375,7 +2480,37 @@ function WhiteMapClass() {
 				$("#loadingIcon").hide();
 
 				/*Enable the refresh button*/
-				$("#resetFilters").button("complete");
+				// $("#resetFilters").button("complete");
+
+				var ss_markers_object = allMarkersObject_wmap['sub_station'],
+					ss_markers_obj_keys = Object.keys(allMarkersObject_wmap['sub_station']);
+
+				overlapping_ss = {};
+
+				for(var k = ss_markers_obj_keys.length;k--;) {
+					var key = ss_markers_obj_keys[k],
+						lat = ss_markers_object[key].ptLat,
+						lon = ss_markers_object[key].ptLon;
+
+					if(key && ss_markers_object[key]) {
+
+						var lat_lon_key = String(lat)+"_"+String(lon),
+							ssLatLonOccurence = ssLatArray[lat_lon_key] ? ssLatArray[lat_lon_key] : 0;
+
+						if(ssLatLonOccurence > 1) {
+							
+							if(!overlapping_ss[lat_lon_key]) {
+								overlapping_ss[lat_lon_key] = [];
+							}
+
+							if(overlapping_ss[lat_lon_key].indexOf(key) == -1) {
+								overlapping_ss[lat_lon_key].push(key);
+							}
+						}
+					}
+				}
+
+
 				
 				if(isFirstTime == 1) {
 					/*Load data for basic filters*/
