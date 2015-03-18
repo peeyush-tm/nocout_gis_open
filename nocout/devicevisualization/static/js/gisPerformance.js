@@ -146,7 +146,6 @@ function GisPerformance() {
      */
     this.sendRequest = function (counter) {
         if (isPollingActive == 0  && isPerfCallStopped == 0) {
-            console.log(perf_self.bsNamesList[counter]);
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
                 last_counter_val = counter;
                 if(!callsInProcess) {
