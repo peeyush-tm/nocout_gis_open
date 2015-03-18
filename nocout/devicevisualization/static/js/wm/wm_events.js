@@ -247,19 +247,30 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			            		gisPerformanceClass.start(bs_id_list);
 			            	}
 	            		} else {
-	            			var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-					    	if(new_bs.length > 0) {
-					    		if(!callsInProcess) {
-					    			// Clear performance calling timeout
+	            			var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
+		                		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
+
+		                	if(new_bs.length > 0) {
+		                		var chunk_size = periodic_poll_process_count,
+		                			new_bs_chunks = createArrayChunks(new_bs, chunk_size);
+		                		if(!callsInProcess) {
+		                			// Clear performance calling timeout
 									if(recallPerf != "") {
-					        			clearTimeout(recallPerf);
-					        			recallPerf = "";
-					        		}
-					    			gisPerformanceClass.start(new_bs);
-					    		} else {
-					    			current_bs_list = current_bs_list.concat(new_bs);
-					    		}
-					    	}
+				            			clearTimeout(recallPerf);
+				            			recallPerf = "";
+				            		}
+		                			gisPerformanceClass.start(new_bs_chunks);
+		                		} else {
+		                			// Create Exisiting ids chunks
+		                			current_bs_list = createArrayChunks(existing_bs_ids,chunk_size);
+		                			// Concat new bs id with the existings
+		                			current_bs_list = current_bs_list.concat(new_bs_chunks);
+		                			// Update bsNamesList data
+		                			gisPerformanceClass.bsNamesList = current_bs_list;
+		                			// sendRequest with last_counter_val
+		                			gisPerformanceClass.sendRequest(last_counter_val);
+		                		}
+		                	}
 	            		}
 					}
         		}
@@ -289,25 +300,36 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				whiteMapClass.showSubStaionsInBounds();
 
 				if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
-						var bs_id_list = getMarkerInCurrentBound();
-		            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
-		            		gisPerformanceClass.start(bs_id_list);
-		            	}
-            		} else {
-            			var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
-				    	if(new_bs.length > 0) {
-				    		if(!callsInProcess) {
-				    			// Clear performance calling timeout
-								if(recallPerf != "") {
-				        			clearTimeout(recallPerf);
-				        			recallPerf = "";
-				        		}
-				    			gisPerformanceClass.start(new_bs);
-				    		} else {
-				    			current_bs_list = current_bs_list.concat(new_bs);
-				    		}
-				    	}
-            		}
+					var bs_id_list = getMarkerInCurrentBound();
+	            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
+	            		gisPerformanceClass.start(bs_id_list);
+	            	}
+        		} else {
+        			var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
+                		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
+
+                	if(new_bs.length > 0) {
+                		var chunk_size = periodic_poll_process_count,
+                			new_bs_chunks = createArrayChunks(new_bs, chunk_size);
+                		if(!callsInProcess) {
+                			// Clear performance calling timeout
+							if(recallPerf != "") {
+		            			clearTimeout(recallPerf);
+		            			recallPerf = "";
+		            		}
+                			gisPerformanceClass.start(new_bs_chunks);
+                		} else {
+                			// Create Exisiting ids chunks
+                			current_bs_list = createArrayChunks(existing_bs_ids,chunk_size);
+                			// Concat new bs id with the existings
+                			current_bs_list = current_bs_list.concat(new_bs_chunks);
+                			// Update bsNamesList data
+                			gisPerformanceClass.bsNamesList = current_bs_list;
+                			// sendRequest with last_counter_val
+                			gisPerformanceClass.sendRequest(last_counter_val);
+                		}
+                	}
+        		}
     		}
         } else {
 

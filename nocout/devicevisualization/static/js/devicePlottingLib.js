@@ -11,7 +11,6 @@ var mapInstance = "",
 	masterClusterInstance = "",
 	base_url = "",
 	defaultIconSize = 'medium',
-	state_lat_lon_db = [],
 	counter_div_style = "",
 	green_status_array = ['ok','success','up'],
     red_status_array = ['critical','down'],
@@ -597,24 +596,24 @@ function devicePlottingClass_gmap() {
             	if(mapInstance.getZoom() > 7) {
 
             		// If zoom level is greate than 13 then start perf calling
-            		if(mapInstance.getZoom() > 13) {
+            		// if(mapInstance.getZoom() > 13) {
 	            		// Reset Perf calling Flag
             			isPerfCallStopped = 0;
-        			} else {
+        			// } else {
         				// Set Perf calling Flag
-            			isPerfCallStopped = 1;
-            			isPerfCallStarted = 0;
+            			// isPerfCallStopped = 1;
+            			// isPerfCallStarted = 0;
 
             			// If any periodic polling ajax call is in process then abort it
-            			try {
-		    				if(gis_perf_call_instance) {
-				                gis_perf_call_instance.abort()
-				                gis_perf_call_instance = "";
-				        	}
-			            } catch(e) {
-			                // pass
-			            }
-        			}
+          //   			try {
+		    				// if(gis_perf_call_instance) {
+				      //           gis_perf_call_instance.abort()
+				      //           gis_perf_call_instance = "";
+				      //   	}
+			       //      } catch(e) {
+			       //          // pass
+			       //      }
+        			// }
 
         			var states_with_bounds = state_lat_lon_db.where(function(obj) {
             			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
@@ -9992,12 +9991,16 @@ function getMarkerInCurrentBound(only_bs_ids) {
         		var earthBounds = getCurrentEarthBoundPolygon();
         		markerVisible =  isPointInPoly(earthBounds, {lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
         	} else if(window.location.pathname.indexOf("white_background") > -1) {
-        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon})
+        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
         	} else {
 				markerVisible = mapInstance.getBounds().contains(allBSObject[key].getPosition());
+				// If marker is present in bounds but not visible then set markerVisible to false
+				if(markerVisible && !allBSObject[key].map) {
+					markerVisible = false;
+				}
         	}
             if(markerVisible) {
-        		bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
+    			bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
             }
         }
     }
@@ -10018,7 +10021,7 @@ function getMarkerInCurrentBound(only_bs_ids) {
     	returned_bs_array = bsMarkersInBound;
     }
 
-    return returned_bs_array ;
+    return returned_bs_array;
 }
 
 /**

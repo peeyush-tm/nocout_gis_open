@@ -260,35 +260,32 @@ function GisPerformance() {
                             });
                         } else {
                             var current_bs_in_bound = getMarkerInCurrentBound(true);
-                            // If map Zoom level is greater than 11 then proceed.
-                            if(mapInstance.getZoom() > 11) {
-                                /*Check that the bsname is present in current bounds or not*/
-                                if (current_bs_in_bound.indexOf(data.id) > -1) {
-                                    //Update Map with the data
-                                    perf_self.updateMap(data,function(response) {
-                                        calls_completed++;
-                                        if(calls_completed >= periodic_poll_process_count) {
-                                            // Reset Calls Completed Counter
-                                            calls_completed = 0;
+                            
+                            /*Check that the bsname is present in current bounds or not*/
+                            if (current_bs_in_bound.indexOf(data.id) > -1) {
+                                //Update Map with the data
+                                perf_self.updateMap(data,function(response) {
+                                    calls_completed++;
+                                    if(calls_completed >= periodic_poll_process_count) {
+                                        // Reset Calls Completed Counter
+                                        calls_completed = 0;
 
-                                            //Send Request for the next counter
-                                            perf_self.sendRequest(counter);
-                                        }
-                                    });
-                                }
+                                        //Send Request for the next counter
+                                        perf_self.sendRequest(counter);
+                                    }
+                                });
                             }
                         }
                     } else {
-                        // if(window.location.pathname.indexOf("white_background") > -1 || window.location.pathname.indexOf("googleEarth") > -1) {
-                        //     //Send Request for the next counter
-                        //     perf_self.sendRequest(counter);
-                        // } else {
-                        //     // If map Zoom level is greater than 11 then proceed.
-                        //     if(mapInstance && mapInstance.getZoom() > 11) {
-                        //         //Send Request for the next counter
-                        //         perf_self.sendRequest(counter);
-                        //     }
-                        // }
+                        calls_completed++;
+                        
+                        if(calls_completed >= periodic_poll_process_count) {
+                            // Reset Calls Completed Counter
+                            calls_completed = 0;
+
+                            //Send Request for the next counter
+                            perf_self.sendRequest(counter);
+                        }
                     }
                 }
 
@@ -308,6 +305,7 @@ function GisPerformance() {
      Then we fetch various google map elements like lineColor or sectorColor and update those components using values from GisPerformanceData.
      */
     this.updateMap = function (data,callback) {
+
         if(data) {
             var apiResponse = data;
             if(data.constructor == Array) {
@@ -727,10 +725,10 @@ function GisPerformance() {
                                     );
                                     
                                     // If show SS checkbox is unchecked then hide SS
-                                    if(show_ss_len <= 0) {
+                                    if(show_ss_len <= 0 && ccpl_map.getZoom() < 11) {
                                         hideOpenLayerFeature(ss_marker);
                                     }
-                                    if(ss_marker.layerReference) {
+                                    if(ss_marker.layerReference && ccpl_map.getZoom() < 11) {
                                         ss_marker.layerReference.redraw();
                                     }
 
@@ -795,7 +793,7 @@ function GisPerformance() {
                                     ss_marker_object['oldIcon'] = ss_icon_obj;
                                     ss_marker_object['clusterIcon'] = ss_icon_obj;
                                     
-                                    if(show_ss_len > 0) {
+                                    if(show_ss_len > 0 && mapInstance.getZoom() > 13) {
                                         ss_marker_object['map'] = mapInstance;
                                     }
 
@@ -968,7 +966,7 @@ function GisPerformance() {
                                     ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
 
                                     // If show Connection Line checkbox is unchecked then hide connection Line
-                                    if(!isLineChecked > 0) {
+                                    if(!isLineChecked > 0 && ccpl_map.getZoom() < 11) {
                                         hideOpenLayerFeature(ss_link_line);
                                     }
 
@@ -1023,7 +1021,7 @@ function GisPerformance() {
                                         cross_label_array['line_'+ss_marker_data.name] = cross_label;
 
 
-                                        if(isLineChecked <= 0) {
+                                        if(isLineChecked <= 0 && ccpl_map.getZoom() < 11) {
                                             hideOpenLayerFeature(cross_label);
                                         }
 
@@ -1069,7 +1067,7 @@ function GisPerformance() {
 
                                     allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
 
-                                    if(isLineChecked > 0) {
+                                    if(isLineChecked > 0 && mapInstance.getZoom() > 13) {
                                         ss_link_line.setMap(mapInstance);
                                     }
 
@@ -1109,7 +1107,7 @@ function GisPerformance() {
                                         cross_label.open(mapInstance);
                                         cross_label_array['line_'+ss_marker_data.name] = cross_label;
 
-                                        if(isLineChecked > 0) {
+                                        if(isLineChecked > 0 && mapInstance.getZoom() > 13) {
                                             cross_label.show();
                                         } else {
                                             cross_label.hide();

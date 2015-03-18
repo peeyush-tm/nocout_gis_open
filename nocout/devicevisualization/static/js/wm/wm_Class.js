@@ -24,7 +24,6 @@ var bs_loki_db = [],
     red_status_array = ['critical','down'],
     orange_status_array = ['warning'],
     ptp_tech_list = ['ptp','p2p','ptp bh'],
-	state_lat_lon_db= [],
 	searchResultData= [],
 	state_wise_device_labels= {},
 	allMarkersObject_wmap= {
@@ -2764,6 +2763,11 @@ function WhiteMapClass() {
 
 		gisPerformanceClass= new GisPerformance();
 
+		/*Initialize Loki db for bs,ss,sector,line,polygon*/
+		// Create the database:
+		var db = new loki('loki.json');
+		// Create new collection for All Map data
+		all_devices_loki_db = db.addCollection('allDevices');
 		//Call prototype method createOpenLayerMap() to create White Map and in the callback. Start Ajax Request to get Data.
 		this.createOpenLayerMap(function() {
 			//start ajax request
