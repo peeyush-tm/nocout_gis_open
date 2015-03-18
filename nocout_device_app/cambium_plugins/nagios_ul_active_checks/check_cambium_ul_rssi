@@ -1,0 +1,157 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+#~ Author: Silvio Knizek
+#~ License: GPLv2
+#~ Version: 1.0
+
+import sys
+from telnetlib import Telnet
+import socket
+import json
+import os
+import mysql.connector
+
+def mysql_conn():
+        db = mysql.connector.connect(
+                        user='root',
+                        host='10.133.12.163',
+                        password='root',
+                        database='nocout_24_09_14',
+                        port=3200)
+
+        return db
+
+
+def extract_host_from_cambium_topology(ss_host_mac):
+        query = """
+        select device_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        cur.close()
+
+        return data
+
+
+def get_from_socket(socket_ip,socket_port, query):
+    """
+    Function_name : get_from_socket (collect the query data from the socket)
+
+    Args: site_name (poller on which monitoring data is to be collected)
+
+    Kwargs: query (query for which data to be collectes from nagios.)
+
+    Return : None
+
+    raise 
+         Exception: SyntaxError,socket error 
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((socket_ip,socket_port))
+    s.send(query)
+    s.shutdown(socket.SHUT_WR)
+    output = s.recv(100000000)
+    output.strip("\n")
+    return output
+
+
+def live_query_ul_rssi(socket_ip,socket_port,mac,warn,crit):
+	"""
+    	Connects to a socket, checks for the WELCOME-MSG and closes the
+    	connection.
+    	Returns nothing.
+    
+    	"""
+	exit_value = 3
+	plugin_message = ''
+	ul_rssi_state = "UNKNOWN"
+	ul_rssi = ''
+	perf = ''
+	host_name = extract_host_from_cambium_topology(mac)
+	try:
+		if host_name[0][0]:
+			query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                        	"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("cambium_topology_discover",host_name[0][0])
+        		query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+			if query_output[0][0]:
+				plugin_output = str(query_output[0][0].split('- ')[1])
+                                plugin_output = [mac for mac in plugin_output.split(' ')]
+                                ss_params = filter(lambda x: '/' in x,plugin_output)
+				ss_matched_params = filter(lambda x: mac in x,ss_params)
+                                ul_rssi= map(lambda x: x.split('/')[2],ss_matched_params)
+				ul_rssi= int(ul_rssi[0])	
+				if isinstance(ul_rssi,int):
+					perf += 'ul_rssi' + "=%s" %(ul_rssi) 
+					if ul_rssi < crit:
+						ul_rssi_state = "CRITICAL"
+						exit_value  = 2 
+                               		elif ul_rssi > crit and ul_rssi < warn:
+						ul_rssi_state = "WARNING"
+						exit_value = 1
+					else:
+						ul_rssi_state = "OK"
+						exit_value = 0	
+	except:
+		ul_rssi_state = "UNKNOWN1"
+
+	plugin_message += "cambium_ss_ul_rssi %s - %s |%s" % (ul_rssi_state,ul_rssi,perf) 
+	sys.stdout.write(plugin_message)  
+	sys.exit((exit_value))
+
+def main():
+    exit_value =3
+    try:
+	socket_ip = sys.argv[1]
+	socket_port = sys.argv[2]
+	mac = sys.argv[3]
+	warn = sys.argv[4]
+	crit =sys.argv[5]
+        live_query_ul_rssi(socket_ip,int(socket_port),mac,int(warn),int(crit))
+    except socket.error, message:
+        sys.stdout.write("Could not open socket: " + message) 
+        sys.exit((exit_value))
+
+
+def get_threshold(perf_data):
+    """
+    Function_name : get_threshold (function for parsing the performance data and storing in the datastructure)
+
+    Args: perf_data performance_data extracted from rrdtool
+
+    Kwargs: None
+    return:
+           threshold_values (data strucutre containing the performance_data for all data sources)
+    Exception:
+           None
+    """
+
+    threshold_values = {}
+
+    #if len(perf_data) == 1:
+     #   return threshold_values
+    for param in perf_data.split(" "):
+        param = param.strip("['\n', ' ']")
+        if param.partition('=')[2]:
+                if ';' in param.split("=")[1]:
+                        threshold_values[param.split("=")[0]] = {
+                        "war": re.sub('[ms]', '', param.split("=")[1].split(";")[1]),
+                        "cric": re.sub('[ms]', '', param.split("=")[1].split(";")[2]),
+                        "cur": re.sub('[ms]', '', param.split("=")[1].split(";")[0])
+                        }
+                else:
+                        threshold_values[param.split("=")[0]] = {
+                        "war": None,
+                        "cric": None,
+                        "cur": re.sub('[ms]', '', param.split("=")[1].strip("\n"))
+                        }
+        else:
+                threshold_values[param.split("=")[0]] = {
+                        "war": None,
+                        "cric": None,
+                        "cur": None
+                        }
+    return threshold_values                          
+
+if __name__ == '__main__':
+    main()

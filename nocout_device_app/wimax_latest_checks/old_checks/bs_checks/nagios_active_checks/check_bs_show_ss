@@ -1,0 +1,78 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+#~ Author: Silvio Knizek
+#~ License: GPLv2
+#~ Version: 1.0
+
+import sys
+from telnetlib import Telnet
+import socket
+
+def connection_telnet(hostname, port):
+	"""
+    	Connects to a socket, checks for the WELCOME-MSG and closes the
+    	connection.
+    	Returns nothing.
+    
+    	"""
+	try:
+    		tn = Telnet(hostname,port,timeout=3)
+	except socket.timeout:
+		exit_value = 3
+                show_ss_state = "show_ss UNKNOWN"
+		sys.stdout.write("UNKNOWN Output")
+		sys.exit((exit_value))
+    	tn.read_until("Login:")
+    	tn.write("admin" + "\r\n")
+    	tn.read_until("Password:")
+    	tn.write("admin" + "\r\n")
+    	tn.write("show ss\r\n")
+    	tn.write("exit\r\n")
+    	data = tn.read_all()
+    	plugin_message= ""
+    	exit_value = 3
+	show_ss_state = "show_ss UNKNOWN"
+	for i,row in enumerate(data.split("\n")):
+		if i > 5 :
+			if ":" in row:
+				show_ss_state = "show_ss OK-"
+    				exit_value = 0
+				params = [r for r in row.split()]
+				sector_id = int(params[1])
+				dl_rssi = int(params[8])
+			
+				ul_rssi = int(params[13])
+				dl_cinr = int(params[9])
+				ul_cinr = int(params[14])
+				dl_intrf = params[10]
+				ul_intrf = params[15]
+				ss_mac =params[2]
+				dl_fec = params[7]
+				ul_fec =params[12]
+				
+				plugin_message += "%s=%s,%s,%s,%s,%s,%s,%s,%s,%s " %(ss_mac,dl_rssi,ul_rssi,dl_cinr,ul_cinr,dl_intrf,
+							ul_intrf,dl_fec,ul_fec,sector_id)
+	plugin_message = show_ss_state +plugin_message
+	sys.stdout.write(plugin_message)  
+	sys.exit((exit_value))
+
+def main():
+    """
+    Parses the time it needs to got the WELCOME-MSG and returns:
+    0:  all got well
+    1:  connection is slow
+    2:  nio connection at all (or really slow)
+    3:  something really bad happend
+    
+    """
+    exit_value =3
+    try:
+	host_name = sys.argv[1]
+        connection_telnet(host_name, 23)
+    except socket.error, message:
+        sys.stdout.write("Could not open socket: " + message) 
+        sys.exit((exit_value))
+
+
+if __name__ == '__main__':
+    main()

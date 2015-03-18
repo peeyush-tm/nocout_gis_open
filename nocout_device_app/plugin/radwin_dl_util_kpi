@@ -1,0 +1,28 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def check_radwin_dl_util_kpi_arguments(params):
+    description,settings = params
+    args =''
+    if "host" in settings:
+        args += '%s ' % quote_shell_string(settings['host'])
+    if "site" in settings:
+        args += '%s ' % quote_shell_string(settings['site'])
+
+    if "war" in settings:
+        args += '%f ' % int(settings['war'])
+
+    if "crit" in settings:
+        args += '%f ' % int(settings['crit'])
+    if "qos" in settings:
+        args += '%f ' % float(settings['qos'])
+
+    return args
+
+active_check_info['radwin_dl_util_kpi'] = {
+    "command_line"        : '$USER1$/check_radwin_dl_util_kpi $ARG1$',
+    "argument_function"   : check_radwin_dl_util_kpi_arguments,
+    "service_description" : lambda params: "%s" % params[0],
+    "has_perfdata"        :True,
+}
+
