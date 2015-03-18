@@ -564,14 +564,18 @@ def get_guege_chart_max_n_stops(dashboard_setting):
     max_range = 0
     stops = []
     for count in range(1, 11):
+        end_range = getattr(dashboard_setting, 'range%d_end' %count)
+        if end_range:
+            end_range = float(end_range)
+            if end_range > max_range:
+                max_range = end_range
+    for count in range(1, 11):
         # Get the end_range and color attribute of dashboard_setting.
         end_range = getattr(dashboard_setting, 'range%d_end' %count)
         color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
 
         # update max_range and stops.
         if end_range and color:
-            end_range = int(end_range)
-            stops.append([end_range, color])
-            if end_range > max_range:
-                max_range = end_range
+            stops.append([float(end_range)/float(max_range), color])
+
     return max_range, stops
