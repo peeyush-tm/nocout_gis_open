@@ -11,7 +11,7 @@ from multiprocessing import Process, Queue
 #nocout utilities
 from nocout.utils.util import fetch_raw_result, \
     format_value, cache_for, \
-    cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
+    cached_all_gis_inventory
 #nocout utilities
 
 #python logging
@@ -197,7 +197,7 @@ def map_results(perf_result, qs):
 
 
 @cache_for(300)
-def combined_indexed_gis_devices(indexes):
+def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, type_rf=None):
     """
     indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
     :return:
@@ -213,7 +213,7 @@ def combined_indexed_gis_devices(indexes):
     indexed_bh_conv = {}
 
     if indexes:
-        raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
+        raw_results = cached_all_gis_inventory(monitored_only=monitored_only, technology=technology, type_rf=type_rf)
 
         for result in raw_results:
             defined_sector_index = result[indexes['sector']]
@@ -275,7 +275,7 @@ def combined_indexed_gis_devices(indexes):
 
 
 @cache_for(300)
-def prepare_gis_devices(devices, page_type):
+def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None, type_rf=None):
     """
     map the devices with gis data
     :return:
@@ -289,6 +289,7 @@ def prepare_gis_devices(devices, page_type):
     #     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
     # ##binary search instead
 
+
     indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv = \
         combined_indexed_gis_devices(indexes={
                                                 'sector': 'SECTOR_CONF_ON_NAME',
@@ -297,8 +298,10 @@ def prepare_gis_devices(devices, page_type):
                                                 'pop': 'POP',
                                                 'aggr': 'AGGR',
                                                 'bsconv': 'BSCONV'
-                                            }
+                                            },
+                                     monitored_only=monitored_only, technology=technology, type_rf=type_rf
                                     )
+
 
     # gis_result = indexed_gis_devices(page_type=page_type)
 
@@ -637,7 +640,7 @@ def get_time(start_date, end_date, date_format):
         end_date = format(end_date_object, 'U')
         start_date = format(start_date_object, 'U')
 
-    return isSet, start_date, end_date
+    return isSet, float(start_date), float(end_date)
 
 
 def color_picker():

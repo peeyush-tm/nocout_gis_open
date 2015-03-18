@@ -50,6 +50,11 @@ if(router_splitted_list.length >= 6) {
     }
 }
 
+// for Device Type Wizard
+if(currentRouter.indexOf('wizard/device-type') > -1) {
+    currentRouter = 'type';
+}
+
 /*By default all the sub-sub menu panel will be collapsed*/
 $(".has-sub-sub > ul.sub-sub").hide();
 
@@ -62,7 +67,6 @@ for(var i = 0; i < sideMenu.length; i++) {
             menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1)),
             menuLink = $.trim(menuLinkString.replace(/,/g,"/")),
             menu_link_last_text = menuLink.split("/")[menuLink.split("/").length-1];
-
         /*Parent Element(li) Classname*/
         var activeClass = $.trim(sideMenu[i].parentElement.className);
         
@@ -78,7 +82,7 @@ for(var i = 0; i < sideMenu.length; i++) {
             menuLink = new_url_splitted_list.join("/");
         }
 
-        if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
+        if(currentRouter.indexOf(menuLink) == 0 && menuLink != "") {
             applySelectedClasses(sideMenu[i]);
         }
     }
@@ -378,8 +382,8 @@ $("#goFullScreen").click(function() {
 
                 // $("#deviceMap").height(aa-bb);
                 // $("#deviceMap").height(aa);
-                toggleBoxTitle();
-                toggleControlButtons();
+                // toggleBoxTitle();
+                // toggleControlButtons();
 
                 /*Set width-height for map div in fullscreen*/
                 if($(".mapContainerBlock").length > 0) {
@@ -557,48 +561,95 @@ var isNewForm = window.location.href.indexOf('new'),
     isEditForm = window.location.href.indexOf('edit'),
     isUpdateForm = window.location.href.indexOf('update'),
     isModifyForm = window.location.href.indexOf('modify'),
+    splitted_url_list = window.location.pathname.split("/"),
+    wizard_condition_1 = window.location.href.indexOf('wizard/device-type') > -1, // Temporary commented
+    wizard_condition_2 = !isNaN(splitted_url_list[splitted_url_list.length-1]),
+    wizard_condition_3 = splitted_url_list.indexOf('gis-wizard') > -1,
+    // isWizardForm =  wizard_condition_2 && wizard_condition_3,
+    isWizardForm =  (wizard_condition_1) || (wizard_condition_2 && wizard_condition_3),
     page_title = "",
     module_name = "",
     isFormSubmit = 0;
 
-if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
-    
-    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
-    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
-} else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+// If formContainer class present then proceed
+if($(".formContainer").length) {
 
-    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ");
-    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+    if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
+        
+        page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
 
-    if(isFormSubmit === 0) {
-        var oldFieldsArray = $("form input").serializeArray(),
-            select_boxes = $("select");
+        try {
+            module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+        } catch(e) {
+            module_name = page_title.join(' ');
+        }
+        // module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
 
-        setTimeout(function() {
-            for(var i=0;i<select_boxes.length;i++) {
-                var select_id = select_boxes[i].attributes["id"].value,
-                    values_array = $("#"+select_id).select2("data"),
-                    selected_values = "";
-                if(values_array && values_array.length) {
-                    $.grep(values_array,function(data){
-                        if(selected_values.length > 0) {
-                            selected_values +=  data.text ? ","+data.text : "";
+    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
+
+        page_title = $(".formContainer .box .box-title h4")[0] ? $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ") : "";
+        // if(page_title) {
+        //     module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+        // } else {
+        //     module_name = "";
+        // }
+        
+        try {
+            module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+        } catch(e) {
+            module_name = page_title.join(' ');
+        }
+
+        if(isFormSubmit === 0) {
+            var oldFieldsArray = $("form input:not(:hidden)").serializeArray(),
+                select_boxes = $("form select"),
+                text_area_fields = $("form textarea");
+
+            setTimeout(function() {
+                for(var i=0;i<select_boxes.length;i++) {
+                    var select_id = select_boxes[i].attributes["id"].value,
+                        isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
+                        values_array = isSelect2 ? $("#"+select_id).select2("data") : $("#"+select_id+" option:selected").text(),
+                        selected_values = "";
+
+                    if(values_array && values_array.constructor == Array) {
+                        $.grep(values_array,function(data){
+                            if(selected_values.length > 0) {
+                                selected_values +=  data.text ? ","+data.text() : "";
+                            } else {
+                                selected_values += data.text ? data.text() : "";
+                            }
+                        });
+                    } else {
+                        if(typeof values_array == 'object') {
+                            selected_values = values_array ? values_array.text : "";
                         } else {
-                            selected_values += data.text ? data.text : "";
+                            selected_values = values_array;
                         }
-                    });
-                } else {
-                    selected_values = values_array ? values_array.text : "";
+                    }
+
+                    var data_obj = {
+                        "name" : select_boxes[i].attributes["name"].value,
+                        "value" : selected_values
+                    };
+                    oldFieldsArray.push(data_obj);
                 }
 
-                var data_obj = {
-                    "name" : select_boxes[i].attributes["name"].value,
-                    "value" : selected_values
-                };
-                oldFieldsArray.push(data_obj);
-            }
-        },600);
-    } 
+                for(var i=0;i<text_area_fields.length;i++) {
+                    var textarea_name = text_area_fields[i].attributes["name"].value,
+                        textarea_id = text_area_fields[i].attributes["id"].value;
+                    if(textarea_name && textarea_id) {
+                        var data_obj = {
+                            "name" : textarea_name,
+                            "value" : $("#"+textarea_id).val()
+                        };
+
+                        oldFieldsArray.push(data_obj);
+                    }
+                }
+            },600);
+        } 
+    }
 }
 
 /*Form Submit Event*/
@@ -616,9 +667,14 @@ $("form").submit(function(e) {
         if(isFormSubmit === 0) {
 
             var alias = $("form input[name*='alias']").val(),
-                shown_val = alias ? alias : $("form input[name*='name']").val(),
-                action = "A new "+module_name.toLowerCase()+" is created - "+shown_val,
-                action_response = "";
+                shown_val = alias ? alias : $("form input[name*='name']").val();
+            
+            if(!shown_val) {
+                shown_val = "";
+            }
+
+            var action = "A new "+module_name.toLowerCase()+" is created - "+shown_val,
+            action_response = "";
 
             /*Call function to save user action*/
             save_user_action(module_name,action,function(result) {
@@ -648,28 +704,35 @@ $("form").submit(function(e) {
             return true;
         }
     /*Edit case*/
-    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
         /*When first time form submitted*/
         if(isFormSubmit === 0) {
 
-            var newFieldsArray = $("form input").serializeArray(),
-                select_boxes = $("select"),
+            var newFieldsArray = $("form input:not(:hidden)").serializeArray(),
+                select_boxes = $("form select"),
+                text_area_fields = $("form textarea"),
                 modifiedFieldsStr = "[";
-            /*Get New Fields*/
+            /*Get New Select Fields*/
             for(var i=0;i<select_boxes.length;i++) {
                 var select_id = select_boxes[i].attributes["id"] ? select_boxes[i].attributes["id"].value : "",
-                    values_array = select_id ? $("#"+select_id).select2("data") : "",
+                    isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
+                    values_array = isSelect2 ? $("#"+select_id).select2("data") : $("#"+select_id+" option:selected").text(),
                     selected_values = "";
-                if(values_array.length) {
+
+                if(values_array && values_array.constructor == Array) {
                     $.grep(values_array,function(data){
                         if(selected_values.length > 0) {
-                            selected_values += data.text ? ","+data.text : "";
+                            selected_values +=  data.text ? ","+data.text() : "";
                         } else {
-                            selected_values += data.text ? data.text : "";
+                            selected_values += data.text ? data.text() : "";
                         }
                     });
                 } else {
-                    selected_values = values_array ? values_array.text : "";
+                    if(typeof values_array == 'object') {
+                        selected_values = values_array ? values_array.text : "";
+                    } else {
+                        selected_values = values_array;
+                    }
                 }
 
                 var data_obj = {
@@ -680,11 +743,24 @@ $("form").submit(function(e) {
                 newFieldsArray.push(data_obj);
             }
 
+            for(var i=0;i<text_area_fields.length;i++) {
+                var textarea_name = text_area_fields[i].attributes["name"].value,
+                    textarea_id = text_area_fields[i].attributes["id"].value;
+                if(textarea_name && textarea_id) {
+                    var data_obj = {
+                        "name" : textarea_name,
+                        "value" : $("#"+textarea_id).val()
+                    };
+
+                    newFieldsArray.push(data_obj);
+                }
+            }
+
             /*Get Modified Fields*/
             for(var j=0;j<oldFieldsArray.length;j++) {
                 var old_field = oldFieldsArray[j],
                     new_field = newFieldsArray[j];
-                if(old_field && new_field) {
+                if(old_field && old_field.value != undefined && new_field && new_field.value != undefined) {
                     if($.trim(old_field.value) != $.trim(new_field.value) && old_field.name.indexOf('password') === -1) {
                         var new_val = new_field.value.toLowerCase() != 'select' ? new_field.value : "",
                             old_val = old_field.value.toLowerCase() != 'select' ? old_field.value : "",
@@ -697,6 +773,7 @@ $("form").submit(function(e) {
                     }
                 }
             }
+            
             /*If any changes done then save user action else return.*/
             if($.trim(modifiedFieldsStr) != '[') {
                 

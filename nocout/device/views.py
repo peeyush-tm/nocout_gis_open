@@ -149,12 +149,19 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
     """
     model = Device
     required_permissions = ('device.view_device',)
+    # columns are used for list of fields which should be displayed on data table.
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
         'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
+    #order_columns is used for list of fields which is used for sorting the data table.
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
         'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
+    #search_columns is used for list of fields which is used for searching the data table.
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
         'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
+    # extra_qs_kwargs is used for filter the device using some extra fields in Mixin DatatableOrganizationFilterMixin.
     extra_qs_kwargs = {
                         'is_deleted': 0,
                         'is_added_to_nms__in': [1,2]
@@ -163,8 +170,12 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
+        :param qs:
+        :return qs:
         """
         sSearch = self.request.GET.get('sSearch', None)
+
+        # If searched character is 3 or more than 3. Then search the entered text on the basis fields of search_columns.
         if sSearch and len(str(sSearch).strip()) >= 3:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
@@ -217,6 +228,8 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
+        :param qs:
+        :return json:
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -1025,12 +1038,6 @@ class DeviceDetail(PermissionsRequiredMixin, DetailView):
                 context['device_model'] = DeviceModel.objects.get(pk=kwargs['object'].device_model).alias
             if kwargs['object'].device_type:
                 context['device_type'] = DeviceType.objects.get(pk=kwargs['object'].device_type).alias
-            if kwargs['object'].country:
-                context['country'] = Country.objects.get(pk=kwargs['object'].country).country_name
-            if kwargs['object'].state:
-                context['state'] = State.objects.get(pk=kwargs['object'].state).state_name
-            if kwargs['object'].city:
-                context['city'] = City.objects.get(pk=kwargs['object'].city).city_name
         except Exception as e:
             logger.exception(e.message)
 
@@ -2326,12 +2333,12 @@ class DeviceTypeList(PermissionsRequiredMixin, ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'agent_tag', 'sTitle': 'Agent tag', 'sWidth': 'auto', },
             {'mData': 'packets', 'sTitle': 'Packets', 'sWidth': 'auto'},
-            {'mData': 'timeout', 'sTitle': 'Timeout', 'sWidth': 'auto'},
+            {'mData': 'timeout', 'sTitle': 'Timeout (ms)', 'sWidth': 'auto'},
             {'mData': 'normal_check_interval', 'sTitle': 'Normal Check Interval', 'sWidth': 'auto'},
-            {'mData': 'rta_warning', 'sTitle': 'RTA Warining', 'sWidth': 'auto'},
-            {'mData': 'rta_critical', 'sTitle': 'RTA Critical', 'sWidth': 'auto'},
-            {'mData': 'pl_warning', 'sTitle': 'PL Warning', 'sWidth': 'auto'},
-            {'mData': 'pl_critical', 'sTitle': 'PL Critical', 'sWidth': 'auto'},
+            {'mData': 'rta_warning', 'sTitle': 'Latency Warning (ms)', 'sWidth': 'auto'},
+            {'mData': 'rta_critical', 'sTitle': 'Latency Critical (ms)', 'sWidth': 'auto'},
+            {'mData': 'pl_warning', 'sTitle': 'PD Warning (%)', 'sWidth': 'auto'},
+            {'mData': 'pl_critical', 'sTitle': 'PD Critical (%)', 'sWidth': 'auto'},
             {'mData': 'device_icon', 'sTitle': 'Device Icon', 'sWidth': 'auto'},
             {'mData': 'device_gmap_icon', 'sTitle': 'Device GMap Icon', 'sWidth': 'auto'},
         ]
@@ -2763,17 +2770,23 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
+        : param qs:
+        : return qs:
         """
         sSearch = self.request.GET.get('sSearch', None)
+        # search if the entered text is atleast 3 characters long.
         if sSearch and len(str(sSearch).strip()) >= 3:
+            #If character '\' is in entered text then replace the character '\' from entered text. Because it will create an error in sql query execution.
             sSearch = sSearch.replace("\\","")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+
+            # filter the model on the basis of the fields present in columns list.
             for column in self.columns:
                 query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"  # returns the id of DeviceFrequency
             exec exec_query
 
         return qs
@@ -2882,6 +2895,8 @@ class DeviceFrequencyDelete(PermissionsRequiredMixin, UserLogDeleteMixin, Delete
 class CountryListing(SuperUserRequiredMixin, ListView):
     """
     Render list of country list
+    :param Mixin SuperUserRequiredMixin- Only SuperUser can see the country list.
+    :return json {'country_name', 'actions'}.
     """
     model = Country
     template_name = 'country/country_list.html'
@@ -2912,9 +2927,14 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
+        :param qs:
+        :return qs:
         """
         sSearch = self.request.GET.get('sSearch', None)
+
+        #if entered text is atleast 3 characters long, then search.
         if sSearch and len(str(sSearch).strip()) >= 3:
+            # if character '\' is in entered text, then remove the character '\' from entered text. because '\' will raise the error in execution of sql query.
             sSearch = sSearch.replace("\\","")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
@@ -2938,6 +2958,8 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
+        :param qs:
+        :return qs:
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -3019,10 +3041,10 @@ class CountryDelete(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
     obj_alias = 'country_name'
 
 
-#**************************************** Country *********************************************
+#**************************************** State *********************************************
 class StateListing(SuperUserRequiredMixin, ListView):
     """
-    Render list of state list
+    Render list of state list. Only SuperUser can see the state list for that SuperUserRequiredMixin is used.
     """
     model = State
     template_name = 'state/state_list.html'
@@ -3045,7 +3067,7 @@ class StateListing(SuperUserRequiredMixin, ListView):
 
 class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
     """
-    Render JQuery datatables for listing of state
+    Render JQuery datatables for listing of state. Only SuperUser can see the state list for that SuperUserRequiredMixin is used.
     """
     model = State
     columns = ['country__country_name', 'state_name']
@@ -3054,9 +3076,14 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
+        : param qs:
+        : return qs:
         """
         sSearch = self.request.GET.get('sSearch', None)
+
+        # if entered text is atleast 3 characters long, then search.
         if sSearch and len(str(sSearch).strip()) >= 3:
+            # if character '\' is in entered text, then replace '\' from entered text because it will raise the error in sql query execution.
             sSearch = sSearch.replace("\\","")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
@@ -3080,6 +3107,8 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
+        :param qs:
+        :return qs:
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -3164,7 +3193,7 @@ class StateDelete(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
 #**************************************** City *********************************************
 class CityListing(SuperUserRequiredMixin, ListView):
     """
-    Render list of city list
+    Render list of city list. Only SuperUser can see the city list for that SuperUserRequiredMixin is used.
     """
     model = City
     template_name = 'city/city_list.html'
@@ -3187,7 +3216,7 @@ class CityListing(SuperUserRequiredMixin, ListView):
 
 class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
     """
-    Render JQuery datatables for listing of city
+    Render JQuery datatables for listing of city. Only SuperUser can see the city list for that SuperUserRequiredMixin is used.
     """
     model = City
     columns = ['state__state_name', 'city_name']
@@ -3196,6 +3225,8 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
+        : param qs:
+        : return qs:
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
@@ -3305,6 +3336,9 @@ class CityDelete(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 
 class GisWizardDeviceTypeMixin(object):
+    """
+    Class based mixin for gis wizard device type create and update.
+    """
     form_class = WizardDeviceTypeForm
     template_name = 'wizard/device_type.html'
 
@@ -3431,7 +3465,7 @@ class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, Ba
 
 class DeviceTypeServiceUpdateView(PermissionsRequiredMixin, UpdateView):
     """
-    Render device type update view
+    Render device type service update view.
     """
     model = DeviceTypeService
     template_name = 'wizard/device_type_service_update.html'
@@ -3473,7 +3507,7 @@ class DeviceTypeServiceUpdateView(PermissionsRequiredMixin, UpdateView):
 
 class GisWizardDeviceTypeServiceMixin(object):
     """
-    Render device type update view
+    Render device type update view. Mixin for gis wizard device type service update.
     """
     def get_success_url(self):
         if self.request.GET.get('show', None):
@@ -3527,52 +3561,74 @@ def list_schedule_device(request):
     """
     Used to return the list to the select2 element using ajax call.
     Return the list of devices while creating/updating the event.
+    :param obj_id
+           sSearch
+           scheduling_type
+           start_on_time
+           end_on_time
+           technology_id
+    :return json:
     """
     # ptp_device_circuit_backhaul(specify_type='all')
     # organization_customer_devices(organizations, technology = None, specify_ptp_type='all')
     # organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all')
     # organization_backhaul_devices(organizations, technology = None)
 
-    obj_id = None   # create case
+    # In case of Event Create set object_id = None.
+    obj_id = None
     if 'obj_id' in request.GET:
         obj_id = request.GET['obj_id'] # update case
+    # Get the entered text.
     sSearch = request.GET['sSearch']
+    # Get the selected scheduling type.
     scheduling_type = request.GET['scheduling_type']
+    # Set new_start_time and new_end_time if start_on_time and end_on_time is empty.
     new_start_time = datetime.today().time()
     new_end_time = datetime.today().time()
+    # if start_on_time and end_on_time is not empty. Update the new_start_time and new_end_time.
     if request.GET['start_on_time'] and request.GET['end_on_time']:
         new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
         new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
+    # Get the events which are overlapped.
     over_lap_event = Event.objects.exclude(id=obj_id).exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
+    # Get the device's id of overlapped events
     over_lap_device_ids = Device.objects.filter(event__in=over_lap_event).values_list("id", flat=True)
 
+    # Get the organization of logged in user.
     org = request.user.userprofile.organization
     device_list = Device.objects.filter(organization__in=[org],
                                         is_added_to_nms=1,
                                         is_deleted=0,)
     technology_id = None
+    # Get the technology_id. And Get the devices of that technology.
     if request.GET['technology_id']:
         technology_id = request.GET['technology_id']
         device_list = device_list.filter(device_technology=int(technology_id))
 
+    # if scheduling type is device, then filter the devices on the basis of device alias.
     if scheduling_type == 'devi':
         device_list = device_list.filter(device_alias__icontains=sSearch)
+    # if scheduling type is device type, then filter the devices on the basis of device type.
     elif scheduling_type == 'dety':
         device_list = device_list.filter(device_type__in=DeviceType.objects.\
                     filter(alias__icontains=sSearch).values_list('id', flat=True))
+    # if scheduling type is customer, then filter the devices from organization_customer_devices.
     elif scheduling_type == 'cust':
         device_list = organization_customer_devices(organizations=[org], technology = technology_id, specify_ptp_type='all').\
                     filter(device_alias__icontains=sSearch)
+    # if scheduling type is network, then filter devices from organization_network_devices.
     elif scheduling_type == 'netw':
         device_list = organization_network_devices(organizations=[org], technology = technology_id, specify_ptp_bh_type='all').\
                     filter(device_alias__icontains=sSearch)
+    # if scheduling type is backhaul, then filter devices from organization_backhaul_devices.
     elif scheduling_type == 'back':
         device_list = organization_backhaul_devices(organizations=[org], technology = technology_id).\
                     filter(device_alias__icontains=sSearch)
     else:   # if no schedling type is available
         device_list = device_list.filter(device_alias__icontains=sSearch)
 
-    device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias') # excule the overlapping devices
+    # excule the overlapping devices.
+    device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias')
 
     return HttpResponse(json.dumps({
         "total_count": device.count(),
@@ -3584,6 +3640,8 @@ def select_schedule_device(request):
     """
     Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     Call to initialize the device list when create/update the event.
+    :param ids:
+    :return json:
     """
     ids = request.GET['ids']
     device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(','))]
@@ -3595,7 +3653,13 @@ def filter_selected_device(request):
     """
     On change of the time filter the devices.
     i.e it removes the devices from the selest2 if device overlaps on that duration.
+    :param ids
+           obj_id
+           start_on_time
+           end_on_time
+    :return json:
     """
+
     ids = request.GET['ids']
     obj_id = None   # create case
     if 'obj_id' in request.GET:
@@ -3777,7 +3841,7 @@ class DeviceSyncHistoryDelete(DeleteView):
 
 class DeviceSyncHistoryUpdate(UpdateView):
     """
-    Class based view to update GISInventoryBulkImport .
+    Class based view to update GISInventoryBulkImport.
     """
     template_name = 'device_sync_history/device_sync_history_update.html'
     model = DeviceSyncHistory

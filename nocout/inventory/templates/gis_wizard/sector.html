@@ -85,7 +85,7 @@
                 <div class="form-group">
                     <div class="col-sm-9">
                         <div class="col-md-8">
-                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_sector_antenna" name="sector_antenna" title="" type="hidden" value="{{ sector_antenna_id }}"/>
+                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sector_antenna" name="sector_antenna" title="" type="hidden" value="{{ sector_antenna_id }}"/>
                         </div>
                     </div>
                 </div><br/>
@@ -116,7 +116,7 @@
                 <div class="form-group">
                     <div class="col-sm-9">
                         <div class="col-md-8">
-                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_sub_station" name="sub_station" title="" type="hidden" value="{{ sub_station_id }}"/>
+                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station" name="sub_station" title="" type="hidden" value="{{ sub_station_id }}"/>
                         </div>
                     </div>
                 </div><br/>
@@ -146,7 +146,7 @@
                 <div class="form-group">
                     <div class="col-sm-9">
                         <div class="col-md-8">
-                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_sub_station_antenna" name="sub_station_antenna" title="" type="hidden" value="{{ sub_station_antenna_id }}"/>
+                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station_antenna" name="sub_station_antenna" title="" type="hidden" value="{{ sub_station_antenna_id }}"/>
                         </div>
                     </div>
                 </div><br/>
@@ -176,7 +176,7 @@
                 <div class="form-group">
                     <div class="col-sm-9">
                         <div class="col-md-8">
-                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_sub_station_circuit" name="sub_station_circuit" title="" type="hidden" value="{{ sub_station_circuit_id }}"/>
+                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station_circuit" name="sub_station_circuit" title="" type="hidden" value="{{ sub_station_circuit_id }}"/>
                         </div>
                     </div>
                 </div><br/>
@@ -206,7 +206,7 @@
                 <div class="form-group">
                     <div class="col-sm-9">
                         <div class="col-md-8">
-                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_sub_station_customer" name="sub_station_customer" title="" type="hidden" value="{{ sub_station_customer_id }}"/>
+                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station_customer" name="sub_station_customer" title="" type="hidden" value="{{ sub_station_customer_id }}"/>
                         </div>
                     </div>
                 </div><br/>
@@ -255,9 +255,10 @@
         });
             // Changing labels of form fields
         {% if selected_technology == '2' %}
-            $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End IP');
+            $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End Device');
         {% endif %}
             $("label[for=id_sector_id]").text('Sector ID');
+            $("label[for=id_frequency]").text('Planned Frequency');
             $("label[for=id_mrc]").text('MRC');
             $("label[for=id_tx_power]").text('TX Power');
             $("label[for=id_rx_power]").text('RX Power');
@@ -271,7 +272,7 @@
             });
 
             $("#id_sector_configured_on").select2({
-                placeholder: "Search for a sector config on.",
+                placeholder: "Search for a near end device.",
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
@@ -314,14 +315,19 @@
             var sector_antenna_form = document.getElementById("id_sector_antenna_form");
             bind_sector_antenna_select2();
             {% if sector_antenna_id %}
-                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: {{ sector_antenna_id }}}, function (data) {sector_antenna_form.innerHTML=data}, 'html');
+                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: {{ sector_antenna_id }}}, function (data) {
+                        sector_antenna_form.innerHTML=data;
+                        $("#id_sector_antenna_form .select2select").select2();
+                    }, 'html');
             {% endif %}
 
             $("input:radio[name=sector_antenna_radio]").change(function (){
                 var sector_antenna_selected = $(this).val();
                 if (sector_antenna_selected == 'new') {
                     $("#id_sector_antenna").select2('destroy');
-                    $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}}, function (data) {sector_antenna_form.innerHTML=data}, 'html');
+                    $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}}, function (data) {sector_antenna_form.innerHTML=data;
+                        $("#id_sector_antenna_form .select2select").select2();
+                    }, 'html');
                 } else { // existing
                     bind_sector_antenna_select2();
                     sector_antenna_form.innerHTML = '';
@@ -337,7 +343,11 @@
             var sub_station_form = document.getElementById("id_sub_station_form");
             bind_sub_station_select2();
             {% if sub_station_id %}
-                $.get('/gis-wizard/get-form/', {model: 'sub_station', technology: {{ selected_technology }}, pk: {{ sub_station_id }}}, function (data) {sub_station_form.innerHTML=data; bind_device_select2(); bind_region_select2();}, 'html');
+                $.get('/gis-wizard/get-form/', {model: 'sub_station', technology: {{ selected_technology }}, pk: {{ sub_station_id }}}, function (data) {
+                        sub_station_form.innerHTML=data;
+                        bind_device_select2();
+                        bind_region_select2();
+                    }, 'html');
             {% endif %}
 
             $("input:radio[name=sub_station_radio]").change(function (){
@@ -363,14 +373,20 @@
             var sub_station_antenna_form = document.getElementById("id_sub_station_antenna_form");
             bind_sub_station_antenna_select2();
             {% if sub_station_antenna_id %}
-                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: {{ sub_station_antenna_id }}}, function (data) {sub_station_antenna_form.innerHTML=data}, 'html');
+                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: {{ sub_station_antenna_id }}}, function (data) {
+                    sub_station_antenna_form.innerHTML=data;
+                    $("#id_sub_station_antenna_form .select2select").select2();
+                }, 'html');
             {% endif %}
 
             $("input:radio[name=sub_station_antenna_radio]").change(function (){
                 var sub_station_antenna_selected = $(this).val();
                 if (sub_station_antenna_selected == 'new') {
                     $("#id_sub_station_antenna").select2('destroy');
-                    $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', {}, function (data) {sub_station_antenna_form.innerHTML=data}, 'html');
+                    $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', {}, function (data) {
+                        sub_station_antenna_form.innerHTML=data;
+                        $("#id_sub_station_antenna_form .select2select").select2();
+                    }, 'html');
                 } else { // existing
                     bind_sub_station_antenna_select2();
                     sub_station_antenna_form.innerHTML = '';
@@ -617,7 +633,9 @@
                 formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
             }).on("select2-selecting", function(el) {
                 var sector_antenna_form = document.getElementById("id_sector_antenna_form");
-                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: el.val}, function (data) {sector_antenna_form.innerHTML=data}, 'html');
+                $.get('/gis-wizard/get-form/', {model: 'antenna', technology: {{ selected_technology }}, pk: el.val}, function (data) {sector_antenna_form.innerHTML = data;
+                    $("#id_sector_antenna_form .select2select").select2();
+                }, 'html');
             });
         }
 
@@ -724,7 +742,10 @@
                 formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
             }).on("select2-selecting", function(el) {
                 var sub_station_antenna_form = document.getElementById("id_sub_station_antenna_form");
-                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: el.val}, function (data) {sub_station_antenna_form.innerHTML=data}, 'html');
+                $.get('{% url "gis-wizard-ptp-sub-station-antenna-form" %}', { pk: el.val}, function (data) {
+                    sub_station_antenna_form.innerHTML=data;
+                    $("#id_sub_station_antenna_form .select2select").select2();
+                }, 'html');
             });
         }
         {% endif %}
@@ -899,25 +920,27 @@
                 Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
             }
 
-    // update 'states' on selecting 'country'
-        $("#id_country").change(function () {
-            if ($("#id_country").val() != "") {
-                Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
-                $("#id_city").empty();
-            }
-            else {
-                $("#id_state").select2("val","");
-                $("#id_state").empty();
-                $("#id_city").select2("val","");
-                $("#id_city").empty();
-            }
-        });
+            // update 'states' on selecting 'country'
+            $("#id_country").change(function () {
+                if ($("#id_country").val() != "") {
+                    Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
+                    $("#id_city").empty();
+                }
+                else {
+                    $("#id_state").select2("val","");
+                    $("#id_state").empty();
+                    $("#id_city").select2("val","");
+                    $("#id_city").empty();
+                }
+            });
 
-        // update 'cities' on selecting 'state'
-        $("#id_state").change(function () {
-            $("#id_city").select2("val","");
-            Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
-        });
+            // update 'cities' on selecting 'state'
+            $("#id_state").change(function () {
+                $("#id_city").select2("val","");
+                Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
+            });
+            $("#id_country, #id_state, #id_city, #id_ethernet_extender").select2();
+            
         }
 
         function repoDeviceFormatResult(device) {

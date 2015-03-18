@@ -1,0 +1,44 @@
+# In CentOS, contents should be placed in the file /etc/sysconfig/celeryd
+# # Available options: http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#available-options
+# # Where to chdir at start. This could be the root of a virtualenv.
+CELERYD_CHDIR="/omd/nocout/nocout/nocout"
+CELERYBEAT_CHDIR="/omd/nocout/nocout/nocout"
+#
+# # Absolute or relative path to the celery program
+NOCOUT_PYTHON="/omd/nocout/nout/bin/python"
+
+NOCOUT_MANAGE="$CELERYD_CHDIR/manage.py"
+
+CELERY_BIN="$NOCOUT_PYTHON $NOCOUT_MANAGE celery"
+
+# Path to celerybeat
+CELERYBEAT="$NOCOUT_PYTHON $NOCOUT_MANAGE celerybeat"
+
+# How to call "manage.py celeryd_multi"
+CELERYD_MULTI="$NOCOUT_PYTHON $NOCOUT_MANAGE celeryd_multi"
+#
+# # How to call "manage.py celeryctl"
+CELERYCTL="$NOCOUT_PYTHON $NOCOUT_MANAGE celeryctl"
+#
+# # App instance to use (value for --app argument).
+CELERY_APP="nocout"
+#
+# # Create log/pid dirs, if they don't already exist
+CELERY_CREATE_DIRS=1
+#
+# # Workers run as an unprivileged user
+CELERYD_USER=tmadmin
+CELERYD_GROUP=tmadmin
+# Beat run as an unprivileged user
+CELERYBEAT_LOG_FILE="/omd/nocout/tmp/celerybeat/nocout-celery-beat-log.log"
+CELERYBEAT_PID_FILE="/omd/nocout/tmp/celerybeat/nocout-celery-beat-pid.pid"
+
+CELERYBEAT_LOG_LEVEL=DEBUG
+
+# Beat run as an unprivileged user
+CELERYBEAT_USER=tmadmin
+CELERYBEAT_GROUP=tmadmin
+CELERYBEAT_OPTS="--schedule=/omd/nocout/tmp/celerybeat/celerybeat-schedule"
+
+export DJANGO_SETTINGS_MODULE="nocout.settings"
+export PYTHONPATH="$PYTHONPATH:/omd/nocout/nocout/nocout"

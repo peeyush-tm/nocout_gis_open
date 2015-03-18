@@ -3,14 +3,14 @@
 {% block content_title %}GIS Wizard: Backhaul{% endblock %}
 {% block content_description %}gis wizard: backhaul{% endblock %}
 {% block content %}
-<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
+<p><a href="javascript:void(0)" class="previous_page_url"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
     <div class="row formContainer">
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS WIZARD: BACKHAUL ({{ base_station.alias }})</h4>
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {{ object.alias }} (BACKHAUL)</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br/>
@@ -89,6 +89,7 @@
                 window.location.replace('{{ delete_url }}');
             }
         }
+
         $(document).ready(function() {
         $("#id_update_and_show").on("click", function(e) {
             e.preventDefault();
@@ -294,6 +295,21 @@
     {% endif %}
 
     <script>
+        // previous url redirection on base station
+        $(".previous_page_url").click(function() {
+            // split current window url by taking slash as a seperator
+            required_url = window.location.href.split('/');
+
+            // remove last three elements of url
+            required_url.splice(-3);
+
+            // join array elements to create url
+            required_url = required_url.join('/');
+
+            // redirect to 'required_url'
+            window.location.href = required_url;
+        });
+
         // Radio specific functions only, nothing to do with form fields.
         $(function() {
             /* :START: Technology radio select selected and bind reload onchange event

@@ -11,10 +11,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 from django.conf import global_settings
 from collections import namedtuple
-
 from datetime import timedelta
-
-from celery.schedules import crontab
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
@@ -60,7 +57,9 @@ SITE_ID = 1
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
-LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/', 'sm/dialog_action/', 'user/change_password/')
+LOGIN_EXEMPT_URLS = (
+    r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/',
+    'sm/dialog_action/', 'user/change_password/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -71,7 +70,7 @@ USE_I18N = True
 USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
-USE_TZ = True
+USE_TZ = False
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
@@ -104,7 +103,7 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'dajaxice.finders.DajaxiceFinder',
-    #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -125,9 +124,9 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
 )
 
 MIDDLEWARE_CLASSES = (
-    #caching
+    # site caching
     # 'django.middleware.cache.UpdateCacheMiddleware',
-    #caching
+    # site caching
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -137,22 +136,22 @@ MIDDLEWARE_CLASSES = (
     # 'nocout.middleware.UserProfileAuditMiddleware',
     'session_security.middleware.SessionSecurityMiddleware',
     'nocout.middlewares.LoginRequiredMiddleware.LoginRequiredMiddleware',
-    #'audit_log.middleware.UserLoggingMiddleware',
-    #'audit_log.middleware.AuditlogMiddleware',
+    # 'audit_log.middleware.UserLoggingMiddleware',
+    # 'audit_log.middleware.AuditlogMiddleware',
     # Uncomment the next line for simple clickjacking protection
-    #required for GISS SCAN
+    # required for GISS SCAN
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-    #caching
+    # site caching
     # 'django.middleware.cache.FetchFromCacheMiddleware',
-    #caching
+    # site caching
 )
 
-#cookies settings
+# cookies settings
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 
-#session cookie
+# session cookie
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = True
 
@@ -171,7 +170,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'session_security',
     'south',
-    'nocout.signals', # Load before nocout apps
+    'nocout.signals',  # Load before nocout apps
     'user_profile',
     'user_group',
     'device',
@@ -210,10 +209,78 @@ AUTHENTICATION_BACKENDS = (
     'session_management.backends.TokenAuthBackend',
 )
 
+# Celery Settings
+
+import djcelery
+
+djcelery.setup_loader()
+
+# MongoDB configuration for django-celery
+# CELERY_RESULT_BACKEND = "mongodb"
+# CELERY_MONGODB_BACKEND_SETTINGS = {
+#     "host": "10.133.12.163",
+#     "port": 27163,
+#     "database": "nocout_celery_db",  # mongodb database for django-celery
+#     "taskmeta_collection": "c_queue"  # collection name to use for task output
+# }
+# BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
+
+# REDIS
+REDIS_HOST = "localhost"
+REDIS_PORT = 6379
+REDIS_DB = 0
+# celery result backend configuration
+CELERY_RESULT_BACKEND = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB)
+
+REDIS_CONNECT_RETRY = True
+BROKER_HOST = REDIS_HOST  # Maps to redis host.
+BROKER_PORT = REDIS_PORT  # Maps to redis port.
+BROKER_VHOST = (REDIS_DB + 1)   # Maps to database number.
+# celery broker configuration
+BROKER_URL = 'redis://' + str(BROKER_HOST) + ':' + str(BROKER_PORT) + '/' + str(BROKER_VHOST)
+
+
+# MEMCACHED
+# CELERY_CACHE_BACKEND = 'memory'
+# CELERY_RESULT_BACKEND = 'cache+memcached://127.0.0.1:11211/'
+
+# USE WITH PYLIB MC
+# CELERY_CACHE_BACKEND_OPTIONS = {'binary': True,
+#                                 'behaviors': {'tcp_nodelay': True}}
+
+from celery import crontab
+
+#=time zone for celery periodic tasks
+CELERY_TIMEZONE = 'Asia/Calcutta'
+CELERY_ENABLE_UTC = False
+CELERYD_TASK_TIME_LIMIT = 300
+CELERY_IGNORE_RESULT = True
+
+
+REDIS_CACHE_HOST = REDIS_HOST
+REDIS_CACHE_PORT = REDIS_PORT
+REDIS_CACHE_DB = (REDIS_DB + 2)
+REDIS_CACHE_URL = 'redis://' + str(REDIS_CACHE_HOST) + ':' + str(REDIS_CACHE_PORT) + '/' + str(REDIS_CACHE_DB)
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_CACHE_URL,
+        'TIMEOUT': 60,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            'MAX_ENTRIES': 1000,
+            "COMPRESS_MIN_LEN": 10,
+            "IGNORE_EXCEPTIONS": True,
+        }
+    }
+}
+
+
 ##TODO: dynamically populate cache
 #
 # def get_cache():
-#     import os
+# import os
 #
 #     try:
 #         os.environ['MEMCACHE_SERVERS'] = os.environ['MEMCACHIER_SERVERS'].replace(',', ';')
@@ -238,106 +305,192 @@ AUTHENTICATION_BACKENDS = (
 # CACHES = get_cache()
 
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'nocout-gis-rf-critical',
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000
-        }
-    }
-}
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+#         'LOCATION': '127.0.0.1:11211',
+#         'TIMEOUT': 300,
+#         'OPTIONS': {
+#             'MAX_ENTRIES': 1000
+#         }
+#     }
+# }
+
+#if pylibmc is isntalled
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+#         'LOCATION': 'localhost:11211',
+#         'TIMEOUT': 500,
+#         'BINARY': True,
+#         'OPTIONS': {  # Maps to pylibmc "behaviors"
+#             'tcp_nodelay': True,
+#             #'ketama': True
+#         }
+#     }
+# }
+
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#         'LOCATION': 'nocout-gis-rf-critical',
+#         'OPTIONS': {
+#             'MAX_ENTRIES': 1000
+#         }
+#     }
+# }
+
+# 16th March 2016 : Using Redis Server as Cache Server instead of much performant Memcached
+
+
 
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
 ]
 
-'''
-# RabbitMQ configuration for django-celery
-BROKER_HOST = "localhost"
-BROKER_PORT = 5672
-BROKER_USER = "priyesh"
-BROKER_PASSWORD = "pass"
-BROKER_VHOST = "/nocout_dev"
-'''
-
-# MongoDB configuration for django-celery
-CELERY_RESULT_BACKEND = "mongodb"
-CELERY_MONGODB_BACKEND_SETTINGS = {
-    "host": "127.0.0.1",
-    "port": 27017,
-    "database": "nocout_celery_db",             # mongodb database for django-celery
-    "taskmeta_collection": "c_queue"            # collection name to use for task output
-}
-BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
-
-#=time zone for celery periodic tasks
-CELERY_TIMEZONE = 'Asia/Calcutta'
-
 
 CELERYBEAT_SCHEDULE = {
-    'wimax-topology': {
-        'task': 'inventory.tasks.get_topology',
-        'schedule': timedelta(seconds=300),
-        'args': ['WiMAX']
-    },
-    'pmp-topology': {
-        'task': 'inventory.tasks.get_topology',
-        'schedule': timedelta(seconds=300),
+    # BEGIN Topology Updates
+    'pmp-topology-site-wise': {
+        'task': 'inventory.tasks.topology_site_wise',
+        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
         'args': ['PMP']
     },
-    'wimax-ss-topology': {
-        'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': timedelta(seconds=300),
+    'wimax-topology-site-wise': {
+        'task': 'inventory.tasks.topology_site_wise',
+        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
         'args': ['WiMAX']
     },
-    'pmp-ss-topology': {
-        'task': 'inventory.tasks.get_topology_with_substations',
-        'schedule': crontab(minute=0, hour=0),
-        'args': ['PMP']
-    },
+    # END Topology Updates
+    # updating the polled sector frequency
     'update-sector-frequency': {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
         'schedule': crontab(minute=0, hour=0)
     },
+    # BEGIN Escalation Status for the configured services
     'check-device-status': {
         'task': 'alarm_escalation.tasks.check_device_status',
         'schedule': timedelta(seconds=300),
     },
-    'gather_sector_status': {
+    # END Escalation Status for the configured services
+    # BEGIN Calculations for Capacity
+    # Calculations start at 2nd minute for Backhual
+    'gather_backhaul_status': {
+        'task': 'capacity_management.tasks.gather_backhaul_status',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+    },
+    # Sector Capacity Caclucations
+    # Calculations start at 2nd minute for PMP
+    'gather_sector_status-pmp': {
         'task': 'capacity_management.tasks.gather_sector_status',
-        'schedule': timedelta(seconds=300),
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'args': ['PMP']
+    },
+    # Calculations start at 3rd minute for WiMAX
+    'gather_sector_status-wimax': {
+        'task': 'capacity_management.tasks.gather_sector_status',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
         'args': ['WiMAX']
     },
-    'timely-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_timely_main_dashboard',
-        'schedule': timedelta(seconds=300),
+    # END Calculations for Capacity
+    # Dashboards Calculations start at 5th minute of the hour
+    'calculate_speedometer_dashboards-NW': {
+        'task': 'dashboard.tasks.network_speedometer_dashboards',
+        'schedule': crontab(minute='*/5'),
+    },
+    'calculate_speedometer_dashboards-TEMP': {
+        'task': 'dashboard.tasks.temperature_speedometer_dashboards',
+        'schedule': crontab(minute='*/5'),
+    },
+    # BEGIN: Range Dashboards
+    'calculate_range_dashboards-PMP': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP', 'type': 'sector'}
+    },
+    'calculate_range_dashboards-WiMAX': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX', 'type': 'sector'}
+    },
+    'calculate_range_dashboards-PMP-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP', 'type': 'backhaul'}
+    },
+    'calculate_range_dashboards-WiMAX-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX', 'type': 'backhaul'}
+    },
+    'calculate_range_dashboards-TCLPOP-BH': {
+        'task': 'dashboard.tasks.calculate_range_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'TCLPOP', 'type': 'backhaul'}
+    },
+    # END: Range Dashboards
+    'calculate_status_dashboards-PMP': {
+        'task': 'dashboard.tasks.calculate_status_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP'}
+    },
+    'calculate_status_dashboards-WiMAX': {
+        'task': 'dashboard.tasks.calculate_status_dashboards',
+        'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX'}
     },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
-        'schedule': crontab(minute=0)
+        'schedule': crontab(minute='5', hour='*')
     },
     'daily-main-dashboard': {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
-        'schedule': crontab(minute=0, hour=0)
+        'schedule': crontab(minute='5', hour=0)  # Execute Daily at Midnight
     },
-    'weekly-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
-        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+    # END Backhaul Capacity Task
+    # BEGIN sector spot dashboard jobs
+    # will run on STATUS tables. must run within 5 minutes
+    'get_all_sector_devices-PMP': {
+        'task': 'performance.tasks.get_all_sector_devices',
+        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP'}
     },
-    'monthly-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_monthly_main_dashboard',
-        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+    'get_all_sector_devices-WiMAX': {
+        'task': 'performance.tasks.get_all_sector_devices',
+        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX'}
     },
-    'yearly-main-dashboard': {
-        'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
-        'schedule': crontab(minute=0, hour=0, day_of_month=1)
+    'check_for_monthly_spot-WiMAX-PMP': {
+        'task': 'performance.tasks.check_for_monthly_spot',
+        'schedule': crontab(hour=23, minute=30)
     },
+    # END sector spot dashboard jobs
+    # Remove all caching per 6 hours
+    'cache_clear_task': {
+        'task': 'nocout.tasks.cache_clear_task',
+        'schedule': crontab(minute=3, hour='*/6'),  # per 6 hours delete all cache
+    },
+    # RF Network Availability Job - PTP-BH
+    'calculate_rf_network_availability-PTP-BH': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'P2P'},  # PTP BH is not a tachnology, P2P is
+        'schedule': crontab(minute=05, hour=0)
+    },
+    # RF Network Availability Job - PMP
+    'calculate_rf_network_availability-PMP': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'PMP'},
+        'schedule': crontab(minute=15, hour=0)
+    },
+    # RF Network Availability Job - WiMAX
+    'calculate_rf_network_availability-WiMAX': {
+        'task': 'performance.tasks.calculate_rf_network_availability',
+        'kwargs': {'technology': 'WiMAX'},
+        'schedule': crontab(minute=25, hour=0)
+    }
 }
-
-
-import djcelery
-djcelery.setup_loader()
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -353,26 +506,26 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s:%(lineno)s %(process)d %(thread)d %(message)s',
-            'datefmt' : "%d/%b/%Y %H:%M:%S"
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
+            'datefmt': "%d/%b/%Y %H:%M:%S"
         },
     },
     'handlers': {
         'sentry': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
         },
         'console': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join( '/tmp/nocout_main.log' ),
-            'maxBytes': 1000000000,
-            'backupCount':10,
+            'filename': os.path.join('/tmp/nocout_main.log'),
+            'maxBytes': 1048576,
+            'backupCount': 100,
             'formatter': 'verbose',
         },
 
@@ -380,56 +533,56 @@ LOGGING = {
     'loggers': {
         'django.db.backends': {
             'level': 'ERROR',
-            'handlers': ['console'],
+            'handlers': ['sentry'],
             'propagate': False,
         },
         'raven': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'sentry'],
+            'level': 'ERROR',
+            'handlers': ['sentry'],
             'propagate': False,
         },
         'sentry.errors': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'handlers': ['console'],
             'propagate': False,
         },
-        '':{
-            'handlers': ['console','logfile','sentry'],
-            'level': 'DEBUG',
+        '': {
+            'handlers': ['logfile'],
+            'level': 'INFO',
         },
     },
 }
 
-##FOR MULTI PROC data analysis
+# #FOR MULTI PROC data analysis
 MULTI_PROCESSING_ENABLED = False
-##FOR MULTI PROC data analysis
+# #FOR MULTI PROC data analysis
 
 SESSION_SECURITY_WARN_AFTER = 540
 SESSION_SECURITY_EXPIRE_AFTER = 600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SECURITY_PASSIVE_URLS = ['dialog_for_page_refresh', 'dialog_expired_logout_user']
 
-MAX_USER_LOGIN_LIMIT=100
+MAX_USER_LOGIN_LIMIT = 100
 
-DEFAULT_USERS= namedtuple('DEFAULT_USERS', 'USERNAME ID')
-NOCOUT_USER= DEFAULT_USERS( USERNAME='nocout', ID=1)
-GISADMIN= DEFAULT_USERS( USERNAME='gisadmin', ID=2)
-GISOPERATOR_ID= DEFAULT_USERS( USERNAME='gisoperator', ID=3)
-GISVIEWER_ID= DEFAULT_USERS( USERNAME='gisviewer', ID=3)
+DEFAULT_USERS = namedtuple('DEFAULT_USERS', 'USERNAME ID')
+NOCOUT_USER = DEFAULT_USERS(USERNAME='nocout', ID=1)
+GISADMIN = DEFAULT_USERS(USERNAME='gisadmin', ID=2)
+GISOPERATOR_ID = DEFAULT_USERS(USERNAME='gisoperator', ID=3)
+GISVIEWER_ID = DEFAULT_USERS(USERNAME='gisviewer', ID=3)
 
 
-DEVICE_TECHNOLOGY = namedtuple('DEVICE_TECHNOLOGY','NAME ID' )
+# TODO: with each deployment check for all the technologies
+DEVICE_TECHNOLOGY = namedtuple('DEVICE_TECHNOLOGY', 'NAME ID')
 P2P = DEVICE_TECHNOLOGY('P2P', '2')
 WiMAX = DEVICE_TECHNOLOGY('WiMAX', '3')
 PMP = DEVICE_TECHNOLOGY('PMP', '4')
 Switch = DEVICE_TECHNOLOGY('Switch', '7')
 TCLPTPPOP = DEVICE_TECHNOLOGY('TCLPTPPOP', '9')
+TCLPOP = DEVICE_TECHNOLOGY('TCLPOP', '8')
 
+MPTT_TREE = namedtuple('MPTT_TREE', 'lft rght level')
 
-
-MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
-
-ISOLATED_NODE= MPTT_TREE(lft=1, rght=2, level=0)
+ISOLATED_NODE = MPTT_TREE(lft=1, rght=2, level=0)
 
 # Default PING parameters
 PING_PACKETS = 60
@@ -443,7 +596,7 @@ PING_PL_CRITICAL = 100
 ######################list of private IPs
 
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
-GIS_MAP_MAX_DEVICE_LIMIT=1000
+GIS_MAP_MAX_DEVICE_LIMIT = 1000
 
 ##############################################
 EXCEPTIONAL_SERVICES = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
@@ -460,7 +613,7 @@ DEVICE_APPLICATION = {
     }
 }
 
-###Services & SErvice Datasoruces settings
+# Services & SErvice Datasoruces settings
 SERVICE_DATA_SOURCE = {
     "rta": {
         "display_name": "Latency",
@@ -523,8 +676,7 @@ SERVICE_DATA_SOURCE = {
         "chart_color": "#70AFC4",
         "service_name": 'rf',
         "service_alias": 'RF Latency',
-    },
-
+    }
 }
 
 SERVICES = {
@@ -534,30 +686,49 @@ SERVICES = {
 #Date Format to be used throughout the application
 DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 
-###################REPORT_PATH
+# ##################REPORT_PATH
 
 REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
 REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
 
 # ********************** django password options **********************
-PASSWORD_MIN_LENGTH = 6 # Defaults to 6
-PASSWORD_MAX_LENGTH = 120 # Defaults to None
+PASSWORD_MIN_LENGTH = 6  # Defaults to 6
+PASSWORD_MAX_LENGTH = 120  # Defaults to None
 
-PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
+PASSWORD_DICTIONARY = "/usr/share/dict/words"  # Defaults to None
 # PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
 
-PASSWORD_MATCH_THRESHOLD = 0.9 # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
-PASSWORD_COMMON_SEQUENCES = [] # Should be a list of strings, see passwords/validators.py for default
-PASSWORD_COMPLEXITY = { # You can ommit any or all of these for no limit for that particular set
-    "UPPER": 1,       # Uppercase
-    "LOWER": 1,       # Lowercase
-    "DIGITS": 1,      # Digits
-    "PUNCTUATION": 0, # Punctuation (string.punctuation)
-    "NON ASCII": 0,   # Non Ascii (ord() >= 128)
-    "WORDS": 0        # Words (substrings seperates by a whitespace)
+PASSWORD_MATCH_THRESHOLD = 0.9  # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
+PASSWORD_COMMON_SEQUENCES = []  # Should be a list of strings, see passwords/validators.py for default
+PASSWORD_COMPLEXITY = {  # You can ommit any or all of these for no limit for that particular set
+                         "UPPER": 1,  # Uppercase
+                         "LOWER": 1,  # Lowercase
+                         "DIGITS": 1,  # Digits
+                         "PUNCTUATION": 0,  # Punctuation (string.punctuation)
+                         "NON ASCII": 0,  # Non Ascii (ord() >= 128)
+                         "WORDS": 0  # Words (substrings seperates by a whitespace)
 }
 
+
+# ###EMAIL SETTINGS
+DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/nocout/tmp/app-messages'  # change this to a proper location
+
+# ### Special Calculation Mechanism for Capacity Management
+CAPACITY_SPECIFIC_TIME = 0
+
+####################### Live Polling Configuration #######################
+LIVE_POLLING_CONFIGURATION = {
+    'maps_default' : True,
+    'maps_themetics' : True,
+    'maps_single_service' : True,
+    'performance' : False
+}
+
+####################### Periodic Polling Parallel Processes Count #######################
+PERIODIC_POLL_PROCESS_COUNT = 2
 
 # Import the local_settings.py file to override global settings
 

@@ -7,8 +7,10 @@
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
     <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css"
-          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    <!-- BOOTSTRAP SWITCH -->
+    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %} />
+
     <style>
         select option[disabled] {
             display: none;
@@ -22,10 +24,10 @@
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
                 <li>
-                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="ping"> Ping Thematics
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="ping" checked=""> Ping Thematics
                 </li>
                 <li>
-                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="normal" checked=""> Service Thematics
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="normal"> Service Thematics
                 </li>
                 <li>
                     <button type="button" id="advSearchBtn" class="btn btn-sm btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
@@ -65,19 +67,15 @@
                         Selection
                     </button>
                 </li>
-                {% for group in user.groups.all %}
-                    {% if group.name == 'group_admin' or group.name == 'group_operator' %}
-                        <li>
-                            <button type="button" id="showToolsBtn" class="btn btn-sm btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
-                            data-loading-text="Please Wait...">
-                                <i class='fa fa-cog'></i> Show Tools
-                            </button>
-                            <button type="button" id="removeToolsBtn" class="btn btn-sm btn-danger hide" onclick="removetoolsPanel();">
-                                <i class='fa fa-times'></i> Hide Tools
-                            </button>
-                        </li>
-                    {% endif %}
-                {% endfor %}
+                <li>
+                    <button type="button" id="showToolsBtn" class="btn btn-sm btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                    data-loading-text="Please Wait...">
+                        <i class='fa fa-cog'></i> Show Tools
+                    </button>
+                    <button type="button" id="removeToolsBtn" class="btn btn-sm btn-danger hide" onclick="removetoolsPanel();">
+                        <i class='fa fa-times'></i> Hide Tools
+                    </button>
+                </li>
             </ul>
         </div>
     </span>
@@ -501,24 +499,45 @@
     <script type="text/javascript" src={% static "js/tooltipLib.js" %}></script>
     <!--Our Common Utilities Script-->
     <script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
+    <!-- Bootstrap switch lib for BS maintenance infowindow -->
+    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <!-- JQUERY UI-->
+    <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %} ></script>
 
     <script type="text/javascript">
 
         var networkMapInstance = "",
-            getFilterApi = "",
-            setFilterApi = "",
             advSearch = "",
+            advJustSearch= "",
+            is_super_admin = "",
             deviceName = "",
-            advJustSearch= "";
+            default_polling = true;
 
         $(document).ready(function (e) {
+            
+            try {
+                deviceName = "{{ device_name }}";
+                // Is user super admin or admin
+                is_super_admin = '{{ is_admin }}';
+                // Live polling Configuration
+                live_poll_config = $.parseJSON('{{ live_poll_config|safe }}');
+                // Periodic polling parallel processes count
+                periodic_poll_process_count = '{{ periodic_poll_process_count }}';
+                periodic_poll_process_count = periodic_poll_process_count ? Number(periodic_poll_process_count) : 1;
+
+                default_polling = live_poll_config['maps_default'] ? live_poll_config['maps_default'] : false;
+
+                if(!default_polling) {
+                    $("#createPolygonBtn").parent().remove();
+                }
+
+            } catch(e) {
+                // pass
+                // console.error(e);
+            }
 
             /*Show page controls page*/
             $("#headerToggleBtn").trigger('click');
-
-            getFilterApi = "{{get_filter_api}}";
-            setFilterApi = "{{set_filter_api}}";
-            deviceName = "{{ device_name }}";
 
             /*Create a instance of gmap_devicePlottingLib*/
             networkMapInstance = new devicePlottingClass_gmap();

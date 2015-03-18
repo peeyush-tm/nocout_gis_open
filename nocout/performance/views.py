@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import csv
+
 #import json
 import ujson as json
 import datetime
@@ -8,10 +8,11 @@ from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
-import xlwt
+
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 
@@ -19,7 +20,9 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, \
-    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus
+    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus, SpotDashboard
+
+from nocout.utils import logged_in_user_organizations
 
 from django.utils.dateformat import format
 
@@ -34,9 +37,12 @@ from performance.utils import util as perf_utils
 
 from service.utils.util import service_data_sources
 
-from nocout.settings import DATE_TIME_FORMAT
+from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION
 
 from performance.formulae import display_time, rta_null
+from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.utils.util import fetch_raw_result
 
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
@@ -377,8 +383,21 @@ class LivePerformanceListing(BaseDatatableView):
         :param device_list:
         :return:
         """
-        page_type = self.request.GET['page_type']
-        return perf_utils.prepare_gis_devices(qs, page_type)
+        page_type = self.request.GET.get('page_type')
+        device_tab_technology = self.request.GET.get('data_tab')
+
+        if page_type == 'network':
+            type_rf = 'sector'
+        elif page_type == 'customer':
+            type_rf = 'ss'
+        else:
+            type_rf = None
+
+        return perf_utils.prepare_gis_devices(qs, page_type,
+                                              monitored_only=True,
+                                              technology=device_tab_technology,
+                                              type_rf=type_rf
+        )
 
     def prepare_machines(self, qs):
         """
@@ -521,7 +540,18 @@ class Get_Perfomance(View):
             'get_status_url': 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/device/' + str(
                 device_id),
-            'page_type': page_type
+            'inventory_page_url' : reverse(
+                'device_edit',
+                kwargs={'pk': device_id},
+                current_app='device'
+            ),
+            'alert_page_url' : reverse(
+                'SingleDeviceAlertsInit',
+                kwargs={'page_type': page_type, 'device_id' : device_id, 'service_name' : 'ping'},
+                current_app='alert_center'
+            ),
+            'page_type': page_type,
+            'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -542,22 +572,282 @@ class Performance_Dashboard(View):
         """
         return render_to_response('home/home.html')
 
+# This function returns last x months 'years,month' tuple & all months name, alias list
+def getLastXMonths(months_count):
 
-class Sector_Dashboard(View):
+    # month name list
+    all_months_list = [
+        {"name" : "jan","alias" : "Jan"},
+        {"name" : "feb","alias" : "Feb"},
+        {"name" : "march","alias" : "March"},
+        {"name" : "april","alias" : "April"},
+        {"name" : "may","alias" : "May"},
+        {"name" : "june","alias" : "June"},
+        {"name" : "july","alias" : "July"},
+        {"name" : "aug","alias" : "Aug"},
+        {"name" : "sept","alias" : "Sept"},
+        {"name" : "oct","alias" : "Oct"},
+        {"name" : "nov","alias" : "Nov"},
+        {"name" : "dec","alias" : "Dec"}
+    ]
+
+    now = time.localtime()
+
+    last_six_months_list = [
+        time.localtime(
+            time.mktime(
+                (now.tm_year, now.tm_mon - n, 1, 0, 0, 0, 0, 0, 0)
+            )
+        )[:2] for n in range(months_count)
+    ]
+
+    # Reverse months list
+    last_six_months_list.reverse()
+
+    return (last_six_months_list, all_months_list)
+
+# Sector Spot Dashboard ListView
+class SectorDashboard(ListView):
     """
     The Class based view to get sector dashboard page requested.
 
     """
 
-    def get(self, request):
-        """
-        Handles the get request
+    model = SpotDashboard
+    template_name = 'performance/sector_dashboard.html'
 
-        :param request:
-        :return Http response object:
+    def get_context_data(self, **kwargs):
+
+        context = super(SectorDashboard, self).get_context_data(**kwargs)
+        # Sector Info Headers
+        sector_headers = [
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', },
+            {'mData': 'sector_sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', }
+        ]
+
+
+        ul_last_six_month_headers = list()
+        sia_last_six_month_headers = list()
+        augt_last_six_month_headers = list()
+        months_index_list = list()
+
+        # Get Last Six Month List
+        last_six_months_list, \
+        months_list = getLastXMonths(6)
+
+        try:
+            # pass
+            last_six_months_list.reverse()
+        except Exception, e:
+            # raise e
+            pass
+
+        for i in range(6):
+            # Get month index from year,month tuple
+            month_index = last_six_months_list[i][1] - 1
+            month_name = months_list[month_index]['name']
+            month_alias = months_list[month_index]['alias']
+
+            # Months index List
+            months_index_list.append(month_index)
+
+            # Last Six Month UL Issues Headers
+            ul_last_six_month_headers.append(
+                {'mData': 'ul_issue_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+            )
+            # Last Six Month SIA Headers
+            sia_last_six_month_headers.append(
+                {'mData': 'sia_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+            )
+            # Last Six Month Augmentation Headers
+            augt_last_six_month_headers.append(
+                {'mData': 'augment_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+            )
+
+        table_headers = []
+        table_headers += sector_headers
+        table_headers += ul_last_six_month_headers
+        table_headers += sia_last_six_month_headers
+        table_headers += augt_last_six_month_headers
+
+        context['table_headers'] = json.dumps(table_headers)
+        context['months_index'] = json.dumps(months_index_list)
+        return context
+
+class SectorDashboardListing(BaseDatatableView):
+    """ This class show sector spot dashboard listing """
+
+    model = SpotDashboard
+
+    # Static info Colums
+    static_columns = [
+        "sector_sector_id",
+        "sector_sector_configured_on",
+        "sector_device_technology"
+    ]
+
+    # Calculated or polled info columns
+    polled_columns = [
+        "ul_issue_1",
+        "ul_issue_2",
+        "ul_issue_3",
+        "ul_issue_4",
+        "ul_issue_5",
+        "ul_issue_6",
+        "augment_1",
+        "augment_2",
+        "augment_3",
+        "augment_4",
+        "augment_5",
+        "augment_6",
+        "sia_1",
+        "sia_2",
+        "sia_3",
+        "sia_4",
+        "sia_5",
+        "sia_6"
+    ]
+
+    columns = static_columns + polled_columns
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        return self.model.objects.values(*self.columns)
+
+    def prepare_results(self,qs):
+
+        report_resultset = []
+
+        for data in qs:
+            report_object = {}
+            report_object['sector_id'] = data['sector_sector_id']
+            report_object['sector_sector_configured_on'] = data['sector_sector_configured_on']
+            report_object['sector_device_technology'] = data['sector_device_technology']
+
+            #  Last 6 months loop
+            for i in range(6):
+                columns_concat_counter = str(i+1)
+                # Condition for ul Issue
+                if data['ul_issue_'+columns_concat_counter]:
+                    report_object['ul_issue_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                else:
+                    report_object['ul_issue_'+columns_concat_counter] = '-'
+
+
+                # Condition for Augmentation
+                if data['augment_'+columns_concat_counter]:
+                    report_object['augment_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                else:
+                    report_object['augment_'+columns_concat_counter] = '-'
+
+
+                # Condition for SIA
+                if data['sia_'+columns_concat_counter]:
+                    report_object['sia_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                else:
+                    report_object['sia_'+columns_concat_counter] = '-'
+
+            #add data to report_resultset list
+            report_resultset.append(report_object)
+
+        return report_resultset
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+
+        order_columns = self.static_columns
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
         """
 
-        return render(request, 'home/home.html')
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+           'iTotalRecords': total_records,
+           'iTotalDisplayRecords': total_display_records,
+           'aaData': aaData
+        }
+
+        return ret
 
 
 class Fetch_Inventory_Devices(View):
@@ -650,6 +940,7 @@ class Inventory_Device_Status(View):
         result['data']['objects']['values'] = list()
 
         customer_name = ''
+        customer_name_url = ''
 
         device = Device.objects.get(id=device_id)
         technology = DeviceTechnology.objects.get(id=device.device_technology)
@@ -699,105 +990,296 @@ class Inventory_Device_Status(View):
             for sector in sector_objects:
 
                 sector_id = 'N/A'
+                sector_id_url = ''
+
                 pmp_port = 'N/A'
+                pmp_port_url = ''
+                
                 dr_ip = None
+                dr_ip_url = ''
+
                 base_station = 'N/A'
+                
                 frequency = 'N/A'
+                frequency_url = ''
+
                 planned_frequency = 'N/A'
+                planned_frequency_url = ''
+
                 if sector:
                     base_station = sector.base_station
+                    
                     planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
-                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     planned_frequency = ",".join(planned_frequency)
+                    
+                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     frequency = ",".join(frequency)
                     if technology.name.lower() in ['ptp', 'p2p']:
                         try:
                             circuits = sector.circuit_set.get()
                             customer_name = circuits.customer.alias
+                            customer_name_url = reverse('customer_edit', kwargs={'pk': circuits.customer.id}, current_app='inventory')
                         except Exception as no_circuit:
                             log.exception(no_circuit)
 
                     else:
                         sector_id = sector.sector_id
+                        sector_id_url = reverse('sector_edit', kwargs={'pk' : sector.id}, current_app='inventory')
                         if technology.name.lower() in ['wimax']:
                             try:
                                 pmp_port = sector.sector_configured_on_port.alias
+                                pmp_port_url = reverse('device_edit', kwargs={'pk': sector.dr_configured_on.id}, current_app='device')
                                 pmp_port = pmp_port.upper()
                             except Exception as no_port:
                                 log.exception(no_port)
                             try:
                                 dr_ip = sector.dr_configured_on.ip_address
+                                dr_ip_url = reverse('device_edit', kwargs={'pk': sector.dr_configured_on.id}, current_app='device')
                             except Exception as no_dr:
                                 dr_ip = None
                                 log.exception(no_dr.message)
                 
                 display_bs_name = 'N/A'
+                bs_name_url = ''
+                
                 city_name = 'N/A'
+                city_url = ''
+                
                 state_name = 'N/A'
+                state_url = ''
 
+                table_values = list()
+                
                 if base_station and base_station != 'N/A':
 
                     city_name = base_station.city.city_name if base_station.city else "N/A"
+                    city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
+
                     state_name = base_station.state.state_name if base_station.state else "N/A"
+                    state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
 
                     display_bs_name = base_station.alias
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
+                        bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                 if technology.name.lower() in ['ptp', 'p2p']:
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                customer_name,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : bs_name_url
+                        },
+                        {
+                            "val" : customer_name,
+                            "url" : customer_name_url
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : type.alias,
+                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : planned_frequency,
+                            "url" : planned_frequency_url
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+
+                    result['data']['objects']['values'].append(table_values)
 
                 elif technology.name.lower() in ['wimax']:
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                sector_id,
-                                                                pmp_port,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+                    # table_values = []
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : bs_name_url
+                        },
+                        {
+                            "val" : sector_id,
+                            "url" : sector_id_url
+                        },
+                        {
+                            "val" : pmp_port,
+                            "url" : pmp_port_url
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : type.alias,
+                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : planned_frequency,
+                            "url" : planned_frequency_url
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+
+                    result['data']['objects']['values'].append(table_values)
+
+                    # result['data']['objects']['values'].append([display_bs_name,
+                    #                                             sector_id,
+                    #                                             pmp_port,
+                    #                                             technology.alias,
+                    #                                             type.alias,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             device.ip_address,
+                    #                                             # device.mac_address,
+                    #                                             planned_frequency,
+                    #                                             frequency
+                    # ])
                     if dr_ip:
                         dr_ip += " (DR) "
-                        result['data']['objects']['values'].append([display_bs_name,
-                                                                sector_id,
-                                                                pmp_port,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                dr_ip,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+
+                        table_values = [
+                            {
+                                "val" : display_bs_name,
+                                "url" : bs_name_url
+                            },
+                            {
+                                "val" : sector_id,
+                                "url" : sector_id_url
+                            },
+                            {
+                                "val" : pmp_port,
+                                "url" : pmp_port_url
+                            },
+                            {
+                                "val" : technology.alias,
+                                "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                            },
+                            {
+                                "val" : type.alias,
+                                "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                            },
+                            {
+                                "val" : city_name,
+                                "url" : city_url
+                            },
+                            {
+                                "val" : state_name,
+                                "url" : state_url
+                            },
+                            {
+                                "val" : dr_ip,
+                                "url" : dr_ip_url
+                            },
+                            {
+                                "val" : planned_frequency,
+                                "url" : planned_frequency_url
+                            },
+                            {
+                                "val" : frequency,
+                                "url" : frequency_url
+                            }
+                        ]
+
+                        result['data']['objects']['values'].append(table_values)
+
+                    #     result['data']['objects']['values'].append([display_bs_name,
+                    #                                             sector_id,
+                    #                                             pmp_port,
+                    #                                             technology.alias,
+                    #                                             type.alias,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             dr_ip,
+                    #                                             # device.mac_address,
+                    #                                             planned_frequency,
+                    #                                             frequency
+                    # ])
 
                 else:
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                sector_id,
-                                                                # pmp_port,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : bs_name_url
+                        },
+                        {
+                            "val" : sector_id,
+                            "url" : sector_id_url
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : type.alias,
+                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : planned_frequency,
+                            "url" : planned_frequency_url
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+                    
+                    result['data']['objects']['values'].append(table_values)
+
+                    # result['data']['objects']['values'].append([display_bs_name,
+                    #                                             sector_id,
+                    #                                             # pmp_port,
+                    #                                             technology.alias,
+                    #                                             type.alias,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             device.ip_address,
+                    #                                             # device.mac_address,
+                    #                                             planned_frequency,
+                    #                                             frequency
+                    # ])
 
         elif device.substation_set.exists():
             result['data']['objects']['headers'] = ['BS Name',
@@ -832,6 +1314,7 @@ class Inventory_Device_Status(View):
                     base_station = 'N/A'
                     planned_frequency = 'N/A'
                     frequency = 'N/A'
+                    frequency_url = ''
 
                     if sector:
                         base_station = sector.base_station
@@ -839,25 +1322,37 @@ class Inventory_Device_Status(View):
                         frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                         planned_frequency = ",".join(planned_frequency)
                         frequency = ",".join(frequency)
+                        # frequency_url = sector.frequency.id
 
                     #Device Technology
                     ss_type = ""
+                    ss_type_url = ""
                     try:
                         ss_type = type.alias
+                        ss_type_url = reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
                     except Exception, e:
                         ss_type = 'N/A'
+                        ss_type_url = ""
 
                     # Handling for city name
+                    city_name = 'N/A'
+                    city_url = ''
                     try:
                         city_name = base_station.city.city_name if base_station.city else "N/A"
+                        city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
                     except Exception, e:
                         city_name = 'N/A'
+                        city_url = ''
 
                     # Handling for state name
+                    state_name = 'N/A'
+                    state_url = ''
                     try:
                         state_name = base_station.state.state_name if base_station.state else "N/A"
+                        state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
                     except Exception, e:
                         state_name = 'N/A'
+                        state_url = ''
 
                     # try:
                     #     city_name = City.objects.get(id=base_station.city).city_name \
@@ -877,36 +1372,88 @@ class Inventory_Device_Status(View):
                         display_mac_address = display_mac_address.upper()
 
                     display_bs_name = "N/A"
+                    display_bs_url = ""
 
                     if base_station and base_station != 'N/A':
                         display_bs_name = base_station.alias
+                        display_bs_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                     # Condition to show Customer name as BS Name in case of backhaul
                     if circuit.circuit_type:
                         if circuit.circuit_type.lower().strip() in ['bh', 'backhaul']:
                             display_bs_name = customer_name[0].alias
+                            display_bs_url = reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')
                         else:
                             display_bs_name = base_station.alias
+                            display_bs_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
 
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : display_bs_url
+                        },
+                        {
+                            "val" : substation.alias,
+                            "url" : reverse('sub_station_edit', kwargs={'pk': substation.id}, current_app='inventory')
+                        },
+                        {
+                            "val" : circuit.circuit_id,
+                            "url" : reverse('circuit_edit', kwargs={'pk': circuit.id}, current_app='inventory')
+                        },
+                        {
+                            "val" : customer_name[0].alias,
+                            "url" : reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : ss_type,
+                            "url" : ss_type_url
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : display_mac_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+                    
+                    result['data']['objects']['values'].append(table_values)
 
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                substation.alias,
-                                                                circuit.circuit_id,
-                                                                customer_name[0].alias,
-                                                                technology.alias,
-                                                                ss_type,
-                                                                # substation.building_height,
-                                                                # substation.tower_height,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                display_mac_address,
-                                                                # planned_frequency,
-                                                                frequency
-                    ])
+                    # result['data']['objects']['values'].append([display_bs_name,
+                    #                                             substation.alias,
+                    #                                             circuit.circuit_id,
+                    #                                             customer_name[0].alias,
+                    #                                             technology.alias,
+                    #                                             ss_type,
+                    #                                             # substation.building_height,
+                    #                                             # substation.tower_height,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             device.ip_address,
+                    #                                             display_mac_address,
+                    #                                             # planned_frequency,
+                    #                                             frequency
+                    # ])
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
@@ -1128,8 +1675,9 @@ class Get_Service_Status(View):
         #check when was the element last down
 
 
-        severity, age = device_current_status(device_object=device)
-        last_down_time = device_last_down_time(device_object=device)
+        severity, a = device_current_status(device_object=device)
+        last_down_time = a['down']
+        age = a['age']
 
         if age:
             age = datetime.datetime.fromtimestamp(float(age)).strftime(DATE_TIME_FORMAT)
@@ -1247,54 +1795,93 @@ class Get_Service_Type_Performance_Data(View):
             }
         }
 
-        date_format = "%d-%m-%Y %H:%M:%S"
+        # for wimax devices special case
+        dr_device = None
 
+        # for topology service these would come in handy
+        sector_object = None
+        sector_device = None
+
+        date_format = DATE_TIME_FORMAT
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        # date time settings
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
-        isSet = False
-
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        if not isSet:
+            end_date = float(format(datetime.datetime.now(), 'U'))
+            start_date = float(format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U'))
 
-        if service_data_source_type in ['pl', 'rta']:
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+
+        if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
+            sds_name = service_name.strip() + "_" + service_data_source_type.strip()
+        else:
+            sds_name = service_data_source_type.strip()
+
+        # to check if data source would be displayed as a chart or as a table
+        #
+        show_chart = False
+        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
+            show_chart = False
+        else:
+            show_chart = True
+
+        # check for the formula
+        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['formula']:
+            formula = SERVICE_DATA_SOURCE[sds_name]['formula']
+        else:
+            formula = None
+
+        parameters = {
+            'model': PerformanceService,
+            'start_time': start_date,
+            'end_time': end_date,
+            'devices': [inventory_device_name],
+            'services': [service_name],
+            'sds': [service_data_source_type]
+        }
+
+        # test once for technology
+        try:
             technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
+        except:
+            return HttpResponse(json.dumps(self.result), content_type="application/json")
+        try:
+            # test now for sector
             if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
                 dr_devices = device.sector_configured_on.filter()
+                sector_device = device
                 for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
+                    dr_device = dr_d.dr_configured_on # there can only be a DR device
+                # append dr device here only
+                parameters['devices'].append(dr_device.device_name)
+                # parameters updated with all devices
+        except:
+            pass  # no dr site
+
+        if service_data_source_type in ['pl', 'rta']:
+
+            parameters.update({
+                'model': PerformanceNetwork
+            })
+
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
+
             if dr_device:
-                performance_data = PerformanceNetwork.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
                 result = self.dr_performance_data_result(performance_data=performance_data,
                                                          sector_device=device,
                                                          dr_device=dr_device
                                                          )
             else:
 
-                performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
-
                 result = self.get_performance_data_result(performance_data)
 
         elif service_data_source_type == 'rf':
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
             sector_device = None
             if device.substation_set.exists():
                 try:
@@ -1302,65 +1889,63 @@ class Get_Service_Type_Performance_Data(View):
                     circuit = ss.circuit_set.get()
                     sector_device = circuit.sector.sector_configured_on
                 except Exception as e:
-                    log.exception(e.message)
-            if sector_device:
-                performance_data_ss = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
-                                                                     service_name='ping',
-                                                                     data_source='rta',
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
-
-                performance_data_bs = PerformanceNetwork.objects.filter(device_name=sector_device.device_name,
-                                                                     service_name='ping',
-                                                                     data_source='rta',
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=sector_device.machine.name).order_by('sys_timestamp')
-
-                result = self.rf_performance_data_result(performance_data_bs=performance_data_bs,
-                                                         performance_data_ss=performance_data_ss
-                )
-
+                    return HttpResponse(json.dumps(self.result), content_type="application/json")
             else:
-                performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
-                                                                     service_name='ping',
-                                                                     data_source='rta',
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+                return HttpResponse(json.dumps(self.result), content_type="application/json")
 
+            parameters.update({
+                'model': PerformanceNetwork,
+                'start_time': start_date,
+                'end_time': end_date,
+                'devices': [inventory_device_name],
+                'services': ['ping'],
+                'sds': ['rta']
+            })
+
+            # ss data performance
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+            if sector_device:
+                # for calculating BS data
+                parameters.update({
+                    'devices': [sector_device.device_name]
+                })
+                # bs data performance
+                performance_data_bs = self.get_performance_data(
+                    **parameters
+                ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
+                result = self.rf_performance_data_result(
+                    performance_data_bs=performance_data_bs,
+                    performance_data_ss=performance_data
+                )
+            else:
                 result = self.get_performance_data_result(performance_data)
 
         elif "availability" in service_name or service_data_source_type in ['availability']:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
+
+            parameters.update({
+                'model': NetworkAvailabilityDaily,
+                'start_time': start_date,
+                'end_time': end_date
+            })
+
+            # gather performance data
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
+
             if dr_device:
-                performance_data = NetworkAvailabilityDaily.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
                 result = self.dr_performance_data_result(performance_data=performance_data,
                                                          sector_device=device,
                                                          dr_device=dr_device,
                                                          availability=True
                                                          )
             else:
-                performance_data = NetworkAvailabilityDaily.objects.filter(device_name=inventory_device_name,
-                                                                       service_name=service_name,
-                                                                       data_source=service_data_source_type,
-                                                                       sys_timestamp__gte=start_date,
-                                                                       sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name).order_by('sys_timestamp')
 
                 result = self.get_performance_data_result(performance_data, data_source="availability")
 
@@ -1370,40 +1955,30 @@ class Get_Service_Type_Performance_Data(View):
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
             #for wimax devices there can be a case of DR
             #we need to incorporate the DR devices as well
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
 
-            sector_object = None
-
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-
+            try:
                 sector_object = device.sector_configured_on.filter()
+            except:
+                return HttpResponse(json.dumps(self.result), content_type="application/json")
 
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
+            parameters.update({
+                'model': Topology,
+                'start_time': start_date,
+                'end_time': end_date,
+                'services': None,
+                'sds': ['topology']
+            })
 
+            performance_data = self.get_performance_data(
+                **parameters
+            )
             if dr_device:
-                dr_device_name = dr_device.device_name
-                performance_data = Topology.objects.filter(device_name__in=[inventory_device_name, dr_device_name],
-                                                           # service_name=service_name,
-                                                           data_source='topology',  #service_data_source_type,
-                                                           sys_timestamp__gte=start_date,
-                                                           sys_timestamp__lte=end_date)#.using(
-                    #alias=inventory_device_machine_name)
                 result = self.get_topology_result(performance_data,
                                                   dr_ip=dr_device.ip_address,
                                                   technology=technology,
                                                   sectors=sector_object
                 )
             else:
-                performance_data = Topology.objects.filter(device_name=inventory_device_name,
-                                                           # service_name=service_name,
-                                                           data_source='topology',  #service_data_source_type,
-                                                           sys_timestamp__gte=start_date,
-                                                           sys_timestamp__lte=end_date)#.using(
-                    #alias=inventory_device_machine_name)
-
                 result = self.get_topology_result(performance_data,
                                                   technology=technology,
                                                   sectors=sector_object
@@ -1414,12 +1989,19 @@ class Get_Service_Type_Performance_Data(View):
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-            performance_data = PerformanceStatus.objects.filter(device_name=inventory_device_name,
-                                                                service_name=service_name,
-                                                                data_source=service_data_source_type,
-                                                                sys_timestamp__gte=start_date,
-                                                                sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name)
+
+            parameters.update({
+                'model': PerformanceStatus,
+                'start_time': start_date,
+                'end_time': end_date,
+                'devices': [inventory_device_name],
+                'services': [service_name],
+                'sds': [service_data_source_type]
+            })
+
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
             result = self.get_perf_table_result(performance_data)
 
@@ -1427,111 +2009,89 @@ class Get_Service_Type_Performance_Data(View):
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-            performance_data = PerformanceInventory.objects.filter(device_name=inventory_device_name,
-                                                                   service_name=service_name,
-                                                                   data_source=service_data_source_type,
-                                                                   sys_timestamp__gte=start_date,
-                                                                   sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name)
+
+            parameters.update({
+                'model': PerformanceInventory,
+                'start_time': start_date,
+                'end_time': end_date,
+                'devices': [inventory_device_name],
+                'services': [service_name],
+                'sds': [service_data_source_type]
+            })
+
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
             result = self.get_perf_table_result(performance_data)
 
         elif '_kpi' in service_name:
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
-            #kpi services depends on the refer fields
-            #and not directly on the "device_name"
-            #the refer filed indicates the sector
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
-            if dr_device:
-                performance_data = Utilization.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
-                result = self.dr_performance_data_result(performance_data=performance_data,
-                                                         sector_device=device,
-                                                         dr_device=dr_device
-                                                         )
-            else:
-                performance_data = Utilization.objects.filter(device_name=inventory_device_name,
-                                                                   service_name=service_name,
-                                                                   data_source=service_data_source_type,
-                                                                   sys_timestamp__gte=start_date,
-                                                                   sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name).order_by('sys_timestamp')
 
-                result = self.get_performance_data_result(performance_data)
+            parameters.update({
+                'model': Utilization,
+                'start_time': start_date,
+                'end_time': end_date,
+                'services': [service_name],
+                'sds': [service_data_source_type]
+            })
 
-        else:
-            if not isSet:
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-            dr_device = None
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on
-            if dr_device:
-                performance_data = PerformanceService.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
-                                                                     service_name=service_name,
-                                                                     data_source=service_data_source_type,
-                                                                     sys_timestamp__gte=start_date,
-                                                                     sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
-                #to check of string based dashboards
-                #need to return a table
-
-                sds_name = service_name.strip() + "_" +service_data_source_type.strip()
-
-                if sds_name in SERVICE_DATA_SOURCE \
-                        and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
-                    result = self.get_perf_table_result(performance_data,
-                                                        formula=SERVICE_DATA_SOURCE[sds_name]['formula']
-                    )
-
-                else:
+            if not show_chart:  # show the table
+                result = self.get_perf_table_result(
+                    performance_data=performance_data,
+                    formula=formula
+                )
+            else:  # show the chart
+                if dr_device:
                     result = self.dr_performance_data_result(performance_data=performance_data,
-                                                         sector_device=device,
-                                                         dr_device=dr_device
-                                                         )
-
-            else:
-                performance_data = PerformanceService.objects.filter(device_name=inventory_device_name,
-                                                                 service_name=service_name,
-                                                                 data_source=service_data_source_type,
-                                                                 sys_timestamp__gte=start_date,
-                                                                 sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name).order_by('sys_timestamp')
-                #to check of string based dashboards
-                #need to return a table
-
-                sds_name = service_name.strip() + "_" +service_data_source_type.strip()
-
-                if sds_name in SERVICE_DATA_SOURCE \
-                        and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
-                    result = self.get_perf_table_result(performance_data,
-                                                        formula=SERVICE_DATA_SOURCE[sds_name]['formula']
-                    )
-
+                                                             sector_device=device,
+                                                             dr_device=dr_device
+                                                             )
                 else:
                     result = self.get_performance_data_result(performance_data)
 
-        download_excel = self.request.GET.get('download_excel', '')
-        download_csv = self.request.GET.get('download_csv', '')
+        else:
+            performance_data = self.get_performance_data(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
 
-        #TODO: EXCEL & CSV download
+            if not show_chart: # show the table
+                result = self.get_perf_table_result(
+                    performance_data=performance_data,
+                    formula=formula
+                )
+            else: # show the chart
+                if dr_device:
+                    result = self.dr_performance_data_result(performance_data=performance_data,
+                                                             sector_device=device,
+                                                             dr_device=dr_device
+                                                             )
+                else:
+                    result = self.get_performance_data_result(performance_data)
 
         return HttpResponse(json.dumps(result), content_type="application/json")
+
+    def get_performance_data(self, model=None, start_time=None, end_time=None, devices=None, services=None, sds=None):
+        if services:
+            performance_data = model.objects.filter(
+                device_name__in=devices,
+                service_name__in=services,
+                data_source__in=sds,
+                sys_timestamp__gte=start_time,
+                sys_timestamp__lte=end_time
+            ).order_by('sys_timestamp')
+        else:
+            performance_data = model.objects.filter(
+                device_name__in=devices,
+                data_source__in=sds,
+                sys_timestamp__gte=start_time,
+                sys_timestamp__lte=end_time
+            ).order_by('sys_timestamp')
+
+        return performance_data
 
     def return_table_header_and_table_data(self, service_name, result):
 
@@ -1814,7 +2374,9 @@ class Get_Service_Type_Performance_Data(View):
                 continue
 
         #last time down results
-        age = device_last_down_time(device_object=ss_device_object)
+        severity, a = device_current_status(device_object=ss_device_object)
+        age = a['age']
+        down = a['down']
         #last time pl = 100 results
         if age:
             status_since = datetime.datetime.fromtimestamp(float(age)
@@ -2626,106 +3188,63 @@ def get_higher_severity(severity_dict):
     return s, a
 
 
+@nocout_utils.cache_for(120)  # just for 2 minutes cache this. short running query
 def device_current_status(device_object):
     """
     Device UP Status
     """
-    #get the current status
-    #if the current status is OK
-    #check when was the element last down
+    # get the current status
+    # if the current status is OK
+    # check when was the element last down
+
+    severity = dict()
+    pl_value = None
+    pl_age = {'age': 0, 'down': 0}
+
+    required_fields = ['age', 'severity', 'current_value', 'sys_timestamp', 'data_source', 'refer']
+
     inventory_device_name = device_object.device_name
     inventory_device_machine_name = device_object.machine.name
-
-    severity = {}
 
     device_nms_uptime_query_set = NetworkStatus.objects.filter(
         device_name=inventory_device_name,
         service_name='ping',
         data_source__in=['pl', 'rta']
-    ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
+    ).using(alias=inventory_device_machine_name).values(*required_fields)
 
     device_nms_uptime = device_nms_uptime_query_set
-    #nocout_utils.nocout_query_results(
-    #    query_set=device_nms_uptime_query_set,
-    #    using=inventory_device_machine_name
-    #)
-    pl_value = None
-    pl_age = None
 
     if device_nms_uptime:
         for data in device_nms_uptime:
-            severity[data['severity']] = data['age']
+            severity[data['severity']] = {'age': data['age'], 'down': data['refer']}
             if data['data_source'].strip().lower() == 'pl':
                 pl_value = data['current_value']
-                pl_age = data['age']
+                pl_age['age'] = data['age']  # refer field holds the last down time
+                pl_age['down'] = data['refer']  # refer field holds the last down time
             else:
                 continue
     else:
         return None, None
 
-    try:
-        if pl_value and float(pl_value) == 100:
-            return 'down', pl_age
+    if pl_value and float(pl_value) == 100:  # if PL = 100 that means AGE = AGE since PL was 100
+        return 'down', pl_age
+    else:
+        s, a = get_higher_severity(severity_dict=severity)
+        if s and s.strip().lower() == 'down':
+            s = 'critical'
+            return s, a
         else:
-            s, a = get_higher_severity(severity_dict=severity)
-            if s and s.strip().lower() == 'down':
-                s = 'critical'
-                return s, a
-            else:
-                return get_higher_severity(severity_dict=severity)
-    except:
-        pass
-
-    return get_higher_severity(severity_dict=severity)
+            return get_higher_severity(severity_dict=severity)
 
 
+@nocout_utils.cache_for(300) #for 5 minutes cache this. long running query
 def device_last_down_time(device_object):
     """
 
     :param device_object:
     :return:
     """
-    inventory_device_name = device_object.device_name
-    inventory_device_machine_name = device_object.machine.name
-
-    age = None
-
     #first check the current PL state of the device
     s, a = device_current_status(device_object=device_object)
-    if s == 'down':
-        return a
-    #if the current status id down, return down
 
-    device_last_down_query_set = PerformanceNetwork.objects.filter(
-                device_name=inventory_device_name,
-                service_name='ping',
-                data_source='pl',
-                current_value=100,
-                severity__in=['down']
-            ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp')
-
-    device_last_down = device_last_down_query_set
-            #nocout_utils.nocout_query_results(
-            #    query_set=device_last_down_query_set,
-            #    using=inventory_device_machine_name
-            #)
-
-    if device_last_down and device_last_down.count():
-        last_down_data = device_last_down[0]
-        age = float(last_down_data['sys_timestamp'])
-
-    if not age:
-        #device has never gone down
-        #we need to gather the first time ever
-        #it was monitored
-        try:
-            always_up = PerformanceNetwork.objects.filter(
-                    device_name=inventory_device_name,
-                    service_name='ping',
-                    data_source='pl',
-                ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')[0]
-            age = float(always_up.sys_timestamp)
-        except:
-            pass
-
-    return age
+    return a['down']  # return the last down time of the device

@@ -71,6 +71,7 @@ urlpatterns = patterns('',
                        url(r'^performance/', include('performance.urls')),
                        url(r'^dashboard/', include('dashboard.urls')),
                        url(r'^scheduling/', include('scheduling_management.urls')),
+                       url(r'^snmp_trap_settings/', include('scheduling_management.snmp_trap_settings_urls')),
                        url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
                        url(r'^session_security/', include('session_security.urls')),
                        url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
@@ -86,6 +87,7 @@ urlpatterns = patterns('',
                        url(r'^city/', include('device.city_urls')),
                        url(r'^wizard/', include('device.wizard_device_type_urls')),
                        url(r'^escalation/', include('alarm_escalation.urls')),
+                       url(r'^global_search/', include('inventory.global_search_urls'))
                        )
 
 # if settings.DEBUG:

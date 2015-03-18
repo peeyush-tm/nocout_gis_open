@@ -1,3 +1,7 @@
+// Global Variables
+var maintenance_popup = "",
+	pl_rta_popup = "";
+
 /**
  * This function creates a Open Layer Map and loads it in dom. Return callback when map is finished creating.
  * @param  {Function} callback Return function when completed.
@@ -44,17 +48,33 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	//Activate Click
 	mapClick.activate();
 
-	//Map moveend event
-	ccpl_map.events.register("moveend", ccpl_map, function(e){
+	ccpl_map.events.register("click", ccpl_map, function(e) {
+		// Remove BS maintenance popup if exists
+		if(maintenance_popup) {
+			ccpl_map.removePopup(maintenance_popup);
+			maintenance_popup = "";
+		}
+
+		// Remove SS or Sector (PL,RTA) popup if exists
+		if(pl_rta_popup) {
+			ccpl_map.removePopup(pl_rta_popup);
+			pl_rta_popup = "";
+		}
+
+		that.unSpiderifyWmapMarker()
+	});
+
+	//Map moveend event(Used for pan & zoom both cases)
+	ccpl_map.events.register("moveend", ccpl_map, function(e) {
 		that.mapIdleCondition();
 		return;
 	});
 
 	//Map zoomend event
-	ccpl_map.events.register("zoomend", ccpl_map, function(e){
-		that.mapIdleCondition();
-		return;
-	});
+	// ccpl_map.events.register("zoomend", ccpl_map, function(e){
+	// 	that.mapIdleCondition();
+	// 	return;
+	// });
 
 	//Create WMS layer to load Map from our geoserver.
 	layers.india_Layer = new OpenLayers.Layer.WMS(
@@ -159,6 +179,12 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Sectors Layer to the Map
 		ccpl_map.addLayer(layers.sectorsLayer);
+
+		//Create a Vector Layer which will hold Sectors
+		layers.spider_ss_lines = new OpenLayers.Layer.Vector('Spider_SS_Lines');
+
+		//Add Sectors Layer to the Map
+		ccpl_map.addLayer(layers.spider_ss_lines);
 	/*
 	End of OpenLayer Layer Vector For Showing Wimax-PMP Sectors Polygon
 	 */
@@ -171,6 +197,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Lines Layer to the Map
 		ccpl_map.addLayer(layers.linesLayer);
+
+		//Create a Vector Layer which will hold Lines
+		layers.red_cross = new OpenLayers.Layer.Vector('RedCross');
+
+		//Add Red Cross Layer to the Map
+		ccpl_map.addLayer(layers.red_cross);
+
 	/*
 	End of OpenLayer Layer Vector For Showing Lines
 	 */
@@ -214,11 +247,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			context: {
 				//Return label according to cluster length or empty
 				label: function(feature) {
-					return feature.cluster.length > 1 ? feature.cluster.length : "";
+					var cluster_size = feature.cluster && feature.cluster.length > 1 ? feature.cluster.length : "";
+					return cluster_size;
 				},
 				//Return cursor according to cluster length > 1
 				cursor: function(feature) {
-					return feature.cluster.length > 1 ? "pointer" : "default";
+					var cluster_cursor = feature.cluster && feature.cluster.length > 1 ? "pointer" : "default";
+					return cluster_cursor;
 				},
 				//Return Cluster Image or Original graphic of Feature
 				externalGraphic: function(feature){
@@ -241,10 +276,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 						return clusterImg;
 					}
 
-					return feature.cluster.length > 1 ? clusterImg(feature.cluster.length) : feature.cluster[0].icon;
+					var isCluster = feature.cluster ? true : false,
+						cluster_icon = isCluster && feature.cluster.length > 1 ? clusterImg(feature.cluster.length) : "";
+
+					return cluster_icon;
 				},
 				graphicWidth: function(feature) {
-					if(feature.cluster.length > 1) {
+					var isCluster = feature.cluster ? true : false;
+					if(isCluster && feature.cluster.length > 1) {
 						return 55;
 					} else {
 						var currentSize = getIconSize();
@@ -256,7 +295,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 					}
 				},
 				graphicHeight: function(feature) {
-					if(feature.cluster.length > 1) {
+					var isCluster = feature.cluster ? true : false;
+					if(isCluster && feature.cluster.length > 1) {
 						return 55;
 					} else {
 						var currentSize = getIconSize();
@@ -285,7 +325,10 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 
 		//Create a Vector Layer for Markers with styleMap and strategy
-		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {styleMap  : styleMap, strategies: [strategy]});
+		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {
+			styleMap   : styleMap,
+			strategies : [strategy]
+		});
 
 		//Add layer to the map
 		ccpl_map.addLayer(layers.markersLayer);
@@ -304,7 +347,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			renderIndent: "temporary",
 			eventListeners: {
 				onfeatureselected: function(e) {
-					console.log(e);
 					// setTimeout(function() {
 					// 	whiteMapClass.mouseOverEvent(e);
 					// }, 20);
@@ -469,13 +511,56 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	var panel = new OpenLayers.Control.Panel();
 
 	//Add Full Screen Control Panel to it
-	panel.addControls([new OpenLayers.Control.FullScreen()]);
+	// panel.addControls([new OpenLayers.Control.FullScreen()]);
 	
 	//Show Panel on the map.
 	ccpl_map.addControl(panel);
 	
 	//Map set Extend to our bounds
 	ccpl_map.zoomToExtent(new OpenLayers.Bounds(whiteMapSettings.initial_bounds));
+
+	// Bind Right click of White Map
+	ccpl_map.div.oncontextmenu = function noContextMenu(e) {
+		// In Case Of IE
+		if(!e) {
+		    var e = window.event;
+		    e.returnValue = false;
+		}
+
+		// Remove BS maintenance popup if exists
+		if(maintenance_popup) {
+			ccpl_map.removePopup(maintenance_popup);
+			maintenance_popup = "";
+		}
+
+		// Remove SS or Sector (PL,RTA) popup if exists
+		if(pl_rta_popup) {
+			ccpl_map.removePopup(pl_rta_popup);
+			pl_rta_popup = "";
+		}
+
+		var clicked_feature = ccpl_map.getLayersByName('Markers')[0].getFeatureFromEvent(e),
+			sector_feature =  ccpl_map.getLayersByName('Devices')[0].getFeatureFromEvent(e),
+			clicked_point_type = clicked_feature ? clicked_feature.pointType : false;
+
+		if(clicked_feature || sector_feature) {
+
+			if(!clicked_point_type) {
+				clicked_point_type = sector_feature.pointType;
+			}
+
+			// In case of base station continue with maintenance status functionality
+			if(clicked_point_type == 'base_station') {
+				gmap_self.startBsMaintenanceFunction(clicked_feature);
+			} else if(clicked_point_type == 'sub_station') {
+				createPLRtaLabel(clicked_feature);
+			} else if(clicked_point_type == 'sector_Marker') {
+				createPLRtaLabel(sector_feature);
+			}
+		}
+
+		e.preventDefault()
+	}
 
 	//return
 	callback();
@@ -550,11 +635,14 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		link_path_color = linkColor;
 
 	var ss_info_obj = "",
-		ss_height = 40;
+		ss_height = 40,
+		bs_index = 0,
+		ss_index = 0;
 
 	if(ss_info != undefined || ss_info == "") {
 		ss_info_obj = ss_info.info;
-		ss_height = ss_info.antenna_height;
+		ss_index = ss_info.ss_item_index > -1 ? ss_info.ss_item_index : 0;
+		ss_height = ss_info.antenna_height && ss_info.antenna_height != 'NA' ? ss_info.antenna_height : 40;
 	} else {
 		ss_info_obj = "";
 		ss_height = 40;
@@ -564,7 +652,8 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		bs_height = 40;
 	if(bs_info != undefined || bs_info == "") {
 		bs_info_obj = bs_info.info;
-		bs_height = bs_info.antenna_height;
+		bs_index = bs_info.bs_item_index > -1 ? bs_info.bs_item_index : 0;
+		bs_height = bs_info.antenna_height && bs_info.antenna_height != 'NA' ? bs_info.antenna_height : 40;
 	} else {
 		bs_info_obj = "";
 		bs_height = 40;
@@ -581,6 +670,8 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		strokeWeight	: 3,
 		pointType 		: "path",
 		geodesic		: true,
+		bs_item_index   : bs_index,
+		ss_item_index   : ss_index,
 		ss_info			: ss_info_obj,
 		ss_lat 			: startEndObj.endLat,
 		ss_lon 			: startEndObj.endLon,
@@ -646,11 +737,10 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		console.log("Plot Sector Polygon Start Time :- "+ new Date().toLocaleString());
 	}
 
-	var polyPathArray = [];
-	var halfPt = Math.floor(pointsArray.length / (+2));
-	
-	var startLat = pointsArray[halfPt].lat;
-	var startLon = pointsArray[halfPt].lon;
+	var polyPathArray = [],
+		halfPt = Math.floor(pointsArray.length / (+2)),
+		startLat = pointsArray[halfPt].lat,
+		startLon = pointsArray[halfPt].lon;
 
 	for(var i=pointsArray.length;i--;) {
 		var pt = new OpenLayers.Geometry.Point(pointsArray[i].lon, pointsArray[i].lat);
@@ -665,11 +755,10 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		sWidth = 2;
 	}
 
-	var linearRing = new OpenLayers.Geometry.LinearRing(polyPathArray);
-
-	var sector = new OpenLayers.Geometry.Polygon([linearRing]);
-
-	var style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+	var linearRing = new OpenLayers.Geometry.LinearRing(polyPathArray),
+		sector = new OpenLayers.Geometry.Polygon([linearRing]),
+		style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']),
+		item_info_index = sectorInfo.sector_info_index > -1 ? sectorInfo.sector_info_index : 0;
 
 	style.strokeColor = sColor;
 	style.fillColor = bgColor;
@@ -688,6 +777,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		pointType	     : "sector",
 		strokeOpacity    : 1,
 		fillOpacity 	 : 0.5,
+		item_index 		 : item_info_index,
 		strokeWeight     : sWidth,
 		poll_info 		 : [],
 		radius 			 : rad,
@@ -718,7 +808,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
     }
 
     // poly.setMap(mapInstance);
-    allMarkersArray_wmap.push(poly);
+    // allMarkersArray_wmap.push(poly);
 
     allMarkersObject_wmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
 

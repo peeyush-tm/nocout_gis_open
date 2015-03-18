@@ -3,7 +3,7 @@
 #python core functions
 import datetime
 
-#django settings
+# nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import P2P, WiMAX, PMP, DEBUG
 
 #django core model functions
@@ -125,36 +125,61 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
     :return list of network devices
     """
 
-
     if not technology:
-        organization_network_devices = Device.objects.filter(
-                                        Q(id__in= ptp_device_circuit_backhaul())
+        devices = Device.objects.filter(Q(id__in=ptp_device_circuit_backhaul())
                                         |
-                                        Q(device_technology = int(WiMAX.ID))
-                                        |
-                                        Q(device_technology = int(PMP.ID)),
+                                        (
+                                            Q(
+                                                device_technology=int(PMP.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
+                                            )
+                                            |
+                                            Q(
+                                                device_technology=int(WiMAX.ID),
+                                                sector_configured_on__isnull=False,
+                                                sector_configured_on__sector_id__isnull=False
+                                            )
+                                        ),
                                         is_added_to_nms=1,
                                         is_deleted=0,
-                                        organization__in= organizations
-        )
+                                        organization__in=organizations)
+
+    elif (not technology) and (not specify_ptp_bh_type):
+        devices = Device.objects.filter(Q(
+                                            device_technology=int(PMP.ID),
+                                            sector_configured_on__isnull=False,
+                                            sector_configured_on__sector_id__isnull=False
+                                        )
+                                        |
+                                        Q(
+                                            device_technology=int(WiMAX.ID),
+                                            sector_configured_on__isnull=False,
+                                            sector_configured_on__sector_id__isnull=False
+                                        )
+                                        ,
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in=organizations)
+
     else:
         if int(technology) == int(P2P.ID):
             if specify_ptp_bh_type in ['ss', 'bs']:
-                organization_network_devices = Device.objects.filter(
+                devices = Device.objects.filter(
                                             Q(id__in= ptp_device_circuit_backhaul(specify_type=specify_ptp_bh_type)),
                                             is_added_to_nms=1,
                                             is_deleted=0,
                                             organization__in= organizations
                 )
             else:
-                organization_network_devices = Device.objects.filter(
+                devices = Device.objects.filter(
                                             Q(id__in= ptp_device_circuit_backhaul()),
                                             is_added_to_nms=1,
                                             is_deleted=0,
                                             organization__in= organizations
                 )
         else:
-            organization_network_devices = Device.objects.filter(
+            devices = Device.objects.filter(
                                             device_technology = int(technology),
                                             is_added_to_nms=1,
                                             sector_configured_on__isnull = False,
@@ -163,7 +188,7 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                             organization__in= organizations
             ).annotate(dcount=Count('id'))
 
-    return organization_network_devices
+    return devices
 
 
 # @cache_for(300)
@@ -262,24 +287,27 @@ def filter_devices(organizations=[],
 
 
 @cache_for(300)
-def prepare_machines(device_list):
+def prepare_machines(device_list, machine_key='device_machine'):
     """
 
+
+    :param device_list:
+    :param machine_key:
     :return:
     """
     # Unique machine from the device_list
-    unique_device_machine_list = {device['device_machine']: True for device in device_list}.keys()
+    unique_device_machine_list = {device[machine_key]: True for device in device_list}.keys()
 
     machine_dict = {}
     #Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
         machine_dict[machine] = [device['device_name'] for device in device_list if
-                                 device['device_machine'] == machine]
+                                 device[machine_key] == machine]
 
     return machine_dict
 
 
-def organization_sectors(organization, technology=None):
+def organization_sectors(organization, technology=0):
     """
     To result back the all the sector from the respective organization.
 
@@ -287,33 +315,46 @@ def organization_sectors(organization, technology=None):
     :param technology:
     :return list of sector
     """
-    if int(technology) == int(PMP.ID):
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on_port__isnull=True,
-                                sector_configured_on__device_technology=technology,
-                            ).annotate(total_sector=Count('sector_id'))
-
-    elif int(technology) == int(WiMAX.ID):
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on_port__isnull=False,
-                                sector_configured_on__device_technology=technology,
-                            ).annotate(total_sector=Count('sector_id'))
-
-    elif int(technology) == int(P2P.ID):
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on__device_technology=technology,
-                            ).annotate(total_sector=Count('sector_id'))
-
-    else:
-        sector_list = Sector.objects.filter(
-                                sector_id__isnull=False,
-                                sector_configured_on__isnull=False,
-                            ).annotate(total_sector=Count('sector_id'))
+    sector_objects = Sector.objects.select_related(
+            'sector_configured_on',
+            'sector_configured_on__machine',
+            'sector_configured_on__site_instance',
+            'organization',
+        ).filter(
+        sector_configured_on__is_added_to_nms=1,
+        sector_configured_on__isnull=False
+    )
 
     if organization:
-        sector_list = sector_list.filter(organization__in=organization)
+        sector_objects = sector_objects.filter(organization__in=organization)
+
+    if int(technology) == int(PMP.ID):
+        sector_list = sector_objects.filter(
+                sector_id__isnull=False,
+                sector_configured_on_port__isnull=True,
+                sector_configured_on__device_technology=technology,
+            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(WiMAX.ID):
+        sector_list = sector_objects.select_related(
+            'sector_configured_on_port'
+        ).filter(
+            sector_id__isnull=False,
+            sector_configured_on_port__isnull=False,
+            sector_configured_on__device_technology=technology,
+        ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(P2P.ID):
+        sector_list = Sector.objects.select_related(
+            'sector_configured_on',
+            'sector_configured_on__machine',
+            'sector_configured_on__site_instance',
+            'organization',
+        ).filter(
+            sector_configured_on__device_technology=technology,
+        ).annotate(total_sector=Count('id'))
+
+    else:
+        sector_list = sector_objects
 
     return sector_list

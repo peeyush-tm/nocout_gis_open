@@ -10,11 +10,15 @@ from nocout.utils import logged_in_user_organizations
 
 class Select2Mixin(object):
     """
+    Mixin used for getting data for select2 field using ajax call.
     """
     obj_alias = 'alias'
 
     def get_queryset(self):
         """
+        Method which returns queryset after filter.
+        :param self:
+        :return qs:
         """
         required_values = ['id', self.obj_alias]
         qs = super(Select2Mixin, self).get_queryset()

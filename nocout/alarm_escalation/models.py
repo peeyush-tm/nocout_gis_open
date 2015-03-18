@@ -1,6 +1,6 @@
 from django.db import models
 from organization.models import Organization
-from device.models import DeviceType, DeviceTechnology
+from device.models import DeviceType, DeviceTechnology, Device
 from service.models import Service, ServiceDataSource
 from inventory.models import BaseStation
 
@@ -30,7 +30,13 @@ class EscalationLevel(models.Model):
     alarm_age = models.IntegerField('Alarm Age')
 
     def __unicode__(self):
-        return '%s' % (self.get_name_display())
+        return 'Level: {0} - Organization: {1} - Device Type: {2} - Service {3} - Data Source: {4}'.format(
+            self.get_name_display(),
+            self.organization.alias,
+            self.device_type.alias,
+            self.service.alias,
+            self.service_data_source.alias
+        )
 
     def get_phones(self):
         phones = self.phones.replace(' ','')
@@ -64,10 +70,13 @@ class EscalationStatus(models.Model):
     )
 
     organization = models.ForeignKey(Organization)
-    device_name = models.CharField(max_length=100, db_index=True)
-    device_type = models.CharField(max_length=100, db_index=True)
-    service = models.CharField(max_length=100, db_index=True)
-    service_data_source =  models.CharField(max_length=100, db_index=True)
+    device = models.ForeignKey(Device)
+    service = models.ForeignKey(Service)
+    service_data_source = models.ForeignKey(ServiceDataSource)
+    # device_name = models.CharField(max_length=100, null=True, blank=True)
+    # device_type = models.CharField(max_length=100, null=True, blank=True)
+    # service = models.CharField(max_length=100, null=True, blank=True)
+    # service_data_source =  models.CharField(max_length=100, null=True, blank=True)
     ip = models.IPAddressField()
     l1_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
     l1_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)

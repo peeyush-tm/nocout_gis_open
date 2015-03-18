@@ -180,6 +180,16 @@ function googleEarthClass() {
         				// Set Perf calling Flag
             			isPerfCallStopped = 1;
             			isPerfCallStarted = 0;
+
+            			// If any periodic polling ajax call is in process then abort it
+			            try {
+							if(gis_perf_call_instance) {
+				                gis_perf_call_instance.abort()
+				                gis_perf_call_instance = "";
+				        	}
+			            } catch(e) {
+			                // pass
+			            }
         			}
 					if(AltToZoom(lookAt.getRange()) < 12 || searchResultData.length > 0) {
 						var poly = getCurrentEarthBoundPolygon();
@@ -363,6 +373,16 @@ function googleEarthClass() {
             		
 				} else if(AltToZoom(lookAt.getRange()) <= 7) {
 
+					// If any periodic polling ajax call is in process then abort it
+		            try {
+						if(gis_perf_call_instance) {
+			                gis_perf_call_instance.abort()
+			                gis_perf_call_instance = "";
+			        	}
+		            } catch(e) {
+		                // pass
+		            }
+
 					// At zoom level less than or equal to 4, hide state clusters & show country cluster.
 					if(AltToZoom(lookAt.getRange()) < 4) {
 						// Remove country cluster if exists country cluster
@@ -513,49 +533,12 @@ function googleEarthClass() {
 		var db = new loki('loki.json');
 
 		// Create a collection:
-		bs_loki_db = db.addCollection('base_station')
-		ss_loki_db = db.addCollection('sub_station')
-		sector_loki_db = db.addCollection('sector_device')
-		polygon_loki_db = db.addCollection('sector_polygon')
-		line_loki_db = db.addCollection('path')
+		// bs_loki_db = db.addCollection('base_station')
+		// ss_loki_db = db.addCollection('sub_station')
+		// sector_loki_db = db.addCollection('sector_device')
+		// polygon_loki_db = db.addCollection('sector_polygon')
+		// line_loki_db = db.addCollection('path')
 		all_devices_loki_db = db.addCollection('allDevices');
-
-		state_lat_lon_db = db.addCollection('state_lat_lon');
-
-		state_lat_lon_db.insert({"name" : "Andhra Pradesh","lat" : 16.50,"lon" : 80.64});
-		state_lat_lon_db.insert({"name" : "Arunachal Pradesh","lat" : 27.06,"lon" : 93.37});
-		state_lat_lon_db.insert({"name" : "Assam","lat" : 26.14,"lon" : 91.77});
-		state_lat_lon_db.insert({"name" : "Bihar","lat" : 25.37,"lon" : 85.13});
-		state_lat_lon_db.insert({"name" : "Chhattisgarh","lat" : 21.27,"lon" : 81.60});
-		state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.61,"lon" : 77.23});
-		state_lat_lon_db.insert({"name" : "NCR","lat" : 28.57,"lon" : 76.42});
-		state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
-		state_lat_lon_db.insert({"name" : "Gujarat","lat" : 23.2167,"lon" : 72.6833});
-		state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
-		state_lat_lon_db.insert({"name" : "Himachal Pradesh","lat" : 31.1033,"lon" : 77.1722});
-		state_lat_lon_db.insert({"name" : "Jammu and Kashmir","lat" : 33.45,"lon" : 76.24});
-		state_lat_lon_db.insert({"name" : "Jharkhand","lat" : 23.3500,"lon" : 85.3300});
-		state_lat_lon_db.insert({"name" : "Karnataka","lat" : 12.9702,"lon" : 77.5603});
-		state_lat_lon_db.insert({"name" : "Kerala","lat" : 8.5074,"lon" : 76.9730});
-		state_lat_lon_db.insert({"name" : "Madhya Pradesh","lat" : 23.2500,"lon" : 77.4170});
-		state_lat_lon_db.insert({"name" : "Maharashtra","lat" : 18.9600,"lon" : 72.8200});
-		state_lat_lon_db.insert({"name" : "Manipur","lat" : 24.8170,"lon" : 93.9500});
-		state_lat_lon_db.insert({"name" : "Meghalaya","lat" : 25.5700,"lon" : 91.8800});
-		state_lat_lon_db.insert({"name" : "Mizoram","lat" : 23.3600,"lon" : 92.0000});
-		state_lat_lon_db.insert({"name" : "Nagaland","lat" : 25.6700,"lon" : 94.1200});
-		state_lat_lon_db.insert({"name" : "Orissa","lat" : 20.1500,"lon" : 85.5000});
-		state_lat_lon_db.insert({"name" : "Punjab","lat" : 30.7900,"lon" : 76.7800});
-		state_lat_lon_db.insert({"name" : "Rajasthan","lat" : 26.5727,"lon" : 73.8390});
-		state_lat_lon_db.insert({"name" : "Sikkim","lat" : 27.3300,"lon" : 88.6200});
-		state_lat_lon_db.insert({"name" : "Tamil Nadu","lat" : 13.0900,"lon" : 80.2700});
-		state_lat_lon_db.insert({"name" : "Tripura","lat" : 23.8400,"lon" : 91.2800});
-		state_lat_lon_db.insert({"name" : "Uttarakhand","lat" : 30.3300,"lon" : 78.0600});
-		state_lat_lon_db.insert({"name" : "Uttar Pradesh","lat" : 26.8500,"lon" : 80.9100});
-		state_lat_lon_db.insert({"name" : "West Bengal","lat" : 22.5667,"lon" : 88.3667});
-		state_lat_lon_db.insert({"name" : "Andaman and Nicobar Islands","lat" : 11.6800,"lon" : 92.7700});
-		state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
-		state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
-		state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
 
 		/*Search text box object*/
 		var searchTxt = document.getElementById('google_loc_search');
@@ -1164,36 +1147,40 @@ var state_wise_device_label_text= {};
 
 		for(var i=0;i<resultantMarkers.length;i++) {			
 
-			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
+			// var bs_marker_icon = base_url+"/static/img/icons/bs.png";
+			// BS marker url
+			var bs_marker_url = resultantMarkers[i].data.markerUrl ? base_url+"/"+resultantMarkers[i].data.markerUrl : base_url+"/static/img/icons/bs.png",
+				bs_maintenance_status = resultantMarkers[i].data.maintenance_status ? $.trim(resultantMarkers[i].data.maintenance_status) : "No";
 
 			var bsInfo = {
-				map: 'current',
-				ptLat: resultantMarkers[i].data.lat,
-				ptLon: resultantMarkers[i].data.lon,
-				icon: base_url+"/static/img/icons/bs.png",
-				oldIcon: base_url+"/static/img/icons/bs.png",
-				clusterIcon: base_url+"/static/img/icons/bs.png",
-				pointType: "base_station",
-				bs_alias 		   :    resultantMarkers[i].alias,
-				child_ss: resultantMarkers[i].data.param.sector,
-				dataset: resultantMarkers[i].data.param.base_station,
-				device_name: resultantMarkers[i].data.device_name,
-				bsInfo: resultantMarkers[i].data.param.base_station,
-				bhInfo: resultantMarkers[i].data.param.backhual,
-				bhInfo_polled : [],
-				bs_name: resultantMarkers[i].name,
-				name: resultantMarkers[i].name,
-				filter_data: {"bs_name" : resultantMarkers[i].name, "bs_id" : resultantMarkers[i].originalId},
-				antenna_height: resultantMarkers[i].data.antenna_height,
-				markerType: 'BS',
-				isMarkerSpiderfied: false,
-				isActive: 1,
-				state: resultantMarkers[i].data.state
+				map 				: 'current',
+				ptLat 				: resultantMarkers[i].data.lat,
+				ptLon 				: resultantMarkers[i].data.lon,
+				icon 				: bs_marker_url,
+				oldIcon 			: bs_marker_url,
+				clusterIcon 		: bs_marker_url,
+				pointType 			: "base_station",
+				bs_alias 			: resultantMarkers[i].alias,
+				child_ss 			: resultantMarkers[i].data.param.sector,
+				maintenance_status  : bs_maintenance_status,
+				item_index			: 0,
+				device_name 		: resultantMarkers[i].data.device_name,
+				bsInfo 				: resultantMarkers[i].data.param.base_station,
+				bhInfo 				: resultantMarkers[i].data.param.backhual,
+				bhInfo_polled  		: [],
+				bs_name 			: resultantMarkers[i].name,
+				name 				: resultantMarkers[i].name,
+				filter_data 		: {"bs_name" : resultantMarkers[i].name, "bs_id" : resultantMarkers[i].originalId},
+				antenna_height  	: resultantMarkers[i].data.antenna_height,
+				markerType 			: 'BS',
+				isMarkerSpiderfied  : false,
+				isActive 			: 1,
+				state 				: resultantMarkers[i].data.state
 			};
 
 			// Create BS placemark.
 			var bs_marker = earth_self.makePlacemark(
-				bs_marker_icon,
+				bs_marker_url,
 				resultantMarkers[i].data.lat,
 				resultantMarkers[i].data.lon,
 				'bs_'+resultantMarkers[i].originalId,
@@ -1245,25 +1232,31 @@ var state_wise_device_label_text= {};
 				event.preventDefault();
 			});
 
-			var sectorsArray = resultantMarkers[i].data.param.sector;
-			var deviceIDArray= [];
+			var sectorsArray = resultantMarkers[i].data.param.sector,
+				deviceIDArray= [],
+				lon = resultantMarkers[i].data.lon,
+				lat = resultantMarkers[i].data.lat,
+				rad = 4,
+				sector_info_list = resultantMarkers[i].data.param.sectors_info_list,
+				sector_infoWindow_content = sector_info_list ? sector_info_list : [];
 
 
     		// $.grep(sectorsArray,function(sector) { 
 			for(var j=0;j<sectorsArray.length;j++) {
 				
 
-				var lon = resultantMarkers[i].data.lon,
-					 lat = resultantMarkers[i].data.lat,
-					rad = 4,
-					azimuth = sectorsArray[j].azimuth_angle,
-					beam_width = sectorsArray[j].beam_width,
-					sector_color = earth_self.makeRgbaObject(sectorsArray[j].color),
+				var fetched_azimuth = sectorsArray[j].azimuth_angle,
+					fetched_beamWidth = sectorsArray[j].beam_width,
+					azimuth = fetched_azimuth && fetched_azimuth != 'NA' ? fetched_azimuth : 10,
+					beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
+					fetched_color = sectorsArray[j].color && sectorsArray[j].color != 'NA' ? sectorsArray[j].color : 'rgba(74,72,94,0.58)',
+					sector_color = earth_self.makeRgbaObject(fetched_color),
 					sector_perf_url = sectorsArray[j].perf_page_url ? sectorsArray[j].perf_page_url : "",
 					sector_inventory_url = sectorsArray[j].inventory_url ? sectorsArray[j].inventory_url : "",
+					sector_item_index = sectorsArray[j].item_index > -1 ? sectorsArray[j].item_index : j,
 					sectorInfo = {
 						"map": 'current',
-						"info" : sectorsArray[j].info,
+						"info" : sector_infoWindow_content,
 						"bs_name" : resultantMarkers[i].name,
 						"sector_name" : sectorsArray[j].sector_configured_on,
 						"sector_id" : sectorsArray[j].sector_id,
@@ -1271,7 +1264,8 @@ var state_wise_device_label_text= {};
 						"technology" : sectorsArray[j].technology,
 						"vendor" : sectorsArray[j].vendor,
 						"sector_perf_url" : sector_perf_url,
-						"inventory_url" : sector_inventory_url
+						"inventory_url" : sector_inventory_url,
+						"sector_info_index" : sector_item_index
 					},
 					orientation = $.trim(sectorsArray[j].orientation),
 					sector_child = sectorsArray[j].sub_station,
@@ -1281,7 +1275,13 @@ var state_wise_device_label_text= {};
 					sectorRadius = (+sectorsArray[j].radius),
 					startEndObj = {},
 					startLon = "",
-					startLat = "";
+					startLat = "",
+					sect_height = gisPerformanceClass.getKeyValue(
+						sector_infoWindow_content,
+						"antenna_height",
+						true,
+						sector_item_index
+					);
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
 				/*If radius is greater than 4 Kms then set it to 4.*/
@@ -1338,35 +1338,35 @@ var state_wise_device_label_text= {};
 					if(deviceIDArray.indexOf(sectorsArray[j]['device_info'][1]['value']) == -1) {
 						var sectorMarkerIcon = base_url+"/"+sectorsArray[j].markerUrl;
 						var sectorInfo = {
-							map: 'current',
-							ptLat: lat,
-							ptLon: lon,
-							icon: base_url+"/"+sectorsArray[j].markerUrl,
-							oldIcon: base_url+"/"+sectorsArray[j].markerUrl,
-							clusterIcon: base_url+"/"+sectorsArray[j].markerUrl,
-							pointType: 'sector_Marker',
-							technology: sectorsArray[j].technology,
-							vendor: sectorsArray[j].vendor,
-							deviceExtraInfo: sectorsArray[j].info,
-							deviceInfo: sectorsArray[j].device_info,
-							poll_info: [],
-							pl: "",
-							rta : "",
-							perf_url : sector_perf_url,
-							inventory_url : sector_inventory_url,
-							sectorName: sectorsArray[j].sector_configured_on,
-							device_name: sectorsArray[j].sector_configured_on_device,
-							name: sectorsArray[j].sector_configured_on_device,
-							filter_data: {"bs_name" : resultantMarkers[i].name, "sector_name" : sectorsArray[j].sector_configured_on, "bs_id" : resultantMarkers[i].originalId, "sector_id" : sectorsArray[j].sector_id},
-							sector_lat: startEndObj["startLat"],
-							sector_lon: startEndObj["startLon"],
-							hasPerf: 0,
-							antenna_height: sectorsArray[j].antenna_height,
-							isActive: 1,
-							state: resultantMarkers[i].data.state
+							map 			 : 'current',
+							ptLat 			 : lat,
+							ptLon 			 : lon,
+							icon 			 : base_url+"/"+sectorsArray[j].markerUrl,
+							oldIcon 		 : base_url+"/"+sectorsArray[j].markerUrl,
+							clusterIcon 	 : base_url+"/"+sectorsArray[j].markerUrl,
+							pointType 		 : 'sector_Marker',
+							technology 		 : sectorsArray[j].technology,
+							vendor 			 : sectorsArray[j].vendor,
+							deviceExtraInfo  : sector_infoWindow_content,
+							deviceInfo 		 : sectorsArray[j].device_info,
+							item_index 		 : sector_item_index,
+							poll_info 		 : [],
+							pl 			 	 : "",
+							rta  			 : "",
+							perf_url  		 : sector_perf_url,
+							inventory_url  	 : sector_inventory_url,
+							sectorName 		 : sectorsArray[j].sector_configured_on,
+							device_name 	 : sectorsArray[j].sector_configured_on_device,
+							name 			 : sectorsArray[j].sector_configured_on_device,
+							filter_data 	 : {"bs_name" : resultantMarkers[i].name, "sector_name" : sectorsArray[j].sector_configured_on, "bs_id" : resultantMarkers[i].originalId, "sector_id" : sectorsArray[j].sector_id},
+							sector_lat 		 : startEndObj["startLat"],
+							sector_lon 		 : startEndObj["startLon"],
+							hasPerf 		 : 0,
+							antenna_height 	 : sectorsArray[j].antenna_height,
+							isActive 		 : 1,
+							state 		 	 : resultantMarkers[i].data.state
 						};
 
-						var sect_height = sectorsArray[j].antenna_height;
 						// Create Sector placemark.
 						var sector_marker = earth_self.makePlacemark(
 							sectorMarkerIcon,
@@ -1375,6 +1375,7 @@ var state_wise_device_label_text= {};
 							sectorsArray[j].sector_configured_on+"_"+j,
 							sectorInfo
 						);
+
 						updateGoogleEarthPlacemark(sector_marker, sectorMarkerIcon);
 						/*Push Sector placemark to sector placemark array*/
 						plotted_sector_earth.push(sector_marker);
@@ -1449,10 +1450,14 @@ var state_wise_device_label_text= {};
 					}
 				}
 
-				for(var k=0;k<sectorsArray[j].sub_station.length;k++) {
+				var subStationData = sectorsArray[j].sub_station ? sectorsArray[j].sub_station : [],
+					ss_infoWindow_content = sectorsArray[j].ss_info_list ? sectorsArray[j].ss_info_list : [];
+
+				for(var k=0;k<subStationData.length;k++) {
 					
-					var ssDataObj = sectorsArray[j].sub_station[k],
-						ckt_id_val = gisPerformanceClass.getKeyValue(ssDataObj.data.param.sub_station,"cktid",true),
+					var ssDataObj = subStationData[k],
+						ss_item_info_index = ssDataObj.data.item_index > -1 ? ssDataObj.data.item_index : k,
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
 						ss_perf_url = ssDataObj.data.perf_page_url ? ssDataObj.data.perf_page_url : "",
 						ss_inventory_url = ssDataObj.data.inventory_url ? ssDataObj.data.inventory_url : "";
 					
@@ -1460,33 +1465,34 @@ var state_wise_device_label_text= {};
 					var ssMarkerIcon = base_url+"/"+ssDataObj.data.markerUrl;
 
 					var ssInfo = {
-						map: 'current',
-						ptLat: ssDataObj.data.lat,
-						ptLon:	ssDataObj.data.lon,
-						technology: ssDataObj.data.technology,
-						icon: ssMarkerIcon,
-						oldIcon: ssMarkerIcon,
-						clusterIcon: ssMarkerIcon,
-						pointType: "sub_station",
-						dataset: ssDataObj.data.param.sub_station,
-						bhInfo: [],
-						poll_info: [],
-						pl: "",
-						rta: "",
-						perf_url : ss_perf_url,
-						inventory_url : ss_inventory_url,
-						antenna_height: ssDataObj.data.antenna_height,
-						name: ssDataObj.name,
-						bs_name: resultantMarkers[i].name,
-						bs_sector_device: sectorsArray[j].sector_configured_on_device,
-						filter_data: {"bs_name" : resultantMarkers[i].name, "sector_name" : sectorsArray[j].sector_configured_on, "ss_name" : ssDataObj.name, "bs_id" : resultantMarkers[i].originalId, "sector_id" : sectorsArray[j].sector_id},
-						device_name: ssDataObj.device_name,
-						ss_ip: ssDataObj.data.substation_device_ip_address,
-						sector_ip: sectorsArray[j].sector_configured_on,
-						hasPerf: 0,
-						isActive: 1,
-						state: resultantMarkers[i].data.state,
-						perf_val: ""
+						map 			 	: 'current',
+						ptLat 			 	: ssDataObj.data.lat,
+						ptLon 			 	: ssDataObj.data.lon,
+						technology 		 	: ssDataObj.data.technology,
+						icon 			 	: ssMarkerIcon,
+						oldIcon 		 	: ssMarkerIcon,
+						clusterIcon 	 	: ssMarkerIcon,
+						pointType 		 	: "sub_station",
+						dataset 		 	: ss_infoWindow_content,
+						item_index 			: ss_item_info_index,
+						bhInfo 			 	: [],
+						poll_info 		 	: [],
+						pl 				 	: "",
+						rta 			 	: "",
+						perf_url  		 	: ss_perf_url,
+						inventory_url  	 	: ss_inventory_url,
+						antenna_height 	 	: ssDataObj.data.antenna_height,
+						name 			 	: ssDataObj.name,
+						bs_name 		 	: resultantMarkers[i].name,
+						bs_sector_device 	: sectorsArray[j].sector_configured_on_device,
+						filter_data 		: {"bs_name" : resultantMarkers[i].name, "sector_name" : sectorsArray[j].sector_configured_on, "ss_name" : ssDataObj.name, "bs_id" : resultantMarkers[i].originalId, "sector_id" : sectorsArray[j].sector_id},
+						device_name 		: ssDataObj.device_name,
+						ss_ip 				: ssDataObj.data.substation_device_ip_address,
+						sector_ip 			: sectorsArray[j].sector_configured_on,
+						hasPerf 			: 0,
+						isActive 			: 1,
+						state 				: resultantMarkers[i].data.state,
+						perf_val 			: ""
 					};
 
 					if(ssDataObj.data.lat && ssDataObj.data.lon) {
@@ -1582,12 +1588,14 @@ var state_wise_device_label_text= {};
 						ssLonArray.push(ssDataObj.data.lon);
 
 						var ss_info = {
-								"info" : ssDataObj.data.param.sub_station,
-								"antenna_height" : ssDataObj.data.antenna_height
+								"info" : ss_infoWindow_content,
+								"antenna_height" : ssDataObj.data.antenna_height,
+								"ss_item_index" : ss_item_info_index
 							},
 							base_info = {
 								"info" : resultantMarkers[i].data.param.base_station,
-								"antenna_height" : resultantMarkers[i].data.antenna_height
+								"antenna_height" : resultantMarkers[i].data.antenna_height,
+								"bs_item_index" : 0
 							};
 
 						startEndObj["nearEndLat"] = resultantMarkers[i].data.lat;
@@ -1596,31 +1604,18 @@ var state_wise_device_label_text= {};
 					    startEndObj["endLat"] = ssDataObj.data.lat;
 			    		startEndObj["endLon"] = ssDataObj.data.lon;
 
-			    		/*Sub station info Object*/
-			    		// ss_info["info"] = ssDataObj.data.param.sub_station;
-			    		// ss_info["antenna_height"] = ssDataObj.data.antenna_height;
-
-			    		/*Link color object*/
-			    		linkColor = ssDataObj.data.link_color;
-
 
 						/*Push SS placemark to sector placemark array*/
 						plotted_ss_earth.push(ss_marker);
 
 						/*Create link between bs & ss or sector & ss*/
-						// if(ssDataObj.data.show_link == 1) {
-							// var startEndObj = {};
-						
-							// startEndObj["startLat"] = resultantMarkers[i].data.lat;
-							// startEndObj["startLon"] = resultantMarkers[i].data.lon;
+						if(ssDataObj.data.show_link) {
 
-							// startEndObj["endLat"] = ssDataObj.data.lat;
-							// startEndObj["endLon"] = ssDataObj.data.lon;
+							var line_color = ssDataObj.data.link_color,
+								bs_info = resultantMarkers[i].data.param.base_station;
 
-							var line_color = ssDataObj.data.link_color;
-                     linkColor = line_color && line_color != 'NA' ? line_color : 'rgba(74,72,94,0.58)';
-							var bs_info = resultantMarkers[i].data.param.base_station;
-							// var ss_info = ssDataObj.data.param.sub_station;
+                     		linkColor = line_color && line_color != 'NA' ? line_color : 'rgba(74,72,94,0.58)';
+
 							var linkLinePlacemark = earth_self.createLink_earth(
 								startEndObj,
 								linkColor,
@@ -1643,8 +1638,7 @@ var state_wise_device_label_text= {};
 				    		ssLinkArray_filtered = ssLinkArray;
 
 				    		allMarkersObject_earth['path']['line_'+ssDataObj.name] = linkLinePlacemark;
-
-						// }
+						}
 					}
 				}
     		}
@@ -1803,12 +1797,19 @@ var state_wise_device_label_text= {};
 
 		var argumentsLength= arguments.length;
 
-		var  linkObject = {},
-			link_path_color = linkColor && linkColor != 'NA' ? linkColor : 'rgba(74,72,94,0.58)';
-		var ss_info_obj = "", ss_height = 40;
+		var linkObject = {},
+			link_path_color = linkColor,
+			ss_info_obj = "",
+			ss_height = 40,
+			ss_index = 0,
+			bs_index = 0,
+			ss_info_obj = "",
+			ss_height = 40;
+
 		if(ss_info != undefined || ss_info == "") {
 			ss_info_obj = ss_info.info;
-			ss_height = ss_info.antenna_height;
+			ss_index = ss_info.ss_item_index > -1 ? ss_info.ss_item_index : 0;
+			ss_height = ss_info.antenna_height && ss_info.antenna_height != 'NA' ? ss_info.antenna_height : 40;
 		} else {
 			ss_info_obj = "";
 			ss_height = 40;
@@ -1816,9 +1817,11 @@ var state_wise_device_label_text= {};
 
 		var bs_info_obj = "",
 			bs_height = 40;
+
 		if(bs_info != undefined || bs_info == "") {
 			bs_info_obj = bs_info.info;
-			bs_height = bs_info.antenna_height;
+			bs_index = bs_info.bs_item_index > -1 ? bs_info.bs_item_index : 0;
+			bs_height = bs_info.antenna_height && bs_info.antenna_height != 'NA' ? bs_info.antenna_height : 40;
 		} else {
 			bs_info_obj = "";
 			bs_height = 40;
@@ -1829,12 +1832,14 @@ var state_wise_device_label_text= {};
         }
 
         linkObject= {
-        	map: 'current',
-        	strokeColor: link_path_color,
-        	strokeOpacity: 1.0,
-        	strokeWeight: 3,
-        	pointType: "path",
-        	ss_info: ss_info_obj,
+        	map 			: 'current',
+        	strokeColor 	: link_path_color,
+        	strokeOpacity 	: 1.0,
+        	strokeWeight 	: 3,
+        	pointType 		: "path",
+        	bs_item_index   : bs_index,
+			ss_item_index   : ss_index,
+        	ss_info 		: ss_info_obj,
         	ss_lat 			: startEndObj.endLat,
 			ss_lon 			: startEndObj.endLon,
 			bs_height 		: ss_height,
@@ -1851,7 +1856,6 @@ var state_wise_device_label_text= {};
 			ssName 		    : ss_name,
 			bsName 			: bs_name,
 			zIndex 			: 9999
-			// state: resultantMarkers[i].data.state
         };
 
 		// 
@@ -1887,7 +1891,6 @@ var state_wise_device_label_text= {};
 		}
 
 		google.earth.addEventListener(lineStringPlacemark, 'click', function(event) {
-
 
 			if(event.getButton() == 2) {
 				if(argumentsLength > 1) {
@@ -2209,13 +2212,13 @@ var state_wise_device_label_text= {};
 			sWidth = 2;
 		}
 
-		var halfPt = Math.floor(pointsArray.length / (+2));
-		
-		var startLat = pointsArray[halfPt].lat;
-		var startLon = pointsArray[halfPt].lon;
+		var halfPt = Math.floor(pointsArray.length / (+2)),
+			startLat = pointsArray[halfPt].lat,
+			startLon = pointsArray[halfPt].lon,
+			item_info_index = sectorInfo.sector_info_index > -1 ? sectorInfo.sector_info_index : 0;
 
 		var sectorAdditionalInfo = {
-			map: 'current',
+			map 			 : 'current',
 			ptLat 		     : lat,
 			ptLon 		     : lng,
 			strokeColor      : sColor,
@@ -2225,6 +2228,7 @@ var state_wise_device_label_text= {};
 			fillOpacity 	 : 0.5,
 			strokeWeight     : sWidth,
 			poll_info 		 : [],
+			item_index 		 : item_info_index,
 			radius 			 : rad,
 			azimuth 		 : azimuth,
 			beam_width 		 : beam_width,
@@ -2242,7 +2246,6 @@ var state_wise_device_label_text= {};
 			polarisation 	 : polarisation,
 			original_sectors : sector_child,
 			isActive 		 : 1
-			// state: resultantMarkers[i].data.state
         };
 
 		// Create the placemark.

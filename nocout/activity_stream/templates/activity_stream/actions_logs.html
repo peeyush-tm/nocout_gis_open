@@ -65,9 +65,19 @@
                         var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
                         length_sel.addClass('form-control input-sm');
                     });
+                    
                     if (destroy){
                         $("#"+tableId).dataTable().fnDestroy();
                     }
+
+                    // ******************************* TEMPORARY CODE START *******************************//
+                    // By Default remove sorting from all datatables
+                    // for(var i=0;i<tableheaders.length;i++) {
+                    //     var header = tableheaders[i];
+                    //     header['bSortable'] = false;
+                    // }
+                    // ******************************* TEMPORARY CODE END *******************************//
+
                     $("#"+tableId).DataTable({
                         bAutoWidth: false,
                         bPaginate: true,
@@ -81,7 +91,7 @@
                         },
                         aoColumns:tableheaders,
                         sPaginationType: "full_numbers",
-                        aaSorting: [[2, 'desc']]
+                        aaSorting: [[3, 'desc']]
                     });
                 };
             }

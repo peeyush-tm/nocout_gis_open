@@ -1,0 +1,42 @@
+# In CentOS, contents should be placed in the file /etc/sysconfig/celeryd
+# # Available options: http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#available-options
+#
+# # Names of nodes to start (space-separated)
+CELERYD_NODES="nocout-celery-node-1"
+#
+# # Where to chdir at start. This could be the root of a virtualenv.
+CELERYD_CHDIR="/omd/nocout/nocout/nocout"
+#
+# # Absolute or relative path to the celery program
+#CELERY_BIN="/omd/nocout/nout/bin/python -m celery"
+
+NOCOUT_PYTHON="/omd/nocout/nout/bin/python"
+
+NOCOUT_MANAGE="$CELERYD_CHDIR/manage.py"
+
+CELERY_BIN="$NOCOUT_PYTHON $NOCOUT_MANAGE celery"
+
+# How to call "manage.py celeryd_multi"
+CELERYD_MULTI="$NOCOUT_PYTHON $NOCOUT_MANAGE celeryd_multi"
+
+# How to call "manage.py celeryctl"
+CELERYCTL="$NOCOUT_PYTHON $NOCOUT_MANAGE celeryctl"
+
+# # App instance to use (value for --app argument).
+CELERY_APP="nocout"
+#
+# # Create log/pid dirs, if they don't already exist
+CELERY_CREATE_DIRS=1
+#
+# # - %n will be replaced with the first part of the nodename.
+# # - %I will be replaced with the current child process index
+# #   and is important when using the prefork pool to avoid race conditions.
+CELERYD_LOG_FILE="/omd/nocout/tmp/celery/%N.log"
+CELERYD_PID_FILE="/omd/nocout/tmp/celery/%N.pid"
+#
+# # Workers run as an unprivileged user
+CELERYD_USER=tmadmin
+CELERYD_GROUP=tmadmin
+
+export DJANGO_SETTINGS_MODULE="nocout.settings"
+export PYTHONPATH="$PYTHONPATH:/omd/nocout/nocout/nocout"

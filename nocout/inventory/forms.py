@@ -140,6 +140,8 @@ class AntennaForm(forms.ModelForm):
         ('Normal', 'Normal'),
         ('Narrow Beam', 'Narrow Beam'),
         ('Lens', 'Lens'),
+        ('Internal', 'Internal'),
+        ('External', 'External')
     )
 
     antenna_type = forms.TypedChoiceField(choices=ANTENNA_TYPE, required=False)
@@ -505,6 +507,7 @@ class SectorForm(forms.ModelForm):
         self.fields['sector_id'].empty_label = True
 
         self.fields['sector_configured_on'].widget = forms.HiddenInput()
+        self.fields['dr_configured_on'].widget = forms.HiddenInput()
         self.fields['base_station'].widget = forms.HiddenInput()
         self.fields['antenna'].widget = forms.HiddenInput()
         try:
@@ -1578,7 +1581,8 @@ class WizardBaseStationForm(BaseStationForm):
 
     def __init__(self, *args, **kwargs):
         super(WizardBaseStationForm, self).__init__(*args, **kwargs)
-
+        self.fields['alias'].widget = forms.TextInput(attrs={'placeholder': 'Enter Base Station Name',
+                                                             'class': ' col-md-12 form-control'})
         self.fields.pop('backhaul')
 
     class Meta:
@@ -1590,6 +1594,27 @@ class WizardBaseStationForm(BaseStationForm):
             'state', 'city', 'address', 'bs_site_id', 'bs_site_type', 'bs_switch', 'bs_type', 'bh_bso', 'hssu_used',
             'infra_provider', 'gps_type', 'tag1', 'tag2', 'description',
         )
+
+    def clean(self):
+        """
+        Validations for base station form
+        """
+        alias = re.compile(r'[^\w]').sub("_", self.cleaned_data['alias'])
+        city = self.cleaned_data['city'].city_name[:3]
+        state = self.cleaned_data['state'].state_name[:3]
+        name = (alias + "_" + city + "_" + state).lower()
+        names = BaseStation.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            self._errors['alias'] = ErrorList(
+                [u"This name already in use."])
+        return self.cleaned_data
+
+
 
 
 class WizardBackhaulForm(BackhaulForm):
@@ -1612,6 +1637,22 @@ class WizardBackhaulForm(BackhaulForm):
                 'aggregator_port_name', 'aggregator_port', 'pe_hostname', 'pe_ip', 'bh_connectivity', 'bh_circuit_id',
                 'bh_capacity', 'ttsl_circuit_id', 'dr_site',
         )
+
+    def clean(self):
+        """
+        Validations for base station form
+        """
+        name = self.cleaned_data['bh_configured_on'].ip_address
+        names = Backhaul.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            self._errors['bh_configured_on'] = ErrorList(
+                [u"This name already in use."])
+        return self.cleaned_data
 
 
 class WizardSectorForm(SectorForm):
@@ -1647,7 +1688,7 @@ class WizardSectorForm(SectorForm):
         Meta Information
         """
         model = Sector
-        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+        fields = ('alias', 'sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
 
     def clean_sector_id(self):
         """
@@ -1670,6 +1711,19 @@ class WizardAntennaForm(AntennaForm):
     Class Based View Antenna Model form to update and create.
     """
 
+    ANTENNA_TYPE = (
+        ('', 'Select'),
+        ('Normal', 'Normal'),
+        ('Narrow Beam', 'Narrow Beam'),
+        ('Lens', 'Lens')
+    )
+
+    PTP_ANTENNA_TYPE = (
+        ('', 'Select'),
+        ('Internal', 'Internal'),
+        ('External', 'External')
+    )
+
     def __init__(self, *args, **kwargs):
         self.technology = kwargs.pop('technology')
 
@@ -1677,8 +1731,12 @@ class WizardAntennaForm(AntennaForm):
 
         # Organization is used from base station.
         self.fields.pop('organization')
+        self.fields['antenna_type'] = forms.TypedChoiceField(choices=WizardAntennaForm.ANTENNA_TYPE, required=False)
+        self.fields['antenna_type'].widget.attrs['class'] = 'col-md-12 select2select'
 
         if self.technology == 'P2P':
+            self.fields['antenna_type'] = forms.TypedChoiceField(choices=WizardAntennaForm.PTP_ANTENNA_TYPE, required=False)
+            self.fields['antenna_type'].widget.attrs['class'] = 'col-md-12 select2select'
             self.fields.pop('tilt')
             self.fields.pop('gain')
             self.fields.pop('beam_width')

@@ -72,7 +72,6 @@ function displayBounds(feature, lon, lat){
     var lonlat = new OpenLayers.LonLat(lon, lat);
 
     if ((lonlat.lon < bounds.left) || (lonlat.lat > bounds.top) || (lonlat.lat < bounds.bottom) ||(lonlat.lon > bounds.right) ) {
-        // console.log('out');
         return 'out';
     }
     return 'in';
@@ -424,7 +423,7 @@ function createSectorData(lat, lng, radius, azimuth, beamWidth, orientation, cal
         var len = Math.floor(PGpoints.length / 3);
         triangle.push(PGpoints[0]);
         triangle.push(PGpoints[(len * 2) - 1]);
-        triangle.push(PGpoints[(len * 3) - 1]);
+        triangle.push(PGpoints[PGpoints.length - 1]);
         /*Assign the triangle object array to sectorDataArray for plotting the polygon*/
         sectorDataArray = triangle;
     } else {
@@ -565,7 +564,7 @@ function showOpenLayerFeature(feature) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = '';
         if(featureLayer) {
-            featureLayer.redraw();
+            // featureLayer.redraw();
         }
     }
 }
@@ -580,11 +579,75 @@ function hideOpenLayerFeature(feature) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = 'none';
         if(featureLayer) {
-            featureLayer.redraw();
+            // featureLayer.redraw();
             
         }
     }
 }
+
+
+/**
+ * This function removes all items from white map
+ * @method removeAllOpenLayerFeature
+ */
+function removeAllOpenLayerFeature() {
+
+    // Hide perf info label
+    for (var x = 0; x < labelsArray.length; x++) {
+        ccpl_map.removePopup(labelsArray[x]);
+    }
+
+    // Hide tooltip info label
+    for (key in tooltipInfoLabel) {
+        ccpl_map.removePopup(tooltipInfoLabel[key]);
+    }
+
+    // Reset labels array 
+    labelsArray = [];
+    tooltipInfoLabel = {};
+
+
+    /*Clear master marker cluster objects*/
+    // Deactivate Marker Clustering Strategy
+    ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+
+    ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
+    ccpl_map.getLayersByName('Markers')[0].redraw();
+
+    ccpl_map.getLayersByName('Lines')[0].destroyFeatures(ccpl_map.getLayersByName('Lines')[0].features);
+    ccpl_map.getLayersByName('Lines')[0].redraw();
+
+    ccpl_map.getLayersByName('RedCross')[0].destroyFeatures(ccpl_map.getLayersByName('RedCross')[0].features);
+    ccpl_map.getLayersByName('RedCross')[0].redraw();
+
+    ccpl_map.getLayersByName('Sectors')[0].destroyFeatures(ccpl_map.getLayersByName('Sectors')[0].features);
+    ccpl_map.getLayersByName('Sectors')[0].redraw();
+
+    ccpl_map.getLayersByName('Devices')[0].destroyFeatures(ccpl_map.getLayersByName('Devices')[0].features);
+    ccpl_map.getLayersByName('Devices')[0].redraw();
+
+    // Reset Variables
+    bs_ss_markers= [];
+    main_devices_data_wmap = [];
+    plottedBsIds = [];
+    pollableDevices = [];
+    deviceIDArray = [];
+    sectorMarkerConfiguredOn = [];
+    sectorMarkersMasterObj = {};
+    sector_MarkersArray = [];
+    currentlyPlottedDevices = [];
+    allMarkersObject_wmap= {
+        'base_station': {},
+        'path': {},
+        'sub_station': {},
+        'sector_device': {},
+        'sector_polygon': {},
+        'backhaul': {}
+    };
+    cross_label_array = {};
+}
+
+
 
 /**
  * This function checks if given feature lies in bound of polygon if polygon is provided else, in map bounds.
@@ -621,4 +684,51 @@ WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
     }
     //else return false
     return false;
+}
+
+/**
+ * This function creates PL-RTA labels on SS & sectors(PTP) when right clicked on them for "White Map"
+ * @method createPLRtaLabel
+ * @param clicked_feature {Object}, It contains the right clicked openlayers feature(Sector or SS).
+ */
+function createPLRtaLabel(clicked_feature) {
+
+    var condition1 = (clicked_feature.pl || clicked_feature.pl == 0) && $.trim(clicked_feature.pl) != 'N/A',
+        condition2 = (clicked_feature.rta || clicked_feature.rta == 0) && $.trim(clicked_feature.rta) != 'N/A',
+        condition3 = clicked_feature.pl_timestamp && $.trim(clicked_feature.pl_timestamp) != 'N/A';
+
+    if(condition1 || condition2 || condition3) {
+        var pl = (clicked_feature.pl || clicked_feature.pl == 0) ? clicked_feature.pl : "N/A",
+            rta = (clicked_feature.rta || clicked_feature.rta == 0) ? clicked_feature.rta : "N/A",
+            pl_timestamp = clicked_feature.pl_timestamp ? clicked_feature.pl_timestamp : "N/A",
+            info_html = '';
+
+        // Create hover infowindow html content
+        info_html += '<table class="table table-responsive table-bordered table-hover">\
+                      <tr><td>Packet Drop</td><td>'+pl+'</td></tr>\
+                      <tr><td>Latency</td><td>'+rta+'</td></tr>\
+                      <tr><td>Timestamp</td><td>'+pl_timestamp+'</td></tr>\
+                      </table>';
+
+        var open_location_lat = clicked_feature.ptLat,
+            open_location_lon = clicked_feature.ptLon;
+
+        if(clicked_feature.pointType == 'sector_Marker') {
+            open_location_lat = clicked_feature.new_lat ? clicked_feature.new_lat : open_location_lat;
+            open_location_lon = clicked_feature.new_lon ? clicked_feature.new_lon : open_location_lon;
+        }
+
+        pl_rta_popup = new OpenLayers.Popup('ss_perf_'+clicked_feature.name,
+            new OpenLayers.LonLat(open_location_lon,open_location_lat),
+            new OpenLayers.Size(135,75),
+            info_html,
+            false
+        );
+
+        ccpl_map.addPopup(pl_rta_popup);
+
+        // Remove height prop from div's
+        $('.olPopupContent').css('height','');
+        $('.olPopup').css('height','');
+    }
 }
