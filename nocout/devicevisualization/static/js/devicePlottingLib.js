@@ -554,17 +554,29 @@ function devicePlottingClass_gmap() {
             // Google maps dragend event, triggers when map drags
             google.maps.event.addListener(mapInstance, 'dragend', function () {
                 if(mapInstance.getZoom() > 11 && isPerfCallStarted == 1) {
-                	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
+
+                	var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
+                		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
+
                 	if(new_bs.length > 0) {
+                		var chunk_size = periodic_poll_process_count,
+                			new_bs_chunks = createArrayChunks(new_bs, chunk_size);
                 		if(!callsInProcess) {
                 			// Clear performance calling timeout
 							if(recallPerf != "") {
 		            			clearTimeout(recallPerf);
 		            			recallPerf = "";
 		            		}
-                			gisPerformanceClass.start(new_bs);
+                			gisPerformanceClass.start(new_bs_chunks);
                 		} else {
-                			current_bs_list = current_bs_list.concat(new_bs);
+                			// Create Exisiting ids chunks
+                			current_bs_list = createArrayChunks(existing_bs_ids,chunk_size);
+                			// Concat new bs id with the existings
+                			current_bs_list = current_bs_list.concat(new_bs_chunks);
+                			// Update bsNamesList data
+                			gisPerformanceClass.bsNamesList = current_bs_list;
+                			// sendRequest with last_counter_val
+                			gisPerformanceClass.sendRequest(last_counter_val);
                 		}
                 	}
                 }
@@ -10001,15 +10013,50 @@ function getMarkerInCurrentBound(only_bs_ids) {
     	returned_bs_array  = [];
 
     if(!only_bs_ids) {
-
-	    if(bsMarkersInBound && bsMarkersInBound.length > 0) {
-	    	while (bsMarkersInBound.length > 0) {
-	    		returned_bs_array.push(bsMarkersInBound.splice(0, chunk_size));
-	    	}
-	    }
+	    returned_bs_array = createArrayChunks(bsMarkersInBound, chunk_size);
     } else {
     	returned_bs_array = bsMarkersInBound;
     }
 
     return returned_bs_array ;
+}
+
+/**
+ * This function creates chunks of given array as per given chunk size
+ * @method createArrayChunks
+ * @param data_array {Array}, It is the items array
+ * @param chunk_size {Number}, It is the size of chunks to be created
+ */
+function createArrayChunks(data_array, chunk_size) {
+
+	var chunks_array = [];
+	
+	var non_null_array = convertChunksToNormalArray(data_array);
+
+	if(non_null_array && non_null_array.length > 0) {
+    	while (non_null_array.length > 0) {
+    		chunks_array.push(non_null_array.splice(0, chunk_size));
+    	}
+    }
+
+    return chunks_array;
+}
+
+/**
+ * This function creates non null normal array from given chunks or normal array
+ * @method convertChunksToNormalArray
+ * @param data_array {Array}, It is the items chunks array
+ * @param chunk_size {Number}, It is the size of chunks to be created
+ */
+function convertChunksToNormalArray(chunks_array) {
+	var simple_array = chunks_array.join(',').split(','),
+		non_null_array = [];
+
+	for(var i=0;i<simple_array.length;i++) {
+		if(simple_array[i] && non_null_array.indexOf(simple_array[i]) == -1)  {
+			non_null_array.push(simple_array[i]);
+		}
+	}
+
+	return non_null_array;
 }

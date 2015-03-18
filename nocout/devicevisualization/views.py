@@ -4025,7 +4025,7 @@ class GISStaticInfo(View):
                 # inventory = prepare_raw_bs_result(bs_id_wise_result[bs_id])
 
                 # get formatted bs inventory
-                inventory = prepare_raw_bs_result(bs_result)
+                inventory = prepare_raw_bs_result(bs_result,True)
 
                 # ******************************** GET DEVICE MACHINE MAPPING (START) ****************************
                 bh_device = None
