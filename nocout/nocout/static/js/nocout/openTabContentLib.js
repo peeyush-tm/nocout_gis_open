@@ -24,7 +24,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     var anchor_id = e.currentTarget.id,
         browser_url_array = window.location.href.split("#"),
         second_condition = "";
-
     if (isFirst) {
         second_condition = isFirst;
     } else {
@@ -40,10 +39,12 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     }
 
     var destroy = false,
+        header_attr = e.currentTarget.attributes.data_header,
+        url_attr = e.currentTarget.attributes.data_url,
         div_id = e.currentTarget.href.split("#").length > 1 ? e.currentTarget.href.split("#")[1] : "",
         table_id = $("#" + div_id).find("table").length > 0 ? $("#" + div_id).find("table")[0].id : "",
-        ajax_url = e.currentTarget.attributes.data_url ? e.currentTarget.attributes.data_url.value : "",
-        grid_headers = e.currentTarget.attributes.data_header ? JSON.parse(e.currentTarget.attributes.data_header.value) : "",
+        ajax_url = url_attr && url_attr.value ? url_attr.value : "",
+        grid_headers = header_attr && header_attr.value ? JSON.parse(header_attr.value) : "",
         isTab = $('.nav li.active .hidden-inline-mobile');
 
     if(table_id && ajax_url && grid_headers) {

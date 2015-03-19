@@ -680,6 +680,9 @@ class SectorDashboardListing(BaseDatatableView):
 
     model = SpotDashboard
 
+    # default technology
+    technology = 'ALL'
+
     # Static info Colums
     static_columns = [
         "sector_sector_id",
@@ -718,7 +721,15 @@ class SectorDashboardListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        return self.model.objects.values(*self.columns)
+        resultset = []
+        if self.technology == 'ALL':
+            resultset = self.model.objects.values(*self.columns)
+        else:
+            resultset = self.model.objects.filter(
+                sector_device_technology=self.technology
+            ).values(*self.columns)
+
+        return resultset
 
     def prepare_results(self,qs):
 
@@ -822,6 +833,7 @@ class SectorDashboardListing(BaseDatatableView):
         request = self.request
         self.initialize(*args, **kwargs)
 
+        self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
 
         qs = self.get_initial_queryset()
 
