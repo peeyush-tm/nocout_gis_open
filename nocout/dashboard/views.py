@@ -954,15 +954,9 @@ class BackhaulCapacityMixin(object):
             chart_series = []
             if len(dashboard_status_dict):
                 for key, value in dashboard_status_dict.items():
-                    # Changing key in to warning and critical
-                    if key == 'Needs_Augmentation':
-                        change_key = 'Warning'
-                    elif key == 'Stop_Provisioning':
-                        change_key = 'Critical'
-                    else:
-                        change_key = key
-                    # create a list of "Key: value".    
-                    chart_series.append(['%s: %s' % (change_key, value), dashboard_status_dict[key]])
+                    # create a list of "Key: value".
+                    chart_series.append(['%s: %s' % (key.replace('_', ' '), value), dashboard_status_dict[key]])
+                    
                 color.append('rgb(255, 153, 0)')
                 color.append('rgb(255, 0, 0)')
                 color.append('rgb(0, 255, 0)')
