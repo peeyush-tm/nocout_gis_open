@@ -212,7 +212,10 @@ class PerformanceDashboardMixin(object):
         :return Http response object:
         """
         data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh = self.get_init_data()
-        template_dict = {'data_sources': json.dumps(data_source_config.keys())}
+        template_dict = {
+            'data_sources': json.dumps(data_source_config.keys()),
+            'parallel_calling_count' : PERIODIC_POLL_PROCESS_COUNT
+        }
 
         data_source = request.GET.get('data_source')
         if not data_source:

@@ -12,18 +12,6 @@
 
 {% block content %}
 
-<style type="text/css">
-    .box .header-tabs .nav-tabs {
-        top: -45px !important;
-    }
-    .rf_chart_style {
-        height: 400px;
-        /*width: 100%;
-        max-width: 100%;*/
-        margin: 0 auto;
-    }
-</style>
-
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
         <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PTP BH</h4>
@@ -75,148 +63,32 @@
         </div>
     </div>
 </div>
-
-<!-- <h2>RSSI</h2>
-<div id="rssi" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
-<h2>Availability</h2>
-<div id="availability" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
-<h2>UAS</h2>
-<div id="uas" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div> -->
 {% endblock %}
 
 {% block load_js %}
 
 <!--Highcharts Library-->
 <script src={% static "js/highcharts.js" %}></script>
-<!-- SPARKLINES -->
-<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
-<!-- Dashboard Custom CSS-->
-<script src={% static "js/nocout_dashboard.js" %}></script>
+<!-- RF Performance Dashboard Custom JS-->
+<script type="text/javascript" src={% static "js/nocout/rfDashboardLib.js" %}></script>
 
-<script>
-    var ds_list = [];
-    jQuery(document).ready(function () {
+<script type="text/javascript">
+    var ds_list = [],
+        chunk_size = 1,
+        ajax_url = "";
+    $(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
         
-        var data_sources = {{ data_sources|safe }};
+        ajax_url = "{% url 'dashboard-rf-performance-ptp-bh' %}";
+
         ds_list = {{ data_sources|safe }};
-
+        chunk_size = {{ parallel_calling_count }} ? {{ parallel_calling_count }} : 1;
+        
         /*Show spinner*/
-
-        if(ds_list.length > 0) {
-            // start API calling
-            rf_getChartData(0);
-        } else {
-            /*hide spinner*/
-            hideSpinner();
-        }
+        showSpinner();
+        // Initialize Dashboard
+        initRfDashboard();
     });
-
-/**
- * This function fetch chart data by making an ajax call 
- * @method rf_getChartData
- */
-function rf_getChartData(counter) {
-    showSpinner();
-    if(ds_list[counter]) {
-        var data_source_title = ds_list[counter] ? ds_list[counter].toUpperCase() : "";
-
-        $.ajax({
-            url : "{% url 'dashboard-rf-performance-ptp-bh' %}" + "?data_source=" + ds_list[counter],
-            type : "GET",
-            success : function(result) {
-                var response = "";
-                if(typeof result == 'string') {
-                    response = JSON.parse(result);
-                } else {
-                    response = result;
-                }
-
-                if(response.success == 1) {
-                    var pie_chart = $('#' + ds_list[counter]).highcharts({
-                        chart: {
-                            plotBackgroundColor: null,
-                            plotBorderWidth: null,
-                            plotShadow: false
-                        },
-                        title: {
-                            // text: response.data.objects.chart_data[0].name
-                            text: ''
-                        },
-                        credits: {
-                            enabled: false
-                        },
-                        plotOptions: {
-                            pie: {
-                                allowPointSelect: true,
-                                cursor: 'pointer',
-                                dataLabels: {
-                                    enabled: false
-                                },
-                                showInLegend: true
-                            }
-                        },
-                        legend:{
-                            itemDistance : 15,
-                            itemMarginBottom : 5,
-                            itemWidth : 125,
-                            borderColor : "#CCCCCC",
-                            borderWidth : "1",
-                            borderRadius : "8",
-                            itemStyle: {
-                                color: '#555555',
-                                fontSize : '10px'
-                            }
-                        },
-                        colors: response.data.objects.colors,
-                        series: [{
-                            type: 'pie',
-                            name: response.data.objects.display_name,
-                            data: response.data.objects.chart_data[0].data
-                        }]
-                    });
-                } else {
-                    hideSpinner();
-                    $('#' + ds_list[counter]).html("<b>"+response.message+"</b>");
-                    // console.log(data_source_title + " : " + response.message);
-                    $.gritter.add({
-                        // (string | mandatory) the heading of the notification
-                        title: 'RF Performance Dashboard - PTP BH',
-                        // (string | mandatory) the text inside the notification
-                        text: data_source_title + " : " + response.message,
-                        // (bool | optional) if you want it to fade out on its own or just sit there
-                        sticky: false,
-                        // Time in ms after which the gritter will dissappear.
-                        time : 1500
-                    });
-                }
-            },
-            error : function(err) {
-                hideSpinner();
-                $.gritter.add({
-                    // (string | mandatory) the heading of the notification
-                    title: 'RF Performance Dashboard - PTP BH',
-                    // (string | mandatory) the text inside the notification
-                    text: data_source_title + " : " + err.statusText,
-                    // (bool | optional) if you want it to fade out on its own or just sit there
-                    sticky: false,
-                    // Time in ms after which the gritter will dissappear.
-                    time : 1500
-                });
-            },
-            complete : function() {
-                // recursive function calling
-                var count = counter;
-                if(ds_list[count++]) {
-                    rf_getChartData(count);
-                    if (ds_list.length == count){
-                        hideSpinner();
-                    }
-                }
-            }
-        });
-    }
-}
 </script>
 {% endblock %}
