@@ -15,80 +15,183 @@
     <div class="box border lite">
         <div class="box-title">
             <h4><i class="fa fa-flask"></i>SECTOR STATUS</h4>
-
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
         </div>
 
         <div class="box-body">
-            <!-- sector_capacity_status_container Start-->
-            <div id="sector_capacity_status_container" class="" style="overflow:auto;">
+
+            <div class="tabbable header-tabs">
                 
-                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="sectorStatusTable">
-                    <thead>
-                        <tr>
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#wimax_status_block" id="wimax_status_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">WiMAX</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#pmp_status_block" id="pmp_status_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#all_status_block" id="all_status_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                </ul>
 
-                            <th colspan="5" class="hide" style="width:auto;" aria-label=""></th>
+                <div class="tab-content" style="overflow-y:auto;">
+                    
+                    <div class="tab-pane" id="wimax_status_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="wimax_sector_status_table">
+                            <thead>
+                                <tr>
+                                    <th colspan="5" class="hide" style="width:auto;" aria-label=""></th>
+                                    <th colspan="7" style="text-align: center;">SECTOR</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current DL</th>
+                                    <th colspan="6" style="text-align: center;">DL (Last Day)</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current UL</th>
+                                    <th colspan="6" style="text-align: center;">UL (Last Day)</th>
+                                </tr>
+                                <tr>
+                                    <th class="hide" style="width:auto;" aria-label="Device ID">Device ID</th>
+                                    <th class="hide" style="width:auto;" aria-label="Sector">Sector</th>
+                                    <th class="hide" style="width:auto;" aria-label="severity">severity</th>
+                                    <th class="hide" style="width:auto;" aria-label="age">age</th>
+                                    <th class="hide" style="width:auto;" aria-label="organization">organization</th>
 
-                            <th colspan="7" style="text-align: center;">SECTOR</th>
+                                    <th style="width:auto;" aria-label="Sector ID">Sector ID</th>
+                                    <th style="width:auto;" aria-label="BS Name">BS Name</th>
+                                    <th style="width:auto;" aria-label="City">City</th>
+                                    <th style="width:auto;" aria-label="State">State</th>
+                                    <th style="width:auto;" aria-label="IP">IP</th>
+                                    <th style="width:auto;" aria-label="Technology">Technology</th>
+                                    <th style="width:auto;" aria-label="Capacity">Cbw (MHz)</th>
 
-                            <th colspan="2" style="text-align: center;" aria-label="">Current DL</th>
-                            
-                            <th colspan="6" style="text-align: center;">DL (Last Day)</th>
+                                    <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
+                                    <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="Capacity DL">Capacity DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="AVG DL (%)">AVG DL (%)</th>
+                                    <th style="width:auto;" aria-label="AVG DL (mbps)">AVG DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (%)">PEAK DL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (mbps)">PEAK DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
 
-                            <th colspan="2" style="text-align: center;" aria-label="">Current UL</th>
+                                    <th style="width:auto;" aria-label="UL (%)">UL (%)</th>
+                                    <th style="width:auto;" aria-label="UL (mbps)">UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="Capacity UL">Capacity UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="AVG UL (%)">AVG UL (%)</th>
+                                    <th style="width:auto;" aria-label="AVG UL (mbps)">AVG UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (%)">PEAK UL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (mbps)">PEAK UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="tab-pane" id="pmp_status_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="pmp_sector_status_table">
+                            <thead>
+                                <tr>
+                                    <th colspan="5" class="hide" style="width:auto;" aria-label=""></th>
+                                    <th colspan="7" style="text-align: center;">SECTOR</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current DL</th>
+                                    <th colspan="6" style="text-align: center;">DL (Last Day)</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current UL</th>
+                                    <th colspan="6" style="text-align: center;">UL (Last Day)</th>
+                                </tr>
+                                <tr>
+                                    <th class="hide" style="width:auto;" aria-label="Device ID">Device ID</th>
+                                    <th class="hide" style="width:auto;" aria-label="Sector">Sector</th>
+                                    <th class="hide" style="width:auto;" aria-label="severity">severity</th>
+                                    <th class="hide" style="width:auto;" aria-label="age">age</th>
+                                    <th class="hide" style="width:auto;" aria-label="organization">organization</th>
 
-                            <th colspan="6" style="text-align: center;">UL (Last Day)</th>
+                                    <th style="width:auto;" aria-label="Sector ID">Sector ID</th>
+                                    <th style="width:auto;" aria-label="BS Name">BS Name</th>
+                                    <th style="width:auto;" aria-label="City">City</th>
+                                    <th style="width:auto;" aria-label="State">State</th>
+                                    <th style="width:auto;" aria-label="IP">IP</th>
+                                    <th style="width:auto;" aria-label="Technology">Technology</th>
+                                    <th style="width:auto;" aria-label="Capacity">Cbw (MHz)</th>
 
-                        </tr>
-                        <tr>
-                            <th class="hide" style="width:auto;" aria-label="Device ID">Device ID</th>
-                            <th class="hide" style="width:auto;" aria-label="Sector">Sector</th>
-                            <th class="hide" style="width:auto;" aria-label="severity">severity</th>
-                            <th class="hide" style="width:auto;" aria-label="age">age</th>
-                            <th class="hide" style="width:auto;" aria-label="organization">organization</th>
+                                    <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
+                                    <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="Capacity DL">Capacity DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="AVG DL (%)">AVG DL (%)</th>
+                                    <th style="width:auto;" aria-label="AVG DL (mbps)">AVG DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (%)">PEAK DL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (mbps)">PEAK DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
 
-                            <th style="width:auto;" aria-label="Sector ID">Sector ID</th>
-                            <th style="width:auto;" aria-label="BS Name">BS Name</th>
-                            <th style="width:auto;" aria-label="City">City</th>
-                            <th style="width:auto;" aria-label="State">State</th>
-                            <th style="width:auto;" aria-label="IP">IP</th>
-                            <th style="width:auto;" aria-label="Technology">Technology</th>
-                            <th style="width:auto;" aria-label="Capacity">Cbw (MHz)</th>
+                                    <th style="width:auto;" aria-label="UL (%)">UL (%)</th>
+                                    <th style="width:auto;" aria-label="UL (mbps)">UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="Capacity UL">Capacity UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="AVG UL (%)">AVG UL (%)</th>
+                                    <th style="width:auto;" aria-label="AVG UL (mbps)">AVG UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (%)">PEAK UL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (mbps)">PEAK UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
 
-                            <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
-                            <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
-                            <th style="width:auto;" aria-label="Capacity DL">Capacity DL (mbps)</th>
-                            <th style="width:auto;" aria-label="AVG DL (%)">AVG DL (%)</th>
-                            <th style="width:auto;" aria-label="AVG DL (mbps)">AVG DL (mbps)</th>
-                            <th style="width:auto;" aria-label="PEAK DL (%)">PEAK DL (%)</th>
-                            <th style="width:auto;" aria-label="PEAK DL (mbps)">PEAK DL (mbps)</th>
-                            <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+                    <div class="tab-pane active" id="all_status_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="all_sector_status_table">
+                            <thead>
+                                <tr>
+                                    <th colspan="5" class="hide" style="width:auto;" aria-label=""></th>
+                                    <th colspan="7" style="text-align: center;">SECTOR</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current DL</th>
+                                    <th colspan="6" style="text-align: center;">DL (Last Day)</th>
+                                    <th colspan="2" style="text-align: center;" aria-label="">Current UL</th>
+                                    <th colspan="6" style="text-align: center;">UL (Last Day)</th>
+                                </tr>
+                                <tr>
+                                    <th class="hide" style="width:auto;" aria-label="Device ID">Device ID</th>
+                                    <th class="hide" style="width:auto;" aria-label="Sector">Sector</th>
+                                    <th class="hide" style="width:auto;" aria-label="severity">severity</th>
+                                    <th class="hide" style="width:auto;" aria-label="age">age</th>
+                                    <th class="hide" style="width:auto;" aria-label="organization">organization</th>
 
-                            <th style="width:auto;" aria-label="UL (%)">UL (%)</th>
-                            <th style="width:auto;" aria-label="UL (mbps)">UL (mbps)</th>
-                            <th style="width:auto;" aria-label="Capacity UL">Capacity UL (mbps)</th>
-                            <th style="width:auto;" aria-label="AVG UL (%)">AVG UL (%)</th>
-                            <th style="width:auto;" aria-label="AVG UL (mbps)">AVG UL (mbps)</th>
-                            <th style="width:auto;" aria-label="PEAK UL (%)">PEAK UL (%)</th>
-                            <th style="width:auto;" aria-label="PEAK UL (mbps)">PEAK UL (mbps)</th>
-                            <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
-                        </tr>
+                                    <th style="width:auto;" aria-label="Sector ID">Sector ID</th>
+                                    <th style="width:auto;" aria-label="BS Name">BS Name</th>
+                                    <th style="width:auto;" aria-label="City">City</th>
+                                    <th style="width:auto;" aria-label="State">State</th>
+                                    <th style="width:auto;" aria-label="IP">IP</th>
+                                    <th style="width:auto;" aria-label="Technology">Technology</th>
+                                    <th style="width:auto;" aria-label="Capacity">Cbw (MHz)</th>
 
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                                    <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
+                                    <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="Capacity DL">Capacity DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="AVG DL (%)">AVG DL (%)</th>
+                                    <th style="width:auto;" aria-label="AVG DL (mbps)">AVG DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (%)">PEAK DL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK DL (mbps)">PEAK DL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
 
+                                    <th style="width:auto;" aria-label="UL (%)">UL (%)</th>
+                                    <th style="width:auto;" aria-label="UL (mbps)">UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="Capacity UL">Capacity UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="AVG UL (%)">AVG UL (%)</th>
+                                    <th style="width:auto;" aria-label="AVG UL (mbps)">AVG UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (%)">PEAK UL (%)</th>
+                                    <th style="width:auto;" aria-label="PEAK UL (mbps)">PEAK UL (mbps)</th>
+                                    <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <!-- sector_capacity_status_container End-->
-            <div class="clearfix"></div>
         </div>
+        <!-- sector_capacity_status_container End-->
+        <div class="clearfix"></div>
     </div>
 {% endblock %}
 
@@ -96,20 +199,38 @@
 {% block jquery %}
 <!-- Custom script for data table-->
 <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 <script type="text/javascript">
 
     var dataTableInstance = "";
     $(document).ready(function(e) {
         /*Make a instance of ourDataTableWidget class */
         dataTableInstance = new ourDataTableWidget();
+
+        var location_array = window.location.href.split("#");
+
         /*Show the spinner*/
         showSpinner();
 
         /*Grid headers object & ajax url*/
-        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
-            ajax_url = '{% url "SectorStatusListingClass" %}';
+        var all_ajax_url = '{% url "SectorStatusListingClass" %}',
+            pmp_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=PMP',
+            wimax_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=WiMAX';
 
-        dataTableInstance.createDataTable("sectorStatusTable", gridHeadersObj, ajax_url);
+        $("#all_status_tab").attr("data_url", all_ajax_url);
+        $("#all_status_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#pmp_status_tab").attr("data_url", pmp_ajax_url);
+        $("#pmp_status_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#wimax_status_tab").attr("data_url", wimax_ajax_url);
+        $("#wimax_status_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            /*Trigger click event on active tab to load its data*/
+            $("#all_status_tab").trigger('click', true);
+        }
     });
 
 </script>
