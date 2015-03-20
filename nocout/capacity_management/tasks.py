@@ -296,7 +296,7 @@ def gather_backhaul_status():
         if calc_util_last_day():
             avg_max_val = get_avg_max_sector_util(
                 devices=machine_bh_devices,
-                services=kpi_services,
+                services=val_services,
                 data_sources=data_sources,
                 machine=machine,
                 getit='val'
@@ -547,7 +547,7 @@ def check_item_is_list(items):
     if type(items) == type(list()):
         return items
     elif type(items) == type(set()):
-        return items
+        return list(items)
     else:
         return [items]
 
@@ -668,13 +668,18 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
 
     try:
         in_string = lambda x: "'" + str(x) + "'"
+
+        # cast as DECIMAL
+        # MAX(CAST(`current_value` AS DECIMAL(3,6)) AS `max_val`,
+        # AVG(CAST(`current_value` AS DECIMAL(3,6)) AS `avg_val`
+
         query = """
         SELECT
             `device_name`,
             `service_name`,
             `data_source`,
-            MAX(CAST(`current_value` AS SIGNED)) AS `max_val`,
-            AVG(CAST(`current_value` AS SIGNED)) AS `avg_val`
+            MAX(`current_value` * 1) AS `max_val`,
+            AVG(`current_value` * 1) AS `avg_val`
         FROM {0}
         WHERE
             `sys_timestamp` >= {4}
@@ -699,7 +704,8 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
             end_date
         )
         perf = fetch_raw_result(query=query, machine=machine)
-    except:
+    except Exception as e:
+        logger.exception(e)
         return None
 
     return perf

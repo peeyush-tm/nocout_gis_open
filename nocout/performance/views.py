@@ -680,6 +680,9 @@ class SectorDashboardListing(BaseDatatableView):
 
     model = SpotDashboard
 
+    # default technology
+    technology = 'ALL'
+
     # Static info Colums
     static_columns = [
         "sector_sector_id",
@@ -718,7 +721,15 @@ class SectorDashboardListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        return self.model.objects.values(*self.columns)
+        resultset = []
+        if self.technology == 'ALL':
+            resultset = self.model.objects.values(*self.columns)
+        else:
+            resultset = self.model.objects.filter(
+                sector_device_technology=self.technology
+            ).values(*self.columns)
+
+        return resultset
 
     def prepare_results(self,qs):
 
@@ -822,6 +833,7 @@ class SectorDashboardListing(BaseDatatableView):
         request = self.request
         self.initialize(*args, **kwargs)
 
+        self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
 
         qs = self.get_initial_queryset()
 
@@ -1292,6 +1304,7 @@ class Inventory_Device_Status(View):
                                                     # 'Tower Height',
                                                     'City',
                                                     'State',
+                                                    'Near End IP',
                                                     'IP Address',
                                                     'MAC Address',
                                                     # 'Planned Frequency',
@@ -1313,11 +1326,15 @@ class Inventory_Device_Status(View):
                     sector = circuit.sector
                     base_station = 'N/A'
                     planned_frequency = 'N/A'
+                    near_end_ip = 'N/A'
+                    near_end_ip_url = ''
                     frequency = 'N/A'
                     frequency_url = ''
 
                     if sector:
                         base_station = sector.base_station
+                        near_end_ip = sector.sector_configured_on.ip_address
+                        near_end_ip_url = reverse('device_edit', kwargs={'pk': sector.sector_configured_on.id}, current_app='device')
                         planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
                         frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                         planned_frequency = ",".join(planned_frequency)
@@ -1422,6 +1439,10 @@ class Inventory_Device_Status(View):
                         {
                             "val" : state_name,
                             "url" : state_url
+                        },
+                        {
+                            "val" : near_end_ip,
+                            "url" : near_end_ip_url
                         },
                         {
                             "val" : device.ip_address,

@@ -268,6 +268,7 @@ CACHES = {
         "LOCATION": REDIS_CACHE_URL,
         'TIMEOUT': 60,
         "OPTIONS": {
+            "PARSER_CLASS": "redis.connection.HiredisParser",
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             'MAX_ENTRIES': 1000,
             "COMPRESS_MIN_LEN": 10,
