@@ -3613,7 +3613,13 @@ def list_schedule_device(request):
         # device_list = device_list.filter(device_type__in=DeviceType.objects.\
         #
 
-        device_list = DeviceType.objects.filter(alias__icontains=sSearch)
+        if technology_id:
+            device_vendor = DeviceVendor.objects.filter(devicetechnology=int(technology_id))
+            device_model = DeviceModel.objects.filter(devicevendor__in=device_vendor)
+            device_type = DeviceType.objects.filter(devicemodel__in=device_model)
+            device_list = device_type.filter(alias__icontains=sSearch)
+        else:
+            device_list = DeviceType.objects.filter(alias__icontains=sSearch)
 
         resultant_data = []
         for key in device_list:
