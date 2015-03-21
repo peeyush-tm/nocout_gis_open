@@ -1,12 +1,29 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Alert Center</a></li>
-    <li><a href="#">{{ page_type }}</a></li>
-    <li><a href="/device/">device</a></li>
-    <li><a href="/device/{{ current_device_id }}">{{ current_device_id }}</a></li>
-    <li><b>{{ service_name }}</b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe page_type|title|add:" Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "Down"  "alert_list_without_tabname"  page_type "down" %}
+
+    {% if page_type == 'network' and device_technology_name|upper == 'P2P'  %}
+        {% breadcrumb_safe "PTP BH"  "alert_list_without_tabname"  page_type "down" %}
+    {% else %}
+        {% if page_type == 'customer' and device_technology_name|upper == 'P2P'  %}
+            {% breadcrumb_safe "PTP"  "alert_list_without_tabname"  page_type "down" %}
+        {% else %}
+            {% breadcrumb_safe device_technology_name|upper  "alert_list_with_tabname"  page_type "down" device_technology_name %}
+        {% endif %}
+    {% endif %}
+
+
+    {% breadcrumb_safe device_alias|upper "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
 {% block content_title %}
     {{ page_type | title }} Alert <span style="font-size: 25px;">{{ device_alias }}</span>
 {% endblock %}

@@ -1,10 +1,16 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Capacity Management</a></li>
-    <li><a href="#">Daily Alerts</a></li>
-    <li><b>Sector Augmentation</b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-flask'></i> Capacity Management" "javascript:;" %}
+    {% breadcrumb_safe "Daily Alerts" "javascript:;" %}
+    {% breadcrumb_safe "Sector Augmentation" "SectorAugmentationAlertsHeaders" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
 {% block content_title %}Sector Augmentation{% endblock %}
 {% block content_description %} Sector Augmentation List {% endblock %}
 {% load staticfiles %}

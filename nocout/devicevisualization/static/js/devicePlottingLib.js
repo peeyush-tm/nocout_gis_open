@@ -5623,8 +5623,7 @@ function devicePlottingClass_gmap() {
 			    				var ss_ip = sub_stations[k].data.substation_device_ip_address ? sub_stations[k].data.substation_device_ip_address : "",
 			    					ss_item_index = sub_stations[k].data.item_index > -1 ? sub_stations[k].data.item_index : 0,
 			    					ss_info_dict = sub_stations[k].data.item_index > -1 ? ss_infoWindow_content : sub_stations[k].data.param.sub_station,
-			    					ckt_id = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_index),
-			    					ss_circuit_id = ckt_id ? $.trim(ckt_id.toLowerCase()) : "";
+			    					ss_circuit_id = sub_stations[k].data.circuit_id ? $.trim(sub_stations[k].data.circuit_id.toLowerCase()) : "";
 
 			    				// If any IP address or Circuit ID is searched
 			    				if(selected_ip_address.length > 0 || selected_circuit_id.length > 0) {

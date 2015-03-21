@@ -1,8 +1,19 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-calendar'></i> Scheduling Management" "event_list" %}
+    {% breadcrumb_safe "Add Event" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
-{% block content_title %}Add Device Type{% endblock %}
-{% block content_description %}Add device type{% endblock %}
+{% block content_title %}Add Event{% endblock %}
+{% block content_description %}Add Event{% endblock %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/schedule_style.css" %} >
     <link rel="stylesheet" type="text/css" href={% static "css/bootstrap-timepicker.min.css" %} >
@@ -14,7 +25,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> ADD DEVICE TYPE</h4>
+                            <h4><i class="fa fa-bars"></i> ADD EVENT</h4>
                         </div>
                         <div class="box-body">
                             <div class="col-md-8"><br />

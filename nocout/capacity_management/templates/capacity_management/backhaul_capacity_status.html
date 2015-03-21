@@ -1,10 +1,17 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Capacity Management</a></li>
-    <li><a href="#">Daily Alerts</a></li>
-    <li><b>Backhaul Status</b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-flask'></i> Capacity Management" "javascript:;" %}
+    {% breadcrumb_safe "Utilization Status" "javascript:;" %}
+    {% breadcrumb_safe "Backhaul Status" "BackhaulStatusHeaders" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
+
 {% block content_title %}Backhaul Status{% endblock %}
 {% block content_description %}Backhaul Status List {% endblock %}
 {% load staticfiles %}
