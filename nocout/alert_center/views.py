@@ -989,7 +989,9 @@ class AlertCenterListing(ListView):
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
+        context['url_data_source'] = self.kwargs['data_source']
         context['page_type'] = page_type
+        context['data_tab'] = data_tab
         return context
 
 

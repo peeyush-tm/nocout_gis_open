@@ -5,11 +5,13 @@ from alert_center import views
 urlpatterns = patterns('',
                        # common page for both customer and network
                        url(r'^((?!detail)(?P<page_type>\w+))/(?P<data_source>\w+)/$',
-                           views.AlertCenterListing.as_view()
+                           views.AlertCenterListing.as_view(),
+                           name='alert_list_without_tabname'
                        ),
 
                        url(r'^((?!detail)(?P<page_type>\w+))/(?P<data_source>\w+)/(?P<data_tab>\w+)/$',
-                           views.AlertCenterListing.as_view()
+                           views.AlertCenterListing.as_view(),
+                           name='alert_list_with_tabname'
                        ),
 
                        url(r'^networklistingtable/',

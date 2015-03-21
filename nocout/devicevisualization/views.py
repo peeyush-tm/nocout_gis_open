@@ -858,6 +858,7 @@ class KmzViewAction(View):
 
         kmz_resultset = KMZReport.objects.filter(pk=kmz_id).values()
         context_data['file_url'] = kmz_resultset[0]['filename']
+        context_data['kmz_id'] = kmz_id
 
         # If page_type is other than google earth & file type is kmz then extract kmz file & pass kml file url
         if page_type != 'google_earth':

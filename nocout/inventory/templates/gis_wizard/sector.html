@@ -1,4 +1,17 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
+    {% breadcrumb_safe "Base Station Wizard" "javascript:;" %}
+    {% breadcrumb_safe "Add PTP : "|add:base_station.alias "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 {% block content_title %}GIS Wizard: {% if selected_technology == '2' %}PTP{% else %}Sector{% endif %}{% endblock %}
 {% block content_description %}gis wizard: {% if selected_technology == '2' %}PTP{% else %}sector{% endif %}{% endblock %}

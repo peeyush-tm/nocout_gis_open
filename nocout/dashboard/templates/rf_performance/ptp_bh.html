@@ -1,14 +1,19 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Performance Reports</a></li>
-    <li><a href="#">RF Performance Dashboard</a></li>
-    <li><b>PTP BH</b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe "RF Performance Dashboard: PTP BH" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
 {% load staticfiles %}
 {% block page_setting_block %} {% endblock %}
-{% block content_title %} RF Performance Dashboard: PTP {% endblock %}
-{% block content_description %} RF Performance Dashboard: PTP {% endblock %}
+{% block content_title %} RF Performance Dashboard: PTP BH {% endblock %}
+{% block content_description %} RF Performance Dashboard: PTP BH {% endblock %}
 
 {% block content %}
 
