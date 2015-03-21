@@ -314,9 +314,12 @@
             }
 
             $("#id_scheduling_type").change(function() {
+                $("#id_device").select2('val', '');
+                $("#id_device_type").select2('val', '');
                 if ($(this).val() == '') {
                     $("#id_device").removeAttr("readonly");
                     $("#id_device").select2('val', '');
+                    $("#id_device_type").select2('val', '');
                     $("#id_device").parents(".form-group").first().show();
                     $("#id_device_type").parents(".form-group").first().hide();
                 } else if($(this).val() == 'dety') {
@@ -331,6 +334,11 @@
                     $("#id_device_type").removeAttr('required');
                     $("#id_device").attr('required',true);
                 }
+            });
+            
+            $("#id_technology").change(function(){
+                $("#id_device_type").select2('val', '');
+                $("#id_device").select2('val', '');
             });
 
             // display weekdays inline when repeat weekly
