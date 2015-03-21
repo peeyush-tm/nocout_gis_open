@@ -1,4 +1,21 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "Service Thematic Settings" "javascript:;" %}
+    {% if is_admin %}
+        {% breadcrumb_safe "Admin Service Thematic" "service-admin-thematic-settings-list" %}
+    {% else %}
+        {% breadcrumb_safe "Global Service Thematic" "service_thematic_settings_list" %}
+    {% endif %}
+    {% breadcrumb_safe "Add New" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block css %}

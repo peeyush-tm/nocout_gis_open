@@ -1,4 +1,17 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Sync History" "device_sync_history_list" %}
+    {% breadcrumb_safe "Update Sync History" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block content_title %}Edit Device Sync History{% endblock %}
@@ -10,7 +23,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> DEVICE SYNC HISTORY : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i> DEVICE SYNC HISTORY : {{ object }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />

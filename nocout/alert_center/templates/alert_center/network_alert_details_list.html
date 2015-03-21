@@ -1,19 +1,23 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Alert Center</a></li>
-    <li><a href="#">Alert Detail</a></li>
-    <li><a href="#">Network Detail</a></li>
-    <li><b><span id="nav_tab_name"></span></b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "Alert Details" "javascript:;" %}
+    {% breadcrumb_safe "Network Alert Details" "NetworkAlertDetailsHeader" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
 {% load url from future %}
 {% block content_title %}Network Details{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
     <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css"
-          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
 {% endblock %}
 
 
@@ -218,6 +222,7 @@
 
 
 {% block jquery %}
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <!-- Custom script for data table-->
     <script type="text/javascript">
         var dataTableInstance = "",
@@ -267,17 +272,9 @@
                         length_sel.addClass('form-control input-sm');
                     });
                     
-                    if (destroy) {
+                    if(destroy) {
                         $("#" + tableId).dataTable().fnDestroy();
                     }
-
-                    // ******************************* TEMPORARY CODE START *******************************//
-                    // By Default remove sorting from all datatables
-                    //for(var i=0;i<tableheaders.length;i++) {
-                    //    var header = tableheaders[i];
-                    //    header['bSortable'] = false;
-                    //}
-                    // ******************************* TEMPORARY CODE END *******************************//
                     
                     var dtable = $("#" + tableId).DataTable({
                         sDom: 'T<"clear">lfrtip',
@@ -388,29 +385,13 @@
             var location_array = window.location.href.split("#");
 
             if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#network_ptp_tab").trigger('click', true);
             }
-            {#            dataTableInstance.createDataTable("network_ptp_block_table", gridHeadersObj, ajax_url_p2p, destroy);#}
-
-            // if tabination is there in page add its text in breadcrumb
-            var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
-            if (tab.length) {
-                $('#nav_tab_name').text(tab.text());
-            }
-            else {
-                $(".breadcrumb").children().last().hide()
-            }
-            // change name of the tab on click of the tab
-            $(".nav-tabs li").click(function () {
-                $('#nav_tab_name').text($(this).text());
-            });
         });
 
     </script>
 
-    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 {% endblock %}
 
 {% block load_js %}

@@ -1,4 +1,16 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "Device Frequency" "device_frequency_list" %}
+    {% breadcrumb_safe "Add Frequency" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block css %}

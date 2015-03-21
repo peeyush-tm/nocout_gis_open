@@ -82,7 +82,8 @@ function rf_getChartData(ds_name, chunk_counter) {
                                 dataLabels: {
                                     enabled: false
                                 },
-                                showInLegend: true
+                                showInLegend: true,
+                                size: "60%"
                             }
                         },
                         legend:{

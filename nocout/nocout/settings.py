@@ -202,6 +202,7 @@ INSTALLED_APPS = (
     'djcelery',
     'rest_framework',
     'alarm_escalation',
+    'django_bootstrap_breadcrumbs'
 )
 
 AUTHENTICATION_BACKENDS = (

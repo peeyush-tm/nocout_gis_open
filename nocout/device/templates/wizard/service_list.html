@@ -1,23 +1,34 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Type" "device_type_list" %}
+    {% if device_type.id %}
+        {% breadcrumb_safe "Update Device Type : "|add:device_type.alias|upper "javascript:;" %}
+    {% else %}
+        {% breadcrumb_safe "Add Device Type" "javascript:;" %}
+    {% endif %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block content_title %}Service Listing{% endblock %}
 {% block content_description %}List of service{% endblock %}
 {% block content %}
 
-        <div class="box border lite">
+    <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> SERVICE LISTING <a href="{% url 'wizard-device-type-update' pk=device_type.id %}">( {{device_type|upper}} )</a></h4>
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
+            <h4>
+                <i class="fa fa-table"></i> SERVICE LISTING
+                <a href="{% url 'wizard-device-type-update' pk=device_type.id %}">( {{device_type.alias|upper}} )</a>
+            </h4>
         </div>
-
         <div id="tableContainer" class="box-body">
             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="wizard-service-list-table">
                 <thead></thead>

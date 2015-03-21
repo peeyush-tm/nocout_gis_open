@@ -160,7 +160,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
 
     setTimeout(function() {
         // Update Breadcrumb
-        $(".breadcrumb li:last-child").html('<a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a>');
+        // $(".breadcrumb li:last-child").html('<a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a>');
     },150);
 
     /*Save the last clicked tab id in global variable for condition checks*/

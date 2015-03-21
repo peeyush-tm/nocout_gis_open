@@ -811,6 +811,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
                                 "lon": circuit['SS_LONGITUDE'],
                                 "perf_page_url" : far_end_perf_url,
                                 "inventory_url" : far_end_inventory_url,
+                                "circuit_id" : format_value(circuit['CCID']),
                                 # "antenna_height": format_value(circuit['SSHGT'], type_of='random'),
                                 "substation_device_ip_address": circuit['SSIP'],
                                 "technology": techno_to_append,

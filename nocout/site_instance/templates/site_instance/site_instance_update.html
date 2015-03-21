@@ -1,4 +1,17 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Site Instance" "site_instance_list" %}
+    {% breadcrumb_safe "Update Site Instance : "|add:object.alias  "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block content_title %}Edit Site Instance{% endblock %}
