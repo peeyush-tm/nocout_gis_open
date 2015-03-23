@@ -6,7 +6,7 @@ urlpatterns = patterns('',
                        url(r'^datatable/$', views.DataTableDownloader.as_view()),
                        url(r'^list/', views.DownloaderHeaders.as_view(),
                            name='Downloader'),
-                       url(r'^downloadcenterlistingtable/$', views.DownloaderListing.as_view(),
+                       url(r'^downloaderlistingtable/', views.DownloaderListing.as_view(),
                            name='DownloaderListing'),
                        url(r'^delete/(?P<pk>\d+)$', views.DownloaderDelete.as_view(), name='download_delete'),
 )
