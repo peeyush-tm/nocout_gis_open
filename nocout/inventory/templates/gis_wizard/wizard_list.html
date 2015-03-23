@@ -6,14 +6,14 @@
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
-    {% breadcrumb_safe "Base Station" "javascript:;" %}
+    {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
 
 {% load staticfiles %}
 
-{% block content_title %}Inventory Stitching{% endblock %}
+{% block content_title %}Base Station Wizard {% endblock %}
 {% block content_description %}List of base station{% endblock %}
 {% block content %}
         {% if perms.inventory.add_basestation %}
