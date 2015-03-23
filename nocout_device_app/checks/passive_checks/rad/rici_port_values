@@ -36,35 +36,45 @@ def connection_telnet_for_rici_port_state(hostip, port,num_port):
 	except socket.timeout:
 		plugin_message = ""
 		return plugin_message
-	tn.read_until("USER NAME")
-	tn.write("su" + "\r\n")
-	tn.read_until("PASSWORD")
-	tn.write("1234" + "\r\n")
-	tn.write("3\r\n")
-	tn.write("2\r\n")
-	tn.write("1\r\n")
-	tn.write("1\r\n")
-	tn.write("1\r\n")
-	tn.write("2\r\n")
-	tn.write("1\r\n")
-	tn.write("3\r\n")
-	tn.write("1\r\n")
-	tn.write("4\r\n")
-	data1=tn.read_until('(Eth%s)'% num_port)
-	tn.write("%s\r\n" % chr(24))
-	pattern= re.compile(r'\x1b\[((?:[0-9]*;?)+)([A-Za-z])')
-	data1 = pattern.sub('',data1)
-	output = re.findall('(?<=Speed and Duplex\()[\w ]*',data1)
-	plugin_message = ""
-	index = 0
-	try:
-		for entry in output:
-			index = index+1
-			port_duplex = entry.split(' ')[0]
-			port_speed = entry.split(' ')[1] + "_" + entry.split(' ')[2]
-			plugin_message += "%s=%s,%s " % (index,port_duplex,port_speed) 
+        try:
+		tn.read_until("USER NAME")
+		tn.write("su" + "\r\n")
+		tn.read_until("PASSWORD")
+		tn.write("1234" + "\r\n")
+       		s= tn.read_until(">",1)
+		if s[-1] != '>':
+			raise Exception
 	except:
+		tn.write("%s\r\n" % chr(24))
+		tn.write("%s\r\n" % chr(24))
 		plugin_message = ""
+		return plugin_message
+	else:
+		tn.write("3\r\n")
+		tn.write("2\r\n")
+		tn.write("1\r\n")
+		tn.write("1\r\n")
+		tn.write("1\r\n")
+		tn.write("2\r\n")
+		tn.write("1\r\n")
+		tn.write("3\r\n")
+		tn.write("1\r\n")
+		tn.write("4\r\n")
+		data1=tn.read_until('(Eth%s)'% num_port)
+		tn.write("%s\r\n" % chr(24))
+		pattern= re.compile(r'\x1b\[((?:[0-9]*;?)+)([A-Za-z])')
+		data1 = pattern.sub('',data1)
+		output = re.findall('(?<=Speed and Duplex\()[\w ]*',data1)
+		plugin_message = ""
+		index = 0
+		try:
+			for entry in output:
+				index = index+1
+				port_duplex = entry.split(' ')[0]
+				port_speed = entry.split(' ')[1] + "_" + entry.split(' ')[2]
+				plugin_message += "%s=%s,%s " % (index,port_duplex,port_speed) 
+		except:
+			plugin_message = ""
 	return plugin_message
                                 
 

@@ -203,6 +203,7 @@ INSTALLED_APPS = (
     'djcelery',
     'rest_framework',
     'alarm_escalation',
+    'django_bootstrap_breadcrumbs'
 )
 
 AUTHENTICATION_BACKENDS = (
@@ -269,6 +270,7 @@ CACHES = {
         "LOCATION": REDIS_CACHE_URL,
         'TIMEOUT': 60,
         "OPTIONS": {
+            "PARSER_CLASS": "redis.connection.HiredisParser",
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             'MAX_ENTRIES': 1000,
             "COMPRESS_MIN_LEN": 10,

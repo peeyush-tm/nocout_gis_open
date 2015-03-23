@@ -13085,9 +13085,9 @@ from inventory.utils.util import organization_network_devices, organization_cust
 from organization.models import Organization
 from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
-
+from nocout.utils.util import indexed_query_set
 #The Django !!
-from django.db.models import Count
+from django.db.models import Count, Q
 
 
 def get_organizations():
@@ -13169,22 +13169,90 @@ def get_topology(technology, rf_type=None, site_name=None):
     topology = Topology.objects.filter(sector_id__in=sector_list)
     required_topology = topology.values('connected_device_ip', 'sector_id', 'connected_device_mac', 'mac_address', 'ip_address')
 
-    sector_ips = topology.values_list('ip_address', flat=True)
+    sector_ips = topology.values_list('ip_address', flat=True).distinct()
+
+    ss_macs = topology.values_list('connected_device_mac', flat=True).distinct()
 
     polled_sectors = sector_objects.filter(sector_id__in=topology.values_list('sector_id', flat=True))
 
-    polled_circuits = Circuit.objects.filter(sub_station__in=SubStation.objects.filter(
-        device__ip_address__in=topology.values_list('connected_device_ip', flat=True)
+    polled_circuits = Circuit.objects.select_related(
+        'sub_station',
+        'sub_station__device',
+        'sector'
+        ).filter(
+            sub_station__in=SubStation.objects.filter(
+                device__ip_address__in=topology.values_list('connected_device_ip', flat=True)
+            )
         )
-    )
+
+    # ss_mac_update_required = polled_circuits.exclude(
+    #     Q(sub_station__mac_address__in=ss_macs)
+    #     |
+    #     Q(sub_station__device__mac_address__isnull=ss_macs)
+    # )
+    #
+    # # ss with mac address as null
+    # ss_null_mac = ss_mac_update_required.filter(
+    #     Q(sub_station__mac_address__isnull=True)
+    #     |
+    #     Q(sub_station__device__mac_address__isnull=True)
+    # )
+    #
+    # # circuits with no sectors connected
+    # circuit_null_sector = polled_circuits.filter(
+    #     sector__isnull=True
+    # )
 
     polled_devices = Device.objects.filter(ip_address__in=sector_ips)  # just work with sector devices here
     # because the ss devices can be get directly with SS only
 
+    if topology.exists() and polled_sectors.exists():  # evaluate the query set
+        # index_this = topology
+        # indexed_topology = indexed_query_set(
+        #     query_set=index_this,
+        #     indexes=['sector_id', 'connected_device_ip'],
+        #     values=['sector_id', 'connected_device_ip', 'connected_device_mac', 'mac_address', 'ip_address'],
+        #     is_raw=False
+        # )
+        # ss_indexed_topology = indexed_query_set(
+        #     query_set=index_this,
+        #     indexes=['connected_device_ip'],
+        #     values=['sector_id', 'connected_device_ip', 'connected_device_mac', 'mac_address', 'ip_address'],
+        #     is_raw=False
+        # )
+        # index_this = polled_sectors
+        # sector_indexed_topology = indexed_query_set(
+        #     query_set=index_this,
+        #     indexes=['sector_id'],
+        #     values=['sector_id', 'id'],
+        #     is_raw=False
+        # )
+        pass
+    else:
+        return False
 
     save_circuit_list = []
     save_device_list = []
     save_ss_list = []
+
+    # for circuit in polled_circuits:
+    #     required_index = (circuit.sector.sector_id, circuit.sub_station.device.ip_address)
+    #     if required_index in indexed_topology:
+    #         # that means there is no need to update a circuit
+    #         continue
+    #     # else the index is not present
+    #     # so the circuit is required to be updated with new sector
+    #     ss_ip_index = circuit.sub_station.device.ip_address
+    #     if ss_ip_index in ss_indexed_topology:
+    #         try:
+    #             ss_indexed_sector_id = ss_indexed_topology[ss_ip_index][0]['sector_id']
+    #             # this is a values list for sector object
+    #             circuit.sector = sector_indexed_topology[ss_indexed_sector_id][0]
+    #             save_circuit_list.append(circuit)
+    #         except Exception as e:
+    #             logger.exception(e)
+    #             continue
+
 
     processed_mac = {}
     for topos in required_topology:
@@ -13271,12 +13339,11 @@ def topology_site_wise(technology):
 
     job = group(g_jobs)
     result = job.apply_async()
-    ret = False
 
-    for r in result.get():
-        ret |= r
+    # for r in result.get():
+    #     ret |= r
 
-    return ret
+    return True
 
 
 @task(default_retry_delay=30, max_retries=2)

@@ -865,3 +865,17 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
         return indexed_result
     else:
         return False
+
+
+def check_item_is_list(items):
+    """
+
+    :param items: any item to check
+    :return: list of items
+    """
+    if type(items) == type(list()):
+        return items
+    elif type(items) == type(set()):
+        return list(items)
+    else:
+        return [items]

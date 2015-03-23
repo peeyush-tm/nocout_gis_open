@@ -212,7 +212,10 @@ class PerformanceDashboardMixin(object):
         :return Http response object:
         """
         data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh = self.get_init_data()
-        template_dict = {'data_sources': json.dumps(data_source_config.keys())}
+        template_dict = {
+            'data_sources': json.dumps(data_source_config.keys()),
+            'parallel_calling_count' : PERIODIC_POLL_PROCESS_COUNT
+        }
 
         data_source = request.GET.get('data_source')
         if not data_source:
@@ -951,15 +954,9 @@ class BackhaulCapacityMixin(object):
             chart_series = []
             if len(dashboard_status_dict):
                 for key, value in dashboard_status_dict.items():
-                    # Changing key in to warning and critical
-                    if key == 'Needs_Augmentation':
-                        change_key = 'Warning'
-                    elif key == 'Stop_Provisioning':
-                        change_key = 'Critical'
-                    else:
-                        change_key = key
-                    # create a list of "Key: value".    
-                    chart_series.append(['%s: %s' % (change_key, value), dashboard_status_dict[key]])
+                    # create a list of "Key: value".
+                    chart_series.append(['%s: %s' % (key.replace('_', ' '), value), dashboard_status_dict[key]])
+                    
                 color.append('rgb(255, 153, 0)')
                 color.append('rgb(255, 0, 0)')
                 color.append('rgb(0, 255, 0)')
@@ -1407,6 +1404,7 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
     # Last 30 Days
     month_before = datetime.date.today() - datetime.timedelta(days=30)
     # Exceptional handling case
+    final_dict = list()
     try:
         has_data = True
         # Query Set with filter, annotate(for summation of data),
@@ -1422,13 +1420,9 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
             Stop_Provisioning=Sum('critical'),
             Unknown=Sum('unknown')
         ).order_by('processed_month')
-    except Exception, e:
-        has_data = False
 
-    final_dict = list()
-
-    if has_data:
-        if 'sector' in dashboard_name:
+        if has_data:
+            # if 'sector' in dashboard_name:
             trends_items = [
                 {
                     "id": "Normal",
@@ -1447,66 +1441,49 @@ def get_severity_status_dict_monthly(dashboard_name, devices_list):
                     "title": "Unknown"
                 }
             ]
-        elif 'backhaul' in dashboard_name:
-            trends_items = [
-                {
-                    "id": "Normal",
-                    "title": "Normal"
-                },
-                {
-                    "id": "Needs_Augmentation",
-                    "title": "Warning"
-                },
-                {
-                    "id": "Stop_Provisioning",
-                    "title": "Critical"
-                },
-                {
-                    "id": "Unknown",
-                    "title": "Unknown"
-                }
-            ]
 
-        # Accessing all elements in sector trend items
-        for i in range(len(trends_items)):
-            item_color = ['rgb(0, 255, 0)', 'rgb(255, 153, 0)', 'rgb(255, 0, 0)', '#d3d3d3']
+            # Accessing all elements in sector trend items
+            for i in range(len(trends_items)):
+                item_color = ['rgb(0, 255, 0)', 'rgb(255, 153, 0)', 'rgb(255, 0, 0)', '#d3d3d3']
 
-            data_dict = {
-                "type": "column",
-                "valuesuffix": " ",
-                "name": trends_items[i]['title'],
-                "valuetext": trends_items[i]['title'],
-                "color": item_color[i],
-                "data": list()
-            }
-            # Reseting month_before for every element of sector_trends_items
-            month_before = datetime.date.today() - datetime.timedelta(days=30)
-            # random color picker for sending different colors
-
-            # Loop for sending complete 30 days Data
-            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
-            while month_before < datetime.date.today():
-                # Function for getting value for element of sector trend items on every date within month    
-                data_val = getValueByTime(
-                    dashboard_status_dict=dashboard_status_dict,
-                    key=trends_items[i]['id'],
-                    current_date=month_before,
-                    date_column='processed_month'
-                )
-
-                # Preparation of final dict for sending to main function
-                data_dict['data'].append({
-                    "color": item_color[i],
-                    "y": data_val,
+                data_dict = {
+                    "type": "column",
+                    "valuesuffix": " ",
                     "name": trends_items[i]['title'],
-                    "x": calendar.timegm(month_before.timetuple()) * 1000,
-                    # Multiply by 1000 to return correct GMT+05:30 timestamp
-                })
+                    "valuetext": trends_items[i]['title'],
+                    "color": item_color[i],
+                    "data": list()
+                }
+                # Reseting month_before for every element of sector_trends_items
+                month_before = datetime.date.today() - datetime.timedelta(days=30)
+                # random color picker for sending different colors
 
-                # Increment of date by one  
-                month_before += relativedelta.relativedelta(days=1)
+                # Loop for sending complete 30 days Data
+                # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
+                while month_before < datetime.date.today():
+                    # Function for getting value for element of sector trend items on every date within month
+                    data_val = getValueByTime(
+                        dashboard_status_dict=dashboard_status_dict,
+                        key=trends_items[i]['id'],
+                        current_date=month_before,
+                        date_column='processed_month'
+                    )
 
-            final_dict.append(data_dict)
+                    # Preparation of final dict for sending to main function
+                    data_dict['data'].append({
+                        "color": item_color[i],
+                        "y": data_val,
+                        "name": trends_items[i]['title'],
+                        "x": calendar.timegm(month_before.timetuple()) * 1000,
+                        # Multiply by 1000 to return correct GMT+05:30 timestamp
+                    })
+
+                    # Increment of date by one
+                    month_before += relativedelta.relativedelta(days=1)
+
+                final_dict.append(data_dict)
+    except Exception, e:
+        has_data = False
 
     return final_dict
 

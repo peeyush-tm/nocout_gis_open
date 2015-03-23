@@ -6,7 +6,7 @@ from performance.views import Get_Service_Type_Performance_Data, \
 from django.views.decorators.cache import cache_page
 
 urlpatterns = patterns('',
-                       url(r'^(?P<page_type>\w+)_live/$', views.Live_Performance.as_view()),
+                       url(r'^(?P<page_type>\w+)_live/$', views.Live_Performance.as_view(), name='performance_listing_url'),
                        url(r'^liveperformancelistingtable/$',
                            views.LivePerformanceListing.as_view(),
                            name='LivePerformanceListing'

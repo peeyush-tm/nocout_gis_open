@@ -1,5 +1,26 @@
 {% extends "nocout/base.html" %}
 
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing_url" page_type %}
+
+    {% if page_type == 'network' and device_technology|upper == 'P2P'  %}
+        {% breadcrumb_safe "PTP BH" "performance_listing_url" page_type  %}
+    {% else %}
+        {% if page_type == 'customer' and device_technology|upper == 'P2P'  %}
+            {% breadcrumb_safe "PTP" "performance_listing_url" page_type  %}
+        {% else %}
+            {% breadcrumb_safe device_technology|upper "performance_listing_url" page_type  %}
+        {% endif %}
+    {% endif %}
+    {% breadcrumb_safe realdevice.ip_address "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% block content_title %}
     {{ page_title }} Live <span style="font-size: 25px;">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</span>
 {% endblock %}
@@ -94,11 +115,6 @@
     <div class="clearfix"></div> -->
     <!--Device Status Block End-->
     <div class="box">
-    <div class="box-title" style="background:transparent;"></div>
-    <!--Services Tabs & their content Start-->
-    {#	        		<div class="tabbable row" id="services_tab_container">#}
-    {##}
-    {#					</div>#}
     <div id="tableContainer" class="box-body">
     <div class="tabbable header-tabs">
         <ul class="nav nav-tabs top_perf_tabs">

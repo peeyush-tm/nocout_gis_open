@@ -83,7 +83,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'sector_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector_capacity', 'sTitle': 'Cbw (MHz)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
 
             {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -121,6 +121,7 @@ class SectorStatusListing(BaseDatatableView):
     is_polled = False
     is_searched = False
     is_initialised = True
+    technology = 'ALL'
 
     columns = [
         'id',
@@ -203,10 +204,17 @@ class SectorStatusListing(BaseDatatableView):
         :param kwargs:
         :return: list of devices
         """
-
-        sectors = self.model.objects.filter(
-            Q(organization__in=kwargs['organizations'])
-        ).prefetch_related(*self.related_columns).values(*self.columns)
+        if self.technology == 'ALL':
+            sectors = self.model.objects.filter(
+                Q(organization__in=kwargs['organizations'])
+            ).prefetch_related(*self.related_columns).values(*self.columns)
+        else:
+            tech_id = DeviceTechnology.objects.get(name=self.technology).id
+            if tech_id:
+                sectors = self.model.objects.filter(
+                    Q(organization__in=kwargs['organizations']),
+                    Q(sector__sector_configured_on__device_technology=tech_id)
+                ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
 
@@ -239,7 +247,10 @@ class SectorStatusListing(BaseDatatableView):
 
         request = self.request
 
+
         self.initialize(*args, **kwargs)
+        
+        self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
 
         qs = self.get_initial_queryset()
 
@@ -304,6 +315,8 @@ class SectorAugmentationAlertsHerders(ListView):
             {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
@@ -325,6 +338,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     is_polled = False
     is_searched = False
     is_initialised = True
+    technology = 'ALL'
 
     columns = [
         'id',
@@ -336,6 +350,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
         'organization__alias',
+        'current_out_per',
+        'current_in_per',
         'severity',
         'sys_timestamp',
         'age'
@@ -372,11 +388,20 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         :return: list of devices
         """
 
-        sectors = self.model.objects.filter(
-            Q(organization__in=kwargs['organizations']),
-            Q(severity__in=['warning', 'critical']),
-            Q(age__lte = F('sys_timestamp') - 600)
-        ).prefetch_related(*self.related_columns).values(*self.columns)
+        if self.technology == 'ALL':
+            sectors = self.model.objects.filter(
+                Q(organization__in=kwargs['organizations']),
+                Q(severity__in=['warning', 'critical']),
+                Q(age__lte = F('sys_timestamp') - 600)
+            ).prefetch_related(*self.related_columns).values(*self.columns)
+        else:
+            tech_id = DeviceTechnology.objects.get(name=self.technology).id
+            sectors = self.model.objects.filter(
+                Q(organization__in=kwargs['organizations']),
+                Q(sector__sector_configured_on__device_technology=tech_id),
+                Q(severity__in=['warning', 'critical']),
+                Q(age__lte = F('sys_timestamp') - 600)
+            ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
 
@@ -413,6 +438,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         request = self.request
 
         self.initialize(*args, **kwargs)
+
+        self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
 
         qs = self.get_initial_queryset()
 
@@ -480,7 +507,7 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'basestation__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'backhaul_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
 
             {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -499,7 +526,9 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
 
-        datatable_headers = hidden_headers
+        datatable_headers = []
+
+        datatable_headers += hidden_headers
 
         datatable_headers += common_headers
 

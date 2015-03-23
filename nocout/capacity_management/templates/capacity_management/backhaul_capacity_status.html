@@ -1,10 +1,17 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Capacity Management</a></li>
-    <li><a href="#">Daily Alerts</a></li>
-    <li><b>Backhaul Status</b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-flask'></i> Capacity Management" "javascript:;" %}
+    {% breadcrumb_safe "Utilization Status" "javascript:;" %}
+    {% breadcrumb_safe "Backhaul Status" "BackhaulStatusHeaders" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
+
 {% block content_title %}Backhaul Status{% endblock %}
 {% block content_description %}Backhaul Status List {% endblock %}
 {% load staticfiles %}
@@ -60,7 +67,7 @@
                             <th style="width:auto;" aria-label="Technology">Technology</th>
                             <th style="width:auto;" aria-label="City">BS City</th>
                             <th style="width:auto;" aria-label="State">BS State</th>
-                            <th style="width:auto;" aria-label="Capacity">Cbw (MHz)</th>
+                            <th style="width:auto;" aria-label="Capacity">BH Capacity (mbps)</th>
 
                             <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
                             <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
@@ -94,114 +101,22 @@
 
 
 {% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 <script type="text/javascript">
     var dataTableInstance = "";
     $(document).ready(function(e) {
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
         /*Show the spinner*/
         showSpinner();
-        var headers_list = headers = [
-            {'mData': 'id', 'sClass' : 'hide'},
-            {'mData': 'severity', 'sClass' : 'hide'},
-            {'mData': 'age', 'sClass' : 'hide'},
-            {'mData': 'organization__alias', 'sClass' : 'hide'},
-            {'mData': 'backhaul__bh_configured_on__ip_address'},
-            {'mData': 'backhaul__alias'},
-            {'mData': 'basestation__alias'},
-            {'mData': 'backhaul__bh_type'},
-            {'mData': 'backhaul__bh_connectivity'},
-            {'mData': 'bh_port_name'},
-            {'mData': 'backhaul__bh_configured_on__device_technology'},
-            {'mData': 'basestation__city__city_name'},
-            {'mData': 'basestation__state__state_name'},
-            {'mData': 'backhaul_capacity'},
-            {'mData': 'current_in_per'},
-            {'mData': 'current_in_val'},
-            {'mData': 'avg_in_per'},
-            {'mData': 'avg_in_val'},
-            {'mData': 'peak_in_per'},
-            {'mData': 'peak_in_val'},
-            {'mData': 'peak_in_timestamp'},
-            {'mData': 'current_out_per'},
-            {'mData': 'current_out_val'},
-            {'mData': 'avg_out_per'},
-            {'mData': 'avg_out_val'},
-            {'mData': 'peak_out_per'},
-            {'mData': 'peak_out_val'},
-            {'mData': 'peak_out_timestamp'}
-        ];
-        /*Grid headers object*/
-        // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-        var ajax_url = '{% url "BackhaulStatusListingClass" %}';
 
-        // ******************************* TEMPORARY CODE START *******************************//
-        // By Default remove sorting from all datatables
-        //for(var i=0;i<headers_list.length;i++) {
-        //    var header = headers_list[i];
-        //    header['bSortable'] = false;
-        //}
-        // ******************************* TEMPORARY CODE END *******************************//
+        /*Grid headers object & ajax url*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+            ajax_url = '{% url "BackhaulStatusListingClass" %}';
 
-        $("#backhaulStatusTable").DataTable({
-            bAutoWidth: false,
-            bDestroy : true,
-            bPaginate: true,
-            bProcessing : true,
-            bServerSide: true,
-            sAjaxSource: ajax_url,
-            aoColumns : headers_list,
-            /*This is the callback funtion for data ajax call*/
-            fnInitComplete: function(oSettings) {
-                /*Hide the spinner*/
-                hideSpinner();
-            },
-            sPaginationType: "full_numbers",
-            aaSorting:[],
-            bStateSave:false
-        });
-        // dataTableInstance.createDataTable("backhaulStatusTable", [], ajax_url);
-    })
-
-    function nw_alert_showFilters() {
-
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        }
-
-        bootbox.dialog({
-            message: "Advance Filters Block",
-            title: '<i class="fa fa-filter">&nbsp;</i> Advance Filters',
-            buttons: {
-                success: {
-                    label: "Search",
-                    className: "btn-success",
-                    callback: function() {
-
-                    }
-                },
-                danger: {
-                    label: "Cancel",
-                    className: "btn-danger",
-                    callback: function() {
-
-                    }
-                }
-            }
-        });
-
-    }
-
-    function nw_alert_removeFilters() {
-
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        } else {
-
-            $("#removeNwDetailFilterBtn").addClass("hide");
-        }
-    }
-
+        dataTableInstance.createDataTable("backhaulStatusTable", gridHeadersObj, ajax_url);
+    });
 </script>
 {% endblock %}
 
