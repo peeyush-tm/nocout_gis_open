@@ -1,7 +1,9 @@
 from celery import task, group
 from dateutil.parser import *
 from models import GISInventoryBulkImport
+from django.contrib.auth.models import User
 from machine.models import Machine
+import requests
 from site_instance.models import SiteInstance
 from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
     Country, TechnologyVendor
@@ -11,6 +13,7 @@ from nocout.settings import MEDIA_ROOT
 from nocout.tasks import cache_clear_task
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Status
 from performance.formulae import display_time
+from django.http import HttpRequest
 from IPy import IP
 import ipaddr
 from decimal import *
@@ -4381,7 +4384,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf5_machine_and_site_info = get_machine_details('ospf', [2])
+    ospf5_machine_and_site_info = get_machine_details('ospf', [1, 4])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -5221,7 +5224,7 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
 
     # get machine and associated sites details in dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    machine_and_site_info = get_machine_details('ospf', [3, 4])
+    machine_and_site_info = get_machine_details('ospf', [1, 4])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -5593,7 +5596,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf5_machine_and_site_info = get_machine_details('ospf', [2])
+    ospf5_machine_and_site_info = get_machine_details('ospf', [5])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -5704,7 +5707,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                                     # loop on device technologies
                                     for tech in temp_technology:
                                         # compare current technology with the technology in the loop
-                                        if tech.technology.name == tech_in_inventory_sheet:
+                                        if tech.technology.name.lower() == tech_in_inventory_sheet.lower():
                                             bh_device_model = temp_model.model
                                             raise FoundModel
                 elif bh_device_model:
