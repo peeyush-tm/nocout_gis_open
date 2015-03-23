@@ -3236,10 +3236,13 @@ class PingThematicSettingsList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
 
         is_global = False
+        is_admin = False
         if 'admin' in self.request.path:
             is_global = True
+            is_admin = True
 
         context['is_global'] = json.dumps(is_global)
+        context['is_admin'] = is_admin
 
         return context
 

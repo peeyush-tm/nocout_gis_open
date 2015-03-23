@@ -1089,13 +1089,24 @@ class Inventory_Device_Status(View):
                 
                 if base_station and base_station != 'N/A':
 
-                    city_name = base_station.city.city_name if base_station.city else "N/A"
-                    city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
-
-                    state_name = base_station.state.state_name if base_station.state else "N/A"
-                    state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
+                    # If no city is present then exception raise
+                    try:
+                        city_name = base_station.city.city_name
+                        city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
+                    except Exception, e:
+                        city_name = "N/A"
+                        city_url = ""
+                    
+                    # If no state is present then exception raise
+                    try:
+                        state_name = base_station.state.state_name if base_station.state else "N/A"
+                        state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
+                    except Exception, e:
+                        state_name = "N/A"
+                        state_url = ""
 
                     display_bs_name = base_station.alias
+
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
                         bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
@@ -1722,8 +1733,8 @@ class Get_Service_Status(View):
 
 
         severity, a = device_current_status(device_object=device)
-        last_down_time = a['down']
-        age = a['age']
+        last_down_time = a['down'] if(a and 'down' in a) else ""
+        age = a['age'] if(a and 'age' in a) else ""
 
         if age:
             age = datetime.datetime.fromtimestamp(float(age)).strftime(DATE_TIME_FORMAT)
