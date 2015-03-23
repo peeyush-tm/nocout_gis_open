@@ -821,6 +821,12 @@ class MFRCauseCodeView(View):
         chart_series = []
         if mfr_reports.exists():
             last_mfr_report = mfr_reports[0]
+            year_month_str = ""
+            if last_mfr_report.process_for:
+                datetime_str = unicode(last_mfr_report.process_for)+" 00:00:00"
+                date_object = datetime.datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
+                if date_object:
+                    year_month_str = unicode(date_object.strftime('%B'))+" - "+unicode(date_object.year)
         else:
             # get the chart_data for the pie chart.
             response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
@@ -837,6 +843,19 @@ class MFRCauseCodeView(View):
         # get the chart_data for the pie chart.
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
                                                       'title': 'MFR Cause Code', 'name': ''})
+
+        # Add year month string of Uploaded MFR caused code report to updated dict
+        json_response = json.loads(response)
+
+        try:
+            if 'timestamp' not in json_response['data']['objects']:
+                json_response['data']['objects']['timestamp'] = ''
+
+            json_response['data']['objects']['timestamp'] = year_month_str
+        except Exception, e:
+            pass
+
+        response = json.dumps(json_response)
 
         return HttpResponse(response)
 

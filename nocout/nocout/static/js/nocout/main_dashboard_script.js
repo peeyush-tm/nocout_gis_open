@@ -420,7 +420,10 @@ function makeDashboardAjaxCall(url, domElement, chart_title, chart_type, calling
                     }
 
                 } else if(chart_type == 'pie') {
-
+                    var timestamp = response.data.objects.timestamp;
+                    if(timestamp) {
+                        $(domElement).parent().find('h4').append(" ("+timestamp+")")
+                    }
                     updatePieChart(response.data.objects,domElement, function(status) {
                         dashboard_call_counter++;
                         if(dashboard_call_counter >= process_count) {
@@ -615,7 +618,7 @@ function updateAreaChart(chartData, domElement, callback) {
             },
             yAxis: {
                 title: {
-                    text: 'Process Values'
+                    text: 'Outage in Minutes'
                 }
             },
             xAxis: {
