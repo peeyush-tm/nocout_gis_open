@@ -486,6 +486,30 @@ function updatePieChart(chartData, domElement, callback) {
                     showInLegend: true
                 }
             },
+            tooltip: {
+                formatter: function () {
+                    var point_name = this.point.name ? this.point.name : "",
+                        series_name = this.point.series.name ? this.point.series.name : "",
+                        percent_val = this.point.percentage ? this.point.percentage : "",
+                        tooltip_html = "";
+
+                    point_name = point_name.split(":")[0];
+
+                    if(percent_val) {
+                        percent_val = percent_val.toFixed(2);
+                    }
+
+                    tooltip_html ='<ul>\
+                                <li>'+point_name+'</li><br/>\
+                                <li>Value: <b>'+this.point.y+'</b><br/></li><br/>';
+                    if(percent_val) {
+                        tooltip_html += '<li>Percentage: <b>'+percent_val+'%</b><br/></li>';
+                    }
+                    tooltip_html += '</ul>';
+
+                    return tooltip_html;
+                }
+            },
             series: [{
                 type: 'pie',
                 name: chartData.chart_data[0].name,
