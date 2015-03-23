@@ -342,7 +342,6 @@ function makeDashboardAjaxCall(url, domElement, chart_title, chart_type, calling
                         
                     updateSpeedometerChart(response.data.objects, domElement, chart_title, function(status) {
                         dashboard_call_counter++;
-
                         if(dashboard_call_counter >= process_count) {
                             dashboard_call_counter = 0;
 
@@ -393,6 +392,13 @@ function makeDashboardAjaxCall(url, domElement, chart_title, chart_type, calling
 
                 } else {
                     // pass
+                }
+            } else {
+                dashboard_call_counter++;
+                if(dashboard_call_counter >= process_count) {
+                    dashboard_call_counter = 0;
+
+                    startChunksAjaxCall(calling_counter);
                 }
             }
         },
@@ -681,7 +687,6 @@ function updateSpeedometerChart(chartData, div_id, div_text, callback) {
             }
         }]
     }));
-
     callback(true);
 }
 
