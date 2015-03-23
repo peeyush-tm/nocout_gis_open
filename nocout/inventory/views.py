@@ -731,8 +731,16 @@ class SectorListingTable(PermissionsRequiredMixin,
         if 'tab' in self.request.GET:
             if self.request.GET.get('tab') == 'corrupted':
                 qs = qs.annotate(num_circuit=Count('circuit')).filter(
-                        Q(sector_configured_on__isnull=True) | Q(base_station__isnull=True) | Q(bs_technology__in=[3,4], sector_id__isnull=True)
-                        | Q(bs_technology__id=3 , sector_configured_on_port__isnull=True) | Q(num_circuit__gt=1))
+                        Q(sector_configured_on__isnull=True)
+                        |
+                        Q(base_station__isnull=True)
+                        |
+                        Q(bs_technology__in=[3, 4], sector_id__isnull=True)
+                        |
+                        Q(bs_technology__id=3, sector_configured_on_port__isnull=True)
+                        |
+                        Q(bs_technology__in=[2], num_circuit__gt=1)
+                )
             elif self.request.GET.get('tab') == 'unused':
                 qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
 
