@@ -186,6 +186,7 @@ INSTALLED_APPS = (
     'home',
     'devicevisualization',
     'sitesearch',
+    'downloader',
     'alert_center',
     'capacity_management',
     'download_center',
