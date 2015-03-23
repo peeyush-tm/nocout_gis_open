@@ -16,16 +16,115 @@ from device.models import Device, DeviceTechnology
 from inventory.models import Sector, Circuit, SubStation, Backhaul
 
 #nocout utilities
-from nocout.utils.util import cache_for
+from nocout.utils.util import cache_for, check_item_is_list
 
 #logging the performance of function
 import logging
 log = logging.getLogger(__name__)
-#logging the performance of function
+# logging the performance of function
+
+VALID_PAGE_LIST = ["customer", "network", "backhaul", "others"]
+VALID_SPECIFICATION = ['all', 'ss', 'bs']
+
+# common function to get the devices
+
+
+def organization_monitored_devices(organizations, **kwargs):
+    """
+
+    :param organizations: list of organizations
+    :param kwargs: keyword arguments defining the elements that are required to be gathered
+    :return: Devices for the organization, based on the argumentas passed
+    """
+    organization_devices = list()
+    if not organizations:
+        return list()
+    organizations = check_item_is_list(organizations)
+
+    organization_devices = Device.objects.select_related(
+        'organization',
+        'substation_set',
+        'substation_set__circuit_set',
+        'substation_set__circuit_set__sector',
+        'backhaul',
+        'backhaul_pop',
+        'backhaul_aggregator',
+        'backhaul_switch',
+        'sector_configured_on',
+        'sector_configured_on__base_station',
+        'sector_configured_on__base_station__city',
+        'sector_configured_on__base_station__state',
+        'sector_configured_on__base_station__bs_switch',
+        'machine',
+        'site_instance'
+    ).filter(
+        is_added_to_nms=1,
+        is_deleted=0,
+        organization__in=organizations
+    )
+
+    if {'technology'}.issubset(kwargs.keys()):
+        # technology would denote the section to be monitored devices
+        # this must be the name of the technology
+        # or the ID of the technology
+        required_techs = check_item_is_list(kwargs['technology'])
+
+        try:
+            technology = DeviceTechnology.objects.filter(
+                id__in=required_techs
+            )
+        except:
+            technology = DeviceTechnology.objects.filter(
+                name__in=required_techs
+            )
+        technology = technology.values_list('id', flat=True)
+        organization_devices = organization_devices.filter(
+            device_technology__in=technology
+        )
+    else:
+        organization_devices = organization_devices
+
+    if {'page_type'}.issubset(kwargs.keys()) and {kwargs['page_type']}.issubset(VALID_PAGE_LIST):
+        # can be re-written as set(['page_type', 'technology']).issubset(kwargs.keys())
+        page = kwargs['page_type']  # customer, network, backhaul, others
+        # check about the P2P devices
+        # what are the P2P devices required ?
+        if page == 'customer':
+            # check for the P2P devices required
+            # by the configuration of ' specify_type ' = all. ss. bs
+            if {'specify_type'}.issubset(kwargs.keys()):
+                type_specification = 'all'
+                # this means that key is present
+                # key must indicate one of the words all. ss. bs
+                type_specification = kwargs['specify_type']
+                if {type_specification}.issubset(VALID_SPECIFICATION):
+                    pass
+                ptp_bh = ptp_device_circuit_backhaul(specify_type=type_specification)
+                organization_devices = organization_devices.exclude(
+                    id__in=ptp_bh
+                )
+            else:
+                # it is now assumed that devices are not PTP
+                # so PMP and WiMAX
+                organization_devices = organization_devices.filter(
+                    substation__isnull=False,
+                    substation__circuit__isnull=False,
+                    substation__circuit__sector__isnull=False,
+                    substation__circuit__sector__sector_configured_on__isnull=False
+                )
+            return organization_devices
+        elif page == 'network':
+            pass
+        elif page == 'backhaul':
+            pass
+        elif page == 'others':
+            pass
+        else:
+            return organization_devices
 
 
 
-#common function to get the devices
+
 # @cache_for(300)
 def ptp_device_circuit_backhaul(specify_type='all'):
     """
@@ -232,26 +331,28 @@ def organization_backhaul_devices(organizations, technology=None, others=False):
 
 
 @cache_for(300)
-def filter_devices(organizations=[],
-                   data_tab=None,
-                   page_type="customer",
-                   required_value_list=[],
-                   other_bh=False
-                   ):
+def filter_devices(organizations, data_tab=None, page_type="customer", required_value_list=None, other_bh=False):
 
     """
 
-    :param logged_in_user: authenticated user
-    :param data_tab: the technology user wants to retrive
-    :return: the list of devices that user has been assigned via organization
+    :param organizations: list of organizations
+    :param data_tab: technology
+    :param page_type: customer, network, backhaul, others
+    :param required_value_list: values list
+    :param other_bh: other than backhaul objects
+    :return: list of devices
     """
+    if not organizations:
+        return list()
+
+    organizations = check_item_is_list(organizations)
     device_list = list()
     organization_devices = list()
 
-    if len(required_value_list):
+    if required_value_list:
         device_value_list = required_value_list
     else:
-        device_value_list = ['id','machine__name','device_name','ip_address']
+        device_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
     device_tab_technology = data_tab ##
     device_technology_id = None
