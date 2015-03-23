@@ -29,7 +29,7 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "DownloaderListing" %}' + '?download_type={{ download_type }}';
+            var ajax_url = '{% url "DownloaderListing" %}' + '?download_type={{ download_type }}&params={{ params }}';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
             dataTableInstance.createDataTable("DownloaderListing", gridHeadersObj, ajax_url, destroy);
