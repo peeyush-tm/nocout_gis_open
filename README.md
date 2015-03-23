@@ -57,3 +57,11 @@ Installation Steps:
 TODO:
 
 1. Dynamic Breadcrumbs
+
+**New Package : SIMPLEJSON : 23rd March**
+
+1. For reports via celery
+2. Install : simplejson
+3. packages available in `requirements/requirements_user_app/Celery/SIMPLEJSON-March-23-15/`
+
+
