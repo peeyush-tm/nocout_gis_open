@@ -9,8 +9,7 @@ var last_clicked_tab = "",
     tech_list = ['PMP',"P2P","WiMAX"];
 
 $(".nav-tabs li a").click(function (e, isFirst) {
-
-    var clicked_tab = e.currentTarget.innerText,
+    var clicked_tab = e.currentTarget.innerText ? $.trim(e.currentTarget.innerText) : $.trim($(this).text()),
         splitted_link = window.location.href.split('/');
 
     if(clicked_tab == 'PTP' || clicked_tab == 'PTP BH') {

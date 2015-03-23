@@ -394,8 +394,8 @@ def gather_sector_status(technology):
                     'base_station__state'
                 ).annotate(Count('sector_id')
             )
-
         else:
+            logger.debug('No Technology from WiMAX and PMP')
             return False
 
         if technology_low == 'pmp':
@@ -410,6 +410,7 @@ def gather_sector_status(technology):
             )
 
         else:
+            logger.debug('No Technology from WiMAX and PMP')
             return False
 
         sector_val = None

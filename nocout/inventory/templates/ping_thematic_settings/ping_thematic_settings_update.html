@@ -11,7 +11,7 @@
     {% else %}
         {% breadcrumb_safe "Global Ping Thematic" "ping_thematic_settings_list" %}
     {% endif %}
-    {% breadcrumb_safe "Update New" "javascript:;" %}
+    {% breadcrumb_safe "Update Ping Thematic : "|add:object.alias "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
