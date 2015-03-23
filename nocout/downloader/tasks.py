@@ -14,6 +14,36 @@ logger = get_task_logger(__name__)
 
 @task
 def get_datatable_response(payload):
+    """
+        Generating excel for datatable
+        Parameters:
+            - payload (dict) - payload data for e.g.
+                                {
+                                    'username': u'priyesh',
+                                    'rows': u'LivePerformanceListing',
+                                    'app': u'performance',
+                                    'object_id': 3L,
+                                    'headers': u'Live_Performance',
+                                    'rows_data': {
+                                        'data_tab': 'P2P',
+                                        'page_type': 'customer',
+                                        'download_excel': 'yes'
+                                    },
+                                    'fulltime': '2015-03-23-17-07-35',
+                                    'headers_data': {
+                                        'data_tab': 'P2P',
+                                        'page_type': 'customer',
+                                        'download_excel': 'yes'
+                                    }
+                                }
+
+        URL:
+           - "/downloader/datatable/?app=performance&headers=Live_Performance&rows=LivePerformanceListing&
+               headers_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }&
+               rows_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }"
+
+    """
+
     # get downloader object
     d_obj = None
     try:
