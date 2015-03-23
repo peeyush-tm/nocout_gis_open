@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#import json
+# import json
 import ujson as json
 import datetime
 import time
@@ -465,6 +465,22 @@ class LivePerformanceListing(BaseDatatableView):
 
         return qs
 
+    def paging(self, qs):
+        """ Paging
+        """
+        print "*****************************"
+        print "*****************************"
+        print "*****************************"
+        print "*****************************"
+        print "***************************** self.max_display_length - ", self.max_display_length
+        limit = min(int(self.request.REQUEST.get('iDisplayLength', 10)), self.max_display_length)
+        # if pagination is disabled ("bPaginate": false)
+        if limit == -1:
+            return qs
+        start = int(self.request.REQUEST.get('iDisplayStart', 0))
+        offset = start + limit
+        return qs[start:offset]
+
     def get_context_data(self, *args, **kwargs):
         """
         The maine function call to fetch, search, ordering , prepare and display the data on the data table.
@@ -473,6 +489,8 @@ class LivePerformanceListing(BaseDatatableView):
         request = self.request
 
         page_type = self.request.GET['page_type']
+
+        download_excel = self.request.GET.get('download_excel', None)
 
         self.initialize(*args, **kwargs)
 
@@ -489,6 +507,8 @@ class LivePerformanceListing(BaseDatatableView):
         #check if this has just initialised
         #if so : process the results
         qs = self.ordering(qs)
+
+        # if download_excel != "yes":
         qs = self.paging(qs)
         ##check if this has been searched
         ## if this has been seached
@@ -502,8 +522,13 @@ class LivePerformanceListing(BaseDatatableView):
         if not self.is_polled:
             #preparing machine list
             machines = self.prepare_machines(qs)
+
             #preparing the polled results
-            qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
+            if download_excel == "yes":
+                qs = self.prepare_polled_results(qs, multi_proc=False, machine_dict=machines)
+            else:
+                qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
+
 
         # if the qs is empty then JSON is unable to serialize the empty
         # ValuesQuerySet.Therefore changing its type to list.
@@ -1064,13 +1089,24 @@ class Inventory_Device_Status(View):
                 
                 if base_station and base_station != 'N/A':
 
-                    city_name = base_station.city.city_name if base_station.city else "N/A"
-                    city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
-
-                    state_name = base_station.state.state_name if base_station.state else "N/A"
-                    state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
+                    # If no city is present then exception raise
+                    try:
+                        city_name = base_station.city.city_name
+                        city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
+                    except Exception, e:
+                        city_name = "N/A"
+                        city_url = ""
+                    
+                    # If no state is present then exception raise
+                    try:
+                        state_name = base_station.state.state_name if base_station.state else "N/A"
+                        state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
+                    except Exception, e:
+                        state_name = "N/A"
+                        state_url = ""
 
                     display_bs_name = base_station.alias
+
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
                         bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
@@ -1697,8 +1733,8 @@ class Get_Service_Status(View):
 
 
         severity, a = device_current_status(device_object=device)
-        last_down_time = a['down']
-        age = a['age']
+        last_down_time = a['down'] if(a and 'down' in a) else ""
+        age = a['age'] if(a and 'age' in a) else ""
 
         if age:
             age = datetime.datetime.fromtimestamp(float(age)).strftime(DATE_TIME_FORMAT)

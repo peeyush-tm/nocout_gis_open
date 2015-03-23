@@ -13,7 +13,7 @@ from inventory.utils.util import prepare_machines
 
 from inventory.tasks import get_devices, bulk_update_create
 
-from nocout.utils.util import fetch_raw_result, indexed_query_set
+from nocout.utils.util import fetch_raw_result, indexed_query_set, check_item_is_list
 
 from performance.models import UtilizationStatus, InventoryStatus, ServiceStatus, Utilization, PerformanceService, Topology
 
@@ -394,8 +394,8 @@ def gather_sector_status(technology):
                     'base_station__state'
                 ).annotate(Count('sector_id')
             )
-
         else:
+            logger.debug('No Technology from WiMAX and PMP')
             return False
 
         if technology_low == 'pmp':
@@ -410,6 +410,7 @@ def gather_sector_status(technology):
             )
 
         else:
+            logger.debug('No Technology from WiMAX and PMP')
             return False
 
         sector_val = None
@@ -536,20 +537,6 @@ def get_time():
     start_date = format(end_time + datetime.timedelta(days=-1), 'U')
 
     return float(start_date), float(end_date)
-
-
-def check_item_is_list(items):
-    """
-
-    :param items: any item to check
-    :return: list of items
-    """
-    if type(items) == type(list()):
-        return items
-    elif type(items) == type(set()):
-        return list(items)
-    else:
-        return [items]
 
 
 def calc_util_last_day():

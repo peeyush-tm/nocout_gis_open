@@ -71,9 +71,9 @@ class DeviceList(PermissionsRequiredMixin, ListView):
         """
         context = super(DeviceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto', },
+            {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto'},
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -94,7 +94,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
         datatable_headers_no_nms_actions = [
             {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
