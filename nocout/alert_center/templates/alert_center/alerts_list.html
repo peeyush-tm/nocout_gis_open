@@ -1,12 +1,26 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Alert Center</a></li>
-    <li><a href="#">Network Alerts</a></li>
-    <li><a href="#">{{ data_source }}</a></li>
-    <li><b><span id="nav_tab_name"></span></b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe page_type|title|add:" Alert Center" "javascript:;" %}
+    {% breadcrumb_safe data_source|title  '' %}
+    {% if page_type == 'network' and data_tab|upper == 'P2P'  %}
+        {% breadcrumb_safe "PTP BH"  alert_list_with_tabname  page_type url_data_source data_tab %}
+    {% else %}
+        {% if page_type == 'customer' and data_tab|upper == 'P2P'  %}
+            {% breadcrumb_safe "PTP"  alert_list_with_tabname  page_type url_data_source data_tab %}
+        {% else %}
+            {% breadcrumb_safe data_tab|upper  alert_list_with_tabname  page_type url_data_source data_tab %}
+        {% endif %}
+    {% endif %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
-{% block content_title %}Alerts{% endblock %}
+
+{% block content_title %} {{ page_type|title }} Alerts {% endblock %}
 {% block content_description %}{{ page_type|title }} Alerts List{% endblock %}
 {% load staticfiles %}
 {% block css %}
@@ -25,38 +39,49 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span
-                            class="hidden-inline-mobile">WiMAX</span></a></li>
-                    <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span
-                            class="hidden-inline-mobile">PMP</span></a></li>
-                    <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span
-                            class="hidden-inline-mobile">
-                        {% if page_type == 'customer' %}
-                            PTP
-                        {% else %}
-                            PTP BH
-                        {% endif %}
-                    </span></a></li>
+                    <li>
+                        <a href="#network_WiMAX_block" id="network_wifi_tab" class="network_wimax_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">WiMAX</span>
+                        </a>
+                        </li>
+                    <li>
+                        <a href="#network_PMP_block" id="network_pmp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#network_PTP_block" id="network_ptp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">
+                                {% if page_type == 'customer' %}
+                                    PTP
+                                {% else %}
+                                    PTP BH
+                                {% endif %}
+                            </span>
+                        </a>
+                    </li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
-                    <!-- network_ptp_block Start -->
-                    <div class="tab-pane active" id="network_ptp_block">
+                    
+                    <!-- network_PTP_block Start -->
+                    <div class="tab-pane active" id="network_PTP_block">
                         <table cellpadding="0" cellspacing="0" border="0"
                                class="datatable table table-striped table-bordered table-hover"
-                               id="network_ptp_block_table">
+                               id="network_PTP_block_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
-                    <!-- network_ptp_block End -->
-                    <div class="tab-pane" id="network_pmp_block">
+                    <!-- network_PTP_block End -->
+
+                    <div class="tab-pane" id="network_PMP_block">
                         <table id="network_pmp_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
                                class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
-                    <div class="tab-pane" id="network_wifi_block">
+                    <div class="tab-pane" id="network_WiMAX_block">
                         <table id="network_wifi_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
                                class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
@@ -71,7 +96,8 @@
     </div>
 {% endblock %}
 {% block jquery %}
-    <!-- Library to load tab content on tab click-->
+    <!-- Library to load tab content on tab click for Alert Center Listing-->
+    <script type="text/javascript" src={% static "js/nocout/alertOpenTab.js" %}></script>
     <script type="text/javascript">
         var dataTableInstance = "",
                 base_url = "",
@@ -88,17 +114,9 @@
             }
 
             /*Ajax url to get grid data*/
-            var ajax_url_get_parameter = "";
+            var ajax_url_get_parameter = "{{ url_data_source }}";
 
-            if (/latency/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'latency'
-                sort_index = 10;
-            } else if (/packet_drop/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'packet_drop'
-            } else if (/down/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'down';
-            } else if (/service/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'service';
+            if(ajax_url_get_parameter == 'latency' || ajax_url_get_parameter == 'service') {
                 sort_index = 10;
             }
 
@@ -134,17 +152,10 @@
                         var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
                         length_sel.addClass('form-control input-sm');
                     });
+
                     if (destroy) {
                         $("#" + tableId).dataTable().fnDestroy();
                     }
-
-                    // ******************************* TEMPORARY CODE START *******************************//
-                    // By Default remove sorting from all datatables
-                    //for(var i=0;i<tableheaders.length;i++) {
-                    //    var header = tableheaders[i];
-                    //    header['bSortable'] = false;
-                    //}
-                    // ******************************* TEMPORARY CODE END *******************************//
 
                     var dtable = $("#" + tableId).DataTable({
                         sDom: 'T<"clear">lfrtip',
@@ -198,42 +209,18 @@
             $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
             $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
-            var location_array = window.location.href.split("#");
+            var lowered_case_url = window.location.href.toLowerCase();
 
-            if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            if (lowered_case_url.indexOf("pmp") > -1) {
+                $("#network_pmp_tab").trigger('click');
+            } else if (lowered_case_url.indexOf("wimax") > -1) {
+                $("#network_wifi_tab").trigger('click');
+            } else {
 
-                /*Trigger click event on active tab to load its data*/
-                $("#network_ptp_tab").trigger('click', true);
-                var splitted_url = window.location.href.split("/"),
-                        last_val = splitted_url[splitted_url.length - 1] != "" ? splitted_url[splitted_url.length - 1] : splitted_url[splitted_url.length - 2];
-                if (last_val != 'P2P') {
-                    window.location.href = "P2P/";
-                }
+                $("#network_ptp_tab").trigger('click');
             }
-
-            // var destroy=false;
-            // /*Call createDataTable function of ourDataTableWidget class*/
-
-            // dataTableInstance.createDataTable("network_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
-            // dataTableInstance.createDataTable("network_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
-            // dataTableInstance.createDataTable("network_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
-
-            // if tabination is there in page add its text in breadcrumb
-            var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
-            if (tab.length) {
-                $('#nav_tab_name').text(tab.text());
-            }
-            else {
-                $(".breadcrumb").children().last().hide()
-            }
-            // change name of the tab on click of the tab
-            $(".nav-tabs li").click(function () {
-                $('#nav_tab_name').text($(this).text());
-            });
         });
     </script>
-    <!-- Library to load tab content on tab click-->
-    <script type="text/javascript" src={% static "js/nocout/alertOpenTab.js" %}></script>
 {% endblock %}
 
 {% block load_js %}

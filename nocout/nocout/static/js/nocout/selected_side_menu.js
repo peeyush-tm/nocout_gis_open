@@ -120,7 +120,7 @@ function applySelectedClasses(menuTag) {
         breadcrumb_txt += "<li>"+closest_has_sub_sub[0].children[0].outerHTML+"</li>";
         breadcrumb_txt += closest_li[0].outerHTML;
 
-        $(".breadcrumb").html(breadcrumb_txt);
+        // $(".breadcrumb").html(breadcrumb_txt);
 
         // If any tab Exists
         if(isTab.length > 0 || isTabCase2.length > 0) {
@@ -136,7 +136,7 @@ function applySelectedClasses(menuTag) {
                 } else {
                     tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
                 }
-                $(".breadcrumb").append(tab_breadcrumb);
+                // $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
 
@@ -144,7 +144,7 @@ function applySelectedClasses(menuTag) {
         if(isForm) {
             setTimeout(function() {
                 var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
-                $(".breadcrumb").append(tab_breadcrumb);
+                // $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
 
@@ -159,7 +159,7 @@ function applySelectedClasses(menuTag) {
         breadcrumb_txt += "<li>"+closest_has_sub[0].children[0].outerHTML+"</li>";
         breadcrumb_txt += closest_li[0].outerHTML;
 
-        $(".breadcrumb").html(breadcrumb_txt);
+        // $(".breadcrumb").html(breadcrumb_txt);
 
         // If any tab Exists
         if(isTab.length > 0 || isTabCase2.length > 0) {
@@ -176,7 +176,7 @@ function applySelectedClasses(menuTag) {
                     tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
                 }
 
-                $(".breadcrumb").append(tab_breadcrumb);
+                // $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
 
@@ -184,7 +184,7 @@ function applySelectedClasses(menuTag) {
         if(isForm) {
             setTimeout(function() {
                 var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
-                $(".breadcrumb").append(tab_breadcrumb);
+                // $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
 
@@ -195,7 +195,7 @@ function applySelectedClasses(menuTag) {
         closest_li.addClass("active");
         var breadcrumb_text = closest_li[0].innerHTML;
 
-        $(".breadcrumb").html(breadcrumb_text);
+        // $(".breadcrumb").html(breadcrumb_text);
         
         // If any tab Exists
         if(isTab.length > 0 || isTabCase2.length > 0) {
@@ -211,7 +211,7 @@ function applySelectedClasses(menuTag) {
                 } else {
                     tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
                 }
-                $(".breadcrumb").append(tab_breadcrumb);
+                // $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
 
@@ -219,7 +219,7 @@ function applySelectedClasses(menuTag) {
         if(isForm) {
             setTimeout(function() {
                 var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
-                $(".breadcrumb").append(tab_breadcrumb);
+                // $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
     }

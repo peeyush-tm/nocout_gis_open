@@ -1,6 +1,16 @@
 {% extends "inventory/inventory.html" %}
-{% load staticfiles %}
 
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-map-marker'></i> Network Maps" "javascript:;" %}
+    {% breadcrumb_safe "KMZ" "kmz_list" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
 {% block content_title %}KMZ Reports Management{% endblock %}
 {% block content_description %}List of KMZ Reports{% endblock %}
 {% block content %}

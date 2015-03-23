@@ -1,10 +1,16 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Capacity Management</a></li>
-    <li><a href="#">Daily Alerts</a></li>
-    <li><b>Sector Augmentation</b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-flask'></i> Capacity Management" "javascript:;" %}
+    {% breadcrumb_safe "Daily Alerts" "javascript:;" %}
+    {% breadcrumb_safe "Sector Augmentation" "SectorAugmentationAlertsHeaders" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
 {% block content_title %}Sector Augmentation{% endblock %}
 {% block content_description %} Sector Augmentation List {% endblock %}
 {% load staticfiles %}
@@ -15,28 +21,51 @@
     <div class="box border lite">
         <div class="box-title">
             <h4><i class="fa fa-flask"></i>SECTOR AUGMENTATION ALERT</h4>
-
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
         </div>
 
         <div class="box-body">
-            <!-- sector_capacity_alert_container Start-->
-            <div id="sector_capacity_alert_container" class="" style="overflow:auto;">
-                
-                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="sectorAlertCapacityList">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
 
-            </div>
-            <!-- sector_capacity_alert_container End-->
+            <div class="tabbable header-tabs">
+                
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#wimax_augment_block" id="wimax_augment_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">WiMAX</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#pmp_augment_block" id="pmp_augment_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#all_augment_block" id="all_augment_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" style="overflow-y:auto;">
+                    
+                    <div class="tab-pane" id="wimax_augment_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="wimax_augment_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="pmp_augment_block">
+                    <table class="datatable table table-striped table-bordered table-hover" id="pmp_augment_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane active" id="all_augment_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="all_augment_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             <div class="clearfix"></div>
         </div>
     </div>
@@ -46,67 +75,44 @@
 {% block jquery %}
 <!-- Custom script for data table-->
 <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 <script type="text/javascript">
     var dataTableInstance = "";
     $(document).ready(function(e) {
-        /*Show the spinner*/
-        showSpinner();
+
         /*Make a instance of ourDataTableWidget class */
         dataTableInstance = new ourDataTableWidget();
-        /*Grid headers object*/
-        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-        var ajax_url = '{% url "SectorAugmentationAlertsListing" %}';
 
-        dataTableInstance.createDataTable("sectorAlertCapacityList", gridHeadersObj, ajax_url, false);
+        var location_array = window.location.href.split("#");
+
+        /*Show the spinner*/
+        showSpinner();
+
+        /*Grid headers object & ajax url*/
+        var all_ajax_url = '{% url "SectorAugmentationAlertsListing" %}',
+            pmp_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=PMP',
+            wimax_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=WiMAX';
+
+        $("#all_augment_tab").attr("data_url", all_ajax_url);
+        $("#all_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#pmp_augment_tab").attr("data_url", pmp_ajax_url);
+        $("#pmp_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#wimax_augment_tab").attr("data_url", wimax_ajax_url);
+        $("#wimax_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            /*Trigger click event on active tab to load its data*/
+            $("#all_augment_tab").trigger('click', true);
+        }
     });
-
-    function nw_alert_showFilters() {
-
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        }
-
-        bootbox.dialog({
-            message: "Advance Filters Block",
-            title: '<i class="fa fa-filter">&nbsp;</i> Advance Filters',
-            buttons: {
-                success: {
-                    label: "Search",
-                    className: "btn-success",
-                    callback: function() {
-
-                    }
-                },
-                danger: {
-                    label: "Cancel",
-                    className: "btn-danger",
-                    callback: function() {
-
-                    }
-                }
-            }
-        });
-
-    }
-
-    function nw_alert_removeFilters() {
-
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        } else {
-
-            $("#removeNwDetailFilterBtn").addClass("hide");
-        }
-    }
-
 </script>
 {% endblock %}
 
 {% block load_js %}
 <!-- /JAVASCRIPTS -->
-
 <script>
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page

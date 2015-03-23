@@ -1,9 +1,20 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">{{ page_title }}</a></li>
-    <li><b>MFR</b></li>
+    {% clear_breadcrumbs %}
+    {% if isOther == 0 %}
+        <!-- Create Breadcrumbs -->
+        {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "home" %}
+    {% else %}
+        <!-- Create Breadcrumbs -->
+        {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+        {% breadcrumb_safe "RF Main Dashboard" "javascript:;" %}
+    {% endif %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
 {% load staticfiles %}
 {% block page_setting_block %} {% endblock %}
 {% block content_title %} {{ page_title }} {% endblock %}

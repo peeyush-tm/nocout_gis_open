@@ -1,4 +1,15 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-download'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe report_name|upper|add:" Reports" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block content_title %}{{ report_name }}{% endblock %}
@@ -37,5 +48,3 @@
 
     </script>
 {% endblock %}
-
-
