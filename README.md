@@ -47,3 +47,13 @@ Installation Steps:
 2. Install : django-redis
 3. Install : hiredis
 4. Packages available in : `requirements/requirements_user_app/Cache/16\ March\ 2015/`
+
+**New Package : Bootstrap Breadcrumbs Django : 23rd March**
+
+1. For displaying breadcrumbs in the application
+2. Install : django-bootstrap-breadcrumbs
+3. packages available in `requirements/requirements_user_app/Base/Breadcrumbs-March-23-15/`
+
+TODO:
+
+1. Dynamic Breadcrumbs
