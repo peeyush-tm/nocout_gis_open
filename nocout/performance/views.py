@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#import json
+# import json
 import ujson as json
 import datetime
 import time
@@ -465,6 +465,22 @@ class LivePerformanceListing(BaseDatatableView):
 
         return qs
 
+    def paging(self, qs):
+        """ Paging
+        """
+        print "*****************************"
+        print "*****************************"
+        print "*****************************"
+        print "*****************************"
+        print "***************************** self.max_display_length - ", self.max_display_length
+        limit = min(int(self.request.REQUEST.get('iDisplayLength', 10)), self.max_display_length)
+        # if pagination is disabled ("bPaginate": false)
+        if limit == -1:
+            return qs
+        start = int(self.request.REQUEST.get('iDisplayStart', 0))
+        offset = start + limit
+        return qs[start:offset]
+
     def get_context_data(self, *args, **kwargs):
         """
         The maine function call to fetch, search, ordering , prepare and display the data on the data table.
@@ -473,6 +489,8 @@ class LivePerformanceListing(BaseDatatableView):
         request = self.request
 
         page_type = self.request.GET['page_type']
+
+        download_excel = self.request.GET.get('download_excel', None)
 
         self.initialize(*args, **kwargs)
 
@@ -489,6 +507,8 @@ class LivePerformanceListing(BaseDatatableView):
         #check if this has just initialised
         #if so : process the results
         qs = self.ordering(qs)
+
+        # if download_excel != "yes":
         qs = self.paging(qs)
         ##check if this has been searched
         ## if this has been seached
@@ -502,8 +522,13 @@ class LivePerformanceListing(BaseDatatableView):
         if not self.is_polled:
             #preparing machine list
             machines = self.prepare_machines(qs)
+
             #preparing the polled results
-            qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
+            if download_excel == "yes":
+                qs = self.prepare_polled_results(qs, multi_proc=False, machine_dict=machines)
+            else:
+                qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
+
 
         # if the qs is empty then JSON is unable to serialize the empty
         # ValuesQuerySet.Therefore changing its type to list.
