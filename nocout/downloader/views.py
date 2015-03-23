@@ -33,7 +33,36 @@ class DownloaderHome(View):
 
 class DataTableDownloader(View):
     """
-        127.0.0.1:8000/downloader/datarable/?app=performance&name=LivePerformance&data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }
+        Generating headers for datatables
+        Parameters:
+            - app (unicode) - name of app for e.g. performance
+            - rows (unicode) - name of datatable listing class for e.g. LivePerformanceListing
+            - headers (unicode) - name datatable headers class for e.g. Live_Performance
+            - headers_data (dict) - dictionary of GET/POST parameters passed in datatable headers view as request
+                                    for e.g.
+                                    {
+                                        'data_tab': 'P2P',
+                                        'page_type': 'customer',
+                                        'download_excel': 'yes'
+                                    }
+            - rows_data (dict) - dictionary of GET/POST parameters passed in datatable listing view as request for e.g.
+                                    {
+                                        'data_tab': 'P2P',
+                                        'page_type': 'customer',
+                                        'download_excel': 'yes'
+                                    }
+
+        URL:
+           - "/downloader/datatable/?app=performance&headers=Live_Performance&rows=LivePerformanceListing&
+               headers_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }&
+               rows_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }"
+
+        Returns:
+           - 'response' (dict) - response dict send in json format for e.g.
+                                {
+                                    'message': 'Startdownloading.',
+                                    'success': 1
+                                }
     """
     def get(self, request):
         # response
