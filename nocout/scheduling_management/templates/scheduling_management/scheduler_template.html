@@ -53,8 +53,8 @@
                         <th>Execute On</th>
                         <th>Created By</th>
                         <th>Scheduling Type</th>
-                        <th>Device</th>
-                        <th>Action</th>
+                        <th>Device Specification</th>
+                        <th>Actions</th>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -75,17 +75,17 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 	<script>
 	    $(document).ready(function () {
+	        App.setPage("");  //Set current page
+	        App.init(); //Initialise plugins and elements
+
             var dataTableInstance = new ourDataTableWidget();
 
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-
-            var ajax_url = '{% url "EventListingTable" %}';
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+                ajax_url = '{% url "EventListingTable" %}';
 
             var destroy=false;
             dataTableInstance.createDataTable("EventListingTable", gridHeadersObj, ajax_url, destroy);
 
-	        App.setPage("");  //Set current page
-	        App.init(); //Initialise plugins and elements
 
             // get the event list on load of the page.
             event_month_list()

@@ -70,7 +70,9 @@ class Event(models.Model):
     created_by = models.ForeignKey(UserProfile)
     organization = models.ForeignKey(Organization)
     scheduling_type = models.CharField('Scheduling type', max_length=10, choices=SCHEDULING_TYPE, default='')
-    device = models.ManyToManyField(Device)
+    device = models.ManyToManyField(Device, null=True, blank=True)
+    device_type = models.ManyToManyField(DeviceType, null=True, blank=True)
+    technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
 
 
 class SNMPTrapSettings(models.Model):
