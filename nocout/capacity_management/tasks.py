@@ -1324,8 +1324,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     # severity for KPI services
                     severity_s = {
+                        indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
                         indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
-                        indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age']
                     }
 
                     severity, age = get_higher_severity(severity_s)
@@ -1440,8 +1440,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                     # severity for KPI services
                     severity_s = {
+                        indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
                         indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
-                        indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age']
                     }
 
                     severity, age = get_higher_severity(severity_s)
@@ -1528,13 +1528,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 scs.severity = severity if severity else 'unknown'
                 scs.age = float(age) if age else 0
                 # new fileds for better representation of IN and OUT
-                try:
-                    scs.sector_capacity_in = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['dl']
-                    scs.sector_capacity_out = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['ul']
-                except Exception as e:
-                    logger.exception(e)
-                    scs.sector_capacity_in = 0
-                    scs.sector_capacity_out = 0
+
+                scs.sector_capacity_in = sector_capacity_in
+                scs.sector_capacity_out = sector_capacity_out
 
                 if calc_util_last_day():
                     scs.avg_in_per = float(avg_in_per) if avg_in_per else 0
@@ -1637,8 +1633,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
                 # severity for KPI services
                 severity_s = {
+                    indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age'],
                     indexed_kpi[out_per_index][0]['severity']: indexed_kpi[out_per_index][0]['age'],
-                    indexed_kpi[in_per_index][0]['severity']: indexed_kpi[in_per_index][0]['age']
                 }
 
                 severity, age = get_higher_severity(severity_s)
@@ -1723,13 +1719,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 # scs.sector_sector_id = sector.sector_id
                 # values taht would be updated per 5 minutes
                 scs.sector_capacity = float(sector_capacity) if sector_capacity else 0
-                try:
-                    scs.sector_capacity_in = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['dl']
-                    scs.sector_capacity_out = CAPACITY_SETTINGS['pmp'][int(sector_capacity)]['ul']
-                except Exception as e:
-                    logger.exception(e)
-                    scs.sector_capacity_in = 0
-                    scs.sector_capacity_out = 0
+
+                scs.sector_capacity_in = sector_capacity_in
+                scs.sector_capacity_out = sector_capacity_out
 
                 scs.current_in_per = float(current_in_per) if current_in_per else 0
                 scs.current_in_val = float(current_in_val) if current_in_val else 0
@@ -1761,6 +1753,9 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                         sector=sector,
                         sector_sector_id=sector.sector_id,
                         sector_capacity=float(sector_capacity) if sector_capacity else 0,
+
+                        sector_capacity_in=sector_capacity_in,
+                        sector_capacity_out=sector_capacity_out,
 
                         current_in_per=float(current_in_per) if current_in_per else 0,
                         current_in_val=float(current_in_val) if current_in_val else 0,
