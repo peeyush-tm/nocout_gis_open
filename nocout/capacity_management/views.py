@@ -1,5 +1,7 @@
 import datetime
 
+from operator import itemgetter
+
 from django.shortcuts import render_to_response
 
 from django.template import RequestContext
@@ -240,6 +242,43 @@ class SectorStatusListing(BaseDatatableView):
 
         return json_data
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
     def get_context_data(self, *args, **kwargs):
         """
         The maine function call to fetch, search, ordering , prepare and display the data on the data table.
@@ -261,6 +300,7 @@ class SectorStatusListing(BaseDatatableView):
 
         # number of records after filtering
         total_display_records = qs.annotate(Count('id')).count()
+
 
         if total_display_records and total_records:
 
