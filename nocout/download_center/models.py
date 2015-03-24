@@ -94,3 +94,57 @@ class CityCharterP2P(CityCharter):
     near_sector_device_mac_address = models.CharField('PTX', max_length=128, null=True, blank=True)
     rssi_during_aceptance = models.CharField('PTX', max_length=128, null=True, blank=True)
     uas = models.CharField('PTX', max_length=128, null=True, blank=True)
+
+
+class CityCharterCommon(models.Model):
+    """
+    Common for all technologies
+    `city_name`  varchar(50),
+
+    `wimax_los` varchar(50),
+    `wimax_na` varchar(50),
+    `wimax_rogue_ss` varchar(50),
+    `wimax_ul` varchar(50),
+    `wimax_pd` varchar(50),
+    `wimax_latancy` varchar(50),
+    `wimax_normal` varchar(50),
+
+    `pmp_los` varchar(50),
+    `pmp_na` varchar(50),
+    `pmp_rogue_ss` varchar(50),
+    `pmp_ul` varchar(50),
+    `pmp_pd` varchar(50),
+    `pmp_latancy` varchar(50),
+    `pmp_normal` varchar(50),
+
+    `p2p_los` varchar(50),
+    `p2p_na` varchar(50),
+    `p2p_rogue_ss` varchar(50),
+    `p2p_pd` varchar(50),
+    `p2p_latancy` varchar(50),
+    `p2p_normal`  varchar(50).
+    """
+    city_name = models.CharField('City', max_length=128, null=True, blank=True)
+
+    wimax_los = models.CharField('LOS WiMAX', max_length=128, null=True, blank=True)
+    wimax_na = models.CharField('NA WiMAX', max_length=128, null=True, blank=True)
+    wimax_rogue_ss = models.CharField('Rogue SS WiMAX', max_length=128, null=True, blank=True)
+    wimax_ul = models.CharField('UL WiMAX', max_length=128, null=True, blank=True)
+    wimax_pd = models.CharField('PD WiMAX', max_length=128, null=True, blank=True)
+    wimax_latancy = models.CharField('Latency WiMAX', max_length=128, null=True, blank=True)
+    wimax_normal = models.CharField('Normal WiMAX', max_length=128, null=True, blank=True)
+
+    pmp_los = models.CharField('LOS PMP', max_length=128, null=True, blank=True)
+    pmp_na = models.CharField('NA PMP', max_length=128, null=True, blank=True)
+    pmp_rogue_ss = models.CharField('Rogue SS PMP', max_length=128, null=True, blank=True)
+    pmp_ul = models.CharField('UL PMP', max_length=128, null=True, blank=True)
+    pmp_pd = models.CharField('PD PMP', max_length=128, null=True, blank=True)
+    pmp_latancy = models.CharField('Latency PMP', max_length=128, null=True, blank=True)
+    pmp_normal = models.CharField('Normal PMP', max_length=128, null=True, blank=True)
+
+    p2p_los = models.CharField('LOS P2P', max_length=128, null=True, blank=True)
+    p2p_na = models.CharField('NA P2P', max_length=128, null=True, blank=True)
+    p2p_rogue_ss = models.CharField('Rogue SS P2P', max_length=128, null=True, blank=True)
+    p2p_pd = models.CharField('PD P2P', max_length=128, null=True, blank=True)
+    p2p_latancy = models.CharField('Latency P2P', max_length=128, null=True, blank=True)
+    p2p_normal = models.CharField('Normal P2P', max_length=128, null=True, blank=True)
