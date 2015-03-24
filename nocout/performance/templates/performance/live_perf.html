@@ -138,6 +138,25 @@
             ///for backhaul devices
             if (ajax_url_get_parameter == "other") {
 
+                tables_info = {
+                    "other_backhaul_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Other Live - Backhaul",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }"
+                    },
+                    "other_other_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Other Live - Others",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }"
+                    }
+                };
+
                 var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
 
                 $("#other_backhaul_tab").attr("data_url", ajax_url_bh);
@@ -152,7 +171,59 @@
                     /*Trigger click event on active tab to load its data*/
                     $("#" + ajax_url_get_parameter + "_backhaul_tab").trigger('click', true);
                 }
+
             } else {
+
+                tables_info = {
+                    "network_wifi_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Network Live - WiMAX",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'download_excel': 'yes' }"
+                    },
+                    "network_ptp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Network Live - PTP BH",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'download_excel': 'yes' }"
+                    },
+                    "network_pmp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Network Live - PMP",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'download_excel': 'yes' }"
+                    },
+                    "customer_wifi_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Customer Live - WiMAX",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'download_excel': 'yes' }"
+                    },
+                    "customer_ptp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Customer Live - PTP",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'download_excel': 'yes' }"
+                    },
+                    "customer_pmp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Customer Live - PMP",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'download_excel': 'yes' }"
+                    }
+                };
 
                 ///for network and cusotmer devices
                 var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
