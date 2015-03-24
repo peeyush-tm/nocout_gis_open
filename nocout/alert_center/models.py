@@ -23,21 +23,21 @@ class GenericAlarm(models.Model):
 
 
 class HistoryAlarms(GenericAlarm):
-
-    class Meta:
-        db_table = 'history_alarms'
-        managed = False
+    pass
+    #class Meta:
+    #    db_table = 'history_alarms'
+    #    managed = False
 
 
 class ClearAlarms(GenericAlarm):
-
-    class Meta:
-        db_table = 'clear_alarms'
-        managed = False
+    pass
+    #class Meta:
+    #    db_table = 'clear_alarms'
+    #    managed = False
 
 
 class CurrentAlarms(GenericAlarm):
-
-    class Meta:
-        db_table = 'current_alarms'
-        managed = False
+    pass
+    #class Meta:
+    #    db_table = 'current_alarms'
+    #    managed = False
