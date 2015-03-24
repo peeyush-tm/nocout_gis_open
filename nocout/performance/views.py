@@ -1201,18 +1201,6 @@ class Inventory_Device_Status(View):
 
                     result['data']['objects']['values'].append(table_values)
 
-                    # result['data']['objects']['values'].append([display_bs_name,
-                    #                                             sector_id,
-                    #                                             pmp_port,
-                    #                                             technology.alias,
-                    #                                             type.alias,
-                    #                                             city_name,
-                    #                                             state_name,
-                    #                                             device.ip_address,
-                    #                                             # device.mac_address,
-                    #                                             planned_frequency,
-                    #                                             frequency
-                    # ])
                     if dr_ip:
                         dr_ip += " (DR) "
 
@@ -1261,19 +1249,6 @@ class Inventory_Device_Status(View):
 
                         result['data']['objects']['values'].append(table_values)
 
-                    #     result['data']['objects']['values'].append([display_bs_name,
-                    #                                             sector_id,
-                    #                                             pmp_port,
-                    #                                             technology.alias,
-                    #                                             type.alias,
-                    #                                             city_name,
-                    #                                             state_name,
-                    #                                             dr_ip,
-                    #                                             # device.mac_address,
-                    #                                             planned_frequency,
-                    #                                             frequency
-                    # ])
-
                 else:
                     table_values = [
                         {
@@ -1316,19 +1291,6 @@ class Inventory_Device_Status(View):
                     
                     result['data']['objects']['values'].append(table_values)
 
-                    # result['data']['objects']['values'].append([display_bs_name,
-                    #                                             sector_id,
-                    #                                             # pmp_port,
-                    #                                             technology.alias,
-                    #                                             type.alias,
-                    #                                             city_name,
-                    #                                             state_name,
-                    #                                             device.ip_address,
-                    #                                             # device.mac_address,
-                    #                                             planned_frequency,
-                    #                                             frequency
-                    # ])
-
         elif device.substation_set.exists():
             result['data']['objects']['headers'] = ['BS Name',
                                                     'SS Name',
@@ -1336,14 +1298,11 @@ class Inventory_Device_Status(View):
                                                     'Customer Name',
                                                     'Technology',
                                                     'Type',
-                                                    # 'Building Height',
-                                                    # 'Tower Height',
                                                     'City',
                                                     'State',
                                                     'Near End IP',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    # 'Planned Frequency',
                                                     'Frequency'
             ]
 
@@ -1358,7 +1317,6 @@ class Inventory_Device_Status(View):
                     customer_name = Customer.objects.filter(id=customer_id[0]["customer_id"])
                     circuit = substation.circuit_set.get()
 
-                    # customer_name = Customer.objects.filter(id=circuit.customer_id)
                     sector = circuit.sector
                     base_station = 'N/A'
                     planned_frequency = 'N/A'
@@ -1406,19 +1364,6 @@ class Inventory_Device_Status(View):
                     except Exception, e:
                         state_name = 'N/A'
                         state_url = ''
-
-                    # try:
-                    #     city_name = City.objects.get(id=base_station.city).city_name \
-                    #         if base_station.city \
-                    #         else "N/A"
-                    # except Exception as no_city:
-                    #     city_name = "N/A"
-                    # try:
-                    #     state_name = State.objects.get(id=base_station.state).state_name \
-                    #         if base_station.state \
-                    #         else "N/A"
-                    # except Exception as no_state:
-                    #     state_name = "N/A"
 
                     display_mac_address = device.mac_address
                     if display_mac_address:
@@ -1495,22 +1440,90 @@ class Inventory_Device_Status(View):
                     ]
                     
                     result['data']['objects']['values'].append(table_values)
+        # Case of backhaul
+        elif device.backhaul.exists():
+            result['data']['objects']['headers'] = [
+                'BS Name',
+                'Backhaul IP',
+                'BH Port',
+                'BH Capacity',
+                'Technology',
+                'Type',
+                'City',
+                'State'
+            ]
 
-                    # result['data']['objects']['values'].append([display_bs_name,
-                    #                                             substation.alias,
-                    #                                             circuit.circuit_id,
-                    #                                             customer_name[0].alias,
-                    #                                             technology.alias,
-                    #                                             ss_type,
-                    #                                             # substation.building_height,
-                    #                                             # substation.tower_height,
-                    #                                             city_name,
-                    #                                             state_name,
-                    #                                             device.ip_address,
-                    #                                             display_mac_address,
-                    #                                             # planned_frequency,
-                    #                                             frequency
-                    # ])
+            result['data']['objects']['values'] = []
+
+            device_edit_url = ""
+            if device and device.id:
+                device_edit_url = reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+
+            try:
+                bh_technology = technology.name
+                bh_technology_url = reverse('device_technology_edit', kwargs={'pk': device.device_technology}, current_app='device')
+                
+                bh_type = type.name
+                bh_type_url = reverse('device_type_edit', kwargs={'pk': device.device_type}, current_app='device')
+            except Exception, e:
+                bh_technology = "N/A"
+                bh_technology_url = ""
+
+                bh_type = "N/A"
+                bh_type_url = ""
+
+            backhaul_objects = Backhaul.objects.filter(bh_configured_on=device.id)
+            
+            bh_id = backhaul_objects[0].id
+            bh_ip_address = device.ip_address
+
+            bs_object = BaseStation.objects.filter(backhaul=bh_id)
+            
+            for bs_instance in bs_object:
+
+                if bs_instance:
+                    # BS Name & Url
+                    bs_name = bs_instance.alias if(bs_instance and bs_instance.alias) else "N/A"
+                    bs_url = reverse('base_station_edit', kwargs={'pk': bs_instance.id}, current_app='inventory')
+
+                    # BH Port
+                    bh_port = bs_instance.bh_port if(bs_instance and bs_instance.bh_port) else "N/A"
+                    bh_capacity = bs_instance.bh_capacity if(bs_instance and bs_instance.bh_capacity) else "N/A"
+
+                    # Handling for city name
+                    try:
+                        city_name = bs_instance.city.city_name if bs_instance.city else "N/A"
+                        city_url = reverse('city_edit', kwargs={'pk': bs_instance.city.id}, current_app='device')
+                    except Exception, e:
+                        city_name = 'N/A'
+                        city_url = ''
+
+                    # Handling for state name
+                    try:
+                        state_name = bs_instance.state.state_name if bs_instance.state else "N/A"
+                        state_url = reverse('state_edit', kwargs={'pk': bs_instance.state.id}, current_app='device')
+                    except Exception, e:
+                        state_name = 'N/A'
+                        state_url = ''
+
+                    table_values = []
+
+                    table_values = [
+                        {"val" : bs_name,"url" : bs_url},
+                        {"val" : bh_ip_address,"url" : device_edit_url},
+                        {"val" : bh_port,"url" : ""},
+                        {"val" : bh_capacity,"url" : ""},
+                        {"val" : bh_technology,"url" : bh_technology_url},
+                        {"val" : bh_type,"url" : bh_type_url},
+                        {"val" : city_name,"url" : city_url},
+                        {"val" : state_name,"url" : state_url}
+                    ]
+
+                    result['data']['objects']['values'].append(table_values)
+
+                print bs_instance.city.city_name
+                print bh_ip_address
+            
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
