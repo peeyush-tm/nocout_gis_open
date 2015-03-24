@@ -83,6 +83,49 @@
 
         <!-- ********** SECOND ROW START **********-->
 
+        <div class="col-md-4">
+            <h5>
+                <strong>
+                    PTP City Charter Report
+                    <i class="fa fa-signal text-success" id="ptp_city_charter_table_trend" title="PTP City Charter Trends"> </i>
+                </strong>
+            </h5>
+            <table class="datatable table table-striped table-bordered table-hover" id="ptp_city_charter_table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="col-md-4">
+            <h5>
+                <strong>
+                    PMP City Charter Report
+                    <i class="fa fa-signal text-success" id="pmp_city_charter_table_trend" title="PMP City Charter Trends"> </i>
+                </strong>
+            </h5>
+            <table class="datatable table table-striped table-bordered table-hover" id="pmp_city_charter_table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="col-md-4">
+            <h5>
+                <strong>
+                    WiMAX City Charter Report
+                    <i class="fa fa-signal text-success" id="wimax_city_charter_table_trend" title="WiMAX City Charter Trends"> </i>
+                </strong>
+            </h5>
+            <table class="datatable table table-striped table-bordered table-hover" id="wimax_city_charter_table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="clearfix"></div>
+
+        <hr/>
+
         <!-- Capacity pie Charts & city table Start -->
         <div class="col-md-3" align="center">
             <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
@@ -93,21 +136,6 @@
                 </strong>
             </h5>
         </div>
-        <div class="col-md-6">
-            <h5>Customer Experience Monitoring</h5>
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="city_ranking_table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>City</th>
-                        <th>% Of Customer Affected</th>
-                    </tr>
-                </thead>
-                <tbody>
-
-                </tbody>
-            </table>
-        </div>
         <div class="col-md-3" align="center">
             <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
             <h5>
@@ -117,14 +145,6 @@
                 </strong>
             </h5>
         </div>
-        <!-- Capacity pie Charts & city table End -->
-
-        <div class="clearfix"></div>
-        <!-- ********** SECOND ROW END **********-->
-        <hr/>
-
-
-        <!-- ********** THIRD ROW START **********-->
         <div class="col-md-3" align="center">
             <div id="wimax_sector_capacity" class="rf_chart_style"></div>
             <h5>
@@ -143,6 +163,14 @@
                 </strong>
             </h5>
         </div>
+        <!-- Capacity pie Charts & city table End -->
+
+        <div class="clearfix"></div>
+        <!-- ********** SECOND ROW END **********-->
+        <hr/>
+
+
+        <!-- ********** THIRD ROW START **********-->
         <div class="col-md-3" align="center">
             <div id="wimax_backhaul_capacity" class="rf_chart_style"></div>
             <h5>
@@ -161,19 +189,6 @@
                 </strong>
             </h5>
         </div>
-        <div class="clearfix"></div>
-        <!-- ********** THIRD ROW END **********-->
-        <hr/>
-
-        <!-- ********** FOURTH ROW START **********-->
-        <div class="col-md-9">
-            <h4>
-                <strong>
-                    MFR Processed
-                </strong>
-            </h4>
-            <div id="id_mfr_processed_chart" class="rf_chart_style"></div>
-        </div>
         <div class="col-md-3">
             <div id="tcl_pop_backhaul_capacity" class="rf_chart_style"></div>
             <h5>
@@ -182,6 +197,19 @@
                     <i class="fa fa-signal text-success" id="tcl_pop_backhaul_capacity_trend" title="TCL POP Backhaul Capacity"> </i>
                 </strong>
             </h5>
+        </div>
+        <div class="clearfix"></div>
+        <!-- ********** THIRD ROW END **********-->
+        <hr/>
+
+        <!-- ********** FOURTH ROW START **********-->
+        <div class="col-md-12">
+            <h4>
+                <strong>
+                    MFR Processed
+                </strong>
+            </h4>
+            <div id="id_mfr_processed_chart" class="rf_chart_style"></div>
         </div>
         <div class="clearfix"></div>
         <!-- ********** FOURTH ROW END **********-->
@@ -303,16 +331,22 @@
 <script src={% static "js/no-data-to-display.js" %}></script>
 <!--Our Common Utilities Script-->
 <script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 <!-- Main Dashboard Custom Script-->
 <script type="text/javascript" src={% static "js/nocout/main_dashboard_script.js" %}></script>
 
 <script type="text/javascript">
 
-    var process_count = 1;
+    var process_count = 1,
+        dataTableInstance = "";
 
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
+
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
 
         var isOther = "{{ isOther }}" ? Number("{{ isOther }}") : 0,
             isDebug = "{{ debug }}" ? Number("{{ debug }}") : 0;
@@ -356,6 +390,22 @@
         }
 
         // Update the main url & trends url of charts in dict
+        // City Charters Datatables
+        city_charter_tbl_obj["ptp_city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'P2P' 'yes' %}";
+        city_charter_tbl_obj["ptp_city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'P2P' 'no' %}";
+        city_charter_tbl_obj["ptp_city_charter_table"]["few_headers"] = JSON.parse('{{ ptp_charter_few_headers|safe }}');
+        city_charter_tbl_obj["ptp_city_charter_table"]["all_headers"] = JSON.parse('{{ ptp_charter_all_headers|safe }}');
+
+        city_charter_tbl_obj["pmp_city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'PMP' 'yes' %}";
+        city_charter_tbl_obj["pmp_city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'PMP' 'no' %}";
+        city_charter_tbl_obj["pmp_city_charter_table"]["few_headers"] = JSON.parse('{{ pmp_charter_few_headers|safe }}');
+        city_charter_tbl_obj["pmp_city_charter_table"]["all_headers"] = JSON.parse('{{ pmp_charter_all_headers|safe }}');
+
+        city_charter_tbl_obj["wimax_city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'WiMAX' 'yes' %}";
+        city_charter_tbl_obj["wimax_city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'WiMAX' 'no' %}";
+        city_charter_tbl_obj["wimax_city_charter_table"]["few_headers"] = JSON.parse('{{ wimax_charter_few_headers|safe }}');
+        city_charter_tbl_obj["wimax_city_charter_table"]["all_headers"] = JSON.parse('{{ wimax_charter_all_headers|safe }}');
+
 
         /***************** GAUGE CHART START ************************/
 
@@ -459,24 +509,6 @@
                 }
             });
         }
-
-        // Initialize city ranking datatable
-        $("#city_ranking_table").DataTable();
-
-        // Update datatable row per pages dropdown n search text box style.
-        $('.datatable').each(function () {
-            var datatable = $(this);
-            // SEARCH - Add the placeholder for Search and Turn this into in-line form control
-            var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
-            search_input.attr('placeholder', 'Search');
-            // search_input.css("max-width","150px");
-            search_input.addClass('form-control input-sm');
-            // LENGTH - Inline-Form control
-            var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
-            length_sel.css("max-width","65px");
-            length_sel.addClass('form-control input-sm');
-        });
-
         // Initialize Dashboard
         initDashboard();
     });

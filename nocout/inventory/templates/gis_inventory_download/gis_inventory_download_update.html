@@ -1,4 +1,16 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-download'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe "GIS Inventory Reports" "gis_selected_bs_inventories_list" %}
+    {% breadcrumb_safe "Update" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block content_title %}Edit GIS Inventory Excel{% endblock %}

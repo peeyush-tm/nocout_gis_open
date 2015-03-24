@@ -1,7 +1,9 @@
-from nocout.settings import MEDIA_ROOT, MEDIA_URL
 import os
 import json
 import time
+import operator
+from django.db.models import Q
+from nocout.settings import MEDIA_URL
 from datetime import datetime
 from django.http import HttpResponse
 from django.views.generic.base import View
@@ -14,7 +16,6 @@ from django.views.generic import ListView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from django.conf import settings
 from nocout.utils.util import convert_utc_to_local_timezone
 import logging
 
@@ -32,7 +33,36 @@ class DownloaderHome(View):
 
 class DataTableDownloader(View):
     """
-        127.0.0.1:8000/downloader/datarable/?app=performance&name=LivePerformance&data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }
+        Generating headers for datatables
+        Parameters:
+            - app (unicode) - name of app for e.g. performance
+            - rows (unicode) - name of datatable listing class for e.g. LivePerformanceListing
+            - headers (unicode) - name datatable headers class for e.g. Live_Performance
+            - headers_data (dict) - dictionary of GET/POST parameters passed in datatable headers view as request
+                                    for e.g.
+                                    {
+                                        'data_tab': 'P2P',
+                                        'page_type': 'customer',
+                                        'download_excel': 'yes'
+                                    }
+            - rows_data (dict) - dictionary of GET/POST parameters passed in datatable listing view as request for e.g.
+                                    {
+                                        'data_tab': 'P2P',
+                                        'page_type': 'customer',
+                                        'download_excel': 'yes'
+                                    }
+
+        URL:
+           - "/downloader/datatable/?app=performance&headers=Live_Performance&rows=LivePerformanceListing&
+               headers_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }&
+               rows_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }"
+
+        Returns:
+           - 'response' (dict) - response dict send in json format for e.g.
+                                {
+                                    'message': 'Startdownloading.',
+                                    'success': 1
+                                }
     """
     def get(self, request):
         # response
@@ -107,7 +137,80 @@ class DataTableDownloader(View):
 
 class DownloaderHeaders(ListView):
     """
-        Generate datatable views for reports associated with various technologies
+        Generating headers for datatables
+        Parameters:
+            - download_name (unicode) - display name for datatable for e.g. Backhaul Status
+            - download_type (unicode) - datatable listing class name for e.g. LivePerformanceListing
+            - params (unicode) - string containing extra paramaters received by datatable
+                                 for e.g. {'page_type' : 'network'}
+
+        URL:
+           - "/downloader/list/?download_name=Backhaul%20Status&download_type=LivePerformanceListing&params={}"
+
+        Returns:
+           - 'result' (dict) - dictionary containing context data for e.g.
+                                {
+                                    u'paginator': None,
+                                    u'object_list': [
+                                        <Downloader: download_excels/device_priyesh_2015-03-23-10-50-33.xls>,
+                                        <Downloader: download_excels/performance_priyesh_2015-03-23-10-51-49.xls>
+                                    ],
+                                    'datatable_headers': '[
+                                        {
+                                            "mData": "file_path",
+                                            "sTitle": "File",
+                                            "sWidth": "auto"
+                                        },
+                                        {
+                                            "mData": "file_type",
+                                            "sTitle": "File Type",
+                                            "sWidth": "auto"
+                                        },
+                                        {
+                                            "mData": "status",
+                                            "sTitle": "Status",
+                                            "sWidth": "auto"
+                                        },
+                                        {
+                                            "mData": "description",
+                                            "sTitle": "Description",
+                                            "sWidth": "auto"
+                                        },
+                                        {
+                                            "mData": "downloaded_by",
+                                            "sTitle": "Downloaded By",
+                                            "sWidth": "auto"
+                                        },
+                                        {
+                                            "mData": "requested_on",
+                                            "sTitle": "Requested On",
+                                            "sWidth": "auto"
+                                        },
+                                        {
+                                            "mData": "request_completion_on",
+                                            "sTitle": "Request Completion Date",
+                                            "sWidth": "auto"
+                                        },
+                                        {
+                                            "mData": "actions",
+                                            "sTitle": "Actions",
+                                            "bSortable": false,
+                                            "sWidth": "5%"
+                                        }
+                                    ]',
+                                    u'downloader_list': [
+                                        <Downloader: download_excels/device_priyesh_2015-03-23-10-50-33.xls>,
+                                        <Downloader: download_excels/performance_priyesh_2015-03-23-10-51-49.xls>
+                                    ],
+                                    u'page_obj': None,
+                                    'params': u'{
+
+                                    }',
+                                    'download_name': u'BackhaulStatus',
+                                    'download_type': u'LivePerformanceListing',
+                                    u'is_paginated': False,
+                                    u'view': <downloader.views.DownloaderHeadersobjectat0x7fbaf612a850>
+                                }
     """
 
     model = Downloader
@@ -119,9 +222,12 @@ class DownloaderHeaders(ListView):
         """
         # get download name
         download_name = self.request.GET.get('download_name', None)
-        
+
         # get download type
         download_type = self.request.GET.get('download_type', None)
+
+        # get extra parameters
+        params = self.request.GET.get('params', None)
 
         context = super(DownloaderHeaders, self).get_context_data(**kwargs)
         datatable_headers = [
@@ -139,6 +245,7 @@ class DownloaderHeaders(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['download_name'] = download_name
         context['download_type'] = download_type
+        context['params'] = params
 
         return context
 
@@ -170,9 +277,25 @@ class DownloaderListing(BaseDatatableView):
         :param qs:
         :return qs:
         """
-        
+
         # get download type
         download_type = self.request.GET.get('download_type', None)
+
+        # get extra parameters
+        params = self.request.GET.get('params', None)
+
+        # extra params list
+        params_list = list()
+
+        if params:
+            try:
+                params = eval(params)
+                for key, val in params.items():
+                    temp_dict = dict()
+                    temp_dict[key] = val
+                    params_list.append(str(temp_dict).replace('{', '').replace('}', ''))
+            except Exception as e:
+                pass
         
         # fields list those are excluded from search
         exclude_columns = ['requested_on', 'request_completion_on']
@@ -189,7 +312,11 @@ class DownloaderListing(BaseDatatableView):
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").filter(rows_view='"+str(download_type)+"').values(*" + str(self.columns + ['id']) + ")"
+            if params:
+                exec_query += ").filter(reduce(operator.and_, (Q(rows_data__contains=x) for x in "+str(params_list)+"))).filter( \
+                    rows_view="+str(download_type)+", downloaded_by="+str(self.request.user.username)+").values(*self.columns + ['id'])"
+            else:
+                exec_query += ").filter(rows_view='"+str(download_type)+"').values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
         return qs
@@ -202,10 +329,32 @@ class DownloaderListing(BaseDatatableView):
         # get download type
         download_type = self.request.GET.get('download_type', None)
 
+        # get extra parameters
+        params = self.request.GET.get('params', None)
+
+        # extra params list
+        params_list = list()
+
+        if params:
+            try:
+                params = eval(params)
+                for key, val in params.items():
+                    temp_dict = dict()
+                    temp_dict[key] = val
+                    params_list.append(str(temp_dict).replace('{', '').replace('}', ''))
+            except Exception as e:
+                pass
+
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Downloader.objects.filter(rows_view=download_type, downloaded_by=self.request.user.username).values(
-            *self.columns+['id'])
+
+        if params:
+            return Downloader.objects.filter(
+                reduce(operator.and_, (Q(rows_data__contains=x) for x in params_list))).filter(
+                rows_view=download_type, downloaded_by=self.request.user.username).values(*self.columns + ['id'])
+        else:
+            return Downloader.objects.filter(rows_view=download_type, downloaded_by=self.request.user.username).values(
+                *self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -327,6 +476,12 @@ class DownloaderDelete(DeleteView):
         # report object
         download_obj = self.get_object()
 
+        # download type
+        download_type = download_obj.rows_view
+
+        # params
+        params = download_obj.rows_data
+
         # remove report file if it exists
         try:
             os.remove(download_obj.file_path)
@@ -337,5 +492,5 @@ class DownloaderDelete(DeleteView):
         download_obj.delete()
 
         # if successfull, return to
-        return HttpResponseRedirect(reverse_lazy('InventoryDownloadCenter', kwargs={'page_type': page_type}))
+        return HttpResponseRedirect(reverse_lazy('InventoryDownloadCenter', kwargs={'download_type': download_type, 'params': params}))
 
