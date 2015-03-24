@@ -42,7 +42,7 @@
                         <tr>
                             <th class="hide" colspan="4" style="width:auto;" aria-label=""></th>
 
-                            <th colspan="10" style="text-align: center;">BACKHAUL</th>
+                            <th colspan="7" style="text-align: center;">BACKHAUL</th>
 
                             <th colspan="2" style="text-align: center;" aria-label="">Current DL</th>
 
@@ -115,7 +115,27 @@
         var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
             ajax_url = '{% url "BackhaulStatusListingClass" %}';
 
-        dataTableInstance.createDataTable("backhaulStatusTable", gridHeadersObj, ajax_url);
+        var datatable_param_info = {
+            "table_title" : "Backhaul Utilization Status",
+            "app_name" : "capacity_management",
+            "header_class_name" : "BackhaulStatusHeaders",
+            "data_class_name" : "BackhaulStatusListing",
+            "header_extra_param" : "{'download_excel': 'yes' }",
+            "data_extra_param" : "{'download_excel': 'yes' }"
+        };
+
+        dataTableInstance.createDataTable(
+            "backhaulStatusTable",
+            gridHeadersObj,
+            ajax_url,
+            false,
+            datatable_param_info['table_title'],
+            datatable_param_info['app_name'],
+            datatable_param_info['header_class_name'],
+            datatable_param_info['data_class_name'],
+            datatable_param_info['header_extra_param'],
+            datatable_param_info['data_extra_param']
+        );
     });
 </script>
 {% endblock %}
