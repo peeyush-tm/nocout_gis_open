@@ -77,7 +77,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
-
+        
         common_headers = [
             {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -156,7 +156,36 @@ class SectorStatusListing(BaseDatatableView):
         'age'
     ]
 
-    order_columns = columns
+    order_columns = [
+        'id',
+        'sector__sector_id',
+        'severity',
+        'age',
+        'organization__alias',
+        'sector_sector_id',
+        'sector__base_station__alias',
+        'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__device_technology',
+        'sector_capacity',
+        'current_in_per',
+        'current_in_val',
+        'sector_capacity_in',
+        'avg_in_per',
+        'avg_in_val',
+        'peak_in_per',
+        'peak_in_val',
+        'peak_in_timestamp',
+        'current_out_per',
+        'current_out_val',
+        'sector_capacity_out',
+        'avg_out_per',
+        'avg_out_val',
+        'peak_out_per',
+        'peak_out_val',
+        'peak_out_timestamp'
+    ]
 
     related_columns = [
         'sector__base_station',
@@ -254,7 +283,7 @@ class SectorStatusListing(BaseDatatableView):
             i_sorting_cols = 0
 
         order = []
-        order_columns = self.get_order_columns()
+        order_columns = self.order_columns
 
         for i in range(i_sorting_cols):
             # sorting column
@@ -268,6 +297,7 @@ class SectorStatusListing(BaseDatatableView):
             sdir = '-' if s_sort_dir == 'desc' else ''
 
             sortcol = order_columns[i_sort_col]
+
             if isinstance(sortcol, list):
                 for sc in sortcol:
                     order.append('%s%s' % (sdir, sc))
