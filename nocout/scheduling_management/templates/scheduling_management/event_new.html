@@ -29,7 +29,8 @@
                         </div>
                         <div class="box-body">
                             <div class="col-md-8"><br />
-                                <form action="/scheduling/new/" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">{% csrf_token %}
+                                <form action="/scheduling/new/" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">
+                                    {% csrf_token %}
                                     <div class="form-group">
 
                                             <div class="form-group">
@@ -136,13 +137,25 @@
 
                                             <!-- select box to search the devices -->
                                             <div class="form-group">
-                                                <label for="{{ form.device.id_for_label }}" class="col-sm-3 control-label">{{ form.device.label|title }}</label>
+                                                <label for="{{ form.device.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.device.label|title }}</label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
                                                         {{ form.device }} {{ form.device.errors }}
                                                     </div>
                                                     <div class="col-md-4 help_text">
                                                         {{ form.device.help_text }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- select box to search the device type-->    
+                                            <div class="form-group">
+                                                <label for="{{ form.device_type.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.device_type.label|title }}</label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        {{ form.device_type }} {{ form.device_type.errors }}
+                                                    </div>
+                                                    <div class="col-md-4 help_text">
+                                                        {{ form.device_type.help_text }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -168,7 +181,7 @@
                                         <div class="col-sm-offset-3 col-sm-9">
                                             <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/new/')"><i class="fa fa-refresh"></i>Reset</button>
+                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
                                             &nbsp;
                                             <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/')"><i class="fa fa-times"></i>Skip</button>
                                             &nbsp;
@@ -202,6 +215,12 @@
                 placement: 'right',
                 trigger: 'focus'
             });
+
+            // $("#id_device_type").parents(".form-group").first().hide();
+            // Trigger change event of scheduling_type to toggle device & device type select boxes as per conditions
+            setTimeout(function() {
+                $("#id_scheduling_type").trigger('change')
+            },100)
 
             $("#id_start_on").datepicker({
                 hideIfNoPrevNext: true,
@@ -301,19 +320,36 @@
             });
 
             if ($("#id_scheduling_type").val() == ''){
-                $("#id_device").prop("readonly", true)
+                $("#id_device").attr("readonly", true)
                 $("#id_device").select2('val', '')
             }
 
             $("#id_scheduling_type").change(function() {
-                if ($(this).val() == ''){
-                    console.log('No schedule type selected')
-                    $("#id_device").prop("readonly", true)
-                    $("#id_device").select2('val', '')
+                $("#id_device").select2('val', '');
+                $("#id_device_type").select2('val', '');
+                if ($(this).val() == '') {
+                    $("#id_device").removeAttr("readonly");
+                    $("#id_device").select2('val', '');
+                    $("#id_device_type").select2('val', '');
+                    $("#id_device").parents(".form-group").first().show();
+                    $("#id_device_type").parents(".form-group").first().hide();
+                } else if($(this).val() == 'dety') {
+                    $("#id_device").parents(".form-group").first().hide();
+                    $("#id_device_type").parents(".form-group").first().show();
+                    $("#id_device").removeAttr('required');
+                    $("#id_device_type").attr('required',true);
+                } else {
+                    $("#id_device").removeAttr("readonly");
+                    $("#id_device").parents(".form-group").first().show();
+                    $("#id_device_type").parents(".form-group").first().hide();
+                    $("#id_device_type").removeAttr('required');
+                    $("#id_device").attr('required',true);
                 }
-                else{
-                    $("#id_device").prop("readonly", false)
-                }
+            });
+            
+            $("#id_technology").change(function(){
+                $("#id_device_type").select2('val', '');
+                $("#id_device").select2('val', '');
             });
 
             // display weekdays inline when repeat weekly
@@ -363,11 +399,8 @@
 
             });
 
-        })// end document.ready
+        }); // end document.ready
 
-    </script>
-
-    <script>
         $(function() {
             $("input[name='device']").select2({
                 placeholder: "Search with (IP, Device Name, Device Alias, MAC, Sector ID, Circuit)",
@@ -425,6 +458,60 @@
         function repoDeviceFormatSelection(device) {
           return device.device_alias;
         }
+
+        setTimeout(function() {
+            $("input[name='device_type']").select2({
+                multiple: true,
+                minimumInputLength: 3,
+                query: function (query) {
+                    var scheduling_type = $("#id_scheduling_type").val(),
+                        start_on_time = $("#id_start_on_time").val(),
+                        end_on_time = $("#id_end_on_time").val(),
+                        technology_id = $("#id_technology").val(),
+                        data = {results: []};
+                    $.ajax({
+                        url : "/device/list/schedule/device/",
+                        type : "GET",
+                        data : {
+                            sSearch: query.term, // search term
+                            scheduling_type: scheduling_type,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
+                            technology_id: technology_id,
+                        },
+                        success : function(response) {
+                            var result = "";
+                            // Type check for response
+                            if(typeof response == 'string') {
+                                result = JSON.parse(response);
+                            } else {
+                                result = response;
+                            }
+                            data['results'] = result.items
+                            query.callback(data);
+                        },
+                        error : function(err) {
+                            query.callback(data);
+                        }
+                    });
+                },
+                initSelection: function(element, callback) {
+                    var id = $(element).val(),
+                        scheduling_type = $("#id_scheduling_type").val();
+                    if (id !== "") {
+                        $.ajax("/device/select/schedule/device/", {
+                            dataType: "json",
+                            data: {
+                                ids : id,
+                                scheduling_type : scheduling_type
+                            }
+                        }).done(function(data) {
+                            callback(data.device_result);
+                        });
+                    }
+                }
+            });
+        }, 300);
     </script>
 
 {% endblock %}

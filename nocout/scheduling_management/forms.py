@@ -38,7 +38,9 @@ class EventForm(forms.ModelForm):
         self.base_fields['device'].help_text = ''
         self.base_fields['end_never'].widget = forms.HiddenInput()
         self.base_fields['device'].widget = forms.HiddenInput()
-
+        # removing help text for device type 'select' field
+        self.base_fields['device_type'].help_text = ''
+        self.base_fields['device_type'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
@@ -53,6 +55,8 @@ class EventForm(forms.ModelForm):
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
+                elif isinstance(field.widget, forms.widgets.HiddenInput):
+                    field.widget.attrs['class'] += ' col-md-12'
                 else:
                     field.widget.attrs['class'] += ' form-control'
             else:
@@ -62,6 +66,8 @@ class EventForm(forms.ModelForm):
                    field.widget.attrs.update({'class': 'col-md-12'})
                 elif isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                elif isinstance(field.widget, forms.widgets.HiddenInput):
+                    field.widget.attrs.update({'class': 'col-md-12'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
 

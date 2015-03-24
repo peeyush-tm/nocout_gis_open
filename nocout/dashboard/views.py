@@ -241,6 +241,8 @@ class PerformanceDashboardMixin(object):
         # (admin : organization + sub organization)
         # (operator + viewer : same organization)
         user_organizations = logged_in_user_organizations(self)
+        if 'rssi' in data_source and is_bh:
+            devices_method_kwargs = dict(specify_ptp_bh_type='all')
 
         # Get Devices of User's Organizations. [and are Sub Station]
         user_devices = devices_method_to_call(user_organizations, technology, **devices_method_kwargs)
@@ -354,7 +356,7 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
         }
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_network_devices
-        devices_method_kwargs = dict(specify_ptp_bh_type='all')
+        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
         is_bh = True
         return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 

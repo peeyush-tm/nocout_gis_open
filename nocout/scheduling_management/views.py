@@ -24,7 +24,7 @@ from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from device.models import Device
+from device.models import Device, DeviceType
 
 # Create your views here.
 # def get_scheduler(request):
@@ -49,13 +49,14 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         context = super(EventList, self).get_context_data(**kwargs)
 
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': '10%', 'bSortable': True},
-            {'mData': 'created_at', 'sTitle': 'Created At', 'sWidth': '10%', 'bSortable': True},
-            {'mData': 'repeat', 'sTitle': 'Repeat', 'sWidth': '10%', 'bSortable': True},
-            {'mData': 'start_on', 'sTitle': 'Start On', 'sWidth': '10%', 'bSortable': True},
-            {'mData': 'created_by__username', 'sTitle': 'Created By', 'sWidth': '10%', 'bSortable': True},
-            {'mData': 'scheduling_type', 'sTitle': 'Scheduling Type', 'sWidth': '15%', 'bSortable': True},
-            {'mData': 'device__device_alias', 'sTitle': 'Device', 'sWidth': 'auto', 'bSortable': True}, ]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'created_at', 'sTitle': 'Created At', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'repeat', 'sTitle': 'Repeat', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'start_on', 'sTitle': 'Start On', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'created_by__username', 'sTitle': 'Created By', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'scheduling_type', 'sTitle': 'Scheduling Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_specification', 'sTitle': 'Device/Device Type', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
         #if the user role is Admin or superuser then the action column will appear on the datatable
         datatable_headers.append({'mData': 'no_of_devices', 'sTitle': 'No.of devices', 'sWidth': '5%', 'bSortable': False})
@@ -75,11 +76,11 @@ class EventListingTable(PermissionsRequiredMixin,
     """
     model = Event
     # columns are used for list of fields which should be displayed on data table.
-    columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device__device_alias']
+    columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device_specification']
     #search_columns is used for list of fields which is used for searching the data table.
-    search_columns = ['name', 'repeat', 'created_by__username', 'scheduling_type', 'device__device_alias']
+    search_columns = ['name', 'repeat', 'created_by__username', 'scheduling_type', 'device_specification']
     #order_columns is used for list of fields which is used for sorting the data table.
-    order_columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device__device_alias']
+    order_columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device_specification']
     required_permissions = ('scheduling_management.view_event',)
 
     def get_initial_queryset(self):
@@ -112,9 +113,16 @@ class EventListingTable(PermissionsRequiredMixin,
             dct.update(scheduling_type=scheduling_type)
             # display the device with ip address upto 5 devices.
             # when there are more than 5 devices than limit it to 5 devices and show with their ip_address.
-            dev_list = ["{}-{}".format(dev.device_alias,dev.ip_address) for i,dev in enumerate(obj.device.all()) if i < 5 ]
-            dct.update(device__device_alias=', '.join(dev_list))
-            dct.update(no_of_devices=obj.device.count())
+            if obj.scheduling_type != "dety":
+                dev_list = ["{}-{}".format(dev.device_alias,dev.ip_address) for i,dev in enumerate(obj.device.all()) if i < 5 ]
+                dct.update(device_specification=', '.join(dev_list))
+                dct.update(no_of_devices=obj.device.count())
+            else:
+                dev_list = ["{0}".format(dev.alias) for i,dev in enumerate(obj.device_type.all()) if i < 5 ]
+                dct.update(device_specification=', '.join(dev_list))
+                dct.update(
+                    no_of_devices = Device.objects.filter(device_type__in=DeviceType.objects.filter(alias__in=tuple(dev_list)).values_list('id')).count()
+                )
             dct.update(actions='<a href="/scheduling/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/scheduling/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
             json_data.append(dct)
@@ -152,9 +160,15 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
         # i.e: device = ['1,2,3,4,5,6...'] and should be ['1','2','3','4',..]
         # get the device id from the querydict.
         device = self.request.POST['device']
+        device_type = self.request.POST['device_type']
         # split device id from comma(,) to get in proper format and assing to querydict.
+        if self.request.POST['device'] != "":
+            self.request.POST['device'] = device.split(',')
+            self.request.POST['device_type'] = ""
+        else:
+             self.request.POST['device'] = ""
+             self.request.POST['device_type'] = device_type.split(',')
         # in order to check the validity of form.
-        self.request.POST['device'] = device.split(',')
         if not form.is_valid():
             # for invalid form again assing the previous format of device id to querydict.
             self.request.POST['device'] = device
@@ -192,7 +206,9 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
         # device id need to in format ['1,2,3,...'] when rendering the templates so,
         # set initial of device in the required format.
         device_initial = ','.join([str(device_id) for device_id in self.object.device.values_list('id', flat=True)])
-        form = EventForm(instance=self.object, initial={'device': device_initial})
+        device_type_initial = ','.join([str(device_id) for device_id in self.object.device_type.values_list('id', flat=True)])
+        form = EventForm(instance=self.object, initial={'device': device_initial, 'device_type': device_type_initial})
+            
         return self.render_to_response(
             self.get_context_data(form=form))
 
@@ -201,7 +217,16 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         device = self.request.POST['device'] # device id come in format '1,2,3'
-        self.request.POST['device'] = device.split(',') # update device id as ['1', '2', '3']
+        device_type = self.request.POST['device_type']
+        if self.request.POST['device'] != "":
+            self.request.POST['device'] = device.split(',')
+            self.request.POST['device_type'] = ""
+        else:
+             self.request.POST['device'] = ""
+             self.request.POST['device_type'] = device_type.split(',')
+
+        # self.request.POST['device'] = device.split(',') # update device id as ['1', '2', '3']
+
         if not form.is_valid():
             self.request.POST['device'] = device # again undo the changes if form is not valid
 
@@ -365,21 +390,33 @@ def get_today_event_list():
                             'device_ids': [1,2,3,4,...],
                         }
     """
+
     event_list = []
+    event_list_type = []
     time = datetime.today().time()
+    device_ids = []
     # Check for every event whether any event will execute today or not.
     for event in Event.objects.all():
         result = event_today_status({'event': event})
-        # Update event list if event is active for today.
+        # # Update event list if event is active for today.
         if result['status']:
             # Update if time now in between event's start and end on time.
             if event.start_on_time <= time and time <= event.end_on_time:
-                event_list.append(event)
-
+                if event.scheduling_type != 'dety':
+                    event_list.append(event)
+                else:
+                    event_list_type.append(event)
     # Get device ids of all the active events.
-    device_ids = Device.objects.filter(event__in=event_list).distinct().values_list('id', flat=True)
-
-    return {'event_list': event_list, 'device_ids': device_ids}
+    device_ids_specific = Device.objects.filter(event__in=event_list).distinct().values_list('id', flat=True)
+    device_type_id = DeviceType.objects.filter(event__in=event_list_type).distinct().values_list('id', flat=True)
+    device_ids_type = Device.objects.filter(device_type__in=device_type_id).distinct().values_list('id', flat=True)
+    device_ids_type = list(device_ids_type)
+    for id in device_ids_specific:
+        if id and id not in device_ids_type:
+            device_ids_type.append(id)
+    # device_ids = device_ids + device_ids_type
+    event_list = event_list+ event_list_type
+    return {'event_list': event_list, 'device_ids': device_ids_type}
 
 
 def get_month_event_list(request):
