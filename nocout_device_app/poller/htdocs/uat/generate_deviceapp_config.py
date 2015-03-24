@@ -60,7 +60,10 @@ def prepare_hosts_file():
     T = namedtuple('devices', 
             ['wimax_bs_devices', 'cambium_bs_devices',
                 'radwin_bs_devices', 'wimax_ss_devices', 
-                'radwin_ss_devices', 'total_radwin_devices'])
+                'cambium_ss_devices', 'radwin_ss_devices', 
+                'total_radwin_devices', 'mrotek_devices',
+                'rici_devices', 'switch_devices'
+                ])
     all_hosts, ipaddresses, host_attributes = [], {}, {}
     wimax_bs_devices, cambium_bs_devices = [], []
     # This file contains device names, to be updated in configuration db
@@ -74,14 +77,20 @@ def prepare_hosts_file():
     #except Exception, exp:
     #   logger.error('Exception in make_SS_data: ' + pformat(exp))
     # Final Devices
-    all_hosts, ipaddresses, host_attributes = make_Backhaul_data(ss_devices.all_hosts,
+    devices_plus_backhaul = make_Backhaul_data(ss_devices.all_hosts,
             ss_devices.ipaddresses, ss_devices.host_attributes)
     T.wimax_bs_devices, T.cambium_bs_devices = bs_devices.wimax_bs_devices, bs_devices.cambium_bs_devices
     T.radwin_bs_devices, T.radwin_ss_devices = bs_devices.radwin_bs_devices, ss_devices.radwin_ss_devices
     T.total_radwin_devices = bs_devices.radwin_bs_devices + ss_devices.radwin_ss_devices
     T.wimax_ss_devices = ss_devices.wimax_ss_devices
+    T.cambium_ss_devices = ss_devices.cambium_ss_devices
+    T.mrotek_devices = devices_plus_backhaul.mrotek_devices
+    T.rici_devices = devices_plus_backhaul.rici_devices
+    T.switch_devices = devices_plus_backhaul.switch_devices
 
-    write_hosts_file(all_hosts, ipaddresses, host_attributes)
+    write_hosts_file(devices_plus_backhaul.all_hosts, 
+            devices_plus_backhaul.ipaddresses, 
+            devices_plus_backhaul.host_attributes)
 
     return T
 
@@ -90,34 +99,51 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
     # Query for Backhaul entities
     query = """
     select 
-    DISTINCT(device_device.ip_address),
+    device_device.ip_address,
     device_device.device_name,
     device_devicetype.name,
     device_device.mac_address,
-    device_device.ip_address,
     device_devicetype.agent_tag,
     site_instance_siteinstance.name,
     device_device.device_alias,
     device_devicetechnology.name as techno_name,
-    inventory_backhaul.bh_configured_on_id as bh_conf_id
+    group_concat(service_servicedatasource.name separator '$$') as port_name,
+    group_concat(inventory_basestation.bh_port_name separator '$$') as port_alias,
+    group_concat(inventory_basestation.bh_capacity separator '$$') as port_wise_capacity
     from device_device 
     inner join
     (device_devicetechnology, device_devicetype, 
-    machine_machine, site_instance_siteinstance, inventory_backhaul)
+    machine_machine, site_instance_siteinstance)
     on 
     (
     device_devicetype.id = device_device.device_type and
     device_devicetechnology.id = device_device.device_technology and
     machine_machine.id = device_device.machine_id and
-    site_instance_siteinstance.id = device_device.site_instance_id and 
-    inventory_backhaul.bh_configured_on_id = device_device.id
+    site_instance_siteinstance.id = device_device.site_instance_id
     )
+    left join
+    (inventory_backhaul)
+    on
+    (inventory_backhaul.bh_configured_on_id = device_device.id)
+    left join
+    (inventory_basestation)
+    on
+    (inventory_backhaul.id = inventory_basestation.backhaul_id)
+    left join
+    (service_servicedatasource)
+    on
+    (inventory_basestation.bh_port_name = service_servicedatasource.alias)
     where 
     device_device.is_deleted=0 and 
     device_devicetype.name in ('Switch', 'RiCi', 'PINE')
+    group by device_device.ip_address
     ;
     """
 
+    T = namedtuple('total_devices', 
+            ['all_hosts', 'ipaddresses', 'host_attributes',
+                'mrotek_devices', 'rici_devices', 'switch_devices']
+            )
     db = mysql_conn()
     try:
         cur = db.cursor() 
@@ -131,27 +157,48 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
         db.close()
 
     # Processing backhaul configured on devices
+    mrotek_devices, rici_devices, switch_devices = [], [], []
     processed = []
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
+        port_wise_capacities = [0]*8
         if  str(device[1]) in processed:
             continue
+        if '_' in str(device[8]):
+	    try:
+	        int_ports = map(lambda x: x.split('_')[-1], device[8].split('$$'))
+	        capacities = device[10].split('$$') if device[10] else device[10]
+	        for p_n, p_cap in zip(int_ports, capacities):
+		    port_wise_capacities[int(p_n)-1] = p_cap
+            except (IndexError, TypeError, AttributeError) as err:
+                port_wise_capacities = [0]*8
+                print err
+        if str(device[2].lower()) == 'pine':
+            mrotek_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'rici':
+            rici_devices.append((device[1], device[5], port_wise_capacities))
+        elif str(device[2].lower()) == 'switch':
+            switch_devices.append((device[1], device[5], port_wise_capacities))
         hosts_only.write(str(device[1]) + '\n')
         processed.append(str(device[1]))
         entry = str(device[1]) + '|' + str(device[2]) + '|' + str(device[3]).lower() + \
-            '|wan|prod|' + str(device[5]) + '|site:' + str(device[6]) + '|wato|//' 
+            '|wan|prod|' + str(device[4]) + '|site:' + str(device[5]) + '|wato|//' 
         all_hosts.append(entry) 
         ipaddresses.update({str(device[1]): str(device[0])})
         host_attributes.update({ str(device[1]): { 
-            'alias': str(device[7]), 
+            'alias': str(device[6]), 
             'contactgroups': (True, ['all']),
-            'site': str(device[6]),
-            'tag_agent': str(device[5])
+            'site': str(device[5]),
+            'tag_agent': str(device[4])
             }})
 
     hosts_only.close()
+    T.all_hosts, T.ipaddresses = all_hosts, ipaddresses
+    T.host_attributes = host_attributes
+    T.mrotek_devices, T.rici_devices = mrotek_devices, rici_devices
+    T.switch_devices = switch_devices
 
-    return (all_hosts, ipaddresses, host_attributes)
+    return T
 
 
 def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
@@ -182,6 +229,47 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     inventory_sector.id = inventory_circuit.sector_id
     )
     where device_device.is_deleted=0 and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU');
+    """
+    query = """
+    select 
+    DISTINCT(device_device.ip_address),
+    device_device.device_name,
+    device_devicetype.name,
+    device_device.mac_address,
+    device_device.ip_address,
+    device_devicetype.agent_tag,
+    inventory_sector.name,
+    site_instance_siteinstance.name,
+    device_device.device_alias,
+    inventory_sector.dr_site,
+    inventory_sector.dr_configured_on_id,
+    device_devicetechnology.name as techno_name,
+    inventory_circuit.qos_bandwidth as QoS_BW
+    from device_device 
+
+    inner join
+    (device_devicetechnology, device_devicemodel, device_devicetype, machine_machine, site_instance_siteinstance, inventory_sector)
+    on 
+    (
+    device_devicetype.id = device_device.device_type and
+    device_devicetechnology.id = device_device.device_technology and
+    device_devicemodel.id = device_device.device_model and
+    machine_machine.id = device_device.machine_id and
+    site_instance_siteinstance.id = device_device.site_instance_id and
+    inventory_sector.sector_configured_on_id = device_device.id
+    )
+
+    left join (inventory_circuit)
+    on (
+    inventory_sector.id = inventory_circuit.sector_id
+    )
+
+    where device_device.is_deleted=0 
+    and 
+    device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') 
+    and 
+    device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU')
+    ;
     """
     # host row for devices
         #host name | device type | mac | parent _ name | wan | prod | agent tags | site | wato
@@ -282,8 +370,11 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     # Get the wimax BS devices (we need them for active checks)
     # Ex entry : ('device_1', 'ospf4_slave_1')
     L0 = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'wimax', data))
-    L1 = map(lambda e: (e[1], e[7]), dr_en_devices)
-    #L2 = zip(map(lambda e: e[0], dr_configured_on_devices), map(lambda e: e[1], L1))
+    # Ex entry : ('device_1', 'ospf4_slave_1', 'dr_site')
+    L1 = map(lambda e: (e[0][1], e[0][7], e[1][0]), final_dr_devices)
+    #for entry in final_dr_devices:
+    #    L1.append((entry[0][1], entry[0][7]))
+    #    L1.append((entry[1][0], entry[0][7]))
     wimax_bs_devices = L0 + L1
     # Get the Cambium BS devices (we need them for active checks)
     # Since, as of now, we have only Cambium devices in pmp technology
@@ -304,8 +395,6 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     #    final_radwin_devices_entry.append((a[0], a[1], b))
 
     T.radwin_bs_devices = final_radwin_devices_entry
-    print 'final radwin --'
-    print final_radwin_devices_entry[0:10]
 
     return T
 
@@ -422,7 +511,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     db.close()
     T = namedtuple('ss_devices', [
         'all_hosts', 'ipaddresses', 'host_attributes',
-        'radwin_ss_devices', 'wimax_ss_devices'])
+        'radwin_ss_devices', 'wimax_ss_devices', 'cambium_ss_devices'])
     processed = []
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
@@ -455,15 +544,16 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     #for a, b in izip_longest(radwin_ss_devices, qos_values):
     #    final_radwin_devices_entry.append((a[0], a[1], b))
 
-    print 'final_radwin_devices_entry --'
-    print final_radwin_devices_entry[0:10]
     # Get Wimax SS devices, for active checks
     wimax_ss_devices = filter(lambda e: e[14].lower() == 'wimax', data)
     wimax_ss_devices = map(lambda e: (e[4], e[8]), wimax_ss_devices)
-    #print wimax_ss_devices[0:10]
+    # Get PMP (Cambium) SS devices, for active checks
+    cambium_ss_devices = filter(lambda e: e[14].lower() == 'pmp', data)
+    cambium_ss_devices = map(lambda e: (e[4], e[8]), cambium_ss_devices)
 
     T.all_hosts, T.ipaddresses, T.host_attributes = all_hosts, ipaddresses, host_attributes
     T.radwin_ss_devices, T.wimax_ss_devices = final_radwin_devices_entry, wimax_ss_devices
+    T.cambium_ss_devices = cambium_ss_devices
 
     return T
 
@@ -476,12 +566,13 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
         hosts = []
         with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
             hosts = map(lambda t: t.strip(), list(f))
-        query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
-        query += " WHERE device_name IN %s" % pformat(tuple(hosts))
-        cur = db.cursor()
-        cur.execute(query)
-        db.commit()
-        cur.close()
+        if hosts:
+            query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
+            query += " WHERE device_name IN %s" % pformat(tuple(hosts))
+            cur = db.cursor()
+            cur.execute(query)
+            db.commit()
+            cur.close()
 
     try:
         if update_id:
@@ -552,12 +643,16 @@ def get_settings():
     exclude_util_active_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
             'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
             'cambium_ul_util_kpi', 'cambium_dl_util_kpi',
-            'radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_util_static']
+            'radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_util_static',
+            'cambium_bs_ul_issue_kpi', 'wimax_bs_ul_issue_kpi',
+            'radwin_ss_provis_kpi',
+            'mrotek_dl_util_kpi', 'mrotek_ul_util_kpi',
+            'rici_dl_util_kpi', 'rici_ul_util_kpi',
+            'switch_dl_util_kpi', 'switch_ul_util_kpi']
     # Following dependent SS checks should not be included in list of passive checks
     # As they are treated as active checks (Dependent in sense they get data from their BS)
-    exclude_ss_active_services = ['wimax_ul_rssi', 'wimax_dl_rssi', 'wimax_ul_cinr',
-            'wimax_dl_cinr', 'wimax_ul_intrf', 'wimax_dl_intrf',
-            'wimax_modulation_ul_fec', 'wimax_modulation_dl_fec']
+    exclude_ss_active_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi', 'wimax_ss_ul_issue_kpi',
+            'wimax_ss_provis_kpi']
     for service in data:
         """
         from pprint import pprint
@@ -593,14 +688,16 @@ def get_settings():
             threshold = ()
             try:
             	threshold = get_threshold(service)
-            	if str(service['service']) in exclude_util_active_services:
-                	active_checks_thresholds.append((str(service['service']), threshold[0], threshold[1]))
-                	continue
-            	if str(service['service']) in exclude_ss_active_services:
-                	active_checks_thresholds.append((str(service['service']), threshold[0], threshold[1]))
-                	continue
             except Exception, exp:
                 logger.error('Exception in get_threshold: ' + pformat(exp))
+            if threshold:
+                active_checks_thresholds.append((str(service['service']), threshold[0], threshold[1]))
+            else:
+                active_checks_thresholds.append((str(service['service']), None, None))
+            if str(service['service']) in exclude_util_active_services:
+                continue
+            if str(service['service']) in exclude_ss_active_services:
+                continue
             service_config = [service['devicetype']], ['@all'], service['service'], None, threshold
         if service_config and (service_config not in default_checks):
                 default_checks.append(service_config)
@@ -780,11 +877,13 @@ def prepare_priority_checks():
 
 
 def ss_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device):
-    wimax_ss_services = ['wimax_ul_rssi', 'wimax_dl_rssi', 'wimax_ul_cinr',
-        'wimax_dl_cinr', 'wimax_ul_intrf', 'wimax_dl_intrf', 
-        'wimax_modulation_ul_fec', 'wimax_modulation_dl_fec']
+    wimax_ss_services = [
+        'wimax_ss_ul_issue_kpi', 'wimax_ss_provis_kpi']
+    cambium_ss_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi']
     check_dict = {}
     check_dict = make_active_check_rows(check_dict, devices.wimax_ss_devices, wimax_ss_services, 
+            active_checks_thresholds, active_checks_thresholds_per_device)
+    check_dict = make_active_check_rows(check_dict, devices.cambium_ss_devices, cambium_ss_services, 
             active_checks_thresholds, active_checks_thresholds_per_device)
 
     return check_dict
@@ -793,12 +892,14 @@ def ss_active_checks(devices, active_checks_thresholds, active_checks_thresholds
 def make_active_check_rows(container, devices, services, active_checks_thresholds, 
         active_checks_thresholds_per_device, def_war=None, def_crit=None):
 
+    qos_based_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'mrotek_dl_util_kpi', 
+		'mrotek_ul_util_kpi', 'rici_dl_util_kpi', 'rici_ul_util_kpi',
+		'switch_dl_util_kpi', 'switch_ul_util_kpi']
     for service in services:
         container[service] = []
         # These thresholds would be used if we dont find entry in below filter func
         serv_specific_entry = filter(lambda e: service in e[0], active_checks_thresholds)
         for host_tuple in devices:
-            #print host_tuple
             host_specific_entry = filter(lambda e: host_tuple[0] == e[0] and service == e[1], active_checks_thresholds_per_device)
             if host_specific_entry:
                 war, crit = host_specific_entry[0][2], host_specific_entry[0][3]
@@ -806,9 +907,14 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
                 war, crit = serv_specific_entry[0][1], serv_specific_entry[0][2]
             else:
                 war, crit = def_war, def_crit
-            if service in ['radwin_ul_util_kpi', 'radwin_dl_util_kpi']:
+            if service in qos_based_services:
                 container[service].append(((str(service), {'host': str(host_tuple[0]), \
                         'site': str(host_tuple[1]), 'qos': host_tuple[2], 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
+            # Check for wimax BS devices
+            elif 'wimax' in service and '_ss_' not in service:
+                dr_site = host_tuple[2] if len(host_tuple) == 3 else ''
+                container[service].append(((str(service), {'host': str(host_tuple[0]), \
+                        'site': str(host_tuple[1]), 'war': war, 'crit': crit, 'dr_slave': dr_site}), [], [str(host_tuple[0])]))
             else:
                 container[service].append(((str(service), {'host': str(host_tuple[0]), \
                         'site': str(host_tuple[1]), 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
@@ -818,9 +924,12 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
 
 def util_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device):
     wimax_util_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
-            'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi']
-    cambium_util_services = ['cambium_ul_util_kpi', 'cambium_dl_util_kpi']
-    radwin_util_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi']
+            'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi', 'wimax_bs_ul_issue_kpi']
+    cambium_util_services = ['cambium_ul_util_kpi', 'cambium_dl_util_kpi', 'cambium_bs_ul_issue_kpi']
+    radwin_util_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_ss_provis_kpi']
+    mrotek_util_services = ['mrotek_dl_util_kpi', 'mrotek_ul_util_kpi']
+    rici_util_services = ['rici_dl_util_kpi', 'rici_ul_util_kpi']
+    switch_util_services = ['switch_dl_util_kpi', 'switch_ul_util_kpi']
     check_dict = {}
     check_dict = make_active_check_rows(check_dict, devices.wimax_bs_devices,
             wimax_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
@@ -828,9 +937,21 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
     check_dict = make_active_check_rows(check_dict, devices.cambium_bs_devices,
             cambium_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
             def_war=80, def_crit=90)
-    check_dict = make_active_check_rows(check_dict, devices.total_radwin_devices,
+    check_dict = make_active_check_rows(check_dict, devices.radwin_ss_devices,
             radwin_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
 	    def_war=80, def_crit=90)
+    # mrotek utilization active checks
+    check_dict = make_active_check_rows(check_dict, devices.mrotek_devices,
+            mrotek_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            def_war=80, def_crit=90)
+    # rici utilization active checks
+    check_dict = make_active_check_rows(check_dict, devices.rici_devices,
+            rici_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            def_war=80, def_crit=90)
+    # switch utilization active checks
+    check_dict = make_active_check_rows(check_dict, devices.switch_devices,
+            switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            def_war=80, def_crit=90)
     ########################################################################################
     # These values would be used if we dont find device specific entry
     #S1 = filter(lambda x: 'wimax_pmp1_ul_util_kpi' in x[0], active_checks_thresholds)
@@ -1033,9 +1154,11 @@ def write_rules_file(settings_out, final_active_checks):
 
 def main():
     hosts_out = prepare_hosts_file()
-    print "wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "radwin_bs_devices", "radwin_ss_devices"
+    print "wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "cambium_ss_devices", \
+            "radwin_bs_devices", "radwin_ss_devices", "mrotek_devices", "rici_devices", "switch_devices"
     print len(hosts_out.wimax_bs_devices), len(hosts_out.wimax_ss_devices), len(hosts_out.cambium_bs_devices), \
-            len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices)
+            len(hosts_out.cambium_ss_devices), len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices), \
+            len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.switch_devices)
     prepare_rules(hosts_out)
 
 
