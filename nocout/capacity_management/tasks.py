@@ -368,7 +368,7 @@ def gather_sector_status(technology):
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
                 sector_configured_on__is_added_to_nms=1,
-                sector_configured_on__in=machine_dict[machine],
+                sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=False
                 ).select_related(
@@ -384,7 +384,7 @@ def gather_sector_status(technology):
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
                 sector_configured_on__is_added_to_nms=1,
-                sector_configured_on__in=machine_dict[machine],
+                sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=True
                 ).select_related(
