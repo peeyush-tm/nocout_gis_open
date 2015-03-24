@@ -281,12 +281,12 @@ function initCityChartersDatatables() {
     }
 
     // Remove search & row per pages from city charter tables
-    // if($(".dataTables_wrapper .row .col-sm-12 .pull-right").length > 0) {
-    //     $(".dataTables_wrapper .row .col-sm-12 .pull-right").remove();
-    // }
-    // if($(".dataTables_wrapper .row .col-sm-12 .pull-left").length > 0) {
-    //     $(".dataTables_wrapper .row .col-sm-12 .pull-left").remove();
-    // }
+    if($(".dataTables_wrapper .row .col-sm-12 .pull-right").length > 0) {
+        $(".dataTables_wrapper .row .col-sm-12 .pull-right").remove();
+    }
+    if($(".dataTables_wrapper .row .col-sm-12 .pull-left").length > 0) {
+        $(".dataTables_wrapper .row .col-sm-12 .pull-left").remove();
+    }
 }
 
 /**
