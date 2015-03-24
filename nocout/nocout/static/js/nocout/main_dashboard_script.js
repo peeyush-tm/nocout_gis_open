@@ -183,8 +183,8 @@ function initDashboard() {
             initAreaCharts_dashboard(function(response) {
                 // Start Server calling with the created list of charts
                 createChartAPIChunks_dashboard(all_charts_array);
-                initCityChartersDatatables();
                 // Create Dashboard City Charter Tables
+                initCityChartersDatatables();
             });
         });
     });
