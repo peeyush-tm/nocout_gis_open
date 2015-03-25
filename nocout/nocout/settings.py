@@ -450,8 +450,16 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
         'schedule': crontab(minute='5', hour='*')
     },
+    'hourly-speedometer-dashboard': {
+        'task': 'dashboard.tasks.calculate_hourly_speedometer_dashboard',
+        'schedule': crontab(minute='5', hour='*')
+    },
     'daily-main-dashboard': {
         'task': 'dashboard.tasks.calculate_daily_main_dashboard',
+        'schedule': crontab(minute='5', hour=0)  # Execute Daily at Midnight
+    },
+    'daily-speedometer-dashboard': {
+        'task': 'dashboard.tasks.calculate_daily_speedometer_dashboard',
         'schedule': crontab(minute='5', hour=0)  # Execute Daily at Midnight
     },
     # END Backhaul Capacity Task
@@ -752,6 +760,10 @@ SETTINGS_EXPORT = [
     'SIA_ENABLED',
 ]
 # #### Access Variables in Templates
+
+# 25th March : Dashbaord Settings
+SPEEDOMETER_DASHBAORDS = ['down-network', 'packetloss-network', 'latency-network', 'temperature-idu']
+# 25th March : Dashbaord Settings
 
 try:
     from local_settings import *

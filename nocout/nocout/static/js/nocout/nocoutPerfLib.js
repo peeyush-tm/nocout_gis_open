@@ -144,9 +144,10 @@ function nocoutPerfLib() {
                     if(device_status.headers && device_status.headers.length > 0) {
                         /*Loop for table headers*/
                         var headers = "<tr>";
-                        $.each(device_status.headers, function (key, value) {
-                            headers += '<th>' + value + '</th>';
-                        });
+                        for(var i=0;i<device_status.headers.length;i++) {
+                            var header_name = device_status.headers[i];
+                            headers += '<th>' + header_name + '</th>';
+                        }
 
                         headers += "</tr>";
                         /*Populate table headers*/
@@ -154,24 +155,27 @@ function nocoutPerfLib() {
 
                         /*Loop for status table data*/
                         var status_val = "";
-                        
-                        for (var i = 0; i < device_status.values.length; i++) {
-                            status_val += "<tr>";
+                        if(device_status.values.length > 0) {
+                            for (var i = 0; i < device_status.values.length; i++) {
+                                status_val += "<tr>";
 
-                            var device_status_data_row = device_status.values[i];
+                                var device_status_data_row = device_status.values[i];
 
-                            if(device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
-                                device_status_data_row = device_status_data_row[0];
+                                if(device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
+                                    device_status_data_row = device_status_data_row[0];
+                                }
+
+                                for (var j = 0; j < device_status_data_row.length; j++) {
+                                    var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
+                                        url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
+                                        display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
+
+                                    status_val += '<td>'+display_txt+'</td>';
+                                }   
+                                status_val += "</tr>";
                             }
-
-                            for (var j = 0; j < device_status_data_row.length; j++) {
-                                var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
-                                    url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
-                                    display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
-
-                                status_val += '<td>'+display_txt+'</td>';
-                            }   
-                            status_val += "</tr>";
+                        } else {
+                            status_val += "<tr><td colspan='"+device_status.headers.length+"' align='center'>No Info</td></tr>";
                         }
                         
                         /*Populate table data*/

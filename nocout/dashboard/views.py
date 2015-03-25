@@ -1650,6 +1650,72 @@ def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_arg
     # colors.append("#d3d3d3")
     return {'chart_data': chart_data, 'color': colors}
 
+def view_range_status_dashboard_monthly(dashboard_name, organizations, dashboard_settings=None):
+    """
+
+    :param dashboard_name:
+    :param organizations:
+    :param dashboard_settings:
+    :return:
+    """
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+    dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
+        select={'processed_month': "date(processed_for)"}
+    ).values(
+        'processed_month',
+        'dashboard_name'
+        # 'organization'
+    ).filter(
+        dashboard_name=dashboard_name,
+        organization__in=organizations,
+        processed_for__gte=month_before
+    ).annotate(
+        range1=Sum('range1'),
+        range2=Sum('range2'),
+        range3=Sum('range3'),
+        range4=Sum('range4'),
+        range5=Sum('range5'),
+        range6=Sum('range6'),
+        range7=Sum('range7'),
+        range8=Sum('range8'),
+        range9=Sum('range9'),
+        range10=Sum('range10'),
+        unknown=Sum('unknown')
+    ).order_by('processed_month')
+
+    chart_data = list()
+    count_color = '#7CB5EC'
+    data_dict = {
+                "type": "column",
+                "valuesuffix": " ",
+                "name": dashboard_name,
+                "valuetext": " ",
+                "color": count_color,
+                "data": list(),
+            }
+
+    for var in dashboard_status_dict:
+
+        processed_date = var['processed_month']  # this is date object of date time
+        js_time = float(format(datetime.datetime(processed_date.year,
+                                                 processed_date.month,
+                                                 processed_date.day,
+                                                 0,
+                                                 0), 'U'))
+        # Preparation of final Dict for all days in One month
+        data_dict['data'].append({
+            "color": count_color,
+            "y": var['range1'],
+            "name": dashboard_name,
+            "x": js_time * 1000,
+            # Multiply by 1000 to return correct GMT+05:30 timestamp
+        })
+        # Increment Date by One
+        # month_before += relativedelta.relativedelta(days=1)
+
+    chart_data.append(data_dict)
+
+    return chart_data
 
 def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=None):
     """
@@ -2025,7 +2091,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_status_name,
+        dashboard_status_dict = view_range_status_dashboard_monthly(dashboard_name=dashboard_status_name,
                                                           organizations=organizations,
                                                           dashboard_settings=dashboard_setting)
         chart_series = dashboard_status_dict

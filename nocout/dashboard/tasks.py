@@ -1,11 +1,11 @@
 from celery import task, group
 
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg, Sum
 from django.utils import timezone
 import datetime
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG
+from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG, SPEEDOMETER_DASHBAORDS
 
 from organization.models import Organization
 from device.models import DeviceTechnology, Device
@@ -17,6 +17,13 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
         DashboardRangeStatusWeekly, DashboardRangeStatusMonthly, DashboardRangeStatusYearly,
     )
 
+# 25th march update
+from nocout.utils.util import fetch_raw_result
+
+import math
+# 25th march update
+
+# inventory utilitites
 from inventory.utils.util import organization_sectors, organization_network_devices
 from inventory.models import get_default_org
 
@@ -773,6 +780,116 @@ def prepare_machines(device_list):
     return machine_dict
 
 
+def speedometer_sum_query(desired_table, now, then, counter=12):
+    """
+
+    :param desired_table:
+    :param now:
+    :param then:
+    :param counter:
+    :return:
+    """
+    in_string = lambda x: "'" + str(x) + "'"
+    query = '''
+      SELECT
+        dashboard_name,
+        (
+            sum(range1)+
+            sum(range2)+
+            sum(range3)+
+            sum(range4)+
+            sum(range5)+
+            sum(range6)+
+            sum(range7)+
+            sum(range8)+
+            sum(range9)+
+            sum(range10)
+        )/{4} as tot,
+        organization_id
+       FROM {0}
+       WHERE
+        processed_for <= '{1}'
+        AND
+        processed_for >= '{2}'
+        AND
+        dashboard_name in ({3})
+       GROUP BY dashboard_name, organization_id
+      '''.format(desired_table,
+                 now.strftime('%Y-%m-%d %H:%M:%S'),
+                 then.strftime('%Y-%m-%d %H:%M:%S'),
+                 (",".join(map(in_string, SPEEDOMETER_DASHBAORDS))),
+                 counter
+                 )
+    return query
+
+@task()
+def calculate_hourly_speedometer_dashboard():
+    '''
+    Task to calculate the speedometer dashboard status in every hour using celerybeat.
+    '''
+    # time format = 2015-03-25 21:00:00
+    # YYYY-MM-DD HH:MM:SS
+
+    in_string = lambda x: "'" + str(x) + "'"
+
+    now = timezone.now()
+    then = now + datetime.timedelta(hours=-1)
+    buffer_now = now + datetime.timedelta(minutes=-5)
+    now = buffer_now
+    # List for exclude entries of speedometer dashboard
+
+    desired_table = DashboardRangeStatusTimely._meta.db_table
+    last_hour_timely_range_status_query = speedometer_sum_query(
+        desired_table,
+        now,
+        then,
+        counter=12
+    )
+    raw_result = fetch_raw_result(last_hour_timely_range_status_query)
+
+    organizations = Organization.objects.all()
+    hourly_range_status_list = list()
+    count = 0
+    for timely_range_status in raw_result:
+        # Create new model object when dashboard_name and device_name are different
+        # from previous dashboard_name and device_name.
+        count = math.ceil(float(timely_range_status['tot']))
+
+        hourly_range_status = DashboardRangeStatusHourly(
+            dashboard_name=timely_range_status['dashboard_name'],
+            device_name=timely_range_status['dashboard_name'],
+            reference_name=timely_range_status['dashboard_name'],
+            processed_for=now,
+            range1=count,
+            range2=0,
+            range3=0,
+            range4=0,
+            range5=0,
+            range6=0,
+            range7=0,
+            range8=0,
+            range9=0,
+            range10=0,
+            unknown=0,
+            organization=organizations.get(id=timely_range_status['organization'])
+        )
+        # append in list for every new dashboard_name and device_name.
+        hourly_range_status_list.append(hourly_range_status)
+
+    if len(hourly_range_status_list):
+        bulk_update_create.delay(
+            bulky=hourly_range_status_list,
+            action='create',
+            model=DashboardRangeStatusHourly)
+
+    DashboardRangeStatusTimely.objects.order_by().filter(
+        processed_for__lte=now,
+        processed_for__gte=then,
+        dashboard_name__in=SPEEDOMETER_DASHBAORDS
+    ).delete()    
+
+    return True
+
 @task()
 def calculate_hourly_main_dashboard():
     '''
@@ -858,10 +975,13 @@ def calculate_hourly_range_status(now, then):
 
     return:
     '''
+    # List for exclude entries of speedometer dashboard
+    speedometer_dashboard = ['down-network', 'packetloss-network', 'latency-network', 'temperature-idu']
     # get all data from the model order by 'dashboard_name' and 'device_name'.
     last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by().filter(
         processed_for__lte=now,
         processed_for__gte=then
+    ).exclude(dashboard_name__in=SPEEDOMETER_DASHBAORDS
     ).values(
         'dashboard_name',
         'organization'
@@ -916,6 +1036,7 @@ def calculate_hourly_range_status(now, then):
     DashboardRangeStatusTimely.objects.order_by().filter(
         processed_for__lte=now,
         processed_for__gte=then
+    ).exclude(dashboard_name__in=SPEEDOMETER_DASHBAORDS
     ).delete()
     return True
 
@@ -1038,6 +1159,7 @@ def calculate_daily_range_status(now):
 
     return:
     '''
+
     # get the current timezone.
     tzinfo = timezone.get_current_timezone()
     # get today date according to current timezone and reset time to 12 o'clock.
@@ -1048,6 +1170,7 @@ def calculate_daily_range_status(now):
     last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by().filter(
         processed_for__gte=yesterday,
         processed_for__lt=today
+    ).exclude(dashboard_name__in=SPEEDOMETER_DASHBAORDS
     ).values(
         'dashboard_name',
         'organization'
@@ -1098,6 +1221,77 @@ def calculate_daily_range_status(now):
     DashboardRangeStatusHourly.objects.order_by().filter(
         processed_for__gte=yesterday,
         processed_for__lt=today
+    ).exclude(dashboard_name__in=SPEEDOMETER_DASHBAORDS
+    ).delete()
+    return True
+
+
+@task()
+def calculate_daily_speedometer_dashboard():
+    '''
+    Task to calculate the daily status of speedometer dashboard.
+    '''
+    now = timezone.now()
+    '''
+    Calculate the status of speedometer dashboard from DashboardRangeStatusHourly model
+    and create list of DashboardRangeStatusDaily model object for calculated data
+    and then delete all data from the DashboardRangeStatusHourly model.
+
+    :param now: datetime (example: timezone.now())
+
+    return:
+    '''
+    # speedometer_dashboard = ['down-network', 'packetloss-network', 'latency-network', 'temperature-idu']
+    # get the current timezone.
+    tzinfo = timezone.get_current_timezone()
+    # get today date according to current timezone and reset time to 12 o'clock.
+    today = timezone.datetime(now.year, now.month, now.day, 0, 0)
+    previous_day = now - timezone.timedelta(days=1)
+    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, 0, 0)
+
+    desired_table = DashboardRangeStatusHourly._meta.db_table
+    last_hour_timely_range_status_query = speedometer_sum_query(
+        desired_table,
+        now=today,
+        then=yesterday,
+        counter=24
+    )
+    raw_result = fetch_raw_result(last_hour_timely_range_status_query)
+
+    organizations = Organization.objects.all()
+
+    daily_range_status_list = list()
+    for hourly_range_status in raw_result:
+        count = math.ceil(float(hourly_range_status['tot']))
+        daily_range_status = DashboardRangeStatusDaily(
+            dashboard_name=hourly_range_status['dashboard_name'],
+            device_name=hourly_range_status['dashboard_name'],
+            reference_name=hourly_range_status['dashboard_name'],
+            processed_for=yesterday,
+            range1=count,
+            range2=0,
+            range3=0,
+            range4=0,
+            range5=0,
+            range6=0,
+            range7=0,
+            range8=0,
+            range9=0,
+            range10=0,
+            unknown=0,
+            organization=organizations.get(id=hourly_range_status['organization'])
+        )
+        daily_range_status_list.append(daily_range_status)
+
+    if len(daily_range_status_list):
+        bulk_update_create.delay(bulky=daily_range_status_list,
+                                 action='create',
+                                 model=DashboardRangeStatusDaily)
+
+    DashboardRangeStatusHourly.objects.order_by().filter(
+        processed_for__gte=yesterday,
+        processed_for__lt=today,
+        dashboard_name__in=SPEEDOMETER_DASHBAORDS
     ).delete()
     return True
 
