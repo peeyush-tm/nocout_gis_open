@@ -761,6 +761,10 @@ SETTINGS_EXPORT = [
 ]
 # #### Access Variables in Templates
 
+# 25th March : Dashbaord Settings
+SPEEDOMETER_DASHBAORDS = ['down-network', 'packetloss-network', 'latency-network', 'temperature-idu']
+# 25th March : Dashbaord Settings
+
 try:
     from local_settings import *
 except ImportError:
