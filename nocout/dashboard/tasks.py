@@ -19,6 +19,8 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
 
 # 25th march update
 from nocout.utils.util import fetch_raw_result
+
+import math
 # 25th march update
 
 # inventory utilitites
@@ -851,7 +853,7 @@ def calculate_hourly_speedometer_dashboard():
     for timely_range_status in raw_result:
         # Create new model object when dashboard_name and device_name are different
         # from previous dashboard_name and device_name.
-        count = float(timely_range_status['tot'])
+        count = math.ceil(float(timely_range_status['tot']))
 
         hourly_range_status = DashboardRangeStatusHourly(
             dashboard_name=timely_range_status['dashboard_name'],
@@ -1260,7 +1262,7 @@ def calculate_daily_speedometer_dashboard():
 
     daily_range_status_list = list()
     for hourly_range_status in raw_result:
-        count = float(hourly_range_status['tot'])
+        count = math.ceil(float(hourly_range_status['tot']))
         daily_range_status = DashboardRangeStatusDaily(
             dashboard_name=hourly_range_status['dashboard_name'],
             device_name=hourly_range_status['dashboard_name'],
