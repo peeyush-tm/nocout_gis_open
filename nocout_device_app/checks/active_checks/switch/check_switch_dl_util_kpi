@@ -64,12 +64,16 @@ def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos):
     crit_flag = 0
     warn_flag = 0
     normal_flag = 0
+    qos_value = qos.split('|')[:-1]
     try:
 	dl_util_dict= extract_switch_dl_util_from_live(hostname,site)
-	
-	for entry in dl_util_dict:
+
+	for index,entry in enumerate(sorted(dl_util_dict)):	
 		dl_kpi =  dl_util_dict[entry]
-		dl_kpi = (float(dl_kpi)/qos) *100
+		try:
+			dl_kpi = (float(dl_kpi)/float(qos_value[index]))) *100
+		except Exception,e:
+			continue
 		if dl_kpi:
 			perf += str(entry) + "=%s;%s;%s;%s " % (dl_kpi,war,crit,qos)
 			if dl_kpi >= crit:
