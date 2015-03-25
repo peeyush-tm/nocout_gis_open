@@ -3,7 +3,7 @@ import json
 import time
 import operator
 from django.db.models import Q
-from nocout.settings import MEDIA_URL
+from nocout.settings import MEDIA_URL, MEDIA_ROOT
 from datetime import datetime
 from django.http import HttpResponse
 from django.views.generic.base import View
@@ -105,7 +105,7 @@ class DataTableDownloader(View):
                 response['message'] = "Inventory download started. Please check status \
                 <a href='/downloader/' target='_blank'>Here</a>."
                 response['success'] = 1
-                d_obj.status = 1
+                d_obj.status = 0
                 d_obj.description = "Start downloading on {}.".format(fulltime)
             except Exception as e:
                 response['message'] = "Wrong data format."
@@ -575,9 +575,12 @@ class DownloaderCompleteListing(BaseDatatableView):
             except Exception as e:
                 pass
 
+            # modified module name
+            modified_module_name = ""
+
             if downloader_obj:
                 # get app name
-                app_name = downloader_obj.app_name.replace("_", "").title()
+                app_name = downloader_obj.app_name.replace("_", " ").title().replace(" ", "")
 
                 # module name
                 module_name = dct['rows_view'].replace("Listing", "").replace("Table", "")
@@ -701,15 +704,9 @@ class DownloaderDelete(DeleteView):
         # report object
         download_obj = self.get_object()
 
-        # download type
-        download_type = download_obj.rows_view
-
-        # params
-        params = download_obj.rows_data
-
         # remove report file if it exists
         try:
-            os.remove(download_obj.file_path)
+            os.remove(MEDIA_ROOT + download_obj.file_path)
         except Exception as e:
             logger.info(e.message)
 

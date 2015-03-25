@@ -145,7 +145,7 @@
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'backhaul', 'download_excel': 'yes' }"
                     },
                     "other_other_tab" : {
                         "app_name" : "performance",
@@ -153,16 +153,16 @@
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'other', 'download_excel': 'yes' }"
                     }
                 };
 
-                var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
+                var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&other_type=backhaul';
 
                 $("#other_backhaul_tab").attr("data_url", ajax_url_bh);
                 $("#other_backhaul_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
-                var ajax_url_other = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
+                var ajax_url_other = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&other_type=other';
 
                 $("#other_other_tab").attr("data_url", ajax_url_other);
                 $("#other_other_tab").attr("data_header", '{{ datatable_headers|safe }}');

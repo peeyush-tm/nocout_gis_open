@@ -576,7 +576,7 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'basestation__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sClass': 'hidden-xs',  'sWidth': 'auto', 'bSortable': True},
             {'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
 
             {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},

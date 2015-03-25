@@ -291,7 +291,7 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
 
 
 # @cache_for(300)
-def organization_backhaul_devices(organizations, technology=None, others=False):
+def organization_backhaul_devices(organizations, technology=None, others=False, other_type="backhaul"):
     """
     To result back the all the network devices from the respective organization..
 
@@ -331,7 +331,8 @@ def organization_backhaul_devices(organizations, technology=None, others=False):
 
 
 @cache_for(300)
-def filter_devices(organizations, data_tab=None, page_type="customer", required_value_list=None, other_bh=False):
+def filter_devices(organizations, data_tab=None, page_type="customer", other_type=None,
+                   required_value_list=None, other_bh=False):
 
     """
 
@@ -368,9 +369,14 @@ def filter_devices(organizations, data_tab=None, page_type="customer", required_
         device_list = organization_network_devices(organizations, device_technology_id
         ).values(*device_value_list)
     elif page_type == "other":
-        device_list = organization_backhaul_devices(organizations,
-                                                    technology=None,
-                                                    others=other_bh).values(*device_value_list)
+        if other_type == "backhaul":
+            device_list = organization_backhaul_devices(organizations,
+                                                        technology=None,
+                                                        others=False).values(*device_value_list)
+        else:
+            device_list = organization_backhaul_devices(organizations,
+                                                        technology=None,
+                                                        others=True).values(*device_value_list)
     else:
         device_list = []
     # get the devices in an organisation which are added for monitoring
