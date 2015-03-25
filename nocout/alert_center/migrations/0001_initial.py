@@ -8,10 +8,75 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        pass
+        # Adding model 'HistoryAlarms'
+        db.create_table(u'alert_center_historyalarms', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('device_name', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=128, null=True, blank=True)),
+            ('ip_address', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('device_type', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_technology', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_vendor', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_model', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('trapoid', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=100, null=True, blank=True)),
+            ('eventname', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=100, null=True, blank=True)),
+            ('eventno', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('severity', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('uptime', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('traptime', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=30, null=True, blank=True)),
+            ('component_name', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('description', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=256, null=True, blank=True)),
+        ))
+        db.send_create_signal(u'alert_center', ['HistoryAlarms'])
+
+        # Adding model 'ClearAlarms'
+        db.create_table(u'alert_center_clearalarms', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('device_name', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=128, null=True, blank=True)),
+            ('ip_address', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('device_type', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_technology', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_vendor', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_model', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('trapoid', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=100, null=True, blank=True)),
+            ('eventname', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=100, null=True, blank=True)),
+            ('eventno', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('severity', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('uptime', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('traptime', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=30, null=True, blank=True)),
+            ('component_name', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('description', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=256, null=True, blank=True)),
+        ))
+        db.send_create_signal(u'alert_center', ['ClearAlarms'])
+
+        # Adding model 'CurrentAlarms'
+        db.create_table(u'alert_center_currentalarms', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('device_name', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=128, null=True, blank=True)),
+            ('ip_address', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('device_type', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_technology', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_vendor', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('device_model', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('trapoid', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=100, null=True, blank=True)),
+            ('eventname', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=100, null=True, blank=True)),
+            ('eventno', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('severity', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('uptime', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=20, null=True, blank=True)),
+            ('traptime', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=30, null=True, blank=True)),
+            ('component_name', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=50, null=True, blank=True)),
+            ('description', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=256, null=True, blank=True)),
+        ))
+        db.send_create_signal(u'alert_center', ['CurrentAlarms'])
 
     def backwards(self, orm):
-        pass
+        # Deleting model 'HistoryAlarms'
+        db.delete_table(u'alert_center_historyalarms')
+
+        # Deleting model 'ClearAlarms'
+        db.delete_table(u'alert_center_clearalarms')
+
+        # Deleting model 'CurrentAlarms'
+        db.delete_table(u'alert_center_currentalarms')
 
     models = {
         u'alert_center.clearalarms': {
