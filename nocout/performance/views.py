@@ -220,6 +220,8 @@ class LivePerformanceListing(BaseDatatableView):
 
         page_type = self.request.GET.get('page_type')
 
+        other_type = self.request.GET.get('other_type', None)
+
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
         device_tab_technology = self.request.GET.get('data_tab')
@@ -227,6 +229,7 @@ class LivePerformanceListing(BaseDatatableView):
         devices = inventory_utils.filter_devices(organizations=kwargs['organizations'],
                                                  data_tab=device_tab_technology,
                                                  page_type=page_type,
+                                                 other_type=other_type,
                                                  required_value_list=required_value_list
         )
         
@@ -468,11 +471,6 @@ class LivePerformanceListing(BaseDatatableView):
     def paging(self, qs):
         """ Paging
         """
-        print "*****************************"
-        print "*****************************"
-        print "*****************************"
-        print "*****************************"
-        print "***************************** self.max_display_length - ", self.max_display_length
         limit = min(int(self.request.REQUEST.get('iDisplayLength', 10)), self.max_display_length)
         # if pagination is disabled ("bPaginate": false)
         if limit == -1:
