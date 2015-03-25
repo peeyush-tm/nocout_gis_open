@@ -462,7 +462,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             sectors = self.model.objects.filter(
                 Q(organization__in=kwargs['organizations']),
                 Q(severity__in=['warning', 'critical']),
-                Q(age__lte = F('sys_timestamp') - 600)
+                # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
             tech_id = DeviceTechnology.objects.get(name=self.technology).id
@@ -470,7 +470,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 Q(organization__in=kwargs['organizations']),
                 Q(sector__sector_configured_on__device_technology=tech_id),
                 Q(severity__in=['warning', 'critical']),
-                Q(age__lte = F('sys_timestamp') - 600)
+                # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
@@ -870,7 +870,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         backhauls = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
             Q(severity__in=['warning', 'critical']),
-            Q(age__lte=F('sys_timestamp') - 600)
+            # Q(age__lte=F('sys_timestamp') - 600)
         ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return backhauls

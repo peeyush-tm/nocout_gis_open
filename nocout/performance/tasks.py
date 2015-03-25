@@ -336,6 +336,16 @@ def get_sector_augmentation_data(sector_ids=[]):
 
     in_string = lambda x: "'" + str(x) + "'"
 
+    # augmentation_raw_query = '''
+    #                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
+    #                         FROM {0}
+    #                         WHERE
+    #                           sector_id IN ( {1} )
+    #                           AND
+    #                           severity IN ( 'warning', 'critical' )
+    #                           AND
+    #                           sys_timestamp - age > 600
+    #                         '''.format(table_name, (",".join(map(in_string, sector_ids))))
     augmentation_raw_query = '''
                             SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
                             FROM {0}
@@ -343,8 +353,6 @@ def get_sector_augmentation_data(sector_ids=[]):
                               sector_id IN ( {1} )
                               AND
                               severity IN ( 'warning', 'critical' )
-                              AND
-                              sys_timestamp - age > 600
                             '''.format(table_name, (",".join(map(in_string, sector_ids))))
 
     # Execute Query to get augmentation data
