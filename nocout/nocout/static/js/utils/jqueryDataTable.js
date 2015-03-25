@@ -26,29 +26,18 @@ function ourDataTableWidget()
         showSpinner();
 
         destroy = typeof destroy !== 'undefined' ? destroy : true;
-		
-        // $('.datatable').each(function () {
-        //     var datatable = $(this);
-        //     // SEARCH - Add the placeholder for Search and Turn this into in-line form control
-        //     var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
-        //     search_input.attr('placeholder', 'Search');
-        //     search_input.addClass('form-control input-sm');
-        //     // LENGTH - Inline-Form control
-        //     var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
-        //     length_sel.addClass('form-control input-sm');
-        // });
-        
+
+        var page_length_val = [[10, 25, 50, 100], [10, 25, 50, 100]];
+
+        if(ajax_url == '/download_center/citycharter/listing/yes/') {
+            page_length_val = [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]];            
+        }
+
+        var default_selected_page_length = page_length_val[0][0] ? page_length_val[0][0] : 10;
+
         if (destroy){
             $("#"+tableId).dataTable().fnDestroy();
         }
-       
-        // ******************************* TEMPORARY CODE START *******************************//
-        // By Default remove sorting from all datatables
-        //for(var i=0;i<tableheaders.length;i++) {
-        //    var header = tableheaders[i];
-        //    header['bSortable'] = false;
-        //}
-        // ******************************* TEMPORARY CODE END *******************************//
 
         $("#"+tableId).DataTable({
             bAutoWidth: false,
@@ -56,6 +45,8 @@ function ourDataTableWidget()
             bPaginate: true,
             bProcessing : true,
             bServerSide: true,
+            aLengthMenu: page_length_val,
+            iDisplayLength : default_selected_page_length,
             sAjaxSource: ajax_url,
             /*This is the callback funtion for data ajax call*/
             fnInitComplete: function(oSettings) {

@@ -83,46 +83,19 @@
 
         <!-- ********** SECOND ROW START **********-->
 
-        <div style="max-height:250px;overflow:auto;">
-            <div class="col-md-4">
+        <div style="overflow:auto;">
+            <div class="col-md-12">
                 <h5>
                     <strong>
-                        PTP City Charter Report
-                        <i class="fa fa-signal text-success" id="ptp_city_charter_table_trend" title="PTP City Charter Trends"> </i>
+                        City Charter Report
+                        <i class="fa fa-signal text-success" id="city_charter_table_trend" title="City Charter Trends"> </i>
                     </strong>
                 </h5>
-                <table class="datatable table table-striped table-bordered table-hover" id="ptp_city_charter_table">
+                <table class="datatable table table-striped table-bordered table-hover" id="city_charter_table">
                     <thead></thead>
                     <tbody></tbody>
                 </table>
             </div>
-
-            <div class="col-md-4">
-                <h5>
-                    <strong>
-                        PMP City Charter Report
-                        <i class="fa fa-signal text-success" id="pmp_city_charter_table_trend" title="PMP City Charter Trends"> </i>
-                    </strong>
-                </h5>
-                <table class="datatable table table-striped table-bordered table-hover" id="pmp_city_charter_table">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <div class="col-md-4">
-                <h5>
-                    <strong>
-                        WiMAX City Charter Report
-                        <i class="fa fa-signal text-success" id="wimax_city_charter_table_trend" title="WiMAX City Charter Trends"> </i>
-                    </strong>
-                </h5>
-                <table class="datatable table table-striped table-bordered table-hover" id="wimax_city_charter_table">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
             <div class="clearfix"></div>
         </div>
 
@@ -393,20 +366,9 @@
 
         // Update the main url & trends url of charts in dict
         // City Charters Datatables
-        city_charter_tbl_obj["ptp_city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'P2P' 'yes' %}";
-        city_charter_tbl_obj["ptp_city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'P2P' 'no' %}";
-        city_charter_tbl_obj["ptp_city_charter_table"]["few_headers"] = JSON.parse('{{ ptp_charter_few_headers|safe }}');
-        city_charter_tbl_obj["ptp_city_charter_table"]["all_headers"] = JSON.parse('{{ ptp_charter_all_headers|safe }}');
-
-        city_charter_tbl_obj["pmp_city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'PMP' 'yes' %}";
-        city_charter_tbl_obj["pmp_city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'PMP' 'no' %}";
-        city_charter_tbl_obj["pmp_city_charter_table"]["few_headers"] = JSON.parse('{{ pmp_charter_few_headers|safe }}');
-        city_charter_tbl_obj["pmp_city_charter_table"]["all_headers"] = JSON.parse('{{ pmp_charter_all_headers|safe }}');
-
-        city_charter_tbl_obj["wimax_city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'WiMAX' 'yes' %}";
-        city_charter_tbl_obj["wimax_city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'WiMAX' 'no' %}";
-        city_charter_tbl_obj["wimax_city_charter_table"]["few_headers"] = JSON.parse('{{ wimax_charter_few_headers|safe }}');
-        city_charter_tbl_obj["wimax_city_charter_table"]["all_headers"] = JSON.parse('{{ wimax_charter_all_headers|safe }}');
+        city_charter_tbl_obj["city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'yes' %}";
+        city_charter_tbl_obj["city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'no' %}";
+        city_charter_tbl_obj["city_charter_table"]["headers"] = JSON.parse('{{ city_charter_headers|safe }}');
 
 
         /***************** GAUGE CHART START ************************/
