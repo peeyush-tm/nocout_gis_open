@@ -13,7 +13,8 @@ from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from device.models import Device, City, State, DeviceType, DeviceTechnology
+from device.models import Device, City, State, DeviceType, DeviceTechnology, DevicePort
+from service.models import ServiceDataSource
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 
 from performance.models import PerformanceService, PerformanceNetwork, \
@@ -1584,22 +1585,6 @@ class Inventory_Device_Service_Data_Source(View):
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
 
-        #if there is no service present in the configuration (BULK SYNC)
-        # inventory_device_service_name = device_type.service.filter().values_list('name', 'service_data_sources__name')
-
-        #
-        # #Fetch the Service names that are configured w.r.t to a device.
-        # inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
-        #     device_name= device.device_name)\
-        #     .values_list('service_name', 'data_source')
-
-        # configured_services = DeviceServiceConfiguration.objects.filter(
-        #     device_name=device.device_name) \
-        #     .values_list('service_name', 'data_source')
-        #
-        # if len(configured_services):
-        #     inventory_device_service_name = configured_services
-
         # TODO:to remove this code as the services are getting multi added with their port.
         # inventory_device_service_name = list(set(inventory_device_service_name))
 
@@ -1631,12 +1616,38 @@ class Inventory_Device_Service_Data_Source(View):
                 'service_type_tab': 'network_perf_tab'
             })
 
+        is_bh = False
+        excluded_bh_data_sources = []
+        if device.backhaul.exists():
+            # if the backhaul exists, that means we need to check for the PORT
+            # if there is a port
+            try:
+                those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+
+                bh_data_sources = set(ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
+                ).values_list('name', flat=True))
+
+                excluded_bh_data_sources = set(
+                    ServiceDataSource.objects.exclude(
+                        name__in=bh_data_sources
+                    ).values_list('name', flat=True)
+                )
+
+                is_bh = True
+            except Exception as e:
+                log.exception('{0} {1}', filter(type(e), e.message))
+                is_bh = False
+
         device_type_services = device_type.service.filter().prefetch_related('servicespecificdatasource_set')
 
         for service in device_type_services:
             service_name = service.name.strip().lower()
-            service_data_sources = service.service_data_sources.filter()
-            for service_data_source in service_data_sources:
+            desired_sds = service.service_data_sources.filter()
+            if is_bh:
+                desired_sds = service.service_data_sources.exclude(name__in=excluded_bh_data_sources).filter()
+
+            for service_data_source in desired_sds:
                 sds_name = service_data_source.name.strip().lower()
 
                 if service_data_source.show_performance_center:
@@ -1663,7 +1674,6 @@ class Inventory_Device_Service_Data_Source(View):
                     continue
                 else:
                     result['data']['objects']['service_perf_tab']["info"].append(sds_info)
-
 
         result['data']['objects']['availability_tab']["info"].append(
             {
