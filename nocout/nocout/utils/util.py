@@ -370,7 +370,7 @@ def non_cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=
 
 
 @cache_for(300)  #caching GIS inventory
-def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None):
+def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
 
 
@@ -378,19 +378,22 @@ def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None
     :param technology: technology name
     :param type_rf: sector, ss, bh
     :param bs_id: id of the base station
+    :param device_list: list of device names
     :return: cached result for the bs or for complete inventory
     """
-    query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id)
+    query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id, device_list=device_list)
     return fetch_raw_result(query)
 
 
 ## Function with imporved GIS API query
-def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None):
+def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
 
     :param monitored_only: True or False
     :param technology: Technology Name
     :param type_rf: sector or ss or backhaul
+    :param bs_id: base station ID
+    :param device_list: list of device names
     :return: query for gis
     """
     added_device = " "
