@@ -80,7 +80,7 @@ class Migration(SchemaMigration):
 
     models = {
         u'alert_center.clearalarms': {
-            'Meta': {'object_name': 'ClearAlarms', 'db_table': "'clear_alarms'", 'managed': 'False'},
+            'Meta': {'object_name': 'ClearAlarms'},
             'component_name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'description': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
             'device_model': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
@@ -98,7 +98,7 @@ class Migration(SchemaMigration):
             'uptime': ('django.db.models.fields.CharField', [], {'max_length': '20'})
         },
         u'alert_center.currentalarms': {
-            'Meta': {'object_name': 'CurrentAlarms', 'db_table': "'current_alarms'", 'managed': 'False'},
+            'Meta': {'object_name': 'CurrentAlarms'},
             'component_name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'description': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
             'device_model': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
@@ -116,7 +116,7 @@ class Migration(SchemaMigration):
             'uptime': ('django.db.models.fields.CharField', [], {'max_length': '20'})
         },
         u'alert_center.historyalarms': {
-            'Meta': {'object_name': 'HistoryAlarms', 'db_table': "'history_alarms'", 'managed': 'False'},
+            'Meta': {'object_name': 'HistoryAlarms'},
             'component_name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'description': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
             'device_model': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
