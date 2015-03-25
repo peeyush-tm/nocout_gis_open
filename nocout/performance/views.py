@@ -13,7 +13,8 @@ from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from device.models import Device, City, State, DeviceType, DeviceTechnology
+from device.models import Device, City, State, DeviceType, DeviceTechnology, DevicePort
+from service.models import ServiceDataSource
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 
 from performance.models import PerformanceService, PerformanceNetwork, \
@@ -468,11 +469,6 @@ class LivePerformanceListing(BaseDatatableView):
     def paging(self, qs):
         """ Paging
         """
-        print "*****************************"
-        print "*****************************"
-        print "*****************************"
-        print "*****************************"
-        print "***************************** self.max_display_length - ", self.max_display_length
         limit = min(int(self.request.REQUEST.get('iDisplayLength', 10)), self.max_display_length)
         # if pagination is disabled ("bPaginate": false)
         if limit == -1:
@@ -955,6 +951,566 @@ class Fetch_Inventory_Devices(View):
         return result
 
 
+def get_device_status_headers(page_type='network', type_of_device=None, technology=None):
+    """
+    This function returns device status headers as per given
+    technology & type_of_device(sub_station, sector, backhaul, other)
+    """
+    headers_list = []
+
+    if type_of_device in ['sector']:
+        headers_list = [
+            'BS Name',
+            'Technology',
+            'Type',
+            'City',
+            'State',
+            'IP Address',
+            'Planned Frequency',
+            'Frequency'
+        ]
+
+        if technology in ['P2P', 'PTP', 'ptp', 'p2p']:
+            headers_list.append('Customer Name')
+            # For PTP near end devices add QOS BW column
+            if page_type == 'customer':
+                headers_list.append("QOS(BW)")
+        elif technology.lower() in ['wimax']:
+            headers_list.append('Sector ID')
+            headers_list.append('PMP Port')
+        else:
+            headers_list.append('Sector ID')
+
+    elif type_of_device in ['sub_station']:
+
+        headers_list = [
+            'BS Name',
+            'SS Name',
+            'Circuit ID',
+            'Customer Name',
+            'Technology',
+            'Type',
+            'City',
+            'State',
+            'Near End IP',
+            'IP Address',
+            'MAC Address',
+            'QOS(BW)',
+            'Frequency'
+        ]
+
+    elif type_of_device in ['backhaul', 'other']:
+
+        headers_list = [
+            'Backhaul IP',
+            'Technology',
+            'Type',
+            'BS Name',
+            'BH Port',
+            'BH Capacity',
+            'City',
+            'State'
+        ]
+
+        if type_of_device in ['other']:
+            headers_list.append('Aggregation Sw/Con')
+            headers_list.append('POP Sw/Con')
+            headers_list.append('PE IP')
+            headers_list.append('BH Connectivity')
+
+    return headers_list
+
+def get_sector_device_status_data(page_type='network', device=None, technology=None, type=None):
+    """
+    This function returns sector device status data as per given params
+    """
+    sector_device_status_data = []
+
+    # If device id or technology not exists then return blank list
+    if not device or not technology or not type:
+        return sector_device_status_data
+
+    # Fetch Sector Info
+    sector_objects = Sector.objects.select_related(
+        'base_station__id',
+        'base_station__alias',
+        'base_station__city',
+        'base_station__city__city_name',
+        'base_station__state',
+        'base_station__state__state_name',
+        'frequency__value'
+    ).filter(
+        sector_configured_on=device.id
+    )
+
+    # Device Type URL
+    device_type_url = reverse(
+        'wizard-device-type-update',
+        kwargs={'pk': type.id},
+        current_app='device'
+    ) if type else ""
+
+    # Device Technology URL
+    device_tech_url = reverse(
+        'device_technology_edit',
+        kwargs={'pk': technology.id},
+        current_app='device'
+    ) if technology else ""
+
+    device_url = reverse(
+        'device_edit',
+        kwargs={'pk': device.id},
+        current_app='device'
+    ) if device else ""
+
+    for sector in sector_objects:
+
+        # Fetch BS name, city & state
+        base_station_alias = sector.base_station.alias.upper() if sector.base_station else "N/A"
+        bs_name_url = reverse(
+            'base_station_edit',
+            kwargs={'pk': sector.base_station.id},
+            current_app='inventory'
+        ) if sector.base_station.alias else ""
+
+        # Get city of base station
+        city_name = sector.base_station.city.city_name if sector.base_station.city else "N/A"
+        city_url = reverse(
+            'city_edit',
+            kwargs={'pk': sector.base_station.city.id},
+            current_app='device'
+        ) if sector.base_station.city else ""
+        
+        # Get state of base station
+        state_name = sector.base_station.state.state_name if sector.base_station.state else "N/A"
+        state_url = reverse(
+            'state_edit',
+            kwargs={'pk': sector.base_station.state.id},
+            current_app='device'
+        ) if sector.base_station.state else ""
+
+        if sector:
+
+            planned_frequency = sector.planned_frequency if sector.planned_frequency else "N/A"
+            
+            frequency = sector.frequency.value if sector.frequency else "N/A"
+            frequency_url = reverse(
+                'device_frequency_edit',
+                kwargs={'pk': sector.frequency.id},
+                current_app='device'
+            ) if sector.frequency else ""
+
+            if technology.name.lower() in ['ptp', 'p2p']:
+                try:
+                    circuits = sector.circuit_set.get()
+                    customer_name = circuits.customer.alias
+                    customer_name_url = reverse('customer_edit', kwargs={'pk': circuits.customer.id}, current_app='inventory')
+                except Exception as no_circuit:
+                    # log.exception(no_circuit)
+                    customer_name = "N/A"
+                    customer_name_url = ""
+            else:
+                sector_id = sector.sector_id
+                sector_id_url = reverse(
+                    'sector_edit',
+                    kwargs={'pk' : sector.id},
+                    current_app='inventory'
+                )
+
+                if technology.name.lower() in ['wimax']:
+                    try:
+                        pmp_port = sector.sector_configured_on_port.alias.upper()
+                        pmp_port_url = reverse(
+                            'device_edit',
+                            kwargs={'pk': sector.dr_configured_on.id},
+                            current_app='device'
+                        )
+                    except Exception as no_port:
+                        # log.exception(no_port)
+                        pmp_port = "N/A"
+                        pmp_port_url = ""
+
+                    try:
+                        dr_ip = sector.dr_configured_on.ip_address
+                        dr_ip_url = reverse(
+                            'device_edit',
+                            kwargs={'pk': sector.dr_configured_on.id},
+                            current_app='device'
+                        )
+                    except Exception as no_dr:
+                        # log.exception(no_dr.message)
+                        dr_ip = None
+                        dr_ip_url = ""
+
+
+        if technology.name.lower() in ['ptp', 'p2p']:
+
+            table_values = [
+                {"val" : base_station_alias,"url" : bs_name_url},
+                {"val" : technology.alias,"url" : device_tech_url},
+                {"val" : type.alias,"url" : device_type_url},
+                {"val" : city_name,"url" : city_url},
+                {"val" : state_name,"url" : state_url},
+                {"val" : device.ip_address,"url" : device_url},
+                {"val" : planned_frequency,"url" : ""},
+                {"val" : frequency,"url" : frequency_url},
+                {"val" : customer_name,"url" : customer_name_url}
+            ]
+
+
+            if page_type == 'customer':
+                # Get QOS BW from circuit 
+                qos_bw = ""
+                qos_bw_url = ""
+                if circuits:
+                    qos_bw = circuits.qos_bandwidth
+                    qos_bw_url = reverse(
+                        'circuit_edit',
+                        kwargs={'pk' : circuits.id},
+                        current_app='inventory'
+                    )
+
+                table_values.append({"val" : qos_bw,"url" : qos_bw_url})
+
+            sector_device_status_data.append(table_values)
+
+        elif technology.name.lower() in ['wimax']:
+            # table_values = []
+            table_values = [
+                {"val" : base_station_alias,"url" : bs_name_url},
+                {"val" : technology.alias,"url" : device_tech_url},
+                {"val" : type.alias,"url" : device_type_url},
+                {"val" : city_name,"url" : city_url},
+                {"val" : state_name,"url" : state_url},
+                {"val" : device.ip_address,"url" : device_url},
+                {"val" : planned_frequency,"url" : ""},
+                {"val" : frequency,"url" : frequency_url},
+                {"val" : sector_id,"url" : sector_id_url},
+                {"val" : pmp_port,"url" : pmp_port_url}
+            ]
+
+            sector_device_status_data.append(table_values)
+
+            if dr_ip:
+                dr_ip += " (DR) "
+
+                table_values = [
+                    {"val" : base_station_alias,"url" : bs_name_url},
+                    {"val" : technology.alias,"url" : device_tech_url},
+                    {"val" : type.alias,"url" : device_type_url},
+                    {"val" : city_name,"url" : city_url},
+                    {"val" : state_name,"url" : state_url},
+                    {"val" : dr_ip,"url" : dr_ip_url},
+                    {"val" : planned_frequency,"url" : ""},
+                    {"val" : frequency,"url" : frequency_url},
+                    {"val" : sector_id,"url" : sector_id_url},
+                    {"val" : pmp_port,"url" : pmp_port_url}
+                ]
+
+                sector_device_status_data.append(table_values)
+
+        else:
+            table_values = [
+                {"val" : base_station_alias,"url" : bs_name_url},
+                {"val" : technology.alias,"url" : device_tech_url},
+                {"val" : type.alias,"url" : device_type_url},
+                {"val" : city_name,"url" : city_url},
+                {"val" : state_name,"url" : state_url},
+                {"val" : device.ip_address,"url" : device_url},
+                {"val" : planned_frequency,"url" : ""},
+                {"val" : frequency,"url" : frequency_url},
+                {"val" : sector_id,"url" : sector_id_url}
+            ]
+            
+            sector_device_status_data.append(table_values)
+
+    return sector_device_status_data
+
+
+def get_sub_station_status_data(device=None, technology=None, type=None):
+    """
+    This function returns SS device status data as per given params
+    """
+    ss_device_status_data = []
+
+    # If device id or technology not exists then return blank list
+    if not device or not technology or not type:
+        return ss_device_status_data
+
+
+    substation_objects = device.substation_set.filter()
+
+    if not len(substation_objects):
+        return ss_device_status_data
+
+    # Device Type URL
+    device_type_url = reverse(
+        'wizard-device-type-update',
+        kwargs={'pk': type.id},
+        current_app='device'
+    ) if type else ""
+
+    # Device Technology URL
+    device_tech_url = reverse(
+        'device_technology_edit',
+        kwargs={'pk': technology.id},
+        current_app='device'
+    ) if technology else ""
+
+    device_url = reverse(
+        'device_edit',
+        kwargs={'pk': device.id},
+        current_app='device'
+    ) if device else ""
+    
+    # Machine name on which device is alloted
+    machine_name = device.machine.name if(device.machine and device.machine.name) else ""
+    
+    # Device name
+    device_name = device.device_name if device else ""
+
+    # Service & DS Name as per technology
+    service_name = ''
+    ds_name = ''
+    if technology.name in ['PMP']:
+        service_name = 'cambium_qos_invent'
+        ds_name = 'bw_dl_sus_rate'
+    elif technology.name in ['WiMAX']:
+        service_name = 'wimax_qos_invent'
+        ds_name = 'dl_qos'
+
+    ss_qos_bw = "N/A"
+
+    substation = substation_objects[0]
+    customer_name = "N/A"
+
+    if substation.circuit_set.exists():
+        customer_id = Circuit.objects.filter(sub_station_id=substation.id).values('customer_id')
+        customer_name = Customer.objects.filter(id=customer_id[0]["customer_id"])
+        circuit = substation.circuit_set.get()
+
+        sector = circuit.sector
+        base_station = 'N/A'
+        near_end_ip = 'N/A'
+        near_end_ip_url = ''
+        frequency_url = ''
+
+        if sector:
+            base_station = sector.base_station
+            
+            near_end_ip = sector.sector_configured_on.ip_address
+            near_end_ip_url = reverse('device_edit', kwargs={'pk': sector.sector_configured_on.id}, current_app='device')
+            
+            planned_frequency = sector.planned_frequency if sector.planned_frequency else "N/A"
+
+            frequency = sector.frequency.value if sector.frequency else "N/A"
+            frequency_url = reverse(
+                'device_frequency_edit',
+                kwargs={'pk': sector.frequency.id},
+                current_app='device'
+            ) if sector.frequency else ""
+
+        #Device Technology
+        ss_type = type.alias if type else "N/A"
+        ss_type_url = device_type_url
+
+        # Handling for city name
+        try:
+            city_name = base_station.city.city_name
+            city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
+        except Exception, e:
+            city_name = 'N/A'
+            city_url = ''
+
+        # Handling for state name
+        try:
+            state_name = base_station.state.state_name
+            state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
+        except Exception, e:
+            state_name = 'N/A'
+            state_url = ''
+
+        display_mac_address = device.mac_address.upper() if device.mac_address else "N/A"
+
+        display_bs_name = "N/A"
+        display_bs_url = ""
+        base_station_url = ''
+        if base_station and base_station != 'N/A':
+            display_bs_name = base_station.alias
+            base_station_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
+
+        # Condition to show Customer name as BS Name in case of backhaul
+        if circuit.circuit_type:
+            if circuit.circuit_type.lower().strip() in ['bh', 'backhaul']:
+                display_bs_name = customer_name[0].alias
+                display_bs_url = reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')
+            else:
+                display_bs_name = base_station.alias
+                display_bs_url = base_station_url
+
+        if display_bs_name:
+            display_bs_name = display_bs_name.upper()
+
+        # QOS BW will fetch from circuit in case of PTP else from polled params
+        ss_qos_bw_url = ''
+        if technology.name in ['PTP','P2P']:
+            ss_qos_bw = circuit.qos_bandwidth if(circuit and circuit.qos_bandwidth) else "N/A"
+            ss_qos_bw_url = reverse(
+                'circuit_edit',
+                kwargs={'pk' : circuit.id},
+                current_app='inventory'
+            )
+        # Fetch QOS BW(Polled) in case of PMP & WiMAX SS
+        elif technology.name in ['PMP','WiMAX']:
+            ss_qos_bw = "N/A"
+            if device_name and machine_name and service_name and ds_name:
+                invent_status_obj = InventoryStatus.objects.filter(
+                    device_name=device_name,
+                    service_name=service_name,
+                    data_source=ds_name
+                ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+
+                if invent_status_obj:
+                    ss_qos_bw = invent_status_obj.current_value
+
+        table_values = [
+            {"val" : display_bs_name,"url" : base_station_url},
+            {"val" : substation.alias,"url" : reverse('sub_station_edit', kwargs={'pk': substation.id}, current_app='inventory')},
+            {"val" : circuit.circuit_id,"url" : reverse('circuit_edit', kwargs={'pk': circuit.id}, current_app='inventory')},
+            {"val" : customer_name[0].alias,"url" : reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')},
+            {"val" : technology.alias,"url" : device_tech_url},
+            {"val" : ss_type,"url" : ss_type_url},
+            {"val" : city_name,"url" : city_url},
+            {"val" : state_name,"url" : state_url},
+            {"val" : near_end_ip,"url" : near_end_ip_url},
+            {"val" : device.ip_address,"url" : device_url},
+            {"val" : display_mac_address,"url" : device_url if device.mac_address else ""},
+            {"val" : ss_qos_bw,"url" : ss_qos_bw_url},
+            {"val" : frequency,"url" : frequency_url}
+        ]
+        
+        ss_device_status_data.append(table_values)
+
+    return ss_device_status_data
+
+def get_backhaul_status_data(device=None, technology=None, type=None, type_of_device='backhaul'):
+    """
+    This function returns Backhaul device status data which are connected 
+    to atleast one BS as per given params
+    """
+    bh_device_status_data = []
+
+    # If device id or technology not exists then return blank list
+    if not device or not technology or not type:
+        return bh_device_status_data
+
+    # Device Type URL
+    device_type_url = reverse(
+        'wizard-device-type-update',
+        kwargs={'pk': type.id},
+        current_app='device'
+    ) if type else ""
+
+    # Device Technology URL
+    device_tech_url = reverse(
+        'device_technology_edit',
+        kwargs={'pk': technology.id},
+        current_app='device'
+    ) if technology else ""
+
+    device_url = reverse(
+        'device_edit',
+        kwargs={'pk': device.id},
+        current_app='device'
+    ) if device else ""
+
+    if type_of_device == 'backhaul':
+        backhaul_object = Backhaul.objects.select_related(
+            'aggregator__ip_address',
+            'pop__ip_address',
+            'bh_configured_on__ip_address'
+        ).filter(bh_configured_on=device.id)
+    else:
+        backhaul_object = Backhaul.objects.select_related(
+            'aggregator__ip_address',
+            'pop__ip_address',
+            'bh_configured_on__ip_address'
+        ).filter(
+            Q(aggregator=device.id) | Q(pop=device.id) | Q(bh_switch=device.id)
+        )
+
+    bs_object = BaseStation.objects.filter(backhaul=backhaul_object[0].id)
+    # bh_ip_address = device.ip_address if device else ""
+    bh_ip_address = backhaul_object[0].bh_configured_on.ip_address if backhaul_object[0].bh_configured_on else ""
+    bh_technology = technology.name if technology else "N/A"
+    bh_type = type.name if type else "N/A"
+
+    device_info_columns = [
+        {"val" : bh_ip_address,"url" : device_url},
+        {"val" : bh_technology,"url" : device_tech_url},
+        {"val" : bh_type,"url" : device_type_url}
+    ]
+
+    if not device.backhaul.exists():
+
+        backhaul_edit_url = reverse('backhaul_edit', kwargs={'pk': backhaul_object[0].id}, current_app='inventory')
+        aggregator_ip = backhaul_object[0].aggregator.ip_address if backhaul_object[0].aggregator else "N/A"
+        pop_ip = backhaul_object[0].pop.ip_address if backhaul_object[0].pop else "N/A"
+        pe_ip = backhaul_object[0].pe_ip if backhaul_object[0].pe_ip else "N/A"
+        bh_connectivity = backhaul_object[0].bh_connectivity if backhaul_object[0].bh_connectivity else "N/A"
+
+        bh_other_specific_columns = [
+            {"val" : aggregator_ip,"url" : backhaul_edit_url if aggregator_ip != 'N/A' else ""},
+            {"val" : pop_ip,"url" : backhaul_edit_url if pop_ip != 'N/A' else ""},
+            {"val" : pe_ip,"url" : backhaul_edit_url if pe_ip != 'N/A' else ""},
+            {"val" : bh_connectivity,"url" : backhaul_edit_url if bh_connectivity != 'N/A' else ""}
+        ]
+
+    if bs_object and len(bs_object):
+        for bs_instance in bs_object:
+            if bs_instance:
+                # BS Name & Url
+                bs_name = bs_instance.alias if(bs_instance and bs_instance.alias) else "N/A"
+                bs_url = reverse('base_station_edit', kwargs={'pk': bs_instance.id}, current_app='inventory')
+
+                # BH Port
+                bh_port = bs_instance.bh_port if(bs_instance and bs_instance.bh_port) else "N/A"
+                bh_capacity = bs_instance.bh_capacity if(bs_instance and bs_instance.bh_capacity) else "N/A"
+
+                # Handling for city name
+                try:
+                    city_name = bs_instance.city.city_name if bs_instance.city else "N/A"
+                    city_url = reverse('city_edit', kwargs={'pk': bs_instance.city.id}, current_app='device')
+                except Exception, e:
+                    city_name = 'N/A'
+                    city_url = ''
+
+                # Handling for state name
+                try:
+                    state_name = bs_instance.state.state_name if bs_instance.state else "N/A"
+                    state_url = reverse('state_edit', kwargs={'pk': bs_instance.state.id}, current_app='device')
+                except Exception, e:
+                    state_name = 'N/A'
+                    state_url = ''
+
+                bs_bh_specific_columns = [
+                    {"val" : bs_name,"url" : bs_url},
+                    {"val" : bh_port,"url" : ""},
+                    {"val" : bh_capacity,"url" : ""},
+                    {"val" : city_name,"url" : city_url},
+                    {"val" : state_name,"url" : state_url}
+                ]
+
+                table_values = device_info_columns + bs_bh_specific_columns
+
+                if not device.backhaul.exists():
+                    table_values = table_values + bh_other_specific_columns
+
+                bh_device_status_data.append(table_values)
+
+    return bh_device_status_data
+
+
 class Inventory_Device_Status(View):
     """
     Class Based Generic view to return a Single Device Status
@@ -971,559 +1527,52 @@ class Inventory_Device_Status(View):
             'message': 'Inventory Device Status Not Fetched Successfully.',
             'data': {
                 'meta': {},
-                'objects': {}
+                'objects': {
+                    "headers" : list(),
+                    "values" : list()
+                }
             }
         }
-        result['data']['objects']['values'] = list()
 
-        customer_name = ''
-        customer_name_url = ''
-
+        # Get Device Object
         device = Device.objects.get(id=device_id)
+        # Get Device Technogy Object
         technology = DeviceTechnology.objects.get(id=device.device_technology)
+        # Get Device Type Object
         type = DeviceType.objects.get(id=device.device_type)
 
         if device.sector_configured_on.exists():
-            if technology.name in ['P2P', 'PTP', 'ptp', 'p2p']:
-                result['data']['objects']['headers'] = ['BS Name',
-                                                        'Customer Name',
-                                                        'Technology',
-                                                        'Type',
-                                                        'City',
-                                                        'State',
-                                                        'IP Address',
-                                                        # 'MAC Address',
-                                                        'Planned Frequency',
-                                                        'Frequency'
-                ]
-            elif technology.name.lower() in ['wimax']:
-                result['data']['objects']['headers'] = ['BS Name',
-                                                        'Sector ID',
-                                                        'PMP Port',
-                                                        'Technology',
-                                                        'Type',
-                                                        'City',
-                                                        'State',
-                                                        'IP Address',
-                                                        # 'MAC Address',
-                                                        'Planned Frequency',
-                                                        'Frequency'
-                ]
-            else:
-                result['data']['objects']['headers'] = ['BS Name',
-                                                        'Sector ID',
-                                                        'Technology',
-                                                        'Type',
-                                                        'City',
-                                                        'State',
-                                                        'IP Address',
-                                                        # 'MAC Address',
-                                                        'Planned Frequency',
-                                                        'Frequency'
-                ]
-            result['data']['objects']['values'] = []
-            sector_objects = Sector.objects.filter(sector_configured_on=device.id)
+            # Fetch the headers for 'sector'
+            result['data']['objects']['headers'] = get_device_status_headers(page_type, 'sector',technology.name)
 
-            for sector in sector_objects:
-
-                sector_id = 'N/A'
-                sector_id_url = ''
-
-                pmp_port = 'N/A'
-                pmp_port_url = ''
-                
-                dr_ip = None
-                dr_ip_url = ''
-
-                base_station = 'N/A'
-                
-                frequency = 'N/A'
-                frequency_url = ''
-
-                planned_frequency = 'N/A'
-                planned_frequency_url = ''
-
-                if sector:
-                    base_station = sector.base_station
-                    
-                    planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
-                    planned_frequency = ",".join(planned_frequency)
-                    
-                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
-                    frequency = ",".join(frequency)
-                    if technology.name.lower() in ['ptp', 'p2p']:
-                        try:
-                            circuits = sector.circuit_set.get()
-                            customer_name = circuits.customer.alias
-                            customer_name_url = reverse('customer_edit', kwargs={'pk': circuits.customer.id}, current_app='inventory')
-                        except Exception as no_circuit:
-                            log.exception(no_circuit)
-
-                    else:
-                        sector_id = sector.sector_id
-                        sector_id_url = reverse('sector_edit', kwargs={'pk' : sector.id}, current_app='inventory')
-                        if technology.name.lower() in ['wimax']:
-                            try:
-                                pmp_port = sector.sector_configured_on_port.alias
-                                pmp_port_url = reverse('device_edit', kwargs={'pk': sector.dr_configured_on.id}, current_app='device')
-                                pmp_port = pmp_port.upper()
-                            except Exception as no_port:
-                                log.exception(no_port)
-                            try:
-                                dr_ip = sector.dr_configured_on.ip_address
-                                dr_ip_url = reverse('device_edit', kwargs={'pk': sector.dr_configured_on.id}, current_app='device')
-                            except Exception as no_dr:
-                                dr_ip = None
-                                log.exception(no_dr.message)
-                
-                display_bs_name = 'N/A'
-                bs_name_url = ''
-                
-                city_name = 'N/A'
-                city_url = ''
-                
-                state_name = 'N/A'
-                state_url = ''
-
-                table_values = list()
-                
-                if base_station and base_station != 'N/A':
-
-                    # If no city is present then exception raise
-                    try:
-                        city_name = base_station.city.city_name
-                        city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
-                    except Exception, e:
-                        city_name = "N/A"
-                        city_url = ""
-                    
-                    # If no state is present then exception raise
-                    try:
-                        state_name = base_station.state.state_name if base_station.state else "N/A"
-                        state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
-                    except Exception, e:
-                        state_name = "N/A"
-                        state_url = ""
-
-                    display_bs_name = base_station.alias
-
-                    if display_bs_name:
-                        display_bs_name = display_bs_name.upper()
-                        bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
-
-                if technology.name.lower() in ['ptp', 'p2p']:
-
-                    table_values = [
-                        {
-                            "val" : display_bs_name,
-                            "url" : bs_name_url
-                        },
-                        {
-                            "val" : customer_name,
-                            "url" : customer_name_url
-                        },
-                        {
-                            "val" : technology.alias,
-                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                        },
-                        {
-                            "val" : type.alias,
-                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                        },
-                        {
-                            "val" : city_name,
-                            "url" : city_url
-                        },
-                        {
-                            "val" : state_name,
-                            "url" : state_url
-                        },
-                        {
-                            "val" : device.ip_address,
-                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
-                        },
-                        {
-                            "val" : planned_frequency,
-                            "url" : planned_frequency_url
-                        },
-                        {
-                            "val" : frequency,
-                            "url" : frequency_url
-                        }
-                    ]
-
-                    result['data']['objects']['values'].append(table_values)
-
-                elif technology.name.lower() in ['wimax']:
-                    # table_values = []
-                    table_values = [
-                        {
-                            "val" : display_bs_name,
-                            "url" : bs_name_url
-                        },
-                        {
-                            "val" : sector_id,
-                            "url" : sector_id_url
-                        },
-                        {
-                            "val" : pmp_port,
-                            "url" : pmp_port_url
-                        },
-                        {
-                            "val" : technology.alias,
-                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                        },
-                        {
-                            "val" : type.alias,
-                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                        },
-                        {
-                            "val" : city_name,
-                            "url" : city_url
-                        },
-                        {
-                            "val" : state_name,
-                            "url" : state_url
-                        },
-                        {
-                            "val" : device.ip_address,
-                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
-                        },
-                        {
-                            "val" : planned_frequency,
-                            "url" : planned_frequency_url
-                        },
-                        {
-                            "val" : frequency,
-                            "url" : frequency_url
-                        }
-                    ]
-
-                    result['data']['objects']['values'].append(table_values)
-
-                    if dr_ip:
-                        dr_ip += " (DR) "
-
-                        table_values = [
-                            {
-                                "val" : display_bs_name,
-                                "url" : bs_name_url
-                            },
-                            {
-                                "val" : sector_id,
-                                "url" : sector_id_url
-                            },
-                            {
-                                "val" : pmp_port,
-                                "url" : pmp_port_url
-                            },
-                            {
-                                "val" : technology.alias,
-                                "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                            },
-                            {
-                                "val" : type.alias,
-                                "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                            },
-                            {
-                                "val" : city_name,
-                                "url" : city_url
-                            },
-                            {
-                                "val" : state_name,
-                                "url" : state_url
-                            },
-                            {
-                                "val" : dr_ip,
-                                "url" : dr_ip_url
-                            },
-                            {
-                                "val" : planned_frequency,
-                                "url" : planned_frequency_url
-                            },
-                            {
-                                "val" : frequency,
-                                "url" : frequency_url
-                            }
-                        ]
-
-                        result['data']['objects']['values'].append(table_values)
-
-                else:
-                    table_values = [
-                        {
-                            "val" : display_bs_name,
-                            "url" : bs_name_url
-                        },
-                        {
-                            "val" : sector_id,
-                            "url" : sector_id_url
-                        },
-                        {
-                            "val" : technology.alias,
-                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                        },
-                        {
-                            "val" : type.alias,
-                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                        },
-                        {
-                            "val" : city_name,
-                            "url" : city_url
-                        },
-                        {
-                            "val" : state_name,
-                            "url" : state_url
-                        },
-                        {
-                            "val" : device.ip_address,
-                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
-                        },
-                        {
-                            "val" : planned_frequency,
-                            "url" : planned_frequency_url
-                        },
-                        {
-                            "val" : frequency,
-                            "url" : frequency_url
-                        }
-                    ]
-                    
-                    result['data']['objects']['values'].append(table_values)
+            # Fetch the data for 'sector'
+            result['data']['objects']['values'] = get_sector_device_status_data(page_type, device, technology, type)
 
         elif device.substation_set.exists():
-            result['data']['objects']['headers'] = ['BS Name',
-                                                    'SS Name',
-                                                    'Circuit ID',
-                                                    'Customer Name',
-                                                    'Technology',
-                                                    'Type',
-                                                    'City',
-                                                    'State',
-                                                    'Near End IP',
-                                                    'IP Address',
-                                                    'MAC Address',
-                                                    'Frequency'
-            ]
 
+            # Fetch the headers for 'sector'
+            result['data']['objects']['headers'] = get_device_status_headers(page_type, 'sub_station',"all")
+            
+            # Fetch the data for 'Sub Station'
+            result['data']['objects']['values'] = get_sub_station_status_data(device, technology, type)
 
-            result['data']['objects']['values'] = []
-            substation_objects = device.substation_set.filter()
-            if len(substation_objects):
-                substation = substation_objects[0]
-                customer_name = "N/A"
-                if substation.circuit_set.exists():
-                    customer_id = Circuit.objects.filter(sub_station_id=substation.id).values('customer_id')
-                    customer_name = Customer.objects.filter(id=customer_id[0]["customer_id"])
-                    circuit = substation.circuit_set.get()
-
-                    sector = circuit.sector
-                    base_station = 'N/A'
-                    planned_frequency = 'N/A'
-                    near_end_ip = 'N/A'
-                    near_end_ip_url = ''
-                    frequency = 'N/A'
-                    frequency_url = ''
-
-                    if sector:
-                        base_station = sector.base_station
-                        near_end_ip = sector.sector_configured_on.ip_address
-                        near_end_ip_url = reverse('device_edit', kwargs={'pk': sector.sector_configured_on.id}, current_app='device')
-                        planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
-                        frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
-                        planned_frequency = ",".join(planned_frequency)
-                        frequency = ",".join(frequency)
-                        # frequency_url = sector.frequency.id
-
-                    #Device Technology
-                    ss_type = ""
-                    ss_type_url = ""
-                    try:
-                        ss_type = type.alias
-                        ss_type_url = reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
-                    except Exception, e:
-                        ss_type = 'N/A'
-                        ss_type_url = ""
-
-                    # Handling for city name
-                    city_name = 'N/A'
-                    city_url = ''
-                    try:
-                        city_name = base_station.city.city_name if base_station.city else "N/A"
-                        city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
-                    except Exception, e:
-                        city_name = 'N/A'
-                        city_url = ''
-
-                    # Handling for state name
-                    state_name = 'N/A'
-                    state_url = ''
-                    try:
-                        state_name = base_station.state.state_name if base_station.state else "N/A"
-                        state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
-                    except Exception, e:
-                        state_name = 'N/A'
-                        state_url = ''
-
-                    display_mac_address = device.mac_address
-                    if display_mac_address:
-                        display_mac_address = display_mac_address.upper()
-
-                    display_bs_name = "N/A"
-                    display_bs_url = ""
-
-                    if base_station and base_station != 'N/A':
-                        display_bs_name = base_station.alias
-                        display_bs_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
-
-                    # Condition to show Customer name as BS Name in case of backhaul
-                    if circuit.circuit_type:
-                        if circuit.circuit_type.lower().strip() in ['bh', 'backhaul']:
-                            display_bs_name = customer_name[0].alias
-                            display_bs_url = reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')
-                        else:
-                            display_bs_name = base_station.alias
-                            display_bs_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
-
-                    if display_bs_name:
-                        display_bs_name = display_bs_name.upper()
-
-                    table_values = [
-                        {
-                            "val" : display_bs_name,
-                            "url" : display_bs_url
-                        },
-                        {
-                            "val" : substation.alias,
-                            "url" : reverse('sub_station_edit', kwargs={'pk': substation.id}, current_app='inventory')
-                        },
-                        {
-                            "val" : circuit.circuit_id,
-                            "url" : reverse('circuit_edit', kwargs={'pk': circuit.id}, current_app='inventory')
-                        },
-                        {
-                            "val" : customer_name[0].alias,
-                            "url" : reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')
-                        },
-                        {
-                            "val" : technology.alias,
-                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
-                        },
-                        {
-                            "val" : ss_type,
-                            "url" : ss_type_url
-                        },
-                        {
-                            "val" : city_name,
-                            "url" : city_url
-                        },
-                        {
-                            "val" : state_name,
-                            "url" : state_url
-                        },
-                        {
-                            "val" : near_end_ip,
-                            "url" : near_end_ip_url
-                        },
-                        {
-                            "val" : device.ip_address,
-                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
-                        },
-                        {
-                            "val" : display_mac_address,
-                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
-                        },
-                        {
-                            "val" : frequency,
-                            "url" : frequency_url
-                        }
-                    ]
-                    
-                    result['data']['objects']['values'].append(table_values)
+                
         # Case of backhaul
         elif device.backhaul.exists():
-            result['data']['objects']['headers'] = [
-                'BS Name',
-                'Backhaul IP',
-                'BH Port',
-                'BH Capacity',
-                'Technology',
-                'Type',
-                'City',
-                'State'
-            ]
 
-            result['data']['objects']['values'] = []
+            type_of_device = "backhaul"
 
-            device_edit_url = ""
-            if device and device.id:
-                device_edit_url = reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+            result['data']['objects']['headers'] = get_device_status_headers(page_type, type_of_device,"")
 
-            try:
-                bh_technology = technology.name
-                bh_technology_url = reverse('device_technology_edit', kwargs={'pk': device.device_technology}, current_app='device')
-                
-                bh_type = type.name
-                bh_type_url = reverse('device_type_edit', kwargs={'pk': device.device_type}, current_app='device')
-            except Exception, e:
-                bh_technology = "N/A"
-                bh_technology_url = ""
+            result['data']['objects']['values'] = get_backhaul_status_data(device, technology, type, type_of_device)
 
-                bh_type = "N/A"
-                bh_type_url = ""
+        elif device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
 
-            backhaul_objects = Backhaul.objects.filter(bh_configured_on=device.id)
-            
-            bh_id = backhaul_objects[0].id
-            bh_ip_address = device.ip_address
+            type_of_device = "other"
 
-            bs_object = BaseStation.objects.filter(backhaul=bh_id)
-            
-            for bs_instance in bs_object:
+            result['data']['objects']['headers'] = get_device_status_headers(page_type, type_of_device,"")
+            result['data']['objects']['values'] = get_backhaul_status_data(device, technology, type, type_of_device)
 
-                if bs_instance:
-                    # BS Name & Url
-                    bs_name = bs_instance.alias if(bs_instance and bs_instance.alias) else "N/A"
-                    bs_url = reverse('base_station_edit', kwargs={'pk': bs_instance.id}, current_app='inventory')
-
-                    # BH Port
-                    bh_port = bs_instance.bh_port if(bs_instance and bs_instance.bh_port) else "N/A"
-                    bh_capacity = bs_instance.bh_capacity if(bs_instance and bs_instance.bh_capacity) else "N/A"
-
-                    # Handling for city name
-                    try:
-                        city_name = bs_instance.city.city_name if bs_instance.city else "N/A"
-                        city_url = reverse('city_edit', kwargs={'pk': bs_instance.city.id}, current_app='device')
-                    except Exception, e:
-                        city_name = 'N/A'
-                        city_url = ''
-
-                    # Handling for state name
-                    try:
-                        state_name = bs_instance.state.state_name if bs_instance.state else "N/A"
-                        state_url = reverse('state_edit', kwargs={'pk': bs_instance.state.id}, current_app='device')
-                    except Exception, e:
-                        state_name = 'N/A'
-                        state_url = ''
-
-                    table_values = []
-
-                    table_values = [
-                        {"val" : bs_name,"url" : bs_url},
-                        {"val" : bh_ip_address,"url" : device_edit_url},
-                        {"val" : bh_port,"url" : ""},
-                        {"val" : bh_capacity,"url" : ""},
-                        {"val" : bh_technology,"url" : bh_technology_url},
-                        {"val" : bh_type,"url" : bh_type_url},
-                        {"val" : city_name,"url" : city_url},
-                        {"val" : state_name,"url" : state_url}
-                    ]
-
-                    result['data']['objects']['values'].append(table_values)
-
-                print bs_instance.city.city_name
-                print bh_ip_address
-            
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
@@ -1589,22 +1638,6 @@ class Inventory_Device_Service_Data_Source(View):
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
 
-        #if there is no service present in the configuration (BULK SYNC)
-        # inventory_device_service_name = device_type.service.filter().values_list('name', 'service_data_sources__name')
-
-        #
-        # #Fetch the Service names that are configured w.r.t to a device.
-        # inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
-        #     device_name= device.device_name)\
-        #     .values_list('service_name', 'data_source')
-
-        # configured_services = DeviceServiceConfiguration.objects.filter(
-        #     device_name=device.device_name) \
-        #     .values_list('service_name', 'data_source')
-        #
-        # if len(configured_services):
-        #     inventory_device_service_name = configured_services
-
         # TODO:to remove this code as the services are getting multi added with their port.
         # inventory_device_service_name = list(set(inventory_device_service_name))
 
@@ -1636,12 +1669,37 @@ class Inventory_Device_Service_Data_Source(View):
                 'service_type_tab': 'network_perf_tab'
             })
 
+        is_bh = False
+        excluded_bh_data_sources = []
+        if device.backhaul.exists():
+            # if the backhaul exists, that means we need to check for the PORT
+            # if there is a port
+            try:
+                those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+
+                bh_data_sources = ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
+                ).values_list('name', flat=True)
+
+                excluded_bh_data_sources = ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter().values_list('name', flat=True)
+                ).exclude(
+                    name__in=bh_data_sources).values_list('name', flat=True)
+
+                is_bh = True
+            except Exception as e:
+                log.exception('{0} {1}', filter(type(e), e.message))
+                is_bh = False
+
         device_type_services = device_type.service.filter().prefetch_related('servicespecificdatasource_set')
 
         for service in device_type_services:
             service_name = service.name.strip().lower()
-            service_data_sources = service.service_data_sources.filter()
-            for service_data_source in service_data_sources:
+            desired_sds = service.service_data_sources.filter()
+            if is_bh:
+                desired_sds = service.service_data_sources.exclude(name__in=excluded_bh_data_sources).filter()
+
+            for service_data_source in desired_sds:
                 sds_name = service_data_source.name.strip().lower()
 
                 if service_data_source.show_performance_center:
@@ -1668,7 +1726,6 @@ class Inventory_Device_Service_Data_Source(View):
                     continue
                 else:
                     result['data']['objects']['service_perf_tab']["info"].append(sds_info)
-
 
         result['data']['objects']['availability_tab']["info"].append(
             {
