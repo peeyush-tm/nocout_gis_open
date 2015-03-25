@@ -678,121 +678,35 @@ class MainDashboard(View):
 
         # City Charter tables Columns list
 
-        common_headers = [
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+        city_charter_headers = [
             {'mData': 'city_name', 'sTitle': 'City', 'sWidth': 'auto'},
-            {'mData': 'state_name', 'sTitle': 'State', 'sWidth': 'auto'},
-            {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto'},
-            {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto'},
-            {'mData': 'packetDrop', 'sTitle': 'PD', 'sWidth': 'auto'},
-            {'mData': 'Latencydrop', 'sTitle': 'RTA', 'sWidth': 'auto'},
-            {'mData': 'device_state', 'sTitle': 'Device State', 'sWidth': 'auto'},
-            {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
-            {'mData': 'ul', 'sTitle': 'UL', 'sWidth': 'auto'},
-            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto'},
-            {'mData': 'pd', 'sTitle': 'Packet Drop', 'sWidth': 'auto'}
+            {'mData': 'p2p_los', 'sTitle': 'LOS PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_na', 'sTitle': 'NA PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_rogue_ss', 'sTitle': 'Rogue SS PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_pd', 'sTitle': 'PD PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_latancy', 'sTitle': 'Latency PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_normal', 'sTitle': 'Normal PTP', 'sWidth': 'auto'},
+            {'mData': 'pmp_los', 'sTitle': 'LOS PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_na', 'sTitle': 'NA PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_rogue_ss', 'sTitle': 'Rogue SS PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_ul', 'sTitle': 'UL PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_pd', 'sTitle': 'PD PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_latancy', 'sTitle': 'Latency PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_normal', 'sTitle': 'Normal PMP', 'sWidth': 'auto'},
+            {'mData': 'wimax_los', 'sTitle': 'LOS WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_na', 'sTitle': 'NA WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_rogue_ss', 'sTitle': 'Rogue SS WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_ul', 'sTitle': 'UL WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_pd', 'sTitle': 'PD WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_latancy', 'sTitle': 'Latency WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'},
         ]
-
-        common_few_headers = [
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
-            {'mData': 'city_name', 'sTitle': 'City', 'sWidth': 'auto'},
-            {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto'},
-        ]
-
-        sectors_common_headers = [
-            {'mData': 'vendor', 'sTitle': 'Vendor', 'sWidth': 'auto'},
-            {'mData': 'ss_device_technology_name', 'sTitle': 'SS Technology', 'sWidth': 'auto'},
-            {'mData': 'device_ss_ip_address', 'sTitle': 'SS IP', 'sWidth': 'auto'},
-            {'mData': 'device_ss_mac_address', 'sTitle': 'SS MAC', 'sWidth': 'auto'},
-            {'mData': 'sector_device_ip_address', 'sTitle': 'Near End IP', 'sWidth': 'auto'},
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto'},
-            {'mData': 'dl_rssi_during_aceptance', 'sTitle': 'DL RSSI Acceptance', 'sWidth': 'auto'},
-            {'mData': 'intrf', 'sTitle': 'INTRF', 'sWidth': 'auto'},
-        ]
-
-        wimax_specific_headers = [
-            {'mData': 'seg_wimax', 'sTitle': 'Seg WiMAX', 'sWidth': 'auto'},
-            {'mData': 'pmp', 'sTitle': 'PMP Port', 'sWidth': 'auto'},
-            {'mData': 'ul_cinr', 'sTitle': 'UL CINR', 'sWidth': 'auto'},
-            {'mData': 'dl_cinr', 'sTitle': 'DL CINR', 'sWidth': 'auto'},
-            {'mData': 'ptx', 'sTitle': 'PTX', 'sWidth': 'auto'}
-        ]
-
-        wimax_specific_few_headers = [
-            {'mData': 'seg_wimax', 'sTitle': 'Seg WiMAX', 'sWidth': 'auto'}
-        ]
-
-        pmp_specific_headers = [
-            {'mData': 'seg_pmp', 'sTitle': 'Seg PMP', 'sWidth': 'auto'},
-            {'mData': 'ul_jitter', 'sTitle': 'UL Jitter', 'sWidth': 'auto'},
-            {'mData': 'dl_jitter', 'sTitle': 'DL Jitter', 'sWidth': 'auto'},
-            {'mData': 'rereg_count', 'sTitle': 'Rereg Count', 'sWidth': 'auto'},
-            {'mData': 'reg_count', 'sTitle': 'Reg Count', 'sWidth': 'auto'},
-        ]
-
-        pmp_specific_few_headers = [
-            {'mData': 'seg_pmp', 'sTitle': 'Seg PMP', 'sWidth': 'auto'}
-        ]
-
-        ptp_specific_headers = [
-            {'mData': 'seg_p2p', 'sTitle': 'Seg P2P', 'sWidth': 'auto'},
-            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto'},
-            {'mData': 'far_ip', 'sTitle': 'Farend IP', 'sWidth': 'auto'},
-            {'mData': 'near_ip', 'sTitle': 'Nearend IP', 'sWidth': 'auto'},
-            {'mData': 'circuit_type', 'sTitle': 'Circuit Type', 'sWidth': 'auto'},
-            {'mData': 'far_device_ss_mac_address', 'sTitle': 'Farend MAC', 'sWidth': 'auto'},
-            {'mData': 'near_sector_device_mac_address', 'sTitle': 'Nearend MAC', 'sWidth': 'auto'},
-            {'mData': 'rssi_during_aceptance', 'sTitle': 'RSSI During Acceptance', 'sWidth': 'auto'},
-            {'mData': 'uas', 'sTitle': 'UAS', 'sWidth': 'auto'}
-        ]
-
-        ptp_specific_few_headers = [
-            {'mData': 'seg_p2p', 'sTitle': 'Seg P2P', 'sWidth': 'auto'}
-        ]
-
-        # P2P Table All Columns
-        ptp_charter_all_headers = []
-        ptp_charter_all_headers += common_headers
-        ptp_charter_all_headers += ptp_specific_headers
-
-        # P2P Table Few Columns
-        ptp_charter_few_headers = []
-        ptp_charter_few_headers += common_few_headers
-        ptp_charter_few_headers += ptp_specific_few_headers
-
-        # PMP Table All Columns
-        pmp_charter_all_headers = []
-        pmp_charter_all_headers += common_headers
-        pmp_charter_all_headers += sectors_common_headers
-        pmp_charter_all_headers += pmp_specific_headers
-
-        # PMP Table Few Columns
-        pmp_charter_few_headers = []
-        pmp_charter_few_headers += common_few_headers
-        pmp_charter_few_headers += pmp_specific_few_headers
-
-        # WiMAX Table All Columns
-        wimax_charter_all_headers = []
-        wimax_charter_all_headers += common_headers
-        wimax_charter_all_headers += sectors_common_headers
-        wimax_charter_all_headers += wimax_specific_headers
-
-        # WiMAX Table Few Columns
-        wimax_charter_few_headers = []
-        wimax_charter_few_headers += common_few_headers
-        wimax_charter_few_headers += wimax_specific_few_headers
-
 
         context = {
             "isOther": 0,
             "page_title": "Main Dashboard",
             "debug" : 0,
-            "ptp_charter_few_headers" : json.dumps(ptp_charter_few_headers),
-            "pmp_charter_few_headers" : json.dumps(pmp_charter_few_headers),
-            "wimax_charter_few_headers" : json.dumps(wimax_charter_few_headers),
-            "ptp_charter_all_headers" : json.dumps(ptp_charter_all_headers),
-            "pmp_charter_all_headers" : json.dumps(pmp_charter_all_headers),
-            "wimax_charter_all_headers" : json.dumps(wimax_charter_all_headers),
+            "city_charter_headers" : json.dumps(city_charter_headers),
             "process_count" : PERIODIC_POLL_PROCESS_COUNT
         }
 
