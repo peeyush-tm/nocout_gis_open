@@ -74,11 +74,14 @@
                             <li><a class="" href="/alert_center/detail/customer_detail/"><span class="sub-menu-text">Customer Details</span></a></li>
                         </ul>
                     </li>
+                    {% if settings.SIA_ENABLED %}
                     <li>
                         <a href="/alarms/sia/">
                             <span class="sub-menu-text">SIA</span>
                         </a>
                     </li>
+                    {% endif %}
+
                 </ul>
             </li>
             <li class="has-sub">

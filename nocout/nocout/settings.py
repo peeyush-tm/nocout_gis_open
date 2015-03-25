@@ -121,6 +121,7 @@ TEMPLATE_LOADERS = (
 TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
     'nocout.context_processors_profile.user_profile_atts.user_dept_org',
+    'django_settings_export.settings_export',  # 25th March
 )
 
 MIDDLEWARE_CLASSES = (
@@ -171,6 +172,7 @@ INSTALLED_APPS = (
     'session_security',
     'south',
     'nocout.signals',  # Load before nocout apps
+    'nocout',  # 25th March 2015
     'user_profile',
     'user_group',
     'device',
@@ -740,6 +742,16 @@ PERIODIC_POLL_PROCESS_COUNT = 2
 SIA_ENABLED = False
 TRAPS_DATABASE = 'default'
 # #### Enable Disable Service Impacting Alarms from GUI #### #
+
+# #### Access Variables in Templates
+# Version 1: 25th March 2015
+# Now you can access those exported settings from your templates via settings.<KEY>:
+# https://github.com/jakubroztocil/django-settings-export
+SETTINGS_EXPORT = [
+    'DEBUG',
+    'SIA_ENABLED',
+]
+# #### Access Variables in Templates
 
 try:
     from local_settings import *
