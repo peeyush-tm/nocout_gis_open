@@ -64,4 +64,9 @@ TODO:
 2. Install : simplejson
 3. packages available in `requirements/requirements_user_app/Celery/SIMPLEJSON-March-23-15/`
 
+**New Package : django-settings-export : 25th March**
 
+1. For accessing Settings Variables in TEMPLATES
+2. Install : django-settings-export
+3. Link : https://github.com/jakubroztocil/django-settings-export
+4. Package Available in `requirements/requirements_user_app/Base/TempateSettings-March-25-15`
