@@ -345,7 +345,8 @@ def calculate_timely_sector_capacity(organizations, technology, model, processed
             for item in sectors:
                 # Create the range_counter dictionay containg the model's field name as key
                 # Update the range_counter on the basis of severity.
-                if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                # if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                if item['severity'].strip().lower() in ['warning', 'critical']:
                     range_counter[item['severity'].strip().lower()] += 1
                 elif item['severity'].strip().lower() == 'ok':
                     range_counter['ok'] += 1
@@ -415,7 +416,8 @@ def calculate_timely_backhaul_capacity(organizations, technology, model, process
 
             for item in backhaul:
                 # Update the range_counter on the basis of severity.
-                if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                # if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
+                if item['severity'].strip().lower() in ['warning', 'critical']:
                     range_counter[item['severity'].strip().lower()] += 1
                 elif item['severity'].strip().lower() == 'ok':
                     range_counter['ok'] += 1

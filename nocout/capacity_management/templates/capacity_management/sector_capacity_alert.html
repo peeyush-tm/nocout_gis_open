@@ -94,6 +94,35 @@
             pmp_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=PMP',
             wimax_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=WiMAX';
 
+
+        tables_info = {
+            "all_augment_tab" : {
+                "app_name" : "capacity_management",
+                "table_title" : "Sector Augmentation Alerts - All",
+                "header_class_name" : "SectorAugmentationAlertsHerders",
+                "data_class_name" : "SectorAugmentationAlertsListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'download_excel': 'yes' }"
+            },
+            "pmp_augment_tab" : {
+                "app_name" : "capacity_management",
+                "table_title" : "Sector Augmentation Alerts - PMP",
+                "header_class_name" : "SectorAugmentationAlertsHerders",
+                "data_class_name" : "SectorAugmentationAlertsListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'technology': 'PMP', 'download_excel': 'yes' }"
+            },
+            "wimax_augment_tab" : {
+                "app_name" : "capacity_management",
+                "table_title" : "Sector Augmentation Alerts - WiMAX",
+                "header_class_name" : "SectorAugmentationAlertsHerders",
+                "data_class_name" : "SectorAugmentationAlertsListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'technology': 'WiMAX', 'download_excel': 'yes' }"
+            }
+        };
+
+
         $("#all_augment_tab").attr("data_url", all_ajax_url);
         $("#all_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
 

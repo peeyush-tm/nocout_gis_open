@@ -141,28 +141,13 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
       }
     },
     city_charter_tbl_ids = [
-        "ptp_city_charter_table",
-        "pmp_city_charter_table",
-        "wimax_city_charter_table"
+        "city_charter_table"
     ],
     city_charter_tbl_obj = {
-        "ptp_city_charter_table" : {
+        "city_charter_table" : {
             "few_url" : "",
             "all_url" : "",
-            "few_headers" : [],
-            "all_headers" : []
-        },
-        "pmp_city_charter_table" : {
-            "few_url" : "",
-            "all_url" : "",
-            "few_headers" : [],
-            "all_headers" : []
-        },
-        "wimax_city_charter_table" : {
-            "few_url" : "",
-            "all_url" : "",
-            "few_headers" : [],
-            "all_headers" : []
+            "headers" : []
         }
     },
     all_charts_array = [],
@@ -183,8 +168,8 @@ function initDashboard() {
             initAreaCharts_dashboard(function(response) {
                 // Start Server calling with the created list of charts
                 createChartAPIChunks_dashboard(all_charts_array);
-                initCityChartersDatatables();
                 // Create Dashboard City Charter Tables
+                initCityChartersDatatables();
             });
         });
     });
@@ -274,19 +259,19 @@ function initCityChartersDatatables() {
             
             current_table_obj = city_charter_tbl_obj[table_id];
             ajax_url = city_charter_tbl_obj[table_id]['few_url'];
-            grid_headers = city_charter_tbl_obj[table_id]['few_headers'];
+            grid_headers = city_charter_tbl_obj[table_id]['headers'];
 
             dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, false);
         }
     }
 
     // Remove search & row per pages from city charter tables
-    if($(".dataTables_wrapper .row .col-sm-12 .pull-right").length > 0) {
-        $(".dataTables_wrapper .row .col-sm-12 .pull-right").remove();
-    }
-    if($(".dataTables_wrapper .row .col-sm-12 .pull-left").length > 0) {
-        $(".dataTables_wrapper .row .col-sm-12 .pull-left").remove();
-    }
+    // if($(".dataTables_wrapper .row .col-sm-12 .pull-right").length > 0) {
+    //     $(".dataTables_wrapper .row .col-sm-12 .pull-right").remove();
+    // }
+    // if($(".dataTables_wrapper .row .col-sm-12 .pull-left").length > 0) {
+    //     $(".dataTables_wrapper .row .col-sm-12 .pull-left").remove();
+    // }
 }
 
 /**
@@ -785,7 +770,7 @@ $("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .b
     } else {
         var table_info_obj = city_charter_tbl_obj[main_element_dom_id];
         if(table_info_obj) {
-            table_headers = table_info_obj['all_headers'];
+            table_headers = table_info_obj['headers'];
             table_ajax_url = table_info_obj['all_url'];
             window_title = $(this).attr("title") ? $.trim($(this).attr("title")) : "City Charter Trends";
         }

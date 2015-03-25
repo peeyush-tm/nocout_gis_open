@@ -6,7 +6,7 @@ from django.views.generic import ListView, DetailView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX
+from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon
 from django.db.models import Q
 from django.conf import settings
 from nocout.utils.util import convert_utc_to_local_timezone
@@ -229,131 +229,57 @@ class CityCharterReportListing(BaseDatatableView):
     """
     A generic class based view for City Charter Report datatable rendering.
     """
-    model = CityCharterP2P
+    model = CityCharterCommon
     
     columns = [
-        'circuit_id',
         'city_name',
-        'state_name',
-        'customer_name',
-        'bs_name',
-        'seg_p2p',
-        'far_ip',
-        'near_ip',
-        'circuit_type',
-        'far_device_ss_mac_address',
-        'near_sector_device_mac_address',
-        'rssi_during_aceptance',
-        'uas',
-        'packetDrop',
-        'Latencydrop',
-        'device_state',
-        'current_value',
-        'ul',
-        'latency',
-        'pd'
+        'p2p_los',
+        'p2p_na',
+        'p2p_rogue_ss',
+        'p2p_pd',
+        'p2p_latancy',
+        'p2p_normal',
+        'pmp_los',
+        'pmp_na',
+        'pmp_rogue_ss',
+        'pmp_ul',
+        'pmp_pd',
+        'pmp_latancy',
+        'pmp_normal',
+        'wimax_los',
+        'wimax_na',
+        'wimax_rogue_ss',
+        'wimax_ul',
+        'wimax_pd',
+        'wimax_latancy',
+        'wimax_normal',
     ]
 
     order_columns = columns
     # max limit of records returned
     max_display_length = 100
 
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        return self.model.objects.values(*self.columns)
+
+    def prepare_results(self, qs):
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        return json_data
+
     def get_context_data(self, *args, **kwargs):
 
         request = self.request
 
         self.initialize(*args, **kwargs)
-        # Technology name
-        technology_name = self.kwargs['tech_name'] if 'tech_name' in self.kwargs else 'P2P'
         # Is Data Limited
         is_limited_data_req = self.kwargs['is_data_limited'] if 'is_data_limited' in self.kwargs else 'no'
 
-        if is_limited_data_req.lower() == 'yes':
+        # if is_limited_data_req.lower() == 'yes':
             # max limit of records returned
-            self.max_display_length = 5
-            # Few Columns List
-            self.columns = [
-                'city_name',
-                'bs_name',
-                'circuit_id'
-            ]
-            # Append Column as per the technology
-            if technology_name in ['PMP']:
-                self.columns.append('seg_pmp')
-            elif technology_name in ['WiMAX']:
-                self.columns.append('seg_wimax')
-            else:
-                self.columns.append('seg_p2p')
-
-            self.order_columns = self.columns
-        else:
-            # Columns list as per the technology
-            if technology_name in ['PMP']:
-                self.columns = [
-                    'circuit_id',
-                    'city_name',
-                    'state_name',
-                    'customer_name',
-                    'bs_name',
-                    'vendor',
-                    'ss_device_technology_name',
-                    'device_ss_ip_address',
-                    'device_ss_mac_address',
-                    'sector_device_ip_address',
-                    'sector_id',
-                    'dl_rssi_during_aceptance',
-                    'intrf',
-                    'seg_pmp',
-                    'ul_jitter',
-                    'dl_jitter',
-                    'rereg_count',
-                    'reg_count',
-                    'packetDrop',
-                    'Latencydrop',
-                    'device_state',
-                    'current_value',
-                    'ul',
-                    'latency',
-                    'pd'
-                ]
-            elif technology_name in ['WiMAX']:
-                self.columns = [
-                    'circuit_id',
-                    'city_name',
-                    'state_name',
-                    'customer_name',
-                    'bs_name',
-                    'vendor',
-                    'ss_device_technology_name',
-                    'device_ss_ip_address',
-                    'device_ss_mac_address',
-                    'sector_device_ip_address',
-                    'sector_id',
-                    'dl_rssi_during_aceptance',
-                    'intrf',
-                    'seg_wimax',
-                    'pmp',
-                    'ul_cinr',
-                    'dl_cinr',
-                    'ptx',
-                    'packetDrop',
-                    'Latencydrop',
-                    'device_state',
-                    'current_value',
-                    'ul',
-                    'latency',
-                    'pd'
-                ]
-            else:
-                self.columns = self.columns
-
-            self.order_columns = self.columns
-
-        # Update the current model as per the technology
-        if technology_name in ['PMP']:
-            self.model = CityCharterPMP
-        elif technology_name in ['WiMAX']:
-            self.model = CityCharterWiMAX
+            # self.max_display_length = 5
 
         qs = self.get_initial_queryset()
 

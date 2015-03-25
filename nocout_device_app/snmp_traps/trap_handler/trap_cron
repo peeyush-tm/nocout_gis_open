@@ -1,0 +1,3 @@
+5 * * * * /usr/bin/python /omd/trap_handler/trap_daemon.py foreground > /dev/null 2>&1
+# handle mysql cleanup for snmptt db
+#0 24 * * * /usr/bin/python /omd/trap_handler/trap_clean.py -d snmptt -t snmptt > /dev/null 2>&1
