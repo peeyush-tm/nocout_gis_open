@@ -1624,15 +1624,14 @@ class Inventory_Device_Service_Data_Source(View):
             try:
                 those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
 
-                bh_data_sources = set(ServiceDataSource.objects.filter(
+                bh_data_sources = ServiceDataSource.objects.filter(
                     name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
-                ).values_list('name', flat=True))
+                ).values_list('name', flat=True)
 
-                excluded_bh_data_sources = set(
-                    ServiceDataSource.objects.exclude(
-                        name__in=bh_data_sources
-                    ).values_list('name', flat=True)
-                )
+                excluded_bh_data_sources = ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter().values_list('name', flat=True)
+                ).exclude(
+                    name__in=bh_data_sources).values_list('name', flat=True)
 
                 is_bh = True
             except Exception as e:
