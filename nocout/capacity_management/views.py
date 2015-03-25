@@ -799,6 +799,8 @@ class BackhaulAugmentationAlertsHeaders(ListView):
             {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
