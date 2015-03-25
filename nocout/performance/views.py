@@ -230,7 +230,7 @@ class LivePerformanceListing(BaseDatatableView):
                                                  page_type=page_type,
                                                  required_value_list=required_value_list
         )
-        
+
         return devices
 
     def filter_queryset(self, qs):
@@ -1027,12 +1027,12 @@ class Inventory_Device_Status(View):
 
                 pmp_port = 'N/A'
                 pmp_port_url = ''
-                
+
                 dr_ip = None
                 dr_ip_url = ''
 
                 base_station = 'N/A'
-                
+
                 frequency = 'N/A'
                 frequency_url = ''
 
@@ -1041,10 +1041,10 @@ class Inventory_Device_Status(View):
 
                 if sector:
                     base_station = sector.base_station
-                    
+
                     planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
                     planned_frequency = ",".join(planned_frequency)
-                    
+
                     frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     frequency = ",".join(frequency)
                     if technology.name.lower() in ['ptp', 'p2p']:
@@ -1071,18 +1071,18 @@ class Inventory_Device_Status(View):
                             except Exception as no_dr:
                                 dr_ip = None
                                 log.exception(no_dr.message)
-                
+
                 display_bs_name = 'N/A'
                 bs_name_url = ''
-                
+
                 city_name = 'N/A'
                 city_url = ''
-                
+
                 state_name = 'N/A'
                 state_url = ''
 
                 table_values = list()
-                
+
                 if base_station and base_station != 'N/A':
 
                     # If no city is present then exception raise
@@ -1092,7 +1092,7 @@ class Inventory_Device_Status(View):
                     except Exception, e:
                         city_name = "N/A"
                         city_url = ""
-                    
+
                     # If no state is present then exception raise
                     try:
                         state_name = base_station.state.state_name if base_station.state else "N/A"
@@ -1284,7 +1284,7 @@ class Inventory_Device_Status(View):
                             "url" : frequency_url
                         }
                     ]
-                    
+
                     result['data']['objects']['values'].append(table_values)
 
         elif device.substation_set.exists():
@@ -1434,7 +1434,7 @@ class Inventory_Device_Status(View):
                             "url" : frequency_url
                         }
                     ]
-                    
+
                     result['data']['objects']['values'].append(table_values)
         # Case of backhaul
         elif device.backhaul.exists():
@@ -1458,7 +1458,7 @@ class Inventory_Device_Status(View):
             try:
                 bh_technology = technology.name
                 bh_technology_url = reverse('device_technology_edit', kwargs={'pk': device.device_technology}, current_app='device')
-                
+
                 bh_type = type.name
                 bh_type_url = reverse('device_type_edit', kwargs={'pk': device.device_type}, current_app='device')
             except Exception, e:
@@ -1469,12 +1469,12 @@ class Inventory_Device_Status(View):
                 bh_type_url = ""
 
             backhaul_objects = Backhaul.objects.filter(bh_configured_on=device.id)
-            
+
             bh_id = backhaul_objects[0].id
             bh_ip_address = device.ip_address
 
             bs_object = BaseStation.objects.filter(backhaul=bh_id)
-            
+
             for bs_instance in bs_object:
 
                 if bs_instance:
@@ -1517,9 +1517,9 @@ class Inventory_Device_Status(View):
 
                     result['data']['objects']['values'].append(table_values)
 
-                print bs_instance.city.city_name
-                print bh_ip_address
-            
+                #print bs_instance.city.city_name
+                #print bh_ip_address
+
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
@@ -1628,10 +1628,14 @@ class Inventory_Device_Service_Data_Source(View):
                     name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
                 ).values_list('name', flat=True)
 
-                excluded_bh_data_sources = ServiceDataSource.objects.filter(
+                excluded_bh_data_sources = list(ServiceDataSource.objects.filter(
                     name__in=DevicePort.objects.filter().values_list('name', flat=True)
                 ).exclude(
-                    name__in=bh_data_sources).values_list('name', flat=True)
+                    name__in=bh_data_sources).values_list('name', flat=True))
+
+                excluded_bh_data_sources_status = [str(x)+"_state" for x in excluded_bh_data_sources]
+
+                excluded_bh_data_sources += excluded_bh_data_sources_status
 
                 is_bh = True
             except Exception as e:
