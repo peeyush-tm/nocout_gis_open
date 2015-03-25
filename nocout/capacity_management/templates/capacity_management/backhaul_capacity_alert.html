@@ -60,52 +60,31 @@
         /*Make a instance of ourDataTableWidget class */
         dataTableInstance = new ourDataTableWidget();
         /*Grid headers object*/
-        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-        var ajax_url = '{% url "BackhaulAugmentationAlertsListing" %}';
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+            ajax_url = '{% url "BackhaulAugmentationAlertsListing" %}';
 
-        dataTableInstance.createDataTable("backhaulAlertCapacityList", gridHeadersObj, ajax_url, false);
+        var datatable_param_info = {
+            "table_title" : "Backhaul Augmentation Alerts",
+            "app_name" : "capacity_management",
+            "header_class_name" : "BackhaulAugmentationAlertsHeaders",
+            "data_class_name" : "BackhaulAugmentationAlertsListing",
+            "header_extra_param" : "{'download_excel': 'yes' }",
+            "data_extra_param" : "{'download_excel': 'yes' }"
+        };
+
+        dataTableInstance.createDataTable(
+            "backhaulAlertCapacityList",
+            gridHeadersObj,
+            ajax_url,
+            false,
+            datatable_param_info['table_title'],
+            datatable_param_info['app_name'],
+            datatable_param_info['header_class_name'],
+            datatable_param_info['data_class_name'],
+            datatable_param_info['header_extra_param'],
+            datatable_param_info['data_extra_param']
+        );
     });
-
-    function nw_alert_showFilters() {
-
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        }
-
-        bootbox.dialog({
-            message: "Advance Filters Block",
-            title: '<i class="fa fa-filter">&nbsp;</i> Advance Filters',
-            buttons: {
-                success: {
-                    label: "Search",
-                    className: "btn-success",
-                    callback: function() {
-
-                    }
-                },
-                danger: {
-                    label: "Cancel",
-                    className: "btn-danger",
-                    callback: function() {
-
-                    }
-                }
-            }
-        });
-
-    }
-
-    function nw_alert_removeFilters() {
-
-        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
-
-            $("#removeNwDetailFilterBtn").removeClass("hide");
-        } else {
-
-            $("#removeNwDetailFilterBtn").addClass("hide");
-        }
-    }
 
 </script>
 {% endblock %}

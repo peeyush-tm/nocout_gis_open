@@ -1,5 +1,7 @@
 import datetime
 
+from operator import itemgetter
+
 from django.shortcuts import render_to_response
 
 from django.template import RequestContext
@@ -75,7 +77,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
-
+        
         common_headers = [
             {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -154,7 +156,36 @@ class SectorStatusListing(BaseDatatableView):
         'age'
     ]
 
-    order_columns = columns
+    order_columns = [
+        'id',
+        'sector__sector_id',
+        'severity',
+        'age',
+        'organization__alias',
+        'sector_sector_id',
+        'sector__base_station__alias',
+        'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__device_technology',
+        'sector_capacity',
+        'current_in_per',
+        'current_in_val',
+        'sector_capacity_in',
+        'avg_in_per',
+        'avg_in_val',
+        'peak_in_per',
+        'peak_in_val',
+        'peak_in_timestamp',
+        'current_out_per',
+        'current_out_val',
+        'sector_capacity_out',
+        'avg_out_per',
+        'avg_out_val',
+        'peak_out_per',
+        'peak_out_val',
+        'peak_out_timestamp'
+    ]
 
     related_columns = [
         'sector__base_station',
@@ -240,6 +271,44 @@ class SectorStatusListing(BaseDatatableView):
 
         return json_data
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.order_columns
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
     def get_context_data(self, *args, **kwargs):
         """
         The maine function call to fetch, search, ordering , prepare and display the data on the data table.
@@ -261,6 +330,7 @@ class SectorStatusListing(BaseDatatableView):
 
         # number of records after filtering
         total_display_records = qs.annotate(Count('id')).count()
+
 
         if total_display_records and total_records:
 
@@ -392,7 +462,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             sectors = self.model.objects.filter(
                 Q(organization__in=kwargs['organizations']),
                 Q(severity__in=['warning', 'critical']),
-                Q(age__lte = F('sys_timestamp') - 600)
+                # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
             tech_id = DeviceTechnology.objects.get(name=self.technology).id
@@ -400,7 +470,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 Q(organization__in=kwargs['organizations']),
                 Q(sector__sector_configured_on__device_technology=tech_id),
                 Q(severity__in=['warning', 'critical']),
-                Q(age__lte = F('sys_timestamp') - 600)
+                # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
@@ -800,7 +870,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         backhauls = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
             Q(severity__in=['warning', 'critical']),
-            Q(age__lte=F('sys_timestamp') - 600)
+            # Q(age__lte=F('sys_timestamp') - 600)
         ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return backhauls

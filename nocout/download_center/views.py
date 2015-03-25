@@ -258,6 +258,16 @@ class CityCharterReportListing(BaseDatatableView):
     # max limit of records returned
     max_display_length = 100
 
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        return self.model.objects.values(*self.columns)
+
+    def prepare_results(self, qs):
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        return json_data
+
     def get_context_data(self, *args, **kwargs):
 
         request = self.request
