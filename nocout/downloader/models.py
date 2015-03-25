@@ -23,4 +23,4 @@ class Downloader(models.Model):
         return super(Downloader, self).save(*args, **kwargs)
 
     def __unicode__(self):
-        return self.file_path
+        return self.file_path or u''
