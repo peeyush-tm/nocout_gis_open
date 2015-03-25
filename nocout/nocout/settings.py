@@ -724,16 +724,22 @@ CAPACITY_SPECIFIC_TIME = 0
 
 ####################### Live Polling Configuration #######################
 LIVE_POLLING_CONFIGURATION = {
-    'maps_default' : True,
-    'maps_themetics' : True,
-    'maps_single_service' : True,
-    'performance' : False
+    'maps_default': True,
+    'maps_themetics': True,
+    'maps_single_service': True,
+    'performance': False
 }
 
 ####################### Periodic Polling Parallel Processes Count #######################
 PERIODIC_POLL_PROCESS_COUNT = 2
 
 # Import the local_settings.py file to override global settings
+
+# #### Enable Disable Service Impacting Alarms from GUI #### #
+# Version 1 : 25th March 2015
+SIA_ENABLED = False
+TRAPS_DATABASE = 'default'
+# #### Enable Disable Service Impacting Alarms from GUI #### #
 
 try:
     from local_settings import *
