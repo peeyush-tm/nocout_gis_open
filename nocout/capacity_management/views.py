@@ -834,6 +834,8 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         'basestation__city__city_name',
         'basestation__state__state_name',
         'organization__alias',
+        'current_out_per',
+        'current_in_per',
         'severity',
         'sys_timestamp',
         'age'
