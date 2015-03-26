@@ -115,6 +115,8 @@ def check_wimax_qos_invent(item, _no_params, info):
 		host_name = extract_host_name_from_wimax_topology(ss_mac)
 		if host_name[0][0]:
 			ul_qos,dl_qos =live_query_qos(host_name[0][0],ss_mac,host_name[0][1])
+			ul_qos = float(ul_qos)/(1000.0*1000)
+			dl_qos = float(dl_qos)/(1000.0*1000)
 			if dl_qos and ul_qos:
 				infotext = "dl_qos=%s ul_qos=%s" % (dl_qos,ul_qos)
 				state = 0
