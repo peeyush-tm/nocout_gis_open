@@ -3135,37 +3135,87 @@ class DeviceServiceDetail(View):
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
         isSet = False
-        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
-        if not isSet:
-            end_date = format(datetime.datetime.now(), 'U')
-            start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
-
-        device = Device.objects.get(id=device_id)
-
-        #specially for DR devices
-        technology = DeviceTechnology.objects.get(id=device.device_technology)
-        dr_device = None
-        # if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-        #     dr_devices = device.sector_configured_on.filter()
-        #     for dr_d in dr_devices:
-        #         dr_device = dr_d.dr_configured_on
-        #specially for DR devices
-
-        device_type = DeviceType.objects.get(id=device.device_type)
-        device_type_services = device_type.service.filter(name__icontains=service_name
-        ).prefetch_related('servicespecificdatasource_set')
-
-        services = device_type_services.values('name',
-                                               'alias',
-                                               'servicespecificdatasource__service_data_sources__name',
-                                               'servicespecificdatasource__service_data_sources__alias'
-        )
 
         service_names = list()
         sds_names = list()
         service_data_sources = {}
 
         colors = ['#1BEAFF','#A60CE8']
+
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        if not isSet:
+            end_date = format(datetime.datetime.now(), 'U')
+            start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+
+        device = Device.objects.get(id=device_id)
+        device_type = DeviceType.objects.get(id=device.device_type)
+
+        if device.sector_configured_on.exists():
+            is_sector = True
+            is_bh = False
+        elif device.backhaul.exists():
+            is_sector = False
+            is_bh = True
+        else:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
+        # specially for DR devices
+        technology = DeviceTechnology.objects.get(id=device.device_technology)
+        # if is_sector:
+        dr_device = None
+
+        if is_sector:
+            device_type_services = device_type.service.filter(name__icontains=service_name
+            ).prefetch_related('servicespecificdatasource_set')
+
+            services = device_type_services.values('name',
+                                                   'alias',
+                                                   'servicespecificdatasource__service_data_sources__name',
+                                                   'servicespecificdatasource__service_data_sources__alias'
+            )
+
+        elif is_bh:
+            try:
+                those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+
+                bh_data_sources = ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
+                ).values_list('name', flat=True)
+
+                excluded_bh_data_sources = list(ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter().values_list('name', flat=True)
+                ).exclude(
+                    name__in=bh_data_sources).values_list('name', flat=True))
+
+                excluded_bh_data_sources_status = [str(x)+"_state" for x in excluded_bh_data_sources]
+
+                excluded_bh_data_sources += excluded_bh_data_sources_status
+
+                device_type_services = device_type.service.filter(
+                    name__icontains=service_name,
+                    servicespecificdatasource_set__name__in=bh_data_sources
+                ).prefetch_related('servicespecificdatasource_set')
+
+                services = device_type_services.values('name',
+                                                       'alias',
+                                                       'servicespecificdatasource__service_data_sources__name',
+                                                       'servicespecificdatasource__service_data_sources__alias'
+                )
+
+            except Exception as e:
+                log.exception('{0} {1}', filter(type(e), e.message))
+                is_bh = False
+                device_type_services = device_type.service.filter(
+                    name__icontains=service_name,
+                ).prefetch_related('servicespecificdatasource_set')
+                services = device_type_services.values('name',
+                                                       'alias',
+                                                       'servicespecificdatasource__service_data_sources__name',
+                                                       'servicespecificdatasource__service_data_sources__alias'
+                )
+
+        else:
+            return HttpResponse(json.dumps(result), content_type="application/json")
 
         for s in services:
             service_names.append(s['name'])
@@ -3184,89 +3234,46 @@ class DeviceServiceDetail(View):
                 service_data_sources[temp_s_name, temp_sds_name] = appnd + \
                                                                    service_data_sources[temp_s_name, temp_sds_name]
 
-        if dr_device:
-            performance = PerformanceService.objects.filter(
-                device_name__in=[device.device_name, dr_device.device_name],
-                service_name__in=service_names,
-                data_source__in=sds_names,
-                sys_timestamp__gte=start_date,
-                sys_timestamp__lte=end_date).using(
-                    alias=device.machine.name).order_by('sys_timestamp')
-        else:
-            performance = PerformanceService.objects.filter(
-                device_name=device.device_name,
-                service_name__in=service_names,
-                data_source__in=sds_names,
-                sys_timestamp__gte=start_date,
-                sys_timestamp__lte=end_date).using(
-                    alias=device.machine.name).order_by('sys_timestamp')
+
+
+        performance = PerformanceService.objects.filter(
+            device_name=device.device_name,
+            service_name__in=service_names,
+            data_source__in=sds_names,
+            sys_timestamp__gte=start_date,
+            sys_timestamp__lte=end_date).using(
+                alias=device.machine.name).order_by('sys_timestamp')
 
         chart_data = []
-        #format for chart data
-        # {'name': str("min value").title(),
-        #  'color': '#01CC14',
-        #  'data': [js_time, value],
-        #  'type': 'line',
-        #  'marker': {
-        #      'enabled': False
-        #  }
-        # }
         color = {}
         temp_chart_data = {}
         for data in performance:
             try:
-                append_ip_address = ""
-                if dr_device and dr_device.ip_address == data.ip_address:
-                    append_ip_address += " DR: {0} ".format(data.ip_address)
-                elif dr_device and dr_device.ip_address != data.ip_address:
-                    append_ip_address += " {0} ".format(data.ip_address)
-                else:
-                    append_ip_address = ""
-
-                if dr_device and dr_device.ip_address == data.ip_address:
-                    if (data.ip_address, data.service_name, data.data_source) not in temp_chart_data:
-
-                        temp_chart_data[data.ip_address, data.service_name, data.data_source] = {
-                            'name': service_data_sources[data.service_name, data.data_source] + append_ip_address,
-                            'data': [],
-                            'color': SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['chart_color'],
-                            'type': SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['type']
-                        }
-                    js_time = data.sys_timestamp*1000
-                    value = float(data.current_value)
-                    temp_chart_data[data.ip_address, data.service_name, data.data_source]['data'].append([
-                        js_time, value,
-                    ])
-                else:
-                    if (data.service_name, data.data_source) not in temp_chart_data:
-                        # color[data.service_name, data.data_source] = perf_utils.color_picker()
-                        c = SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['chart_color']
-                        if technology and technology.name.lower() in ['ptp', 'p2p']:
-                            if 'ul' in data.service_name.strip().lower():
-                                c = colors[0]
-                            elif 'dl' in data.service_name.strip().lower():
-                                c = colors[1]
-                            else:
-                                pass
-                        temp_chart_data[data.service_name, data.data_source] = {
-                            'name': service_data_sources[data.service_name, data.data_source],
-                            'data': [],
-                            'color': c,
-                            'type': SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['type']
-                        }
-                    js_time = data.sys_timestamp*1000
-                    value = float(data.current_value)
-                    temp_chart_data[data.service_name, data.data_source]['data'].append([
-                        js_time, value,
-                    ])
+                if (data.service_name, data.data_source) not in temp_chart_data:
+                    # color[data.service_name, data.data_source] = perf_utils.color_picker()
+                    c = SERVICE_DATA_SOURCE[
+                                    data.service_name.strip() + "_" +data.data_source.strip()
+                                ]['chart_color']
+                    if technology and technology.name.lower() in ['ptp', 'p2p']:
+                        if 'ul' in data.service_name.strip().lower():
+                            c = colors[0]
+                        elif 'dl' in data.service_name.strip().lower():
+                            c = colors[1]
+                        else:
+                            pass
+                    temp_chart_data[data.service_name, data.data_source] = {
+                        'name': service_data_sources[data.service_name, data.data_source],
+                        'data': [],
+                        'color': c,
+                        'type': SERVICE_DATA_SOURCE[
+                                    data.service_name.strip() + "_" +data.data_source.strip()
+                                ]['type']
+                    }
+                js_time = data.sys_timestamp*1000
+                value = float(data.current_value)
+                temp_chart_data[data.service_name, data.data_source]['data'].append([
+                    js_time, value,
+                ])
             except Exception as e:
                 log.exception(e.message)
                 continue
