@@ -977,7 +977,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             headers_list.append('Customer Name')
             # For PTP near end devices add QOS BW column
             if page_type == 'customer':
-                headers_list.append("QOS(BW)")
+                headers_list.append("Qos(Mbps)")
         elif technology.lower() in ['wimax']:
             headers_list.append('Sector ID')
             headers_list.append('PMP Port')
@@ -998,28 +998,36 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             'Near End IP',
             'IP Address',
             'MAC Address',
-            'QOS(BW)',
+            'Qos(Mbps)',
             'Frequency'
         ]
 
-    elif type_of_device in ['backhaul', 'other']:
-
+    elif type_of_device in ['backhaul']:
         headers_list = [
-            'Backhaul IP',
+            'IP',
             'Technology',
             'Type',
             'BS Name',
             'BH Port',
-            'BH Capacity',
+            'BH Capacity(mbps)',
             'City',
             'State'
         ]
-
-        if type_of_device in ['other']:
-            headers_list.append('Aggregation Sw/Con')
-            headers_list.append('POP Sw/Con')
-            headers_list.append('PE IP')
-            headers_list.append('BH Connectivity')
+    elif type_of_device in ['other']:
+        headers_list = [
+            'IP',
+            'Technology',
+            'Type',
+            'BS Name',
+            # 'BH Port',
+            # 'BH Capacity(mbps)',
+            'City',
+            'State',
+            # 'Aggregation Sw/Con',
+            # 'POP Sw/Con',
+            # 'PE IP',
+            # 'BH Connectivity'
+        ]
 
     return headers_list
 
@@ -1166,7 +1174,10 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
                 qos_bw = ""
                 qos_bw_url = ""
                 if circuits:
-                    qos_bw = circuits.qos_bandwidth
+                    ptp_qos_val = "N/A"
+                    if circuits.qos_bandwidth:
+                        ptp_qos_val = circuits.qos_bandwidth/1000
+                    qos_bw = ptp_qos_val
                     qos_bw_url = reverse(
                         'circuit_edit',
                         kwargs={'pk' : circuits.id},
@@ -1357,7 +1368,7 @@ def get_sub_station_status_data(device=None, technology=None, type=None):
         # QOS BW will fetch from circuit in case of PTP else from polled params
         ss_qos_bw_url = ''
         if technology.name in ['PTP','P2P']:
-            ss_qos_bw = circuit.qos_bandwidth if(circuit and circuit.qos_bandwidth) else "N/A"
+            ss_qos_bw = circuit.qos_bandwidth/1000 if(circuit and circuit.qos_bandwidth) else "N/A"
             ss_qos_bw_url = reverse(
                 'circuit_edit',
                 kwargs={'pk' : circuit.id},
@@ -1373,8 +1384,8 @@ def get_sub_station_status_data(device=None, technology=None, type=None):
                     data_source=ds_name
                 ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
 
-                if invent_status_obj:
-                    ss_qos_bw = invent_status_obj.current_value
+                if invent_status_obj and invent_status_obj[0].current_value:
+                    ss_qos_bw = invent_status_obj[0].current_value
 
         table_values = [
             {"val" : display_bs_name,"url" : base_station_url},
@@ -1444,8 +1455,8 @@ def get_backhaul_status_data(device=None, technology=None, type=None, type_of_de
         )
 
     bs_object = BaseStation.objects.filter(backhaul=backhaul_object[0].id)
-    # bh_ip_address = device.ip_address if device else ""
-    bh_ip_address = backhaul_object[0].bh_configured_on.ip_address if backhaul_object[0].bh_configured_on else ""
+    bh_ip_address = device.ip_address if device else ""
+    # bh_ip_address = backhaul_object[0].bh_configured_on.ip_address if backhaul_object[0].bh_configured_on else ""
     bh_technology = technology.name if technology else "N/A"
     bh_type = type.name if type else "N/A"
 
@@ -1456,18 +1467,17 @@ def get_backhaul_status_data(device=None, technology=None, type=None, type_of_de
     ]
 
     if not device.backhaul.exists():
-
-        backhaul_edit_url = reverse('backhaul_edit', kwargs={'pk': backhaul_object[0].id}, current_app='inventory')
-        aggregator_ip = backhaul_object[0].aggregator.ip_address if backhaul_object[0].aggregator else "N/A"
-        pop_ip = backhaul_object[0].pop.ip_address if backhaul_object[0].pop else "N/A"
-        pe_ip = backhaul_object[0].pe_ip if backhaul_object[0].pe_ip else "N/A"
-        bh_connectivity = backhaul_object[0].bh_connectivity if backhaul_object[0].bh_connectivity else "N/A"
+        # backhaul_edit_url = reverse('backhaul_edit', kwargs={'pk': backhaul_object[0].id}, current_app='inventory')
+        # aggregator_ip = backhaul_object[0].aggregator.ip_address if backhaul_object[0].aggregator else "N/A"
+        # pop_ip = backhaul_object[0].pop.ip_address if backhaul_object[0].pop else "N/A"
+        # pe_ip = backhaul_object[0].pe_ip if backhaul_object[0].pe_ip else "N/A"
+        # bh_connectivity = backhaul_object[0].bh_connectivity if backhaul_object[0].bh_connectivity else "N/A"
 
         bh_other_specific_columns = [
-            {"val" : aggregator_ip,"url" : backhaul_edit_url if aggregator_ip != 'N/A' else ""},
-            {"val" : pop_ip,"url" : backhaul_edit_url if pop_ip != 'N/A' else ""},
-            {"val" : pe_ip,"url" : backhaul_edit_url if pe_ip != 'N/A' else ""},
-            {"val" : bh_connectivity,"url" : backhaul_edit_url if bh_connectivity != 'N/A' else ""}
+            # {"val" : aggregator_ip,"url" : backhaul_edit_url if aggregator_ip != 'N/A' else ""},
+            # {"val" : pop_ip,"url" : backhaul_edit_url if pop_ip != 'N/A' else ""},
+            # {"val" : pe_ip,"url" : backhaul_edit_url if pe_ip != 'N/A' else ""},
+            # {"val" : bh_connectivity,"url" : backhaul_edit_url if bh_connectivity != 'N/A' else ""}
         ]
 
     if bs_object and len(bs_object):
@@ -1478,7 +1488,7 @@ def get_backhaul_status_data(device=None, technology=None, type=None, type_of_de
                 bs_url = reverse('base_station_edit', kwargs={'pk': bs_instance.id}, current_app='inventory')
 
                 # BH Port
-                bh_port = bs_instance.bh_port if(bs_instance and bs_instance.bh_port) else "N/A"
+                bh_port = bs_instance.bh_port_name if(bs_instance and bs_instance.bh_port_name) else "N/A"
                 bh_capacity = bs_instance.bh_capacity if(bs_instance and bs_instance.bh_capacity) else "N/A"
 
                 # Handling for city name
@@ -1498,12 +1508,16 @@ def get_backhaul_status_data(device=None, technology=None, type=None, type_of_de
                     state_url = ''
 
                 bs_bh_specific_columns = [
-                    {"val" : bs_name,"url" : bs_url},
-                    {"val" : bh_port,"url" : ""},
-                    {"val" : bh_capacity,"url" : ""},
-                    {"val" : city_name,"url" : city_url},
-                    {"val" : state_name,"url" : state_url}
+                    {"val" : bs_name,"url" : bs_url}
                 ]
+
+                if device.backhaul.exists():
+                    bs_bh_specific_columns.append({"val" : bh_port,"url" : ""})
+                    bs_bh_specific_columns.append({"val" : bh_capacity,"url" : ""})
+
+                bs_bh_specific_columns.append({"val" : city_name,"url" : city_url},)
+                bs_bh_specific_columns.append({"val" : state_name,"url" : state_url})
+
 
                 table_values = device_info_columns + bs_bh_specific_columns
 
@@ -1533,7 +1547,8 @@ class Inventory_Device_Status(View):
                 'meta': {},
                 'objects': {
                     "headers" : list(),
-                    "values" : list()
+                    "values" : list(),
+                    "is_others_page" : 0
                 }
             }
         }
@@ -1576,6 +1591,7 @@ class Inventory_Device_Status(View):
 
             result['data']['objects']['headers'] = get_device_status_headers(page_type, type_of_device,"")
             result['data']['objects']['values'] = get_backhaul_status_data(device, technology, type, type_of_device)
+            result['data']['objects']['is_others_page'] = 1
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
@@ -3138,37 +3154,87 @@ class DeviceServiceDetail(View):
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
         isSet = False
-        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
-        if not isSet:
-            end_date = format(datetime.datetime.now(), 'U')
-            start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
-
-        device = Device.objects.get(id=device_id)
-
-        #specially for DR devices
-        technology = DeviceTechnology.objects.get(id=device.device_technology)
-        dr_device = None
-        # if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-        #     dr_devices = device.sector_configured_on.filter()
-        #     for dr_d in dr_devices:
-        #         dr_device = dr_d.dr_configured_on
-        #specially for DR devices
-
-        device_type = DeviceType.objects.get(id=device.device_type)
-        device_type_services = device_type.service.filter(name__icontains=service_name
-        ).prefetch_related('servicespecificdatasource_set')
-
-        services = device_type_services.values('name',
-                                               'alias',
-                                               'servicespecificdatasource__service_data_sources__name',
-                                               'servicespecificdatasource__service_data_sources__alias'
-        )
 
         service_names = list()
         sds_names = list()
         service_data_sources = {}
 
         colors = ['#1BEAFF','#A60CE8']
+
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        if not isSet:
+            end_date = format(datetime.datetime.now(), 'U')
+            start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+
+        device = Device.objects.get(id=device_id)
+        device_type = DeviceType.objects.get(id=device.device_type)
+
+        if device.sector_configured_on.exists():
+            is_sector = True
+            is_bh = False
+        elif device.backhaul.exists():
+            is_sector = False
+            is_bh = True
+        else:
+            return HttpResponse(json.dumps(result), content_type="application/json")
+
+        # specially for DR devices
+        technology = DeviceTechnology.objects.get(id=device.device_technology)
+        # if is_sector:
+        dr_device = None
+
+        if is_sector:
+            device_type_services = device_type.service.filter(name__icontains=service_name
+            ).prefetch_related('servicespecificdatasource_set')
+
+            services = device_type_services.values('name',
+                                                   'alias',
+                                                   'servicespecificdatasource__service_data_sources__name',
+                                                   'servicespecificdatasource__service_data_sources__alias'
+            )
+
+        elif is_bh:
+            try:
+                those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
+
+                bh_data_sources = ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
+                ).values_list('name', flat=True)
+
+                excluded_bh_data_sources = list(ServiceDataSource.objects.filter(
+                    name__in=DevicePort.objects.filter().values_list('name', flat=True)
+                ).exclude(
+                    name__in=bh_data_sources).values_list('name', flat=True))
+
+                excluded_bh_data_sources_status = [str(x)+"_state" for x in excluded_bh_data_sources]
+
+                excluded_bh_data_sources += excluded_bh_data_sources_status
+
+                device_type_services = device_type.service.filter(
+                    name__icontains=service_name,
+                    servicespecificdatasource_set__name__in=bh_data_sources
+                ).prefetch_related('servicespecificdatasource_set')
+
+                services = device_type_services.values('name',
+                                                       'alias',
+                                                       'servicespecificdatasource__service_data_sources__name',
+                                                       'servicespecificdatasource__service_data_sources__alias'
+                )
+
+            except Exception as e:
+                log.exception('{0} {1}', filter(type(e), e.message))
+                is_bh = False
+                device_type_services = device_type.service.filter(
+                    name__icontains=service_name,
+                ).prefetch_related('servicespecificdatasource_set')
+                services = device_type_services.values('name',
+                                                       'alias',
+                                                       'servicespecificdatasource__service_data_sources__name',
+                                                       'servicespecificdatasource__service_data_sources__alias'
+                )
+
+        else:
+            return HttpResponse(json.dumps(result), content_type="application/json")
 
         for s in services:
             service_names.append(s['name'])
@@ -3187,89 +3253,46 @@ class DeviceServiceDetail(View):
                 service_data_sources[temp_s_name, temp_sds_name] = appnd + \
                                                                    service_data_sources[temp_s_name, temp_sds_name]
 
-        if dr_device:
-            performance = PerformanceService.objects.filter(
-                device_name__in=[device.device_name, dr_device.device_name],
-                service_name__in=service_names,
-                data_source__in=sds_names,
-                sys_timestamp__gte=start_date,
-                sys_timestamp__lte=end_date).using(
-                    alias=device.machine.name).order_by('sys_timestamp')
-        else:
-            performance = PerformanceService.objects.filter(
-                device_name=device.device_name,
-                service_name__in=service_names,
-                data_source__in=sds_names,
-                sys_timestamp__gte=start_date,
-                sys_timestamp__lte=end_date).using(
-                    alias=device.machine.name).order_by('sys_timestamp')
+
+
+        performance = PerformanceService.objects.filter(
+            device_name=device.device_name,
+            service_name__in=service_names,
+            data_source__in=sds_names,
+            sys_timestamp__gte=start_date,
+            sys_timestamp__lte=end_date).using(
+                alias=device.machine.name).order_by('sys_timestamp')
 
         chart_data = []
-        #format for chart data
-        # {'name': str("min value").title(),
-        #  'color': '#01CC14',
-        #  'data': [js_time, value],
-        #  'type': 'line',
-        #  'marker': {
-        #      'enabled': False
-        #  }
-        # }
         color = {}
         temp_chart_data = {}
         for data in performance:
             try:
-                append_ip_address = ""
-                if dr_device and dr_device.ip_address == data.ip_address:
-                    append_ip_address += " DR: {0} ".format(data.ip_address)
-                elif dr_device and dr_device.ip_address != data.ip_address:
-                    append_ip_address += " {0} ".format(data.ip_address)
-                else:
-                    append_ip_address = ""
-
-                if dr_device and dr_device.ip_address == data.ip_address:
-                    if (data.ip_address, data.service_name, data.data_source) not in temp_chart_data:
-
-                        temp_chart_data[data.ip_address, data.service_name, data.data_source] = {
-                            'name': service_data_sources[data.service_name, data.data_source] + append_ip_address,
-                            'data': [],
-                            'color': SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['chart_color'],
-                            'type': SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['type']
-                        }
-                    js_time = data.sys_timestamp*1000
-                    value = float(data.current_value)
-                    temp_chart_data[data.ip_address, data.service_name, data.data_source]['data'].append([
-                        js_time, value,
-                    ])
-                else:
-                    if (data.service_name, data.data_source) not in temp_chart_data:
-                        # color[data.service_name, data.data_source] = perf_utils.color_picker()
-                        c = SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['chart_color']
-                        if technology and technology.name.lower() in ['ptp', 'p2p']:
-                            if 'ul' in data.service_name.strip().lower():
-                                c = colors[0]
-                            elif 'dl' in data.service_name.strip().lower():
-                                c = colors[1]
-                            else:
-                                pass
-                        temp_chart_data[data.service_name, data.data_source] = {
-                            'name': service_data_sources[data.service_name, data.data_source],
-                            'data': [],
-                            'color': c,
-                            'type': SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['type']
-                        }
-                    js_time = data.sys_timestamp*1000
-                    value = float(data.current_value)
-                    temp_chart_data[data.service_name, data.data_source]['data'].append([
-                        js_time, value,
-                    ])
+                if (data.service_name, data.data_source) not in temp_chart_data:
+                    # color[data.service_name, data.data_source] = perf_utils.color_picker()
+                    c = SERVICE_DATA_SOURCE[
+                                    data.service_name.strip() + "_" +data.data_source.strip()
+                                ]['chart_color']
+                    if technology and technology.name.lower() in ['ptp', 'p2p']:
+                        if 'ul' in data.service_name.strip().lower():
+                            c = colors[0]
+                        elif 'dl' in data.service_name.strip().lower():
+                            c = colors[1]
+                        else:
+                            pass
+                    temp_chart_data[data.service_name, data.data_source] = {
+                        'name': service_data_sources[data.service_name, data.data_source],
+                        'data': [],
+                        'color': c,
+                        'type': SERVICE_DATA_SOURCE[
+                                    data.service_name.strip() + "_" +data.data_source.strip()
+                                ]['type']
+                    }
+                js_time = data.sys_timestamp*1000
+                value = float(data.current_value)
+                temp_chart_data[data.service_name, data.data_source]['data'].append([
+                    js_time, value,
+                ])
             except Exception as e:
                 log.exception(e.message)
                 continue

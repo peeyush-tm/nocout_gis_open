@@ -287,13 +287,13 @@
 
             if(page_type_val == 'other') {
                 // Hide Utilization & IA Table Tabs for Backhaul Devices
-                if (!$("#utilization_top").hasClass("hide")) {
-                    $("#utilization_top").addClass("hide");
-                }
+                // if (!$("#utilization_top").hasClass("hide")) {
+                //     $("#utilization_top").addClass("hide");
+                // }
 
-                if (!$("#utilization_top_tab").hasClass("hide")) {
-                    $("#utilization_top_tab").addClass("hide");
-                }
+                // if (!$("#utilization_top_tab").hasClass("hide")) {
+                //     $("#utilization_top_tab").addClass("hide");
+                // }
 
                 if (!$("#topology").hasClass("hide")) {
                     $("#topology").addClass("hide");
@@ -305,14 +305,13 @@
 
             } else {
                 // Hide Utilization & RSSI Tabs for all network devices
-                if ($("#utilization_top").hasClass("hide")) {
-                    $("#utilization_top").removeClass("hide");
-                }
+                // if ($("#utilization_top").hasClass("hide")) {
+                //     $("#utilization_top").removeClass("hide");
+                // }
 
-                if ($("#utilization_top_tab").hasClass("hide")) {
-                    $("#utilization_top_tab").removeClass("hide");
-                }
-
+                // if ($("#utilization_top_tab").hasClass("hide")) {
+                //     $("#utilization_top_tab").removeClass("hide");
+                // }
             }
 
             var current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
