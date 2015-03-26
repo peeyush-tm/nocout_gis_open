@@ -882,7 +882,7 @@ class MFRProcesedView(View):
 
         # get the chart_data for the area chart.
         response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
-                                                      'title': 'MFR Processed', 'valuesuffix': 'seconds'})
+                                                      'title': 'MFR Processed', 'valuesuffix': ' Minutes'})
 
         return HttpResponse(response)
 
@@ -1803,11 +1803,9 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
 
             if item['title'] != 'unknown':
                 count_color = getattr(dashboard_settings, '%s_color_hex_value' % item['title'])
-
             else:
                 # Color for Unknown range
                 count_color = '#CED5DB'
-
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",

@@ -519,7 +519,8 @@ function updatePieChart(chartData, domElement, callback) {
                     var point_name = this.point.name ? this.point.name : "",
                         series_name = this.point.series.name ? this.point.series.name : "",
                         percent_val = this.point.percentage ? this.point.percentage : "",
-                        tooltip_html = "";
+                        tooltip_html = "",
+                        val_txt = "Value";
 
                     point_name = point_name.split(":")[0];
 
@@ -527,9 +528,12 @@ function updatePieChart(chartData, domElement, callback) {
                         percent_val = percent_val.toFixed(2);
                     }
 
+                    if((domElement.indexOf("#") > -1 && domElement == '#mfr_cause_code') || (domElement.indexOf("#") == -1 && domElement == 'mfr_cause_code')) {
+                        val_txt = "Outage in Minutes";
+                    }
                     tooltip_html ='<ul>\
                                 <li>'+point_name+'</li><br/>\
-                                <li>Value: <b>'+this.point.y+'</b><br/></li><br/>';
+                                <li>'+val_txt+' : <b>'+this.point.y+'</b><br/></li><br/>';
                     if(percent_val) {
                         tooltip_html += '<li>Percentage: <b>'+percent_val+'%</b><br/></li>';
                     }
