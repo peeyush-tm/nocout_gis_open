@@ -137,9 +137,19 @@ function nocoutPerfLib() {
                     result = response;
                 }
 
-                if (result.success == 1) {
+                if(result.success == 1) {
 
                     device_status = result.data.objects;
+                    // If it is single device page for other devices then hide utilization tab
+                    if(device_status.is_others_page) {
+                        if (!$("#utilization_top").hasClass("hide")) {
+                            $("#utilization_top").addClass("hide");
+                        }
+
+                        if (!$("#utilization_top_tab").hasClass("hide")) {
+                            $("#utilization_top_tab").addClass("hide");
+                        }
+                    }
 
                     if(device_status.headers && device_status.headers.length > 0) {
                         /*Loop for table headers*/

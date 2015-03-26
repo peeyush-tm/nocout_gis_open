@@ -1467,11 +1467,11 @@ def get_backhaul_status_data(device=None, technology=None, type=None, type_of_de
     ]
 
     if not device.backhaul.exists():
-        backhaul_edit_url = reverse('backhaul_edit', kwargs={'pk': backhaul_object[0].id}, current_app='inventory')
-        aggregator_ip = backhaul_object[0].aggregator.ip_address if backhaul_object[0].aggregator else "N/A"
-        pop_ip = backhaul_object[0].pop.ip_address if backhaul_object[0].pop else "N/A"
-        pe_ip = backhaul_object[0].pe_ip if backhaul_object[0].pe_ip else "N/A"
-        bh_connectivity = backhaul_object[0].bh_connectivity if backhaul_object[0].bh_connectivity else "N/A"
+        # backhaul_edit_url = reverse('backhaul_edit', kwargs={'pk': backhaul_object[0].id}, current_app='inventory')
+        # aggregator_ip = backhaul_object[0].aggregator.ip_address if backhaul_object[0].aggregator else "N/A"
+        # pop_ip = backhaul_object[0].pop.ip_address if backhaul_object[0].pop else "N/A"
+        # pe_ip = backhaul_object[0].pe_ip if backhaul_object[0].pe_ip else "N/A"
+        # bh_connectivity = backhaul_object[0].bh_connectivity if backhaul_object[0].bh_connectivity else "N/A"
 
         bh_other_specific_columns = [
             # {"val" : aggregator_ip,"url" : backhaul_edit_url if aggregator_ip != 'N/A' else ""},
@@ -1547,7 +1547,8 @@ class Inventory_Device_Status(View):
                 'meta': {},
                 'objects': {
                     "headers" : list(),
-                    "values" : list()
+                    "values" : list(),
+                    "is_others_page" : 0
                 }
             }
         }
@@ -1590,6 +1591,7 @@ class Inventory_Device_Status(View):
 
             result['data']['objects']['headers'] = get_device_status_headers(page_type, type_of_device,"")
             result['data']['objects']['values'] = get_backhaul_status_data(device, technology, type, type_of_device)
+            result['data']['objects']['is_others_page'] = 1
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
