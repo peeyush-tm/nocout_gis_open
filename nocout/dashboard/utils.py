@@ -23,7 +23,7 @@ def get_unused_dashboards(dashboard_setting_id=None):
     dashboard_settings = DashboardSetting.objects.all()
     if dashboard_setting_id:
 
-        dashboard_settings = ashboard_settings.exclude(id=dashboard_setting_id)
+        dashboard_settings = dashboard_settings.exclude(id=dashboard_setting_id)
 
     technologies = {
         'P2P': 2,
