@@ -85,12 +85,27 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
             'sys_timestamp',
             'check_timestamp'
         ]
-    service_status_data = model.objects.filter(
-        device_name__in=machine_device_list,
-        service_name__icontains = service_name,
-        data_source = data_source#,
-        # severity__in=required_severity
-    ).using(machine).values(*required_values)
+        counter = 1
+        service_status_data = list()
+        total_devices = len(machine_device_list)
+        service_status_data_temp = model.objects.order_by('-sys_timestamp').filter(
+            device_name__in=machine_device_list,
+            service_name__icontains = service_name,
+            data_source = data_source#,
+            # severity__in=required_severity
+        ).using(machine).values(*required_values)
+        while counter <= total_devices:
+            service_status_data.append(service_status_data_temp[counter])
+            counter+=1
+
+    else:
+
+        service_status_data = model.objects.filter(
+            device_name__in=machine_device_list,
+            service_name__icontains = service_name,
+            data_source = data_source#,
+            # severity__in=required_severity
+        ).using(machine).values(*required_values)
 
     if queue:
         try:
