@@ -268,14 +268,14 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                             Q(id__in= ptp_device_circuit_backhaul(specify_type=specify_ptp_bh_type)),
                                             is_added_to_nms=1,
                                             is_deleted=0,
-                                            organization__in= organizations
+                                            organization__in=organizations
                 )
             else:
                 devices = Device.objects.filter(
                                             Q(id__in= ptp_device_circuit_backhaul()),
                                             is_added_to_nms=1,
                                             is_deleted=0,
-                                            organization__in= organizations
+                                            organization__in=organizations
                 )
         else:
             devices = Device.objects.filter(
@@ -284,14 +284,14 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                             sector_configured_on__isnull = False,
                                             sector_configured_on__sector_id__isnull=False, #sector id must be present for PMP and WiMAX
                                             is_deleted=0,
-                                            organization__in= organizations
+                                            organization__in=organizations
             ).annotate(dcount=Count('id'))
 
     return devices
 
 
 # @cache_for(300)
-def organization_backhaul_devices(organizations, technology=None, others=False):
+def organization_backhaul_devices(organizations, technology=None, others=False, other_type="backhaul"):
     """
     To result back the all the network devices from the respective organization..
 
@@ -331,7 +331,8 @@ def organization_backhaul_devices(organizations, technology=None, others=False):
 
 
 @cache_for(300)
-def filter_devices(organizations, data_tab=None, page_type="customer", required_value_list=None, other_bh=False):
+def filter_devices(organizations, data_tab=None, page_type="customer", other_type=None,
+                   required_value_list=None, other_bh=False):
 
     """
 
@@ -345,7 +346,7 @@ def filter_devices(organizations, data_tab=None, page_type="customer", required_
     if not organizations:
         return list()
 
-    organizations = check_item_is_list(organizations)
+    # organizations = check_item_is_list(organizations)  #need to upgrade this function
     device_list = list()
     organization_devices = list()
 
@@ -368,9 +369,14 @@ def filter_devices(organizations, data_tab=None, page_type="customer", required_
         device_list = organization_network_devices(organizations, device_technology_id
         ).values(*device_value_list)
     elif page_type == "other":
-        device_list = organization_backhaul_devices(organizations,
-                                                    technology=None,
-                                                    others=other_bh).values(*device_value_list)
+        if other_type == "backhaul":
+            device_list = organization_backhaul_devices(organizations,
+                                                        technology=None,
+                                                        others=False).values(*device_value_list)
+        else:
+            device_list = organization_backhaul_devices(organizations,
+                                                        technology=None,
+                                                        others=True).values(*device_value_list)
     else:
         device_list = []
     # get the devices in an organisation which are added for monitoring

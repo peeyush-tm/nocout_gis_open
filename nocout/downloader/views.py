@@ -3,7 +3,7 @@ import json
 import time
 import operator
 from django.db.models import Q
-from nocout.settings import MEDIA_URL
+from nocout.settings import MEDIA_URL, MEDIA_ROOT
 from datetime import datetime
 from django.http import HttpResponse
 from django.views.generic.base import View
@@ -102,9 +102,10 @@ class DataTableDownloader(View):
             try:
                 headers_data = eval(self.request.GET.get('headers_data', None))
                 rows_data = eval(self.request.GET.get('rows_data', None))
-                response['message'] = "Start downloading."
+                response['message'] = "Inventory download started. Please check status \
+                <a href='/downloader/' target='_blank'>Here</a>."
                 response['success'] = 1
-                d_obj.status = 1
+                d_obj.status = 0
                 d_obj.description = "Start downloading on {}.".format(fulltime)
             except Exception as e:
                 response['message'] = "Wrong data format."
@@ -465,6 +466,233 @@ class DownloaderListing(BaseDatatableView):
         return ret
 
 
+class DownloaderCompleteHeaders(ListView):
+    """
+        Generating headers for datatables
+    """
+
+    model = Downloader
+    template_name = 'downloader/downloader_complete_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+
+        context = super(DownloaderCompleteHeaders, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'file_path', 'sTitle': 'File', 'sWidth': 'auto'},
+            {'mData': 'file_type', 'sTitle': 'File Type', 'sWidth': 'auto'},
+            {'mData': 'rows_view', 'sTitle': 'Module', 'sWidth': 'auto'},
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto'},
+            {'mData': 'downloaded_by', 'sTitle': 'Downloaded By', 'sWidth': 'auto'},
+            {'mData': 'requested_on', 'sTitle': 'Requested On', 'sWidth': 'auto'},
+            {'mData': 'request_completion_on', 'sTitle': 'Request Completion Date', 'sWidth': 'auto'},
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        return context
+
+
+class DownloaderCompleteListing(BaseDatatableView):
+    """
+    A generic class based view for the reports data table rendering.
+    """
+    model = Downloader
+    columns = ['file_path',
+               'file_type',
+               'rows_view',
+               'status',
+               'description',
+               'downloaded_by',
+               'requested_on',
+               'request_completion_on']
+
+    order_columns = ['file_path',
+                     'file_type',
+                     'rows_view',
+                     'status',
+                     'description',
+                     'downloaded_by',
+                     'requested_on',
+                     'request_completion_on']
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
+
+        # fields list those are excluded from search
+        exclude_columns = ['downloaded_by', 'requested_on', 'request_completion_on']
+
+        # search keyword
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % self.model.__name__
+            for column in self.columns:
+                # avoid search on columns in exclude list
+                if column in exclude_columns:
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").filter(downloaded_by='"+str(self.request.user.username)+"').values(*" + \
+                          str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+        return Downloader.objects.filter(downloaded_by=self.request.user.username).values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            # get downloader object
+            downloader_obj = None
+            try:
+                downloader_obj = Downloader.objects.get(id=dct['id'])
+            except Exception as e:
+                pass
+
+            # modified module name
+            modified_module_name = ""
+
+            if downloader_obj:
+                # get app name
+                app_name = downloader_obj.app_name.replace("_", " ").title().replace(" ", "")
+
+                # module name
+                module_name = dct['rows_view'].replace("Listing", "").replace("Table", "")
+
+                # modified module name
+                modified_module_name = "[{}] : [{}]".format(app_name, module_name)
+
+            # icon for excel file
+            excel_green = static("img/ms-office-icons/excel_2013_green.png")
+
+            # icon for excel file
+            excel_red = static("img/ms-office-icons/excel_2013_red.png")
+
+            # full path of download
+            download_path = ""
+            try:
+                download_path = MEDIA_URL + dct['file_path']
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if dct.get('status') == 0:
+                    dct.update(status='Pending')
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if dct.get('status') == 1:
+                    dct.update(status='Success')
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if dct.get('status') == 2:
+                    dct.update(status='Failed')
+            except Exception as e:
+                logger.info(e.message)
+
+            if modified_module_name:
+                try:
+                    dct['rows_view'] = modified_module_name
+                except Exception as e:
+                    pass
+
+            # 'requested on' field timezone conversion from 'utc' to 'local'
+            try:
+                dct['requested_on'] = convert_utc_to_local_timezone(dct['requested_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            # 'request completion on' field timezone conversion from 'utc' to 'local'
+            try:
+                dct['request_completion_on'] = convert_utc_to_local_timezone(dct['request_completion_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            try:
+                if dct.get('status') == "Success":
+                    dct.update(
+                        file_path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                            download_path, excel_green))
+                else:
+                    dct.update(
+                        file_path='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                            excel_red))
+            except Exception as e:
+                dct.update(
+                    file_path='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                        excel_red))
+                pass
+
+            dct.update(
+                actions='<a href="/downloader/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+
+        """
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+
 class DownloaderDelete(DeleteView):
     """
     Class based View to delete the GISInventoryBulkImport
@@ -476,15 +704,9 @@ class DownloaderDelete(DeleteView):
         # report object
         download_obj = self.get_object()
 
-        # download type
-        download_type = download_obj.rows_view
-
-        # params
-        params = download_obj.rows_data
-
         # remove report file if it exists
         try:
-            os.remove(download_obj.file_path)
+            os.remove(MEDIA_ROOT + download_obj.file_path)
         except Exception as e:
             logger.info(e.message)
 
@@ -492,5 +714,5 @@ class DownloaderDelete(DeleteView):
         download_obj.delete()
 
         # if successfull, return to
-        return HttpResponseRedirect(reverse_lazy('InventoryDownloadCenter', kwargs={'download_type': download_type, 'params': params}))
+        return HttpResponseRedirect('/downloader/')
 
