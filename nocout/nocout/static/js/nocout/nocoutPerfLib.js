@@ -277,7 +277,6 @@ function nocoutPerfLib() {
                             }
 
                             device_services = result.data.objects[device_services_tab[i]].info;
-
                             if(device_services && device_services.length > 0) {
                                 var left_section_class = "col-md-3",
                                     right_section_class = "col-md-9"
@@ -294,7 +293,6 @@ function nocoutPerfLib() {
                                 service_tabs_data += '<div class="tab-content">';
 
                                 var is_first_tab = 0;
-
                                 if (result.data.objects[device_services_tab[i]].isActive == 1) {
                                     is_first_tab = 1;
                                     $("#" + tab_id).parent("li").addClass("active");
@@ -459,8 +457,9 @@ function nocoutPerfLib() {
 
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
+
                     //If parent Tab id is there & parent tab element exist in the dom.
-                    if(parent_tab_id && $('#'+parent_tab_id).length) {
+                    if(parent_tab_id && $('#'+parent_tab_id).length && $('#'+parent_tab_id)[0].className.indexOf('hide') == -1) {
                         $('#'+parent_tab_id).trigger('click');
                     } else {
                         // show loading spinner
