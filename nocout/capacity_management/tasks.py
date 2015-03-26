@@ -1099,6 +1099,8 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 bhs.current_in_val = float(current_in_val) if current_in_val else 0
                 bhs.sys_timestamp = float(sys_timestamp) if sys_timestamp else 0
                 bhs.organization = bs.backhaul.organization if bs.backhaul.organization else 1
+                bhs.current_out_per = float(current_out_per) if current_out_per else 0
+                bhs.current_out_val = float(current_out_val) if current_out_val else 0
                 bhs.severity = severity if severity else 'unknown'
                 bhs.age = float(age) if age else 0
                 if calc_util_last_day():  # values that would be updated once in a day
@@ -1107,8 +1109,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     bhs.peak_in_per = float(peak_in_per) if peak_in_per else 0
                     bhs.peak_in_val = float(peak_in_val) if peak_in_val else 0
                     bhs.peak_in_timestamp = float(peak_in_timestamp) if peak_in_timestamp else 0
-                    bhs.current_out_per = float(current_out_per) if current_out_per else 0
-                    bhs.current_out_val = float(current_out_val) if current_out_val else 0
                     bhs.avg_out_per = float(avg_out_per) if avg_out_per else 0
                     bhs.avg_out_val = float(avg_out_val) if avg_out_val else 0
                     bhs.peak_out_per = float(peak_out_per) if peak_out_per else 0
