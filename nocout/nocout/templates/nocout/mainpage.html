@@ -79,6 +79,8 @@
     {% endblock %}
     <script type="text/javascript">
 
+        var datatables_download_flag = false;
+
         $(document).ready(function() {
 
             var isMenuOpen = +($.cookie("isMenuOpen"));
@@ -140,8 +142,16 @@
 
             session_in_check = setInterval(function(){session_check(do_session_check)}, checkInterval);
             
-            // Global Search Flag
-            var global_search_flag = "{{ global_search_flag }}" ? Number("{{ global_search_flag }}") : 0;
+            // 26th March : Conditional
+            var global_search_flag = false;
+
+            {% if settings.DATATABLES_DOWNLOAD_FLAG %}
+                datatables_download_flag = true;
+            {% endif %}
+
+            {% if settings.GLOBAL_SEARCH_FLAG %}
+                global_search_flag = true;
+            {% endif %}
 
             // Enable/Disable global search as per the flag
             if(!global_search_flag) {

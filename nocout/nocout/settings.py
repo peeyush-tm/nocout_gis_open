@@ -122,7 +122,6 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
     'nocout.context_processors_profile.user_profile_atts.user_dept_org',
     'django_settings_export.settings_export',  # 25th March
-    'nocout.views.get_global_search_flag', #26th March
 )
 
 MIDDLEWARE_CLASSES = (
@@ -744,8 +743,11 @@ LIVE_POLLING_CONFIGURATION = {
 ####################### Periodic Polling Parallel Processes Count #######################
 PERIODIC_POLL_PROCESS_COUNT = 2
 
-####################### NOCOUT GLOBAL SEARCH FLAG #######################
-GLOBAL_SEARCH_FLAG = 1
+####################### Flag to enable/disable global search #######################
+GLOBAL_SEARCH_FLAG = True
+
+####################### Flag to enable/disable datatable download option #######################
+DATATABLES_DOWNLOAD_FLAG = True
 
 # Import the local_settings.py file to override global settings
 
@@ -762,6 +764,8 @@ TRAPS_DATABASE = 'default'
 SETTINGS_EXPORT = [
     'DEBUG',
     'SIA_ENABLED',
+    'GLOBAL_SEARCH_FLAG',
+    'DATATABLES_DOWNLOAD_FLAG'
 ]
 # #### Access Variables in Templates
 
