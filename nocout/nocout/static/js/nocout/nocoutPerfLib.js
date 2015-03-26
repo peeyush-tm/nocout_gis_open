@@ -137,9 +137,19 @@ function nocoutPerfLib() {
                     result = response;
                 }
 
-                if (result.success == 1) {
+                if(result.success == 1) {
 
                     device_status = result.data.objects;
+                    // If it is single device page for other devices then hide utilization tab
+                    if(device_status.is_others_page) {
+                        if (!$("#utilization_top").hasClass("hide")) {
+                            $("#utilization_top").addClass("hide");
+                        }
+
+                        if (!$("#utilization_top_tab").hasClass("hide")) {
+                            $("#utilization_top_tab").addClass("hide");
+                        }
+                    }
 
                     if(device_status.headers && device_status.headers.length > 0) {
                         /*Loop for table headers*/
@@ -448,11 +458,11 @@ function nocoutPerfLib() {
                     perf_that.resetLivePolling("last_updated_"+active_tab_content_dom_id);
 
                     /*Get Last opened tab id from cookie*/
-                    var parent_tab_id = $.cookie('parent_tab_id');
+                    // var parent_tab_id = $.cookie('parent_tab_id');
                     //If parent Tab id is there & parent tab element exist in the dom.
-                    if(parent_tab_id && $('#'+parent_tab_id).length) {
-                        $('#'+parent_tab_id).trigger('click');
-                    } else {
+                    // if(parent_tab_id && $('#'+parent_tab_id).length) {
+                        // $('#'+parent_tab_id).trigger('click');
+                    // } else {
                         // show loading spinner
                         showSpinner();
                         perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
@@ -465,7 +475,7 @@ function nocoutPerfLib() {
                             /*Call getServiceData function to fetch the data for currently active service*/
                             perf_that.getServiceData(active_tab_url, active_tab_id, device_id, data_obj);
                         });
-                    }
+                    // }
                 }
             }
         });
@@ -553,7 +563,7 @@ function nocoutPerfLib() {
         // Decrement the tabs click on evert click counter
         tabs_click_counter--;
 
-        $.cookie('activeTabId', service_id+"_tab", {path: '/', secure: true});
+        // $.cookie('activeTabId', service_id+"_tab", {path: '/', secure: true});
 
         var start_date = "",
             end_date = "",
