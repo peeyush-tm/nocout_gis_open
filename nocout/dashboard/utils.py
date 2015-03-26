@@ -8,6 +8,7 @@ from multiprocessing import Process, Queue
 from django.conf import settings
 from django.db.models import Count
 from datetime import datetime, timedelta
+from django.utils.dateformat import format
 
 from dashboard.models import DashboardSetting
 from dashboard.config import dashboards
@@ -22,7 +23,7 @@ def get_unused_dashboards(dashboard_setting_id=None):
     dashboard_settings = DashboardSetting.objects.all()
     if dashboard_setting_id:
 
-        dashboard_settings = dashboard_settings.exclude(id=dashboard_setting_id)
+        dashboard_settings = ashboard_settings.exclude(id=dashboard_setting_id)
 
     technologies = {
         'P2P': 2,
@@ -99,7 +100,8 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
         # so to calculate this we would require
         now = datetime.now()
         today = datetime(now.year, now.month, now.day, 0, 0)
-        yesterday = today + timedelta(days=-1)
+        yesterday = float(format(today + timedelta(days=-1), 'U'))
+        today = float(format(today, 'U'))
 
         service_status_data = service_status_data.filter(
             sys_timestamp__lte=today,
