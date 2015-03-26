@@ -334,3 +334,11 @@ def reset_cache(request):
 
     cache.clear()
     return HttpResponse(json.dumps({'code': 0, 'message': 'Cache has been cleared.'}), content_type='application/json')
+
+def get_global_search_flag(request):
+    """
+    This function returns search flag used to enable/disable 
+    global search from settings.py
+    """
+
+    return {'global_search_flag': settings.GLOBAL_SEARCH_FLAG}

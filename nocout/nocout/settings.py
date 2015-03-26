@@ -122,6 +122,7 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
     'nocout.context_processors_profile.user_profile_atts.user_dept_org',
     'django_settings_export.settings_export',  # 25th March
+    'nocout.views.get_global_search_flag', #26th March
 )
 
 MIDDLEWARE_CLASSES = (
@@ -742,6 +743,9 @@ LIVE_POLLING_CONFIGURATION = {
 
 ####################### Periodic Polling Parallel Processes Count #######################
 PERIODIC_POLL_PROCESS_COUNT = 2
+
+####################### NOCOUT GLOBAL SEARCH FLAG #######################
+GLOBAL_SEARCH_FLAG = 1
 
 # Import the local_settings.py file to override global settings
 
