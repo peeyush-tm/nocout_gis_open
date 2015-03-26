@@ -743,6 +743,12 @@ LIVE_POLLING_CONFIGURATION = {
 ####################### Periodic Polling Parallel Processes Count #######################
 PERIODIC_POLL_PROCESS_COUNT = 2
 
+####################### Flag to enable/disable global search #######################
+GLOBAL_SEARCH_FLAG = True
+
+####################### Flag to enable/disable datatable download option #######################
+DATATABLES_DOWNLOAD_FLAG = True
+
 # Import the local_settings.py file to override global settings
 
 # #### Enable Disable Service Impacting Alarms from GUI #### #
@@ -758,6 +764,8 @@ TRAPS_DATABASE = 'default'
 SETTINGS_EXPORT = [
     'DEBUG',
     'SIA_ENABLED',
+    'GLOBAL_SEARCH_FLAG',
+    'DATATABLES_DOWNLOAD_FLAG'
 ]
 # #### Access Variables in Templates
 
