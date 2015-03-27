@@ -871,7 +871,7 @@ def calculate_hourly_speedometer_dashboard():
             range9=0,
             range10=0,
             unknown=0,
-            organization=organizations.get(id=timely_range_status['organization'])
+            organization=organizations.get(id=timely_range_status['organization_id'])
         )
         # append in list for every new dashboard_name and device_name.
         hourly_range_status_list.append(hourly_range_status)
@@ -1279,7 +1279,7 @@ def calculate_daily_speedometer_dashboard():
             range9=0,
             range10=0,
             unknown=0,
-            organization=organizations.get(id=hourly_range_status['organization'])
+            organization=organizations.get(id=hourly_range_status['organization_id'])
         )
         daily_range_status_list.append(daily_range_status)
 

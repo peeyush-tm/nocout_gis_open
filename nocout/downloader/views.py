@@ -13,7 +13,6 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
 from django.views.generic import ListView
-from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
 from nocout.utils.util import convert_utc_to_local_timezone
