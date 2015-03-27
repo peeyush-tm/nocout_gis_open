@@ -261,7 +261,7 @@ class SectorStatusListing(BaseDatatableView):
         for item in json_data:
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
-                device_id = int(item['sector__sector_configured_on__id'])
+                device_id = item['sector__sector_configured_on__id']
 
                 item['sector__sector_configured_on__device_technology'] = techno_name
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
@@ -726,7 +726,7 @@ class BackhaulStatusListing(BaseDatatableView):
         for item in json_data:
             try:
                 techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
-                device_id = int(item['backhaul__bh_configured_on__id'])
+                device_id = item['backhaul__bh_configured_on__id']
 
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
                 
