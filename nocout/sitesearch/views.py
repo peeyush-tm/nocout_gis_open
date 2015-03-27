@@ -993,6 +993,10 @@ def prepare_raw_bs_result(bs_result=None,with_data=False):
                 'vendor': None,
                 'city': base_station['BSCITY'],
                 'state': base_station['BSSTATE'],
+                'bh_id' : base_station['BHID'],
+                'bh_device_id' : base_station['BH_DEVICE_ID'],
+                'bh_device_type' : base_station['BHTYPE'],
+                'bh_device_tech' : base_station['BHTECH'],
                 'param': {
                     'base_station': [],
                     'backhual' : []

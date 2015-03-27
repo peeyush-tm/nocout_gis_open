@@ -114,7 +114,8 @@ var main_devices_data_gmaps = [],
     },
     country_label = {
     	"india" : ""
-    };
+    },
+    direct_val_keys = ['pos_link1','pos_link2'];
 
 /* Live Polling Variables */
 var allSSIds = [],
@@ -1945,6 +1946,11 @@ function devicePlottingClass_gmap() {
 				ptLat 		       : 	bs_ss_devices[i].data.lat,
 				ptLon 		       : 	bs_ss_devices[i].data.lon,
 				icon 	  	       : 	bs_marker_icon_obj,
+				bh_id 			   : 	bs_ss_devices[i].data.bh_id,
+				bh_device_id 	   : 	bs_ss_devices[i].data.bh_device_id,
+				bh_device_type 	   : 	bs_ss_devices[i].data.bh_device_type,
+				bh_device_tech 	   : 	bs_ss_devices[i].data.bh_device_tech,
+				pl 				   : 	"",
 				oldIcon 	       : 	bs_marker_icon_obj,
 				clusterIcon 	   : 	bs_marker_icon_obj,
 				pointType	       : 	stationType,
@@ -3162,14 +3168,16 @@ function devicePlottingClass_gmap() {
 			infoTable =  "",
 			perfContent = "",
 			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "",
-			direct_val_keys = ['pos_link1','pos_link2'],
 			device_id = "",
 			device_name = "",
 			marker_key = "",
 			maps_single_service_poll_flag = live_poll_config ? live_poll_config['maps_single_service'] : "",
 			maps_themetics_poll_flag = live_poll_config ? live_poll_config['maps_themetics'] : "",
 			single_service_polling = maps_single_service_poll_flag ? maps_single_service_poll_flag : false,
-			themetics_polling = maps_themetics_poll_flag ? maps_themetics_poll_flag : false;
+			themetics_polling = maps_themetics_poll_flag ? maps_themetics_poll_flag : false,
+			device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "",
+			device_pl = contentObject.pl ? contentObject.pl : "",
+			device_name = contentObject.device_name ? contentObject.device_name : "";
 
 		if(clickedType == 'sector_Marker' || clickedType == 'sector') {
 			device_id = gisPerformanceClass.getKeyValue(contentObject.deviceInfo, 'device_id', true, 0);
@@ -3181,25 +3189,26 @@ function devicePlottingClass_gmap() {
 		} else if(clickedType == 'sub_station') {
 			device_id = contentObject.ss_device_id ? contentObject.ss_device_id : "";
 			marker_key = "ss_"+contentObject.name;
+		} else if(clickedType == 'base_station') {
+			device_id = contentObject.bh_device_id ? contentObject.bh_device_id : "";
+			device_tech = contentObject.bh_device_type ? $.trim(contentObject.bh_device_type).toLowerCase() : "";
+			marker_key = "bs_"+contentObject.name;
 		}
-		
-		var device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "",
-			device_pl = contentObject.pl ? contentObject.pl : "",
-			device_name = contentObject.device_name ? contentObject.device_name : "";
 
 		// Tabs Structure HTML
 		/*Tabbale Start*/
 		infoTable += '<div class="tabbable">';
 		/*Tabs Creation Start*/
-		infoTable += '<ul class="nav nav-tabs">';
-		infoTable += '<li class="active"><a href="#static_block" data-toggle="tab">\
-					  <i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>';
-		infoTable += '<li class=""><a href="#polled_block" data-toggle="tab" id="polled_tab" \
+		infoTable += '<ul class="nav nav-tabs">\
+					  <li class="active"><a href="#static_block" data-toggle="tab">\
+					  <i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>\
+					  <li class=""><a href="#polled_block" data-toggle="tab" id="polled_tab" \
 					  device_id="'+device_id+'" point_type="'+clickedType+'" \
 					  pl_value = "'+device_pl+'" device_tech="'+device_tech+'">\
 					  <i class="fa fa-arrow-circle-o-right"></i> Polled Info \
 					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
 					  </li>';
+
 		if(single_service_polling && (clickedType == 'sector_Marker' || clickedType == 'sub_station')) {
 			infoTable += '<li class=""><a href="#poll_now_block" data-toggle="tab" id="poll_now_tab" \
 						  device_id="'+device_id+'" point_type="'+clickedType+'" \
@@ -3240,7 +3249,6 @@ function devicePlottingClass_gmap() {
 				/*First Tab Content Start*/
 				infoTable += '<div class="tab-pane fade active in" id="near_end_block"><div class="divide-10"></div>';
 
-				infoTable += "<table class='table table-bordered table-hover'><tbody>";
 				var bs_info = [];
 
 				if(lineStartTitle.toLowerCase().indexOf("point") > -1) {
@@ -3248,17 +3256,11 @@ function devicePlottingClass_gmap() {
 				} else {
 					bs_info = contentObject.bs_info ?  rearrangeTooltipArray(bs_toolTip_static,contentObject.bs_info) : [];
 				}
-				/*Loop for BS or Sector info object array*/
-				for(var i=0;i<bs_info.length;i++) {
-					if(bs_info[i].show == 1) {
-						var val = bs_info[i]['value'] || bs_info[i]['value'] == 0 ? bs_info[i]['value'] : "",
-							actual_val = String(val).split("|")[bs_item_index] ? String(val).split("|")[bs_item_index] : "";
-
-						infoTable += "<tr><td>"+bs_info[i].title+"</td><td>"+actual_val+"</td></tr>";
-					}
-				}
-
+				
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
+				infoTable += gmap_self.createTableDataHtml_map(bs_info, bs_item_index, true);
 				infoTable += "</tbody></table>";
+
 				/*BS-Sector Info End*/
 
 				infoTable += '</div>';
@@ -3268,7 +3270,6 @@ function devicePlottingClass_gmap() {
 				infoTable += '<div class="tab-pane fade" id="far_end_block"><div class="divide-10"></div>';
 				/*SS Info Start*/
 				infoTable += "<td>";			
-				infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
 
 
@@ -3293,34 +3294,14 @@ function devicePlottingClass_gmap() {
 					pos2 = "<a href='"+posLink2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a>";
 				}
 
-				/*Loop for ss info object array*/
-				for(var i=0;i<ss_actual_data.length;i++) {
-					if(ss_actual_data[i].name == 'pos_link1') {
-						ss_actual_data[i].value = pos1;
-					}
-
-					if(ss_actual_data[i].name == 'pos_link2') {
-						ss_actual_data[i].value = pos2;
-					}
-					if(ss_actual_data[i].show == 1) {
-						var val = ss_actual_data[i]['value'] || ss_actual_data[i]['value'] == 0 ? ss_actual_data[i]['value'] : "",
-							actual_val = "";
-						
-						if(direct_val_keys.indexOf(ss_actual_data[i].name) > -1) {
-							actual_val = val;
-						} else {
-							actual_val = String(val).split("|")[ss_item_index] ? String(val).split("|")[ss_item_index] : "";
-						}
-
-						infoTable += "<tr><td>"+ss_actual_data[i].title+"</td><td>"+actual_val+"</td></tr>";
-					}
-				}
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
+				infoTable += gmap_self.createTableDataHtml_map(ss_actual_data, ss_item_index, true, pos1, pos2);
+				infoTable += "</tbody></table>";
 
 				var report_download_btn = "";
 				if(path_circuit_id) {
 					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
 				}
-				infoTable += "</tbody></table>";
 				/*SS Info End*/
 				infoTable += '</div>';
 				/*Second Tab Content End*/
@@ -3431,7 +3412,6 @@ function devicePlottingClass_gmap() {
 			/*Static Tab Content Start*/
 			infoTable += '<div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
 
-			infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
 			var circuit_id = "",
 				pos1 = "",
@@ -3445,37 +3425,11 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
-			for(var i=0; i< static_info.length; i++) {
-				var highlight_class = "";
-				// If ptp sector then update lat-lon value by sector lat-lon
-				if(ptp_tech_list.indexOf(sector_tech) > -1) {
-					if(static_info[i]["name"] == 'pos_link1') {
-						static_info[i]["value"] = pos1;
-					}
 
-					if(static_info[i]["name"] == 'pos_link2') {
-						static_info[i]["value"] = pos2;
-					}
-				}
-
-				if(static_info[i]["name"] == 'pmp_port') {
-					highlight_class = "text-warning text-bold"
-				}
-				
-				if(static_info[i].show) {
-					var val = static_info[i]['value'] || static_info[i]['value'] == 0 ? static_info[i]['value'] : "",
-						actual_val = "";
-						
-					if(direct_val_keys.indexOf(static_info[i].name) > -1) {
-						actual_val = val;
-					} else {
-						actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
-					}
-
-					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td class='"+highlight_class+"'>"+actual_val+"</td></tr>";		
-				}
-			}
+			infoTable += "<table class='table table-bordered table-hover'><tbody>";
+			infoTable += gmap_self.createTableDataHtml_map(static_info, item_index, true, pos1, pos2);
 			infoTable += "</tbody></table>";
+
 			/*BS-Sector Info End*/
 
 			infoTable += '</div>';
@@ -3498,22 +3452,9 @@ function devicePlottingClass_gmap() {
 
 				/*Polled Tab Content Start*/
 				infoTable += '<div class="tab-pane fade" id="polled_block"><div class="divide-10"></div>';
-
-				infoTable += "<table class='table table-bordered table-hover'><tbody>";
-
 				/*Poll Parameter Info*/
-				for(var i=0; i< actual_polled_info.length; i++) {
-					var url = "",
-						text_class = "";
-					if(actual_polled_info[i]["show"]) {
-
-						// Url
-						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
-						text_class = "text-primary";
-
-						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
-					}
-				}
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
+				infoTable += gmap_self.createTableDataHtml_map(actual_polled_info, 0, false);
 				infoTable += "</tbody></table>";
 				/*BS-Sector Info End*/
 
@@ -3703,20 +3644,9 @@ function devicePlottingClass_gmap() {
 				/*Polled Tab Content Start*/
 				infoTable += '<div class="tab-pane fade" id="polled_block"><div class="divide-10"></div>';
 
-				infoTable += "<table class='table table-bordered table-hover'><tbody>";
-
 				/*Poll Parameter Info*/
-				for(var i=0; i< actual_polled_info.length; i++) {
-					var url = "",
-						text_class = "";
-					if(actual_polled_info[i]["show"]) {
-						// Url
-						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
-						text_class = "text-primary";
-
-						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
-					}
-				}
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
+				infoTable += gmap_self.createTableDataHtml_map(actual_polled_info, 0, false);
 				infoTable += "</tbody></table>";
 				/*SS Info End*/
 
@@ -3801,8 +3731,9 @@ function devicePlottingClass_gmap() {
 							  <div class='clearfix'></div><div class='pull-right'></div>\
 							  <div class='clearfix'></div></div></div></div>";
 		} else {
-			// If base station then reset tabs html string
-			infoTable = "";
+			
+			/*Tab-content Start*/
+			infoTable += '<div class="tab-content">';
 
 			var startPtInfo = [],
 				item_index = contentObject.item_index > -1 ? contentObject.item_index : 0,
@@ -3814,6 +3745,8 @@ function devicePlottingClass_gmap() {
 				startPtInfo = bs_actual_data;
 			}
 
+			/*Static Tab Content Start*/
+			infoTable += '<div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
 			infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
 			for(var i=0;i<startPtInfo.length;i++) {
@@ -3869,23 +3802,44 @@ function devicePlottingClass_gmap() {
 						infoTable += "<tr><td>"+bh_actual_data[i].title+"</td><td>"+actual_val+"</td></tr>";
 					}
 				}
+			}
 
-				var backend_BH_polled_info = contentObject.bhInfo_polled ? contentObject.bhInfo_polled : [],
-					actual_polled_params = rearrangeTooltipArray(bh_toolTip_polled,backend_BH_polled_info);
+			infoTable += "</tbody></table>";
+			infoTable += '</div>';
+			/*Static Tab Content End*/
 
-				for(var i=0;i<actual_polled_params.length;i++) {
-					var text_class = "",
-						url = "";
-					if(actual_polled_params[i].show == 1) {
-						// Url
-						url = actual_polled_params[i]["url"] ? actual_polled_params[i]["url"] : "";
-						text_class = "text-primary";
-						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_params[i].title+"</td><td>"+actual_polled_params[i].value+"</td></tr>";
-					}
+			/*Polled Tab Content Start*/
+			infoTable += '<div class="tab-pane fade" id="polled_block"><div class="divide-10"></div>';
+
+			infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
+			var backend_BH_polled_info = contentObject.bhInfo_polled ? contentObject.bhInfo_polled : [],
+				actual_polled_params = [];
+
+			if(contentObject.bh_device_type) {
+				var bh_device_type = $.trim(contentObject.bh_device_type).toLowerCase();
+				if(bh_device_type == 'pine') {
+					actual_polled_params = rearrangeTooltipArray(mrotech_bh_toolTip_polled,backend_BH_polled_info);
+				} else if(bh_device_type == 'switch') {
+					actual_polled_params = rearrangeTooltipArray(switch_bh_toolTip_polled,backend_BH_polled_info);
+				} else if(bh_device_type == 'rici') {
+					actual_polled_params = rearrangeTooltipArray(rici_bh_toolTip_polled,backend_BH_polled_info);
+				}
+			}
+
+			for(var i=0;i<actual_polled_params.length;i++) {
+				var text_class = "",
+					url = "";
+				if(actual_polled_params[i].show == 1) {
+					// Url
+					url = actual_polled_params[i]["url"] ? actual_polled_params[i]["url"] : "";
+					text_class = "text-primary";
+					infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_params[i].title+"</td><td>"+actual_polled_params[i].value+"</td></tr>";
 				}
 			}
 
 			infoTable += "</tbody></table>";
+			infoTable += '</div>';
 
 			/*Final infowindow content string*/
 			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
@@ -3908,6 +3862,56 @@ function devicePlottingClass_gmap() {
 		/*Return the info window content*/
 		return windowContent;
 	};
+
+	/**
+	 * This function create table structur HTML for tooltip data
+	 * @method createTableDataHtml_map
+	 * @param data_obj {Array}, It contains the object array of items which are to be shown on tooltip
+	 * @param item_index {Number}, It contains item index to show the correct info from multiple
+	 * @param is_static {Boolean}, It contains the boolean flag to check that the info html is for static data for polled
+	 */
+	this.createTableDataHtml_map = function(data_obj, item_index, is_static, pos1, pos2) {
+
+		var table_html = "";
+
+		if(data_obj && data_obj.length) {
+			for(var i=0; i< data_obj.length; i++) {
+				var url = "",
+					text_class = "",
+					highlight_class = "";
+
+				if(data_obj[i]["show"]) {
+
+					if(data_obj[i]["name"] == 'pos_link1') {
+						data_obj[i]["value"] = pos1 ? pos1 : "";
+					}
+
+					if(data_obj[i]["name"] == 'pos_link2') {
+						data_obj[i]["value"] = pos2 ? pos2 : "";
+					}
+
+					if(data_obj[i]["name"] == 'pmp_port') {
+						highlight_class = "text-warning text-bold"
+					}
+					
+					var val = data_obj[i]["value"];
+
+					if(direct_val_keys.indexOf(data_obj[i].name) > -1 || !is_static) {
+						actual_val = val;
+						// This is useful only for polled data
+						url = data_obj[i]["url"] ? $.trim(data_obj[i]["url"]) : "";
+						text_class = url ? "text-primary" : "";
+					} else {
+						actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
+					}
+					table_html += "<tr><td class='"+text_class+" "+highlight_class+"' url='"+url+"'>"+data_obj[i]['title']+"</td><td>"+actual_val+"</td></tr>";
+				}
+			}
+		}
+
+		return table_html;
+	};
+
 
 	/**
 	 * This function show or hide extra info on info window
