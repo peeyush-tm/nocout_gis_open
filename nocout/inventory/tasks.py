@@ -11043,6 +11043,15 @@ def get_selected_ptp_inventory(base_station, sector):
                 except Exception as e:
                     logger.info("BS UAS not exist for base station ({}).".format(base_station.name, e.message))
 
+                # mimo/diversity
+                try:
+                    ptp_rows['MIMO/Diversity'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                                service_name='radwin_odu_sn_invent',
+                                                                                data_source='odu_sn').using(
+                        alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("MIMO/Diversity not exist for base station ({}).".format(base_station.name, e.message))
+
                 # bs rssi
                 try:
                     ptp_row['BS RSSI'] = ServiceStatus.objects.filter(device_name=bs_device_name,
@@ -11334,6 +11343,16 @@ def get_selected_ptp_inventory(base_station, sector):
                 except Exception as e:
                     logger.info("SS Auto Negotiation not exist for sub station ({}).".format(sub_station.name,
                                                                                              e.message))
+
+                # mimo/diversity
+                try:
+                    ptp_rows['SS MIMO/Diversity'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                   service_name='radwin_odu_sn_invent',
+                                                                                   data_source='odu_sn').using(
+                        alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS MIMO/Diversity not exist for base station ({}).".format(base_station.name, e.message))
+
                 # ss product type
                 try:
                     ptp_row['SS Product Type'] = InventoryStatus.objects.filter(device_name=ss_device_name,
@@ -12088,8 +12107,9 @@ def get_selected_pmp_inventory(base_station, sector):
                 # uptime
                 try:
                     session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                data_source='uptime').using(
-                                                                alias=ss_machine_name)[0].current_value
+                                                                  service_name='cambium_session_uptime_system',
+                                                                  data_source='uptime').using(
+                                                                  alias=ss_machine_name)[0].current_value
                     pmp_sm_row['Session Uptime'] = display_time(session_uptime)
                 except Exception as e:
                     logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
