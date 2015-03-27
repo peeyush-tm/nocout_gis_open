@@ -8,6 +8,7 @@ from multiprocessing import Process, Queue
 from django.conf import settings
 from django.db.models import Count
 from datetime import datetime, timedelta
+from django.utils.dateformat import format
 
 from dashboard.models import DashboardSetting
 from dashboard.config import dashboards
@@ -85,12 +86,27 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
             'sys_timestamp',
             'check_timestamp'
         ]
+
     service_status_data = model.objects.filter(
         device_name__in=machine_device_list,
-        service_name__icontains = service_name,
-        data_source = data_source#,
-        # severity__in=required_severity
+        service_name__icontains=service_name,
+        data_source=data_source
     ).using(machine).values(*required_values)
+
+    if data_source.strip().lower() in ['availability']:
+        # availablity is a daily value
+        # inserted once a day
+        # as a new row
+        # so to calculate this we would require
+        now = datetime.now()
+        today = datetime(now.year, now.month, now.day, 0, 0)
+        yesterday = float(format(today + timedelta(days=-1), 'U'))
+        today = float(format(today, 'U'))
+
+        service_status_data = service_status_data.filter(
+            sys_timestamp__lte=today,
+            sys_timestamp__gte=yesterday,
+        )
 
     if queue:
         try:
