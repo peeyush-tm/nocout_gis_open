@@ -1,3 +1,4 @@
+from nocout.utils.util import html_to_text
 import os
 from downloader.models import Downloader
 from nocout.settings import MEDIA_ROOT
@@ -171,6 +172,10 @@ def get_datatable_response(payload):
                     for i, l in enumerate(rows_list):
                         i += 1
                         for j, col in enumerate(l):
+                            try:
+                                col = html_to_text(col)
+                            except Exception as e:
+                                pass
                             ws.write(i, j, col)
                 except Exception as e:
                     pass
