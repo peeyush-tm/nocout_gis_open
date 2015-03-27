@@ -58,6 +58,7 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time - timedelta(minutes=1), end_time - timedelta(minutes=1)
     start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
     # Get site specific mongo conf
@@ -81,7 +82,7 @@ def main(**configs):
             doc.get('avg_value'),
             doc.get('warning_threshold'),
             doc.get('critical_threshold'),
-            local_time_epoch,
+            check_time_epoch,
             check_time_epoch,
             doc.get('ip_address'),
             doc.get('severity'),
