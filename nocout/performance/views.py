@@ -550,10 +550,13 @@ class Get_Perfomance(View):
     """
 
     def get(self, request, page_type="no_page", device_id=0):
+        
 
         device = Device.objects.get(id=device_id)
         device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
         realdevice = device
+
+        is_util_tab = request.GET.get('is_util',0)
 
         page_data = {
             'page_title': page_type.capitalize(),
@@ -562,8 +565,7 @@ class Get_Perfomance(View):
             'realdevice': realdevice,
             'get_devices_url': 'performance/get_inventory_devices/' + page_type,
             'get_status_url': 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
-            'get_services_url': 'performance/get_inventory_service_data_sources/device/' + str(
-                device_id),
+            'get_services_url': 'performance/get_inventory_service_data_sources/device/'+str(device_id)+'?is_util='+str(is_util_tab),
             'inventory_page_url' : reverse(
                 'device_edit',
                 kwargs={'pk': device_id},
@@ -575,7 +577,8 @@ class Get_Perfomance(View):
                 current_app='alert_center'
             ),
             'page_type': page_type,
-            'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION)
+            'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
+            'is_util_tab' : int(is_util_tab)
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -1612,6 +1615,7 @@ class Inventory_Device_Service_Data_Source(View):
         :params device_id:
         :return result
         """
+        is_util_tab = request.GET.get('is_util',0)
 
         result = {
             'success': 0,
@@ -1654,6 +1658,12 @@ class Inventory_Device_Service_Data_Source(View):
                 }
             }
         }
+
+        # if is_util_tab is 1 then make isActive key of utilization_top_tab to 1
+        if int(is_util_tab):
+            result['data']['objects']['network_perf_tab']["isActive"] = 0
+            result['data']['objects']['utilization_top_tab']["isActive"] = 1
+
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
 
@@ -2525,8 +2535,8 @@ class Get_Service_Type_Performance_Data(View):
 
         #last time down results
         severity, a = device_current_status(device_object=ss_device_object)
-        age = a['age']
-        down = a['down']
+        age = a['age'] if(a and 'age' in a) else ""
+        down = a['down'] if(a and 'down' in a) else ""
         #last time pl = 100 results
         if age:
             status_since = datetime.datetime.fromtimestamp(float(age)

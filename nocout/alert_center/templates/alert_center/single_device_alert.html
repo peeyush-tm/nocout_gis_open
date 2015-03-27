@@ -210,6 +210,10 @@
                 window.location.href = location_array[0];
             }
 
+            if($.cookie('filter_start_date') && $.cookie('filter_end_date')) {
+                isDateFilterApplied = true;                
+            }
+
             current_device_id = "{{ current_device_id }}";
 
             /*Make a instance of ourDataTableWidget class */
@@ -218,43 +222,11 @@
             //Create instance of nocoutPerfLib
             perfInstance = new nocoutPerfLib();
 
+            /*To initialize date range picker*/
+            perfInstance.initDateRangePicker("reservationtime");
+
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
-
-            // Initialize daterange picker
-            $('#reservationtime').daterangepicker({
-                timePicker: true,
-                timePickerIncrement: 1,
-                // format: 'd/m/Y H:M:S' ,
-                opens: "right",
-                showDropdowns: true,
-                ranges: {
-                    'Today': [moment(), moment()],
-                    'Last 24 Hours': [moment().subtract(1, 'days'), moment()],
-                    'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                    'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                    'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-                },
-                buttonClasses: ['btn btn-default'],
-                applyClass: 'btn-small btn-primary',
-                cancelClass: 'btn-small',
-                format: "DD-MM-YYYY HH:mm:ss",
-                separator: ' to ',
-                startDate: oldStartDate,
-                endDate: oldENdData
-            },function (start, end) {
-                $('#reservationtime span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
-                startDate = start;
-                endDate = end;
-            });
-    
-            // Calculate start & end date if available in query string
-            if (oldStartDate && oldENdData) {
-                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
-                startDate = moment(oldStartDate);
-                endDate = moment(oldENdData);
-            }
 
             // Ajax url to get grid data
             var ajax_url = '{% url "SingleDeviceAlertsListing_clone" page_type current_device_id %}';
@@ -292,16 +264,15 @@
                 startDate = myStartDate.getTime() / 1000.0;
                 endDate = myEndDate.getTime() / 1000.0;
 
-                // window.location.href = window.location.href+'?start_date=' + encodeURIComponent(myStartTime)
-                //         + '&end_date=' + encodeURIComponent(myEndTime);
-                // window.location.search = '?start_date=' + encodeURIComponent(myStartTime)+ '&end_date=' + encodeURIComponent(myEndTime);
+                $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+                $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+
                 var active_tab = $("#single_device_alert_container li.active").children("a"),
                     active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
 
                 if(active_tab_id) {
                     $("#"+active_tab_id).trigger("click",true);
                 }
-
             } else {
                 alert("Select Start & End Date");
             }
@@ -309,12 +280,14 @@
 
         // When filter reset
         $("#reset_filter").on('click', function () {
-            // if (window.location.href.indexOf("?") > -1) {
-            //     window.location.href = window.location.href.split("?")[0];
-            // }
             isDateFilterApplied = false;
 
             $('#reservationtime').val("")
+            startDate = "";
+            endDate = "";
+            
+            $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+            $.cookie('filter_end_date', endDate, {path: '/', secure: true});
             var active_tab = $("#single_device_alert_container li.active").children("a"),
                 active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
 
@@ -344,12 +317,6 @@
             $(tabId).parent().addClass('active').siblings().removeClass('active');
         }
 
-        $("#reset_filter").on('click', function () {
-            if (window.location.href.indexOf("?") > -1) {
-                window.location.href = window.location.href.split("?")[0];
-            }
-        });
-
         /**
          * This  function get the device service(PL) status i.e. Status & AGE
          * @method getPlServiceStatus
@@ -361,16 +328,15 @@
                     url: base_url + "" + url,
                     type: "GET",
                     success: function (response) {
-                        var result = "";
 
+                        var result = "";
                         if (typeof response == 'string') {
                             result = JSON.parse(response);
                         } else {
                             result = response;
                         }
 
-                        if (result.data && result.data.objects) {
-                            
+                        if (result.data && result.data.objects) {                            
                             // Call function to populate latest status info
                             populateDeviceStatus_nocout("latestStatusContainer",result.data.objects);
                         }
