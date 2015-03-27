@@ -596,7 +596,7 @@ function nocoutPerfLib() {
         // Decrement the tabs click on evert click counter
         tabs_click_counter--;
 
-        $.cookie('activeTabId', service_id+"_tab", {path: '/', secure: true});
+        $.cookie('activeTabId', service_id+"_tab", {path: '/'});
 
         var start_date = "",
             end_date = "",

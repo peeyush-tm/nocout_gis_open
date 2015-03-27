@@ -15,7 +15,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 import ujson as json
 
-from device.models import DeviceTechnology
+from device.models import DeviceTechnology, Device
 
 #get the organisation of logged in user
 from nocout.utils import logged_in_user_organizations
@@ -104,6 +104,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': 'auto', 'bSortable': False}
         ]
 
         datatable_headers = hidden_headers
@@ -134,6 +135,7 @@ class SectorStatusListing(BaseDatatableView):
         'sector__base_station__state__state_name',
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
+        'sector__sector_configured_on__id',
         'sector_capacity',
         'sector_capacity_in',
         'sector_capacity_out',
@@ -259,6 +261,8 @@ class SectorStatusListing(BaseDatatableView):
         for item in json_data:
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                device_id = item['sector__sector_configured_on__id']
+
                 item['sector__sector_configured_on__device_technology'] = techno_name
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
@@ -266,7 +270,14 @@ class SectorStatusListing(BaseDatatableView):
                 item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_in_timestamp'])
                 ).strftime(DATE_TIME_FORMAT)
-            except:
+
+                perf_page_link = ''
+                if device_id > 0:
+                    perf_page_link = '<a href="/performance/network_live/'+str(device_id)+'/?is_util=1" \
+                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+
+                item.update(actions=perf_page_link)
+            except Exception, e:
                 continue
 
         return json_data
@@ -594,6 +605,7 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': 'auto', 'bSortable': False},
         ]
 
         datatable_headers = []
@@ -622,6 +634,7 @@ class BackhaulStatusListing(BaseDatatableView):
         'age',
         'organization__alias',
         'backhaul__bh_configured_on__ip_address',
+        'backhaul__bh_configured_on__id',
         'backhaul__alias',
         'basestation__alias',
         'backhaul__bh_type',
@@ -713,14 +726,25 @@ class BackhaulStatusListing(BaseDatatableView):
         for item in json_data:
             try:
                 techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
+                device_id = int(item['backhaul__bh_configured_on__id']) if item['backhaul__bh_configured_on__id'] else 0
+
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
+                
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
-                ).strftime(DATE_TIME_FORMAT)
+                ).strftime(DATE_TIME_FORMAT) if item['peak_out_timestamp'] else ''
+
                 item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_in_timestamp'])
-                ).strftime(DATE_TIME_FORMAT)
-            except:
+                ).strftime(DATE_TIME_FORMAT) if item['peak_in_timestamp'] else ''
+
+                perf_page_link = ''
+                if device_id > 0:
+                    perf_page_link = '<a href="/performance/other_live/'+str(device_id)+'/?is_util=1" \
+                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+
+                item.update(actions=perf_page_link)
+            except Exception, e:
                 continue
 
         return json_data

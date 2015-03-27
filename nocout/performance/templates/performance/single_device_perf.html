@@ -244,15 +244,21 @@
         $(document).ready(function (e) {
 
             var statusUrl = "{{ get_status_url }}" ? base_url+"/"+"{{ get_status_url }}"+"/" : "",
-                serviceUrl = "{{ get_services_url }}" ? base_url+"/"+"{{ get_services_url }}"+"/" : "",
+                serviceUrl = "{{ get_services_url }}" ? base_url+"/"+"{{ get_services_url }}" : "",
                 inventory_url = "{{ inventory_page_url }}" ? base_url+""+"{{ inventory_page_url }}" : "",
                 alert_url = "{{ alert_page_url }}" ? base_url+""+"{{ alert_page_url }}" : "",
-                page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
+                page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer",
+                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
 
             current_device = "{{ device.id }}";
             device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
+            
+            // If call for utilization tab the reset tab cookie
+            if(is_util_tab) {
+                $.cookie('parent_tab_id', '', {path: '/', secure: true});
+            }
 
             var current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
 
