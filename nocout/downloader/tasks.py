@@ -121,6 +121,13 @@ def get_datatable_response(payload):
         except Exception as e:
             logger.error(e.message)
 
+        # exclude parameters from excel sheet
+        if payload['excluded']:
+            try:
+                file_headers_list = [val for val in file_headers_list if val not in payload['excluded']]
+            except Exception as e:
+                pass
+
         # create view class object (for rows data)
         rows_req_obj = eval("{}()".format(payload['rows']))
         rows_req_obj.request = rows_req
@@ -130,7 +137,12 @@ def get_datatable_response(payload):
         query_set_length = len(rows_req_obj.get_initial_queryset())
 
         rows_req.REQUEST['iDisplayLength'] = query_set_length
-        rows_req_obj.max_display_length = query_set_length
+
+        if payload['max_rows']:
+            rows_req_obj.max_display_length = int(payload['max_rows'])
+        else:
+            rows_req_obj.max_display_length = query_set_length
+
         result = rows_req_obj.get_context_data()
 
         # error rows list
@@ -187,7 +199,9 @@ def get_datatable_response(payload):
                 # saving bulk upload errors excel sheet
                 try:
                     # file path
-                    file_path = 'download_excels/{}_{}_{}.xls'.format(payload['app'], payload['username'], payload['fulltime'])
+                    file_path = 'download_excels/{}_{}_{}.xls'.format(payload['app'],
+                                                                      payload['username'],
+                                                                      payload['fulltime'])
 
                     # saving workbook
                     wb.save(MEDIA_ROOT + file_path)
