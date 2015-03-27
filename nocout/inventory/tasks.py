@@ -10874,7 +10874,7 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # date of acceptance
             try:
-                ptp_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
+                ptp_row['Date Of Acceptance'] = circuit.date_of_acceptance
             except Exception as e:
                 logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
                                                                                          e.message))
@@ -12537,6 +12537,11 @@ def get_selected_wimax_inventory(base_station, sector):
                             device_name=bs_device_name,
                             service_name='wimax_pmp1_ul_util_bgp').using(
                             alias=bs_machine_name)[0].current_value
+                        wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp1_frequency_invent',
+                            data_source='frequency').using(
+                            alias=bs_machine_name)[0].current_value
                     elif sector.name.split("_")[-1] == '2':
                         wimax_bs_row['Sector Utilization DL'] = ServiceStatus.objects.filter(
                             device_name=bs_device_name,
@@ -12546,19 +12551,17 @@ def get_selected_wimax_inventory(base_station, sector):
                             device_name=bs_device_name,
                             service_name='wimax_pmp2_ul_util_bgp').using(
                             alias=bs_machine_name)[0].current_value
+                        wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp2_frequency_invent',
+                            data_source='frequency').using(
+                            alias=bs_machine_name)[0].current_value
                     else:
                         pass
                 except Exception as e:
-                    logger.info("Sector Utilization DL/UL not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # frequency
-                try:
-                    wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                               data_source='frequency').using(
-                                                                               alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Sector Utilization DL/UL or Frequecy not exist for base station ({}).".format(
+                        base_station.name,
+                        e.message))
 
                 # mrc
                 try:
