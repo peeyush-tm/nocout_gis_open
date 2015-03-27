@@ -54,67 +54,98 @@ function nocoutPerfLib() {
     perf_that = this;
 
     /**
-     * This function call the server to get all the devices data & then populate it to the dropdown
-     * @class nocout.perf.lib
-     * @method getAllDevices
-     * @param get_device_url "String", It contains the url to fetch the devices list.
-     * @param device_id "INT", It contains the ID of current device.
+     * This function initializes daterange picker on given domElemet
+     * @method initDateRangePicker
+     * @param domElemet "String", It contains the dom element id on which the the date range picker is to be initialized.
      */
-    this.getAllDevices = function (get_device_url, device_id) {
-        /*Ajax call to Get Devices API*/
-        var get_url = get_device_url;
-        // $.ajax({
-        //     url: get_url,
-        //     type: "GET",
-        //     dataType: "json",
-        //     success: function (response) {
+    this.initDateRangePicker = function(domElemet) {
 
-                // var result = "";
-                // // Type check of response
-                // if(typeof response == 'string') {
-                //     result = JSON.parse(response);
-                // } else {
-                //     result = response;
-                // }
+        var saved_start_date = $.cookie('filter_start_date') ? $.cookie('filter_start_date') : "",
+            saved_end_date = $.cookie('filter_end_date') ? $.cookie('filter_end_date') : "",
+            oldStartDate = saved_start_date ? new Date(saved_start_date * 1000) : new Date(),
+            oldENdData = saved_end_date ? new Date(saved_end_date * 1000) : new Date();
 
-        //         if (result.success == 1) {
-        //             allDevices = result.data.objects;
-        //             var devices_options = '<option value="">Select Device</option>';
-        //             $.each(allDevices, function (key, value) {
-        //                 if (value.id == device_id) {
-        //                     devices_options += '<option value="' + value.id + '" selected>' + value.technology + ':' + value.alias + '</option>';
-        //                 } else {
-        //                     devices_options += '<option value="' + value.id + '">' + value.technology + ':' + value.alias + '</option>';
-        //                 }
-        //             });
-        //             $("#device_name").html(devices_options);
-        //         } else {
-        //             $.gritter.add({
-        //                 // (string | mandatory) the heading of the notification
-        //                 title: 'Performance',
-        //                 // (string | mandatory) the text inside the notification
-        //                 text: result.message,
-        //                 // (bool | optional) if you want it to fade out on its own or just sit there
-        //                 sticky: false
-        //             });
-        //         }
-        //     },
-        //     error: function (err) {
-        //         $.gritter.add({
-        //             // (string | mandatory) the heading of the notification
-        //             title: 'Performance',
-        //             // (string | mandatory) the text inside the notification
-        //             text: err.statusText,
-        //             // (bool | optional) if you want it to fade out on its own or just sit there
-        //             sticky: false
-        //         });
-        //     }
-        // });
+        startDate = saved_start_date ? new Date(saved_start_date * 1000) : "";
+        endDate = saved_end_date ? new Date(saved_end_date * 1000) : "";
+
+        $('#'+domElemet).daterangepicker(
+                {
+                    timePicker: true,
+                    timePickerIncrement: 1,
+                    opens: "right",
+                    showDropdowns: true,
+                    ranges: {
+                        'Today': [moment().startOf('day'), moment()],
+                        'Last 24 Hours': [moment().subtract('days', 1), moment()],
+                        'Last 7 Days': [moment().subtract('days', 6), moment()],
+                        'Last 30 Days': [moment().subtract('days', 29), moment()],
+                        'This Month': [moment().startOf('month'), moment().endOf('month')],
+                        'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
+                    },
+                    buttonClasses: ['btn btn-default'],
+                    applyClass: 'btn-small btn-primary',
+                    cancelClass: 'btn-small',
+                    format: "DD-MM-YYYY HH:mm:ss",
+                    separator: ' to ',
+                    startDate: oldStartDate,
+                    endDate: oldENdData
+                },
+                function (start, end) {
+                    startDate = start;
+                    endDate = end;
+                }
+        );
+
+        if (saved_start_date && saved_end_date) {
+            $('#'+domElemet).val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
+            startDate = moment(oldStartDate);
+            endDate = moment(oldENdData);
+        }
+    };
+
+    /**
+     * This function Show/Hide tabs as per the page type
+     * @method togglePerfPageElements
+     * @param page_type "String", It contains the page type i.e either the page is of network, customer or other devices
+     * @param technology "String", It contains current device technology
+     */
+    this.togglePerfPageElements = function(page_type, technology) {
+
+        var condition_1 = page_type == 'customer' || technology.toLowerCase() == 'ptp' || technology.toLowerCase() == 'p2p',
+            condition_2 = page_type == 'other';
+
+        // Show/hide parent Tabs
+        if(condition_1 || condition_2) {
+            if (!$("#topology").hasClass("hide")) {
+                $("#topology").addClass("hide");
+            }
+
+            if (!$("#topology_tab").hasClass("hide")) {
+                $("#topology_tab").addClass("hide");
+            }
+        } else {
+            
+            if($("#topology").hasClass("hide")) {
+                $("#topology").removeClass("hide");
+            }
+
+            if ($("#topology_tab").hasClass("hide")) {
+                $("#topology_tab").removeClass("hide");
+            }
+        }
+
+        // Show/hide live polling button & chart container
+        var live_poll_condition1 = ptp_tech_list.indexOf(technology) > -1,
+            live_poll_condition2 = page_type == 'customer';
+
+        if(!live_poll_condition1 && !live_poll_condition2) {
+            $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+        }
+
     };
 
     /**
      * This function fetch the status of current device
-     * @class nocout.perf.lib
      * @method getStatus
      * @param get_status_url "String", It contains the url to fetch the status of current device.
      * @param device_id "INT", It contains the ID of current device.
@@ -222,7 +253,6 @@ function nocoutPerfLib() {
 
     /**
      * This function fetch the list of services
-     * @class nocout.perf.lib
      * @method getServices
      * @param get_service_url "String", It contains the url to fetch the services.
      * @param device_id "INT", It contains the ID of current device.
@@ -559,6 +589,10 @@ function nocoutPerfLib() {
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
 
+        if(get_service_data_url[0] != '/') {
+            get_service_data_url = "/"+get_service_data_url;
+        }
+
         // Decrement the tabs click on evert click counter
         tabs_click_counter--;
 
@@ -570,18 +604,27 @@ function nocoutPerfLib() {
 
         showSpinner();
 
-        window.location.href = '#' + get_service_data_url.split('/')[3] + "#" + get_service_data_url.split('/')[5];
+        // window.location.href = '#' + get_service_data_url.split('/')[3] + "#" + get_service_data_url.split('/')[5];
 
         get_url = base_url + "" + get_service_data_url;
 
-        start_date = $.urlParam('start_date');
-        end_date = $.urlParam('end_date');
+        start_date = "";
+        end_date = "";
 
-        if (start_date && end_date) {
-            start_date = new Date(start_date*1000);
-            end_date = new Date(end_date*1000);
+        if(startDate && endDate) {
+            var myStartDate = startDate.toDate(),
+                myEndDate = endDate.toDate();
+            
+            $.cookie('filter_start_date', myStartDate.getTime() / 1000.0, {path: '/', secure: true});
+            $.cookie('filter_end_date', myEndDate.getTime() / 1000.0, {path: '/', secure: true});
+
+            start_date = new Date(myStartDate.getTime()),
+            end_date = new Date(myEndDate.getTime());
+
             sendAjax(start_date, end_date);
         } else {
+            $.cookie('filter_start_date', "", {path: '/', secure: true});
+            $.cookie('filter_end_date', "", {path: '/', secure: true});
             sendAjax('', '');
         }
 
