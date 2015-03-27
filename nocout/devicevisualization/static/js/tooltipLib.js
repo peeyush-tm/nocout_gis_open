@@ -222,33 +222,174 @@ var bh_toolTip_static = [
     }
 ];
 
-// BH Tooltip polled info object
-var bh_toolTip_polled = [
+// MROTECH BH Tooltip polled info object
+var mrotech_bh_toolTip_polled = [
     {
-        'name'  : 'converter_temp',
-        'title' : 'Converter Temperature',
-        'show'  : 0,
+        'name'  : 'mrotek_ul_utilization_fe_1',
+        'title' : 'BH UL Utilization',
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
-        'name'  : 'bh_utilization',
-        'title' : 'BH Utilization',
-        'show'  : 0,
+        'name'  : 'mrotek_dl_utilization_fe_1',
+        'title' : 'BH DL Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'mrotek_temperature_temperature',
+        'title' : 'BH Temperature',
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
         'name'  : 'pl',
         'title' : 'Packet Loss',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
         'name'  : 'rta',
         'title' : 'Latency',
-        'show'  : 0,
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    }
+];
+
+// RICI BH Tooltip polled info object
+var rici_bh_toolTip_polled = [
+    {
+        'name'  : 'rici_ul_utilization_eth_1',
+        'title' : 'BH UL Utilization(eth 1)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rici_ul_utilization_eth_2',
+        'title' : 'BH UL Utilization(eth 2)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rici_ul_utilization_eth_3',
+        'title' : 'BH UL Utilization(eth 3)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rici_ul_utilization_eth_4',
+        'title' : 'BH UL Utilization(eth 4)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rici_dl_utilization_eth_1',
+        'title' : 'BH DL Utilization(eth 1)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rici_dl_utilization_eth_2',
+        'title' : 'BH DL Utilization(eth 2)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rici_dl_utilization_eth_3',
+        'title' : 'BH DL Utilization(eth 3)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rici_dl_utilization_eth_4',
+        'title' : 'BH DL Utilization(eth 4)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rta',
+        'title' : 'Latency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    }
+];
+
+// SWITCH BH Tooltip polled info object
+var switch_bh_toolTip_polled = [
+    {
+        'name'  : 'switch_ul_utilization_fe_1',
+        'title' : 'BH UL Utilization(fe 1)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'switch_ul_utilization_fe_2',
+        'title' : 'BH UL Utilization(fe 2)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'switch_ul_utilization_fe_3',
+        'title' : 'BH UL Utilization(fe 3)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'switch_dl_utilization_fe_1',
+        'title' : 'BH DL Utilization(fe 1)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'switch_dl_utilization_fe_2',
+        'title' : 'BH DL Utilization(fe 2)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'switch_dl_utilization_fe_3',
+        'title' : 'BH DL Utilization(fe 3)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rta',
+        'title' : 'Latency',
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     }

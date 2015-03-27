@@ -67,7 +67,7 @@ def prepare_hosts_file():
     all_hosts, ipaddresses, host_attributes = [], {}, {}
     wimax_bs_devices, cambium_bs_devices = [], []
     # This file contains device names, to be updated in configuration db
-    open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
+    open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
     #try:
     bs_devices = make_BS_data()
     #except Exception, exp:
@@ -159,7 +159,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
     # Processing backhaul configured on devices
     mrotek_devices, rici_devices, switch_devices = [], [], []
     processed = []
-    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
         port_wise_capacities = [0]*8
         if  str(device[1]) in processed:
@@ -307,7 +307,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     #print '-- final_dr_devices --'
     #print len(final_dr_devices)
 
-    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 
     for entry in final_dr_devices:
         if (str(entry[0][1]) in processed) or (str(entry[1][0]) in processed):
@@ -431,7 +431,7 @@ def eval_qos(vals, out=[]):
 
 
 def write_hosts_file(all_hosts, ipaddresses, host_attributes):
-    with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
+    with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
         f.write("# encoding: utf-8\n\n")
         f.write("\nhost_contactgroups += []\n\n\n")
         f.write("all_hosts += %s\n" % pformat(all_hosts))
@@ -441,7 +441,7 @@ def write_hosts_file(all_hosts, ipaddresses, host_attributes):
 
     
     ## Write DR enabled devices to seperate .mk file
-    #with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
+    #with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
     #   f.write("# encoding: utf-8\n\n")
     #   f.write("\nhost_contactgroups += []\n\n\n")
     #   f.write("all_hosts += %s\n" % pformat(dr_all_hosts))
@@ -513,7 +513,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
         'all_hosts', 'ipaddresses', 'host_attributes',
         'radwin_ss_devices', 'wimax_ss_devices', 'cambium_ss_devices'])
     processed = []
-    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
         if str(device[4]) in processed:
             continue
@@ -564,7 +564,7 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
     db = mysql_conn()
     if update_device_table:
         hosts = []
-        with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
+        with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
             hosts = map(lambda t: t.strip(), list(f))
         if hosts:
             query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
@@ -1090,7 +1090,7 @@ def write_rules_file(settings_out, final_active_checks):
         default_snmp_communities = settings_out.snmp_communities_db
     if len(settings_out.snmp_ports_db):
         default_snmp_ports = settings_out.snmp_ports_db
-    with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
+    with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")
         f.write("bulkwalk_hosts += %s" % pformat(bulkwalk_hosts))

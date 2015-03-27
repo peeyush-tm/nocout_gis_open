@@ -152,7 +152,7 @@ def process_history_alarms():
         processed_traps_db_obj = MyDBConnection(conf='/omd/trap_handler/trap_conf.py', 
                 db_type='processed_traps')
         p_db = processed_traps_db_obj.get_connection()
-        insert_qry = "INSERT INTO history_alarms" 
+        insert_qry = "INSERT INTO alert_center_historyalarms" 
         insert_qry += """
         (ip_address, device_name, device_type, device_technology, device_vendor, device_model, 
         trapoid, eventname, eventno, severity, uptime, traptime, component_id, 
@@ -179,7 +179,7 @@ def process_history_alarms():
 
 def process_current_clear_alarms(trap_data):
     global unique_key_indexes
-    current_table, clear_table = 'current_alarms', 'clear_alarms'
+    current_table, clear_table = 'alert_center_currentalarms', 'alert_center_clearalarms'
     db_obj = MyDBConnection(conf='/omd/trap_handler/trap_conf.py', 
         db_type='processed_traps')
     db = db_obj.get_connection()
@@ -284,13 +284,6 @@ def process_current_clear_alarms(trap_data):
             sys.stdout.write(str(e)) 
     db_obj.close_connection()
 
-        #if indexes:
-        #    keys, vals = indexes.keys(), indexes.values()
-        #    vals = map(lambda e: data[e], vals)
-        #    delete_qry = "DELETE FROM %s WHERE " % delete_from
-        #    delete_qry += ' AND '.join("%s='%s'" % t for t in zip(keys, vals))
-        #    find_existing_qry = "SELECT COUNT(1) FROM %s WHERE " % insert_into
-        #    find_existing_qry += ' AND '.join("%s='%s'" % t for t in zip(keys, vals))
 
 def normalize_trap_data(data, devices_info, custom_traps):
     """

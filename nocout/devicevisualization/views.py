@@ -1650,6 +1650,7 @@ class GISPerfData(View):
                     if backhaul_device and backhaul_device.is_added_to_nms == 1:
                         backhaul_data = self.get_backhaul_info(backhaul_device, network_perf_data)
                         bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
+                        bs_dict['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
                         bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
                     # loop through all sectors
@@ -4226,32 +4227,33 @@ class GISStaticInfo(View):
         backhaul_data = dict()
         backhaul_data['bh_info'] = list()
         backhaul_data['bhSeverity'] = "NA"
+        backhaul_data['bh_pl'] = "NA"
 
         # backhaul pl dictionary
-        pl_dict = dict()
-        pl_dict['name'] = "pl"
-        pl_dict['show'] = 1
-        pl_dict['title'] = "Packet Drop"
+        # pl_dict = dict()
+        # pl_dict['name'] = "pl"
+        # pl_dict['show'] = 1
+        # pl_dict['title'] = "Packet Drop"
 
         # backhaul rta dictionary
-        rta_dict = dict()
-        rta_dict['name'] = "rta"
-        rta_dict['show'] = 1
-        rta_dict['title'] = "Latency"
+        # rta_dict = dict()
+        # rta_dict['name'] = "rta"
+        # rta_dict['show'] = 1
+        # rta_dict['title'] = "Latency"
 
         # pl
         try:
-            pl_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+            backhaul_data['bh_pl'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
                                 d['data_source'] == 'pl'][0]['current_value']
         except Exception as e:
-            pl_dict['value'] = "NA"
+            backhaul_data['bh_pl'] = "NA"
 
         # rta
-        try:
-            rta_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
-                                 d['data_source'] == 'pl'][0]['current_value']
-        except Exception as e:
-            rta_dict['value'] = "NA"
+        # try:
+        #     rta_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+        #                          d['data_source'] == 'pl'][0]['current_value']
+        # except Exception as e:
+        #     rta_dict['value'] = "NA"
 
         # bh severity
         try:
@@ -4261,10 +4263,10 @@ class GISStaticInfo(View):
             backhaul_data['bhSeverity'] = 'unknown'
 
         # append 'pl_dict' to 'bh_info' list
-        backhaul_data['bh_info'].append(pl_dict)
+        # backhaul_data['bh_info'].append(pl_dict)
 
         # append 'rta_dict' to 'bh_info' list
-        backhaul_data['bh_info'].append(rta_dict)
+        # backhaul_data['bh_info'].append(rta_dict)
 
         return backhaul_data
 
