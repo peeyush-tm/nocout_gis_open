@@ -229,233 +229,38 @@
     <script type="text/javascript">
         /*Global Variables*/
         var perfInstance = "",
+            dateRangePicker_domId = "reservationtime",
             current_device = "",
             device_technology = "",
             live_poll_condition1 = "",
             live_poll_condition2 = "",
             ptp_tech_list = ['ptp','p2p','ptp bh'],
-            is_perf_polling_enabled = false;
+            is_perf_polling_enabled = false,
+            base_url = "",
+            startDate = "",
+            endDate = "";
 
 
         $(document).ready(function (e) {
 
-            var url_array = window.location.href.split("/"),
-                page_type_val = "",
-                base_url = "";
+            var statusUrl = "{{ get_status_url }}" ? base_url+"/"+"{{ get_status_url }}"+"/" : "",
+                serviceUrl = "{{ get_services_url }}" ? base_url+"/"+"{{ get_services_url }}" : "",
+                inventory_url = "{{ inventory_page_url }}" ? base_url+""+"{{ inventory_page_url }}" : "",
+                alert_url = "{{ alert_page_url }}" ? base_url+""+"{{ alert_page_url }}" : "",
+                page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer",
+                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
 
+            current_device = "{{ device.id }}";
+            device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
-
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
-
-            /*Set the base url of application for ajax calls*/
-            if (window.location.origin) {
-                base_url = window.location.origin;
-            } else {
-                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-            }
-
-            for (var i = 0; i < url_array.length; i++) {
-                if (url_array[i].indexOf("_live") > -1) {
-                    page_type_val = url_array[i].split("_")[0];
-                }
-            }
-
-            /*Show SIA tab only for network devices*/
-            device_technology = '{{ device_technology }}';
-
-            // Hide Topology tab for PTP
-            if(page_type_val == 'customer' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
-                if (!$("#topology").hasClass("hide")) {
-                    $("#topology").addClass("hide");
-                }
-
-                if (!$("#topology_tab").hasClass("hide")) {
-                    $("#topology_tab").addClass("hide");
-                }
-
-            } else {
-                
-                if ($("#topology").hasClass("hide")) {
-                    $("#topology").removeClass("hide");
-                }
-
-                if ($("#topology_tab").hasClass("hide")) {
-                    $("#topology_tab").removeClass("hide");
-                }
-            }
-
-
-            if(page_type_val == 'other') {
-                // Hide Utilization & IA Table Tabs for Backhaul Devices
-                // if (!$("#utilization_top").hasClass("hide")) {
-                //     $("#utilization_top").addClass("hide");
-                // }
-
-                // if (!$("#utilization_top_tab").hasClass("hide")) {
-                //     $("#utilization_top_tab").addClass("hide");
-                // }
-
-                if (!$("#topology").hasClass("hide")) {
-                    $("#topology").addClass("hide");
-                }
-
-                if (!$("#topology_tab").hasClass("hide")) {
-                    $("#topology_tab").addClass("hide");
-                }
-
-            } else {
-                // Hide Utilization & RSSI Tabs for all network devices
-                // if ($("#utilization_top").hasClass("hide")) {
-                //     $("#utilization_top").removeClass("hide");
-                // }
-
-                // if ($("#utilization_top_tab").hasClass("hide")) {
-                //     $("#utilization_top_tab").removeClass("hide");
-                // }
+            
+            // If call for utilization tab the reset tab cookie
+            if(is_util_tab) {
+                $.cookie('parent_tab_id', '', {path: '/', secure: true});
             }
 
             var current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
-
-            // Show/hide live polling button & chart container
-            live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
-            live_poll_condition2 = page_type_val == 'customer';
-
-            if(!live_poll_condition1 && !live_poll_condition2) {
-                $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
-            }
-
-
-            //setting up a custom jquery function to retrive the get paramters.
-            $.urlParam = function (name) {
-                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-                if (results == null) {
-                    return null;
-                }
-                else {
-                    return results[1] || 0;
-                }
-            };
-
-            start_date = $.urlParam('start_date');
-
-            if (start_date) {
-                $("#start_date").val(decodeURIComponent(start_date));
-            }
-            end_date = $.urlParam('end_date');
-            if (end_date) {
-                $("#end_date").val(decodeURIComponent(end_date));
-            }
-            //set the dropdown to current device value
-            $("#device_name").val("{{ device.id }}");
-
-            //on change of selection element in device_name
-            // we should redirect user to the new page for the device
-            $("#device_name").on('change', function () {
-                var new_device = $(this).val();
-                var uri = $.url();
-                var path = uri.attr('path').split('/');
-                path[path.length - 2] = new_device;
-                var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
-                window.location.href = new_url;
-            });
-
-            Highcharts.setOptions({
-                global: {
-                    useUTC: false
-                }
-            });
-
-            /*Initialize Datepicker*/
-            $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
-
-            $("#apply_filter").on('click', function () {
-                if (startDate && endDate) {
-                    //epoch function
-                    var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
-                    var myStartTime = myStartDate.getTime() / 1000.0;
-                    var myEndTime = myEndDate.getTime() / 1000.0;
-
-                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartTime)
-                            + '&end_date=' + encodeURIComponent(myEndTime);
-
-                } else {
-                    alert("Select Start & End Date");
-                }
-                // else {
-                //     window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent($("#start_date").val())
-                //             + '&end_date=' + encodeURIComponent($("#end_date").val());
-                // }
-            });
-
-            $("#reset_filter").on('click', function () {
-                if (window.location.href.indexOf("?") > -1) {
-                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}';
-                    // window.location.href = window.location.href.split("?")[0];
-                }
-            });
-
-            $("#download_excel").on('click', function () {
-
-                //get start date and end date from params
-                var start_date = $.urlParam('start_date');
-                var end_date = $.urlParam('end_date');
-                if (!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
-                    var service_name = window.location.href.split('#')[1];
-                    var service_data_source = window.location.href.split('#')[2];
-
-                    //if start date and end date is present, url request with epoch start and end date
-                    if (start_date && end_date) {
-                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
-                                '/device/{{ device.id }}' +
-                                '?download_excel=true' + '&start_date=' + encodeURIComponent(start_date) +
-                                '&end_date=' + encodeURIComponent(end_date));
-                    } else {
-                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
-                                '/device/{{ device.id }}' +
-                                '?download_excel=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
-                                '&end_date=' + encodeURIComponent($("#end_date").val()));
-                    }
-                }
-            });
-
-            $("#download_csv").on('click', function () {
-
-                //get start date and end date from params
-                var start_date = $.urlParam('start_date');
-                var end_date = $.urlParam('end_date');
-
-                if (!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
-
-                    var service_name = window.location.href.split('#')[1];
-                    var service_data_source = window.location.href.split('#')[2];
-
-                    //if start date and end date is present, url request with epoch start and end date
-                    if (start_date && end_date) {
-                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
-                                '/device/{{ device.id }}' +
-                                '?download_csv=true' + '&start_date=' + encodeURIComponent(start_date) +
-                                '&end_date=' + encodeURIComponent(end_date))
-                    } else {
-                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
-                                '/device/{{ device.id }}' +
-                                '?download_csv=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
-                                '&end_date=' + encodeURIComponent($("#end_date").val()))
-                    }
-                }
-            });
-
-
-            /*Hide Status Container*/
-            //$("#status_container").hide();
-
-            var devicesUrl = base_url + "/" + "{{ get_devices_url }}",
-                statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
-                serviceUrl = base_url + "/" + "{{ get_services_url }}" + "/",
-                inventory_url = "{{ inventory_page_url }}",
-                alert_url = "{{ alert_page_url }}";
-            
-            inventory_url = inventory_url ? base_url+""+inventory_url : "";
-            alert_url = alert_url ? base_url+""+alert_url : "";
 
             if(inventory_url) {
                 $("#inventory_link_tag").attr("href",inventory_url);
@@ -467,11 +272,20 @@
                 $("#alerts_link_tag").removeClass("hide");
             }
 
-            current_device = "{{ device.id }}";
+            // SET utc false for highcharts to show time in GMT+5:30
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+
+            // Create nocoutPerfLib instance to access its functions
             perfInstance = new nocoutPerfLib();
 
-            /*To Populate the device dropdown*/
-            // perfInstance.getAllDevices(devicesUrl, current_device);
+            perfInstance.togglePerfPageElements(page_type_val, current_device_technology)
+
+            /*To initialize date range picker*/
+            perfInstance.initDateRangePicker(dateRangePicker_domId);
 
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
@@ -479,67 +293,77 @@
             /*To populate the services tabs*/
             perfInstance.getServices(serviceUrl, current_device);
         });
+    
+        /**
+         * This event triggers when apply filter button clicked
+         * @event click
+         */
+        $("#apply_filter").on('click', function () {
+            if(startDate && endDate) {
+                
+                var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                    service_id = active_inner_tab.attr("id").slice(0, -4),
+                    get_service_data_url = active_inner_tab.attr("url");
 
-        $("#show_status_btn").click(function (e) {
-
-            $("#status_container").slideToggle();
-            if ($("#show_status_btn").text() == "Hide Status") {
-                $("#show_status_btn").text("Show Status");
+                if(get_service_data_url && service_id && current_device) {
+                    perfInstance.getServiceData(get_service_data_url, service_id, current_device);
+                }
+            } else {
+                alert("Select Start & End Date");
             }
-            else {
-                $("#show_status_btn").text("Hide Status");
-            }
-        });
-
-        /*Load first inner tab of network performance*/
-        $("#network_perf").click(function (e) {
-            fetchFirstTabContent(e);
-            $.cookie('parent_tab_id', 'network_perf', {path: '/', secure: true});
-        });
-
-        /*Load first inner tab of service performance*/
-        $("#service_perf").click(function (e) {
-            fetchFirstTabContent(e);
-            $.cookie('parent_tab_id', 'service_perf', {path: '/', secure: true});
-        });
-
-        /*Load first inner tab of service status*/
-        $("#service_status").click(function (e) {
-            fetchFirstTabContent(e);
-            $.cookie('parent_tab_id', 'service_status', {path: '/', secure: true});
-        });
-
-        /*Load first inner tab of inventory status*/
-        $("#inventory_status").click(function (e) {
-            fetchFirstTabContent(e);
-            $.cookie('parent_tab_id', 'inventory_status', {path: '/', secure: true});
-        });
-
-        /*Load first inner tab of availability*/
-        $("#availability").click(function (e) {
-            fetchFirstTabContent(e);
-            $.cookie('parent_tab_id', 'availability', {path: '/', secure: true});
-        });
-
-
-        /*Load first inner tab of inventory status*/
-        $("#topology").click(function (e) {
-            fetchFirstTabContent(e);
-            $.cookie('parent_tab_id', 'topology', {path: '/', secure: true});
-        });
-
-        /*Load first inner tab of Utilization tab*/
-        $("#utilization_top").click(function (e) {
-            fetchFirstTabContent(e);
-            $.cookie('parent_tab_id', 'utilization_top', {path: '/', secure: true});
         });
 
         /**
-         * This function load the first inner tab content when the tab is opened.
+         * This event triggers when reset filter button clicked
+         * @event click
          */
-        function fetchFirstTabContent(e) {
-            var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
-            var li_count = $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li").length;
+        $("#reset_filter").on('click', function () {
+            if(startDate && endDate) {
+                $('#reservationtime').val('');
+                startDate = "";
+                endDate = "";
+                
+                $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+                $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+
+                var service_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id").slice(0, -4),
+                    get_service_data_url = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("url");
+
+                if(get_service_data_url && service_id && current_device) {
+                    perfInstance.getServiceData(get_service_data_url, service_id, current_device);
+                }
+            }
+        });
+
+        /**
+         * This event triggers when any parent tab is clicked and 
+           it loads first inner tab when any parent tab is clicked
+         * @event click
+         */
+        $("#network_perf,\
+           #service_perf,\
+           #service_status,\
+           #inventory_status,\
+           #availability,\
+           #topology,\
+           #utilization_top"
+        ).click(function (e) {
+            fetchFirstTabContent(this);
+        });
+
+        /**
+         * This function load the first inner tab content when any parent tab is clicked.
+         * @method fetchFirstTabContent
+         * @param this_pointer {Object}, It contains the clicked tab 'this' pointer object
+         */
+        function fetchFirstTabContent(this_pointer) {
+
+            var tab_id = $(this_pointer).attr("href") ? $(this_pointer).attr("href").split("#")[1] : "",
+                li_count = $("#"+tab_id+" .inner_tab_container .left_tabs_container ul li").length;
+
+            // Save parent tab reference in cookie
+            $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
+
             if (li_count > 0) {
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
@@ -551,28 +375,10 @@
             }
         }
 
-        /*This event will collapse & expand device status block*/
-        $('.status_box .tools_status .collapse, .status_box .tools_status .expand').click(function () {
-            var el = $(this).parents(".status_box").children(".status_body");
-
-            if ($(this).hasClass("collapse")) {
-                $(this).removeClass("collapse");
-                $(this).addClass("expand");
-                $(this).attr("title", "Show Status")
-                var i = $(this).children(".fa-chevron-up");
-                i.removeClass("fa-chevron-up").addClass("fa-chevron-down");
-                el.slideUp();
-            } else {
-                $(this).removeClass("expand");
-                $(this).addClass("collapse");
-                $(this).attr("title", "Hide Status");
-                var i = $(this).children(".fa-chevron-down");
-                i.removeClass("fa-chevron-down").addClass("fa-chevron-up");
-                el.slideDown();
-            }
-        });
-
-        //When poll now button is clicked
+        /**
+         * This event triggers when poll now button clicked
+         * @event click
+         */
         $("body").delegate('.perf_poll_now','click',function(e) {
             
             var sparkline_dom_id = 'perf_live_poll_chart',
@@ -616,69 +422,16 @@
             }
 
         });
-
     </script>
 
 {% endblock %}
 
 
 {% block load_js %}
-    <script>
-        var startDate, endDate;
+    <script type="text/javascript">
         jQuery(document).ready(function () {
             App.setPage("");  //Set current page
             App.init(); //Initialise plugins and elements
-
-
-            var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date') * 1000) : new Date();
-            var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date();
-
-            $('#reservationtime').daterangepicker(
-                    {
-                        timePicker: true,
-                        timePickerIncrement: 1,
-                        // format: 'd/m/Y H:M:S' ,
-                        opens: "right",
-                        showDropdowns: true,
-                        ranges: {
-                            'Today': [moment().startOf('day'), moment()],
-                            'Last 24 Hours': [moment().subtract('days', 1), moment()],
-                            'Last 7 Days': [moment().subtract('days', 6), moment()],
-                            'Last 30 Days': [moment().subtract('days', 29), moment()],
-                            'This Month': [moment().startOf('month'), moment().endOf('month')],
-                            'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
-                        },
-                        buttonClasses: ['btn btn-default'],
-                        applyClass: 'btn-small btn-primary',
-                        cancelClass: 'btn-small',
-                        format: "DD-MM-YYYY HH:mm:ss",
-                        separator: ' to ',
-                        startDate: oldStartDate,
-                        endDate: oldENdData
-                    },
-                    function (start, end) {
-                        startDate = start;
-                        endDate = end;
-                    }
-            );
-
-            if ($.urlParam('start_date') && $.urlParam('end_date')) {
-                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
-                startDate = moment(oldStartDate);
-                endDate = moment(oldENdData);
-            }
-
-            // setTimeout(function() {
-            //     if($.cookie('activeTabId')) {
-            //         $('#'+$.cookie('activeTabId')).trigger('click');
-            //     }
-            // }, 100);
-        });
-
-        // Add click event to technology on breadcrumb
-        $("body").delegate(".perf_tech_breadcrumb",'click',function(e) {
-            // Go back to last tab
-            window.history.go(tabs_click_counter);
         });
     </script>
 {% endblock %}
