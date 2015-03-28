@@ -1,8 +1,7 @@
 import json
-from django.db.models.query import ValuesQuerySet
+from django.db.models.query import ValuesQuerySet, Q
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
-
 from django.conf import settings
 from user_profile.models import UserProfile
 
@@ -62,8 +61,15 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     model = UserAction
     required_permissions = ('activity_stream.view_useraction',)
-    columns = ['logged_at']
-    order_columns = ['-logged_at']
+    columns = [
+        'user_id',
+        'action',
+        'module',
+        'logged_at'
+    ]
+
+    # order_columns = ['-logged_at']
+    order_columns = columns
 
     def filter_queryset(self, qs):
         """
@@ -73,11 +79,19 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :return result_list:
         """
         sSearch = self.request.GET.get('sSearch', None)
+
         if sSearch:
-            user_ids_list = UserProfile.objects.filter(username__icontains=sSearch,
-                                                       organization__in=logged_in_user_organizations(self)).values_list(
-                'id', flat=True)
-            qs = UserAction.objects.filter(user_id__in=user_ids_list).values('id', 'logged_at')
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
         return qs
 
     def get_initial_queryset(self):
@@ -91,20 +105,20 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         startdate = datetime.now()
         enddate = startdate + timedelta(days=-30)
 
-        qs = []
-        limit = 10
-        offset = 0
-        start = 0
-        user_id_list = UserProfile.objects.filter(organization__in=logged_in_user_organizations(self)).values_list('id')
-        for x in range(0, UserAction.objects.filter(user_id__in=user_id_list).count(), limit):
-            offset = start + limit
-            qs += UserAction.objects.filter(user_id__in=user_id_list,
-                                            logged_at__range=(enddate.strftime("%Y-%m-%d 00:00:00"),
-                                                              startdate.strftime("%Y-%m-%d %H:%M:%S"))
-            ).values("id", "logged_at")[start:offset]
-            start += limit
+        user_logs_resultset = []
 
-        return qs
+        # Get all the user ids of logged in user's organization
+        user_id_list = UserProfile.objects.filter(
+            organization__in=logged_in_user_organizations(self)
+        ).values_list('id')
+
+        # Get user logs of last 30 days for all fetched user ids
+        user_logs_resultset = UserAction.objects.filter(
+            user_id__in=user_id_list
+        ).values(*self.columns).order_by('-logged_at')
+
+
+        return user_logs_resultset
 
     def prepare_results(self, qs):
         """
@@ -118,28 +132,12 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             for dct in qs:
                 dct['logged_at'] = convert_utc_to_local_timezone(dct['logged_at'])
-                # logger.debug(dct)
-                for key, val in dct.items():
-                    try:
-                        if key == 'id':
-                            action_object = UserAction.objects.get(pk=val)
-                            dct['user_id'] = unicode(UserProfile.objects.get(id=action_object.user_id))
-                            dct['module'] = action_object.module
-                            dct['action'] = action_object.action
-                        else:
-                            dct[key] = val
-                    except Exception as deleted_user:
-                        if key == 'id':
-                            action_object = UserAction.objects.get(pk=val)
-                            dct['user_id'] = 'User Unknown/Deleted'
-                            dct['module'] = 'Unknown : (System Exception):[%s]' % (action_object.module)
-                            dct['action'] = 'Failed to Fetch Action for ' \
-                                            'Deleted User (System Exception):[%s : %s]' % (
-                                                deleted_user.message,
-                                                action_object.action
-                                            )
-                        else:
-                            dct[key] = val
+                user_id = dct['user_id']
+                try:
+                    dct['user_id'] = unicode(UserProfile.objects.get(id=user_id))
+                except Exception, e:
+                    dct['user_id'] = 'User Unknown/Deleted'
+                    pass
             return list(qs)
         return []
 
@@ -155,13 +153,14 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         # number of records before filtering
         total_records = len(qs)
-        # qs = self.filter_queryset(qs)
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
 
-        # qs = self.ordering(qs)
-        # qs = self.paging(qs)
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not (qs and isinstance(qs, ValuesQuerySet)) and len(qs):
@@ -169,6 +168,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         # prepare output data
         aaData = self.prepare_results(qs)
+
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
