@@ -14,9 +14,8 @@ from nocout_site_name import *
 import mysql.connector
 from datetime import datetime, timedelta
 import subprocess
-import socket
 import imp
-import time
+import sys
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
@@ -51,40 +50,40 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    #db = utility_module.mysql_conn(configs=configs)
     """
     start_time variable would store the latest time uptill which mysql
     table has an entry, so the data having time stamp greater than start_time
     would be imported to mysql, only, and this way mysql would not store
     duplicate data.
     """
-    #for i in range(len(configs.get('mongo_conf'))):
-#    start_time = mongo_module.get_latest_entry(
-#   	    	db_type='mysql', 
-#		    	db=db,
-#		    	site=configs.get('mongo_conf')[0][0],
-#		    	table_name=configs.get('table_name')
-#    )	
-#    db.close()
 
-    end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=5)
-    print start_time ,end_time
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
+    start_time, end_time = None, None
+    try:
+        db = mongo_module.mongo_conn(
+            host=site_spec_mongo_conf[1],
+            port=int(site_spec_mongo_conf[2]),
+            db_name=configs.get('nosql_db')
+        )
+    except:
+        sys.stdout.write('Mongodb connection problem\n')
+        sys.exit(1)
+    end_time = datetime.now()
+    # get most latest sys timestamp entry present in mysql
+    time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_servicestatus'}))
+    for doc in time_doc:
+        start_time = doc.get('sys_timestamp')
+    print start_time ,end_time
     # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+    docs = read_data(start_time, end_time, db)
     print len(docs)
-    #print docs[0:5]
-    #for doc in docs:
-    #	values_list = build_data(doc)
-    #	data_values.append(values_list)
     if docs:
     	insert_data(configs.get('table_name'), docs, configs=configs)
     	print "Data inserted into my mysql db"
     else:
-	print "No data in mongo db in this time frame"
+	    print "No data in mongo db in this time frame"
 
-def read_data(start_time, end_time, **kwargs):
+def read_data(start_time, end_time, db):
     """
     Function to read data from mongodb
 
@@ -96,51 +95,55 @@ def read_data(start_time, end_time, **kwargs):
 	kwargs (dict): Store mongodb connection variables 
     """
 
-    db = None
-    port = None
-    #end_time = datetime(2014, 6, 26, 18, 30)
-    #start_time = end_time - timedelta(minutes=10)
+    #db = None
     docs = [] 
-    db = mongo_module.mongo_conn(
-        host=kwargs.get('configs')[1],
-        port=int(kwargs.get('configs')[2]),
-        db_name=kwargs.get('db_name')
-    )
+    #db = mongo_module.mongo_conn(
+    #    host=kwargs.get('configs')[1],
+    #    port=int(kwargs.get('configs')[2]),
+    #    db_name=kwargs.get('db_name')
+    #)
     if db:
-	if start_time is None:
-		start_time = end_time - timedelta(minutes=15)
-		cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
-	else:
-		cur = db.device_service_status.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
-    	configs = config_module.parse_config_obj()
-    	for config, options in configs.items():
+        if start_time is None:
+            # read data from status, initially
+            start_time = end_time - timedelta(minutes=10)
+            cur = db.device_service_status.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
+        elif (start_time + timedelta(minutes=15)) < end_time:
+            # data in mysql is older than mongo data by more than half an hour
+            # so we need to read data from live mongo collection, rather than status
+            if (start_time + timedelta(days=1) < end_time):
+                # max time range for data sync is 1 day 
+                start_time = end_time - timedelta(days=1)
+            cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
+        else:
+            # we should read from status rather than live
+            cur = db.device_service_status.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
+    configs = config_module.parse_config_obj()
+    for config, options in configs.items():
 	    machine_name = options.get('machine')
-        for doc in cur:
-		check_time_epoch = utility_module.get_epoch_time(doc.get('data')[0].get('time'))
-        	local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
-        	# Advancing local_timestamp/sys_timestamp to next 5 mins time frame
-        	#local_time_epoch = check_time_epoch + 300
-        	t = (
-                #uuid,
-                doc.get('host'),
-                doc.get('service'),
-                machine_name,
-                doc.get('site'),
-                doc.get('ds'),
-                doc.get('data')[0].get('value'),
-                doc.get('data')[0].get('value'),
-                doc.get('data')[0].get('value'),
-                doc.get('data')[0].get('value'),
-                doc.get('meta').get('war'),
-                doc.get('meta').get('cric'),
-                local_time_epoch,
-                check_time_epoch,
-                doc.get('ip_address'),
-		doc.get('severity'),
-		doc.get('age')
-            	)
-		docs.append(t)
-		t =()
+    for doc in cur:
+        check_time_epoch = utility_module.get_epoch_time(doc.get('data')[0].get('time'))
+        local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+        t = (
+            #uuid,
+            doc.get('host'),
+            doc.get('service'),
+            machine_name,
+            doc.get('site'),
+            doc.get('ds'),
+            doc.get('data')[0].get('value'),
+            doc.get('data')[0].get('value'),
+            doc.get('data')[0].get('value'),
+            doc.get('data')[0].get('value'),
+            doc.get('meta').get('war'),
+            doc.get('meta').get('cric'),
+            local_time_epoch,
+            check_time_epoch,
+            doc.get('ip_address'),
+            doc.get('severity'),
+            doc.get('age')
+            )
+        docs.append(t)
+        t =()
     return docs
 
 def build_data(doc):
