@@ -9,6 +9,7 @@ from nocout_site_name import *
 import mysql.connector
 from datetime import datetime
 from datetime import timedelta
+from events_rrd_migration import get_latest_event_entry
 import imp
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -33,6 +34,7 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time - timedelta(minutes=1), end_time - timedelta(minutes=1)
     start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
 
@@ -42,6 +44,7 @@ def main(**configs):
    
     # Read data function reads the data from mongodb and insert into mysql
     docs = read_data(start_time, end_time,configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+    print 'Found %s values for %s' % (len(docs), configs.get('table_name'))
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
@@ -92,7 +95,7 @@ def build_data(doc):
     t = (
         doc.get('device_name'),
     doc.get('service_name'),
-        doc.get('sys_timestamp'),
+        doc.get('check_timestamp'),
     doc.get('check_timestamp'),
     doc.get('current_value'),
     doc.get('min_value'),

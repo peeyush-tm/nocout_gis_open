@@ -58,7 +58,10 @@ def check_cambium_qos_invent(item, _no_params, info):
         if info:
 		infotext = ""
 		for index in range(len(info[0])):
-			value1 = float(info[0][index])/1024.0
+			if info[0][index]:
+				value1 = float(info[0][index])/1024.0
+			else:
+				value1 =info[0][index]
 			qos_list.append((qos_string(str(index+1)),value1))
             	state = 0
 		for ds,value in qos_list:

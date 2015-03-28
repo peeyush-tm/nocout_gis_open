@@ -121,10 +121,12 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
     machine_machine.id = device_device.machine_id and
     site_instance_siteinstance.id = device_device.site_instance_id
     )
-    left join
+    inner join
     (inventory_backhaul)
     on
-    (inventory_backhaul.bh_configured_on_id = device_device.id)
+    (device_device.id = inventory_backhaul.bh_configured_on_id OR device_device.id = inventory_backhaul.aggregator_id OR
+     device_device.id = inventory_backhaul.pop_id OR
+     device_device.id = inventory_backhaul.bh_switch_id)
     left join
     (inventory_basestation)
     on
@@ -161,7 +163,10 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
     processed = []
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
-        port_wise_capacities = [0]*8
+	if str(device[2].lower()) == 'switch':
+        	port_wise_capacities = [0]*26
+	else:
+        	port_wise_capacities = [0]*8
         if  str(device[1]) in processed:
             continue
         if '_' in str(device[8]):

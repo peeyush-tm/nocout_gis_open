@@ -66,13 +66,16 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
         	result = db['network_perf'].aggregate(pipeline=pipe)
 		result = result.get('result')
 	except:
-		return		
+		return
+	print result		
         for entry in result:
                 try:
                         host = entry.get('_id')
                         host_ip = entry.get('ip')
                         down_count = entry.get('count')
                         total_down = ((down_count * 5)/(24*60.0) *100)
+			if total_down >=100:
+				total_down = 100.0
                         total_up = 100 -total_down
                         host_state = "ok"
                 except Exception ,e:
