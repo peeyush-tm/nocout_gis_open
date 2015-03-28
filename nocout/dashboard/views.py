@@ -1800,16 +1800,24 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
         ]
         # Accessing every element of trend items
         for item in trend_items:
-
             if item['title'] != 'unknown':
                 count_color = getattr(dashboard_settings, '%s_color_hex_value' % item['title'])
+                start_range = getattr(dashboard_settings, '%s_start' % item['title'])
+                end_range = getattr(dashboard_settings, '%s_end' % item['title'])
+                if start_range and end_range:
+                    range_param = '(%s,%s)' %(start_range, end_range)
+                else:
+                    continue    
             else:
                 # Color for Unknown range
                 count_color = '#CED5DB'
+                range_param = ''
+
+            final_param_name = '%s %s' %(item['title'].title(), range_param)
             data_dict = {
                 "type": "column",
                 "valuesuffix": " ",
-                "name": item['title'].title(),
+                "name": final_param_name, 
                 "valuetext": " ",
                 "color": count_color,
                 "data": list(),
@@ -2010,9 +2018,7 @@ class MonthlyTrendSalesMixin(object):
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
-        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_name,
-                                                          organizations=organization,
-                                                          dashboard_settings=dashboard_setting)
+        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_name, organizations=organization, dashboard_settings=dashboard_setting)
 
         chart_series = dashboard_status_dict
         # Sending Final response

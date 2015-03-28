@@ -1986,9 +1986,10 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
         point_type = evt.currentTarget.attributes.point_type ? evt.currentTarget.attributes.point_type.value : "",
         dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
         device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
-        href_val = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
-        block_id = href_val.length > 1 ? href_val[1] : "",
-        device_pl = evt.currentTarget.attributes.pl_value ? evt.currentTarget.attributes.pl_value.value : "";
+        href_attr = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
+        block_id = href_attr.length > 1 ? href_attr[1] : "",
+        pl_attr = evt.currentTarget.attributes.pl_value,
+        device_pl = pl_attr && pl_attr.value != 'N/A' ? pl_attr.value : "";
 
     if(dom_id && point_type && current_device_id) {
         // Show Spinner
@@ -2041,6 +2042,14 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                                 tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled,fetched_polled_info);
                             } else {
                                 // pass
+                            }
+                        } else if(point_type == 'base_station') {
+                            if(bh_device_type == 'pine') {
+                                tooltip_info_dict = rearrangeTooltipArray(mrotech_bh_toolTip_polled,fetched_polled_info);
+                            } else if(bh_device_type == 'switch') {
+                                tooltip_info_dict = rearrangeTooltipArray(switch_bh_toolTip_polled,fetched_polled_info);
+                            } else if(bh_device_type == 'rici') {
+                                tooltip_info_dict = rearrangeTooltipArray(rici_bh_toolTip_polled,fetched_polled_info);
                             }
                         } else {
                             // pass

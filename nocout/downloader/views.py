@@ -79,6 +79,16 @@ class DataTableDownloader(View):
         # get headers
         headers = self.request.GET.get('headers', None)
 
+        # get fields needs to be excluded
+        excluded = list()
+        try:
+            excluded = eval(self.request.GET.get('excluded', None))
+        except Exception as e:
+            pass
+
+        # maximum no. of rows in excel
+        max_rows = self.request.GET.get('max_rows', None)
+
         if app and rows and headers:
             # get current user name
             username = self.request.user.username
@@ -124,7 +134,9 @@ class DataTableDownloader(View):
                 'rows_data': rows_data,
                 'username': username,
                 'fulltime': fulltime,
-                'object_id': d_obj.id
+                'object_id': d_obj.id,
+                'excluded': excluded,
+                'max_rows': max_rows
             }
 
             # queue download to celery

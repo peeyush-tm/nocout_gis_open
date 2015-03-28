@@ -341,9 +341,11 @@ function GisPerformance() {
                 try {
                     // Update BH polled info & severity value
                     bs_marker['bhInfo_polled'] = perf_bh_info;
-                    bs_marker['bhSeverity'] = perf_bh_severity;
                     bs_marker['bsInfo'] = bsInfo;
+                    bs_marker['bhSeverity'] = perf_bh_severity;
                     bs_marker['bhInfo'] = bhInfo;
+                    bs_marker['pl'] = bh_pl;
+                    
 
 
                     // If we have BS maintenance status then update it in Bs marker

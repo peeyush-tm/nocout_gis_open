@@ -272,7 +272,7 @@ class SectorStatusListing(BaseDatatableView):
                 ).strftime(DATE_TIME_FORMAT)
 
                 perf_page_link = ''
-                if device_id > 0:
+                if device_id:
                     perf_page_link = '<a href="/performance/network_live/'+str(device_id)+'/?is_util=1" \
                                       title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
 
@@ -726,7 +726,7 @@ class BackhaulStatusListing(BaseDatatableView):
         for item in json_data:
             try:
                 techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
-                device_id = int(item['backhaul__bh_configured_on__id']) if item['backhaul__bh_configured_on__id'] else 0
+                device_id = item['backhaul__bh_configured_on__id']
 
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
                 
@@ -739,7 +739,7 @@ class BackhaulStatusListing(BaseDatatableView):
                 ).strftime(DATE_TIME_FORMAT) if item['peak_in_timestamp'] else ''
 
                 perf_page_link = ''
-                if device_id > 0:
+                if device_id:
                     perf_page_link = '<a href="/performance/other_live/'+str(device_id)+'/?is_util=1" \
                                       title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
 

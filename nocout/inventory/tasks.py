@@ -6,7 +6,7 @@ from machine.models import Machine
 import requests
 from site_instance.models import SiteInstance
 from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
-    Country, TechnologyVendor
+    Country, TechnologyVendor, DeviceVendor
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
@@ -10331,7 +10331,7 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                      'Utilization UL', 'Sector Uptime', 'TX Power', 'RX Power']
 
     # pmp ss dictionary
-    pmp_sm_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
+    pmp_sm_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'Site ID', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
                      'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
                      'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
                      'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
@@ -10348,8 +10348,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                        'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                        'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
                        'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
-                       'PE IP', 'DR Site', 'DR Master/Slave', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
-                       'Frequency', 'MRC', 'IDU Type', 'System Uptime', 'Latency', 'PD']
+                       'Sector Utilization DL', 'Sector Utilization UL', 'PE IP', 'DR Site', 'DR Master/Slave',
+                       'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Frequency', 'MRC', 'IDU Type', 'System Uptime',
+                       'Latency', 'PD']
 
     # wimax ss dictionary
     wimax_ss_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
@@ -10873,7 +10874,7 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # date of acceptance
             try:
-                ptp_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
+                ptp_row['Date Of Acceptance'] = circuit.date_of_acceptance
             except Exception as e:
                 logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
                                                                                          e.message))
@@ -11041,6 +11042,15 @@ def get_selected_ptp_inventory(base_station, sector):
                                                                      alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS UAS not exist for base station ({}).".format(base_station.name, e.message))
+
+                # mimo/diversity
+                try:
+                    ptp_rows['MIMO/Diversity'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                                service_name='radwin_odu_sn_invent',
+                                                                                data_source='odu_sn').using(
+                        alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("MIMO/Diversity not exist for base station ({}).".format(base_station.name, e.message))
 
                 # bs rssi
                 try:
@@ -11333,6 +11343,16 @@ def get_selected_ptp_inventory(base_station, sector):
                 except Exception as e:
                     logger.info("SS Auto Negotiation not exist for sub station ({}).".format(sub_station.name,
                                                                                              e.message))
+
+                # mimo/diversity
+                try:
+                    ptp_rows['SS MIMO/Diversity'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                   service_name='radwin_odu_sn_invent',
+                                                                                   data_source='odu_sn').using(
+                        alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS MIMO/Diversity not exist for base station ({}).".format(base_station.name, e.message))
+
                 # ss product type
                 try:
                     ptp_row['SS Product Type'] = InventoryStatus.objects.filter(device_name=ss_device_name,
@@ -11549,6 +11569,12 @@ def get_selected_pmp_inventory(base_station, sector):
                 pmp_bs_row['BS Name'] = base_station.alias
             except Exception as e:
                 logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
+
+            # site id
+            try:
+                pmp_bs_row['Site ID'] = base_station.bs_site_id
+            except Exception as e:
+                logger.info("Site ID not exist for base station ({}).".format(base_station.name, e.message))
 
             # type of bs (technology)
             try:
@@ -11855,6 +11881,18 @@ def get_selected_pmp_inventory(base_station, sector):
             except Exception as e:
                 logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
 
+            # site id
+            try:
+                pmp_sm_row['Site ID'] = base_station.bs_site_id
+            except Exception as e:
+                logger.info("Site ID not exist for base station ({}).".format(base_station.name, e.message))
+
+            # ap ip
+            try:
+                pmp_sm_row['AP IP'] = sector.sector_configured_on.ip_address
+            except Exception as e:
+                logger.info("AP IP not exist for base station ({}).".format(base_station.name, e.message))
+
             # ss ip
             try:
                 pmp_sm_row['SS IP'] = sub_station.device.ip_address
@@ -12069,9 +12107,10 @@ def get_selected_pmp_inventory(base_station, sector):
                 # uptime
                 try:
                     session_uptime = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='uptime').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                    pmp_bs_row['Session Uptime'] = display_time(session_uptime)
+                                                                  service_name='cambium_session_uptime_system',
+                                                                  data_source='uptime').using(
+                                                                  alias=ss_machine_name)[0].current_value
+                    pmp_sm_row['Session Uptime'] = display_time(session_uptime)
                 except Exception as e:
                     logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -12136,6 +12175,7 @@ def get_selected_pmp_inventory(base_station, sector):
     result['pmp_sm'] = pmp_sm_rows if pmp_sm_rows else ""
 
     return result
+
 
 def get_selected_wimax_inventory(base_station, sector):
     # result dictionary (contains ptp and ptp bh inventory)
@@ -12275,6 +12315,12 @@ def get_selected_wimax_inventory(base_station, sector):
                 wimax_bs_row['IDU IP'] = sector.sector_configured_on.ip_address
             except Exception as e:
                 logger.info("IDU IP not exist for base station ({}).".format(base_station.name, e.message))
+
+            # vendor
+            try:
+                wimax_bs_row['Vendor'] = DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name
+            except Exception as e:
+                logger.info("IDU Vendor not exist for base station ({}).".format(base_station.name, e.message))
 
             # sector name
             try:
@@ -12473,7 +12519,7 @@ def get_selected_wimax_inventory(base_station, sector):
             try:
                 wimax_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
                                                                        data_source='rta').using(
-                                                                       alias=bs_machine_name)[0].current_value
+                    alias=bs_machine_name)[0].current_value
             except Exception as e:
                 logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12482,26 +12528,40 @@ def get_selected_wimax_inventory(base_station, sector):
                 try:
                     # by splitting last string after underscore from sector name; we get pmp port number
                     if sector.name.split("_")[-1] == '1':
-                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        data_source='wimax_pmp1_utilization').using(
-                                                                        alias=bs_machine_name)[0].current_value
+                        wimax_bs_row['Sector Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp1_dl_util_bgp').using(
+                            alias=bs_machine_name)[0].current_value
+
+                        wimax_bs_row['Sector Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp1_ul_util_bgp').using(
+                            alias=bs_machine_name)[0].current_value
+                        wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp1_frequency_invent',
+                            data_source='frequency').using(
+                            alias=bs_machine_name)[0].current_value
                     elif sector.name.split("_")[-1] == '2':
-                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        data_source='wimax_pmp2_utilization').using(
-                                                                        alias=bs_machine_name)[0].current_value
+                        wimax_bs_row['Sector Utilization DL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp2_dl_util_bgp').using(
+                            alias=bs_machine_name)[0].current_value
+                        wimax_bs_row['Sector Utilization UL'] = ServiceStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp2_ul_util_bgp').using(
+                            alias=bs_machine_name)[0].current_value
+                        wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(
+                            device_name=bs_device_name,
+                            service_name='wimax_pmp2_frequency_invent',
+                            data_source='frequency').using(
+                            alias=bs_machine_name)[0].current_value
                     else:
                         pass
                 except Exception as e:
-                    logger.info("Sector Utilization not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # frequency
-                try:
-                    wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                               data_source='frequency').using(
-                                                                               alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Sector Utilization DL/UL or Frequecy not exist for base station ({}).".format(
+                        base_station.name,
+                        e.message))
 
                 # mrc
                 try:
@@ -12530,8 +12590,9 @@ def get_selected_wimax_inventory(base_station, sector):
                 # system uptime
                 try:
                     system_uptime = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                                 data_source='bs_uptime').using(
-                                                                                 alias=bs_machine_name)[0].current_value
+                                                                 service_name='wimax_bs_uptime',
+                                                                 data_source='uptime').using(
+                                                                 alias=bs_machine_name)[0].current_value
                     wimax_bs_row['System Uptime'] = display_time(system_uptime)
                 except Exception as e:
                     logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
@@ -12550,11 +12611,23 @@ def get_selected_wimax_inventory(base_station, sector):
             except Exception as e:
                 logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
 
+            # sector id
+            try:
+                wimax_ss_row['Sector ID'] = sector.sector_id
+            except Exception as e:
+                logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
             # ss ip
             try:
                 wimax_ss_row['SS IP'] = sub_station.device.ip_address
             except Exception as e:
                 logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+            # ss vendor
+            try:
+                wimax_ss_row['Vendor'] = DeviceVendor.objects.get(id=sub_station.device.device_vendor).name
+            except Exception as e:
+                logger.info("Vendor not exist for sub station ({}).".format(sub_station.name, e.message))
 
             # qos bandwidth
             try:
@@ -12684,6 +12757,7 @@ def get_selected_wimax_inventory(base_station, sector):
                 # frequency
                 try:
                     wimax_ss_row['Frequency'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                             service_name='wimax_ss_frequency',
                                                                              data_source='frequency').using(
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
