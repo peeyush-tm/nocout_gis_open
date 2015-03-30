@@ -9165,7 +9165,7 @@ function devicePlottingClass_gmap() {
     		url : base_url+"/inventory/export_selected_bs_inventory/",
     		type : "POST",
     		data : {
-    			"base_stations" : inventory_bs_ids
+    			"base_stations" : JSON.stringify(inventory_bs_ids)
     		},
     		success : function(response) {
     			
