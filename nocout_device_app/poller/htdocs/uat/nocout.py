@@ -1041,7 +1041,7 @@ def sync():
     }
     # Create an archive of current folder state, to be used for rollback
     os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
-    out = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar', mode='w')
+    out = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar.gz', mode='w:gz')
     try:
         for entry in os.listdir('.'):
             if entry not in ['..', '.']:
@@ -1144,7 +1144,7 @@ def nocout_untar_backup_folder():
                 os.remove(entry)
     # Untar the content and place in wato folder
     try:
-        t = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar', 'r')
+        t = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar.gz', 'r:gz')
         t.extractall('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
     except Exception, err:
         logger.error('Exception in opening backup  tarfile: ' + pprint.pformat(err))
