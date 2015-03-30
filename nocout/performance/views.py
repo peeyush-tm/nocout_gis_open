@@ -3167,7 +3167,8 @@ class DeviceServiceDetail(View):
 
         service_names = list()
         sds_names = list()
-        service_data_sources = {}
+        service_data_sources = dict()
+        bh_data_sources = None
 
         colors = ['#1BEAFF', '#A60CE8']
 
@@ -3200,17 +3201,17 @@ class DeviceServiceDetail(View):
             return HttpResponse(json.dumps(result), content_type="application/json")
 
 
-        if is_sector or is_ss:
-            device_type_services = device_type.service.filter(name__icontains=service_name
-            ).prefetch_related('servicespecificdatasource_set')
 
-            services = device_type_services.values('name',
-                                                   'alias',
-                                                   'servicespecificdatasource__service_data_sources__name',
-                                                   'servicespecificdatasource__service_data_sources__alias'
-            )
+        device_type_services = device_type.service.filter(name__icontains=service_name
+        ).prefetch_related('servicespecificdatasource_set')
 
-        elif is_bh:
+        services = device_type_services.values('name',
+                                               'alias',
+                                               'servicespecificdatasource__service_data_sources__name',
+                                               'servicespecificdatasource__service_data_sources__alias'
+        )
+
+        if is_bh:
             try:
                 those_ports = device.backhaul.get().basestation_set.filter().values_list('bh_port_name', flat=True)
 
@@ -3218,57 +3219,37 @@ class DeviceServiceDetail(View):
                     name__in=DevicePort.objects.filter(alias__in=those_ports).values_list('name', flat=True)
                 ).values_list('name', flat=True)
 
-                excluded_bh_data_sources = list(ServiceDataSource.objects.filter(
-                    name__in=DevicePort.objects.filter().values_list('name', flat=True)
-                ).exclude(
-                    name__in=bh_data_sources).values_list('name', flat=True))
-
-                excluded_bh_data_sources_status = [str(x)+"_state" for x in excluded_bh_data_sources]
-
-                excluded_bh_data_sources += excluded_bh_data_sources_status
-
-                device_type_services = device_type.service.filter(
-                    name__icontains=service_name,
-                    servicespecificdatasource_set__name__in=bh_data_sources
-                ).prefetch_related('servicespecificdatasource_set')
-
-                services = device_type_services.values('name',
-                                                       'alias',
-                                                       'servicespecificdatasource__service_data_sources__name',
-                                                       'servicespecificdatasource__service_data_sources__alias'
-                )
-
             except Exception as e:
                 log.exception('{0} {1}', filter(type(e), e.message))
                 is_bh = False
-                device_type_services = device_type.service.filter(
-                    name__icontains=service_name,
-                ).prefetch_related('servicespecificdatasource_set')
-                services = device_type_services.values('name',
-                                                       'alias',
-                                                       'servicespecificdatasource__service_data_sources__name',
-                                                       'servicespecificdatasource__service_data_sources__alias'
-                )
-
-        else:
-            return HttpResponse(json.dumps(result), content_type="application/json")
+                bh_data_sources = None
 
         for s in services:
             service_names.append(s['name'])
             temp_sds_name = s['servicespecificdatasource__service_data_sources__name']
             temp_s_name = s['name']
-            sds_names.append(temp_sds_name)
+            if is_bh:
+                if bh_data_sources:
+                    if temp_sds_name in bh_data_sources:
+                        sds_names.append(temp_sds_name)
+                    else:
+                        continue
+                else:
+                    sds_names.append(temp_sds_name)
+            else:
+                sds_names.append(temp_sds_name)
+
             service_data_sources[temp_s_name, temp_sds_name] = \
                 s['servicespecificdatasource__service_data_sources__alias']
-            if technology and technology.name.lower() in ['ptp', 'p2p']:
-                if 'ul' in temp_s_name.lower():
-                    appnd = 'UL : '
-                elif 'dl' in temp_s_name.lower():
-                    appnd = 'DL : '
-                else:
-                    appnd = ''
-                service_data_sources[temp_s_name, temp_sds_name] = appnd + \
-                                                                   service_data_sources[temp_s_name, temp_sds_name]
+            # if technology and technology.name.lower() in ['ptp', 'p2p']:
+            if 'ul' in temp_s_name.lower():
+                appnd = 'UL : '
+            elif 'dl' in temp_s_name.lower():
+                appnd = 'DL : '
+            else:
+                appnd = ''
+            service_data_sources[temp_s_name, temp_sds_name] = appnd + \
+                                                               service_data_sources[temp_s_name, temp_sds_name]
 
 
 
