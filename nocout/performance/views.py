@@ -2897,6 +2897,8 @@ class Get_Service_Type_Performance_Data(View):
 
         return result
 
+    # TODO: Mix charts support
+    
     def get_performance_data_result(self, performance_data, data_source=None):
         chart_data = list()
         if performance_data:
