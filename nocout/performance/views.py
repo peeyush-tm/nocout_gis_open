@@ -3169,7 +3169,10 @@ class DeviceServiceDetail(View):
         sds_names = list()
         service_data_sources = {}
 
-        colors = ['#1BEAFF','#A60CE8']
+        colors = ['#1BEAFF', '#A60CE8']
+
+        # if is_sector:
+        dr_device = None
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
         if not isSet:
@@ -3178,22 +3181,26 @@ class DeviceServiceDetail(View):
 
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
+        # specially for DR devices
+        technology = DeviceTechnology.objects.get(id=device.device_technology)
 
         if device.sector_configured_on.exists():
             is_sector = True
             is_bh = False
+            is_ss = False
         elif device.backhaul.exists():
             is_sector = False
             is_bh = True
+            is_ss = False
+        elif device.substation_set.exists():
+            is_sector = False
+            is_bh = False
+            is_ss = True
         else:
             return HttpResponse(json.dumps(result), content_type="application/json")
 
-        # specially for DR devices
-        technology = DeviceTechnology.objects.get(id=device.device_technology)
-        # if is_sector:
-        dr_device = None
 
-        if is_sector:
+        if is_sector or is_ss:
             device_type_services = device_type.service.filter(name__icontains=service_name
             ).prefetch_related('servicespecificdatasource_set')
 
