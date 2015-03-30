@@ -1814,32 +1814,15 @@ class GISPerfData(View):
         backhaul_data = dict()
         backhaul_data['bh_info'] = list()
         backhaul_data['bhSeverity'] = "NA"
-
-        # backhaul pl dictionary
-        pl_dict = dict()
-        pl_dict['name'] = "pl"
-        pl_dict['show'] = 1
-        pl_dict['title'] = "Packet Drop"
-
-        # backhaul rta dictionary
-        rta_dict = dict()
-        rta_dict['name'] = "rta"
-        rta_dict['show'] = 1
-        rta_dict['title'] = "Latency"
+        backhaul_data['bh_pl'] = "NA"
 
         # pl
         try:
-            pl_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
+            backhaul_data['bh_pl'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
                                 d['data_source'] == 'pl'][0]['current_value']
         except Exception as e:
-            pl_dict['value'] = "NA"
-
-        # rta
-        try:
-            rta_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
-                                 d['data_source'] == 'pl'][0]['current_value']
-        except Exception as e:
-            rta_dict['value'] = "NA"
+            # pl_dict['value'] = "NA"
+            backhaul_data['bh_pl'] = "NA"
 
         # bh severity
         try:
@@ -1847,12 +1830,6 @@ class GISPerfData(View):
                                            d['data_source'] == 'pl'][0]['severity']
         except Exception as e:
             backhaul_data['bhSeverity'] = 'unknown'
-
-        # append 'pl_dict' to 'bh_info' list
-        backhaul_data['bh_info'].append(pl_dict)
-
-        # append 'rta_dict' to 'bh_info' list
-        backhaul_data['bh_info'].append(rta_dict)
 
         return backhaul_data
 
@@ -4059,8 +4036,8 @@ class GISStaticInfo(View):
                 # ********************************* BACKHAUL PERF INFO (START) ***********************************
                 if bh_device:
                     backhaul_data = self.get_backhaul_info(bh_device, complete_performance['network_perf_data'])
-                    inventory['data']['param']['bh_polled_info'] = backhaul_data[
-                        'bh_info'] if 'bh_info' in backhaul_data else []
+                    inventory['data']['param']['bh_polled_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
+                    inventory['data']['param']['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
                     inventory['data']['param']['bhSeverity'] = backhaul_data[
                         'bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
 
@@ -4229,18 +4206,6 @@ class GISStaticInfo(View):
         backhaul_data['bhSeverity'] = "NA"
         backhaul_data['bh_pl'] = "NA"
 
-        # backhaul pl dictionary
-        # pl_dict = dict()
-        # pl_dict['name'] = "pl"
-        # pl_dict['show'] = 1
-        # pl_dict['title'] = "Packet Drop"
-
-        # backhaul rta dictionary
-        # rta_dict = dict()
-        # rta_dict['name'] = "rta"
-        # rta_dict['show'] = 1
-        # rta_dict['title'] = "Latency"
-
         # pl
         try:
             backhaul_data['bh_pl'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
@@ -4248,25 +4213,12 @@ class GISStaticInfo(View):
         except Exception as e:
             backhaul_data['bh_pl'] = "NA"
 
-        # rta
-        # try:
-        #     rta_dict['value'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
-        #                          d['data_source'] == 'pl'][0]['current_value']
-        # except Exception as e:
-        #     rta_dict['value'] = "NA"
-
         # bh severity
         try:
             backhaul_data['bhSeverity'] = [d for d in network_perf_data if d['device_name'] == bh_device.device_name and
                                            d['data_source'] == 'pl'][0]['severity']
         except Exception as e:
             backhaul_data['bhSeverity'] = 'unknown'
-
-        # append 'pl_dict' to 'bh_info' list
-        # backhaul_data['bh_info'].append(pl_dict)
-
-        # append 'rta_dict' to 'bh_info' list
-        # backhaul_data['bh_info'].append(rta_dict)
 
         return backhaul_data
 

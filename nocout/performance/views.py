@@ -565,7 +565,7 @@ class Get_Perfomance(View):
             'realdevice': realdevice,
             'get_devices_url': 'performance/get_inventory_devices/' + page_type,
             'get_status_url': 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
-            'get_services_url': 'performance/get_inventory_service_data_sources/device/'+str(device_id)+'?is_util='+str(is_util_tab),
+            'get_services_url': 'performance/get_inventory_service_data_sources/device/'+str(device_id)+'/?is_util='+str(is_util_tab),
             'inventory_page_url' : reverse(
                 'device_edit',
                 kwargs={'pk': device_id},
