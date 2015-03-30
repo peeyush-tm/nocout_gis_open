@@ -18,6 +18,7 @@ from itertools import ifilterfalse
 from nocout_logger import nocout_log
 import mysql.connector
 import generate_deviceapp_config
+from shutil import copy
 
 logger = nocout_log()
 
@@ -1032,6 +1033,8 @@ def write_new_host_rules():
 def sync():
     logger.debug('[-- sync --]')
     sites_affected = []
+    # sites for which sync is unsuccessful
+    dirty_sites = {}
     response = {
         "success": 1,
         "message": "Config pushed to "
@@ -1050,9 +1053,9 @@ def sync():
         out.close()
 
     nocout_sites = nocout_distributed_sites()
-    # Remove master_UA from nocout_sites
+    # Remove master_UA from nocout_sites, we dont need to push conf to master_UA
     nocout_sites = dict(filter(lambda d: d[1].get('replication') == 'slave', nocout_sites.items()))
-    logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_sites))
+    #logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_sites))
 
     try:
         # Generate hosts n rules file, read configurations from db
@@ -1060,7 +1063,7 @@ def sync():
     except Exception, e:
         logger.error('Error in make_hosts or make_rules: ' + pprint.pformat(e))
         # Perform rollback
-        nocout_rollback_action(nocout_sites, response)
+        nocout_rollback_action(nocout_sites, response, proceed=False)
         return response
 
     nocout_create_sync_snapshot()
@@ -1073,42 +1076,57 @@ def sync():
     if f != 0:
         logger.info("Could not cmk -R master_UA")
         # Perform rollback if problem with master_UA
-        nocout_rollback_action(nocout_sites, response)
+        nocout_rollback_action(nocout_sites, response, proceed=False)
         return response
     for site, attrs in nocout_sites.items():
         logger.debug('site :' + pprint.pformat(site))
         response_text = nocout_synchronize_site(site, attrs, True)
         if response_text is True:
+            # affected sites with a successful restart
             sites_affected.append(site)
+        else:
+            # sites for which restart was unsuccessful
+            dirty_sites.update({site: attrs})
     logger.info('sites_affected: ' + pprint.pformat(sites_affected))
+    logger.info('dirty_sites: ' + pprint.pformat(dirty_sites.keys()))
+    response.update({
+        "message": "Successfully pushed to : " + ','.join(sites_affected)
+    })
     if len(sites_affected) == len(nocout_sites):
-        response.update({
-            "message": "Config pushed to " + ','.join(sites_affected)
-        })
         # Update the configuration database
         sync_log_id = int(html.var('sync_obj_id')) if html.var('sync_obj_id') else None
         generate_deviceapp_config.update_configuration_db(update_id=sync_log_id,
                 status=1, sync_message='Successful', detailed_message=response.get('message'))
     else:
         logger.info("Length of sites_affected and nocout_sites doesn't match")
-        nocout_rollback_action(nocout_sites, response)
+        # perform rollback for dirty sites, only
+        nocout_rollback_action(dirty_sites, response, all_sites=False)
     logger.debug('[-- sync finish --]')
+
     return response
 
 
-def nocout_rollback_action(nocout_sites, response):
-    # Untar the backup archive
-    nocout_untar_backup_folder()
-    # Generate a fresh snapshot
-    nocout_create_sync_snapshot()
-    os.system('~/bin/cmk -R')
-    for site, attrs in nocout_sites.items():
-        nocout_synchronize_site(site, attrs, True)
+def nocout_rollback_action(nocout_sites, response, all_sites=True, proceed=True):
+    if all_sites:
+        # untar the backup archive
+        nocout_untar_backup_folder()
+        # generate a fresh snapshot
+        nocout_create_sync_snapshot()
+        os.system('~/bin/cmk -R')
+    else:
+        # copy wato_backup.tar into sync_snapshot_file
+        # do not change the configuration present @ master_UA
+        copy('../wato_backup.tar', sync_snapshot_file)
+    if proceed is False:
         response.update({
-            "message": "Problem with the new config, old config retained",
+            "message": "Configuration error, old config retained",
             "success": 1
             })
-    # Update the sync log table
+        return
+    for site, attrs in nocout_sites.items():
+        nocout_synchronize_site(site, attrs, True)
+    response['message'] += '\nError with sites : ' + ','.join(nocout_sites.keys())
+    # update the sync log table
     sync_log_id = int(html.var('sync_obj_id')) if html.var('sync_obj_id') else None
     generate_deviceapp_config.update_configuration_db(update_device_table=False,
             update_id=sync_log_id, sync_message='Not Successful', status=2, 
@@ -1161,14 +1179,14 @@ def nocout_synchronize_site(site, site_attrs, restart):
 
 
 def nocout_distributed_sites():
-    logger.debug('[nocout_distributed_sites]')
+    #logger.debug('[nocout_distributed_sites]')
     nocout_site_vars = {
         "sites": {}
     }
     sites_file = defaults.default_config_dir + "/multisite.d/sites.mk"
     if os.path.exists(sites_file):
         execfile(sites_file, nocout_site_vars, nocout_site_vars)
-    logger.debug('[--]')
+    #logger.debug('[--]')
 
     return nocout_site_vars.get('sites')
 
