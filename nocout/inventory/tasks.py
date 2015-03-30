@@ -12328,8 +12328,7 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # sector name
             try:
-                sector_name = sector.name.split("_")[-1]
-                wimax_bs_row['Sector Name'] = "v" + sector_name
+                wimax_bs_row['Sector Name'] = sector.alias
             except Exception as e:
                 logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
 
