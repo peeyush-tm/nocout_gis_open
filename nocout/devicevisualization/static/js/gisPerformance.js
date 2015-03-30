@@ -319,6 +319,7 @@ function GisPerformance() {
                 maintenance_icon = apiResponse.data.markerUrl ? apiResponse.data.markerUrl : false,
                 perf_bh_info = apiResponse.data.param.bh_polled_info ? apiResponse.data.param.bh_polled_info : [],
                 perf_bh_severity = apiResponse.data.param.bhSeverity ? apiResponse.data.param.bhSeverity : "",
+                bh_pl = apiResponse.data.param.bh_pl ? apiResponse.data.param.bh_pl : "",
                 show_ss_len = $("#showAllSS:checked").length,
                 bs_lat = apiResponse.data.lat,
                 bs_lon = apiResponse.data.lon,

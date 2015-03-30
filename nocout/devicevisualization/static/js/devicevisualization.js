@@ -2044,11 +2044,11 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                                 // pass
                             }
                         } else if(point_type == 'base_station') {
-                            if(bh_device_type == 'pine') {
+                            if(device_tech == 'pine') {
                                 tooltip_info_dict = rearrangeTooltipArray(mrotech_bh_toolTip_polled,fetched_polled_info);
-                            } else if(bh_device_type == 'switch') {
+                            } else if(device_tech == 'switch') {
                                 tooltip_info_dict = rearrangeTooltipArray(switch_bh_toolTip_polled,fetched_polled_info);
-                            } else if(bh_device_type == 'rici') {
+                            } else if(device_tech == 'rici') {
                                 tooltip_info_dict = rearrangeTooltipArray(rici_bh_toolTip_polled,fetched_polled_info);
                             }
                         } else {
