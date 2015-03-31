@@ -60,8 +60,10 @@ function nocoutPerfLib() {
      */
     this.initDateRangePicker = function(domElemet) {
 
-        var saved_start_date = $.cookie('filter_start_date') ? $.cookie('filter_start_date') : "",
-            saved_end_date = $.cookie('filter_end_date') ? $.cookie('filter_end_date') : "",
+        // var saved_start_date = $.cookie('filter_start_date') ? $.cookie('filter_start_date') : "",
+        //     saved_end_date = $.cookie('filter_end_date') ? $.cookie('filter_end_date') : "",
+        var saved_start_date = "",
+            saved_end_date = "",
             oldStartDate = saved_start_date ? new Date(saved_start_date * 1000) : new Date(),
             oldENdData = saved_end_date ? new Date(saved_end_date * 1000) : new Date();
 
@@ -615,16 +617,16 @@ function nocoutPerfLib() {
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
             
-            $.cookie('filter_start_date', myStartDate.getTime() / 1000.0, {path: '/', secure: true});
-            $.cookie('filter_end_date', myEndDate.getTime() / 1000.0, {path: '/', secure: true});
+            // $.cookie('filter_start_date', myStartDate.getTime() / 1000.0, {path: '/', secure: true});
+            // $.cookie('filter_end_date', myEndDate.getTime() / 1000.0, {path: '/', secure: true});
 
             start_date = new Date(myStartDate.getTime()),
             end_date = new Date(myEndDate.getTime());
 
             sendAjax(start_date, end_date);
         } else {
-            $.cookie('filter_start_date', "", {path: '/', secure: true});
-            $.cookie('filter_end_date', "", {path: '/', secure: true});
+            // $.cookie('filter_start_date', "", {path: '/', secure: true});
+            // $.cookie('filter_end_date', "", {path: '/', secure: true});
             sendAjax('', '');
         }
 

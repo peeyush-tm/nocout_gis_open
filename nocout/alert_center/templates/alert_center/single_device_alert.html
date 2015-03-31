@@ -210,9 +210,9 @@
                 window.location.href = location_array[0];
             }
 
-            if($.cookie('filter_start_date') && $.cookie('filter_end_date')) {
-                isDateFilterApplied = true;                
-            }
+            // if($.cookie('filter_start_date') && $.cookie('filter_end_date')) {
+            //     isDateFilterApplied = true;
+            // }
 
             current_device_id = "{{ current_device_id }}";
 
@@ -264,8 +264,8 @@
                 startDate = myStartDate.getTime() / 1000.0;
                 endDate = myEndDate.getTime() / 1000.0;
 
-                $.cookie('filter_start_date', startDate, {path: '/', secure: true});
-                $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+                // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+                // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
 
                 var active_tab = $("#single_device_alert_container li.active").children("a"),
                     active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
@@ -286,8 +286,8 @@
             startDate = "";
             endDate = "";
             
-            $.cookie('filter_start_date', startDate, {path: '/', secure: true});
-            $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+            // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+            // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
             var active_tab = $("#single_device_alert_container li.active").children("a"),
                 active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
 
