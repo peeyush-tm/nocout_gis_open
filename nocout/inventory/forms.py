@@ -793,7 +793,42 @@ class SubStationForm(forms.ModelForm):
         """
         Validations for sub station form
         """
+        latitude = self.cleaned_data.get('latitude')
+        longitude = self.cleaned_data.get('longitude')
+        state = self.cleaned_data.get('state')
         name = self.cleaned_data.get('name')
+
+        #commented because of goes package is not supported for python 2.7 on centos 6.5
+        # check whether lat log lies in state co-ordinates or not
+        # '''
+        if latitude and longitude and state:
+            try:
+                project = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init='epsg:4326'),
+                    pyproj.Proj(
+                        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+
+                state_geo_info = StateGeoInfo.objects.filter(state_id=state)
+                state_lat_longs = list()
+                for geo_info in state_geo_info:
+                    temp_lat_longs = list()
+                    temp_lat_longs.append(geo_info.longitude)
+                    temp_lat_longs.append(geo_info.latitude)
+                    state_lat_longs.append(temp_lat_longs)
+
+                poly = Polygon(tuple(state_lat_longs))
+                point = Point(longitude, latitude)
+
+                # Translate to spherical Mercator or Google projection
+                poly_g = transform(project, poly)
+                p1_g = transform(project, point)
+                if not poly_g.contains(p1_g):
+                    self._errors["latitude"] = ErrorList(
+                        [u"Latitude, longitude specified doesn't exist within selected state."])
+            #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
+            except Exception as e:
+                logger.exception(e)
 
         # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
         try:
@@ -1651,10 +1686,6 @@ class WizardBaseStationForm(BaseStationForm):
         except Exception as e:
             pass
 
-        print "****************************** latitude - ", latitude
-        print "****************************** longitude - ", longitude
-        print "****************************** state - ", state
-
         if ('alias' not in self.cleaned_data) or (not self.cleaned_data['alias']):
             self._errors['alias'] = ErrorList(
                 [u"This field is required."])
@@ -1879,6 +1910,53 @@ class WizardSubStationForm(SubStationForm):
         self.fields.pop('antenna')
         self.fields.pop('address')
         self.fields.pop('description')
+
+    def clean(self):
+        """
+        Validations for base station form
+        """
+        latitude = self.cleaned_data.get('latitude')
+        longitude = self.cleaned_data.get('longitude')
+        state = self.cleaned_data.get('state')
+
+        state_id = None
+        try:
+            state_id = State.objects.get(state_name=state)
+        except Exception as e:
+            pass
+
+        if latitude and longitude and state:
+
+            try:
+                project = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init='epsg:4326'),
+                    pyproj.Proj(
+                        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+
+                state_geo_info = StateGeoInfo.objects.filter(state_id=state_id)
+                state_lat_longs = list()
+                for geo_info in state_geo_info:
+                    temp_lat_longs = list()
+                    temp_lat_longs.append(geo_info.longitude)
+                    temp_lat_longs.append(geo_info.latitude)
+                    state_lat_longs.append(temp_lat_longs)
+
+                poly = Polygon(tuple(state_lat_longs))
+                point = Point(longitude, latitude)
+
+                # Translate to spherical Mercator or Google projection
+                poly_g = transform(project, poly)
+                p1_g = transform(project, point)
+                if not poly_g.contains(p1_g):
+                    self._errors["latitude"] = ErrorList(
+                        [u"Latitude, longitude specified doesn't exist within selected state."])
+            #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
+            except Exception as e:
+                logger.exception(e)
+
+        return self.cleaned_data
+
 
 
 class WizardCustomerForm(CustomerForm):
