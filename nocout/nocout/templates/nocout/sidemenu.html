@@ -201,8 +201,10 @@
                             <li><a class="" href="/dashboard/mfr-reports/"><span class="sub-menu-text">MFR</span></a></li>
                         </ul>
                     </li>
-                <li><a class="" href="/gis_downloaded_inventories/"><span class="sub-menu-text">GIS Inventory Reports</span></a></li>
-                <li><a class="" href="/downloader/"><span class="sub-menu-text">User Downloaded Reports</span></a></li>
+                    <li><a class="" href="/gis_downloaded_inventories/"><span class="sub-menu-text">GIS Inventory Reports</span></a></li>
+                    {% if settings.DATATABLES_DOWNLOAD_FLAG %}
+                    <li><a class="" href="/downloader/"><span class="sub-menu-text">User Downloaded Reports</span></a></li>
+                    {% endif %}
                 </ul>
             </li>
             <li class="has-sub">
