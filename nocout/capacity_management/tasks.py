@@ -666,7 +666,7 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
             `service_name`,
             `data_source`,
             MAX(`current_value` * 1) AS `max_val`,
-            AVG(`current_value` * 1) AS `avg_val`
+            AVG(CAST(`current_value` AS DECIMAL(6,2))) AS `avg_val`
         FROM {0}
         WHERE
             `sys_timestamp` >= {4}
