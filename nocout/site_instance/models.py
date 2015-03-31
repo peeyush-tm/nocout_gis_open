@@ -14,6 +14,7 @@ class SiteInstance(models.Model):
     username = models.CharField('Username', max_length=100, null=True, blank=True)
     password = models.CharField('Password', max_length=100, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    is_device_change = models.IntegerField('Is Device Change', default=0)
 
     def __unicode__(self):
         """
