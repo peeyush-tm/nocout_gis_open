@@ -1136,7 +1136,7 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
                         pmp_port = sector.sector_configured_on_port.alias.upper()
                         pmp_port_url = reverse(
                             'device_edit',
-                            kwargs={'pk': sector.dr_configured_on.id},
+                            kwargs={'pk': sector.sector_configured_on.id},
                             current_app='device'
                         )
                     except Exception as no_port:
