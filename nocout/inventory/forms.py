@@ -376,9 +376,12 @@ class BaseStationForm(forms.ModelForm):
     )
 
     PROVISIONING_STATUS = (
-        ('Normal', 'Normal'),
-        ('Needs Provisioning', 'Needs Provisioning'),
-        ('Stop Provisioning', 'Stop Provisioning')
+        ('', 'Select'),
+        ('Installed', 'Installed'),
+        ('Ready for Migration', 'Ready for Migration'),
+        ('Ready - Non Operational', 'Ready - Non Operational'),
+        ('Ready in Service', 'Ready in Service'),
+        ('Decommissioned', 'Decommissioned')
     )
 
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
