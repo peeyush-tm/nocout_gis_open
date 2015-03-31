@@ -96,3 +96,9 @@
     text-align: left;
     max-width: 100%;
 }
+.has-error .form-control,  .has-error .select2-container {
+    border: 1px solid #b94a48 !important;
+    border-radius: 2px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}

@@ -972,8 +972,8 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             'City',
             'State',
             'IP Address',
-            'Planned Frequency',
-            'Frequency'
+            'Planned Frequency(MHz)',
+            'Frequency(MHz)'
         ]
 
         if technology in ['P2P', 'PTP', 'ptp', 'p2p']:
@@ -1002,7 +1002,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             'IP Address',
             'MAC Address',
             'Qos(Mbps)',
-            'Frequency'
+            'Frequency(MHz)'
         ]
 
     elif type_of_device in ['backhaul']:

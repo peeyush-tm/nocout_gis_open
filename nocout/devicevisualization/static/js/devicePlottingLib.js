@@ -1962,6 +1962,7 @@ function devicePlottingClass_gmap() {
 				bhInfo_polled 	   :    [],
 				bhSeverity 		   :    "",
 				bs_name 		   : 	bs_ss_devices[i].name,
+				alias 		   	   :    bs_ss_devices[i].alias,
 				bs_alias 		   :    bs_ss_devices[i].alias,
 				name 		 	   : 	bs_ss_devices[i].name,
 				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
@@ -2088,6 +2089,7 @@ function devicePlottingClass_gmap() {
 							// map 				: mapInstance,
 							ptLat 			 	: lat,
 							ptLon 			 	: lon,
+							alias 		   	   	: sector_array[j].sector_configured_on,
 							icon 			 	: hiddenIconImageObj,
 							oldIcon 		 	: sector_icon_obj,
 							clusterIcon 	 	: hiddenIconImageObj,
@@ -2212,6 +2214,7 @@ function devicePlottingClass_gmap() {
 				    	oldIcon 		 : 	ss_icon_obj,
 				    	clusterIcon 	 : 	ss_icon_obj,
 				    	pointType	     : 	"sub_station",
+				    	alias 		   	 :  ss_marker_obj.data.circuit_id,
 				    	dataset 	     : 	ss_info_dict,
 				    	item_index 		 :  ss_item_info_index,
 				    	bhInfo 			 : 	[],
@@ -3164,6 +3167,7 @@ function devicePlottingClass_gmap() {
 			var start_date_infowindow = new Date();
 			// console.log("Make Info Window HTML Start Time :- "+ start_date_infowindow.toLocaleString());
 		}
+
 		var windowContent = "",
 			infoTable =  "",
 			perfContent = "",
@@ -3251,7 +3255,7 @@ function devicePlottingClass_gmap() {
 
 				var bs_info = [];
 
-				if(lineStartTitle.toLowerCase().indexOf("point") > -1) {
+				if(lineWindowTitle == "Point A-Point B") {
 					bs_info = contentObject.bs_info;
 				} else {
 					bs_info = contentObject.bs_info ?  rearrangeTooltipArray(bs_toolTip_static,contentObject.bs_info) : [];
@@ -3280,7 +3284,7 @@ function devicePlottingClass_gmap() {
 					actual_sequence_array = ss_toolTip_static,
 					ss_actual_data = [];
 
-				if(lineEndTitle.toLowerCase().indexOf("point") > -1) {
+				if(lineWindowTitle == "Point A-Point B") {
 					ss_actual_data = ss_tooltip_backend_data;
 				} else {
 					ss_actual_data = rearrangeTooltipArray(actual_sequence_array,ss_tooltip_backend_data);
@@ -7580,12 +7584,17 @@ function devicePlottingClass_gmap() {
 	this.create_old_line= function() {
 		if($.cookie('tools_line')) {
     		var line_obj= JSON.parse($.cookie('tools_line'));
-    		if(line_obj) {
-    			
-    			var first_point = new google.maps.Marker({position: new google.maps.LatLng(line_obj["startLat"], line_obj["startLon"]), map: mapInstance});
+    		if(line_obj) {    			
+    			var first_point = new google.maps.Marker({
+    				position: new google.maps.LatLng(line_obj["startLat"], line_obj["startLon"]),
+    				map: mapInstance
+				});
     			tools_line_marker_array.push(first_point);
 
-    			var second_point = new google.maps.Marker({position: new google.maps.LatLng(line_obj["endLat"], line_obj["endLon"]), map: mapInstance});
+    			var second_point = new google.maps.Marker({
+    				position: new google.maps.LatLng(line_obj["endLat"], line_obj["endLon"]),
+    				map: mapInstance
+    			});
     			tools_line_marker_array.push(second_point);
 
     			// Base station info
@@ -7946,10 +7955,8 @@ function devicePlottingClass_gmap() {
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			openGoogleEarthBaloon(right_click_html, marker);
 		} else {
-
 			/*Close infowindow if any opened*/
 			infowindow.close();
-
 			/*Set the content for infowindow*/
 			infowindow.setContent(right_click_html);
 			/*Open the info window*/
@@ -7971,7 +7978,6 @@ function devicePlottingClass_gmap() {
 		if($.trim($("#point_name").val()) == '') {
 			bootbox.alert("Please enter point name");
 		} else {
-
 			try {
 				marker['name'] = current_marker['point_name'] = document.getElementById("point_name").value;
 				marker['desc'] = current_marker['point_desc'] = document.getElementById("point_desc").value;
@@ -8097,7 +8103,7 @@ function devicePlottingClass_gmap() {
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			ge.setBalloon(null);
 		} else if(window.location.pathname.indexOf("white_background") > -1) {
-			
+			// pass
 		} else {
 			infowindow.close();
 		}
@@ -8124,12 +8130,11 @@ function devicePlottingClass_gmap() {
 				}
 			}
 		} else if(window.location.pathname.indexOf("white_background") > -1) {
-
+			// pass
 		} else {
 	        google.maps.event.clearListeners(mapInstance,'click');
 
 			google.maps.event.addListener(mapInstance,'click',function(e) {
-
 				if(Object.keys(connected_end_obj).length === 0) {
 					bootbox.alert("Please select other point");
 				} else {
@@ -8147,7 +8152,18 @@ function devicePlottingClass_gmap() {
 	 */
 	this.plot_point_line = function(marker) {
 
-		var current_pt = current_point_for_line;
+		var current_pt = current_point_for_line,
+			point_1_name = point_data_obj[current_pt]['point_name'] ? point_data_obj[current_pt]['point_name'] : point_data_obj[current_pt]['alias'],
+			point_2_name = marker['point_name'] ? marker['point_name'] : marker['alias'];
+
+		if(!point_1_name) {
+			point_1_name = "Point A";
+		}
+
+		if(!point_2_name) {
+			point_2_name = "Point B";
+		}
+
 		var line_obj = {
 			"startLat" : point_data_obj[current_pt].lat,
 			"startLon" : point_data_obj[current_pt].lon,
@@ -8156,8 +8172,8 @@ function devicePlottingClass_gmap() {
 			"nearEndLat" : point_data_obj[current_pt].lat,
 			"nearEndLon" : point_data_obj[current_pt].lon,
 			"windowTitle" : "Point A-Point B",
-    		"startTitle" : "Point A",
-    		"endTitle" : "Point B"
+    		"startTitle" : point_1_name,
+    		"endTitle" : point_2_name
 		};
 
 		var current_line;
@@ -8215,7 +8231,14 @@ function devicePlottingClass_gmap() {
 		point_data_obj[current_pt].connected_lat = connected_end_obj.lat;
 		point_data_obj[current_pt].connected_lon = connected_end_obj.lon;
 		point_data_obj[current_pt].connected_point_type = marker.pointType ? marker.pointType : "point";
-		point_data_obj[current_pt].connected_point_info = marker.filter_data ? JSON.stringify(marker.filter_data) : "";
+		
+		var connected_pt_info = marker.filter_data ? marker.filter_data : "";
+		// Add point alias to the filter info if the point is SS, BS or Sector
+		if(connected_pt_info) {
+			connected_pt_info['alias'] = marker['alias'] ? marker['alias'] : "";
+		}
+
+		point_data_obj[current_pt].connected_point_info = JSON.stringify(connected_pt_info);
 
 		line_data_obj[current_pt] = current_line;
 
@@ -8351,13 +8374,18 @@ function devicePlottingClass_gmap() {
 	        	},
 	        	error : function(err) {
 	        		// console.log(err);
+	        	},
+	        	complete : function() {
+	        		if(infowindow) {
+	        			infowindow.close();
+	        		}
 	        	}
 	    	});
 		}
 	};
 
 	/**
-	 * This function call the get_tools_data API  to populate available point & line on gmap
+	 * This function call the get_tools_data API to populate available point on gmap
 	 * @method get_tools_data_gmap
 	 */
 	this.get_tools_data_gmap = function() {
@@ -8378,8 +8406,8 @@ function devicePlottingClass_gmap() {
 
 				for(var i=0;i<point_array.length;i++) {
 
-					var current_point = point_array[i];
-					var infoObj = {
+					var current_point = point_array[i],
+						infoObj = {
 						'lat' : current_point.lat,
 						'lon' : current_point.lon,
 						'name' : current_point.name,
@@ -8397,11 +8425,41 @@ function devicePlottingClass_gmap() {
 					if(window.location.pathname.indexOf('googleEarth') > -1) {
 						earth_self.plotPoint_earth(infoObj);
 					} else {
-						gmap_self.plotPoint_gmap(infoObj);	
+						gmap_self.plotPoint_gmap(infoObj);
 					}
 
-					if(current_point.connected_lat != 0 && current_point.connected_lon != 0) {
-						var point_custom_id = "point_"+String(current_point.lat).split(".").join("-")+"_"+String(current_point.lon).split(".").join("-");
+					var start_lat_str = String(current_point.lat).split(".").join("-"),
+						start_lon_str = String(current_point.lon).split(".").join("-"),
+						end_lat_str = String(current_point.connected_lat).split(".").join("-"),
+						end_lon_str = String(current_point.connected_lon).split(".").join("-"),
+						point_custom_id = "point_"+start_lat_str+"_"+start_lon_str,
+						point_1_name = "",
+						point_2_name = "";
+
+					// If any connected point exists
+					if(current_point.connected_lat && current_point.connected_lon) {
+						if(current_point.connected_point_type &&  current_point.connected_point_type != 'point') {
+							var conn_pt_info = JSON.parse(current_point.connected_point_info);
+							point_2_name = conn_pt_info['alias'] ? conn_pt_info['alias'] : "";
+						} else {
+							var end_point_obj = point_data_obj["point_"+end_lat_str+"_"+end_lon_str];
+							point_2_name = end_point_obj['point_name'] ? end_point_obj['point_name'] : end_point_obj['alias'];
+						}
+
+						if(current_point['name']) {
+							point_1_name = current_point['name'];
+						} else if(current_point['point_name']) {
+							point_1_name = current_point['point_name'];
+						} else if(current_point['alias']) {
+							point_1_name = current_point['alias'];
+						} else {
+							point_1_name = "Point A";
+						}
+
+						if(!point_2_name) {
+							point_2_name = "Point B";
+						}
+
 						var line_obj = {
 							"startLat"   : current_point.lat,
 							"startLon"   : current_point.lon,
@@ -8410,8 +8468,8 @@ function devicePlottingClass_gmap() {
 							"nearEndLat" : current_point.lat,
 							"nearEndLon" : current_point.lon,
 							"windowTitle" : "Point A-Point B",
-				    		"startTitle" : "Point A",
-				    		"endTitle" : "Point B"
+				    		"startTitle" : point_1_name,
+				    		"endTitle" : point_2_name
 						};
 
 						// Base station info
@@ -8680,12 +8738,6 @@ function devicePlottingClass_gmap() {
         gmap_self.toggleSpecificMarkers_gmap('sub_station',null);
         // Clear link line
         gmap_self.toggleSpecificMarkers_gmap('path',null);
-
-		/*Clear all everything from map*/
-		// $.grep(allMarkersArray_gmap,function(marker) {
-		// 	marker.setOptions({"isActive" : 0});
-		// 	marker.setMap(null);
-		// });
 
 		/*Hide drawn points & lines from tools*/
 		var connected_points_array = Object.keys(point_data_obj),
