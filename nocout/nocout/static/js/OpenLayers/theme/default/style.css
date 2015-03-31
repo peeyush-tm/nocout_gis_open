@@ -523,3 +523,12 @@ a.olControlZoomOut {
 img.olTileImage {
     max-width: none;
 }
+
+/*CSS For Loader Label*/
+.loader_style {
+    background: transparent !important;
+    border: 0px none !important;
+    font-weight: bold !important;;
+    font-size: 15px !important;;
+    color: #333333 !important;;
+}
