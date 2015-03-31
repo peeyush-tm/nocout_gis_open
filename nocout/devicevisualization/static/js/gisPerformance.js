@@ -23,10 +23,20 @@ var recallPerf = "",
         borderRadius  : "5px",
         maxWidth      : '120px'
     },
+    loaderInfoboxStyle = {
+        border        : "0px none",
+        background    : "transparent",
+        textAlign     : "center",
+        fontSize      : "15px",
+        fontWeight    : "bold",
+        color         : "#333333"
+    },
     callsInProcess = false,
     gis_perf_call_instance = "",
     calls_completed = 0,
-    last_counter_val = 0;
+    last_counter_val = 0,
+    loader_icon_html = "<i class='fa fa-cog fa-spin'>&nbsp;</i>",
+    loader_icon_dict = {};
 
 if(!base_url) {
     var base_url = "";
@@ -54,6 +64,10 @@ if((window.location.pathname.indexOf("googleEarth") > -1) || (window.location.pa
  * [GisPerformance description]
  */
 function GisPerformance() {
+    // If google earth page then update loader color
+    if(window.location.pathname.indexOf('google_earth') > -1) {
+        loaderInfoboxStyle['color'] = "#F9F9F9";
+    }
     //Is Frozen variable.. Get value from isFreeze Global Variable defined.
     this.isFrozen_ = 0;
     //Variable to hold GisData
@@ -210,7 +224,78 @@ function GisPerformance() {
      */
     this.makePeriodicAjaxCall = function(bs_id,counter) {
 
-        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
+        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal",
+            bs_data_object = all_devices_loki_db.where(function(bs) {
+                return bs.originalId == bs_id
+            })[0];
+
+        // Show Loader on Current BS
+        if(bs_data_object && bs_data_object.name) {
+            var base_station_name = bs_data_object.name;
+                bs_marker_lat = bs_data_object.data.lat,
+                bs_marker_lon = bs_data_object.data.lon,
+                loader_label = "";
+            
+            if(window.location.pathname.indexOf("white_background") > -1) {
+                
+                loader_label = new OpenLayers.Popup("loader_"+base_station_name,
+                    new OpenLayers.LonLat(bs_marker_lon,bs_marker_lat),
+                    new OpenLayers.Size(20,20),
+                    loader_icon_html,
+                    false
+                );
+
+                ccpl_map.addPopup(loader_label);
+
+                // Add 'loader_style' class to set the style of loader label
+                $("#loader_"+base_station_name).addClass("loader_style");
+
+                // Remove height prop from div's
+                $('.olPopupContent').css('height','');
+                $('.olPopup').css('height','');
+
+                if($("#loader_"+base_station_name).length > 0) {
+                    // Left Position in PX
+                    var current_left = $("#loader_"+base_station_name).position().left,
+                        current_top = $("#loader_"+base_station_name).position().top;
+
+                    current_left = current_left - 10;
+                    current_top = current_top - 25;
+                    // Update position of Loader Label
+                    $("#loader_"+base_station_name).css("left",current_left+"px");
+                    $("#loader_"+base_station_name).css("top",current_top+"px");
+                }
+
+                // Close existing label if exists
+                if(loader_icon_dict[base_station_name]) {
+                    ccpl_map.removePopup(loader_icon_dict[base_station_name]);
+                    delete loader_icon_dict[base_station_name];
+                }
+            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                // 
+            } else {
+                var bs_position_obj = new google.maps.LatLng(bs_marker_lat,bs_marker_lon);
+
+                loader_label = perf_self.createInfoboxLabel(
+                    loader_icon_html,
+                    loaderInfoboxStyle,
+                    -20,
+                    -40,
+                    bs_position_obj,
+                    false
+                );
+
+                loader_label.open(mapInstance);
+                // Close existing label if exists
+                if(loader_icon_dict[base_station_name]) {
+                    loader_icon_dict[base_station_name].close();
+                    delete loader_icon_dict[base_station_name];
+                }
+            }
+            // Add label object to global dict
+            loader_icon_dict[base_station_name] = loader_label;
+        }
+
 
         //Ajax Request
         gis_perf_call_instance = $.ajax({
@@ -294,6 +379,22 @@ function GisPerformance() {
             error: function (err) {
                 //Send Request for the next counter
                 // perf_self.sendRequest(counter);
+            },
+            complete : function() {
+                if(loader_icon_dict[base_station_name]) {
+                    if(window.location.pathname.indexOf("white_background") > -1) {
+                        // Remove the loader from wmap
+                        ccpl_map.removePopup(loader_icon_dict[base_station_name]);
+                    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                        // Remove the loader from google earth
+                        ccpl_map.removePopup(loader_icon_dict[base_station_name]);
+                    } else {
+                        // Remove the loader from gmap
+                        loader_icon_dict[base_station_name].close();
+                    }
+                    // Remove the loader from global variable
+                    delete loader_icon_dict[base_station_name];
+                }
             }
         });
     };

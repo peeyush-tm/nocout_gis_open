@@ -97,6 +97,7 @@ def check_wimax_ss_dl_utilization(item, _no_params, info):
 			dl_throughput =live_query_for_dl_utilization(host_name[0][0],ss_mac,host_name[0][1])
 			if dl_throughput:
 				dl_throughput = float(dl_throughput)/1024.0
+				dl_throughput = round(dl_throughput,2)
 				infotext = "SS downlink utilization is %s" % dl_throughput
 				state = 0
     except ValueError:
