@@ -10335,7 +10335,7 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                      'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
                      'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
                      'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
-                     'Lens/Reflector', 'AP IP', 'Frequency', 'Sector ID', 'RSSI DL', 'RSSI UL', 'Jitter DL',
+                     'Lens/Reflector', 'AP IP', 'Frequency', 'RSSI DL', 'RSSI UL', 'Jitter DL',
                      'Jitter UL', 'Transmit Power', 'Polled SS IP', 'Polled SS MAC', 'Polled BS IP',
                      'Polled BS MAC', 'Session Uptime', 'Latency', 'PD', 'Utilization DL', 'Utilization UL',
                      'Auto Negotiation', 'Duplex', 'Speed', 'Link']
@@ -11829,16 +11829,18 @@ def get_selected_pmp_inventory(base_station, sector):
                 # dl utilization
                 try:
                     pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                                data_source='dl_utilization').using(
-                                                                                alias=bs_machine_name)[0].current_value
+                                                                            service_name='cambium_dl_utilization',
+                                                                            data_source='dl_utilization').using(
+                                                                            alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
 
                 # ul utilization
                 try:
                     pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                                data_source='ul_utilization').using(
-                                                                                alias=bs_machine_name)[0].current_value
+                                                                            service_name='cambium_ul_utilization',
+                                                                            data_source='ul_utilization').using(
+                                                                            alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12117,16 +12119,18 @@ def get_selected_pmp_inventory(base_station, sector):
                 # dl utilization
                 try:
                     pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='dl_utilization').using(
-                                                                                alias=ss_machine_name)[0].current_value
+                                                                            service_name='cambium_ss_dl_utilization',
+                                                                            data_source='dl_utilization').using(
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # ul utilization
                 try:
                     pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='ul_utilization').using(
-                                                                                alias=ss_machine_name)[0].current_value
+                                                                            service_name='cambium_ss_ul_utilization',
+                                                                            data_source='ul_utilization').using(
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -12324,8 +12328,7 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # sector name
             try:
-                sector_name = sector.name.split("_")[-1]
-                wimax_bs_row['Sector Name'] = "v" + sector_name
+                wimax_bs_row['Sector Name'] = sector.alias
             except Exception as e:
                 logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
 

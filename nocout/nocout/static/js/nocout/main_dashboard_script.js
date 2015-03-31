@@ -478,7 +478,6 @@ function updatePieChart(chartData, domElement, callback) {
             }
         }
     } else {
-
         var pie_chart = $(domElement).highcharts({
             chart: {
                 plotBackgroundColor: null,
@@ -528,9 +527,14 @@ function updatePieChart(chartData, domElement, callback) {
                         percent_val = percent_val.toFixed(2);
                     }
 
+                    // Change point name txt & value txt as per the chart
                     if((domElement.indexOf("#") > -1 && domElement == '#mfr_cause_code') || (domElement.indexOf("#") == -1 && domElement == 'mfr_cause_code')) {
                         val_txt = "Outage in Minutes";
+                    } else if(domElement.indexOf("_sales_opportunity") > -1) {
+                        point_name = "Count. Of Customers: "+point_name;
+                        val_txt = "Number of Sectors: ";
                     }
+
                     tooltip_html ='<ul>\
                                 <li>'+point_name+'</li><br/>\
                                 <li>'+val_txt+' : <b>'+this.point.y+'</b><br/></li><br/>';

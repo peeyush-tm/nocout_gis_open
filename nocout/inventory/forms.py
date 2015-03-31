@@ -1599,19 +1599,23 @@ class WizardBaseStationForm(BaseStationForm):
         """
         Validations for base station form
         """
-        alias = re.compile(r'[^\w]').sub("_", self.cleaned_data['alias'])
-        city = self.cleaned_data['city'].city_name[:3]
-        state = self.cleaned_data['state'].state_name[:3]
-        name = (alias + "_" + city + "_" + state).lower()
-        names = BaseStation.objects.filter(name=name)
-        try:
-            if self.id:
-                names = names.exclude(pk=self.id)
-        except Exception as e:
-            logger.info(e.message)
-        if names.count() > 0:
+        if ('alias' not in self.cleaned_data) or (not self.cleaned_data['alias']):
             self._errors['alias'] = ErrorList(
-                [u"This name already in use."])
+                [u"This field is required."])
+        else:
+            alias = re.compile(r'[^\w]').sub("_", self.cleaned_data['alias'])
+            city = self.cleaned_data['city'].city_name[:3]
+            state = self.cleaned_data['state'].state_name[:3]
+            name = (alias + "_" + city + "_" + state).lower()
+            names = BaseStation.objects.filter(name=name)
+            try:
+                if self.id:
+                    names = names.exclude(pk=self.id)
+            except Exception as e:
+                logger.info(e.message)
+            if names.count() > 0:
+                self._errors['alias'] = ErrorList(
+                    [u"This name already in use."])
         return self.cleaned_data
 
 
@@ -1642,16 +1646,20 @@ class WizardBackhaulForm(BackhaulForm):
         """
         Validations for base station form
         """
-        name = self.cleaned_data['bh_configured_on'].ip_address
-        names = Backhaul.objects.filter(name=name)
-        try:
-            if self.id:
-                names = names.exclude(pk=self.id)
-        except Exception as e:
-            logger.info(e.message)
-        if names.count() > 0:
-            self._errors['bh_configured_on'] = ErrorList(
-                [u"This name already in use."])
+        if ('bh_configured_on' not in self.cleaned_data) or (not self.cleaned_data['bh_configured_on']):
+            self._errors['alias'] = ErrorList(
+                [u"This field is required."])
+        else:
+            name = self.cleaned_data['bh_configured_on'].ip_address
+            names = Backhaul.objects.filter(name=name)
+            try:
+                if self.id:
+                    names = names.exclude(pk=self.id)
+            except Exception as e:
+                logger.info(e.message)
+            if names.count() > 0:
+                self._errors['bh_configured_on'] = ErrorList(
+                    [u"This name already in use."])
         return self.cleaned_data
 
 

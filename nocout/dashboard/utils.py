@@ -208,8 +208,6 @@ def get_range_status(dashboard_setting, result):
         elif dashboard_setting.dashboard_type == 'STR' and start_range:
             if result['current_value'].lower() in start_range.lower():
                 range_count = 'range%d' %i
-        else:
-            range_count = 'unknown'
 
     return {'range_count': range_count}
 
