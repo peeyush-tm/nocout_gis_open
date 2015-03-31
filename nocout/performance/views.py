@@ -1105,9 +1105,9 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
 
         if sector:
 
-            planned_frequency = sector.planned_frequency if sector.planned_frequency else "N/A"
+            planned_frequency = str(sector.planned_frequency)+" MHz" if sector.planned_frequency else "N/A"
             
-            frequency = sector.frequency.value if sector.frequency else "N/A"
+            frequency = str(sector.frequency.value)+" MHz" if sector.frequency else "N/A"
             frequency_url = reverse(
                 'device_frequency_edit',
                 kwargs={'pk': sector.frequency.id},
@@ -1318,9 +1318,9 @@ def get_sub_station_status_data(device=None, technology=None, type=None):
             near_end_ip = sector.sector_configured_on.ip_address
             near_end_ip_url = reverse('device_edit', kwargs={'pk': sector.sector_configured_on.id}, current_app='device')
             
-            planned_frequency = sector.planned_frequency if sector.planned_frequency else "N/A"
+            planned_frequency = str(sector.planned_frequency)+" MHz" if sector.planned_frequency else "N/A"
 
-            frequency = sector.frequency.value if sector.frequency else "N/A"
+            frequency = str(sector.frequency.value)+" MHz" if sector.frequency else "N/A"
             frequency_url = reverse(
                 'device_frequency_edit',
                 kwargs={'pk': sector.frequency.id},
