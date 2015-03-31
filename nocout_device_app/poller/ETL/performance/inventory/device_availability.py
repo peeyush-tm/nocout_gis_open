@@ -67,7 +67,6 @@ def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 		result = result.get('result')
 	except:
 		return
-	print result		
         for entry in result:
                 try:
                         host = entry.get('_id')
