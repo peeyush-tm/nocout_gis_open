@@ -70,6 +70,7 @@ def live_query_cam_ul_util_kpi(host_name,site,war,crit):
 	cam_ul =extract_cam_ul_util_from_live(host_name,site)
 	if cam_ul:
 		cam_ul = (float(cam_ul)/2.24 ) * 100
+		cam_ul = round(cam_ul,2)
 		if cam_ul < war:
                 	state = 0
 			state_string = "ok"
