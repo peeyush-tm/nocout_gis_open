@@ -60,7 +60,7 @@ def check_cambium_ul_utilization(item, _no_params, info):
 				rate = (rate*8)/(1024*1024)
                 	except MKCounterWrapped:
                         	wrapped=True
-                	status_list.append(("ul_utilization", "%f" % (rate)))
+                	status_list.append(("ul_utilization", "%.2f" % (rate)))
 			infotext = "Uplink utilization %s " % (rate)
 			state= 0
 	else:
