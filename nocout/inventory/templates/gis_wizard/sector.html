@@ -27,7 +27,9 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {% if selected_technology == '2' %}PTP{% else %}SECTOR{% endif %} ({{ base_station.alias }})</h4>
+                            <h4>
+                                <i class="fa fa-bars"></i> GIS WIZARD: {% if selected_technology == '2' %} PTP {% else %} SECTOR {% endif %} ({{ base_station.alias }})
+                            </h4>
                         </div>
                         <div class="box-body">
                             <div class="col-md-8">
@@ -550,14 +552,30 @@
                                         dataType: "json",
                                         data: {'obj_id': id}
                                     }).done(function(data) {
+
+                                        // Update box-title html with selected sector name
+                                        var current_tech_id = "{{ selected_technology }}",
+                                            type_text = "Sector",
+                                            current_box_title_html = $.trim($(".box .box-title h4").html()),
+                                            splitted_title = current_box_title_html.split("GIS WIZARD: ");
+
+                                        if(current_tech_id == 2) {
+                                            type_text = "PTP";
+                                        }
+
+                                        splitted_title[1] = type_text+" - "+data[0];
+                                        // Update Box Title HTML
+                                        $(".box .box-title h4")[0].innerHTML = splitted_title.join("GIS WIZARD: ");
+                                        $(".box .box-title h4").html(splitted_title.join("GIS WIZARD: "));
+                                        // Callback data
                                         callback({id: id, alias: data[0]});
-                                        });
+                                    });
                                 }
                             },
                             formatResult: repoSectorFormatResult, // omitted for brevity, see the source of this page
                             formatSelection: repoSectorFormatSelection,  // omitted for brevity, see the source of this page
                         }).on("select2-selecting", function(el) {
-                            location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/{{ selected_technology }}/sector/" + el.val + "/";
+                            location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/{{ selected_technology }}/sector/"+el.val+"/";
                         });
                 {% else %}
                     $radios.filter('[value=new]').prop('checked', true);

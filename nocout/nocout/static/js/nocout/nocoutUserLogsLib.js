@@ -124,6 +124,14 @@ $("form").submit(function(e) {
         /*When first time form submitted*/
         if(isFormSubmit === 0) {
 
+            page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
+
+            try {
+                module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+            } catch(e) {
+                module_name = page_title.join(' ');
+            }
+
             var alias = $("form input[name*='alias']").val(),
                 shown_val = alias ? alias : $("form input[name*='name']").val();
             
@@ -163,8 +171,16 @@ $("form").submit(function(e) {
         }
     /*Edit case*/
     } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1 || isWizardForm) {
+
         /*When first time form submitted*/
         if(isFormSubmit === 0) {
+
+            page_title = $(".formContainer .box .box-title h4")[0] ? $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ") : "";
+            try {
+                module_name = page_title.join(' ').split("</i>")[1].toUpperCase();
+            } catch(e) {
+                module_name = page_title.join(' ');
+            }
 
             var newFieldsArray = $("form input:not([type='hidden']):not([type='checkbox'])").serializeArray(),
                 select_boxes = $("form select"),

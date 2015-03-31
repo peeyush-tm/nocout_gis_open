@@ -1765,12 +1765,18 @@ function devicePlottingClass_gmap() {
 	    for (key in tooltipInfoLabel) {
 	        tooltipInfoLabel[key].close();
 	    }
+
+	    // Remove the loader
+	    for (key in loader_icon_dict) {
+	        loader_icon_dict[key].close();
+	    }
 	    
 
         // Reset labels array 
         labelsArray = [];
         cross_label_array = {};
         tooltipInfoLabel = {};
+        loader_icon_dict = {};
 
         // Clear base-stations
         gmap_self.toggleSpecificMarkers_gmap('base_station',null);
