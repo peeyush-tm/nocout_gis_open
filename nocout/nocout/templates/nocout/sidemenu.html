@@ -12,11 +12,37 @@
 <!-- /SIDEBAR QUICK-LAUNCH -->
         <!-- SIDEBAR MENU -->
         <ul>
-            <li class="active">
-                <a href="/home/">
+            <li class="has-sub active">
+                <!-- <a href="/home/">
                     <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
                     <span class="selected"></span>
+                </a> -->
+                <a href="javascript:;" class="">
+                    <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
+                    <span class="arrow"></span>
                 </a>
+                <ul class="sub">
+                    <li>
+                        <a href="/home/">
+                            <span class="sub-menu-text">Main Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'dashboard-rf-performance-ptp' %}">
+                            <span class="sub-menu-text">RF Performance Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'rf-main-dashbaord' %}?isOther=1">
+                            <span class="sub-menu-text">RF Main Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/performance/sector_dashboard/">
+                            <span class="sub-menu-text">Sector Spot Dashboard</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
             <li class="has-sub">
                 <a href="javascript:;" class="">
@@ -39,10 +65,6 @@
                 </a>
                 <ul class="sub">
                     <li class="has-sub-sub">
-                    <!--
-                    {#<a class="" href="/alert_center/network/"><span class="sub-menu-text">Network Alert Center</span>#}
-                    {#</a>#}
-                    -->
                         <a class="" href="javascript:;">
                             <span class="sub-menu-text">Network Alert Center</span>
                             <span class="arrow"></span>
@@ -130,28 +152,6 @@
                     <li><a class="" href="/performance/network_live/"><span class="sub-menu-text">Network Live</span></a></li>
                     <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
                     <li><a class="" href="/performance/other_live/"><span class="sub-menu-text">Other</span></a></li>
-                    <li class="has-sub-sub">
-                        <a class="" href="{% url 'dashboard-rf-performance-ptp' %}">
-                            <span class="sub-menu-text">RF Performance Dashboard</span>
-                            <!-- <span class="arrow"></span> -->
-                        </a>
-                        <!-- <ul class="sub-sub">
-                            <li><a class="" href="{% url 'dashboard-rf-performance-wimax' %}"><span class="sub-menu-text">WiMAX</span></a></li>
-                            <li><a class="" href="{% url 'dashboard-rf-performance-pmp' %}"><span class="sub-menu-text">PMP</span></a></li>
-                            <li><a class="" href="{% url 'dashboard-rf-performance-ptp' %}"><span class="sub-menu-text">PTP</span></a></li>
-                            <li><a class="" href="{% url 'dashboard-rf-performance-ptp-bh' %}"><span class="sub-menu-text">PTP BH</span></a></li>
-                        </ul> -->
-                    </li>
-                    <li>
-                        <a class="" href="{% url 'rf-main-dashbaord' %}?isOther=1">
-                            <span class="sub-menu-text">RF Main Dashboard</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="" href="/performance/sector_dashboard/">
-                            <span class="sub-menu-text">Sector Spot Dashboard</span>
-                        </a>
-                    </li>
                 </ul>
             </li>
             <li class="has-sub">
