@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
 import os
+import json
 from django.conf import global_settings
 from collections import namedtuple
 from datetime import timedelta
@@ -768,6 +769,14 @@ GLOBAL_SEARCH_FLAG = True
 
 ####################### Flag to enable/disable datatable download option #######################
 DATATABLES_DOWNLOAD_FLAG = True
+####################### White map configuration dict #######################
+# 1 April 2015
+WHITE_MAP_CONFIGURATION = json.dumps({
+    "format"                :   "application/openlayers",
+    "geoserver_url_India"   :   "http://10.133.12.163:5008/geoserver/cite/wms",
+    "layer"                 :   "cite:STATE",
+    "initial_bounds"        :   [68.14339447036186,6.748584270488672,97.40963745103579,37.07349395945833],
+})
 
 # Import the local_settings.py file to override global settings
 
@@ -785,7 +794,8 @@ SETTINGS_EXPORT = [
     'DEBUG',
     'SIA_ENABLED',
     'GLOBAL_SEARCH_FLAG',
-    'DATATABLES_DOWNLOAD_FLAG'
+    'DATATABLES_DOWNLOAD_FLAG',
+    'WHITE_MAP_CONFIGURATION'
 ]
 # #### Access Variables in Templates
 
