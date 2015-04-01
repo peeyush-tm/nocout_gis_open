@@ -159,7 +159,7 @@ function GisPerformance() {
      This function sends Request based on the counter value.
      */
     this.sendRequest = function (counter) {
-        if (isPollingActive == 0  && isPerfCallStopped == 0) {
+        if(isPollingActive == 0  && isPerfCallStopped == 0) {
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
                 last_counter_val = counter;
                 if(!callsInProcess) {
@@ -196,14 +196,14 @@ function GisPerformance() {
 
         counter++;
 
-        if(gis_perf_call_instance) {
-            try {
-                gis_perf_call_instance.abort()
-                gis_perf_call_instance = "";
-            } catch(e) {
-                // pass
-            }
-        }
+        // if(gis_perf_call_instance) {
+        //     try {
+        //         gis_perf_call_instance.abort()
+        //         gis_perf_call_instance = "";
+        //     } catch(e) {
+        //         // pass
+        //     }
+        // }
 
         var current_chunk = JSON.parse(JSON.stringify(bs_id));
 
@@ -214,7 +214,6 @@ function GisPerformance() {
                 perf_self.makePeriodicAjaxCall(bs_id,counter);
             }
         }
-
     }
 
     /**
@@ -234,66 +233,24 @@ function GisPerformance() {
             var base_station_name = bs_data_object.name;
                 bs_marker_lat = bs_data_object.data.lat,
                 bs_marker_lon = bs_data_object.data.lon,
-                loader_label = "";
+                loader_label = "",
+                allMarkersObject = "";
             
             if(window.location.pathname.indexOf("white_background") > -1) {
-                
-                loader_label = new OpenLayers.Popup("loader_"+base_station_name,
-                    new OpenLayers.LonLat(bs_marker_lon,bs_marker_lat),
-                    new OpenLayers.Size(20,20),
-                    loader_icon_html,
-                    false
-                );
-
-                ccpl_map.addPopup(loader_label);
-
-                // Add 'loader_style' class to set the style of loader label
-                $("#loader_"+base_station_name).addClass("loader_style");
-
-                // Remove height prop from div's
-                $('.olPopupContent').css('height','');
-                $('.olPopup').css('height','');
-
-                if($("#loader_"+base_station_name).length > 0) {
-                    // Left Position in PX
-                    var current_left = $("#loader_"+base_station_name).position().left,
-                        current_top = $("#loader_"+base_station_name).position().top;
-
-                    current_left = current_left - 10;
-                    current_top = current_top - 25;
-                    // Update position of Loader Label
-                    $("#loader_"+base_station_name).css("left",current_left+"px");
-                    $("#loader_"+base_station_name).css("top",current_top+"px");
-                }
-
-                // Close existing label if exists
-                if(loader_icon_dict[base_station_name]) {
-                    ccpl_map.removePopup(loader_icon_dict[base_station_name]);
-                    delete loader_icon_dict[base_station_name];
-                }
+                allMarkersObject = allMarkersObject_wmap;    
             } else if(window.location.pathname.indexOf("googleEarth") > -1) {
-                // 
+                // pass
             } else {
-                var bs_position_obj = new google.maps.LatLng(bs_marker_lat,bs_marker_lon);
+                allMarkersObject = allMarkersObject_gmap;
+            }
 
-                loader_label = perf_self.createInfoboxLabel(
-                    loader_icon_html,
-                    loaderInfoboxStyle,
-                    -20,
-                    -40,
-                    bs_position_obj,
-                    false
-                );
-
-                loader_label.open(mapInstance);
-                // Close existing label if exists
-                if(loader_icon_dict[base_station_name]) {
-                    loader_icon_dict[base_station_name].close();
-                    delete loader_icon_dict[base_station_name];
+            if(allMarkersObject) {
+                base_station_marker = allMarkersObject['base_station']['bs_'+base_station_name];
+                loader_icon_dict[base_station_name] = true;
+                if(base_station_marker) {
+                    perf_self.animateBaseStationIcon(base_station_marker);
                 }
             }
-            // Add label object to global dict
-            loader_icon_dict[base_station_name] = loader_label;
         }
 
 
@@ -323,7 +280,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= periodic_poll_process_count) {
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -335,7 +292,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= periodic_poll_process_count) {
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -344,22 +301,17 @@ function GisPerformance() {
                                 }
                             });
                         } else {
-                            var current_bs_in_bound = getMarkerInCurrentBound(true);
-                            
-                            /*Check that the bsname is present in current bounds or not*/
-                            if (current_bs_in_bound.indexOf(data.id) > -1) {
-                                //Update Map with the data
-                                perf_self.updateMap(data,function(response) {
-                                    calls_completed++;
-                                    if(calls_completed >= periodic_poll_process_count) {
-                                        // Reset Calls Completed Counter
-                                        calls_completed = 0;
+                            //Update Map with the data
+                            perf_self.updateMap(data,function(response) {
+                                calls_completed++;
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+                                    // Reset Calls Completed Counter
+                                    calls_completed = 0;
 
-                                        //Send Request for the next counter
-                                        perf_self.sendRequest(counter);
-                                    }
-                                });
-                            }
+                                    //Send Request for the next counter
+                                    perf_self.sendRequest(counter);
+                                }
+                            });
                         }
                     } else {
                         calls_completed++;
@@ -382,17 +334,7 @@ function GisPerformance() {
             },
             complete : function() {
                 if(loader_icon_dict[base_station_name]) {
-                    if(window.location.pathname.indexOf("white_background") > -1) {
-                        // Remove the loader from wmap
-                        ccpl_map.removePopup(loader_icon_dict[base_station_name]);
-                    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
-                        // Remove the loader from google earth
-                        ccpl_map.removePopup(loader_icon_dict[base_station_name]);
-                    } else {
-                        // Remove the loader from gmap
-                        loader_icon_dict[base_station_name].close();
-                    }
-                    // Remove the loader from global variable
+                    loader_icon_dict[base_station_name] = false;
                     delete loader_icon_dict[base_station_name];
                 }
             }
@@ -1776,4 +1718,50 @@ function GisPerformance() {
         }
         return isPlottable;
     };
+
+    /**
+     * This function blinks Bs icon to show animation effect on BS marker 
+       till the periodic call for that BS is completed
+     * @method animateBaseStationIcon
+     * @param bs_marker {Object}, It contains the bs marker object
+     */
+    this.animateBaseStationIcon = function(bs_marker) {
+
+        if(loader_icon_dict[bs_marker.bs_name]) {
+            setTimeout(function() {
+                if(window.location.pathname.indexOf("white_background") > -1) {
+                    if(bs_marker.getVisibility()) {
+                        hideOpenLayerFeature(bs_marker);
+                    } else {
+                        showOpenLayerFeature(bs_marker);
+                    }
+                    // Redraw BS marker
+                    bs_marker.layerReference.redraw();
+                } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                    // pass
+                } else {
+                    if(bs_marker.map) {
+                        bs_marker.setMap(null);
+                    } else {
+                        bs_marker.setMap(mapInstance);
+                    }
+                }
+                perf_self.animateBaseStationIcon(bs_marker);
+            },350);
+        } else {
+            if(window.location.pathname.indexOf("white_background") > -1) {
+                if(!bs_marker.getVisibility()) {
+                    showOpenLayerFeature(bs_marker);
+                    // Redraw BS marker
+                    bs_marker.layerReference.redraw();
+                }
+            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                // pass
+            } else {
+                if(!bs_marker.map) {
+                    bs_marker.setMap(mapInstance);
+                }
+            }
+        }
+    }
 }
