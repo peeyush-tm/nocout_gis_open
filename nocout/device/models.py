@@ -262,7 +262,7 @@ class DeviceSyncHistory(models.Model):
         return self.status
 
 
-# ********************************** Connect Device Signals ***********************************
+# ********************************** DEVICE SIGNALS ***********************************
 
 # set site instance 'is_device_change' bit on device modified or created
 pre_save.connect(device_signals.update_site_on_device_change, sender=Device)
