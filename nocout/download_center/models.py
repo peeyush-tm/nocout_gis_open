@@ -154,3 +154,6 @@ class CityCharterCommon(models.Model):
     p2p_normal = models.CharField('Normal P2P', max_length=128, null=True, blank=True)
     p2p_ss_count = models.IntegerField('Count of P2P SS', default=0)
     p2p_ss_percentage = models.FloatField('% of P2P SS Affected', default=0)
+
+    total_ss_count = models.IntegerField('Count of ALL SS', default=0)
+    total_ss_percentage = models.FloatField('% of P2P SS Affected', default=0)
