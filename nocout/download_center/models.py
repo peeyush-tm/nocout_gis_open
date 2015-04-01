@@ -139,11 +139,11 @@ class CityCharterCommon(models.Model):
     pmp_los = models.CharField('LOS PMP', max_length=128, null=True, blank=True)
 
     # replace
-    pmp_na = models.CharField('NA PMP', max_length=128, null=True, blank=True)
+    # pmp_na = models.CharField('NA PMP', max_length=128, null=True, blank=True)
     pmp_jitter = models.CharField('NA PMP', max_length=128, null=True, blank=True)
 
     # replace
-    pmp_rogue_ss = models.CharField('Rogue SS PMP', max_length=128, null=True, blank=True)
+    # pmp_rogue_ss = models.CharField('Rogue SS PMP', max_length=128, null=True, blank=True)
     pmp_rereg = models.CharField('Rogue SS PMP', max_length=128, null=True, blank=True)
 
     pmp_ul = models.CharField('UL PMP', max_length=128, null=True, blank=True)
@@ -156,11 +156,11 @@ class CityCharterCommon(models.Model):
     p2p_los = models.CharField('LOS P2P', max_length=128, null=True, blank=True)
 
     # replace
-    p2p_na = models.CharField('NA P2P', max_length=128, null=True, blank=True)
+    # p2p_na = models.CharField('NA P2P', max_length=128, null=True, blank=True)
     p2p_uas = models.CharField('NA P2P', max_length=128, null=True, blank=True)
 
     # remove this
-    p2p_rogue_ss = models.CharField('Rogue SS P2P', max_length=128, null=True, blank=True)
+    # p2p_rogue_ss = models.CharField('Rogue SS P2P', max_length=128, null=True, blank=True)
 
     p2p_pd = models.CharField('PD P2P', max_length=128, null=True, blank=True)
     p2p_latancy = models.CharField('Latency P2P', max_length=128, null=True, blank=True)
