@@ -754,7 +754,7 @@ function devicePlottingClass_gmap() {
 		            		gisPerformanceClass.start(bs_id_list);
 		            	}
             		} else {
-        			// also used in case of panning
+        				// also used in case of panning
             			var existing_bs_ids = convertChunksToNormalArray(current_bs_list),
 	                		new_bs = gisPerformanceClass.get_intersection_bs(existing_bs_ids,getMarkerInCurrentBound(true));
 
@@ -792,14 +792,14 @@ function devicePlottingClass_gmap() {
 					gmap_self.clearMapMarkers();
 
 	        		// If any periodic polling ajax call is in process then abort it
-        			try {
-	    				if(gis_perf_call_instance) {
-			                gis_perf_call_instance.abort()
-			                gis_perf_call_instance = "";
-			        	}
-		            } catch(e) {
-		                // pass
-		            }
+        	// 		try {
+	    				// if(gis_perf_call_instance) {
+			      //           gis_perf_call_instance.abort()
+			      //           gis_perf_call_instance = "";
+			      //   	}
+		       //      } catch(e) {
+		       //          // pass
+		       //      }
 
 	        		if(mapInstance.getZoom() <= 4) {
 	            		// Hide State Labels which are in current bounds
@@ -1977,7 +1977,7 @@ function devicePlottingClass_gmap() {
 				optimized 		   : 	false,
 				markerType 		   : 	'BS',
 				isMarkerSpiderfied : 	false,
-				isActive 		   : 	1,
+				isActive 		   : 	false,
 				windowTitle 	   : 	"Base Station"
 			};
 
@@ -2703,18 +2703,11 @@ function devicePlottingClass_gmap() {
 		    	var bs_marker = allMarkersObject_gmap['base_station'][key],
 		      		isMarkerExist = mapInstance.getBounds().contains(bs_marker.getPosition());
 	      		if(isMarkerExist) {
-			    	if(bs_marker.isActive && +(bs_marker.isActive) === 1) {
-			    		// If BS Marker not shown then show the BS Marker
-			    		if(!allMarkersObject_gmap['base_station'][key].map) {
-			      			allMarkersObject_gmap['base_station'][key].setMap(mapInstance);
-			    		}
-			    		// plotted_bs_ids.push(allMarkersObject_gmap['base_station'][key].filter_data.bs_id);
-			        } else {
-			        	// If BS Marker shown then hide the BS Marker
-			        	if(allMarkersObject_gmap['base_station'][key].map) {
-			      			allMarkersObject_gmap['base_station'][key].setMap(null);
-		        		}
-			        }
+		    		// If BS Marker not shown then show the BS Marker
+		    		if(!allMarkersObject_gmap['base_station'][key].map) {
+		      			allMarkersObject_gmap['base_station'][key].setMap(mapInstance);
+		    			allMarkersObject_gmap['base_station'][key]['isActive'] = true;
+		    		}
 	      		}
 		    }
 		}
@@ -10067,7 +10060,7 @@ function getMarkerInCurrentBound(only_bs_ids) {
         	} else {
 				markerVisible = mapInstance.getBounds().contains(allBSObject[key].getPosition());
 				// If marker is present in bounds but not visible then set markerVisible to false
-				if(markerVisible && !allBSObject[key].map) {
+				if(markerVisible && !allBSObject[key].map && !allBSObject[key].isActive) {
 					markerVisible = false;
 				}
         	}
@@ -10104,9 +10097,8 @@ function getMarkerInCurrentBound(only_bs_ids) {
  */
 function createArrayChunks(data_array, chunk_size) {
 
-	var chunks_array = [];
-	
-	var non_null_array = convertChunksToNormalArray(data_array);
+	var chunks_array = [],
+		non_null_array = convertChunksToNormalArray(data_array);
 
 	if(non_null_array && non_null_array.length > 0) {
     	while (non_null_array.length > 0) {
