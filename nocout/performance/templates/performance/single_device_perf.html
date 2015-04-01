@@ -48,24 +48,39 @@
             padding-left: 0px;
         }
         .top_perf_tabs {
-            top:-44px;
-            float:left;
-            padding-left:15px;
-            margin-right:0px;
+            top: 0px !important;
+            float: left;
+            padding-left: 15px;
+            margin-right: 0px !important;
         }
-        .top_perf_tab_content {
-            top: -44px;
-            position: relative;
+        .box .header-tabs .top_perf_tabs > li > a {
+            padding: 7px 5px !important;
         }
-        #status_container {
-            margin-bottom: 50px;
+        .top_perf_tab_content, .top_perf_tab_content .panel .panel-body {
+            overflow: auto;
+        }
+        .chart_container h3, .last_updated_container h3, #latestStatusContainer h3 {
+            margin-top: 0px;
         }
     </style>
+    <!--Device Status Block Start-->
+    <div class="well well-sm" id="status_container" style="overflow:auto;">
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
+        </div>
+        <div class="clearfix"></div>
+        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+        <div class="clearfix"></div>
+    </div>
+    <!--Device Status Block End-->
     <!--Single Device Live Perf Start-->
     <div class='box border lite perfContainerBlock'>
         <div class='box-title'>
             <h4 class="hide">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</h4>
-            <!--Filters Block Start-->
+            <!-- Filters Block - Start-->
             <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
                 <li class="date_range_filter_container">
                     <div class="input-group">
@@ -98,120 +113,129 @@
             </ul>
             <!--Filters Block End-->
             <div class="clearfix"></div>
+            <!--Filters Block Start-->
         </div>
         <div class='box-body'>
-            <!--Device Status Block Start-->
-            <div class="well well-sm" id="status_container" style="overflow:auto;">
-                <div id="latestStatusContainer"></div>
-                <div class="clearfix"></div>
-                <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
+            <!-- <div id="tableContainer" class="box-body"> -->
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs top_perf_tabs">
+                    <li>
+                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Utilization</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">IA Table</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Availability</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Inventory Status</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Status</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#service_perf_tab" id="service_perf" title="Service Performance" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Performance</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Network Performance</span>
+                        </a>
+                    </li>
+                </ul>
                 <div class="clearfix"></div>
             </div>
-            <!--Device Status Block End-->
-            <div class="box">
-                <div id="tableContainer" class="box-body">
-                    <div class="tabbable header-tabs">
-                        <ul class="nav nav-tabs top_perf_tabs">
-                            <li>
-                                <a href="#utilization_top_tab" id="utilization_top" data-toggle="tab">
-                                    <span class="hidden-inline-mobile">Utilization</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#topology_tab" id="topology" class="hide" data-toggle="tab">
-                                    <span class="hidden-inline-mobile">IA Table</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#availability_tab" id="availability" data-toggle="tab">
-                                    <span class="hidden-inline-mobile">Availability</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#inventory_status_tab" id="inventory_status" data-toggle="tab">
-                                    <span class="hidden-inline-mobile">Inventory Status</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#service_status_tab" id="service_status" data-toggle="tab">
-                                    <span class="hidden-inline-mobile">Service Status</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#service_perf_tab" id="service_perf" data-toggle="tab">
-                                    <span class="hidden-inline-mobile">Service Performance</span>
-                                </a>
-                            </li>
-                            <li class="active">
-                                <a href="#network_perf_tab" id="network_perf" data-toggle="tab">
-                                    <span class="hidden-inline-mobile">Network Performance</span>
-                                </a>
-                            </li>
-                        </ul>
-                        <div class="clearfix"></div>
-                    </div>
-                    <div class="tab-content top_perf_tab_content" style="overflow:auto;">
-                        <div class="tab-pane active" id="network_perf_tab">
-                            <div class="panel panel-default inner_tab_container">
-                                <div class="panel-body" style="overflow:auto;">
-                                    <div class="tabbable tabs-left"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="service_perf_tab">
-                            <div class="panel panel-default inner_tab_container">
-                                <div class="panel-body" style="overflow:auto;">
-                                    <div class="tabbable tabs-left"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="service_status_tab">
-                            <div class="panel panel-default inner_tab_container">
-                                <div class="panel-body" style="overflow:auto;">
-                                    <div class="tabbable tabs-left"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="tab-pane" id="inventory_status_tab">
-                            <div class="panel panel-default inner_tab_container">
-                                <div class="panel-body" style="overflow:auto;">
-                                    <div class="tabbable tabs-left"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="tab-pane" id="availability_tab">
-                            <div class="panel panel-default inner_tab_container">
-                                <div class="panel-body" style="overflow:auto;">
-                                    <div class="tabbable tabs-left"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="tab-pane hide" id="topology_tab">
-                            <div class="panel panel-default inner_tab_container">
-                                <div class="panel-body" style="overflow:auto;">
-                                    <div class="tabbable tabs-left"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="tab-pane" id="utilization_top_tab">
-                            <div class="panel panel-default inner_tab_container">
-                                <div class="panel-body" style="overflow:auto;">
-                                    <div class="tabbable tabs-left"></div>
-                                </div>
+            <div class="tab-content top_perf_tab_content">
+                <div class="tab-pane active" id="network_perf_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Network Performance Services"></i>
                             </div>
                         </div>
                     </div>
                 </div>
-            <!--Services Tabs & their content End-->
+                <div class="tab-pane" id="service_perf_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Service Performance Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="service_status_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Service Status Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane" id="inventory_status_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Inventory Status Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="availability_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Availability Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane hide" id="topology_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching IA Table Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="utilization_top_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Utilization Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
             </div>
         </div>
+        <!-- </div> -->
         <div class="clearfix"></div>
     </div>
     <!--Single Device Live Perf End-->

@@ -16,7 +16,8 @@ var green_color = "#468847",
     right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;",
     val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
     time_icon = '<i class="fa fa-clock-o"></i>',
-    perf_page_live_polling_call = "";
+    perf_page_live_polling_call = "",
+    isLatestStatusUpdated = false;
 
 
 /**
@@ -26,6 +27,10 @@ var green_color = "#468847",
  * @param info {Object}, It contains the latest status info object
  */
 function populateDeviceStatus_nocout(domElement,info) {
+
+    if(isLatestStatusUpdated) {
+        return true;
+    }
 
     var fa_icon_class = "fa-circle",
         txt_color = "",
@@ -52,14 +57,23 @@ function populateDeviceStatus_nocout(domElement,info) {
 
     status_html = "";
 
-    status_html += '<table id="final_status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;"><tr>';
-    status_html += '<td style="color:'+txt_color+';"><i title = "'+status+'" class="fa '+fa_icon_class+'" style="vertical-align: middle;"> </i> <b>Current Status</b> : '+status+'</td>';
-    status_html += '<td style="color:'+txt_color+';"><b>Current Status Since</b> : '+age+'</td>';
-    status_html += '<td style="color:'+txt_color+';"><b>Last Down Time</b> : '+lastDownTime+'</td>';
-    status_html += '</tr></table>';
+    status_html += '<table id="final_status_table" class="table table-responsive table-bordered" \
+                    style="background:#FFFFFF;"><tr>\
+                    <td style="color:'+txt_color+';">\
+                    <i title = "'+status+'" class="fa '+fa_icon_class+'" style="vertical-align: middle;"> </i> \
+                    <b>Current Status</b> : '+status+'\
+                    </td><td style="color:'+txt_color+';">\
+                    <b>Current Status Since</b> : '+age+'</td>\
+                    <td style="color:'+txt_color+';">\
+                    <b>Last Down Time</b> : '+lastDownTime+'</td>\
+                    </tr></table>';
 
     // Update Status Block HTML as per the device status
     $("#"+domElement).html(status_html);
+
+    if(!isLatestStatusUpdated) {
+        isLatestStatusUpdated = true;
+    }
 }
 
 /**
