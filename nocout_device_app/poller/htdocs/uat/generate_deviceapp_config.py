@@ -49,9 +49,16 @@ extra_service_conf['retry_check_interval'] = []
 
 extra_service_conf['max_check_attempts'] = []
 
-extra_service_conf['normal_check_interval'] = [
-    (5, [], ['@all'], 'Check_MK'),
+extra_service_conf['check_interval'] = [
+    (5, [], ['@all'], ['Check_MK']),
 ]
+
+snmp_check_interval = []
+# time interval for service types
+t_interval_s_type = {
+        '_invent': 1440,
+        '_status': 60
+        }
 
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
@@ -620,6 +627,7 @@ def prepare_rules(devices):
 
 
 def get_settings():
+    global snmp_check_interval
     data = []
     T = namedtuple('host_rules', [
         'ping_levels_db', 'default_checks', 'snmp_ports_db',
@@ -690,6 +698,15 @@ def get_settings():
             processed.append(service['devicetype'])
         service_config = None
         if service['service']:
+            # add the inventory services for snmp_check_interval
+            if '_invent' in service['service']:
+                snmp_check_interval.append(
+                        ((str(service['service']), 1440), [], ['@all'])
+                        )
+            elif '_status' in service['service']:
+                snmp_check_interval.append(
+                        ((str(service['service']), 60), [], ['@all'])
+                        )
             threshold = ()
             try:
             	threshold = get_threshold(service)
@@ -1101,45 +1118,10 @@ def write_rules_file(settings_out, final_active_checks):
         f.write("bulkwalk_hosts += %s" % pformat(bulkwalk_hosts))
         f.write("\n\n\n")
         f.write("ping_levels += %s" % pformat(settings_out.ping_levels_db))
-        f.write("\n\n\n")
-
-        #f.write("active_checks.setdefault('wimax_pmp1_ul_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('wimax_pmp1_dl_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('wimax_pmp2_ul_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('wimax_pmp2_dl_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('cambium_ul_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('cambium_dl_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('radwin_ul_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('radwin_dl_util_kpi', [])\n")
-        #f.write("active_checks.setdefault('radwin_util_static', [])\n")
-
-        #f.write("active_checks['wimax_pmp1_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp1_ul_check_list))
-        #f.write("active_checks['wimax_pmp1_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp1_dl_check_list))
-        #f.write("active_checks['wimax_pmp2_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp2_ul_check_list))
-        #f.write("active_checks['wimax_pmp2_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp2_dl_check_list))
-        #f.write("active_checks['cambium_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.cambium_ul_check_list))
-        #f.write("active_checks['cambium_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.cambium_dl_check_list))
-        #f.write("active_checks['radwin_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.radwin_ul_check_list))
-        #f.write("active_checks['radwin_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.radwin_dl_check_list))
-        #f.write("active_checks['radwin_util_static'] += %s\n\n" % pformat(ac_chks1.radwin_static_check_list))
-
-        #for check_name in ac_chks1._fields:
-        #    f.write("active_checks.setdefault('" + check_name + "', [])\n")
-        #for check_name in ac_chks1._fields:
-        #    if isinstance(getattr(ac_chks1, check_name), list):
-        #        f.write("active_checks['" + check_name + "'] += %s\n\n" % pformat(list(getattr(ac_chks1, check_name))))
-
-        f.write("\n")
-        #for check_name in ac_chks2._fields:
-        #    f.write("active_checks.setdefault('" + check_name + "', [])\n")
-        #f.write("\n")
-        #for check_name in ac_chks2._fields:
-        #    if isinstance(getattr(ac_chks2, check_name), list):
-        #        f.write("active_checks['" + check_name + "'] += %s\n\n" % pformat(list(getattr(ac_chks2, check_name))))
+        f.write("\n\n\n\n")
 
         for service in final_active_checks.keys():
             f.write("active_checks.setdefault('" + service + "', [])\n")
-
         for service, check_list in final_active_checks.iteritems():
             f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
 
@@ -1149,12 +1131,11 @@ def write_rules_file(settings_out, final_active_checks):
         f.write("\n\n\n")
         f.write("snmp_communities += %s" % pformat(default_snmp_communities))
         f.write("\n\n\n")
-        f.write(
-            "extra_service_conf['normal_check_interval'] = %s" % pformat(extra_service_conf['normal_check_interval']))
-        f.write("\n\n\n")
-        f.write("extra_service_conf['max_check_attempts'] = %s" % pformat(extra_service_conf['max_check_attempts']))
-        f.write("\n\n\n")
-        f.write("extra_service_conf['retry_check_interval'] = %s" % pformat(extra_service_conf['retry_check_interval']))
+
+        for key, val in extra_service_conf.iteritems():
+            f.write("extra_service_conf['"+str(key)+"'] = %s" % pformat(val))
+            f.write("\n\n")
+        f.write("snmp_check_interval = %s\n" % pformat(snmp_check_interval))
 
 
 def main():
