@@ -5,12 +5,12 @@ from django.utils import timezone
 import datetime
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG, SPEEDOMETER_DASHBAORDS
+from nocout.settings import P2P, PMP, WiMAX, TCLPOP, DEBUG, SPEEDOMETER_DASHBAORDS
 
 from organization.models import Organization
 from device.models import DeviceTechnology, Device
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
-from performance.models import Topology, NetworkStatus, ServiceStatus
+from performance.models import Topology, NetworkStatus, ServiceStatus, NetworkAvailabilityDaily
 from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, DashboardSeverityStatusHourly,
         DashboardSeverityStatusDaily, DashboardSeverityStatusWeekly, DashboardSeverityStatusMonthly,
         DashboardSeverityStatusYearly, DashboardRangeStatusTimely, DashboardRangeStatusHourly, DashboardRangeStatusDaily,
@@ -24,7 +24,7 @@ import math
 # 25th march update
 
 # inventory utilitites
-from inventory.utils.util import organization_sectors, organization_network_devices
+from inventory.utils.util import organization_sectors, organization_network_devices, organization_customer_devices 
 from inventory.models import get_default_org
 
 from inventory.tasks import bulk_update_create
@@ -32,7 +32,8 @@ from inventory.tasks import bulk_update_create
 from dashboard.utils import \
     get_topology_status_results, \
     get_dashboard_status_range_counter, \
-    get_dashboard_status_range_mapped
+    get_dashboard_status_range_mapped, \
+    get_service_status_results
 
 
 import logging
@@ -61,7 +62,7 @@ def network_speedometer_dashboards():
         },
         'packetloss-network': {
             'model': NetworkStatus,
-            'data_source': 'rta',
+            'data_source': 'pl',
             'service_name': 'ping',
             'severity': ['warning', 'critical', 'down'],
             'current_value': ' current_value < 100 '
@@ -779,7 +780,323 @@ def prepare_machines(device_list):
 
     return machine_dict
 
+#****************************RF Performance Dashboard
+@task()
+def calculate_RF_Performance_dashboards(technology, is_bh = False):
+    """
+    :return:
+    """
+    g_jobs = list()
+    ret = False
 
+
+    try:
+        tech_id = eval(technology).ID
+    except:
+        return ret
+
+    tech=technology
+    user_organizations = Organization.objects.all()
+    processed_for = timezone.now()
+    if technology == 'WiMAX' and is_bh == False:
+        dashboards = {
+            'ul_rssi':{
+                'model': ServiceStatus,
+                'data_source': 'ul_rssi',
+                'service_name': 'wimax_ul_rssi',
+            },
+            'dl_rssi':{
+                'model': ServiceStatus,
+                'data_source': 'dl_rssi',
+                'service_name': 'wimax_dl_rssi',
+            },
+            'ul_cinr':{
+                'model': ServiceStatus,
+                'data_source': 'ul_cinr',
+                'service_name': 'wimax_ul_cinr',
+            },
+            'dl_cinr':{
+                'model': ServiceStatus,
+                'data_source': 'dl_cinr',
+                'service_name': 'wimax_dl_cinr',
+            },
+            'modulation_ul_fec':{
+                'model': ServiceStatus,
+                'data_source': 'modulation_ul_fec',
+                'service_name': 'wimax_modulation_ul_fec',
+            },
+            'modulation_dl_fec':{
+                'model': ServiceStatus,
+                'data_source': 'modulation_dl_fec',
+                'service_name': 'wimax_modulation_dl_fec',
+            }
+        }
+        
+
+        for organization in user_organizations:
+            
+            for dashboard in dashboards:
+                g_jobs.append(
+                    prepare_Rf_dashboard_devices.s(
+                        organizations=organization,
+                        # user_devices=user_devices,
+                        dashboard_name=dashboard,
+                        processed_for=processed_for,
+                        dashboard_config=dashboards,
+                        devices_method_to_call = organization_customer_devices,
+                        devices_method_kwargs = dict(specify_ptp_type='all'),
+                        technology=tech
+                    )
+                )
+    elif technology == 'PMP' and is_bh == False:
+        dashboards = {
+            'ul_jitter':{
+                'model': ServiceStatus,
+                'data_source': 'ul_jitter',
+                'service_name': 'cambium_ul_jitter',
+            },
+            'dl_jitter':{
+                'model': ServiceStatus,
+                'data_source': 'dl_jitter',
+                'service_name': 'cambium_dl_jitter',
+            },
+            'rereg_count':{
+                'model': ServiceStatus,
+                'data_source': 'rereg_count',
+                'service_name': 'cambium_rereg_count',
+            },
+            'ul_rssi':{
+                'model': ServiceStatus,
+                'data_source': 'ul_rssi',
+                'service_name': 'cambium_ul_rssi',
+            },
+            'dl_rssi':{
+                'model': ServiceStatus,
+                'data_source': 'dl_rssi',
+                'service_name': 'cambium_dl_rssi',
+            }
+        }
+
+        for organization in user_organizations:
+            
+            for dashboard in dashboards:
+                g_jobs.append(
+                    prepare_Rf_dashboard_devices.s(
+                        organizations=organization,
+                        # user_devices=user_devices,
+                        dashboard_name=dashboard,
+                        processed_for=processed_for,
+                        dashboard_config=dashboards,
+                        devices_method_to_call = organization_customer_devices,
+                        devices_method_kwargs = dict(specify_ptp_type='all'),
+                        technology=tech
+                    )
+                )
+
+    elif technology == 'P2P' and is_bh == False:
+        dashboards = {
+            'rssi':{
+                'model': ServiceStatus,
+                'data_source': 'rssi',
+                'service_name': 'radwin_rssi',
+            },
+            'uas':{
+                'model': ServiceStatus,
+                'data_source': 'uas',
+                'service_name': 'radwin_uas',
+            }
+        }
+
+        for organization in user_organizations:
+    
+            for dashboard in dashboards:
+                g_jobs.append(
+                    prepare_Rf_dashboard_devices.s(
+                        organizations=organization,
+                        # user_devices=user_devices,
+                        dashboard_name=dashboard,
+                        processed_for=processed_for,
+                        dashboard_config=dashboards,
+                        devices_method_to_call = organization_customer_devices,
+                        devices_method_kwargs = dict(specify_ptp_type='all'),
+                        technology=tech
+                    )
+                )
+
+    elif technology == 'P2P' and is_bh == True:
+        dashboards = {
+            'rssi':{
+                'model': ServiceStatus,
+                'data_source': 'rssi',
+                'service_name': 'radwin_rssi',
+            },
+            'uas':{
+                'model': ServiceStatus,
+                'data_source': 'uas',
+                'service_name': 'radwin_uas',
+            },
+            'availability':{
+                'model': NetworkAvailabilityDaily,
+                'data_source': 'availability',
+                'service_name': 'availability',
+            }
+        }
+
+        for organization in user_organizations:
+                for dashboard in dashboards:
+                    
+                    if dashboard == 'rssi':
+                        devices_method_kwargs = dict(specify_ptp_bh_type='all')
+                    else:
+                        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
+
+                    g_jobs.append(
+                        prepare_Rf_dashboard_devices.s(
+                            organizations=organization,
+                            # user_devices=user_devices,
+                            dashboard_name=dashboard,
+                            processed_for=processed_for,
+                            dashboard_config=dashboards,
+                            devices_method_to_call = organization_network_devices,
+                            devices_method_kwargs = devices_method_kwargs,
+                            technology=tech,
+                            is_bh=True
+                        )
+                    ) 
+    if not len(g_jobs):
+        return ret
+
+    job = group(g_jobs)
+    result = job.apply_async()  # start the jobs
+    # for r in result.get():
+    #     ret |= r
+    return True
+
+@task()
+def prepare_Rf_dashboard_devices(organizations,
+                                dashboard_name,
+                                processed_for,
+                                dashboard_config,
+                                devices_method_to_call,
+                                devices_method_kwargs,
+                                technology=None,
+                                is_bh=False
+                            ):
+    """
+    :param dashboard_config:
+    :param devices_method_to_call:
+    :param devices_method_kwargs
+    :param organization:
+    :param dashboard_name:
+    :param processed_for:
+    :param technology:
+    param is_bh:
+    :return:
+    """
+    processed_for = processed_for
+    technology_id = None
+
+    if technology:
+        try:
+            technology_id = eval(technology).ID
+        except Exception as e:
+            logger.exception(e)
+            return False
+    else:
+        pass
+
+    service_status_results = list()
+    g_jobs = list()
+    ret = False
+
+    user_devices = devices_method_to_call(organizations=[organizations.id],
+                                                        technology=technology_id,
+                                                        **devices_method_kwargs
+                                                        )
+
+    dashboard_status_name=dashboard_name
+    model = dashboard_config[dashboard_name]['model']
+    service_name = dashboard_config[dashboard_name]['service_name']
+    data_source = dashboard_config[dashboard_name]['data_source']
+
+    try:
+        dashboard_setting = DashboardSetting.objects.get(
+            technology_id=technology_id,
+            page_name='rf_dashboard',
+            name=dashboard_status_name,
+            is_bh=is_bh
+        )
+    except DashboardSetting.DoesNotExist as e:
+        logger.exception(" Dashboard Setting of {0} is not available. {1}".format(dashboard_name, e))
+        return False
+
+    if is_bh:
+        dashboard_name = dashboard_name+'_bh' 
+    # for machine_name, device_list in machine_dict.items():
+    #     status_count += model.objects.order_by(
+    #     ).extra(
+    #         where=[current_value]
+    #     ).filter(
+    #         device_name__in=device_list,
+    #         service_name=service_name,
+    #         data_source=data_source,
+    #         severity__in=severity
+    #     ).using(machine_name).count()
+    if user_devices.exists():
+        data_list = list()
+        # user_sector = sector_objects
+        status_counter = {
+            "dashboard_name": dashboard_name,
+            "device_name": dashboard_name,
+            "reference_name": dashboard_name,
+            "processed_for": processed_for,
+            "organization": organizations,
+            "range1": 0,
+            "range2": 0,
+            "range3": 0,
+            "range4": 0,
+            "range5": 0,
+            "range6": 0,
+            "range7": 0,
+            "range8": 0,
+            "range9": 0,
+            "range10": 0,
+            "unknown": 0,
+        }
+            # get the list of dictionary on the basis of parameters.
+        service_status_results = get_service_status_results(user_devices,
+                                                            model=model,
+                                                            service_name=service_name,
+                                                            data_source=data_source
+                                                        )
+        # service_status_results = get_topology_status_results(
+        #     user_devices=None,
+        #     model=Topology,
+        #     service_name=None,
+        #     data_source='topology',
+        #     user_sector=user_sector
+        # )
+
+        for result in service_status_results:
+            # get the dictionary containing the model's field name as key.
+            # range_counter in format {'range1': 1, 'range2': 2,...}
+            range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
+            for ranges in range_counter:
+                status_counter[ranges] += range_counter[ranges]
+            # prepare a list of model object.
+        data_list.append(DashboardRangeStatusTimely(**status_counter))
+
+        if len(data_list):
+            # call method to bulk create the model object.
+            bulk_update_create.delay(
+                bulky=data_list,
+                action='create',
+                model=DashboardRangeStatusTimely
+            )
+
+    return True
+
+#***************************** Trend Calculation
 def speedometer_sum_query(desired_table, now, then, counter=12):
     """
 
@@ -1294,4 +1611,3 @@ def calculate_daily_speedometer_dashboard():
         dashboard_name__in=SPEEDOMETER_DASHBAORDS
     ).delete()
     return True
-

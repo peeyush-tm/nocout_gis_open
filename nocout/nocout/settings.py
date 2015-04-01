@@ -446,6 +446,26 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'WiMAX'}
     },
+    'calculate_rf_range_dashboards-WiMAX': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX'}
+    },
+    'calculate_rf_range_dashboards-PMP': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP'}
+    },
+    'calculate_rf_range_dashboards-PTP': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'P2P'}
+    },
+    'calculate_rf_range_dashboards-PTP-BH': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'P2P', 'is_bh' : 'True'}
+    },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
         'schedule': crontab(minute='5', hour='*')
