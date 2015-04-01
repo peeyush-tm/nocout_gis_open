@@ -1,6 +1,5 @@
 from django.db import models
-from django.db.models.signals import post_save
-from django.utils.safestring import mark_safe
+from django.db.models.signals import pre_save, post_save, m2m_changed
 
 from machine.models import Machine
 from organization.models import Organization
@@ -245,7 +244,6 @@ class DeviceTypeFieldsValue(models.Model):
     device_id = models.IntegerField()
 
 
-
 class DeviceSyncHistory(models.Model):
     status = models.IntegerField('Status', null=True, blank=True)
     message = models.TextField('NMS Message', null=True, blank=True)
@@ -263,7 +261,17 @@ class DeviceSyncHistory(models.Model):
     def __unicode__(self):
         return self.status
 
-#********************* Connect Device Signals *******************
+
+# ********************************** Connect Device Signals ***********************************
+
+# set site instance 'is_device_change' bit on device modified or created
+pre_save.connect(device_signals.update_site_on_device_change, sender=Device)
+
+# set site instance 'is_device_change' bit on device type modified
+pre_save.connect(device_signals.update_site_on_devicetype_change, sender=DeviceType)
+
+# set site instance 'is_device_change' bit on device type service modified or created
+post_save.connect(device_signals.update_site_on_service_change, sender=DeviceTypeService)
 
 post_save.connect(device_signals.update_device_type_service, sender=DeviceTypeService)
 

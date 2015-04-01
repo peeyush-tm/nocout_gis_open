@@ -26,19 +26,24 @@ class SiteInstanceList(PermissionsRequiredMixin, ListView):
         """
         Preparing the Context Variable required in the template rendering.
         """
-        context=super(SiteInstanceList, self).get_context_data(**kwargs)
+        context = super(SiteInstanceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                  'sTitle' : 'Name',                  'sWidth':'auto',},
-            {'mData':'alias',                 'sTitle' : 'Alias',                 'sWidth':'auto','sClass':'hidden-xs'},
-            {'mData':'machine__name',         'sTitle' : 'Machine',               'sWidth':'auto','sClass':'hidden-xs'},
-            {'mData':'live_status_tcp_port',  'sTitle' : 'Live Status TCP Port',  'sWidth':'auto','sClass':'hidden-xs'},
-            {'mData':'web_service_port',      'sTitle' : 'Web Service Port',      'sWidth':'auto',},
-            {'mData':'username',              'sTitle' : 'Username',              'sWidth':'auto',},
+            {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'live_status_tcp_port', 'sTitle': 'Live Status TCP Port', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
+            {'mData': 'web_service_port', 'sTitle': 'Web Service Port', 'sWidth': 'auto', },
+            {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'nms_actions', 'sTitle': 'NMS Actions', 'sWidth': '8%',
+                                      'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
+
 
 class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
@@ -46,8 +51,8 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
     """
     model = SiteInstance
     required_permissions = ('site_instance.view_siteinstance',)
-    columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
-    order_columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
+    columns = ['name', 'alias', 'machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
+    order_columns = ['name', 'alias', 'machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
 
     def prepare_results(self, qs):
         """
@@ -57,10 +62,31 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
         :return qs
         """
 
-        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            dct.update(actions='<a href="/site/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/site/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            current_site = None
+            try:
+                current_site = SiteInstance.objects.get(id=dct['id'])
+            except Exception as e:
+                pass
+
+            # if device is already added to nms core than show icon in device table
+            icon = ""
+            try:
+                if current_site.is_device_change == 1:
+                    icon = '<i class="fa fa-circle red-dot"></i>'
+                else:
+                    icon = '<i class="fa fa-circle green-dot"></i>'
+                dct.update(status_icon=icon)
+            except Exception as e:
+                dct.update(status_icon='<img src="">')
+            try:
+                dct.update(actions='<a href="/site/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                    <a href="/site/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id']))
+                dct.update(nms_actions='<a href="javascript:;" onclick="sync_devices();">\
+                    <i class="fa fa-refresh text-danger"title="Sync Device"></i></a>'.format(dct['id']))
+            except Exception as e:
+                pass
         return json_data
 
 
