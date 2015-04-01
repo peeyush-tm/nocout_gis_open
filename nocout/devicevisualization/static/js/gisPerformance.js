@@ -159,7 +159,7 @@ function GisPerformance() {
      This function sends Request based on the counter value.
      */
     this.sendRequest = function (counter) {
-        if (isPollingActive == 0  && isPerfCallStopped == 0) {
+        if(isPollingActive == 0  && isPerfCallStopped == 0) {
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
                 last_counter_val = counter;
                 if(!callsInProcess) {
@@ -196,16 +196,17 @@ function GisPerformance() {
 
         counter++;
 
-        if(gis_perf_call_instance) {
-            try {
-                gis_perf_call_instance.abort()
-                gis_perf_call_instance = "";
-            } catch(e) {
-                // pass
-            }
-        }
+        // if(gis_perf_call_instance) {
+        //     try {
+        //         gis_perf_call_instance.abort()
+        //         gis_perf_call_instance = "";
+        //     } catch(e) {
+        //         // pass
+        //     }
+        // }
 
         var current_chunk = JSON.parse(JSON.stringify(bs_id));
+
         while(current_chunk && current_chunk.length > 0) {
             var bs_id = current_chunk.splice(0,1)[0];
             if(bs_id) {
@@ -279,7 +280,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= periodic_poll_process_count) {
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -291,7 +292,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= periodic_poll_process_count) {
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -301,11 +302,12 @@ function GisPerformance() {
                             });
                         } else {
                             //Update Map with the data
-                            calls_completed++;
                             perf_self.updateMap(data,function(response) {
-                                if(calls_completed >= periodic_poll_process_count) {
+                                calls_completed++;
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
+
                                     //Send Request for the next counter
                                     perf_self.sendRequest(counter);
                                 }
@@ -387,6 +389,9 @@ function GisPerformance() {
                     bs_marker['bhSeverity'] = perf_bh_severity;
                     bs_marker['bhInfo'] = bhInfo;
                     bs_marker['pl'] = bh_pl;
+                    
+
+
                     // If we have BS maintenance status then update it in Bs marker
                     if(bs_maintenance_status) {
                         bs_marker['maintenance_status'] = bs_maintenance_status;
@@ -1745,13 +1750,17 @@ function GisPerformance() {
             },350);
         } else {
             if(window.location.pathname.indexOf("white_background") > -1) {
-                showOpenLayerFeature(bs_marker);
-                // Redraw BS marker
-                bs_marker.layerReference.redraw();
+                if(!bs_marker.getVisibility()) {
+                    showOpenLayerFeature(bs_marker);
+                    // Redraw BS marker
+                    bs_marker.layerReference.redraw();
+                }
             } else if(window.location.pathname.indexOf("googleEarth") > -1) {
                 // pass
             } else {
-                bs_marker.setMap(mapInstance);
+                if(!bs_marker.map) {
+                    bs_marker.setMap(mapInstance);
+                }
             }
         }
     }
