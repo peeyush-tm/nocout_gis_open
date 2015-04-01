@@ -247,11 +247,6 @@ function GisPerformance() {
                 base_station_marker = allMarkersObject['base_station']['bs_'+base_station_name];
                 loader_icon_dict[base_station_name] = true;
                 if(base_station_marker) {
-                    try {
-                        base_station_marker['isBlink'] = true;
-                    } catch(e) {
-                        // pass
-                    }
                     perf_self.animateBaseStationIcon(base_station_marker);
                 }
             }
@@ -392,8 +387,6 @@ function GisPerformance() {
                     bs_marker['bhSeverity'] = perf_bh_severity;
                     bs_marker['bhInfo'] = bhInfo;
                     bs_marker['pl'] = bh_pl;
-                    // Revert the BS marker 'isBlink' key to false
-                    base_station_marker['isBlink'] = false;
                     // If we have BS maintenance status then update it in Bs marker
                     if(bs_maintenance_status) {
                         bs_marker['maintenance_status'] = bs_maintenance_status;
