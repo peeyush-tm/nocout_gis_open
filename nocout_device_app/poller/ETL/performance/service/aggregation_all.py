@@ -6,12 +6,12 @@ Usage ::
 python aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly
 python aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly
 python aggregation_all.py -r mysql -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
-python aggregation_all.py -r mysql -t 1 -f hourly -d performance_performanceservicebihourly -d performance_performanceservicehourly
-python aggregation_all.py -r mysql -t 24 -f daily -d performance_performanceservicehourly -d performance_performanceservicedaily
-python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performancestatusdaily -d performance_performancestatusweekly
-python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performanceinventorydaily -d performance_performanceinventoryweekly
-python aggregation_all.py -r mysql -t 720 -f monthly -d performance_performanceserviceweekly -d performance_performanceservicemonthly
-python aggregation_all.py -r mysql -t 8640 -f yearly -d performance_performanceservicemonthly -d performance_performanceserviceyearly
+python aggregation_all.py -r mysql -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly
+python aggregation_all.py -r mysql -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily
+python aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancestatusdaily -d performance_performancestatusweekly
+python aggregation_all.py -r mysql -t 168 -f weekly -s performance_performanceinventorydaily -d performance_performanceinventoryweekly
+python aggregation_all.py -r mysql -t 720 -f monthly -s performance_performanceserviceweekly -d performance_performanceservicemonthly
+python aggregation_all.py -r mysql -t 8640 -f yearly -s performance_performanceservicemonthly -d performance_performanceserviceyearly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
@@ -54,9 +54,9 @@ parser.add_option('-r', '--read_from', dest='read_from', type='str')
 parser.add_option('-s', '--source', dest='source_db', type='str')
 parser.add_option('-d', '--destination', dest='destination_db', type='str')
 parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['0.5', 
-'1', '24', '168'])
+'1', '24', '168', '720', '8640'])
 parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=[
-'half_hourly', 'hourly', 'daily', 'weekly'])
+'half_hourly', 'hourly', 'daily', 'weekly', 'monthly', 'yearly'])
 options, remainder = parser.parse_args(sys.argv[1:])
 if options.source_db and options.destination_db and options.hours and \
         options.timeframe and options.read_from:
@@ -140,6 +140,10 @@ def quantify_perf_data(host_specific_data):
         elif read_from == 'mongodb':
             war, cric = doc.get('meta').get('war'), doc.get('meta').get('cric')
             current_value = doc.get('meta').get('cur')
+	try:
+	    current_value = eval(current_value)
+	except:
+	    current_value = current_value
 
         if time_frame == 'half_hourly':
             if time.minute < 30:
@@ -173,6 +177,7 @@ def quantify_perf_data(host_specific_data):
             time = time.replace(month=12, day=31, hour=23, minute=55,
                     second=0, microsecond=0)
 
+	# convert values from string, since these are stored as str in mysql
         aggr_data = {
                 'host': host,
                 'service': service,
@@ -187,10 +192,14 @@ def quantify_perf_data(host_specific_data):
                 'check_time': check_time
                 }
         if read_from == 'mysql':
+	    try:
+	        mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
+	    except:
+	        mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
             aggr_data.update({
-                'min': doc.get('min_value'),
-                'max': doc.get('max_value'),
-                'avg': doc.get('avg_value'),
+                'min': mn,
+                'max': mx,
+                'avg': ag,
             })
         elif read_from == 'mongodb':
             aggr_data.update({
@@ -226,7 +235,7 @@ def quantify_perf_data(host_specific_data):
                 max_val = max(values_list) 
                 if aggr_data.get('avg'):
                     try:
-                        avg_val = (float(existing_doc.get('avg')) + float(aggr_data.get('avg')))/ 2
+                        avg_val = (float(existing_doc.get('avg')) + float(aggr_data.get('avg')))/ 2.0
                     except Exception:
                         avg_val = existing_doc.get('avg') if existing_doc.get('avg') else aggr_data.get('avg')
                 else:
@@ -238,6 +247,17 @@ def quantify_perf_data(host_specific_data):
                 })
             # First remove the existing entry from aggregated_data_values
             host_specific_aggregated_data.pop(existing_doc_index)
+	# round floats to 2 decimal places
+	# since we cant round to 2 decimal places in python <= 2.6, directly,
+        # convert these values to str instead
+	try:
+            aggr_data['current_value'] = "{0:.2f}".format((float(aggr_data['current_value'])))
+            aggr_data['min'] = "{0:.2f}".format((float(aggr_data['min'])))
+            aggr_data['max'] = "{0:.2f}".format((float(aggr_data['max'])))
+            aggr_data['avg'] = "{0:.2f}".format((float(aggr_data['avg'])))
+        except:
+            # dont change any thing
+            pass
         host_specific_aggregated_data.append(aggr_data)
     
     return host_specific_aggregated_data
@@ -267,7 +287,7 @@ def usage():
 if __name__ == '__main__':
     final_data_values = prepare_data()
     if final_data_values:
-        db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
+	db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
         mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)
     print 'Length of Data Inserted'
     print len(final_data_values)
