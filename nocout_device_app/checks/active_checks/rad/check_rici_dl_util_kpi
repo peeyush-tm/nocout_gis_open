@@ -77,7 +77,6 @@ def live_query_rici_dl_util_kpi(hostname,site,war,crit,qos):
 		except Exception,e:
 			continue
 		if dl_kpi:
-			dl_kpi = "%.2f" % dl_kpi
 			perf += str(entry) + "=%s;%s;%s;%s " % (dl_kpi,war,crit,qos_value[index])
 			if dl_kpi >= crit:
 				crit_flag = 1
