@@ -61,7 +61,7 @@ def network_speedometer_dashboards():
         },
         'packetloss-network': {
             'model': NetworkStatus,
-            'data_source': 'rta',
+            'data_source': 'pl',
             'service_name': 'ping',
             'severity': ['warning', 'critical', 'down'],
             'current_value': ' current_value < 100 '
