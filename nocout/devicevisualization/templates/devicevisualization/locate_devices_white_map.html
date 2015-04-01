@@ -361,7 +361,7 @@
 
             <!--Info Window Content Container START-->
 
-            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:999;"></div>
+            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:1000;"></div>
 
             <!--Info Window Content Container END-->
 
@@ -543,7 +543,7 @@
         $(document).ready(function (e) {
 
             try {
-                
+
                 var wmap_config = '{{ settings.WHITE_MAP_CONFIGURATION|safe }}';
                 if(typeof wmap_config == 'string') {
                     wmap_config = JSON.parse(wmap_config)
