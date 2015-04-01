@@ -24,22 +24,23 @@ def update_site_on_device_change(sender, instance=None, created=False, **kwargs)
     from device.models import Device
 
     # instance before saving the form
-    old_instance = Device.objects.get(id=instance.id)
+    old_instance = None
+    try:
+        old_instance = Device.objects.get(id=instance.id)
+    except Exception as e:
+        pass
 
-    # old fields values list
-    old_values = [old_instance.device_name,
-                  old_instance.ip_address,
-                  old_instance.site_instance.name]
+    if old_instance:
+        # old fields values list
+        old_values = [old_instance.device_name,
+                      old_instance.ip_address,
+                      old_instance.site_instance.name]
 
-    # new fields values list
-    new_values = [instance.device_name,
-                  instance.ip_address,
-                  instance.site_instance.name]
+        # new fields values list
+        new_values = [instance.device_name,
+                      instance.ip_address,
+                      instance.site_instance.name]
 
-    if created:
-        instance.site_instance.is_device_change = 1
-        instance.site_instance.save()
-    else:
         if instance.site_instance.is_device_change != 1:
             if list(set(old_values) - set(new_values)):
                 instance.site_instance.is_device_change = 1
@@ -47,6 +48,9 @@ def update_site_on_device_change(sender, instance=None, created=False, **kwargs)
                 if instance.site_instance == old_instance.site_instance:
                     old_instance.site_instance.is_device_change = 1
                     old_instance.site_instance.save()
+    else:
+        instance.site_instance.is_device_change = 1
+        instance.site_instance.save()
 
 
 def update_site_on_devicetype_change(sender, instance=None, created=False, **kwargs):
@@ -70,25 +74,30 @@ def update_site_on_devicetype_change(sender, instance=None, created=False, **kwa
     from site_instance.models import SiteInstance
 
     # instance before saving the form
-    old_instance = DeviceType.objects.get(id=instance.id)
+    old_instance = None
+    try:
+        old_instance = DeviceType.objects.get(id=instance.id)
+    except Exception as e:
+        pass
 
-    # old fields values list
-    old_values = [old_instance.rta_critical,
-                  old_instance.rta_warning,
-                  old_instance.pl_critical,
-                  old_instance.pl_warning]
-    old_values = [x for x in old_values if x is not None]
+    if old_instance:
+        # old fields values list
+        old_values = [old_instance.rta_critical,
+                      old_instance.rta_warning,
+                      old_instance.pl_critical,
+                      old_instance.pl_warning]
+        old_values = [x for x in old_values if x is not None]
 
-    # new fields values list
-    new_values = [instance.rta_critical,
-                  instance.rta_warning,
-                  instance.pl_critical,
-                  instance.pl_warning]
-    new_values = [x for x in new_values if x is not None]
+        # new fields values list
+        new_values = [instance.rta_critical,
+                      instance.rta_warning,
+                      instance.pl_critical,
+                      instance.pl_warning]
+        new_values = [x for x in new_values if x is not None]
 
-    if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
-        # modify all site instances 'is_device_change' bit to 1
-        SiteInstance.objects.all().update(is_device_change=1)
+        if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
+            # modify all site instances 'is_device_change' bit to 1
+            SiteInstance.objects.all().update(is_device_change=1)
 
 
 def update_site_on_service_change(sender, instance=None, created=False, **kwargs):

@@ -50,21 +50,26 @@ def update_site_on_ds_change(sender, instance=None, created=False, **kwargs):
     from site_instance.models import SiteInstance
 
     # instance before saving the form
-    old_instance = ServiceDataSource.objects.get(id=instance.id)
+    old_instance = None
+    try:
+        old_instance = ServiceDataSource.objects.get(id=instance.id)
+    except Exception as e:
+        pass
 
-    # old fields values list
-    old_values = [old_instance.warning,
-                  old_instance.critical]
-    old_values = [x for x in old_values if x is not None]
+    if old_instance:
+        # old fields values list
+        old_values = [old_instance.warning,
+                      old_instance.critical]
+        old_values = [x for x in old_values if x is not None]
 
-    # new fields values list
-    new_values = [instance.warning,
-                  instance.critical]
-    new_values = [x for x in new_values if x is not None]
+        # new fields values list
+        new_values = [instance.warning,
+                      instance.critical]
+        new_values = [x for x in new_values if x is not None]
 
-    if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
-        # modify all site instances 'is_device_change' bit to 1
-        SiteInstance.objects.all().update(is_device_change=1)
+        if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
+            # modify all site instances 'is_device_change' bit to 1
+            SiteInstance.objects.all().update(is_device_change=1)
 
 
 def update_site_on_service_change(sender, instance=None, created=False, **kwargs):
@@ -88,19 +93,24 @@ def update_site_on_service_change(sender, instance=None, created=False, **kwargs
     from site_instance.models import SiteInstance
 
     # instance before saving the form
-    old_instance = Service.objects.get(id=instance.id)
+    old_instance = None
+    try:
+        old_instance = Service.objects.get(id=instance.id)
+    except Exception as e:
+        pass
 
-    # old fields values list
-    old_values = [old_instance.name]
-    old_values = [x for x in old_values if x is not None]
+    if old_instance:
+        # old fields values list
+        old_values = [old_instance.name]
+        old_values = [x for x in old_values if x is not None]
 
-    # new fields values list
-    new_values = [instance.name]
-    new_values = [x for x in new_values if x is not None]
+        # new fields values list
+        new_values = [instance.name]
+        new_values = [x for x in new_values if x is not None]
 
-    if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
-        # modify all site instances 'is_device_change' bit to 1
-        SiteInstance.objects.all().update(is_device_change=1)
+        if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
+            # modify all site instances 'is_device_change' bit to 1
+            SiteInstance.objects.all().update(is_device_change=1)
 
 
 def update_site_on_svc_specific_ds_change(sender, instance=None, created=False, **kwargs):
@@ -175,24 +185,29 @@ def update_site_on_pingconf_change(sender, instance=None, created=False, **kwarg
     from site_instance.models import SiteInstance
 
     # instance before saving the form
-    old_instance = DevicePingConfiguration.objects.get(id=instance.id)
+    old_instance = None
+    try:
+        old_instance = DevicePingConfiguration.objects.get(id=instance.id)
+    except Exception as e:
+        pass
 
-    # old fields values list
-    old_values = [old_instance.device_name,
-                  old_instance.rta_critical,
-                  old_instance.rta_warning,
-                  old_instance.pl_critical,
-                  old_instance.pl_warning]
-    old_values = [x for x in old_values if x is not None]
+    if old_instance:
+        # old fields values list
+        old_values = [old_instance.device_name,
+                      old_instance.rta_critical,
+                      old_instance.rta_warning,
+                      old_instance.pl_critical,
+                      old_instance.pl_warning]
+        old_values = [x for x in old_values if x is not None]
 
-    # new fields values list
-    new_values = [instance.device_name,
-                  instance.rta_critical,
-                  instance.rta_warning,
-                  instance.pl_critical,
-                  instance.pl_warning]
-    new_values = [x for x in new_values if x is not None]
+        # new fields values list
+        new_values = [instance.device_name,
+                      instance.rta_critical,
+                      instance.rta_warning,
+                      instance.pl_critical,
+                      instance.pl_warning]
+        new_values = [x for x in new_values if x is not None]
 
-    if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
-        # modify all site instances 'is_device_change' bit to 1
-        SiteInstance.objects.all().update(is_device_change=1)
+        if (len(new_values) != len(old_values)) or (list(set(old_values) - set(new_values))):
+            # modify all site instances 'is_device_change' bit to 1
+            SiteInstance.objects.all().update(is_device_change=1)
