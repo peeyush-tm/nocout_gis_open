@@ -206,7 +206,6 @@ function GisPerformance() {
         }
 
         var current_chunk = JSON.parse(JSON.stringify(bs_id));
-
         while(current_chunk && current_chunk.length > 0) {
             var bs_id = current_chunk.splice(0,1)[0];
             if(bs_id) {
@@ -214,7 +213,6 @@ function GisPerformance() {
                 perf_self.makePeriodicAjaxCall(bs_id,counter);
             }
         }
-
     }
 
     /**
@@ -249,6 +247,11 @@ function GisPerformance() {
                 base_station_marker = allMarkersObject['base_station']['bs_'+base_station_name];
                 loader_icon_dict[base_station_name] = true;
                 if(base_station_marker) {
+                    try {
+                        base_station_marker['isBlink'] = true;
+                    } catch(e) {
+                        // pass
+                    }
                     perf_self.animateBaseStationIcon(base_station_marker);
                 }
             }
@@ -302,22 +305,16 @@ function GisPerformance() {
                                 }
                             });
                         } else {
-                            var current_bs_in_bound = getMarkerInCurrentBound(true);
-                            
-                            /*Check that the bsname is present in current bounds or not*/
-                            if (current_bs_in_bound.indexOf(data.id) > -1) {
-                                //Update Map with the data
-                                perf_self.updateMap(data,function(response) {
-                                    calls_completed++;
-                                    if(calls_completed >= periodic_poll_process_count) {
-                                        // Reset Calls Completed Counter
-                                        calls_completed = 0;
-
-                                        //Send Request for the next counter
-                                        perf_self.sendRequest(counter);
-                                    }
-                                });
-                            }
+                            //Update Map with the data
+                            calls_completed++;
+                            perf_self.updateMap(data,function(response) {
+                                if(calls_completed >= periodic_poll_process_count) {
+                                    // Reset Calls Completed Counter
+                                    calls_completed = 0;
+                                    //Send Request for the next counter
+                                    perf_self.sendRequest(counter);
+                                }
+                            });
                         }
                     } else {
                         calls_completed++;
@@ -395,9 +392,8 @@ function GisPerformance() {
                     bs_marker['bhSeverity'] = perf_bh_severity;
                     bs_marker['bhInfo'] = bhInfo;
                     bs_marker['pl'] = bh_pl;
-                    
-
-
+                    // Revert the BS marker 'isBlink' key to false
+                    base_station_marker['isBlink'] = false;
                     // If we have BS maintenance status then update it in Bs marker
                     if(bs_maintenance_status) {
                         bs_marker['maintenance_status'] = bs_maintenance_status;
