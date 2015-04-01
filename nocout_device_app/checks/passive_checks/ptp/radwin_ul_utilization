@@ -66,7 +66,7 @@ def check_radwin_ul_utilization(item, _no_params, info):
 			rate = (rate *8)/(1024.0 * 1024)
 		except MKCounterWrapped:
 			wrapped=True
-                status_list.append((if_name, "%.4f" % rate))
+                status_list.append((if_name, "%.2f" % rate))
             for name, rate in status_list:
                 infotext += "[%s] ul_utilization:%s" % (name, rate)
             state = 0

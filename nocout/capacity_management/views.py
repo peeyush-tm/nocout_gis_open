@@ -263,6 +263,13 @@ class SectorStatusListing(BaseDatatableView):
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 device_id = item['sector__sector_configured_on__id']
 
+                perf_page_link = ''
+                if device_id:
+                    perf_page_link = '<a href="/performance/network_live/'+str(device_id)+'/?is_util=1" \
+                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+
+                item['actions']=perf_page_link
+
                 item['sector__sector_configured_on__device_technology'] = techno_name
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
@@ -270,14 +277,8 @@ class SectorStatusListing(BaseDatatableView):
                 item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_in_timestamp'])
                 ).strftime(DATE_TIME_FORMAT)
-
-                perf_page_link = ''
-                if device_id:
-                    perf_page_link = '<a href="/performance/network_live/'+str(device_id)+'/?is_util=1" \
-                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
-
-                item.update(actions=perf_page_link)
             except Exception, e:
+                logger.exception(e)
                 continue
 
         return json_data
@@ -728,6 +729,13 @@ class BackhaulStatusListing(BaseDatatableView):
                 techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
                 device_id = item['backhaul__bh_configured_on__id']
 
+                perf_page_link = ''
+                if device_id:
+                    perf_page_link = '<a href="/performance/other_live/'+str(device_id)+'/?is_util=1" \
+                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+
+                item['actions']=perf_page_link
+
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
                 
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
@@ -738,13 +746,8 @@ class BackhaulStatusListing(BaseDatatableView):
                     float(item['peak_in_timestamp'])
                 ).strftime(DATE_TIME_FORMAT) if item['peak_in_timestamp'] else ''
 
-                perf_page_link = ''
-                if device_id:
-                    perf_page_link = '<a href="/performance/other_live/'+str(device_id)+'/?is_util=1" \
-                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
-
-                item.update(actions=perf_page_link)
             except Exception, e:
+                logger.exception(e)
                 continue
 
         return json_data

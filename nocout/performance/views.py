@@ -972,8 +972,8 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             'City',
             'State',
             'IP Address',
-            'Planned Frequency',
-            'Frequency'
+            'Planned Frequency(MHz)',
+            'Frequency(MHz)'
         ]
 
         if technology in ['P2P', 'PTP', 'ptp', 'p2p']:
@@ -1002,7 +1002,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             'IP Address',
             'MAC Address',
             'Qos(Mbps)',
-            'Frequency'
+            'Frequency(MHz)'
         ]
 
     elif type_of_device in ['backhaul']:
@@ -1136,7 +1136,7 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
                         pmp_port = sector.sector_configured_on_port.alias.upper()
                         pmp_port_url = reverse(
                             'device_edit',
-                            kwargs={'pk': sector.dr_configured_on.id},
+                            kwargs={'pk': sector.sector_configured_on.id},
                             current_app='device'
                         )
                     except Exception as no_port:

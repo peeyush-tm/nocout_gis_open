@@ -1192,7 +1192,7 @@ $("#point_select").click(function(e) {
         }
         networkMapInstance.addPointTool_gmap();
     } else if(window.location.pathname.indexOf("white_background") > -1) {
-
+        // pass
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
         // Change map cursor

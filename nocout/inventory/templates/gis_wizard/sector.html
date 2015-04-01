@@ -16,236 +16,266 @@
 {% block content_title %}GIS Wizard: {% if selected_technology == '2' %}PTP{% else %}Sector{% endif %}{% endblock %}
 {% block content_description %}gis wizard: {% if selected_technology == '2' %}PTP{% else %}sector{% endif %}{% endblock %}
 {% block content %}
-<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
+    <p>
+        <a href="javascript:void(0)" onclick="window.history.go(-1);">
+            <i class="fa fa-arrow-left">&nbsp;</i> Previous Page
+        </a>
+    </p>
     <div class="row formContainer">
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {% if selected_technology == '2' %}PTP{% else %}SECTOR{% endif %} ({{ base_station.alias }})</h4>
+                            <h4>
+                                <i class="fa fa-bars"></i> GIS WIZARD: {% if selected_technology == '2' %} PTP {% else %} SECTOR {% endif %} ({{ base_station.alias }})
+                            </h4>
                         </div>
-                            <div class="box-body">
-                                <div class="col-md-8"><br/>
+                        <div class="box-body">
+                            <div class="col-md-8">
+                                {% if not base_station_has_sector %}
+                                <!-- :START: Radio Buttons to choose technology-->
+                                <div class="form-group">
+                                    <label class="control-label pull-left">Technology &nbsp;:&nbsp;&nbsp;</label>
+                                    <div class="pull-left">
 
-            {% if not base_station_has_sector %}
-                <!-- :START: Radio Buttons to choose technology and to choose existing or create new -->
-                <div class="form-group">
-                    <label class="control-label pull-left">Technology &nbsp;:&nbsp;&nbsp;</label>
-                    <div class="pull-left">
-
-                        {% for technology in technologies %}
-                        <label class="radio-inline">
-                            <input type="radio" id="id_technology_radio" class="radioField" value="{{ technology.id }}" name="technology_radio"> {{ technology.name }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div><br/>
-                <div class="form-group">
-                    <label class="control-label pull-left">{% if selected_technology == '2' %}Near End {% else %}Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
-                    <div class="pull-left">
-
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sector_radio" class="radioField" value="existing" name="sector_radio"> Choose Existing
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sector_radio" class="radioField" value="new" name="sector_radio"> Create New
-                        </label>
-                    </div>
-                </div><br/><br/>
-                <div class="form-group">
-                    <div class="col-sm-9">
-                        <div class="col-md-8">
-                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_sector" name="sector" title="" type="hidden" value="{% if object %}{{ object.id }}{% endif %}"/>
-                        </div>
-                    </div>
-                </div>
-                {% if object or select_view %}
-                </br>
-                </br>
-                {% endif %}
-                <!-- :END: Radio Buttons to choose technology and to choose existing or create new -->
-            {% else %}
-                <div class="form-group">
-                    <label class="control-label pull-left">{% if selected_technology == '2' %}Near End {% else %}Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
-                </div></br>
-            {% endif %} {# if not base_station_has_sector #}
-
-            {% if form %}
-
-            <form id="id_sector_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
-                {% include "gis_wizard/form.html" with form=form only %}
-
-                <!-- :START: Sector Antenna Form -->
-                <hr style="border-width:4px;">
-                <div class="form-group">
-                    <label class="control-label pull-left">{% if selected_technology == '2' %}Near End Antenna &nbsp;{% else %}Antenna &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}:&nbsp;&nbsp;</label>
-                    {% if sector_antenna_form %}
-                </div>
-                {% include "gis_wizard/form.html" with form=sector_antenna_form only %}
-                <br/>
-                    {% else %}
-                    <div class="pull-left">
-
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sector_antenna_radio" class="radioField" value="existing" name="sector_antenna_radio"> Choose Existing
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sector_antenna_radio" class="radioField" value="new" name="sector_antenna_radio"> Create New
-                        </label>
-                    </div>
-                </div><br/>
-                <div class="form-group">
-                    <div class="col-sm-9">
-                        <div class="col-md-8">
-                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sector_antenna" name="sector_antenna" title="" type="hidden" value="{{ sector_antenna_id }}"/>
-                        </div>
-                    </div>
-                </div><br/>
-                <div id="id_sector_antenna_form"></div><br>
-                {% endif %}
-                <!-- :END: Sector Antenna Form -->
-
-                {% if selected_technology == '2' %}
-                <!-- :START: SubStation Form -->
-                <hr style="border-width:4px;">
-                <div class="form-group">
-                    <label class="control-label pull-left">Far End &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
-                    {% if sub_station_form %}
-                </div>
-                {% include "gis_wizard/form.html" with form=sub_station_form only %}
-                <br/>
-                    {% else %}
-                    <div class="pull-left">
-
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_radio" class="radioField" value="existing" name="sub_station_radio"> Choose Existing
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_radio" class="radioField" value="new" name="sub_station_radio"> Create New
-                        </label>
-                    </div>
-                </div><br/>
-                <div class="form-group">
-                    <div class="col-sm-9">
-                        <div class="col-md-8">
-                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station" name="sub_station" title="" type="hidden" value="{{ sub_station_id }}"/>
-                        </div>
-                    </div>
-                </div><br/>
-                <div id="id_sub_station_form"></div><br>
-                    {% endif %}
-                <!-- :END: SubStation Form -->
-
-                <!-- :START: SubStation Antenna Form -->
-                <hr style="border-width:4px;">
-                <div class="form-group">
-                    <label class="control-label pull-left">Far End Antenna &nbsp;:&nbsp;&nbsp;</label>
-                    {% if sub_station_antenna_form %}
-                </div>
-                    {% include 'gis_wizard/ptp_sub_station_antenna_form.html' with formset=sub_station_antenna_form only %}
-                <br/>
-                    {% else %}
-                    <div class="pull-left">
-
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_antenna_radio" class="radioField" value="existing" name="sub_station_antenna_radio"> Choose Existing
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_antenna_radio" class="radioField" value="new" name="sub_station_antenna_radio"> Create New
-                        </label>
-                    </div>
-                </div><br/>
-                <div class="form-group">
-                    <div class="col-sm-9">
-                        <div class="col-md-8">
-                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station_antenna" name="sub_station_antenna" title="" type="hidden" value="{{ sub_station_antenna_id }}"/>
-                        </div>
-                    </div>
-                </div><br/>
-                <div id="id_sub_station_antenna_form"></div><br>
-                    {% endif %}
-                <!-- :END: SubStation Antenna Form -->
-
-                <!-- :START: Circuit Form -->
-                <hr style="border-width:4px;">
-                <div class="form-group">
-                    <label class="control-label pull-left">Circuit &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
-                    {% if circuit_form %}
-                </div>
-                {% include "gis_wizard/form.html" with form=circuit_form only %}
-                <br/>
-                    {% else %}
-                    <div class="pull-left">
-
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_circuit_radio" class="radioField" value="existing" name="sub_station_circuit_radio"> Choose Existing
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_circuit_radio" class="radioField" value="new" name="sub_station_circuit_radio"> Create New
-                        </label>
-                    </div>
-                </div><br/>
-                <div class="form-group">
-                    <div class="col-sm-9">
-                        <div class="col-md-8">
-                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station_circuit" name="sub_station_circuit" title="" type="hidden" value="{{ sub_station_circuit_id }}"/>
-                        </div>
-                    </div>
-                </div><br/>
-                <div id="id_sub_station_circuit_form"></div><br>
-                    {% endif %}
-                <!-- :END: Circuit Form -->
-
-                <!-- :START: Customer Form -->
-                <hr style="border-width:4px;">
-                <div class="form-group">
-                    <label class="control-label pull-left">Customer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
-                    {% if customer_form %}
-                </div>
-                {% include "gis_wizard/form.html" with form=customer_form only %}
-                <br/>
-                    {% else %}
-                    <div class="pull-left">
-
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_customer_radio" class="radioField" value="existing" name="sub_station_customer_radio"> Choose Existing
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="id_sub_station_customer_radio" class="radioField" value="new" name="sub_station_customer_radio"> Create New
-                        </label>
-                    </div>
-                </div><br/>
-                <div class="form-group">
-                    <div class="col-sm-9">
-                        <div class="col-md-8">
-                            <input class=" tip-focus col-md-12" data-placement="right" data-toggle="tooltip" id="id_sub_station_customer" name="sub_station_customer" title="" type="hidden" value="{{ sub_station_customer_id }}"/>
-                        </div>
-                    </div>
-                </div><br/>
-                <div id="id_sub_station_customer_form"></div><br>
-                    {% endif %}
-                <!-- :END: Customer Form -->
-                {% endif %}
-
-                                        <div class="form-group">
-                                            <div class="col-sm-offset-3 col-sm-9">
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
-                                                &nbsp;
-                                                <button type="submit" id="id_update_and_show" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Show</button>
-                                                &nbsp;
-                                                <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')"><i class="fa fa-times"></i>Skip</button>
-                                                {% if base_station_has_sector %}
-                                                &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="delete_and_show()"><i class="fa fa-times"></i>Delete &amp; Show</button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-            </form>
-            {% endif %}
+                                        {% for technology in technologies %}
+                                        <label class="radio-inline">
+                                            <input type="radio" id="id_technology_radio" class="radioField" value="{{ technology.id }}" name="technology_radio"> {{ technology.name }}
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="clearfix"></div>
                                 </div>
-                                <div class="clearfix"></div>
+                                <!-- :END: Radio Buttons to choose technology-->
+
+                                <!-- :START: Radio Buttons for Near End to choose existing or create new -->
+                                <div class="form-group">
+                                    <label class="control-label pull-left">
+                                        {% if selected_technology == '2' %}
+                                            Near End
+                                        {% else %}
+                                            Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                        {% endif %}
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;
+                                    </label>
+                                    <div class="pull-left">
+                                        <label class="radio-inline">
+                                            <input type="radio" id="id_sector_radio" class="radioField" value="existing" name="sector_radio"> Choose Existing
+                                        </label>
+                                        <label class="radio-inline">
+                                            <input type="radio" id="id_sector_radio" class="radioField" value="new" name="sector_radio"> Create New
+                                        </label>
+                                    </div>
+                                    <div class="clearfix"></div>
+                                </div>
+                                <!-- :END: Radio Buttons for Near End to choose existing or create new -->
+
+                                <!-- START : Choose Existing Near End Device Selectbox -->
+                                <div class="form-group">
+                                    <input class=" tip-focus col-md-6" data-placement="right" data-toggle="tooltip" id="id_sector" name="sector" title="" type="hidden" value="{% if object %}{{ object.id }}{% endif %}"/>
+                                    <div class="clearfix"></div>
+                                </div>
+                                <!-- END : Choose Existing Near End Device Selectbox -->
+                            {% else %}
+                                <div class="form-group">
+                                    <label class="control-label pull-left">
+                                        {% if selected_technology == '2' %}
+                                            Near End
+                                        {% else %}
+                                            Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                        {% endif %}
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;
+                                    </label>
+                                    <div class="clearfix"></div>
+                                </div>
+                            {% endif %}
+                            
+                            {% if form %}
+                                <form id="id_sector_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                    {% include "gis_wizard/form.html" with form=form only %}
+
+                                    <!-- :START: Sector Antenna Form -->
+                                    <hr style="border-width:4px;">
+                                    <div class="form-group">
+                                        <label class="control-label pull-left">
+                                            {% if selected_technology == '2' %}
+                                                Near End Antenna &nbsp;
+                                            {% else %}
+                                                Antenna &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                            {% endif %}
+                                            :&nbsp;&nbsp;
+                                        </label>
+                                        <div class="clearfix"></div>
+                                        {% if sector_antenna_form %}
+                                    </div>
+                                    {% include "gis_wizard/form.html" with form=sector_antenna_form only %}
+                                        {% else %}
+                                        <div class="pull-left">
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sector_antenna_radio" class="radioField" value="existing" name="sector_antenna_radio"> Choose Existing
+                                            </label>
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sector_antenna_radio" class="radioField" value="new" name="sector_antenna_radio"> Create New
+                                            </label>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <input class=" tip-focus col-md-6" data-placement="right" data-toggle="tooltip" id="id_sector_antenna" name="sector_antenna" title="" type="hidden" value="{{ sector_antenna_id }}"/>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                    <div id="id_sector_antenna_form"></div>
+                                    {% endif %}
+                                    <!-- :END: Sector Antenna Form -->
+
+                                    {% if selected_technology == '2' %}
+                                    <!-- :START: SubStation Form -->
+                                    <hr style="border-width:4px;">
+                                    <div class="form-group">
+                                        <label class="control-label pull-left">
+                                            Far End &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;
+                                        </label>
+                                        {% if sub_station_form %}
+                                    </div>
+                                    {% include "gis_wizard/form.html" with form=sub_station_form only %}
+                                        {% else %}
+                                        <div class="pull-left">
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_radio" class="radioField" value="existing" name="sub_station_radio"> Choose Existing
+                                            </label>
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_radio" class="radioField" value="new" name="sub_station_radio"> Create New
+                                            </label>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <input class=" tip-focus col-md-6" data-placement="right" data-toggle="tooltip" id="id_sub_station" name="sub_station" title="" type="hidden" value="{{ sub_station_id }}"/>
+                                        <div class="clearfix"></div>
+                                    </div>
+
+                                    <div id="id_sub_station_form"></div>
+                                        {% endif %}
+                                    <!-- :END: SubStation Form -->
+
+                                    <!-- :START: SubStation Antenna Form -->
+                                    <hr style="border-width:4px;">
+                                    <div class="form-group">
+                                        <label class="control-label pull-left">Far End Antenna &nbsp;:&nbsp;&nbsp;</label>
+                                        {% if sub_station_antenna_form %}
+                                        <div class="clearfix"></div>
+                                    </div>
+                                        {% include 'gis_wizard/ptp_sub_station_antenna_form.html' with formset=sub_station_antenna_form only %}
+                                    <div class="clearfix"></div>
+                                        {% else %}
+                                        <div class="pull-left">
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_antenna_radio" class="radioField" value="existing" name="sub_station_antenna_radio"> Choose Existing
+                                            </label>
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_antenna_radio" class="radioField" value="new" name="sub_station_antenna_radio"> Create New
+                                            </label>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <input class=" tip-focus col-md-6" data-placement="right" data-toggle="tooltip" id="id_sub_station_antenna" name="sub_station_antenna" title="" type="hidden" value="{{ sub_station_antenna_id }}"/>
+                                        <div class="clearfix"></div>
+                                    </div>
+
+                                    <div id="id_sub_station_antenna_form"></div>
+                                        {% endif %}
+                                    <!-- :END: SubStation Antenna Form -->
+
+                                    <!-- :START: Circuit Form -->
+                                    <hr style="border-width:4px;">
+                                    <div class="form-group">
+                                        <label class="control-label pull-left">Circuit &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                        {% if circuit_form %}
+                                        <div class="clearfix"></div>
+                                    </div>
+                                    {% include "gis_wizard/form.html" with form=circuit_form only %}
+                                        {% else %}
+                                        <div class="pull-left">
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_circuit_radio" class="radioField" value="existing" name="sub_station_circuit_radio"> Choose Existing
+                                            </label>
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_circuit_radio" class="radioField" value="new" name="sub_station_circuit_radio"> Create New
+                                            </label>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <input class=" tip-focus col-md-6" data-placement="right" data-toggle="tooltip" id="id_sub_station_circuit" name="sub_station_circuit" title="" type="hidden" value="{{ sub_station_circuit_id }}"/>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                    <div id="id_sub_station_circuit_form"></div><br>
+                                        {% endif %}
+                                    <!-- :END: Circuit Form -->
+
+                                    <!-- :START: Customer Form -->
+                                    <hr style="border-width:4px;">
+                                    <div class="form-group">
+                                        <label class="control-label pull-left">Customer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                        <div class="clearfix"></div>
+                                        {% if customer_form %}
+                                    </div>
+                                    {% include "gis_wizard/form.html" with form=customer_form only %}
+                                        {% else %}
+                                        <div class="pull-left">
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_customer_radio" class="radioField" value="existing" name="sub_station_customer_radio"> Choose Existing
+                                            </label>
+                                            <label class="radio-inline">
+                                                <input type="radio" id="id_sub_station_customer_radio" class="radioField" value="new" name="sub_station_customer_radio"> Create New
+                                            </label>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <input class=" tip-focus col-md-6" data-placement="right" data-toggle="tooltip" id="id_sub_station_customer" name="sub_station_customer" title="" type="hidden" value="{{ sub_station_customer_id }}"/>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                    <div id="id_sub_station_customer_form"></div>
+                                        {% endif %}
+                                    <!-- :END: Customer Form -->
+                                    {% endif %}
+
+                                    <div class="form-group">
+                                        <div class="col-sm-offset-3 col-sm-9">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-pencil"></i>{{ save_text }} &amp; Next
+                                            </button>
+                                            &nbsp;
+                                            <button type="submit" id="id_update_and_show" class="btn btn-success">
+                                                <i class="fa fa-pencil"></i>{{ save_text }} &amp; Show
+                                            </button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')">
+                                                <i class="fa fa-times"></i> Skip
+                                            </button>
+                                            {% if base_station_has_sector %}
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-danger" onclick="delete_and_show()">
+                                                <i class="fa fa-times"></i> Delete &amp; Show
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </form>
+                                {% endif %}
                             </div>
+                            <div class="clearfix"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -254,22 +284,26 @@
 
     {% if form %}
     <script>
+
         {% if base_station_has_sector %}
-        function delete_and_show(){
-            if (confirm('Remove relationship of Sector and Base Station?')) {
-                window.location.replace('{{ delete_url }}');
+            function delete_and_show(){
+                if (confirm('Remove relationship of Sector and Base Station?')) {
+                    window.location.replace('{{ delete_url }}');
+                }
             }
-        }
         {% endif %}
+
         $(document).ready(function() {
-        $("#id_update_and_show").on("click", function(e) {
-            e.preventDefault();
-            $('#id_sector_form').attr('action', "?show=True").submit();
-        });
-            // Changing labels of form fields
-        {% if selected_technology == '2' %}
-            $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End Device');
-        {% endif %}
+            
+            $("#id_update_and_show").on("click", function(e) {
+                e.preventDefault();
+                $('#id_sector_form').attr('action', "?show=True").submit();
+            });
+                // Changing labels of form fields
+            {% if selected_technology == '2' %}
+                $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End Device');
+            {% endif %}
+
             $("label[for=id_sector_id]").text('Sector ID');
             $("label[for=id_frequency]").text('Planned Frequency');
             $("label[for=id_mrc]").text('MRC');
@@ -279,11 +313,13 @@
 
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+            // Initlize tooltip
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
             });
 
+            // Initialize sector configured on select2
             $("#id_sector_configured_on").select2({
                 placeholder: "Search for a near end device.",
                 minimumInputLength: 2,
@@ -315,7 +351,7 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
-                            });
+                        });
                     }
                 },
                 formatResult: repoFormatResult, // omitted for brevity, see the source of this page
@@ -516,14 +552,30 @@
                                         dataType: "json",
                                         data: {'obj_id': id}
                                     }).done(function(data) {
+
+                                        // Update box-title html with selected sector name
+                                        var current_tech_id = "{{ selected_technology }}",
+                                            type_text = "Sector",
+                                            current_box_title_html = $.trim($(".box .box-title h4").html()),
+                                            splitted_title = current_box_title_html.split("GIS WIZARD: ");
+
+                                        if(current_tech_id == 2) {
+                                            type_text = "PTP";
+                                        }
+
+                                        splitted_title[1] = type_text+" - "+data[0];
+                                        // Update Box Title HTML
+                                        $(".box .box-title h4")[0].innerHTML = splitted_title.join("GIS WIZARD: ");
+                                        $(".box .box-title h4").html(splitted_title.join("GIS WIZARD: "));
+                                        // Callback data
                                         callback({id: id, alias: data[0]});
-                                        });
+                                    });
                                 }
                             },
                             formatResult: repoSectorFormatResult, // omitted for brevity, see the source of this page
                             formatSelection: repoSectorFormatSelection,  // omitted for brevity, see the source of this page
                         }).on("select2-selecting", function(el) {
-                            location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/{{ selected_technology }}/sector/" + el.val + "/";
+                            location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/{{ selected_technology }}/sector/"+el.val+"/";
                         });
                 {% else %}
                     $radios.filter('[value=new]').prop('checked', true);
