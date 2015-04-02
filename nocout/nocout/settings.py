@@ -465,7 +465,7 @@ CELERYBEAT_SCHEDULE = {
     'calculate_rf_range_dashboards-PTP-BH': {
         'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
         'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
-        'kwargs': {'technology': 'P2P', 'is_bh' : 'True'}
+        'kwargs': {'technology': 'P2P', 'is_bh' : True}
     },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',

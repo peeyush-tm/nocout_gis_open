@@ -1003,7 +1003,7 @@ def prepare_Rf_dashboard_devices(organizations,
             logger.exception(e)
             return False
     else:
-        pass
+        return
 
     service_status_results = list()
     g_jobs = list()
@@ -1030,18 +1030,10 @@ def prepare_Rf_dashboard_devices(organizations,
         logger.exception(" Dashboard Setting of {0} is not available. {1}".format(dashboard_name, e))
         return False
 
+    dashboard_name = dashboard_name+'_'+technology
     if is_bh:
         dashboard_name = dashboard_name+'_bh' 
-    # for machine_name, device_list in machine_dict.items():
-    #     status_count += model.objects.order_by(
-    #     ).extra(
-    #         where=[current_value]
-    #     ).filter(
-    #         device_name__in=device_list,
-    #         service_name=service_name,
-    #         data_source=data_source,
-    #         severity__in=severity
-    #     ).using(machine_name).count()
+
     if user_devices.exists():
         data_list = list()
         # user_sector = sector_objects
@@ -1069,13 +1061,6 @@ def prepare_Rf_dashboard_devices(organizations,
                                                             service_name=service_name,
                                                             data_source=data_source
                                                         )
-        # service_status_results = get_topology_status_results(
-        #     user_devices=None,
-        #     model=Topology,
-        #     service_name=None,
-        #     data_source='topology',
-        #     user_sector=user_sector
-        # )
 
         for result in service_status_results:
             # get the dictionary containing the model's field name as key.
