@@ -1819,7 +1819,6 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
                                                          processed_date.day,
                                                          0,
                                                          0), 'U'))
-                print var[item['title']]
                 # Preparation of final Dict for all days in One month
                 data_dict['data'].append({
                     "color": count_color,
@@ -1832,7 +1831,6 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
                 # month_before += relativedelta.relativedelta(days=1)
 
             chart_data.append(data_dict)
-            print chart_data
         return chart_data
 
     return dashboard_status_dict
