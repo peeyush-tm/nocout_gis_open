@@ -47,7 +47,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>DL RSSI</h3>
+                                    <h3>
+                                        DL RSSI
+                                        <i class="fa fa-signal text-success pull-right" id="dl_rssi_trend" title="DL RSSI Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_rssi" class="rf_chart_style"></div>
@@ -57,7 +60,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>UL RSSI</h3>
+                                    <h3>
+                                        UL RSSI
+                                        <i class="fa fa-signal text-success pull-right" id="ul_rssi_trend" title="UL RSSI Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_rssi" class="rf_chart_style"></div>
@@ -67,7 +73,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>DL CINR</h3>
+                                    <h3>
+                                        DL CINR
+                                        <i class="fa fa-signal text-success pull-right" id="dl_cinr_trend" title="DL CINR Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_cinr" class="rf_chart_style"></div>
@@ -77,7 +86,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>UL CINR</h3>
+                                    <h3>
+                                        UL CINR
+                                        <i class="fa fa-signal text-success pull-right" id="ul_cinr_trend" title="UL CINR Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_cinr" class="rf_chart_style"></div>
@@ -87,7 +99,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>UL Modulation</h3>
+                                    <h3>
+                                        UL Modulation
+                                        <i class="fa fa-signal text-success pull-right" id="modulation_ul_fec_trend" title="MODULATION UL FEC Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="modulation_ul_fec" class="rf_chart_style"></div>
@@ -97,7 +112,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>DL Modulation</h3>
+                                    <h3>
+                                        DL Modulation
+                                        <i class="fa fa-signal text-success pull-right" id="modulation_dl_fec_trend" title="MODULATION DL FEC Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="modulation_dl_fec" class="rf_chart_style"></div>
@@ -119,16 +137,23 @@
 <script src={% static "js/highcharts.js" %}></script>
 <!-- RF Performance Dashboard Custom JS-->
 <script type="text/javascript" src={% static "js/nocout/rfDashboardLib.js" %}></script>
+<!-- Custom Utilities JS-->
+<script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
 
 <script type="text/javascript">
     var ds_list = [],
         chunk_size = 1,
         ajax_url = "";
+        trends_ajax_url = "",
+        is_bh = 0,
+        tech_name = "WiMAX";
     $(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
         
         ajax_url = "{% url 'dashboard-rf-performance-wimax' %}";
+
+        trends_ajax_url = "{% url 'GetMonthlyRFTrendData' %}";
 
         ds_list = {{ data_sources|safe }};
         chunk_size = {{ parallel_calling_count }} ? {{ parallel_calling_count }} : 1;

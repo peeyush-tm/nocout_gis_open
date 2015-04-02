@@ -216,9 +216,9 @@ class PerformanceDashboardMixin(object):
 
         data_source = request.GET.get('data_source')
         data_source=str(data_source)
-        dashboard_name=data_source
+        dashboard_name=data_source+'_'+tech_name
         if is_bh:
-            dashboard_name=data_source+'_bh'
+            dashboard_name=dashboard_name+'_bh'
         
         if not data_source:
             return render(self.request, self.template_name, dictionary=template_dict)
@@ -247,6 +247,10 @@ class PerformanceDashboardMixin(object):
         dashboard_status_dict, processed_for_key = view_range_status(dashboard_name, user_organizations)
         chart_series = []
         colors = []
+        response_dict ={
+                "message": "Corresponding Dashboard data is not available.",
+                "success": 0
+            }
         if len(dashboard_status_dict):
             # Get the dictionay of chart data for the dashbaord.
             response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, dashboard_status_dict)
@@ -1786,8 +1790,10 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
                 count_color = getattr(dashboard_settings, '%s_color_hex_value' % item['title'])
                 start_range = getattr(dashboard_settings, '%s_start' % item['title'])
                 end_range = getattr(dashboard_settings, '%s_end' % item['title'])
-                if start_range and end_range:
+                if dashboard_settings.dashboard_type == 'INT' and start_range and end_range:              
                     range_param = '(%s,%s)' %(start_range, end_range)
+                elif dashboard_settings.dashboard_type == 'STR' and start_range:
+                    range_param = '%s' %start_range
                 else:
                     continue    
             else:
@@ -2050,8 +2056,9 @@ class GetMonthlyRFTrendData(View):
         if "#" in dashboard_name:
             dashboard_name = dashboard_name.replace('#', '')
 
-        if is_bh:
-            dashboard_status_name=dashboard_name+'_bh'
+        dashboard_status_name=dashboard_name+'_'+tech_name
+        if int(is_bh):
+            dashboard_status_name=dashboard_status_name+'_bh'
         organization = logged_in_user_organizations(self)
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology,
@@ -2064,6 +2071,7 @@ class GetMonthlyRFTrendData(View):
             }))
 
         dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_status_name, organizations=organization, dashboard_settings=dashboard_setting)
+
         if dashboard_status_dict:
             chart_series = dashboard_status_dict
             dashboard_name=dashboard_name.replace('_', ' ')
