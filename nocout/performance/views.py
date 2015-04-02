@@ -2615,8 +2615,11 @@ class Get_Service_Type_Performance_Data(View):
 
 
         self.result['success'] = 1
-        self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
         self.result['data']['objects']['chart_data'] = chart_data
+        self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
+
+        if(not chart_data or len(chart_data) == 0):
+            self.result['message'] = 'No Data'
 
         return self.result
 
@@ -3315,6 +3318,9 @@ class DeviceServiceDetail(View):
                 }
             }
         }
+
+        if(not chart_data or len(chart_data) == 0):
+            result['message'] = 'Device Utilization Data not found'
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
