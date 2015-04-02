@@ -42,66 +42,103 @@ def parse_args(args_list, out=None):
 
 
 def pre_clean(line_args, live_mysql_configs=None, historical_mysql_configs=None):
-    live_db_tables = [
-            'performance_eventnetwork', 'performance_eventservice', 'performance_performanceservice',
-            'performance_performancenetwork', 'performance_performancestatus',
-            'performance_performanceinventory', 'performance_networkavailabilitydaily'
-            ]
-    bihourly_db_tables = [
-            'performance_performanceservicebihourly', 'performance_performancenetworkbihourly'
-            ]
-    hourly_db_tables = [
-            'performance_performancenetworkhourly', 'performance_performanceservicehourly'
-            ]
-    daily_db_tables = [
-            'performance_performancenetworkdaily', 'performance_performanceservicedaily',
-            'performance_performancestatusdaily', 'performance_performanceinventorydaily',
-            'performance_networkavailabilitydaily', 'performance_eventservicedaily',
-            'performance_eventnetworkdaily', 'performance_utilizationdaily'
-            ]
-    weekly_db_tables = [
-            'performance_performancenetworkweekly', 'performance_performanceserviceweekly',
-            'performance_performancestatusweekly', 'performance_performanceinventoryweekly',
-            'performance_networkavailabilityweekly', 'performance_eventserviceweekly',
-            'performance_eventnetworkweekly', 'performance_utilizationweekly'
-            ]
+    # we need to store partition names for these tables
+    live_db_tables = {
+            'performance_eventnetwork': 0, 
+            'performance_eventservice': 0, 
+            'performance_performanceservice': 0,
+            'performance_performancenetwork': 0, 
+            'performance_performancestatus': 0,
+            'performance_performanceinventory': 0, 
+            'performance_networkavailabilitydaily': 0,
+            'performance_utilization': 0
+            }
+    bihourly_db_tables = {
+            'performance_performanceservicebihourly': 0, 
+            'performance_performancenetworkbihourly': 0,
+            'performance_utilizationbihourly': 0
+            }
+    hourly_db_tables = {
+            'performance_performancenetworkhourly': 0, 
+            'performance_performanceservicehourly': 0,
+            'performance_utilizationhourly': 0
+            }
+    daily_db_tables = {
+            'performance_performancenetworkdaily': 0, 
+            'performance_performanceservicedaily': 0,
+            'performance_performancestatusdaily': 0, 
+            'performance_performanceinventorydaily': 0,
+            'performance_networkavailabilitydaily': 0, 
+            'performance_eventservicedaily': 0,
+            'performance_eventnetworkdaily': 0, 
+            'performance_utilizationdaily': 0
+            }
+    weekly_db_tables = {
+            'performance_performancenetworkweekly': 0, 
+            'performance_performanceserviceweekly': 0,
+            'performance_performancestatusweekly': 0, 
+            'performance_performanceinventoryweekly': 0,
+            'performance_networkavailabilityweekly': 0, 
+            'performance_eventserviceweekly': 0,
+            'performance_eventnetworkweekly': 0, 
+            'performance_utilizationweekly': 0
+            }
 
     if line_args == 'live_data':
         db = utility_module.mysql_conn(configs=live_mysql_configs) 
         # We have to perform clean operations for live mysql db
-        end_time = int((datetime.now()- timedelta(days=30)).strftime('%s'))
-        clean_data(db, end_time, live_db_tables)
+        # this will give partition names for `sys_timetimestamp` < `older_than`
+        # we need to use sys_timestamp, bcz we have range partition on sys_timestamp field
+        live_db_tables = get_partitions_names(db, live_db_tables, 1*30)
+        clean_data(db, live_db_tables)
         db.close()
     elif line_args == 'historical_data':
         db = utility_module.mysql_conn(configs=historical_mysql_configs) 
+
         # Clean the entries older than 1 month
-        end_time = int((datetime.now() - timedelta(days=30)).strftime('%s'))
-        clean_data(db, end_time, bihourly_db_tables)
+        bihourly_db_tables = get_partitions_names(db, bihourly_db_tables, 1*30)
+        clean_data(db, bihourly_db_tables)
+
         # Clean the entries older than 3 months
-        end_time = int((datetime.now() - timedelta(days=90)).strftime('%s'))
-        clean_data(db, end_time, hourly_db_tables)
+        hourly_db_tables = get_partitions_names(db, hourly_db_tables, 3*30)
+        clean_data(db, hourly_db_tables)
+
         # Clean the entries older than 6 months
-        end_time = int((datetime.now() - timedelta(days=180)).strftime('%s'))
-        clean_data(db, end_time, daily_db_tables)
+        daily_db_tables = get_partitions_names(db, daily_db_tables, 6*30)
+        clean_data(db, daily_db_tables)
+
         # Clean the entries older than 12 months
-        end_time = int((datetime.now() - timedelta(days=360)).strftime('%s'))
-        clean_data(db, end_time, weekly_db_tables)
+        weekly_db_tables = get_partitions_names(db, weekly_db_tables, 12*30)
+        clean_data(db, weekly_db_tables)
 
         db.close()
+
+
+def get_partitions_names(db, tables, older_than):
+    # we would store one week's extra data, if we want to delete by partition
+    days = (older_than - older_than % 7) + 7 + 1
+    timerange = (datetime.now() - timedelta(days=days)).strftime('%s')
+    cur = db.cursor()
+    for t in tables.keys():
+        qry = """EXPLAIN PARTITIONS SELECT (1) FROM {0} 
+                 WHERE sys_timestamp < {1}""".format(t, timerange)
+        cur.execute(qry)
+        tables[t] = cur.fetchall()[0][3]
+    cur.close()
+
+    return tables
 
 
 # Live mysql db tables would contain data for last 30 days only
 # Historical db tables would contain entry for last 1, 3, 6, 12 months
-def clean_data(db, end_time, tables):
-    for entry in tables:
-        query = "DELETE FROM %s WHERE " % entry
-        query += "sys_timestamp < %s" % (end_time)
-        cursor = db.cursor()
-        cursor.execute(query)
-        db.commit()
-        cursor.close()
-        print 'Data cleaned for table - %s , older than - %s' % (entry, \
-                datetime.fromtimestamp(float(end_time)))
+def clean_data(db, tables):
+    cursor = db.cursor()
+    for table, partitions in tables.items():
+        qry = "ALTER TABLE {0} DROP PARTITION {1}".format(table, partitions)
+        cursor.execute(qry)
+        #db.commit()
+        print "Dropped partitions for table - {0} : {1}".format(table, partitions)
+    cursor.close()
     print '\n'
 
 
