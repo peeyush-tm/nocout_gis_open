@@ -36,7 +36,7 @@
                                 {% if not base_station_has_sector %}
                                 <!-- :START: Radio Buttons to choose technology-->
                                 <div class="form-group">
-                                    <label class="control-label pull-left">Technology &nbsp;:&nbsp;&nbsp;</label>
+                                    <label class="control-label pull-left">Technology </label>
                                     <div class="pull-left">
 
                                         {% for technology in technologies %}
@@ -51,13 +51,12 @@
 
                                 <!-- :START: Radio Buttons for Near End to choose existing or create new -->
                                 <div class="form-group">
-                                    <label class="control-label pull-left">
+                                    <label class="control-label pull-left" id="form_1">
                                         {% if selected_technology == '2' %}
                                             Near End
                                         {% else %}
-                                            Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                            Sector
                                         {% endif %}
-                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;
                                     </label>
                                     <div class="pull-left">
                                         <label class="radio-inline">
@@ -79,13 +78,12 @@
                                 <!-- END : Choose Existing Near End Device Selectbox -->
                             {% else %}
                                 <div class="form-group">
-                                    <label class="control-label pull-left">
+                                    <label class="control-label pull-left" id="form_2">
                                         {% if selected_technology == '2' %}
                                             Near End
                                         {% else %}
-                                            Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                            Sector
                                         {% endif %}
-                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;
                                     </label>
                                     <div class="clearfix"></div>
                                 </div>
@@ -98,13 +96,8 @@
                                     <!-- :START: Sector Antenna Form -->
                                     <hr style="border-width:4px;">
                                     <div class="form-group">
-                                        <label class="control-label pull-left">
-                                            {% if selected_technology == '2' %}
-                                                Near End Antenna &nbsp;
-                                            {% else %}
-                                                Antenna &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                            {% endif %}
-                                            :&nbsp;&nbsp;
+                                        <label class="control-label pull-left" id="form_3">
+                                            {% if selected_technology == '2' %} Near End Antenna {% else %} Antenna {% endif %}:
                                         </label>
                                         <div class="clearfix"></div>
                                         {% if sector_antenna_form %}
@@ -133,8 +126,8 @@
                                     <!-- :START: SubStation Form -->
                                     <hr style="border-width:4px;">
                                     <div class="form-group">
-                                        <label class="control-label pull-left">
-                                            Far End &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;
+                                        <label class="control-label pull-left" id="form_4">
+                                            Far End
                                         </label>
                                         {% if sub_station_form %}
                                     </div>
@@ -164,7 +157,7 @@
                                     <!-- :START: SubStation Antenna Form -->
                                     <hr style="border-width:4px;">
                                     <div class="form-group">
-                                        <label class="control-label pull-left">Far End Antenna &nbsp;:&nbsp;&nbsp;</label>
+                                        <label class="control-label pull-left" id="form_5">Far End Antenna</label>
                                         {% if sub_station_antenna_form %}
                                         <div class="clearfix"></div>
                                     </div>
@@ -195,7 +188,7 @@
                                     <!-- :START: Circuit Form -->
                                     <hr style="border-width:4px;">
                                     <div class="form-group">
-                                        <label class="control-label pull-left">Circuit &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                        <label class="control-label pull-left" id="form_6">Circuit</label>
                                         {% if circuit_form %}
                                         <div class="clearfix"></div>
                                     </div>
@@ -223,7 +216,7 @@
                                     <!-- :START: Customer Form -->
                                     <hr style="border-width:4px;">
                                     <div class="form-group">
-                                        <label class="control-label pull-left">Customer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                        <label class="control-label pull-left" id="form_7">Customer</label>
                                         <div class="clearfix"></div>
                                         {% if customer_form %}
                                     </div>
@@ -255,16 +248,13 @@
                                             <button type="submit" class="btn btn-success">
                                                 <i class="fa fa-pencil"></i>{{ save_text }} &amp; Next
                                             </button>
-                                            &nbsp;
                                             <button type="submit" id="id_update_and_show" class="btn btn-success">
                                                 <i class="fa fa-pencil"></i>{{ save_text }} &amp; Show
                                             </button>
-                                            &nbsp;
                                             <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')">
                                                 <i class="fa fa-times"></i> Skip
                                             </button>
                                             {% if base_station_has_sector %}
-                                            &nbsp;
                                             <button type="reset" class="btn btn-danger" onclick="delete_and_show()">
                                                 <i class="fa fa-times"></i> Delete &amp; Show
                                             </button>
