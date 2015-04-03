@@ -4536,7 +4536,14 @@ function devicePlottingClass_gmap() {
 	 */
 	this.addPinPoint = function(index, pos) {
 		if($('#pin-point-'+index+'').length == 0) {
-			$('#pin-points-container').append('<div id="pin-point-'+index+'" class="pin-point col-md-5" pointid="'+ index +'"><span class="pin-point-name">Point '+ index +' - <input name="pinpoint'+ index +'" class="userpinpoint" type="text" size="2" value="0" /> m at <span class="point-distance'+ index +'">'+ parseFloat(latLongArray[index][3]).toFixed(2) +'</span> Km</span>  <span id="pin-point-remove'+index+'" class="pin-point-remove">X</span></div>');
+			var pin_point_html = '<div id="pin-point-'+index+'" class="pin-point col-md-5" \
+								  pointid="'+ index +'"><span class="pin-point-name">Point \
+								  '+ index +' - <input name="pinpoint'+ index +'" class="userpinpoint" \
+								  type="text" size="2" value="0" /> m at <span class="point-distance'+ index +'">\
+								  '+ parseFloat(latLongArray[index][3]).toFixed(2) +'</span> Km</span>\
+								  <span id="pin-point-remove'+index+'" class="pin-point-remove">X</span></div>';
+
+			$('#pin-points-container').append(pin_point_html);
 			
 			$('input[name="pinpoint'+ index +'"]').change(function() {
 				var height =  parseFloat($(this).val());
@@ -4571,23 +4578,25 @@ function devicePlottingClass_gmap() {
 	 */
 	this.heightChanged = function() {
 		
-		HEIGHT_CHANGED = true;
-		isDialogOpen = false;
-		latLongArrayCopy = latLongArray;
-		antenaHight1 = $("#antinaVal1").val();
-		antenaHight2 = $("#antinaVal2").val();
-		clear_factor = $("#clear-factor_val").val();
+		if((antenaHight1 != $("#antinaVal1").val()) || (antenaHight2 != $("#antinaVal2").val())) {
+			HEIGHT_CHANGED = true;
+			isDialogOpen = false;
+			latLongArrayCopy = latLongArray;
+			antenaHight1 = $("#antinaVal1").val();
+			antenaHight2 = $("#antinaVal2").val();
+			clear_factor = $("#clear-factor_val").val();
 
-		var sector_ss_obj = {
-			"sector_name" : bts1_name,
-			"ss_name" : bts2_name,
-			"sector_Alias" : fresnelData.bts1_alias,
-			"ss_customerName" : fresnelData.bts2_customerName,
-			"ss_circuitId" : fresnelData.bts2_circuitId,
-			"isBSLeft" : fresnel_isBSLeft
-		};
+			var sector_ss_obj = {
+				"sector_name" : bts1_name,
+				"ss_name" : bts2_name,
+				"sector_Alias" : fresnelData.bts1_alias,
+				"ss_customerName" : fresnelData.bts2_customerName,
+				"ss_circuitId" : fresnelData.bts2_circuitId,
+				"isBSLeft" : fresnel_isBSLeft
+			};
 
-		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
+			gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
+		}
 	};
 
 	/**

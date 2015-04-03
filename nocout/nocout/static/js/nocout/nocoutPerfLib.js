@@ -627,21 +627,27 @@ function nocoutPerfLib() {
             start_date = new Date(myStartDate.getTime()),
             end_date = new Date(myEndDate.getTime());
 
-            if($("#"+service_id+"_chart").highcharts()) {
-                var chart = $("#"+service_id+"_chart").highcharts(),
-                    chart_series = $("#"+service_id+"_chart").highcharts().series;
+            try {
+                if($("#"+service_id+"_chart").highcharts()) {
+                    var chart = $("#"+service_id+"_chart").highcharts(),
+                        chart_series = chart.series;
 
-                // Remove series from highchart
-                while(chart_series.length > 0) {
-                    chart.chart_series[0].remove(true);
+                    if(chart_series && chart_series.length > 0) {
+                        // Remove series from highchart
+                        while(chart_series.length > 0) {
+                            chart_series[0].remove(true);
+                        }
+                    }
+                    // Destroy highchart
+                    $("#"+service_id+"_chart").highcharts().destroy();
+
                 }
-                // Destroy highchart
-                $("#"+service_id+"_chart").highcharts().destroy();
 
-            }
-
-            if($("#"+service_id+"_bottom_table").length) {
-                $("#"+service_id+"_bottom_table").html("");
+                if($("#"+service_id+"_bottom_table").length) {
+                    $("#"+service_id+"_bottom_table").html("");
+                }
+            } catch(e) {
+                // console.log(e);
             }
 
             // Send ajax call
