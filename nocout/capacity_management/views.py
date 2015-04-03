@@ -582,7 +582,7 @@ class BackhaulStatusHeaders(ListView):
         common_headers = [
             {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
