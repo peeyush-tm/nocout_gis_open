@@ -1272,7 +1272,8 @@ function GisPerformance() {
                                             10,
                                             -10,
                                             ss_marker.getPosition(),
-                                            hide_flag
+                                            hide_flag,
+                                            'perf_val_label'
                                         );
 
                                         
@@ -1280,7 +1281,7 @@ function GisPerformance() {
                                         labelsArray.push(perf_infobox);
                                         // Remove width property of infobox
                                         setTimeout(function() {
-                                            $('.infoBox').css('width','');
+                                            $('.perf_val_label').css('width','');
                                         },100);
                                     }
                                 }
@@ -1601,7 +1602,7 @@ function GisPerformance() {
      * @param labelPosition {Object}, It contains the gmap lat lon object for label position
      * @param hide_flag {String}, It contains the flag either to show label or not.
      */
-    this.createInfoboxLabel = function(labelContent,labelStyleObj,xOffset,yOffset,labelPosition,hide_flag) {
+    this.createInfoboxLabel = function(labelContent,labelStyleObj,xOffset,yOffset,labelPosition,hide_flag, boxClass) {
         var toolTip_infobox = new InfoBox({
             content: labelContent,
             boxStyle: labelStyleObj,
@@ -1611,7 +1612,8 @@ function GisPerformance() {
             closeBoxURL: "",
             isHidden: hide_flag,
             enableEventPropagation: true,
-            zIndex: 80
+            zIndex: 80,
+            boxClass : boxClass
         });
 
         return toolTip_infobox;
@@ -1758,6 +1760,9 @@ function GisPerformance() {
             } else if(window.location.pathname.indexOf("googleEarth") > -1) {
                 // pass
             } else {
+                if(tooltipInfoLabel["bs_"+bs_marker.bs_name] && !tooltipInfoLabel["bs_"+bs_marker.bs_name].map) {
+                    tooltipInfoLabel["bs_"+bs_marker.bs_name].setMap(mapInstance);
+                }
                 if(!bs_marker.map) {
                     bs_marker.setMap(mapInstance);
                 }
