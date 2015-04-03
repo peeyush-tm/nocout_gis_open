@@ -45,7 +45,7 @@ def update_site_on_device_change(sender, instance=None, created=False, **kwargs)
             if list(set(old_values) - set(new_values)):
                 instance.site_instance.is_device_change = 1
                 instance.site_instance.save()
-                if instance.site_instance == old_instance.site_instance:
+                if instance.site_instance != old_instance.site_instance:
                     old_instance.site_instance.is_device_change = 1
                     old_instance.site_instance.save()
     else:
