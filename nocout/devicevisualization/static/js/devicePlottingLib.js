@@ -2377,14 +2377,7 @@ function devicePlottingClass_gmap() {
 
 	    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) > -1) {
 
-	    		var item_index = bs_marker.item_index > -1 ? bs_marker.item_index : 0,
-		    		labelInfoObject = gisPerformanceClass.getKeyValue(bs_marker.bsInfo,last_selected_label,false, item_index),
-                	labelHtml = "";
-
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
-                }
+	    		var labelHtml = bs_ss_devices[i].alias;
 
 		    	// If any html created then show label on ss
 		    	if(labelHtml) {
@@ -2664,6 +2657,10 @@ function devicePlottingClass_gmap() {
 				    		if(!allMarkersObject_gmap['sub_station'][key].map) {
 				      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
 				    		}
+
+				    		if(tooltipInfoLabel[key] && !tooltipInfoLabel[key].map) {
+			      				tooltipInfoLabel[key].setMap(mapInstance);
+			      			}
 				    	} else {
 				    		// If SS Marker shown then hide the SS Marker
 				    		if(allMarkersObject_gmap['sub_station'][key].map) {
@@ -2703,6 +2700,9 @@ function devicePlottingClass_gmap() {
 		    	var bs_marker = allMarkersObject_gmap['base_station'][key],
 		      		isMarkerExist = mapInstance.getBounds().contains(bs_marker.getPosition());
 	      		if(isMarkerExist) {
+	      			if(tooltipInfoLabel[key] && !tooltipInfoLabel[key].map) {
+	      				tooltipInfoLabel[key].setMap(mapInstance);
+	      			}
 		    		// If BS Marker not shown then show the BS Marker
 		    		if(!allMarkersObject_gmap['base_station'][key].map) {
 		      			allMarkersObject_gmap['base_station'][key].setMap(mapInstance);
@@ -9361,7 +9361,7 @@ function devicePlottingClass_gmap() {
 		if(not_ss_param_labels.indexOf(last_selected_label) > -1) {
 			elements_type = 'base_station';
 			remove_element_keys = 'sub_station';
-			dataset_key = 'bsInfo';
+			dataset_key = 'alias';
 			param_label_gritter_title = 'BS Parameter Label';
 		}
 
@@ -9382,16 +9382,20 @@ function devicePlottingClass_gmap() {
 		if(Object.keys(tooltipInfoLabel).length < 1) {
 
 			for(key in markers_list) {
-
 				var marker = markers_list[key],
-					labelHtml = "",
-					item_index = marker.item_index > -1 ? marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false,item_index);
+					labelHtml = "";
 
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
-                }
+				if(elements_type == 'base_station') {
+					labelHtml = marker[dataset_key];
+				} else {
+					var item_index = marker.item_index > -1 ? marker.item_index : 0,
+						labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false,item_index);
+
+	            	if(labelInfoObject) {
+	            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+	                    labelHtml += shownVal;
+	                }
+				}
 
                 // If labelHtml
                 if(labelHtml) {
@@ -9411,10 +9415,9 @@ function devicePlottingClass_gmap() {
 						
 
 						ccpl_map.addPopup(toolTip_infobox);
-
-						if(hide_flag) {
-							toolTip_infobox.hide();
-						}
+						// if(hide_flag) {
+						// 	toolTip_infobox.hide();
+						// }
 
 						// Remove height prop from div's
 	        	    	$('.olPopupContent').css('height','');
@@ -9433,7 +9436,7 @@ function devicePlottingClass_gmap() {
 	                        -120,
 	                        -10,
 	                        marker.getPosition(),
-	                        hide_flag
+	                        false
 	                    );
 
 		                toolTip_infobox.open(mapInstance, marker);
@@ -9443,18 +9446,21 @@ function devicePlottingClass_gmap() {
             	}
 			}
 		} else {
-
 			for(key in markers_list) {
 				var marker = markers_list[key],
-					labelHtml = "",
-					item_index = marker.item_index > -1 ? marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false, item_index);
+					labelHtml = "";
 
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
+				if(elements_type == 'base_station') {
+					labelHtml = marker[dataset_key];
+				} else {
+					var item_index = marker.item_index > -1 ? marker.item_index : 0,
+						labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false, item_index);
+
+	            	if(labelInfoObject) {
+	            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+	                    labelHtml += shownVal;
+	                }
                 }
-
                 // if labelHtml
                 if(labelHtml) {
 
@@ -9476,9 +9482,9 @@ function devicePlottingClass_gmap() {
 
 							ccpl_map.addPopup(toolTip_infobox);
 
-							if(hide_flag) {
-								toolTip_infobox.hide();
-							}
+							// if(hide_flag) {
+							// 	toolTip_infobox.hide();
+							// }
 
 							// Remove height prop from div's
 		        	    	$('.olPopupContent').css('height','');
@@ -9503,7 +9509,7 @@ function devicePlottingClass_gmap() {
 		                        -120,
 		                        -10,
 		                        marker.getPosition(),
-		                        hide_flag
+		                        false
 		                    );
 
 			                toolTip_infobox.open(mapInstance, marker);
