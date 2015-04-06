@@ -2,6 +2,7 @@
 var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:#EEEEEE;"+
                             "padding:0px 5px;border-radius:3px;text-shadow: 1.5px 1.5px 2px #CCCCCC;",
     gauge_val_default_color = "",
+    clock_icon_html = '<i class="fa fa-clock-o">&nbsp;</i>',
     solid_gauge_chart_ids = [
         "down-all",
         "latency-all",
@@ -363,6 +364,25 @@ function makeDashboardAjaxCall(url, domElement, chart_title, chart_type, calling
             }
 
             if(response.success == 1) {
+
+                var timestamp = response.data.objects.timestamp ? response.data.objects.timestamp : "",
+                    dom_id = domElement;
+
+                if(dom_id[0] != "#") {
+                    dom_id = "#"+domElement;
+                }
+
+                if(timestamp) {
+                    if($(dom_id+"_timestamp").length > 0) {
+                        var timestamp_html = '<strong>'+clock_icon_html+' <span> '+timestamp+'</span></strong>';
+                        $(dom_id+"_timestamp").html(timestamp_html);
+                    }
+                } else {
+                    if($(dom_id+"_timestamp").length > 0) {
+                        $(dom_id+"_timestamp").html("");
+                    }
+                }
+
                 if(chart_type == 'speedometer') {
                         
                     updateSpeedometerChart(response.data.objects, domElement, chart_title, function(status) {
@@ -405,10 +425,10 @@ function makeDashboardAjaxCall(url, domElement, chart_title, chart_type, calling
                     }
 
                 } else if(chart_type == 'pie') {
-                    var timestamp = response.data.objects.timestamp;
                     if(timestamp) {
-                        $(domElement).parent().find('h4').append(" ("+timestamp+")")
+                        $(dom_id).parent().find('h4').append(" ("+timestamp+")")
                     }
+
                     updatePieChart(response.data.objects,domElement, function(status) {
                         dashboard_call_counter++;
                         if(dashboard_call_counter >= process_count) {

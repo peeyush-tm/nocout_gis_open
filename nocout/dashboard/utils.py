@@ -490,7 +490,7 @@ def get_highchart_response(dictionary={}):
                     "meta": {
                 },
                     "objects": {
-                        "TimeStamp" : timestamp,
+                        "timestamp" : timestamp,
                         "chart_data": [chart_data]
                     }
                 },
@@ -519,7 +519,7 @@ def get_highchart_response(dictionary={}):
                 "meta": {
             },
                 "objects": {
-                    "TimeStamp" : timestamp,
+                    "timestamp" : timestamp,
                     "chart_data": [chart_data]
                 }
             },
