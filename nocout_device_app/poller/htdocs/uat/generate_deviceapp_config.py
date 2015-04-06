@@ -213,7 +213,10 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
     return T
 
 
-def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
+def make_BS_data(all_hosts=None, ipaddresses=None, host_attributes=None):
+    all_hosts = []
+    ipaddresses={}
+    host_attributes={}
     db = mysql_conn()
     query = """
     select 
@@ -300,7 +303,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     data = unq_device_data
     cur.close() 
     db.close()
-    T = namedtuple('bs_devices', [
+    T1 = namedtuple('bs_devices', [
         'all_hosts', 'ipaddresses', 'host_attributes',
         'wimax_bs_devices', 'cambium_bs_devices', 'radwin_bs_devices'])
     processed = []
@@ -377,7 +380,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
             }})
     hosts_only.close()
 
-    T.all_hosts, T.ipaddresses, T.host_attributes = all_hosts, ipaddresses, host_attributes
+    T1.all_hosts, T1.ipaddresses, T1.host_attributes = all_hosts, ipaddresses, host_attributes
 
     # Get the wimax BS devices (we need them for active checks)
     # Ex entry : ('device_1', 'ospf4_slave_1')
@@ -391,7 +394,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     # Get the Cambium BS devices (we need them for active checks)
     # Since, as of now, we have only Cambium devices in pmp technology
     cambium_bs_devices = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'pmp', data))
-    T.wimax_bs_devices, T.cambium_bs_devices = wimax_bs_devices, cambium_bs_devices
+    T1.wimax_bs_devices, T1.cambium_bs_devices = wimax_bs_devices, cambium_bs_devices
 
     final_radwin_devices_entry = []
     # Get the Radwin BS devices (We need them to generate active and static checks)
@@ -406,9 +409,9 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     #for a, b in izip_longest(radwin_bs_devices, qos_values):
     #    final_radwin_devices_entry.append((a[0], a[1], b))
 
-    T.radwin_bs_devices = final_radwin_devices_entry
+    T1.radwin_bs_devices = final_radwin_devices_entry
 
-    return T
+    return T1
 
 
 def get_dr_configured_on_devices(device_ids=[]):
@@ -1140,6 +1143,7 @@ def write_rules_file(settings_out, final_active_checks):
 
 def main():
     hosts_out = prepare_hosts_file()
+    
     print "wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "cambium_ss_devices", \
             "radwin_bs_devices", "radwin_ss_devices", "mrotek_devices", "rici_devices", "switch_devices"
     print len(hosts_out.wimax_bs_devices), len(hosts_out.wimax_ss_devices), len(hosts_out.cambium_bs_devices), \
