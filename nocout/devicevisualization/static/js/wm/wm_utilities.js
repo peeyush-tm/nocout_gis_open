@@ -602,9 +602,15 @@ function removeAllOpenLayerFeature() {
         ccpl_map.removePopup(tooltipInfoLabel[key]);
     }
 
+    // Hide loader label
+    for (key in loader_icon_dict) {
+        ccpl_map.removePopup(loader_icon_dict[key]);
+    }
+
     // Reset labels array 
     labelsArray = [];
     tooltipInfoLabel = {};
+    loader_icon_dict = {};
 
 
     /*Clear master marker cluster objects*/

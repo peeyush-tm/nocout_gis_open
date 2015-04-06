@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
 import os
+import json
 from django.conf import global_settings
 from collections import namedtuple
 from datetime import timedelta
@@ -446,6 +447,26 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute='4,9,14,19,24,29,34,39,44,49,54,59'),  # timedelta(seconds=300),
         'kwargs': {'technology': 'WiMAX'}
     },
+    'calculate_rf_range_dashboards-WiMAX': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'WiMAX'}
+    },
+    'calculate_rf_range_dashboards-PMP': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'PMP'}
+    },
+    'calculate_rf_range_dashboards-PTP': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'P2P'}
+    },
+    'calculate_rf_range_dashboards-PTP-BH': {
+        'task': 'dashboard.tasks.calculate_RF_Performance_dashboards',
+        'schedule': crontab(minute='*/5'),  # timedelta(seconds=300),
+        'kwargs': {'technology': 'P2P', 'is_bh' : True}
+    },
     'hourly-main-dashboard': {
         'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
         'schedule': crontab(minute='5', hour='*')
@@ -748,6 +769,14 @@ GLOBAL_SEARCH_FLAG = True
 
 ####################### Flag to enable/disable datatable download option #######################
 DATATABLES_DOWNLOAD_FLAG = True
+####################### White map configuration dict #######################
+# 1 April 2015
+WHITE_MAP_CONFIGURATION = json.dumps({
+    "format"                :   "application/openlayers",
+    "geoserver_url_India"   :   "http://10.133.12.163:5008/geoserver/cite/wms",
+    "layer"                 :   "cite:STATE",
+    "initial_bounds"        :   [68.14339447036186,6.748584270488672,97.40963745103579,37.07349395945833],
+})
 
 # Import the local_settings.py file to override global settings
 
@@ -765,7 +794,8 @@ SETTINGS_EXPORT = [
     'DEBUG',
     'SIA_ENABLED',
     'GLOBAL_SEARCH_FLAG',
-    'DATATABLES_DOWNLOAD_FLAG'
+    'DATATABLES_DOWNLOAD_FLAG',
+    'WHITE_MAP_CONFIGURATION'
 ]
 # #### Access Variables in Templates
 

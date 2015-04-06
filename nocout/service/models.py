@@ -1,6 +1,8 @@
 from django.db import models
 from command.models import Command
 from datetime import datetime
+from django.db.models.signals import pre_save, post_save
+import signals as service_signals
 
 
 class Protocol(models.Model):
@@ -229,3 +231,24 @@ class DevicePingConfiguration(models.Model):
         Device Ping Configuration object presentation
         """
         return "{} - {} - {}".format(self.device_name, self.service_name, self.added_on)
+
+
+# ********************************** DEVICE SIGNALS ***********************************
+
+# set site instance 'is_device_change' bit on protocol modified or created
+post_save.connect(service_signals.update_site_on_protocol_change, sender=Protocol)
+
+# set site instance 'is_device_change' bit on data source modified or created
+pre_save.connect(service_signals.update_site_on_ds_change, sender=ServiceDataSource)
+
+# set site instance 'is_device_change' bit on service modified or created
+pre_save.connect(service_signals.update_site_on_service_change, sender=Service)
+
+# set site instance 'is_device_change' bit on service specific data source modified or created
+post_save.connect(service_signals.update_site_on_svc_specific_ds_change, sender=ServiceSpecificDataSource)
+
+# set site instance 'is_device_change' bit on service configuration modified or created
+post_save.connect(service_signals.update_site_on_svcconf_change, sender=DeviceServiceConfiguration)
+
+# set site instance 'is_device_change' bit on ping configuration modified or created
+pre_save.connect(service_signals.update_site_on_pingconf_change, sender=DevicePingConfiguration)

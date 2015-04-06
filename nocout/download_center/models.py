@@ -133,18 +133,40 @@ class CityCharterCommon(models.Model):
     wimax_pd = models.CharField('PD WiMAX', max_length=128, null=True, blank=True)
     wimax_latancy = models.CharField('Latency WiMAX', max_length=128, null=True, blank=True)
     wimax_normal = models.CharField('Normal WiMAX', max_length=128, null=True, blank=True)
+    wimax_ss_count = models.IntegerField('Count of WiMAX SS', default=0)
+    wimax_ss_percentage = models.FloatField('% of WiMAX SS Affected', default=0)
 
     pmp_los = models.CharField('LOS PMP', max_length=128, null=True, blank=True)
-    pmp_na = models.CharField('NA PMP', max_length=128, null=True, blank=True)
-    pmp_rogue_ss = models.CharField('Rogue SS PMP', max_length=128, null=True, blank=True)
+
+    # replace
+    # pmp_na = models.CharField('NA PMP', max_length=128, null=True, blank=True)
+    pmp_jitter = models.CharField('NA PMP', max_length=128, null=True, blank=True)
+
+    # replace
+    # pmp_rogue_ss = models.CharField('Rogue SS PMP', max_length=128, null=True, blank=True)
+    pmp_rereg = models.CharField('Rogue SS PMP', max_length=128, null=True, blank=True)
+
     pmp_ul = models.CharField('UL PMP', max_length=128, null=True, blank=True)
     pmp_pd = models.CharField('PD PMP', max_length=128, null=True, blank=True)
     pmp_latancy = models.CharField('Latency PMP', max_length=128, null=True, blank=True)
     pmp_normal = models.CharField('Normal PMP', max_length=128, null=True, blank=True)
+    pmp_ss_count = models.IntegerField('Count of PMP SS', default=0)
+    pmp_ss_percentage = models.FloatField('% of PMP SS Affected', default=0)
 
     p2p_los = models.CharField('LOS P2P', max_length=128, null=True, blank=True)
-    p2p_na = models.CharField('NA P2P', max_length=128, null=True, blank=True)
-    p2p_rogue_ss = models.CharField('Rogue SS P2P', max_length=128, null=True, blank=True)
+
+    # replace
+    # p2p_na = models.CharField('NA P2P', max_length=128, null=True, blank=True)
+    p2p_uas = models.CharField('NA P2P', max_length=128, null=True, blank=True)
+
+    # remove this
+    # p2p_rogue_ss = models.CharField('Rogue SS P2P', max_length=128, null=True, blank=True)
+
     p2p_pd = models.CharField('PD P2P', max_length=128, null=True, blank=True)
     p2p_latancy = models.CharField('Latency P2P', max_length=128, null=True, blank=True)
     p2p_normal = models.CharField('Normal P2P', max_length=128, null=True, blank=True)
+    p2p_ss_count = models.IntegerField('Count of P2P SS', default=0)
+    p2p_ss_percentage = models.FloatField('% of P2P SS Affected', default=0)
+
+    total_ss_count = models.IntegerField('Count of ALL SS', default=0)
+    total_ss_percentage = models.FloatField('% of P2P SS Affected', default=0)

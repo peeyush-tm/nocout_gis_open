@@ -42,114 +42,148 @@
         .perfContainerBlock .box-title .pull-right .list-inline > li {
             max-width: 200px !important;
         }
+        .top_perf_tabs {
+            top: 0px !important;
+            float: left;
+            padding-left: 15px;
+            margin-right: 0px !important;
+        }
+        .box .header-tabs .top_perf_tabs > li > a {
+            padding: 7px 5px !important;
+        }
+        .top_perf_tab_content, .top_perf_tab_content .panel .panel-body {
+            overflow: auto;
+        }
     </style>
+
+    <div class="well well-sm" id="status_container" style="overflow:auto;">
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
+        </div>
+        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
     <!--Single Device Live Perf Start-->
     <div class='box border lite perfContainerBlock'>
-    <div class='box-title'>
-        <h4 class="hide"><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
-
-        <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
-            <li class="date_range_filter_container">
-                <div class="input-group">
-                    <span class="input-group-addon">
-                        <i class="fa fa-calendar"></i>
-                    </span>
-                    <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
-                </div>
-            </li>
-            <li>
-                <button id="apply_filter" class="btn  btn-default btn-sm">
-                    <i class="fa fa-filter"></i> Apply Filter
-                </button>
-            </li>
-            <li>
-                <button id="reset_filter" class="btn  btn-warning btn-sm">
-                    <i class="fa fa-times"></i> Reset Filter
-                </button>
-            </li>
-            <li>
-                <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
-                    <i class="fa fa-dropbox text-primary"></i>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="btn btn-default btn-sm hide" id="perf_link_tag" title="Performance" target="_blank">
-                    <i class="fa fa-bar-chart-o text-primary"></i>
-                </a>
-            </li>
-        </ul>
-        <div class="clearfix"></div>
-    </div>
-    <div class='box-body'>
-
-        <div class="well well-sm" id="status_container" style="overflow:auto;">
-            <div id="latestStatusContainer">
-                
-            </div>
-            <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
+        <div class='box-title'>
+            <h4 class="hide"><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
+            <!-- Filters Block - Start-->
+            <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+                <li class="date_range_filter_container">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <i class="fa fa-calendar"></i>
+                        </span>
+                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
+                    </div>
+                </li>
+                <li>
+                    <button id="apply_filter" class="btn  btn-default btn-sm">
+                        <i class="fa fa-filter"></i> Apply Filter
+                    </button>
+                </li>
+                <li>
+                    <button id="reset_filter" class="btn  btn-warning btn-sm">
+                        <i class="fa fa-times"></i> Reset Filter
+                    </button>
+                </li>
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
+                        <i class="fa fa-dropbox text-primary"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="perf_link_tag" title="Performance" target="_blank">
+                        <i class="fa fa-bar-chart-o text-primary"></i>
+                    </a>
+                </li>
+            </ul>
+            <!-- Filters Block - End-->
+            <div class="clearfix"></div>
         </div>
-
-        <div class="box">
-            <div class="box-title" style="background:transparent;"></div>
-            <div id="single_device_alert_container" class="box-body">
-                <div class="tabbable header-tabs">
-                    <ul id="" class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
-                        <li>
-                            <a href="#network_alert_service_block" id="network_alert_service_tab" data-toggle="tab">
-                                <span class="hidden-inline-mobile">Polling Alerts</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#network_alert_down_block" id="network_alert_down_tab" data-toggle="tab">
-                                <span class="hidden-inline-mobile">Down</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#network_alert_packet_block" id="network_alert_packet_tab" data-toggle="tab">
-                                <span class="hidden-inline-mobile">Packet Drop</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#network_alert_latency_block" id="network_alert_latency_tab" data-toggle="tab">
-                                <span class="hidden-inline-mobile">Latency</span>
-                            </a>
-                        </li>
-                        <li class="active">
-                            <a href="#network_alert_ping_block" id="network_alert_ping_tab" data-toggle="tab">
-                                <span class="hidden-inline-mobile">Ping Details</span>
-                            </a>
-                        </li>
-                    </ul>
-                    <div class="clearfix"></div>
-                    <div class="tab-content" style="overflow-y:auto;">
-                        <div class="tab-pane" id="network_alert_service_block">
+        <div class='box-body' id="single_device_alert_container">
+            <div class="tabbable header-tabs">
+                <ul id="" class="nav nav-tabs top_perf_tabs">
+                    <li>
+                        <a href="#network_alert_service_block" id="network_alert_service_tab" title="Polling Alerts" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Polling Alerts</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#network_alert_down_block" id="network_alert_down_tab" title="Down" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Down</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#network_alert_packet_block" id="network_alert_packet_tab" title="Packet Drop" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Packet Drop</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#network_alert_latency_block" id="network_alert_latency_tab" title="Latency" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Latency</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#network_alert_ping_block" id="network_alert_ping_tab" title="Ping Details" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Ping Details</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="tab-content top_perf_tab_content">
+                <div class="tab-pane" id="network_alert_service_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
                             <table id="network_alert_service_table" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane" id="network_alert_down_block">
+                    </div>
+                </div>
+                <div class="tab-pane" id="network_alert_down_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
                             <table id="network_alert_down_table" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane" id="network_alert_packet_block">
+                    </div>
+                </div>
+                <div class="tab-pane" id="network_alert_packet_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
                             <table id="network_alert_packet_table" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane" id="network_alert_latency_block">
+                    </div>
+                </div>
+                <div class="tab-pane" id="network_alert_latency_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
                             <table id="network_alert_latency_table" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane active" id="network_alert_ping_block">
+                    </div>
+                </div>
+                <div class="tab-pane active" id="network_alert_ping_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
                             <table id="network_alert_ping_table" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
@@ -158,15 +192,7 @@
                     </div>
                 </div>
             </div>
-            <div class="clearfix"></div>
         </div>
-        <!-- <div style="overflow:auto;">
-            <table id="device_alert" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover hide">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
-        </div> -->
-    </div>
     </div>
 
     <!-- Custom script for data table-->
@@ -210,9 +236,9 @@
                 window.location.href = location_array[0];
             }
 
-            if($.cookie('filter_start_date') && $.cookie('filter_end_date')) {
-                isDateFilterApplied = true;                
-            }
+            // if($.cookie('filter_start_date') && $.cookie('filter_end_date')) {
+            //     isDateFilterApplied = true;
+            // }
 
             current_device_id = "{{ current_device_id }}";
 
@@ -255,21 +281,18 @@
         // When any filter is applied
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-
-                isDateFilterApplied = true;
+                // isDateFilterApplied = true;
                 //epoch function
                 var myStartDate = startDate.toDate(),
                     myEndDate = endDate.toDate();
+                startDate = myStartDate.getTime();
+                endDate = myEndDate.getTime();
 
-                startDate = myStartDate.getTime() / 1000.0;
-                endDate = myEndDate.getTime() / 1000.0;
-
-                $.cookie('filter_start_date', startDate, {path: '/', secure: true});
-                $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+                // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+                // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
 
                 var active_tab = $("#single_device_alert_container li.active").children("a"),
                     active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
-
                 if(active_tab_id) {
                     $("#"+active_tab_id).trigger("click",true);
                 }
@@ -280,14 +303,14 @@
 
         // When filter reset
         $("#reset_filter").on('click', function () {
-            isDateFilterApplied = false;
+            // isDateFilterApplied = false;
 
             $('#reservationtime').val("")
             startDate = "";
             endDate = "";
             
-            $.cookie('filter_start_date', startDate, {path: '/', secure: true});
-            $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+            // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+            // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
             var active_tab = $("#single_device_alert_container li.active").children("a"),
                 active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
 

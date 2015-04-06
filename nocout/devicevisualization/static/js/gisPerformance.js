@@ -23,10 +23,20 @@ var recallPerf = "",
         borderRadius  : "5px",
         maxWidth      : '120px'
     },
+    loaderInfoboxStyle = {
+        border        : "0px none",
+        background    : "transparent",
+        textAlign     : "center",
+        fontSize      : "15px",
+        fontWeight    : "bold",
+        color         : "#333333"
+    },
     callsInProcess = false,
     gis_perf_call_instance = "",
     calls_completed = 0,
-    last_counter_val = 0;
+    last_counter_val = 0,
+    loader_icon_html = "<i class='fa fa-cog fa-spin'>&nbsp;</i>",
+    loader_icon_dict = {};
 
 if(!base_url) {
     var base_url = "";
@@ -54,6 +64,10 @@ if((window.location.pathname.indexOf("googleEarth") > -1) || (window.location.pa
  * [GisPerformance description]
  */
 function GisPerformance() {
+    // If google earth page then update loader color
+    if(window.location.pathname.indexOf('google_earth') > -1) {
+        loaderInfoboxStyle['color'] = "#F9F9F9";
+    }
     //Is Frozen variable.. Get value from isFreeze Global Variable defined.
     this.isFrozen_ = 0;
     //Variable to hold GisData
@@ -145,7 +159,7 @@ function GisPerformance() {
      This function sends Request based on the counter value.
      */
     this.sendRequest = function (counter) {
-        if (isPollingActive == 0  && isPerfCallStopped == 0) {
+        if(isPollingActive == 0  && isPerfCallStopped == 0) {
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
                 last_counter_val = counter;
                 if(!callsInProcess) {
@@ -182,14 +196,14 @@ function GisPerformance() {
 
         counter++;
 
-        if(gis_perf_call_instance) {
-            try {
-                gis_perf_call_instance.abort()
-                gis_perf_call_instance = "";
-            } catch(e) {
-                // pass
-            }
-        }
+        // if(gis_perf_call_instance) {
+        //     try {
+        //         gis_perf_call_instance.abort()
+        //         gis_perf_call_instance = "";
+        //     } catch(e) {
+        //         // pass
+        //     }
+        // }
 
         var current_chunk = JSON.parse(JSON.stringify(bs_id));
 
@@ -200,7 +214,6 @@ function GisPerformance() {
                 perf_self.makePeriodicAjaxCall(bs_id,counter);
             }
         }
-
     }
 
     /**
@@ -210,7 +223,36 @@ function GisPerformance() {
      */
     this.makePeriodicAjaxCall = function(bs_id,counter) {
 
-        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
+        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal",
+            bs_data_object = all_devices_loki_db.where(function(bs) {
+                return bs.originalId == bs_id
+            })[0];
+
+        // Show Loader on Current BS
+        if(bs_data_object && bs_data_object.name) {
+            var base_station_name = bs_data_object.name;
+                bs_marker_lat = bs_data_object.data.lat,
+                bs_marker_lon = bs_data_object.data.lon,
+                loader_label = "",
+                allMarkersObject = "";
+            
+            if(window.location.pathname.indexOf("white_background") > -1) {
+                allMarkersObject = allMarkersObject_wmap;    
+            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                // pass
+            } else {
+                allMarkersObject = allMarkersObject_gmap;
+            }
+
+            if(allMarkersObject) {
+                base_station_marker = allMarkersObject['base_station']['bs_'+base_station_name];
+                loader_icon_dict[base_station_name] = true;
+                if(base_station_marker) {
+                    perf_self.animateBaseStationIcon(base_station_marker);
+                }
+            }
+        }
+
 
         //Ajax Request
         gis_perf_call_instance = $.ajax({
@@ -238,7 +280,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= periodic_poll_process_count) {
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -250,7 +292,7 @@ function GisPerformance() {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
-                                if(calls_completed >= periodic_poll_process_count) {
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
                                     // Reset Calls Completed Counter
                                     calls_completed = 0;
 
@@ -259,22 +301,17 @@ function GisPerformance() {
                                 }
                             });
                         } else {
-                            var current_bs_in_bound = getMarkerInCurrentBound(true);
-                            
-                            /*Check that the bsname is present in current bounds or not*/
-                            if (current_bs_in_bound.indexOf(data.id) > -1) {
-                                //Update Map with the data
-                                perf_self.updateMap(data,function(response) {
-                                    calls_completed++;
-                                    if(calls_completed >= periodic_poll_process_count) {
-                                        // Reset Calls Completed Counter
-                                        calls_completed = 0;
+                            //Update Map with the data
+                            perf_self.updateMap(data,function(response) {
+                                calls_completed++;
+                                if(calls_completed >= perf_self.bsNamesList[counter-1].length) {
+                                    // Reset Calls Completed Counter
+                                    calls_completed = 0;
 
-                                        //Send Request for the next counter
-                                        perf_self.sendRequest(counter);
-                                    }
-                                });
-                            }
+                                    //Send Request for the next counter
+                                    perf_self.sendRequest(counter);
+                                }
+                            });
                         }
                     } else {
                         calls_completed++;
@@ -294,6 +331,12 @@ function GisPerformance() {
             error: function (err) {
                 //Send Request for the next counter
                 // perf_self.sendRequest(counter);
+            },
+            complete : function() {
+                if(loader_icon_dict[base_station_name]) {
+                    loader_icon_dict[base_station_name] = false;
+                    delete loader_icon_dict[base_station_name];
+                }
             }
         });
     };
@@ -1229,7 +1272,8 @@ function GisPerformance() {
                                             10,
                                             -10,
                                             ss_marker.getPosition(),
-                                            hide_flag
+                                            hide_flag,
+                                            'perf_val_label'
                                         );
 
                                         
@@ -1237,7 +1281,7 @@ function GisPerformance() {
                                         labelsArray.push(perf_infobox);
                                         // Remove width property of infobox
                                         setTimeout(function() {
-                                            $('.infoBox').css('width','');
+                                            $('.perf_val_label').css('width','');
                                         },100);
                                     }
                                 }
@@ -1558,7 +1602,7 @@ function GisPerformance() {
      * @param labelPosition {Object}, It contains the gmap lat lon object for label position
      * @param hide_flag {String}, It contains the flag either to show label or not.
      */
-    this.createInfoboxLabel = function(labelContent,labelStyleObj,xOffset,yOffset,labelPosition,hide_flag) {
+    this.createInfoboxLabel = function(labelContent,labelStyleObj,xOffset,yOffset,labelPosition,hide_flag, boxClass) {
         var toolTip_infobox = new InfoBox({
             content: labelContent,
             boxStyle: labelStyleObj,
@@ -1568,7 +1612,8 @@ function GisPerformance() {
             closeBoxURL: "",
             isHidden: hide_flag,
             enableEventPropagation: true,
-            zIndex: 80
+            zIndex: 80,
+            boxClass : boxClass
         });
 
         return toolTip_infobox;
@@ -1675,4 +1720,53 @@ function GisPerformance() {
         }
         return isPlottable;
     };
+
+    /**
+     * This function blinks Bs icon to show animation effect on BS marker 
+       till the periodic call for that BS is completed
+     * @method animateBaseStationIcon
+     * @param bs_marker {Object}, It contains the bs marker object
+     */
+    this.animateBaseStationIcon = function(bs_marker) {
+
+        if(loader_icon_dict[bs_marker.bs_name]) {
+            setTimeout(function() {
+                if(window.location.pathname.indexOf("white_background") > -1) {
+                    if(bs_marker.getVisibility()) {
+                        hideOpenLayerFeature(bs_marker);
+                    } else {
+                        showOpenLayerFeature(bs_marker);
+                    }
+                    // Redraw BS marker
+                    bs_marker.layerReference.redraw();
+                } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                    // pass
+                } else {
+                    if(bs_marker.map) {
+                        bs_marker.setMap(null);
+                    } else {
+                        bs_marker.setMap(mapInstance);
+                    }
+                }
+                perf_self.animateBaseStationIcon(bs_marker);
+            },350);
+        } else {
+            if(window.location.pathname.indexOf("white_background") > -1) {
+                if(!bs_marker.getVisibility()) {
+                    showOpenLayerFeature(bs_marker);
+                    // Redraw BS marker
+                    bs_marker.layerReference.redraw();
+                }
+            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                // pass
+            } else {
+                if(tooltipInfoLabel["bs_"+bs_marker.bs_name] && !tooltipInfoLabel["bs_"+bs_marker.bs_name].map) {
+                    tooltipInfoLabel["bs_"+bs_marker.bs_name].setMap(mapInstance);
+                }
+                if(!bs_marker.map) {
+                    bs_marker.setMap(mapInstance);
+                }
+            }
+        }
+    }
 }

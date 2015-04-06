@@ -5,7 +5,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
     {% breadcrumb_safe "RF Performance Dashboard: PMP" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -36,7 +36,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>UL Jitter</h3>
+                                    <h3>
+                                        UL Jitter
+                                        <i class="fa fa-signal text-success pull-right" id="ul_jitter_trend" title="UL JITTER Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_jitter" class="rf_chart_style"></div>
@@ -47,7 +50,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>DL Jitter</h3>
+                                    <h3>
+                                        DL Jitter
+                                        <i class="fa fa-signal text-success pull-right" id="dl_jitter_trend" title="DL JITTER Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_jitter" class="rf_chart_style"></div>
@@ -58,7 +64,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>ReReg Counter</h3>
+                                    <h3>
+                                        ReReg Counter
+                                        <i class="fa fa-signal text-success pull-right" id="rereg_count_trend" title="REREG COUNT Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="rereg_count" class="rf_chart_style"></div>
@@ -69,7 +78,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>UL RSSI</h3>
+                                    <h3>
+                                        UL RSSI
+                                        <i class="fa fa-signal text-success pull-right" id="ul_rssi_trend" title="UL RSSI Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_rssi" class="rf_chart_style"></div>
@@ -80,7 +92,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>DL RSSI</h3>
+                                    <h3>
+                                        DL RSSI
+                                        <i class="fa fa-signal text-success pull-right" id="dl_rssi_trend" title="DL RSSI Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_rssi" class="rf_chart_style"></div>
@@ -101,16 +116,23 @@
 <script src={% static "js/highcharts.js" %}></script>
 <!-- RF Performance Dashboard Custom JS-->
 <script type="text/javascript" src={% static "js/nocout/rfDashboardLib.js" %}></script>
+<!-- Custom Utilities JS-->
+<script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
 
 <script type="text/javascript">
     var ds_list = [],
         chunk_size = 1,
         ajax_url = "";
+        trends_ajax_url = "",
+        is_bh = 0,
+        tech_name = "PMP";
     $(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
         
         ajax_url = "{% url 'dashboard-rf-performance-pmp' %}";
+
+        trends_ajax_url = "{% url 'GetMonthlyRFTrendData' %}";
 
         ds_list = {{ data_sources|safe }};
         chunk_size = "{{ parallel_calling_count }}" ? "{{ parallel_calling_count }}" : 1;

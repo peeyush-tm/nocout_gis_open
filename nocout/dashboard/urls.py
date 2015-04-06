@@ -199,4 +199,8 @@ urlpatterns = patterns('',
                        url(r'^rf_network_availability/$',
                            cache_page(60 * 60)(views.GetRfNetworkAvailData.as_view()),
                            name='GetRfNetworkAvailData'),
+
+                       url(r'^trend_monthly_rf_dashboard/$',
+                           cache_page(60 * 60)(views.GetMonthlyRFTrendData.as_view()),
+                           name='GetMonthlyRFTrendData'),
 )

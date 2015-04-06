@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
     {% breadcrumb_safe "RF Performance Dashboard: PTP BH" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -35,7 +35,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>RSSI</h3>
+                                    <h3>
+                                        RSSI
+                                        <i class="fa fa-signal text-success pull-right" id="rssi_trend" title="RSSI Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="rssi" class="rf_chart_style"></div>
@@ -45,7 +48,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>Availability</h3>
+                                    <h3>
+                                        Availability
+                                        <i class="fa fa-signal text-success pull-right" id="availability_trend" title="AVAILABILITY Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="availability" class="rf_chart_style"></div>
@@ -55,7 +61,10 @@
                         <div class="col-md-6 box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>UAS</h3>
+                                    <h3>
+                                        UAS
+                                        <i class="fa fa-signal text-success pull-right" id="uas_trend" title="UAS Trends">&nbsp;</i>
+                                    </h3>
                                 </div>
                                 <div class="box-body">
                                     <div id="uas" class="rf_chart_style"></div>
@@ -76,16 +85,23 @@
 <script src={% static "js/highcharts.js" %}></script>
 <!-- RF Performance Dashboard Custom JS-->
 <script type="text/javascript" src={% static "js/nocout/rfDashboardLib.js" %}></script>
+<!-- Custom Utilities JS-->
+<script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
 
 <script type="text/javascript">
     var ds_list = [],
         chunk_size = 1,
         ajax_url = "";
+        trends_ajax_url = "",
+        is_bh = 1,
+        tech_name = "P2P";
     $(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
         
         ajax_url = "{% url 'dashboard-rf-performance-ptp-bh' %}";
+
+        trends_ajax_url = "{% url 'GetMonthlyRFTrendData' %}";
 
         ds_list = {{ data_sources|safe }};
         chunk_size = {{ parallel_calling_count }} ? {{ parallel_calling_count }} : 1;

@@ -618,7 +618,9 @@ class GetToolsData(View):
             ]
 
             # Fetch all the points info associated with logged in user
-            point_data_obj = GISPointTool.objects.filter(user_id=request.user.id).values(*required_columns)
+            point_data_obj = GISPointTool.objects.filter(
+                user_id=request.user.id
+            ).values(*required_columns).order_by('connected_lat')
 
             # Loop fetched result & append it to points list
             for point_data in point_data_obj :

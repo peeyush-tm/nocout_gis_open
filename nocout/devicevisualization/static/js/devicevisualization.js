@@ -213,8 +213,8 @@ $("#resetFilters").click(function(e) {
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
         /*Reset search txt box*/
-        $("#google_loc_search").val("");
-        $("#lat_lon_search").val("");
+        // $("#google_loc_search").val("");
+        // $("#lat_lon_search").val("");
         
         isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
 
@@ -282,13 +282,29 @@ $("#resetFilters").click(function(e) {
         }
     }
 
-    // Reset Location Search if exists
+    // Reset Lat Lon Search if exists
     if($("#lat_lon_search").val()) {
+        searchResultData = [];
         $("#lat_lon_search").val("");
     }
     if(lastSearchedPt && lastSearchedPt.map) {
         lastSearchedPt.setMap(null);
         lastSearchedPt = {};
+    }
+
+    // Reset Location Search if exists
+    if($("#google_loc_search").val()) {
+        searchResultData = [];
+        $("#google_loc_search").val("");
+    }
+
+    if(place_markers && place_markers.length > 0) {
+        for(var i=0;i<place_markers.length;i++) {
+            if(place_markers[i] && place_markers[i].map) {
+                place_markers[i].setMap(null);
+            }
+        }
+        place_markers = [];
     }
 
     if(window.location.pathname.indexOf("white_background") > -1) {
@@ -301,19 +317,6 @@ $("#resetFilters").click(function(e) {
         } catch(e) {
             // pass
         }
-    }
-
-    if($("#google_loc_search").val()) {
-        $("#google_loc_search").val("");
-    }
-
-    if(place_markers && place_markers.length > 0) {
-        for(var i=0;i<place_markers.length;i++) {
-            if(place_markers[i] && place_markers[i].map) {
-                place_markers[i].setMap(null);
-            }
-        }
-        place_markers = [];
     }
 });
 
@@ -1192,7 +1195,7 @@ $("#point_select").click(function(e) {
         }
         networkMapInstance.addPointTool_gmap();
     } else if(window.location.pathname.indexOf("white_background") > -1) {
-
+        // pass
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
         // Change map cursor

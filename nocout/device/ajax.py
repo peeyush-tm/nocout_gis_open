@@ -1295,9 +1295,10 @@ def sync_device_with_nms_core(request):
         # last sync status
         last_syn_status = last_sync_obj.status
     except Exception as e:
+        last_syn_status = 4
         logger.error("DeviceSyncHistory table has no entry.")
 
-    if last_sync_id and last_syn_status in [1, 2, 3]:
+    if last_syn_status in [1, 2, 3, 4]:
         # current user's username
         username = request.user.username
 
@@ -1315,6 +1316,7 @@ def sync_device_with_nms_core(request):
             'mode': 'sync',
             'sync_obj_id': sync_obj_id
         }
+        print "************************** device_data - ", device_data
 
         # get device
         # device = Device.objects.get(pk=device_id)

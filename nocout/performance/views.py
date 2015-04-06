@@ -972,8 +972,8 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             'City',
             'State',
             'IP Address',
-            'Planned Frequency',
-            'Frequency'
+            'Planned Frequency(MHz)',
+            'Frequency(MHz)'
         ]
 
         if technology in ['P2P', 'PTP', 'ptp', 'p2p']:
@@ -1002,7 +1002,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             'IP Address',
             'MAC Address',
             'Qos(Mbps)',
-            'Frequency'
+            'Frequency(MHz)'
         ]
 
     elif type_of_device in ['backhaul']:
@@ -1135,9 +1135,9 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
                     try:
                         pmp_port = sector.sector_configured_on_port.alias.upper()
                         pmp_port_url = reverse(
-                            'device_edit',
-                            kwargs={'pk': sector.dr_configured_on.id},
-                            current_app='device'
+                            'sector_edit',
+                            kwargs={'pk': sector.id},
+                            current_app='inventory'
                         )
                     except Exception as no_port:
                         # log.exception(no_port)
@@ -2615,8 +2615,11 @@ class Get_Service_Type_Performance_Data(View):
 
 
         self.result['success'] = 1
-        self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
         self.result['data']['objects']['chart_data'] = chart_data
+        self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
+
+        if(not chart_data or len(chart_data) == 0):
+            self.result['message'] = 'No Data'
 
         return self.result
 
@@ -3315,6 +3318,9 @@ class DeviceServiceDetail(View):
                 }
             }
         }
+
+        if(not chart_data or len(chart_data) == 0):
+            result['message'] = 'Device Utilization Data not found'
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 

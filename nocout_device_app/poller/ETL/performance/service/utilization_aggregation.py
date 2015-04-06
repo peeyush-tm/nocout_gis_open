@@ -22,6 +22,7 @@ from pprint import pprint
 from operator import itemgetter
 import optparse
 from itertools import groupby
+import collections
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -48,9 +49,9 @@ parser.add_option('-r', '--read_from', dest='read_from', type='str')
 parser.add_option('-s', '--source', dest='source_db', type='str')
 parser.add_option('-d', '--destination', dest='destination_db', type='str')
 parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['0.5', 
-'1', '24', '168'])
+'1', '24', '168', '720', '8640'])
 parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=[
-'half_hourly', 'hourly', 'daily', 'weekly'])
+'half_hourly', 'hourly', 'daily', 'weekly', 'monthly', 'yearly'])
 options, remainder = parser.parse_args(sys.argv[1:])
 if options.source_db and options.destination_db and options.hours and \
         options.timeframe and options.read_from:
@@ -88,6 +89,7 @@ def prepare_data(aggregated_data_values=[]):
         data_values = mysql_migration_mod.read_data_from_mongo(source_perf_table, start_time, end_time, mongo_configs, kpi=True)
 
     data_values = sorted(data_values, key=itemgetter('device_name'))
+    print 'Data Values', len(data_values)
     for host, host_values in groupby(data_values, key=itemgetter('device_name')):
         aggregated_data_values.extend(quantify_utilization_data(list(host_values)))
     
@@ -95,6 +97,8 @@ def prepare_data(aggregated_data_values=[]):
 
 
 def quantify_utilization_data(host_specific_data):
+    freq_based_util_services = ['wimax_ss_provis_kpi', 'cambium_ss_provis_kpi',
+		'radwin_ss_provis_kpi', 'cambium_ss_ul_issue_kpi', 'wimax_ss_ul_issue_kpi']
     host_specific_aggregated_data = []
     #print '## Docs len ##'
     #print len(data_values)
@@ -104,9 +108,9 @@ def quantify_utilization_data(host_specific_data):
 
         host = doc.get('device_name') if doc.get('device_name') else doc.get('host')
         ip_address = doc.get('ip_address')
-        ds = doc.get('data_source') if doc.get('data_source') else doc.get('ds')
+        ds = str(doc.get('data_source')) if doc.get('data_source') else str(doc.get('ds'))
         severity = doc.get('severity')
-        service = doc.get('service_name') if doc.get('service_name') else doc.get('service')
+        service = str(doc.get('service_name')) if doc.get('service_name') else str(doc.get('service'))
         site = doc.get('site_name') if doc.get('site_name') else doc.get('site')
         check_time = doc.get('check_timestamp') if doc.get('check_timestamp') else doc.get('check_time')
         if read_from == 'mysql':
@@ -115,10 +119,13 @@ def quantify_utilization_data(host_specific_data):
             original_time, time = time, datetime.fromtimestamp(time)
         elif read_from == 'mongodb':
             time = doc.get('local_timestamp') if doc.get('local_timestamp') else doc.get('sys_timestamp')
-        current_value = doc.get('current_value')
+	try:
+            current_value = eval(doc.get('current_value'))
+	except:
+	    current_value = doc.get('current_value')
         war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
         # `refer` field to store Ckt-id for current device
-        refer = doc.get('refer')
+        refer = str(doc.get('refer'))
 
         if time_frame == 'half_hourly':
             if time.minute < 30:
@@ -161,19 +168,32 @@ def quantify_utilization_data(host_specific_data):
                 'ip_address': ip_address,
                 'current_value': current_value,
                 'severity': severity,
-                'min': doc.get('min_value'),
-                'max': doc.get('max_value'),
-                'avg': doc.get('avg_value'),
                 'war': war,
                 'cric': cric,
                 'refer': refer,
                 'check_time': check_time
                 }
+	if read_from == 'mysql':
+	    try:
+	        mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
+	    except:
+	        mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
+            aggr_data.update({
+                'min': mn,
+                'max': mx,
+                'avg': ag,
+            })
+        elif read_from == 'mongodb':
+            aggr_data.update({
+                'min': current_value,
+                'max': current_value,
+                'avg': current_value,
+            })
 
         # Find the existing doc to update
         find_query = {
                 #'host': doc.get('host'),
-                'service': doc.get('service'),
+                'service': aggr_data.get('service'),
                 'ds': aggr_data.get('ds'),
                 'refer': refer,
                 #'time': time
@@ -185,12 +205,25 @@ def quantify_utilization_data(host_specific_data):
             existing_doc = existing_doc[0]
             values_list = [existing_doc.get('max'), aggr_data.get('max'), 
                     existing_doc.get('min'), aggr_data.get('min')]
-            min_val = min(values_list) 
-            max_val = max(values_list) 
-            if aggr_data.get('avg'):
-                avg_val = float(str((existing_doc.get('avg')))) + float(str((aggr_data.get('avg'))))/ 2
-            else:
-                avg_val = existing_doc.get('avg')
+	    if service in freq_based_util_services:
+		# Calculation based on number of occurrences
+		occur = collections.defaultdict(int)
+                for val in values_list:
+                    occur[val] += 1
+                freq_dist = occur.keys()
+                min_val = freq_dist[0]
+                max_val = freq_dist[-1]
+                avg_val = None
+	    else:
+		# Calculation based on normal min, max and avg
+                min_val = min(values_list) 
+                max_val = max(values_list) 
+                if existing_doc.get('avg') and aggr_data.get('avg'):
+                    avg_val = (float(str((existing_doc.get('avg')))) + float(str((aggr_data.get('avg')))))/ 2.0
+		elif aggr_data.get('avg'):
+		    avg_val = aggr_data.get('avg') 
+                else:
+                    avg_val = existing_doc.get('avg')
             aggr_data.update({
                 'min': min_val,
                 'max': max_val,
@@ -198,7 +231,17 @@ def quantify_utilization_data(host_specific_data):
                 })
             # First remove the existing entry from aggregated_data_values
             host_specific_aggregated_data.pop(existing_doc_index)
-        #upsert_aggregated_data(find_query, aggr_data)
+	# round floats to 2 decimal places
+	# since we cant round to 2 decimal places in python <= 2.6, directly,
+	# convert these values to str instead
+	try:
+            aggr_data['current_value'] = "{0:.2f}".format((float(aggr_data['current_value'])))
+	    aggr_data['min'] = "{0:.2f}".format((float(aggr_data['min'])))
+	    aggr_data['max'] = "{0:.2f}".format((float(aggr_data['max'])))
+	    aggr_data['avg'] = "{0:.2f}".format((float(aggr_data['avg'])))
+	except:
+	    # dont change any thing
+	    pass
         host_specific_aggregated_data.append(aggr_data)
     
     return host_specific_aggregated_data

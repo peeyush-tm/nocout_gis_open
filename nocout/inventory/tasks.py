@@ -12322,7 +12322,7 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # vendor
             try:
-                wimax_bs_row['Vendor'] = DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name
+                wimax_bs_row['Vendor'] = DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).alias
             except Exception as e:
                 logger.info("IDU Vendor not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12628,7 +12628,7 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # ss vendor
             try:
-                wimax_ss_row['Vendor'] = DeviceVendor.objects.get(id=sub_station.device.device_vendor).name
+                wimax_ss_row['Vendor'] = DeviceVendor.objects.get(id=sub_station.device.device_vendor).alias
             except Exception as e:
                 logger.info("Vendor not exist for sub station ({}).".format(sub_station.name, e.message))
 
