@@ -23,7 +23,7 @@ var perf_that = "",
             "title" : "Live",
         },
         {
-            "id" : "bi_hourly",
+            "id" : "bihourly",
             "title" : "Bi-Hourly",
         },
         {
@@ -567,50 +567,18 @@ function nocoutPerfLib() {
                         }
 
                         /*Bind click event on tabs*/
-                        $('.inner_tab_container  .panel-body .tabs-left ul.nav-tabs li a').click(function (e) {
-
+                        $('.inner_tab_container > .panel-body > .tabs-left > ul.nav-tabs > li > a').click(function (e) {
                             // show loading spinner
                             // showSpinner();
-                            if(show_historical_on_performance) {
-                                var all_tabs_condition_1 = e.currentTarget.id.indexOf('availability') == -1,
-                                    all_tabs_condition_2 = e.currentTarget.id.indexOf('topology') == -1,
-                                    all_tabs_condition_3 = e.currentTarget.id.indexOf('utilization') == -1;
-                                    
-                                if(
-                                    (
-                                        e.currentTarget.id.indexOf('live') == -1
-                                        &&
-                                        e.currentTarget.id.indexOf('bi_hourly') == -1
-                                        &&
-                                        e.currentTarget.id.indexOf('hourly') == -1
-                                        &&
-                                        e.currentTarget.id.indexOf('daily') == -1
-                                        &&
-                                        e.currentTarget.id.indexOf('weekly') == -1
-                                        &&
-                                        e.currentTarget.id.indexOf('monthly') == -1
-                                        &&
-                                        e.currentTarget.id.indexOf('yearly') == -1
-                                        &&
-                                        all_tabs_condition_1
-                                        &&
-                                        all_tabs_condition_2
-                                        &&
-                                        all_tabs_condition_3
-                                    )
-                                ) {
-                                    return ;
-                                }
-                            }
 
-                            var serviceId = e.currentTarget.id.slice(0, -4),
-                                splitted_local_id = e.currentTarget.attributes.href.value.split("#"),
+                            var current_target = e.currentTarget,
+                                current_attr = current_target.attributes,
+                                serviceId = current_target.id.slice(0, -4),
+                                splitted_local_id = current_attr.href.value.split("#"),
                                 tab_content_dom_id = splitted_local_id.length > 1 ? splitted_local_id[1] : splitted_local_id[0];
-
-                            perf_that.resetLivePolling("last_updated_"+tab_content_dom_id);
                             
                             //@TODO: all the ursl must end with a / - django style
-                            var service_data_url_val = e.currentTarget.attributes.url ? $.trim(e.currentTarget.attributes.url.value) : "";
+                            var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
                                 serviceDataUrl = "";
 
                             if(service_data_url_val) {
@@ -621,53 +589,11 @@ function nocoutPerfLib() {
                                 }
                             }
 
-                            /*Reset Variables & counters */
-                            clearTimeout(timeInterval);
-                            if($("#other_perf_table").length > 0) {
-                                $("#other_perf_table").dataTable().fnDestroy();
-                                $("#other_perf_table").remove();
-                            }
-
-
-                            if($("#perf_data_table").length > 0) {
-                                $("#perf_data_table").dataTable().fnDestroy();
-                                $("#perf_data_table").remove();
-                            }
-
-                            if($('#'+serviceId+'_chart').highcharts()) {
-                                $('#'+serviceId+'_chart').highcharts().destroy();
-                            }
-
-                            for(var i=0;i<Highcharts.charts.length;i++) {
-                                if(Highcharts.charts[i]) {
-                                    Highcharts.charts[i].destroy();
-                                }
-                            }
-                            
-                            Highcharts.charts = [];
-
-                            if(
-                                serviceId.indexOf('bi_hourly') == -1
-                                &&
-                                serviceId.indexOf('hourly') == -1
-                                &&
-                                serviceId.indexOf('daily') == -1
-                                &&
-                                serviceId.indexOf('weekly') == -1
-                                &&
-                                serviceId.indexOf('monthly') == -1
-                                &&
-                                serviceId.indexOf('yearly') == -1
-                            ) {
+                            if($("#last_updated_"+tab_content_dom_id).length > 0) {
+                                perf_that.resetLivePolling("last_updated_"+tab_content_dom_id);
                                 // get the service status for that service
                                 perfInstance.getServiceStatus(serviceDataUrl,function(response_type,data_obj) {
                                     if(response_type == 'success') {
-                                        // Create tab content HTML
-                                        if(show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
-                                            var tmp_var = tab_content_dom_id.split("_");
-                                            tmp_var.splice(0,1);
-                                            tab_content_dom_id = tmp_var.join('_');
-                                        }
                                         // Call function to populate latest status for this service
                                         populateServiceStatus_nocout("last_updated_"+tab_content_dom_id,data_obj);
                                     } else {
@@ -675,10 +601,9 @@ function nocoutPerfLib() {
                                     }
                                 });
                             }
-
-                            /*Call getServiceData function to fetch the data for clicked service tab*/
-                            perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
-
+                            if(!show_historical_on_performance) {
+                                perfInstance.initGetServiceData(serviceDataUrl, serviceId, current_device);
+                            }
                         });
                     }
                 } else {
@@ -730,20 +655,23 @@ function nocoutPerfLib() {
                     } else {
                         // show loading spinner
                         // showSpinner();
-                        perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
-                            if(response_type == 'success') {
-                                // Call function to populate latest status for this service
-                                populateServiceStatus_nocout("last_updated_"+active_tab_content_dom_id,data_obj);
-                            } else {
-                                $("#last_updated_"+active_tab_content_dom_id).html("");
-                            }
-                            if(show_historical_on_performance) {
-                                $("#live_"+active_tab_id+"_tab").trigger('click');
-                            } else {
-                                /*Call getServiceData function to fetch the data for currently active service*/
-                                perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
-                            }
-                        });
+                        if($("#last_updated_"+active_tab_content_dom_id).length > 0) {
+                            perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
+                                if(response_type == 'success') {
+                                    // Call function to populate latest status for this service
+                                    populateServiceStatus_nocout("last_updated_"+active_tab_content_dom_id,data_obj);
+                                } else {
+                                    $("#last_updated_"+active_tab_content_dom_id).html("");
+                                }
+                            });
+                        }
+
+                        if(show_historical_on_performance) {
+                            $("#live_"+active_tab_id+"_tab").trigger('click');
+                        } else {
+                            /*Call getServiceData function to fetch the data for currently active service*/
+                            perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                        }
                     }
                 }
             }
@@ -758,8 +686,9 @@ function nocoutPerfLib() {
      */
     this.getServiceStatus = function(service_status_url,callback) {
 
-        var updated_url = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url+"/" : service_status_url,
-            device_id = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url.split("/")[service_status_url.split("/").length -1] : service_status_url.split("/")[service_status_url.split("/").length -2];
+        var splitted_status_url = service_status_url.split("/"),
+            updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url+"/" : service_status_url,
+            device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
 
         if(updated_url.indexOf("/servicedetail/") > -1) {
             if(updated_url.indexOf("rssi") > -1) {
@@ -1089,4 +1018,66 @@ function nocoutPerfLib() {
             // console.error(e);
         }
     };
+
+    /**
+     * This function initializes
+     * @method initGetServiceData
+     * @param get_service_data_url "String", It contains the url to fetch the status of current device.
+     * @param service_id "String", It contains unique name for service.
+     * @param device_id "INT", It contains the ID of current device.
+     */
+    this.initGetServiceData = function(get_service_data_url, service_id, device_id) {
+        /*Reset Variables & counters */
+        if(timeInterval) {
+            clearTimeout(timeInterval);
+        }
+        if($("#other_perf_table").length > 0) {
+            $("#other_perf_table").dataTable().fnDestroy();
+            $("#other_perf_table").remove();
+        }
+
+
+        if($("#perf_data_table").length > 0) {
+            $("#perf_data_table").dataTable().fnDestroy();
+            $("#perf_data_table").remove();
+        }
+
+        if($('#'+service_id+'_chart').highcharts()) {
+            $('#'+service_id+'_chart').highcharts().destroy();
+        }
+
+        for(var i=0;i<Highcharts.charts.length;i++) {
+            if(Highcharts.charts[i]) {
+                Highcharts.charts[i].destroy();
+            }
+        }
+        
+        Highcharts.charts = [];
+
+        /*Call getServiceData function to fetch the data for clicked service tab*/
+        perfInstance.getServiceData(get_service_data_url, service_id, device_id);
+    };
 }
+
+
+$('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e) {
+    var current_target = e.currentTarget,
+        current_attr = current_target.attributes,
+        tab_service_id = current_target.id.slice(0, -4);
+
+    var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
+        serviceDataUrl = "";
+
+    if(service_data_url_val) {
+        if(service_data_url_val[0] != "/") {
+            serviceDataUrl = "/"+service_data_url_val;
+        } else {
+            serviceDataUrl = service_data_url_val;
+        }
+    }
+
+    if(show_historical_on_performance) {
+        perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
+    }
+
+});

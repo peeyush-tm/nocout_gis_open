@@ -1959,6 +1959,7 @@ class Get_Service_Type_Performance_Data(View):
                 'objects': {}
             }
         }
+
         # GET param to check the the data is requested for live data or historical data
         data_for = self.request.GET.get('data_for','live')
 
@@ -1979,8 +1980,23 @@ class Get_Service_Type_Performance_Data(View):
         end_date = self.request.GET.get('end_date', '')
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
         if not isSet:
-            end_date = float(format(datetime.datetime.now(), 'U'))
-            start_date = float(format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U'))
+            now_datetime = datetime.datetime.now()
+
+            end_date = float(format(now_datetime, 'U'))
+            # In case of 'bihourly' & 'hourly' start date will be start of today(i.e '%Y-%m-%d 00:00:00')
+            if data_for in ['bihourly', 'hourly']:
+                start_date = float(format(now_datetime.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
+            elif data_for == 'daily':
+                last_30_days = now_datetime - datetime.timedelta(days=30)
+                start_date = float(format(last_30_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
+            elif data_for == 'weekly':
+                last_12_months = now_datetime - datetime.timedelta(days=365)
+                start_date = float(format(last_12_months.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
+            elif data_for in ['monthly', 'yearly']:
+                start_date = ''
+                end_date = ''
+            else:
+                start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
 
 
         if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
@@ -2003,15 +2019,8 @@ class Get_Service_Type_Performance_Data(View):
             formula = None
 
         # Update 'default' machine name in case of historical data request
-        if data_for and data_for not in ['live']:
-            if(
-                '_kpi' not in service_name
-                and
-                service_data_source_type not in ['availability', 'topology']
-                and
-                data_for in ['bi_hourly', 'hourly', 'daily', 'weekly', 'monthly', 'yearly']
-            ):
-                inventory_device_machine_name = 'default'
+        if data_for not in ['live']:
+            inventory_device_machine_name = 'default'
 
         parameters = {
             'model': PerformanceService,
@@ -2022,31 +2031,30 @@ class Get_Service_Type_Performance_Data(View):
             'sds': [service_data_source_type]
         }
 
-        if data_for:
-            if data_for == 'bi_hourly':
-                parameters.update({
-                    'model' : PerformanceServiceBiHourly
-                })
-            elif data_for == 'hourly':
-                parameters.update({
-                    'model' : PerformanceServiceHourly
-                })
-            elif data_for == 'daily':
-                parameters.update({
-                    'model' : PerformanceServiceDaily
-                })
-            elif data_for == 'weekly':
-                parameters.update({
-                    'model' : PerformanceServiceWeekly
-                })
-            elif data_for == 'monthly':
-                parameters.update({
-                    'model' : PerformanceServiceMonthly
-                })
-            elif data_for == 'yearly':
-                parameters.update({
-                    'model' : PerformanceServiceYearly
-                })
+        if data_for == 'bihourly':
+            parameters.update({
+                'model' : PerformanceServiceBiHourly
+            })
+        elif data_for == 'hourly':
+            parameters.update({
+                'model' : PerformanceServiceHourly
+            })
+        elif data_for == 'daily':
+            parameters.update({
+                'model' : PerformanceServiceDaily
+            })
+        elif data_for == 'weekly':
+            parameters.update({
+                'model' : PerformanceServiceWeekly
+            })
+        elif data_for == 'monthly':
+            parameters.update({
+                'model' : PerformanceServiceMonthly
+            })
+        elif data_for == 'yearly':
+            parameters.update({
+                'model' : PerformanceServiceYearly
+            })
 
         # test once for technology
         try:
@@ -2067,35 +2075,30 @@ class Get_Service_Type_Performance_Data(View):
             pass  # no dr site
 
         if service_data_source_type in ['pl', 'rta']:
-            if data_for:
-                if data_for == 'bi_hourly':
-                    parameters.update({
-                        'model' : PerformanceNetworkBiHourly
-                    })
-                elif data_for == 'hourly':
-                    parameters.update({
-                        'model' : PerformanceNetworkHourly
-                    })
-                elif data_for == 'daily':
-                    parameters.update({
-                        'model' : PerformanceNetworkDaily
-                    })
-                elif data_for == 'weekly':
-                    parameters.update({
-                        'model' : PerformanceNetworkWeekly
-                    })
-                elif data_for == 'monthly':
-                    parameters.update({
-                        'model' : PerformanceNetworkMonthly
-                    })
-                elif data_for == 'yearly':
-                    parameters.update({
-                        'model' : PerformanceNetworkYearly
-                    })
-                else:
-                    parameters.update({
-                        'model': PerformanceNetwork
-                    })
+            if data_for == 'bihourly':
+                parameters.update({
+                    'model' : PerformanceNetworkBiHourly
+                })
+            elif data_for == 'hourly':
+                parameters.update({
+                    'model' : PerformanceNetworkHourly
+                })
+            elif data_for == 'daily':
+                parameters.update({
+                    'model' : PerformanceNetworkDaily
+                })
+            elif data_for == 'weekly':
+                parameters.update({
+                    'model' : PerformanceNetworkWeekly
+                })
+            elif data_for == 'monthly':
+                parameters.update({
+                    'model' : PerformanceNetworkMonthly
+                })
+            elif data_for == 'yearly':
+                parameters.update({
+                    'model' : PerformanceNetworkYearly
+                })
             else:
                 parameters.update({
                     'model': PerformanceNetwork
@@ -2135,31 +2138,30 @@ class Get_Service_Type_Performance_Data(View):
                 'sds': ['rta']
             })
 
-            if data_for:
-                if data_for == 'bi_hourly':
-                    parameters.update({
-                        'model' : PerformanceNetworkBiHourly
-                    })
-                elif data_for == 'hourly':
-                    parameters.update({
-                        'model' : PerformanceNetworkHourly
-                    })
-                elif data_for == 'daily':
-                    parameters.update({
-                        'model' : PerformanceNetworkDaily
-                    })
-                elif data_for == 'weekly':
-                    parameters.update({
-                        'model' : PerformanceNetworkWeekly
-                    })
-                elif data_for == 'monthly':
-                    parameters.update({
-                        'model' : PerformanceNetworkMonthly
-                    })
-                elif data_for == 'yearly':
-                    parameters.update({
-                        'model' : PerformanceNetworkYearly
-                    })
+            if data_for == 'bihourly':
+                parameters.update({
+                    'model' : PerformanceNetworkBiHourly
+                })
+            elif data_for == 'hourly':
+                parameters.update({
+                    'model' : PerformanceNetworkHourly
+                })
+            elif data_for == 'daily':
+                parameters.update({
+                    'model' : PerformanceNetworkDaily
+                })
+            elif data_for == 'weekly':
+                parameters.update({
+                    'model' : PerformanceNetworkWeekly
+                })
+            elif data_for == 'monthly':
+                parameters.update({
+                    'model' : PerformanceNetworkMonthly
+                })
+            elif data_for == 'yearly':
+                parameters.update({
+                    'model' : PerformanceNetworkYearly
+                })
 
             # ss data performance
             performance_data = self.get_performance_data(
@@ -2258,23 +2260,22 @@ class Get_Service_Type_Performance_Data(View):
                 'sds': [service_data_source_type]
             })
 
-            if data_for:
-                if data_for == 'daily':
-                    parameters.update({
-                        'model' : PerformanceStatusDaily
-                    })
-                elif data_for == 'weekly':
-                    parameters.update({
-                        'model' : PerformanceStatusWeekly
-                    })
-                elif data_for == 'monthly':
-                    parameters.update({
-                        'model' : PerformanceStatusMonthly
-                    })
-                elif data_for == 'yearly':
-                    parameters.update({
-                        'model' : PerformanceStatusYearly
-                    })
+            if data_for == 'daily':
+                parameters.update({
+                    'model' : PerformanceStatusDaily
+                })
+            elif data_for == 'weekly':
+                parameters.update({
+                    'model' : PerformanceStatusWeekly
+                })
+            elif data_for == 'monthly':
+                parameters.update({
+                    'model' : PerformanceStatusMonthly
+                })
+            elif data_for == 'yearly':
+                parameters.update({
+                    'model' : PerformanceStatusYearly
+                })
 
             performance_data = self.get_performance_data(
                 **parameters
@@ -2296,23 +2297,22 @@ class Get_Service_Type_Performance_Data(View):
                 'sds': [service_data_source_type]
             })
 
-            if data_for:
-                if data_for == 'daily':
-                    parameters.update({
-                        'model' : PerformanceInventoryDaily
-                    })
-                elif data_for == 'weekly':
-                    parameters.update({
-                        'model' : PerformanceInventoryWeekly
-                    })
-                elif data_for == 'monthly':
-                    parameters.update({
-                        'model' : PerformanceInventoryMonthly
-                    })
-                elif data_for == 'yearly':
-                    parameters.update({
-                        'model' : PerformanceInventoryYearly
-                    })
+            if data_for == 'daily':
+                parameters.update({
+                    'model' : PerformanceInventoryDaily
+                })
+            elif data_for == 'weekly':
+                parameters.update({
+                    'model' : PerformanceInventoryWeekly
+                })
+            elif data_for == 'monthly':
+                parameters.update({
+                    'model' : PerformanceInventoryMonthly
+                })
+            elif data_for == 'yearly':
+                parameters.update({
+                    'model' : PerformanceInventoryYearly
+                })
 
             performance_data = self.get_performance_data(
                 **parameters
@@ -2371,20 +2371,38 @@ class Get_Service_Type_Performance_Data(View):
 
     def get_performance_data(self, model=None, start_time=None, end_time=None, devices=None, services=None, sds=None):
         if services:
-            performance_data = model.objects.filter(
-                device_name__in=devices,
-                service_name__in=services,
-                data_source__in=sds,
-                sys_timestamp__gte=start_time,
-                sys_timestamp__lte=end_time
-            ).order_by('sys_timestamp')
+            where_condition = ''
+            if start_time and end_time:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(service_name__in=services) & Q(data_source__in=sds)
+                    &
+                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
+                )
+            else:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(service_name__in=services) & Q(data_source__in=sds)
+                )
+            performance_data = model.objects.filter(where_condition).order_by('sys_timestamp')
         else:
-            performance_data = model.objects.filter(
-                device_name__in=devices,
-                data_source__in=sds,
-                sys_timestamp__gte=start_time,
-                sys_timestamp__lte=end_time
-            ).order_by('sys_timestamp')
+            if start_time and end_time:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(data_source__in=sds)
+                    &
+                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
+                )
+            else:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(data_source__in=sds)
+                )
+            performance_data = model.objects.filter(where_condition).order_by('sys_timestamp')
 
         return performance_data
 
