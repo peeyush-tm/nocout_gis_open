@@ -2002,6 +2002,17 @@ class Get_Service_Type_Performance_Data(View):
         else:
             formula = None
 
+        # Update 'default' machine name in case of historical data request
+        if data_for and data_for not in ['live']:
+            if(
+                '_kpi' not in service_name
+                and
+                service_data_source_type not in ['availability', 'topology']
+                and
+                data_for in ['bi_hourly', 'hourly', 'daily', 'weekly', 'monthly', 'yearly']
+            ):
+                inventory_device_machine_name = 'default'
+
         parameters = {
             'model': PerformanceService,
             'start_time': start_date,
@@ -2056,7 +2067,6 @@ class Get_Service_Type_Performance_Data(View):
             pass  # no dr site
 
         if service_data_source_type in ['pl', 'rta']:
-
             if data_for:
                 if data_for == 'bi_hourly':
                     parameters.update({
