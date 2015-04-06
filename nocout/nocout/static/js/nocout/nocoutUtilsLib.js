@@ -288,6 +288,14 @@ function initChartDataTable_nocout(table_id, headers, service_id) {
                 }
             ]
         },
+        fnInitComplete: function(oSettings) {
+            var row_per_pages_selectbox = '#'+table_id+'_wrapper div.dataTables_length label select',
+                search_box = '#'+table_id+'_wrapper div.dataTables_filter label input';
+            // Update search txt box & row per pages dropdown style
+            $(row_per_pages_selectbox+' , '+search_box).addClass("form-control");
+            $(row_per_pages_selectbox+' , '+search_box).addClass("input-sm");
+            $(row_per_pages_selectbox+' , '+search_box).css("max-width","150px");
+        },
         bPaginate: true,
         bDestroy: true,
         aaSorting : [[0,'desc']],
