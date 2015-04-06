@@ -1980,8 +1980,23 @@ class Get_Service_Type_Performance_Data(View):
         end_date = self.request.GET.get('end_date', '')
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
         if not isSet:
-            end_date = float(format(datetime.datetime.now(), 'U'))
-            start_date = float(format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U'))
+            now_datetime = datetime.datetime.now()
+
+            end_date = float(format(now_datetime, 'U'))
+            # In case of 'bihourly' & 'hourly' start date will be start of today(i.e '%Y-%m-%d 00:00:00')
+            if data_for in ['bihourly', 'hourly']:
+                start_date = float(format(now_datetime.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
+            elif data_for == 'daily':
+                last_30_days = now_datetime - datetime.timedelta(days=30)
+                start_date = float(format(last_30_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
+            elif data_for == 'weekly':
+                last_12_months = now_datetime - datetime.timedelta(days=365)
+                start_date = float(format(last_12_months.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
+            elif data_for in ['monthly', 'yearly']:
+                start_date = ''
+                end_date = ''
+            else:
+                start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
 
 
         if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
@@ -2016,7 +2031,7 @@ class Get_Service_Type_Performance_Data(View):
             'sds': [service_data_source_type]
         }
 
-        if data_for == 'bi_hourly':
+        if data_for == 'bihourly':
             parameters.update({
                 'model' : PerformanceServiceBiHourly
             })
@@ -2060,7 +2075,7 @@ class Get_Service_Type_Performance_Data(View):
             pass  # no dr site
 
         if service_data_source_type in ['pl', 'rta']:
-            if data_for == 'bi_hourly':
+            if data_for == 'bihourly':
                 parameters.update({
                     'model' : PerformanceNetworkBiHourly
                 })
@@ -2123,7 +2138,7 @@ class Get_Service_Type_Performance_Data(View):
                 'sds': ['rta']
             })
 
-            if data_for == 'bi_hourly':
+            if data_for == 'bihourly':
                 parameters.update({
                     'model' : PerformanceNetworkBiHourly
                 })
@@ -2356,20 +2371,38 @@ class Get_Service_Type_Performance_Data(View):
 
     def get_performance_data(self, model=None, start_time=None, end_time=None, devices=None, services=None, sds=None):
         if services:
-            performance_data = model.objects.filter(
-                device_name__in=devices,
-                service_name__in=services,
-                data_source__in=sds,
-                sys_timestamp__gte=start_time,
-                sys_timestamp__lte=end_time
-            ).order_by('sys_timestamp')
+            where_condition = ''
+            if start_time and end_time:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(service_name__in=services) & Q(data_source__in=sds)
+                    &
+                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
+                )
+            else:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(service_name__in=services) & Q(data_source__in=sds)
+                )
+            performance_data = model.objects.filter(where_condition).order_by('sys_timestamp')
         else:
-            performance_data = model.objects.filter(
-                device_name__in=devices,
-                data_source__in=sds,
-                sys_timestamp__gte=start_time,
-                sys_timestamp__lte=end_time
-            ).order_by('sys_timestamp')
+            if start_time and end_time:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(data_source__in=sds)
+                    &
+                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
+                )
+            else:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(data_source__in=sds)
+                )
+            performance_data = model.objects.filter(where_condition).order_by('sys_timestamp')
 
         return performance_data
 
