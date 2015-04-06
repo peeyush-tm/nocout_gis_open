@@ -39,7 +39,7 @@
             max-width: 200px !important;
         }
         .perfContainerBlock .left_tabs_container {
-            padding: 0px !important;
+            /*padding: 0px !important;*/
         }
         .inner_tab_container .panel-body {
             padding: 10px !important;
@@ -260,6 +260,7 @@
             live_poll_condition2 = "",
             ptp_tech_list = ['ptp','p2p','ptp bh'],
             is_perf_polling_enabled = false,
+            show_historical_on_performance = false,
             base_url = "",
             startDate = "",
             endDate = "";
@@ -278,6 +279,10 @@
             device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
+
+            {% if settings.HISTORICAL_ON_PERFORMANCE %}
+                show_historical_on_performance = true;
+            {% endif %}
             
             // If call for utilization tab the reset tab cookie
             if(is_util_tab) {
@@ -383,7 +388,7 @@
         function fetchFirstTabContent(this_pointer) {
 
             var tab_id = $(this_pointer).attr("href") ? $(this_pointer).attr("href").split("#")[1] : "",
-                li_count = $("#"+tab_id+" .inner_tab_container .left_tabs_container ul li").length;
+                li_count = $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li").length;
 
             // Save parent tab reference in cookie
             $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
@@ -391,13 +396,25 @@
             if (li_count > 0) {
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
-                if (activeTabId && $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li a#" + activeTabId).length) {
-                    $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li a#" + activeTabId).trigger('click');
+                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length) {
+                    $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
-                    $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li:first-child a").trigger('click');
+                    $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
                 }
             }
         }
+
+
+        /**
+         * This function load the first inner inner tab content when any inner tab is clicked.
+         * @event click
+         */
+        $("body").delegate('.left_tabs_container li','click',function(e) {
+            var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
+            if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
+                $(".inner_tab_container #"+tab_content_id+"_block .inner_inner_tab li:first-child a").trigger('click');
+            }
+        });
 
         /**
          * This event triggers when poll now button clicked
@@ -409,11 +426,11 @@
                 hidden_input_dom_id = 'perf_live_poll_input',
                 polled_val_shown_dom_id = "last_polled_val",
                 device_name = "{{ device.device_name }}",
-                current_active_tab_url = $(".top_perf_tab_content div.active .left_tabs_container ul li.active a").attr("url"),
+                current_active_tab_url = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("url"),
                 service_name = "",
                 ds_name = "",
                 container_id = "",
-                block_dom_id_str = $(".top_perf_tab_content div.active .left_tabs_container ul li.active a").attr("href");
+                block_dom_id_str = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("href");
 
             if(current_active_tab_url && current_active_tab_url.indexOf("service/") > -1 && current_active_tab_url.indexOf("service_data_source/") > -1 ) {
                 service_name = current_active_tab_url ? current_active_tab_url.split("service/")[1].split("/")[0] : "";
