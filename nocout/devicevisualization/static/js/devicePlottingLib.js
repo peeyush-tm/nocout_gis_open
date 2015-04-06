@@ -2377,14 +2377,7 @@ function devicePlottingClass_gmap() {
 
 	    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) > -1) {
 
-	    		var item_index = bs_marker.item_index > -1 ? bs_marker.item_index : 0,
-		    		labelInfoObject = gisPerformanceClass.getKeyValue(bs_marker.bsInfo,last_selected_label,false, item_index),
-                	labelHtml = "";
-
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
-                }
+	    		var labelHtml = bs_ss_devices[i].alias;
 
 		    	// If any html created then show label on ss
 		    	if(labelHtml) {
@@ -2664,6 +2657,10 @@ function devicePlottingClass_gmap() {
 				    		if(!allMarkersObject_gmap['sub_station'][key].map) {
 				      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
 				    		}
+
+				    		if(tooltipInfoLabel[key] && !tooltipInfoLabel[key].map) {
+			      				tooltipInfoLabel[key].setMap(mapInstance);
+			      			}
 				    	} else {
 				    		// If SS Marker shown then hide the SS Marker
 				    		if(allMarkersObject_gmap['sub_station'][key].map) {
@@ -2703,6 +2700,9 @@ function devicePlottingClass_gmap() {
 		    	var bs_marker = allMarkersObject_gmap['base_station'][key],
 		      		isMarkerExist = mapInstance.getBounds().contains(bs_marker.getPosition());
 	      		if(isMarkerExist) {
+	      			if(tooltipInfoLabel[key] && !tooltipInfoLabel[key].map) {
+	      				tooltipInfoLabel[key].setMap(mapInstance);
+	      			}
 		    		// If BS Marker not shown then show the BS Marker
 		    		if(!allMarkersObject_gmap['base_station'][key].map) {
 		      			allMarkersObject_gmap['base_station'][key].setMap(mapInstance);
@@ -4536,7 +4536,14 @@ function devicePlottingClass_gmap() {
 	 */
 	this.addPinPoint = function(index, pos) {
 		if($('#pin-point-'+index+'').length == 0) {
-			$('#pin-points-container').append('<div id="pin-point-'+index+'" class="pin-point col-md-5" pointid="'+ index +'"><span class="pin-point-name">Point '+ index +' - <input name="pinpoint'+ index +'" class="userpinpoint" type="text" size="2" value="0" /> m at <span class="point-distance'+ index +'">'+ parseFloat(latLongArray[index][3]).toFixed(2) +'</span> Km</span>  <span id="pin-point-remove'+index+'" class="pin-point-remove">X</span></div>');
+			var pin_point_html = '<div id="pin-point-'+index+'" class="pin-point col-md-5" \
+								  pointid="'+ index +'"><span class="pin-point-name">Point \
+								  '+ index +' - <input name="pinpoint'+ index +'" class="userpinpoint" \
+								  type="text" size="2" value="0" /> m at <span class="point-distance'+ index +'">\
+								  '+ parseFloat(latLongArray[index][3]).toFixed(2) +'</span> Km</span>\
+								  <span id="pin-point-remove'+index+'" class="pin-point-remove">X</span></div>';
+
+			$('#pin-points-container').append(pin_point_html);
 			
 			$('input[name="pinpoint'+ index +'"]').change(function() {
 				var height =  parseFloat($(this).val());
@@ -4571,23 +4578,25 @@ function devicePlottingClass_gmap() {
 	 */
 	this.heightChanged = function() {
 		
-		HEIGHT_CHANGED = true;
-		isDialogOpen = false;
-		latLongArrayCopy = latLongArray;
-		antenaHight1 = $("#antinaVal1").val();
-		antenaHight2 = $("#antinaVal2").val();
-		clear_factor = $("#clear-factor_val").val();
+		if((antenaHight1 != $("#antinaVal1").val()) || (antenaHight2 != $("#antinaVal2").val())) {
+			HEIGHT_CHANGED = true;
+			isDialogOpen = false;
+			latLongArrayCopy = latLongArray;
+			antenaHight1 = $("#antinaVal1").val();
+			antenaHight2 = $("#antinaVal2").val();
+			clear_factor = $("#clear-factor_val").val();
 
-		var sector_ss_obj = {
-			"sector_name" : bts1_name,
-			"ss_name" : bts2_name,
-			"sector_Alias" : fresnelData.bts1_alias,
-			"ss_customerName" : fresnelData.bts2_customerName,
-			"ss_circuitId" : fresnelData.bts2_circuitId,
-			"isBSLeft" : fresnel_isBSLeft
-		};
+			var sector_ss_obj = {
+				"sector_name" : bts1_name,
+				"ss_name" : bts2_name,
+				"sector_Alias" : fresnelData.bts1_alias,
+				"ss_customerName" : fresnelData.bts2_customerName,
+				"ss_circuitId" : fresnelData.bts2_circuitId,
+				"isBSLeft" : fresnel_isBSLeft
+			};
 
-		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
+			gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
+		}
 	};
 
 	/**
@@ -9361,7 +9370,7 @@ function devicePlottingClass_gmap() {
 		if(not_ss_param_labels.indexOf(last_selected_label) > -1) {
 			elements_type = 'base_station';
 			remove_element_keys = 'sub_station';
-			dataset_key = 'bsInfo';
+			dataset_key = 'alias';
 			param_label_gritter_title = 'BS Parameter Label';
 		}
 
@@ -9382,16 +9391,20 @@ function devicePlottingClass_gmap() {
 		if(Object.keys(tooltipInfoLabel).length < 1) {
 
 			for(key in markers_list) {
-
 				var marker = markers_list[key],
-					labelHtml = "",
-					item_index = marker.item_index > -1 ? marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false,item_index);
+					labelHtml = "";
 
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
-                }
+				if(elements_type == 'base_station') {
+					labelHtml = marker[dataset_key];
+				} else {
+					var item_index = marker.item_index > -1 ? marker.item_index : 0,
+						labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false,item_index);
+
+	            	if(labelInfoObject) {
+	            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+	                    labelHtml += shownVal;
+	                }
+				}
 
                 // If labelHtml
                 if(labelHtml) {
@@ -9411,10 +9424,9 @@ function devicePlottingClass_gmap() {
 						
 
 						ccpl_map.addPopup(toolTip_infobox);
-
-						if(hide_flag) {
-							toolTip_infobox.hide();
-						}
+						// if(hide_flag) {
+						// 	toolTip_infobox.hide();
+						// }
 
 						// Remove height prop from div's
 	        	    	$('.olPopupContent').css('height','');
@@ -9433,7 +9445,7 @@ function devicePlottingClass_gmap() {
 	                        -120,
 	                        -10,
 	                        marker.getPosition(),
-	                        hide_flag
+	                        false
 	                    );
 
 		                toolTip_infobox.open(mapInstance, marker);
@@ -9443,18 +9455,21 @@ function devicePlottingClass_gmap() {
             	}
 			}
 		} else {
-
 			for(key in markers_list) {
 				var marker = markers_list[key],
-					labelHtml = "",
-					item_index = marker.item_index > -1 ? marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false, item_index);
+					labelHtml = "";
 
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
+				if(elements_type == 'base_station') {
+					labelHtml = marker[dataset_key];
+				} else {
+					var item_index = marker.item_index > -1 ? marker.item_index : 0,
+						labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false, item_index);
+
+	            	if(labelInfoObject) {
+	            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+	                    labelHtml += shownVal;
+	                }
                 }
-
                 // if labelHtml
                 if(labelHtml) {
 
@@ -9476,9 +9491,9 @@ function devicePlottingClass_gmap() {
 
 							ccpl_map.addPopup(toolTip_infobox);
 
-							if(hide_flag) {
-								toolTip_infobox.hide();
-							}
+							// if(hide_flag) {
+							// 	toolTip_infobox.hide();
+							// }
 
 							// Remove height prop from div's
 		        	    	$('.olPopupContent').css('height','');
@@ -9503,7 +9518,7 @@ function devicePlottingClass_gmap() {
 		                        -120,
 		                        -10,
 		                        marker.getPosition(),
-		                        hide_flag
+		                        false
 		                    );
 
 			                toolTip_infobox.open(mapInstance, marker);

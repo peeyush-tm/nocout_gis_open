@@ -1610,6 +1610,9 @@ function WhiteMapClass() {
 		    		ss_marker = allMarkersObject_wmap['sub_station'][key],
 		    		isMarkerExist = global_this.checkIfPointLiesInside({lat: ss_marker.ptLat, lon: ss_marker.ptLon});
 	    		if(isMarkerExist) {
+	    			if(tooltipInfoLabel[key]) {
+	      				tooltipInfoLabel[key].show();
+	      			}
 		    		if(!ss_marker.getVisibility()) {
 		    			showOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
 		    		}
@@ -1642,6 +1645,9 @@ function WhiteMapClass() {
 		      		isMarkerExist = "";
 		      	isMarkerExist = global_this.checkIfPointLiesInside({lat: bs_marker.ptLat, lon: bs_marker.ptLon});
 	      		if(isMarkerExist) {
+	      			if(tooltipInfoLabel[key]) {
+	      				tooltipInfoLabel[key].show();
+	      			}
 			    	if(!bs_marker.getVisibility()) {
 			    		// If BS Marker not shown then show the BS Marker
 		      			showOpenLayerFeature(allMarkersObject_wmap['base_station'][key]);
@@ -2061,6 +2067,7 @@ function WhiteMapClass() {
 					bh_device_tech 	   : 	bs_ss_devices[i].data.bh_device_tech,
 					pl 				   : 	"",
 					map       	       : 	'current',
+					alias 		   	   :    bs_ss_devices[i].alias,
 					icon 	  	       : 	bs_marker_url,
 					oldIcon 	       : 	bs_marker_url,
 					clusterIcon 	   : 	bs_marker_url,

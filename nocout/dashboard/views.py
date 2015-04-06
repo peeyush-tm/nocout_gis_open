@@ -1874,6 +1874,7 @@ class MonthlyTrendBackhaulMixin(object):
         :retun dictionary containing data used for main dashboard Monthly charts.
         '''
         tech_name = self.tech_name
+        y_axis_text = 'Number of Base Station'
         organization = logged_in_user_organizations(self)
         # Getting Technology ID
         try:
@@ -1897,11 +1898,14 @@ class MonthlyTrendBackhaulMixin(object):
             chart_series = dashboard_status_dict
 
             response = get_highchart_response(
-                dictionary={'type': 'column',
-                            'valuesuffix': '',
-                            'chart_series': chart_series,
-                            'name': '%s Backhaul Capacity' % tech_name.upper(),
-                            'valuetext': ''})
+                dictionary={
+                    'type': 'column',
+                    'valuesuffix': '',
+                    'chart_series': chart_series,
+                    'name': '%s Backhaul Capacity' % tech_name.upper(),
+                    'valuetext': y_axis_text
+                }
+            )
 
         return HttpResponse(response)
 
@@ -1932,6 +1936,7 @@ class MonthlyTrendSectorMixin(object):
 
     def get(self, request):
         tech_name = self.tech_name
+        y_axis_text = 'Number of Sectors'
         organization = logged_in_user_organizations(self)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
@@ -1942,11 +1947,15 @@ class MonthlyTrendSectorMixin(object):
         chart_series = []
         chart_series = processed_key_dict
 
-        response = get_highchart_response(dictionary={'type': 'column',
-                                                      'valuesuffix': '',
-                                                      'chart_series': chart_series,
-                                                      'name': '%s Sector Capacity' % tech_name.upper(),
-                                                      'valuetext': ''})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'column',
+                'valuesuffix': '',
+                'chart_series': chart_series,
+                'name': '%s Sector Capacity' % tech_name.upper(),
+                'valuetext': y_axis_text
+            }
+        )
 
         return HttpResponse(response)
 
@@ -1974,7 +1983,7 @@ class MonthlyTrendSalesMixin(object):
         '''
         is_bh = False
         tech_name = self.tech_name
-
+        y_axis_text = 'Number of Sectors'
         data_source_config = {
             'topology': {'service_name': 'topology', 'model': Topology},
         }
@@ -2010,11 +2019,14 @@ class MonthlyTrendSalesMixin(object):
 
         chart_series = dashboard_status_dict
         # Sending Final response
-        response = get_highchart_response(dictionary={'type': 'column',
-                                                      'valuesuffix': '',
-                                                      'chart_series': chart_series,
-                                                      'name': '%s Sales Opportunity' % tech_name.upper(),
-                                                      'valuetext': ''})
+        response = get_highchart_response(
+            dictionary={
+            'type': 'column',
+            'valuesuffix': '',
+            'chart_series': chart_series,
+            'name': '%s Sales Opportunity' % tech_name.upper(),
+            'valuetext': y_axis_text
+        })
 
         return HttpResponse(response)
 
@@ -2102,6 +2114,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
         """
         # Get Request for getting url name passed in URL
         dashboard_name = self.request.GET['dashboard_name']
+        y_axis_text = 'Number of Network Devices (WiMAX+PMP)'
         # remove '#' from the dashboard_name.
         if "#" in dashboard_name:
             dashboard_name = dashboard_name.replace('#', '')
@@ -2118,6 +2131,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
         dashboard_status_name = dashboard_name
         if 'temperature' in dashboard_name:
             dashboard_name = 'temperature'
+            y_axis_text = 'Number of IDU'
             # replace the '-wimax' with ''. (e.g: 'dash-wimax' => 'dash')
             dashboard_status_name = dashboard_status_name.replace('-wimax', '')
         # Finding Organization of user   
@@ -2135,14 +2149,23 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = view_range_status_dashboard_monthly(dashboard_name=dashboard_status_name,
-                                                          organizations=organizations,
-                                                          dashboard_settings=dashboard_setting)
+        dashboard_status_dict = view_range_status_dashboard_monthly(
+            dashboard_name=dashboard_status_name,
+            organizations=organizations,
+            dashboard_settings=dashboard_setting
+        )
         chart_series = dashboard_status_dict
         # Trend Items for matching range
 
-        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
-                                                      'name': dashboard_name, 'valuetext': ''})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'column',
+                'valuesuffix': '',
+                'chart_series': chart_series,
+                'name': dashboard_name,
+                'valuetext': y_axis_text
+            }
+        )
 
         return HttpResponse(response)
 
