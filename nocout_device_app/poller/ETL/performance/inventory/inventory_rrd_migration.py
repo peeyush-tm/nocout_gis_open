@@ -109,7 +109,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		host_ip = entry[1] 
 		service = entry[3]
 		try:				
-			plugin_output = str(entry[5].split('- ')[1])
+			plugin_output = str(entry[5].split('OK - ')[1])
 			plugin_output=plugin_output.strip()
 		except Exception as e:
 			print e
@@ -126,8 +126,11 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		current_time = int(time.time())
 		plugin_output = plugin_output.split(' ')
 		if len(plugin_output) > 1 and 'radwin' not in service:
-			ds_list = map(lambda x: x.split("=")[0],plugin_output)
-			value_list = map(lambda x: x.split("=")[1],plugin_output)
+			try:
+				ds_list = map(lambda x: x.split("=")[0],plugin_output)
+				value_list = map(lambda x: x.split("=")[1],plugin_output)
+			except:
+				continue
 
 			for index in range(len(ds_list)):
 				if value_list[index]:
