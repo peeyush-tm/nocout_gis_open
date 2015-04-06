@@ -1071,6 +1071,13 @@ def add_device_to_nms_core(request, device_id, ping_data):
                 result['message'] = "<i class=\"fa fa-check green-dot\"></i> Device added successfully."
                 # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
                 device.is_added_to_nms = 1
+
+                # modify site instance 'is_device_change' bit to relect corresponding site for sync
+                try:
+                    device.site_instance.is_device_change == 1
+                except Exception as e:
+                    pass
+
                 device.save()
     else:
         result['message'] = "<i class=\"fa fa-check red-dot\"></i> Device state is disabled. First enable it than add it to nms core."
