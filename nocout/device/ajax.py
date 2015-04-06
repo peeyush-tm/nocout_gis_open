@@ -44,7 +44,7 @@ def update_vendor(request, option):
     out = list()
     out.append("<option value='' selected>Select</option>")
     for vendor in vendors:
-        out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
+        out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.alias))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -166,9 +166,9 @@ def after_update_vendor(request, option, selected=''):
     out.append("<option value=''>Select</option>")
     for vendor in vendors:
         if vendor.id == int(selected):
-            out.append("<option value='%d' selected>%s</option>" % (vendor.id, vendor.name))
+            out.append("<option value='%d' selected>%s</option>" % (vendor.id, vendor.alias))
         else:
-            out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
+            out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.alias))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
     return dajax.json()
 
