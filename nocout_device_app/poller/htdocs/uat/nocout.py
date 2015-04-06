@@ -19,7 +19,8 @@ from nocout_logger import nocout_log
 import mysql.connector
 import generate_deviceapp_config
 from shutil import copy
-
+from mysql_connection import mysql_conn
+from pprint import pformat
 logger = nocout_log()
 
 
@@ -1052,7 +1053,10 @@ def sync():
     finally:
         out.close()
 
-    nocout_sites = nocout_distributed_sites()
+    #nocout_sites = nocout_distributed_sites()
+    nocout_sites = extract_affected_sites()
+    logger.debug('Nocout_sites: ' + pprint.pformat(nocout_sites))
+   
     # Remove master_UA from nocout_sites, we dont need to push conf to master_UA
     nocout_sites = dict(filter(lambda d: d[1].get('replication') == 'slave', nocout_sites.items()))
     #logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_sites))
@@ -1077,13 +1081,14 @@ def sync():
         logger.info("Could not cmk -R master_UA")
         # Perform rollback if problem with master_UA
         nocout_rollback_action(nocout_sites, response, proceed=False)
+	
         return response
     for site, attrs in nocout_sites.items():
         logger.debug('site :' + pprint.pformat(site))
         response_text = nocout_synchronize_site(site, attrs, True)
         if response_text is True:
             # affected sites with a successful restart
-            sites_affected.append(site)
+            sites_affected.append(str(site))
         else:
             # sites for which restart was unsuccessful
             dirty_sites.update({site: attrs})
@@ -1101,12 +1106,15 @@ def sync():
         logger.info("Length of sites_affected and nocout_sites doesn't match")
         # perform rollback for dirty sites, only
         nocout_rollback_action(dirty_sites, response, all_sites=False)
+    if sites_affected:
+       set_site_affected_bit_on_mysql(sites_affected)
     logger.debug('[-- sync finish --]')
 
     return response
 
 
 def nocout_rollback_action(nocout_sites, response, all_sites=True, proceed=True):
+    sync_log_id = int(html.var('sync_obj_id')) if html.var('sync_obj_id') else None
     if all_sites:
         # untar the backup archive
         nocout_untar_backup_folder()
@@ -1122,12 +1130,14 @@ def nocout_rollback_action(nocout_sites, response, all_sites=True, proceed=True)
             "message": "Configuration error, old config retained",
             "success": 1
             })
+    	generate_deviceapp_config.update_configuration_db(update_device_table=False,
+            update_id=sync_log_id, sync_message='Not Successful', status=2, 
+            detailed_message=response.get('message'))
         return
     for site, attrs in nocout_sites.items():
         nocout_synchronize_site(site, attrs, True)
     response['message'] += '\nError with sites : ' + ','.join(nocout_sites.keys())
     # update the sync log table
-    sync_log_id = int(html.var('sync_obj_id')) if html.var('sync_obj_id') else None
     generate_deviceapp_config.update_configuration_db(update_device_table=False,
             update_id=sync_log_id, sync_message='Not Successful', status=2, 
             detailed_message=response.get('message'))
@@ -1417,7 +1427,47 @@ def nocout_find_host(host):
 
     return new_host
 
+def set_site_affected_bit_on_mysql(affected_site):
+    if affected_site:
+        if len(affected_site) == 1:
+		site = "('%s')" % affected_site[0]
+        else:	
+   		site = tuple(affected_site)
+	try:
+    		query = "update site_instance_siteinstance set is_device_change =0 where name IN %s" % str(site)
+	except:
+    		logger.error('Affected Site Error: ' + pprint.pformat(query),str(site))
+		
+    	db = mysql_conn()
+    	cur = db.cursor()
+    	cur.execute(query)
+    	db.commit()
+    	cur.close()
+    	db.close()
 
+def extract_affected_sites ():
+    affected_sites = []
+    nocout_sites = {}
+    data =[]
+    query = "select name from site_instance_siteinstance where is_device_change=1"
+    try:
+    	db = mysql_conn()
+    	cur = db.cursor()
+    	cur.execute(query)
+    except Exception,e:
+	logger.error('Affected Site Error: ' + pprint.pformat(e))
+    else:
+    	data = cur.fetchall()
+    finally:
+    	cur.close()
+    	db.close()
+    for entry in data:
+	affected_sites.append(entry[0])	
+    total_sites = nocout_distributed_sites()
+    nocout_sites = dict([(site_name, total_sites[site_name]) for site_name in affected_sites])
+	 
+    return nocout_sites
+ 
 def give_permissions(file_path):
     import grp
     fd = os.open(file_path, os.O_RDWR | os.O_CREAT)
