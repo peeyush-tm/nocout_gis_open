@@ -34,12 +34,14 @@ def update_site_on_device_change(sender, instance=None, created=False, **kwargs)
         # old fields values list
         old_values = [old_instance.device_name,
                       old_instance.ip_address,
-                      old_instance.site_instance.name]
+                      old_instance.site_instance.name,
+                      old_instance.host_state]
 
         # new fields values list
         new_values = [instance.device_name,
                       instance.ip_address,
-                      instance.site_instance.name]
+                      instance.site_instance.name,
+                      instance.host_state]
 
         if instance.site_instance.is_device_change != 1:
             if list(set(old_values) - set(new_values)):
