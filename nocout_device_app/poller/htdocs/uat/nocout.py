@@ -1107,7 +1107,9 @@ def sync():
         # perform rollback for dirty sites, only
         nocout_rollback_action(dirty_sites, response, all_sites=False)
     if sites_affected:
-       set_site_affected_bit_on_mysql(sites_affected)
+        # adding master_UA site in affected site as master_UA is always affected.
+	sites_affected.append('master_UA')
+	set_site_affected_bit_on_mysql(sites_affected)
     logger.debug('[-- sync finish --]')
 
     return response
