@@ -3744,9 +3744,10 @@ class DeviceSyncHistoryList(ListView):
         ]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
-            context['deadlock_status'] = deadlock_status
-            context['last_sync_time'] = last_sync_time
+            if self.request.user.is_superuser:
+                datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+                context['deadlock_status'] = deadlock_status
+                context['last_sync_time'] = last_sync_time
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -3772,7 +3773,7 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = DeviceSyncHistory.objects.filter(sync_by=self.request.user.username).values(*self.columns+['id'])
+        queryset = DeviceSyncHistory.objects.all().values(*self.columns+['id'])
 
         # if self.request.user.is_superuser:
         #     queryset = DeviceSyncHistory.objects.filter().values(*self.columns+['id'])
