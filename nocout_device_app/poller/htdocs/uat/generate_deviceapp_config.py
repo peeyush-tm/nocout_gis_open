@@ -143,7 +143,9 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
     on
     (inventory_basestation.bh_port_name = service_servicedatasource.alias)
     where 
-    device_device.is_deleted=0 and 
+    device_device.is_deleted=0 and
+    device_device.host_state <> 'Disable'
+    and 
     device_devicetype.name in ('Switch', 'RiCi', 'PINE')
     group by device_device.ip_address
     ;
@@ -280,6 +282,8 @@ def make_BS_data(all_hosts=None, ipaddresses=None, host_attributes=None):
     )
 
     where device_device.is_deleted=0 
+    and
+    device_device.host_state <> 'Disable'
     and 
     device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') 
     and 
@@ -619,11 +623,11 @@ def prepare_rules(devices):
     ac_chks1 = util_active_checks(
             devices, 
             settings_out.active_checks_thresholds, 
-            settings_out.active_checks_thresholds_per_device)
+            settings_out.active_checks_thresholds_per_device,settings_out.active_checks)
     ac_chks2 = ss_active_checks(
             devices, 
             settings_out.active_checks_thresholds,
-            settings_out.active_checks_thresholds_per_device)
+            settings_out.active_checks_thresholds_per_device,settings_out.active_checks)
     ac_chks1.update(ac_chks2)
 
     write_rules_file(settings_out, ac_chks1)
@@ -635,7 +639,7 @@ def get_settings():
     T = namedtuple('host_rules', [
         'ping_levels_db', 'default_checks', 'snmp_ports_db',
         'snmp_communities_db', 'active_checks_thresholds',
-        'active_checks_thresholds_per_device'
+        'active_checks_thresholds_per_device','active_checks'
         ])
     # Device specific actve check thresholds, collected from service_deviceserviceconfiguration
     default_checks, active_checks_thresholds_per_device = prepare_priority_checks()
@@ -655,6 +659,7 @@ def get_settings():
         db.close()
 
     processed = []
+    active_check_services = []
     # Following utilization active checks should not be included in list of passive checks
     exclude_util_active_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
             'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
@@ -702,6 +707,8 @@ def get_settings():
         service_config = None
         if service['service']:
             # add the inventory services for snmp_check_interval
+	    if '_kpi' in service['service']:
+		active_check_services.append(str(service['service']))
             if '_invent' in service['service']:
                 snmp_check_interval.append(
                         ((str(service['service']), 1440), [], ['@all'])
@@ -737,7 +744,7 @@ def get_settings():
     T.ping_levels_db, T.default_checks, T.snmp_ports_db = ping_levels_db, default_checks, snmp_ports_db
     T.snmp_communities_db, T.active_checks_thresholds = snmp_communities_db, active_checks_thresholds
     T.active_checks_thresholds_per_device = active_checks_thresholds_per_device
-
+    T.active_checks = active_check_services 
     return T
 
 
@@ -901,26 +908,32 @@ def prepare_priority_checks():
     return processed_values, active_checks_thresholds_per_device
 
 
-def ss_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device):
+def ss_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device,active_checks):
     wimax_ss_services = [
         'wimax_ss_ul_issue_kpi', 'wimax_ss_provis_kpi']
     cambium_ss_services = ['cambium_ss_ul_issue_kpi', 'cambium_ss_provis_kpi']
     check_dict = {}
     check_dict = make_active_check_rows(check_dict, devices.wimax_ss_devices, wimax_ss_services, 
-            active_checks_thresholds, active_checks_thresholds_per_device)
+            active_checks_thresholds, active_checks_thresholds_per_device,active_checks)
     check_dict = make_active_check_rows(check_dict, devices.cambium_ss_devices, cambium_ss_services, 
-            active_checks_thresholds, active_checks_thresholds_per_device)
+            active_checks_thresholds, active_checks_thresholds_per_device,active_checks)
 
     return check_dict
 
 
 def make_active_check_rows(container, devices, services, active_checks_thresholds, 
-        active_checks_thresholds_per_device, def_war=None, def_crit=None):
+        active_checks_thresholds_per_device,active_checks, def_war=None, def_crit=None):
 
     qos_based_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'mrotek_dl_util_kpi', 
 		'mrotek_ul_util_kpi', 'rici_dl_util_kpi', 'rici_ul_util_kpi',
 		'switch_dl_util_kpi', 'switch_ul_util_kpi']
     for service in services:
+
+	######### Code has been Added to facilate addtion/deletion of service from device_typeon UI ,only active checks which 
+        # will be on UI wil be added on device application not all
+	if service not in active_checks:
+	    continue
+	#########################
         container[service] = []
         # These thresholds would be used if we dont find entry in below filter func
         serv_specific_entry = filter(lambda e: service in e[0], active_checks_thresholds)
@@ -947,7 +960,7 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
     return container
 
 
-def util_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device):
+def util_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device,active_checks):
     wimax_util_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
             'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi', 'wimax_bs_ul_issue_kpi']
     cambium_util_services = ['cambium_ul_util_kpi', 'cambium_dl_util_kpi', 'cambium_bs_ul_issue_kpi']
@@ -957,25 +970,25 @@ def util_active_checks(devices, active_checks_thresholds, active_checks_threshol
     switch_util_services = ['switch_dl_util_kpi', 'switch_ul_util_kpi']
     check_dict = {}
     check_dict = make_active_check_rows(check_dict, devices.wimax_bs_devices,
-            wimax_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            wimax_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     check_dict = make_active_check_rows(check_dict, devices.cambium_bs_devices,
-            cambium_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            cambium_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     check_dict = make_active_check_rows(check_dict, devices.radwin_ss_devices,
-            radwin_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            radwin_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
 	    def_war=80, def_crit=90)
     # mrotek utilization active checks
     check_dict = make_active_check_rows(check_dict, devices.mrotek_devices,
-            mrotek_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            mrotek_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     # rici utilization active checks
     check_dict = make_active_check_rows(check_dict, devices.rici_devices,
-            rici_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            rici_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     # switch utilization active checks
     check_dict = make_active_check_rows(check_dict, devices.switch_devices,
-            switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            switch_util_services, active_checks_thresholds, active_checks_thresholds_per_device,active_checks,
             def_war=80, def_crit=90)
     ########################################################################################
     # These values would be used if we dont find device specific entry
