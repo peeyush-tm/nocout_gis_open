@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 import json
 from operator import itemgetter
-from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.contrib.auth.models import User
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
-from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.core.urlresolvers import reverse_lazy, reverse
 from datetime import datetime, timedelta
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
-    DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService, DeviceSyncHistory
+    DeviceFrequency, DeviceTypeService, DeviceSyncHistory
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DevicePortForm, DeviceFrequencyForm, \
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
@@ -25,7 +22,6 @@ from organization.models import Organization
 from service.models import Service
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.conf import settings                                      # Importing settings for logger
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
@@ -36,14 +32,9 @@ from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin
 from nocout.mixins.select2 import Select2Mixin
 from django.db.models import Q
-from service.forms import DTServiceDataSourceUpdateFormSet
-from inventory.utils.util import ptp_device_circuit_backhaul, organization_customer_devices, \
+from inventory.utils.util import organization_customer_devices, \
     organization_network_devices, organization_backhaul_devices
 from scheduling_management.models import Event
-
-
-from django.views.decorators.csrf import csrf_exempt
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -76,7 +67,8 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -85,7 +77,8 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin or superadmin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
+        if 'admin' in self.request.user.userprofile.role.values_list(
+                'role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
             datatable_headers.append(
@@ -97,7 +90,8 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -106,7 +100,8 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
+        if 'admin' in self.request.user.userprofile.role.values_list(
+                'role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
@@ -126,8 +121,10 @@ class DeviceList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['datatable_headers_no_nms_actions'] = json.dumps(datatable_headers_no_nms_actions)
 
-        context['deadlock_status'] = deadlock_status
-        context['last_sync_time'] = last_sync_time
+        # show sync only if user is superuser
+        if self.request.user.is_superuser:
+            context['deadlock_status'] = deadlock_status
+            context['last_sync_time'] = last_sync_time
 
         return context
 
@@ -151,21 +148,21 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
     required_permissions = ('device.view_device',)
     # columns are used for list of fields which should be displayed on data table.
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
 
-    #order_columns is used for list of fields which is used for sorting the data table.
+    # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
 
-    #search_columns is used for list of fields which is used for searching the data table.
+    # search_columns is used for list of fields which is used for searching the data table.
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-        'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
 
     # extra_qs_kwargs is used for filter the device using some extra fields in Mixin DatatableOrganizationFilterMixin.
     extra_qs_kwargs = {
-                        'is_deleted': 0,
-                        'is_added_to_nms__in': [1,2]
-        }
+        'is_deleted': 0,
+        'is_added_to_nms__in': [1, 2]
+    }
 
     def filter_queryset(self, qs):
         """
@@ -186,7 +183,8 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             for column in self.search_columns:
                 query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(
+                device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
         return qs
@@ -250,17 +248,15 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             try:
                 dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
                     'device_type'] else ''
-            except Exception as device_type_exp:
+            except Exception as e:
                 dct['device_type__name'] = ""
 
             try:
                 dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
                     if dct['device_technology'] else ''
-            except Exception as device_tech_exp:
+            except Exception as e:
                 dct['device_technology__name'] = ""
 
-            # img_url = static('img/nms_icons/circle_green.png')
-            # dct.update(status_icon='<img src="{0}">'.format(img_url))
             if current_device.is_monitored_on_nms == 1:
                 status_icon_color = "green-dot"
                 dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
@@ -268,99 +264,82 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 status_icon_color = "light-green-dot"
                 dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
 
-            # There are two set of links in device list table
-            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
-            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
-            # in device table if device id one of the following:
-            # a. backhaul configured on (from model Backhaul)
-            # b. sector configures on (from model Sector)
-            # c. sub-station configured on (from model SubStation)
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            # Following are two set of links in device list view:
+            # 1. Device Actions --> Device detail, edit, delete from inventory.
+            #                       They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> Device add, sync, service add etc. from nocout nms core.
+            #                    Following are the device type present in device listing:
+            #                       a. backhaul configured on (from model Backhaul)
+            #                       b. sector configures on (from model Sector)
+            #                       c. sub-station configured on (from model SubStation)
+            #                       d. others (any device, may be out of inventory)
+
+            # device detail action
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
+                            </a>&nbsp&nbsp'.format(dct['id'])
+
+            # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                    dct['id'])
             else:
                 edit_action = ''
+
+            # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
+                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
+
             if edit_action or delete_action:
                 dct.update(actions=detail_action+edit_action+delete_action)
 
             dct.update(nms_actions='')
 
-            # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
-            # checking whether device is 'backhaul configured on' or not
+            # text color
+            text_color = "text-dark"
             try:
                 if len(Backhaul.objects.filter(bh_configured_on=current_device)):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-info" title="Services Status"></i></a>\
-                                            <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>\
-                                            <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-info" title="Sync Device"></i></a>'.format(
-                        dct['id']))
-                    try:
-                        if current_device.is_added_to_nms == 2:
-                            dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-info" title="Services Status"></i></a>\
-                                                    <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
-                                                    <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-info" title="Sync Device"></i></a>'.format(dct['id']))
-                    except Exception as e:
-                        logger.exception(e.message)
+                    text_color = "text-info"
+                elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
+                        len(Sector.objects.filter(dr_configured_on=current_device)):
+                    text_color = "text-success"
+                elif SubStation.objects.get(device=current_device):
+                    text_color = "text-danger"
+                else:
+                    pass
             except Exception as e:
-                logger.exception("Device is not a backhaul %s" %e.message)
+                pass
 
-            # checking whether device is 'sector configured on' or not
             try:
-                if len(Sector.objects.filter(sector_configured_on=current_device)) or len(Sector.objects.filter(dr_configured_on=current_device)):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
-                                            <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>\
-                                            <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-success" title="Sync Device"></i></a>'.format(
-                        dct['id']))
-                    try:
-                        if current_device.is_added_to_nms == 2:
-                            dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
-                                                    <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-success" title="Edit Device"></i></a>\
-                                                    <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-success" title="Sync Device"></i></a>'.format(dct['id']))
-                    except Exception as e:
-                        logger.exception(e.message)
-            except Exception as e:
-                logger.exception("Device is not sector configured on. %s" % e.message)
-
-            # checking whether device is 'sub station' or not
-            try:
-                if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-danger" title="Services Status"></i></a>\
-                                            <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>\
-                                            <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-danger" title="Sync Device"></i></a>'.format(
-                        dct['id']))
-                    try:
-                        if current_device.is_added_to_nms == 2:
-                            dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-danger" title="Services Status"></i></a>\
-                                                    <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
-                                                    <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-danger" title="Sync Device"></i></a>'.format(dct['id']))
-                    except Exception as e:
-                        logger.exception(e.message)
+                dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status\
+                                        (device_services_status_frame, {{\'device_id\': {0}}})">\
+                                        <i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
+                                        <a href="javascript:;" onclick="delete_device({0});">\
+                                        <i class="fa fa-ban {1}" title="Disable Device"></i></a>\
+                                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form\
+                                        (get_service_add_form, {{\'value\': {0}}})">\
+                                        <i class="fa fa-plus {1}" title="Add Services"></i></a>\
+                                        <a href="javascript:;" onclick="Dajaxice.device.edit_service_form\
+                                        (get_service_edit_form, {{\'value\': {0}}})">\
+                                        <i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
+                                        <a href="javascript:;" onclick="Dajaxice.device.delete_service_form\
+                                        (get_service_delete_form, {{\'value\': {0}}})">\
+                                        <i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
+                    dct['id'], text_color))
             except Exception as e:
                 logger.exception("Device is not a substation. %s" % e.message)
+
+            # show sync button only if user is superuser
+            if self.request.user.is_superuser:
+                try:
+                    dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();">\
+                                            <i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
+                        dct['id'], text_color)
+                except Exception as e:
+                    logger.exception("Device is not a substation. %s" % e.message)
         return json_data
 
 
@@ -398,7 +377,8 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             for column in self.search_columns:
                 query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(
+                device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
         return qs
@@ -457,71 +437,79 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
+            # device type name
             try:
                 dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
                     'device_type'] else ''
-            except Exception as device_type_exp:
+            except Exception as e:
                 dct['device_type__name'] = ""
 
+            # device technology name
             try:
                 dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
                     if dct['device_technology'] else ''
-            except Exception as device_tech_exp:
+            except Exception as e:
                 dct['device_technology__name'] = ""
-
-            # img_url = static('img/nms_icons/circle_orange.png')
-            # dct.update(status_icon='<img src="{0}">'.format(img_url))
 
             dct.update(status_icon='<i class="fa fa-circle orange-dot"></i>')
 
-            # There are two set of links in device list table
-            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
-            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
-            # in device table if device id one of the following:
-            # a. backhaul configured on (from model Backhaul)
-            # b. sector configures on (from model Sector)
-            # c. sub-station configured on (from model SubStation)
-            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title=" Soft Delete"></i></a>'.format(
-            #     dct['id']))
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            # Following are two set of links in device list view:
+            # 1. Device Actions --> Device detail, edit, delete from inventory.
+            #                       They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> Device add, sync, service add etc. from nocout nms core.
+            #                    Following are the device type present in device listing:
+            #                       a. backhaul configured on (from model Backhaul)
+            #                       b. sector configures on (from model Sector)
+            #                       c. sub-station configured on (from model SubStation)
+            #                       d. others (any device, may be out of inventory)
+
+            # device detail action
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail">\
+                             </i></a>&nbsp&nbsp'.format(dct['id'])
+
+            # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                    dct['id'])
             else:
                 edit_action = ''
+
+            # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
+                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
+
             if edit_action or delete_action:
-                dct.update(actions=detail_action+edit_action+delete_action)
+                dct.update(actions=detail_action + edit_action + delete_action)
 
             dct.update(nms_actions='')
-            # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
-            # checking whether device is 'backhaul configured on' or not
-            try:
-                if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>'.format(
-                        dct['id']))
-            except Exception as e:
-                logger.exception("Device is not a backhaul. %s " % e.message)
 
-            # checking whether device is 'sector configured on' or not
+            # text color
+            text_color = "text-dark"
             try:
-                if len(Sector.objects.filter(sector_configured_on=current_device)) or len(Sector.objects.filter(dr_configured_on=current_device)):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
-                        dct['id']))
+                if len(Backhaul.objects.filter(bh_configured_on=current_device)):
+                    text_color = "text-info"
+                elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
+                        len(Sector.objects.filter(dr_configured_on=current_device)):
+                    text_color = "text-success"
+                elif SubStation.objects.get(device=current_device):
+                    text_color = "text-danger"
+                else:
+                    pass
             except Exception as e:
-                logger.exception("Device is not sector configured on. %s " % e.message)
+                pass
 
-            # checking whether device is 'sub station' or not
+            # update nms actions
             try:
-                if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-danger"></i></a>'.format(
-                        dct['id']))
+                dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form\
+                                        (add_device_form, {{\'device_id\': {0}}})">\
+                                        <i class="fa fa-plus-square {1}" title="Add device to NMS."></i></a>'.format(dct['id'], text_color))
             except Exception as e:
-                logger.exception("Device is not a substation. %s" % e.message)
+                pass
+
         return json_data
 
 
@@ -530,12 +518,16 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
     Render JQuery datatables for listing disabled devices only
     """
     model = Device
+
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
                      'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
                       'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     extra_qs_kwargs = {
         "is_deleted": 0,
         "host_state": 'Disable'
@@ -556,7 +548,8 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             for column in self.search_columns:
                 query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(
+                device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
         return qs
@@ -614,73 +607,79 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
+            # device type name
             try:
                 dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
                     'device_type'] else ''
             except Exception as device_type_exp:
                 dct['device_type__name'] = ""
 
+            # device technology name
             try:
                 dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
                     if dct['device_technology'] else ''
             except Exception as device_tech_exp:
                 dct['device_technology__name'] = ""
 
-            # img_url = static('img/nms_icons/circle_grey.png')
-            # dct.update(status_icon='<img src="{0}">'.format(img_url))
+            dct.update(status_icon='<i class="fa fa-circle orange-dot"></i>')
 
-            dct.update(status_icon='<i class="fa fa-circle grey-dot"></i>')
+            # Following are two set of links in device list view:
+            # 1. Device Actions --> Device detail, edit, delete from inventory.
+            #                       They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> Device add, sync, service add etc. from nocout nms core.
+            #                    Following are the device type present in device listing:
+            #                       a. backhaul configured on (from model Backhaul)
+            #                       b. sector configures on (from model Sector)
+            #                       c. sub-station configured on (from model SubStation)
+            #                       d. others (any device, may be out of inventory)
 
-            # There are two set of links in device list table
-            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
-            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
-            # in device table if device id one of the following:
-            # a. backhaul configured on (from model Backhaul)
-            # b. sector configures on (from model Sector)
-            # c. sub-station configured on (from model SubStation)
-            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(
-            #     dct['id']))
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            # device detail action
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail">\
+                             </i></a>&nbsp&nbsp'.format(dct['id'])
+
+            # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                    dct['id'])
             else:
                 edit_action = ''
+
+            # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
+                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
+
             if edit_action or delete_action:
-                dct.update(actions=detail_action+edit_action+delete_action)
+                dct.update(actions=detail_action + edit_action + delete_action)
+
             dct.update(nms_actions='')
-            # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
-            # # checking whether device is 'backhaul configured on' or not
-            # try:
-            #     if Backhaul.objects.get(bh_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
-            # except:
-            #     logger.info("Device is not basestation")
-            #
-            # # checking whether device is 'sector configured on' or not
-            # try:
-            #     if Sector.objects.get(sector_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
-            # except:
-            #     logger.info("Device is not basestation")
-            #
-            # # checking whether device is 'sub station' or not
-            # try:
-            #     if SubStation.objects.get(device=current_device):
-            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
-            # except:
-            #     logger.info("Device is not substation.")
+
+            # text color
+            text_color = "text-dark"
+            try:
+                if len(Backhaul.objects.filter(bh_configured_on=current_device)):
+                    text_color = "text-info"
+                elif len(Sector.objects.filter(sector_configured_on=current_device)) or \
+                        len(Sector.objects.filter(dr_configured_on=current_device)):
+                    text_color = "text-success"
+                elif SubStation.objects.get(device=current_device):
+                    text_color = "text-danger"
+                else:
+                    pass
+            except Exception as e:
+                pass
+
+            # update nms actions
+            try:
+                dct.update(nms_actions='<a href="javascript:;" onclick="modify_device_state({0});">\
+                                        <i class="fa fa-check {1}" title="Enable Device"></i></a>'.format(
+                    dct['id'], text_color))
+            except Exception as e:
+                pass
+
         return json_data
 
 
@@ -3703,7 +3702,7 @@ def filter_selected_device(request):
     device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(',')).exclude(id__in=over_lap_device_ids)]
     return HttpResponse(json.dumps({
         'device_result': device_result
-        }) )
+        }))
 
 
 class DeviceSyncHistoryList(ListView):

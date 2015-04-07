@@ -232,8 +232,8 @@ function device_edit_message(responseResult) {
 // delete device to monitoring core
 function delete_device(device_id) {
     bootbox.dialog({
-        message: "Delete device form nms core.",
-        title: "<span class='text-danger'><i class='fa fa-times'></i> Delete device form nms core.</span>",
+        message: "Disable device form nms core.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Disable and delete device form nms core.</span>",
         buttons: {
             success: {
                 label: "Yes!",
@@ -259,6 +259,41 @@ function device_delete_message(responseResult) {
     bootbox.alert(responseResult.result.message, function(){
         // reload page after clicking "OK!"
         location = window.location.origin+"/device/#OperationalDeviceListing";
+        location.reload();
+    });
+}
+
+
+// modify device state (enable or disable)
+function modify_device_state(device_id) {
+    bootbox.dialog({
+        message: "Modify device state.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Modify device state.</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.modify_device_state(modify_device_state_message, {'device_id': device_id});
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+        }
+    });
+}
+
+
+// show message for device state modification success/failure
+function modify_device_state_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function(){
+        // reload page after clicking "OK!"
+        location = window.location.origin+"/device/#DisabledDeviceListing";
         location.reload();
     });
 }
