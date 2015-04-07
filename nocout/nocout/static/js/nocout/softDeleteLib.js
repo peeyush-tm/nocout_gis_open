@@ -232,8 +232,8 @@ function device_edit_message(responseResult) {
 // delete device to monitoring core
 function delete_device(device_id) {
     bootbox.dialog({
-        message: "Disable device form nms core.",
-        title: "<span class='text-danger'><i class='fa fa-times'></i> Disable and delete device form nms core.</span>",
+        message: "Disable and delete device from NMS.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Disable and delete device from NMS.</span>",
         buttons: {
             success: {
                 label: "Yes!",

@@ -266,7 +266,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
 
             # Following are two set of links in device list view:
             # 1. Device Actions --> Device detail, edit, delete from inventory.
-            #                       They are always present in device table if user role is 'Admin'
+            # They are always present in device table if user role is 'Admin'
             # 2. NMS Actions --> Device add, sync, service add etc. from nocout nms core.
             #                    Following are the device type present in device listing:
             #                       a. backhaul configured on (from model Backhaul)
@@ -294,7 +294,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 delete_action = ''
 
             if edit_action or delete_action:
-                dct.update(actions=detail_action+edit_action+delete_action)
+                dct.update(actions=detail_action + edit_action + delete_action)
 
             dct.update(nms_actions='')
 
@@ -455,7 +455,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
             # Following are two set of links in device list view:
             # 1. Device Actions --> Device detail, edit, delete from inventory.
-            #                       They are always present in device table if user role is 'Admin'
+            # They are always present in device table if user role is 'Admin'
             # 2. NMS Actions --> Device add, sync, service add etc. from nocout nms core.
             #                    Following are the device type present in device listing:
             #                       a. backhaul configured on (from model Backhaul)
@@ -506,7 +506,8 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             try:
                 dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form\
                                         (add_device_form, {{\'device_id\': {0}}})">\
-                                        <i class="fa fa-plus-square {1}" title="Add device to NMS."></i></a>'.format(dct['id'], text_color))
+                                        <i class="fa fa-plus-square {1}" title="Add device to NMS."></i></a>'.format(
+                    dct['id'], text_color))
             except Exception as e:
                 pass
 
@@ -625,7 +626,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
             # Following are two set of links in device list view:
             # 1. Device Actions --> Device detail, edit, delete from inventory.
-            #                       They are always present in device table if user role is 'Admin'
+            # They are always present in device table if user role is 'Admin'
             # 2. NMS Actions --> Device add, sync, service add etc. from nocout nms core.
             #                    Following are the device type present in device listing:
             #                       a. backhaul configured on (from model Backhaul)
@@ -687,13 +688,18 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
     """
     Render JQuery datatables for listing archived devices only
     """
+
     model = Device
+
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
                      'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
                       'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     extra_qs_kwargs = {
         'is_deleted': 1
     }
@@ -713,7 +719,8 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             for column in self.search_columns:
                 query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(
+                device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
         return qs
@@ -758,6 +765,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
@@ -768,80 +776,52 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             except Exception as e:
                 logger.exception("Device not present. Exception: ", e.message)
 
-            # current device in loop
-            current_device = Device.objects.get(pk=dct['id'])
-
+            # device type name
             try:
                 dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
                     'device_type'] else ''
             except Exception as device_type_exp:
                 dct['device_type__name'] = ""
 
+            # device technology name
             try:
                 dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
                     if dct['device_technology'] else ''
             except Exception as device_tech_exp:
                 dct['device_technology__name'] = ""
 
-            # img_url = static('img/nms_icons/circle_red.png')
-            # dct.update(status_icon='<img src="{0}">'.format(img_url))
-
+            # update status icon
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
-            # There are two set of links in device list table
-            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
-            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
-            # in device table if device id one of the following:
-            # a. backhaul configured on (from model Backhaul)
-            # b. sector configures on (from model Sector)
-            # c. sub-station configured on (from model SubStation)
-            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-            #    <a href="/device/delete/{0}"><i class="fa fa-minus text-danger" title="Hard Delete"></i></a>\
-            #    <a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id']))
             if self.request.user.is_superuser:
-                add_action = '<a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
+                add_action = '<a href="javascript:;" onclick="Dajaxice.device.device_restore_form\
+                (get_restore_device_form, {{\'value\': {0}}})">\
+                <i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
             else:
                 add_action = ''
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+
+            # device detail
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
+                             </a>&nbsp&nbsp'.format(dct['id'])
+
+            # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(
+                    dct['id'])
             else:
                 edit_action = ''
+
+            # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>&nbsp'.format(dct['id'])
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
+                (get_soft_delete_form, {{\'value\': {0}}})">\
+                <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>&nbsp'.format(dct['id'])
             else:
                 delete_action = ''
+
             if edit_action or delete_action:
-                dct.update(actions=detail_action+edit_action+delete_action+add_action)
-            # dct.update(nms_actions='')
-            # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
-            # # checking whether device is 'backhaul configured on' or not
-            # try:
-            #     if Backhaul.objects.get(bh_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
-            # except:
-            #     logger.info("Device is not basestation")
-            #
-            # # checking whether device is 'sector configured on' or not
-            # try:
-            #     if Sector.objects.get(sector_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
-            # except:
-            #     logger.info("Device is not basestation")
-            #
-            # # checking whether device is 'sub station' or not
-            # try:
-            #     if SubStation.objects.get(device=current_device):
-            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
-            # except:
-            #     logger.info("Device is not substation.")
+                dct.update(actions=detail_action + edit_action + delete_action + add_action)
+
         return json_data
 
 
@@ -850,12 +830,16 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
     Render JQuery datatables for listing of all devices
     """
     model = Device
+
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
                      'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
                       'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+
     extra_qs_kwargs = {
         'is_deleted': 0
     }
@@ -875,7 +859,8 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
             for column in self.search_columns:
                 query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(
+                device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
         return qs
@@ -933,12 +918,14 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
+            # device type name
             try:
                 dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
                     'device_type'] else ''
             except Exception as device_type_exp:
                 dct['device_type__name'] = ""
 
+            # device technology name
             try:
                 dct['device_technology__name'] = DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
                     if dct['device_technology'] else ''
@@ -958,61 +945,32 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
                     icon = '<i class="fa fa-circle green-dot"></i>'
                 dct.update(status_icon=icon)
             except Exception as e:
-                logger.exception(e.message)
                 dct.update(status_icon='<img src="">')
 
-            # There are two set of links in device list table
-            # 1. Device Actions --> device detail, edit, delete from inventory.
-            # They are always present in device table if user role is 'Admin'
-            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
-            # in device table if device id one of the following:
-            # a. backhaul configured on (from model Backhaul)
-            # b. sector configures on (from model Sector)
-            # c. sub-station configured on (from model SubStation)
-            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})">\
-            #    <i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
-            #     dct['id']))
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            # device detail action
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
+                             </a>&nbsp&nbsp'.format(dct['id'])
+
+            # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                    dct['id'])
             else:
                 edit_action = ''
+
+            # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
+                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
+
             if edit_action or delete_action:
-                dct.update(actions=detail_action+edit_action+delete_action)
+                dct.update(actions=detail_action + edit_action + delete_action)
+
             dct.update(nms_actions='')
-            # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
-            # checking whether device is 'backhaul configured on' or not
-            try:
-                if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
-                        dct['id']))
-            except:
-                logger.exception("Device is not basestation")
 
-            # checking whether device is 'sector configured on' or not
-            try:
-                if len(Sector.objects.filter(sector_configured_on=current_device)):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
-                        dct['id']))
-            except:
-                logger.exception("Device is not basestation")
-
-            # checking whether device is 'sub station' or not
-            try:
-                if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
-                        dct['id']))
-            except:
-                logger.exception("Device is not substation.")
         return json_data
 
 
@@ -1247,7 +1205,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
         # if 'site_instance' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
         try:
-            if (initial_field_dict['site_instance'] != form.cleaned_data['site_instance'].id) and (self.object.is_added_to_nms == 1):
+            if (initial_field_dict['site_instance'] != form.cleaned_data['site_instance'].id) and (
+                self.object.is_added_to_nms == 1):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
@@ -1255,7 +1214,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
         # if 'ip_address' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
         try:
-            if (initial_field_dict['ip_address'] != form.cleaned_data['ip_address']) and (self.object.is_added_to_nms == 1):
+            if (initial_field_dict['ip_address'] != form.cleaned_data['ip_address']) and (
+                self.object.is_added_to_nms == 1):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
@@ -1398,7 +1358,7 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 for dict in dictionary:
                     if dictionary[dict]:
                         if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
+                                    dictionary not in result_list
                         ):
                             if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
                                 result_list.append(dictionary)
@@ -1480,7 +1440,7 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -1560,7 +1520,7 @@ class DeviceTechnologyList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_vendor__model_type__name', 'sTitle': 'Device Type', 'sWidth': '10%', }
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -1589,7 +1549,7 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 for dict in dictionary:
                     if dictionary[dict]:
                         if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
+                                    dictionary not in result_list
                         ):
                             if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
                                 result_list.append(dictionary)
@@ -1689,7 +1649,7 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -1826,7 +1786,7 @@ class DeviceVendorList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -1855,7 +1815,7 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 for dict in dictionary:
                     if dictionary[dict]:
                         if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
+                                    dictionary not in result_list
                         ):
                             if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
                                 result_list.append(dictionary)
@@ -1953,7 +1913,7 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -2093,7 +2053,7 @@ class DeviceModelList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'auto', }
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2122,7 +2082,7 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 for dict in dictionary:
                     if dictionary[dict]:
                         if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
+                                    dictionary not in result_list
                         ):
                             if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
                                 result_list.append(dictionary)
@@ -2217,7 +2177,7 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -2357,7 +2317,7 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
     columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
                'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'device_icon', 'device_gmap_icon']
     order_columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
-               'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'device_icon', 'device_gmap_icon']
+                     'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'device_icon', 'device_gmap_icon']
 
     def filter_queryset(self, qs):
         """
@@ -2374,7 +2334,7 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 for dict in dictionary:
                     if dictionary[dict]:
                         if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
+                                    dictionary not in result_list
                         ):
                             if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
                                 result_list.append(dictionary)
@@ -2401,23 +2361,28 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             try:
-                device_icon_img_url = "/media/"+ (dct['device_icon']) if \
+                device_icon_img_url = "/media/" + (dct['device_icon']) if \
                     "uploaded" in dct['device_icon'] \
                     else static("img/" + dct['device_icon'])
-                dct.update(device_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_icon_img_url))
+                dct.update(
+                    device_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                        device_icon_img_url))
             except Exception as e:
                 logger.exception(e)
 
             try:
-                device_gmap_icon_img_url = "/media/"+ (dct['device_gmap_icon']) if \
+                device_gmap_icon_img_url = "/media/" + (dct['device_gmap_icon']) if \
                     "uploaded" in dct['device_gmap_icon'] \
                     else static("img/" + dct['device_gmap_icon'])
-                dct.update(device_gmap_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_gmap_icon_img_url))
+                dct.update(
+                    device_gmap_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                        device_gmap_icon_img_url))
             except Exception as e:
                 logger.exception(e)
 
             dct.update(actions='<a href="/wizard/device-type/{0}/"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/type/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                        <a href="/type/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
         return qs
 
     def ordering(self, qs):
@@ -2473,7 +2438,7 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -2530,9 +2495,9 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         form = self.get_form(form_class)
         device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
         if (form.is_valid() and device_type_service_form.is_valid()):
-            return self.form_valid(form, device_type_service_form )
+            return self.form_valid(form, device_type_service_form)
         else:
-            return self.form_invalid(form, device_type_service_form )
+            return self.form_invalid(form, device_type_service_form)
 
 
 class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
@@ -2572,9 +2537,9 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         form = self.get_form(form_class)
         device_type_service_form = DeviceTypeServiceUpdateFormset(self.request.POST, instance=self.object, prefix='dts')
         if (form.is_valid() and device_type_service_form.is_valid()):
-            return self.form_valid(form, device_type_service_form )
+            return self.form_valid(form, device_type_service_form)
         else:
-            return self.form_invalid(form, device_type_service_form )
+            return self.form_invalid(form, device_type_service_form)
 
 
 class DeviceTypeDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2607,7 +2572,7 @@ class DevicePortList(PermissionsRequiredMixin, ListView):
             {'mData': 'value', 'sTitle': 'Value', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2676,7 +2641,7 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -2751,7 +2716,7 @@ class DeviceFrequencyListing(PermissionsRequiredMixin, ListView):
             {'mData': 'frequency_radius', 'sTitle': 'Frequency Radius (Km)', 'sWidth': 'auto', }
         ]
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -2775,8 +2740,8 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
         # search if the entered text is atleast 3 characters long.
         if sSearch and len(str(sSearch).strip()) >= 3:
-            #If character '\' is in entered text then replace the character '\' from entered text. Because it will create an error in sql query execution.
-            sSearch = sSearch.replace("\\","")
+            # If character '\' is in entered text then replace the character '\' from entered text. Because it will create an error in sql query execution.
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
 
@@ -2806,7 +2771,7 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             if "color_hex_value" in dct:
-                dct.update(value = dct["value"] + " MHz")
+                dct.update(value=dct["value"] + " MHz")
 
                 dct.update(
                     color_hex_value="<div style='float:left; display:block; height:20px; width:20px; background:{0}'>"
@@ -2814,9 +2779,9 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
                                     "<span style='margin-left: 5px;'>{0}</span>".
                     format(dct["color_hex_value"]))
 
-                dct.update(frequency_radius = "N/A"
-                            if not dct['frequency_radius']
-                            else dct['frequency_radius']
+                dct.update(frequency_radius="N/A"
+                if not dct['frequency_radius']
+                else dct['frequency_radius']
                 )
 
             dct.update(actions='<a href="/frequency/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
@@ -2842,7 +2807,7 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -2890,7 +2855,7 @@ class DeviceFrequencyDelete(PermissionsRequiredMixin, UserLogDeleteMixin, Delete
     obj_alias = 'value'
 
 
-#**************************************** Country *********************************************
+# **************************************** Country *********************************************
 class CountryListing(SuperUserRequiredMixin, ListView):
     """
     Render list of country list
@@ -2909,7 +2874,7 @@ class CountryListing(SuperUserRequiredMixin, ListView):
             {'mData': 'country_name', 'sTitle': 'Country', 'sWidth': 'auto', },
         ]
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -2920,8 +2885,8 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
     Render JQuery datatables for listing of country
     """
     model = Country
-    columns = ['country_name',]
-    order_columns = ['country_name',]
+    columns = ['country_name', ]
+    order_columns = ['country_name', ]
 
     def filter_queryset(self, qs):
         """
@@ -2934,7 +2899,7 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
         #if entered text is atleast 3 characters long, then search.
         if sSearch and len(str(sSearch).strip()) >= 3:
             # if character '\' is in entered text, then remove the character '\' from entered text. because '\' will raise the error in execution of sql query.
-            sSearch = sSearch.replace("\\","")
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -3058,7 +3023,7 @@ class StateListing(SuperUserRequiredMixin, ListView):
             {'mData': 'state_name', 'sTitle': 'State', 'sWidth': 'auto', },
         ]
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -3070,7 +3035,7 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
     """
     model = State
     columns = ['country__country_name', 'state_name']
-    order_columns = ['country__country_name', 'state_name',]
+    order_columns = ['country__country_name', 'state_name', ]
 
     def filter_queryset(self, qs):
         """
@@ -3083,7 +3048,7 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
         # if entered text is atleast 3 characters long, then search.
         if sSearch and len(str(sSearch).strip()) >= 3:
             # if character '\' is in entered text, then replace '\' from entered text because it will raise the error in sql query execution.
-            sSearch = sSearch.replace("\\","")
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -3207,7 +3172,7 @@ class CityListing(SuperUserRequiredMixin, ListView):
             {'mData': 'city_name', 'sTitle': 'City', 'sWidth': 'auto', },
         ]
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -3219,7 +3184,7 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
     """
     model = City
     columns = ['state__state_name', 'city_name']
-    order_columns = ['state__state_name', 'city_name',]
+    order_columns = ['state__state_name', 'city_name', ]
 
     def filter_queryset(self, qs):
         """
@@ -3229,7 +3194,7 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
-            sSearch = sSearch.replace("\\","")
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -3333,7 +3298,6 @@ class CityDelete(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
     obj_alias = 'city_name'
 
 
-
 class GisWizardDeviceTypeMixin(object):
     """
     Class based mixin for gis wizard device type create and update.
@@ -3349,20 +3313,20 @@ class GisWizardDeviceTypeMixin(object):
 
     def get_context_data(self, **kwargs):
         context = super(GisWizardDeviceTypeMixin, self).get_context_data(**kwargs)
-        if 'pk' in self.kwargs: # Update View
+        if 'pk' in self.kwargs:  # Update View
 
             device_type = DeviceType.objects.get(id=self.kwargs['pk'])
             skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.object.id})
 
             save_text = 'Update'
             context['skip_url'] = skip_url
-        else: # Create View
+        else:  # Create View
             save_text = 'Save'
 
         service_dict = dict()
         qs = Service.objects.all()
         for obj in qs:
-            service_dict.update( {obj.id: {'text': '%s(%s)'%(obj.alias, obj.name), 'select': False, 'remove': False}} )
+            service_dict.update({obj.id: {'text': '%s(%s)' % (obj.alias, obj.name), 'select': False, 'remove': False}})
         context['service_dict'] = json.dumps(service_dict)
         context['save_text'] = save_text
         return context
@@ -3424,15 +3388,16 @@ class GisWizardServiceListView(PermissionsRequiredMixin, ListView):
         return context
 
 
-
 class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
     model = DeviceTypeService
     required_permissions = ('device.view_devicetypeservice',)
-    columns = ['device_type', 'service__name', 'service__alias', 'parameter__parameter_description', 'service_data_sources__alias']
-    search_columns = ['device_type__alias', 'service__name', 'service__alias', 'parameter__parameter_description', 'service_data_sources__alias']
+    columns = ['device_type', 'service__name', 'service__alias', 'parameter__parameter_description',
+               'service_data_sources__alias']
+    search_columns = ['device_type__alias', 'service__name', 'service__alias', 'parameter__parameter_description',
+                      'service_data_sources__alias']
     order_columns = ['device_type', 'service__name', 'service__alias']
 
     def get_initial_queryset(self):
@@ -3456,8 +3421,11 @@ class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, Ba
             dct.update(service__name=obj.service.name)
             dct.update(service__alias=obj.service.alias)
             dct.update(parameter__parameter_description=obj.parameter.parameter_description)
-            dct.update(service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
-            dct.update(actions='<a href="/wizard/device-type/{0}/service/{1}/"><i class="fa fa-pencil text-dark"></i></a>'.format(self.kwargs['dt_pk'],obj.id))
+            dct.update(
+                service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
+            dct.update(
+                actions='<a href="/wizard/device-type/{0}/service/{1}/"><i class="fa fa-pencil text-dark"></i></a>'.format(
+                    self.kwargs['dt_pk'], obj.id))
             json_data.append(dct)
         return json_data
 
@@ -3497,34 +3465,36 @@ class DeviceTypeServiceUpdateView(PermissionsRequiredMixin, UpdateView):
         self.object = self.get_object()
         form_class = self.get_form_class()
         form = self.get_form(form_class)
-        dts_data_source_form = DeviceTypeServiceDataSourceUpdateFormset(self.request.POST, instance=self.object, prefix='dtsds')
+        dts_data_source_form = DeviceTypeServiceDataSourceUpdateFormset(self.request.POST, instance=self.object,
+                                                                        prefix='dtsds')
         if (form.is_valid() and dts_data_source_form.is_valid()):
-            return self.form_valid(form, dts_data_source_form )
+            return self.form_valid(form, dts_data_source_form)
         else:
-            return self.form_invalid(form, dts_data_source_form )
+            return self.form_invalid(form, dts_data_source_form)
 
 
 class GisWizardDeviceTypeServiceMixin(object):
     """
     Render device type update view. Mixin for gis wizard device type service update.
     """
+
     def get_success_url(self):
         if self.request.GET.get('show', None):
             return reverse('wizard-service-update', kwargs={'pk': self.object.id,
-                    'dt_pk': self.kwargs['dt_pk']})
+                                                            'dt_pk': self.kwargs['dt_pk']})
         else:
             return reverse('wizard-service-list', kwargs={'dt_pk': self.kwargs['dt_pk']})
 
     def get_context_data(self, **kwargs):
         context = super(GisWizardDeviceTypeServiceMixin, self).get_context_data(**kwargs)
-        if 'pk' in self.kwargs: # Update View
+        if 'pk' in self.kwargs:  # Update View
 
             device_type_service = DeviceTypeService.objects.get(id=self.kwargs['pk'])
             skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.kwargs['dt_pk']})
 
             save_text = 'Update'
             context['skip_url'] = skip_url
-        else: # Create View
+        else:  # Create View
             save_text = 'Save'
 
         context['save_text'] = save_text
@@ -3576,7 +3546,7 @@ def list_schedule_device(request):
     # In case of Event Create set object_id = None.
     obj_id = None
     if 'obj_id' in request.GET:
-        obj_id = request.GET['obj_id'] # update case
+        obj_id = request.GET['obj_id']  # update case
     # Get the entered text.
     sSearch = request.GET['sSearch']
     # Get the selected scheduling type.
@@ -3589,7 +3559,8 @@ def list_schedule_device(request):
         new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
         new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
     # Get the events which are overlapped.
-    over_lap_event = Event.objects.exclude(id=obj_id).exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
+    over_lap_event = Event.objects.exclude(id=obj_id).exclude(
+        Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
     # Get the device's id of overlapped events
     over_lap_device_ids = Device.objects.filter(event__in=over_lap_event).values_list("id", flat=True)
 
@@ -3597,7 +3568,7 @@ def list_schedule_device(request):
     org = request.user.userprofile.organization
     device_list = Device.objects.filter(organization__in=[org],
                                         is_added_to_nms=1,
-                                        is_deleted=0,)
+                                        is_deleted=0, )
     technology_id = None
     # Get the technology_id. And Get the devices of that technology.
     if request.GET['technology_id']:
@@ -3623,30 +3594,32 @@ def list_schedule_device(request):
         resultant_data = []
         for key in device_list:
             resultant_data.append({
-                "id" : key.id,
-                "value" : key.alias,
-                "text" : key.alias
+                "id": key.id,
+                "value": key.alias,
+                "text": key.alias
             })
 
-        # device_list = device_list.values_list('id', 'alias')
+            # device_list = device_list.values_list('id', 'alias')
 
     # if scheduling type is customer, then filter the devices from organization_customer_devices.
     elif scheduling_type == 'cust':
-        device_list = organization_customer_devices(organizations=[org], technology = technology_id, specify_ptp_type='all').\
-                    filter(device_alias__icontains=sSearch)
+        device_list = organization_customer_devices(organizations=[org], technology=technology_id,
+                                                    specify_ptp_type='all'). \
+            filter(device_alias__icontains=sSearch)
     # if scheduling type is network, then filter devices from organization_network_devices.
     elif scheduling_type == 'netw':
-        device_list = organization_network_devices(organizations=[org], technology = technology_id, specify_ptp_bh_type='all').\
-                    filter(device_alias__icontains=sSearch)
+        device_list = organization_network_devices(organizations=[org], technology=technology_id,
+                                                   specify_ptp_bh_type='all'). \
+            filter(device_alias__icontains=sSearch)
     # if scheduling type is backhaul, then filter devices from organization_backhaul_devices.
     elif scheduling_type == 'back':
-        device_list = organization_backhaul_devices(organizations=[org], technology = technology_id).\
-                    filter(device_alias__icontains=sSearch)
-    else:   # if no schedling type is available
+        device_list = organization_backhaul_devices(organizations=[org], technology=technology_id). \
+            filter(device_alias__icontains=sSearch)
+    else:  # if no schedling type is available
         device_list = device_list.filter(device_alias__icontains=sSearch)
 
     if scheduling_type != 'dety':
-    # excule the overlapping devices.
+        # excule the overlapping devices.
         device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias')
         total_count = device.count()
         device_items = list(device)
@@ -3661,6 +3634,7 @@ def list_schedule_device(request):
         "items": device_items
     }))
 
+
 def select_schedule_device(request):
     """
     Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
@@ -3672,12 +3646,14 @@ def select_schedule_device(request):
     scheduling_type = request.GET['scheduling_type'] if 'scheduling_type' in request.GET else ""
 
     if scheduling_type and scheduling_type == 'dety':
-        device_result = [{'id': dev.id, 'text': dev.alias } for dev in DeviceType.objects.filter(id__in=ids.split(','))]
+        device_result = [{'id': dev.id, 'text': dev.alias} for dev in DeviceType.objects.filter(id__in=ids.split(','))]
     else:
-        device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(','))]
+        device_result = [{'id': dev.id, 'device_alias': dev.device_alias} for dev in
+                         Device.objects.filter(id__in=ids.split(','))]
     return HttpResponse(json.dumps({
         'device_result': device_result
-        }) )
+    }))
+
 
 def filter_selected_device(request):
     """
@@ -3691,18 +3667,20 @@ def filter_selected_device(request):
     """
 
     ids = request.GET['ids']
-    obj_id = None   # create case
+    obj_id = None  # create case
     if 'obj_id' in request.GET:
         obj_id = request.GET['obj_id']  # update case
     new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
     new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
-    over_lap_event = Event.objects.exclude(id=obj_id).exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
+    over_lap_event = Event.objects.exclude(id=obj_id).exclude(
+        Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
     over_lap_device_ids = Device.objects.filter(event__in=over_lap_event).values_list("id", flat=True)
 
-    device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(',')).exclude(id__in=over_lap_device_ids)]
+    device_result = [{'id': dev.id, 'device_alias': dev.device_alias} for dev in
+                     Device.objects.filter(id__in=ids.split(',')).exclude(id__in=over_lap_device_ids)]
     return HttpResponse(json.dumps({
         'device_result': device_result
-        }))
+    }))
 
 
 class DeviceSyncHistoryList(ListView):
@@ -3744,7 +3722,7 @@ class DeviceSyncHistoryList(ListView):
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             if self.request.user.is_superuser:
-                datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+                datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
                 context['deadlock_status'] = deadlock_status
                 context['last_sync_time'] = last_sync_time
 
@@ -3772,7 +3750,7 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
-        queryset = DeviceSyncHistory.objects.all().values(*self.columns+['id'])
+        queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id'])
 
         # if self.request.user.is_superuser:
         #     queryset = DeviceSyncHistory.objects.filter().values(*self.columns+['id'])
@@ -3849,7 +3827,8 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             dct.update(actions='<a href="/device_sync_history/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="/device_sync_history/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+                                <a href="/device_sync_history/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.get('id')))
 
         return json_data
 
