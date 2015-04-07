@@ -2447,18 +2447,7 @@ function WhiteMapClass() {
 
 		    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) > -1) {
 
-			    	var labelInfoObject = gisPerformanceClass.getKeyValue(
-			    			bs_marker.bsInfo,
-			    			last_selected_label,
-			    			false,
-			    			bs_marker.item_index
-		    			),
-			    		labelHtml = "";
-
-			    	if(labelInfoObject) {
-                		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                        labelHtml += shownVal;
-                    }
+                    var labelHtml = bs_ss_devices[i].alias;
 
 			    	// If any html created then show label on ss
 			    	if(labelHtml) {
