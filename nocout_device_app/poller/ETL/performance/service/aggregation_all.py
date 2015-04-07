@@ -139,7 +139,7 @@ def quantify_perf_data(host_specific_data):
             current_value = doc.get('current_value')
         elif read_from == 'mongodb':
             war, cric = doc.get('meta').get('war'), doc.get('meta').get('cric')
-            current_value = doc.get('meta').get('cur')
+            current_value = doc.get('data')[0].get('value')
 	try:
 	    current_value = eval(current_value)
 	except:
@@ -222,6 +222,10 @@ def quantify_perf_data(host_specific_data):
             existing_doc = existing_doc[0]
             values_list = [existing_doc.get('max'), aggr_data.get('max'), 
                     existing_doc.get('min'), aggr_data.get('min')]
+	    # we calculate values for latency as 0 for pd = 100% cases
+	    # we need to remove those values for min, max calculations
+	    if str(ds) == 'rta':
+		values_list = [x for x in values_list if x != 0]
             if service in wimax_mrotek_services or '_status' in service or '_invent' in service:
                 occur = collections.defaultdict(int)
                 for val in values_list:
@@ -259,7 +263,6 @@ def quantify_perf_data(host_specific_data):
             # dont change any thing
             pass
         host_specific_aggregated_data.append(aggr_data)
-    
     return host_specific_aggregated_data
 
 
