@@ -54,9 +54,10 @@ def check_cambium_port_speed_status(item, _no_params, info):
 	if info[0][0]:
 	    port_stats = info[0][0]
 	    port_speed_value = get_num(port_stats)
-	    port_speed_value = port_speed_value + "Mbps"
-            state = 0
-            infotext = "%s" % (port_speed_value)
+	    if port_speed_value:
+	    	port_speed_value = port_speed_value + "Mbps"
+            	state = 0
+            	infotext = "%s" % (port_speed_value)
 
     except ValueError:
         infotext = "type_mismatch_value"
