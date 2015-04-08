@@ -22,6 +22,10 @@ from alarm_escalation.models import EscalationStatus, EscalationLevel
 
 from inventory.utils import util as inventory_utils
 from scheduling_management.views import get_today_event_list
+from inventory.tasks import bulk_update_create
+import logging
+logger = logging.getLogger(__name__)
+
 
 
 status_dict = {
@@ -81,11 +85,15 @@ def raise_alarms(service_status_list, org, required_levels):
 
     g_jobs = list()
     ret = False
-
+    new_data_create = list()
+    new_data_update = list()
     s_sds = ServiceSpecificDataSource.objects.prefetch_related(
         'service_data_sources',
         'service'
     ).all()
+
+    # So that mysql can't query again and again in below loop (Data is collected in this Query set)
+    escalation_status_data = EscalationStatus.objects.all()
 
     for service_status in service_status_list:
 
@@ -125,7 +133,7 @@ def raise_alarms(service_status_list, org, required_levels):
 
         if service_level_list.exists():  # if there are actually a level corrosponding to this alarm - lets talk
             # device, device_type, service(get from service_status) and service_data_source(get from service_status).
-            obj, created = EscalationStatus.objects.get_or_create(
+            obj, created = escalation_status_data.get_or_create(
                 device=device,
                 service=service,
                 service_data_source=service_data_source,
@@ -138,7 +146,6 @@ def raise_alarms(service_status_list, org, required_levels):
                     'organization': org
                 }
             )
-
             # if object is get & not created,
             # then update the severity and ip_address of object as per the severity and ip_address of service_status.
             if not created:
@@ -187,8 +194,7 @@ def raise_alarms(service_status_list, org, required_levels):
 
                 obj.old_status = new_status
                 obj.new_status = old_status
-                obj.save()
-
+                new_data_update.append(obj)
             elif created:  # the object has been created for the first time
                 # if the object has been just created
                 # check for the current status as in good or bad
@@ -203,22 +209,38 @@ def raise_alarms(service_status_list, org, required_levels):
                         g_jobs.append(
                             alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
                         )
+                new_data_create.append(obj)                        
 
             else:  # don't know what this means
                 continue
-
-
-
+            # new_data.append(obj)
         else:
             continue
 
-    if len(g_jobs):
-        job = group(g_jobs)
-        result = job.apply_async()
-        for r in result.get():
-            ret |= r
+    # bulk_data_list.append(EscalationStatus(**new_data))
+    if len(new_data_create):
+        # call the method to bulk create the onjects.
+        bulk_update_create.delay(bulky=new_data_create,
+                                 action='create',
+                                 model=EscalationStatus)
+    elif len(new_data_update):
+        bulk_update_create.delay(bulky=new_data_update,
+                                 action='update',
+                                 model=EscalationStatus)
+    else:
+        pass
 
+    if not(g_jobs):
         return ret
+    elif len(g_jobs):
+        job = group(g_jobs)
+        try:
+            result = job.apply_async()
+            # for r in result.get():
+            #     ret |= r
+        except Exception as e:
+            logger.exception(e.message)
+        return True
 
     return True
 
@@ -233,19 +255,29 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
     :param levels:
     :return:
     """
+    changed=False
+    bulkyobject= list()
+    g_jobs = list()
+    ret = False
     for level in levels:
+        method_to_call_email = ''
+        method_to_call_phone = ''
         if getattr(alarm_object, 'l%d_email_status' % level.name) == 1:
             # this level has been notified
             if is_bad:
                 continue
             else:
-                alert_emails_for_good_performance.delay(alarm=alarm_object, level=level)
+                method_to_call_email=alert_emails_for_good_performance
+                # alert_emails_for_good_performance.delay(alarm=alarm_object, level=level)
                 setattr(alarm_object, 'l%d_email_status' % level.name, 0)
+                changed=True
         elif getattr(alarm_object, 'l%d_email_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
-                alert_emails_for_bad_performance.delay(alarm=alarm_object, level=level)
+                method_to_call_email=alert_emails_for_bad_performance
+                # alert_emails_for_bad_performance.delay(alarm=alarm_object, level=level)
                 setattr(alarm_object, 'l%d_email_status' % level.name, 1)
+                changed=True
             else:
                 continue
         if getattr(alarm_object, 'l%d_phone_status' % level.name) == 1:
@@ -253,19 +285,38 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
             if is_bad:
                 continue
             else:
-                alert_phones_for_good_performance.delay(alarm=alarm_object, level=level)
+                method_to_call_phone=alert_phones_for_good_performance
+                # alert_phones_for_good_performance.delay(alarm=alarm_object, level=level)
                 setattr(alarm_object, 'l%d_phone_status' % level.name, 0)
+                changed=True
         elif getattr(alarm_object, 'l%d_phone_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
-                alert_phones_for_bad_performance.delay(alarm=alarm_object, level=level)
+                method_to_call_phone=alert_phones_for_bad_performance
+                # alert_phones_for_bad_performance.delay(alarm=alarm_object, level=level)
                 setattr(alarm_object, 'l%d_phone_status' % level.name, 1)
+                changed=True
             else:
                 continue
-        else:
-            continue
-    alarm_object.save()
-    return True
+        # else:
+        #     continue
+         
+        if method_to_call_email and method_to_call_phone:
+            g_jobs.append(method_to_call_email.s(alarm=alarm_object, level=level))
+            g_jobs.append(method_to_call_phone.s(alarm=alarm_object, level=level))
+    # alarm_object.save()
+    if changed:
+        bulkyobject.append(alarm_object)
+        bulk_update_create.delay(bulky=bulkyobject,
+                                     action='update',
+                                     model=EscalationStatus)
+
+    if not len(g_jobs):
+        return ret
+    else:
+        job = group(g_jobs)
+        result = job.apply_async()
+        return True
 
 
 @task
@@ -280,6 +331,7 @@ def alert_emails_for_bad_performance(alarm, level):
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+    return True
 
 
 @task
@@ -305,6 +357,7 @@ def alert_emails_for_good_performance(alarm, level):
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/good_message.html', context_dict)
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+    return True
 
 
 @task
@@ -325,7 +378,7 @@ def check_device_status():
     """
     g_jobs = list()
     ret = False
-
+    count = 0
     service_list = []
     service_data_source_list = []
 
@@ -348,7 +401,6 @@ def check_device_status():
             ).exclude(id__in=device_id_list)
 
             machine_dict = prepare_machines(device_list_qs)
-
             for machine_name, device_list in machine_dict.items():
                 service_status_list = ServiceStatus.objects.filter(
                     device_name__in=device_list,
@@ -370,8 +422,8 @@ def check_device_status():
 
     job = group(g_jobs)
     result = job.apply_async()
-    for r in result.get():
-        ret |= r
+    # for r in result.get():
+    #     ret |= r
 
     return True
 
