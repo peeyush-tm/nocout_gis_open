@@ -274,7 +274,7 @@
 
     {% if form %}
     <script>
-
+    var current_tech = "";
         {% if base_station_has_sector %}
             function delete_and_show(){
                 if (confirm('Remove relationship of Sector and Base Station?')) {
@@ -284,7 +284,14 @@
         {% endif %}
 
         $(document).ready(function() {
+
+            current_tech = "{{ selected_technology }}" ? Number("{{ selected_technology }}") : 0;
             
+            if(current_tech == 2){
+                sub_module_title_key_dict["form_2"] = "sector_configured_on";
+                sub_module_title_key_dict["form_3"] = "sector_configured_on";
+            }
+
             $("#id_update_and_show").on("click", function(e) {
                 e.preventDefault();
                 $('#id_sector_form').attr('action', "?show=True").submit();
