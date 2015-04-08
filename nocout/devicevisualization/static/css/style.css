@@ -488,3 +488,9 @@ iframe {
 .infoBox {
     word-break: break-word;
 }
+.deviceWellContainer .well-sm {
+    padding: 5px;
+}
+#sideInfoContainer #sideInfo .panel-body {
+    padding: 5px;
+}
