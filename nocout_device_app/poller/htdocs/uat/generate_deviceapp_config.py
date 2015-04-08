@@ -635,6 +635,7 @@ def prepare_rules(devices):
 
 def get_settings():
     global snmp_check_interval
+    snmp_communities_db, snmp_ports_db = [], []
     data = []
     T = namedtuple('host_rules', [
         'ping_levels_db', 'default_checks', 'snmp_ports_db',
@@ -1122,12 +1123,13 @@ def dict_rows(cur):
 
 
 def write_rules_file(settings_out, final_active_checks):
-    global default_snmp_ports
-    global default_snmp_communities
+    #global default_snmp_ports
+    #global default_snmp_communities
+    snmp_communities_db, snmp_ports_db = [], []
     if len(settings_out.snmp_communities_db):
-        default_snmp_communities = settings_out.snmp_communities_db
+        snmp_communities_db = settings_out.snmp_communities_db
     if len(settings_out.snmp_ports_db):
-        default_snmp_ports = settings_out.snmp_ports_db
+        snmp_ports_db = settings_out.snmp_ports_db
     with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")
@@ -1143,9 +1145,9 @@ def write_rules_file(settings_out, final_active_checks):
 
         f.write("checks += %s" % pformat(settings_out.default_checks))
         f.write("\n\n\n")
-        f.write("snmp_ports += %s" % pformat(default_snmp_ports))
+        f.write("snmp_ports += %s" % pformat(snmp_ports_db))
         f.write("\n\n\n")
-        f.write("snmp_communities += %s" % pformat(default_snmp_communities))
+        f.write("snmp_communities += %s" % pformat(snmp_communities_db))
         f.write("\n\n\n")
 
         for key, val in extra_service_conf.iteritems():
