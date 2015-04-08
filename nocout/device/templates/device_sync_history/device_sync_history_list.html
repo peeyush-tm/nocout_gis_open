@@ -16,24 +16,26 @@
 {% block content_title %}Device Sync History{% endblock %}
 {% block content_description %}List of device sync history{% endblock %}
 {% block page_setting_block %}
-    <span class="pull-right">
-        <div class="btn-group">
-            {% if last_sync_time %}
-                <i class="green-dot">Last Sync Run At: {{ last_sync_time }} | </i>
-            {% else %}
-                <i class="red-dot">Last Sync Run At: Yet to be run. | </i>
-            {% endif %}
-        </div>
-        <div class="btn-group">
-            {% if deadlock_status == 'yes' %}
-                <i class="red-dot">Sync Status: <a class="" href="#" onclick="remove_sync_deadlock();"><i class="fa fa-times-circle red-dot" title="Remove deadlock in sync process."></i></a> | </i>
-                <i class="red-dot">Run Sync: </i><a class="" href="#" > <i class="fa fa-refresh red-dot" title="Something is wrong. Can't run sync right now."></i></a>
-            {% else %}
-                <i class="green-dot">Sync Status: <a class=""><i class="fa fa-check-circle green-dot " title="No deadlock exist in sync process."></i></a> | </i>
-                <i class="green-dot">Run Sync: </i><a class="" href="#" onclick="sync_devices();"> <i class="fa fa-refresh green-dot" title="Sync device for monitoring."></i></a>
-            {% endif %}
-        </div>
-    </span>
+    {% if request.user.is_superuser %}
+        <span class="pull-right">
+            <div class="btn-group">
+                {% if last_sync_time %}
+                    <i class="green-dot">Last Sync Run At: {{ last_sync_time }} | </i>
+                {% else %}
+                    <i class="red-dot">Last Sync Run At: Yet to be run. | </i>
+                {% endif %}
+            </div>
+            <div class="btn-group">
+                {% if deadlock_status == 'yes' %}
+                    <i class="red-dot">Sync Status: <a class="" href="#" onclick="remove_sync_deadlock();"><i class="fa fa-times-circle red-dot" title="Remove deadlock in sync process."></i></a> | </i>
+                    <i class="red-dot">Run Sync: </i><a class="" href="#" > <i class="fa fa-refresh red-dot" title="Something is wrong. Can't run sync right now."></i></a>
+                {% else %}
+                    <i class="green-dot">Sync Status: <a class=""><i class="fa fa-check-circle green-dot " title="No deadlock exist in sync process."></i></a> | </i>
+                    <i class="green-dot">Run Sync: </i><a class="" href="#" onclick="sync_devices();"> <i class="fa fa-refresh green-dot" title="Sync device for monitoring."></i></a>
+                {% endif %}
+            </div>
+        </span>
+    {% endif %}
 {% endblock %}
 {% block content %}
     <div class="box border lite">
