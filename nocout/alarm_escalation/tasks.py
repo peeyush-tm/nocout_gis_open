@@ -378,7 +378,6 @@ def check_device_status():
     """
     g_jobs = list()
     ret = False
-    count = 0
     service_list = []
     service_data_source_list = []
 
