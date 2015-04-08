@@ -2193,8 +2193,9 @@ function devicePlottingClass_gmap() {
 						ss_info_dict = ss_marker_obj.data.item_index > -1 ? ss_infoWindow_content : ss_marker_obj.data.param.sub_station,
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
 						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_info_dict,"antenna_height",true,ss_item_info_index),
-						ckt_id_val = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_info_index),
-						ss_ip_address = gisPerformanceClass.getKeyValue(ss_info_dict,"ss_ip",true,ss_item_info_index),
+						// ckt_id_val = gisPerformanceClass.getKeyValue(ss_info_dict,"cktid",true,ss_item_info_index),
+						// ss_ip_address = gisPerformanceClass.getKeyValue(ss_info_dict,"ss_ip",true,ss_item_info_index),
+						ckt_id_val = ss_marker_obj.data.circuit_id ? ss_marker_obj.data.circuit_id : "",
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "",
 						ss_pl = ss_marker_obj.data.pl ? ss_marker_obj.data.pl : "",
@@ -2237,7 +2238,8 @@ function devicePlottingClass_gmap() {
 				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	ss_device_id 	 : 	ss_marker_obj.device_id,
-				    	ss_ip 	 		 : 	ss_ip_address,
+				    	// ss_ip 	 		 : 	ss_ip_address,
+				    	ss_ip 	 		 :  ss_marker_obj.data.substation_device_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
 				    	cktId 			 :  ckt_id_val,
 				    	zIndex 			 : 	200,
@@ -2377,14 +2379,7 @@ function devicePlottingClass_gmap() {
 
 	    	if(last_selected_label && not_ss_param_labels.indexOf(last_selected_label) > -1) {
 
-	    		var item_index = bs_marker.item_index > -1 ? bs_marker.item_index : 0,
-		    		labelInfoObject = gisPerformanceClass.getKeyValue(bs_marker.bsInfo,last_selected_label,false, item_index),
-                	labelHtml = "";
-
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
-                }
+	    		var labelHtml = bs_ss_devices[i].alias;
 
 		    	// If any html created then show label on ss
 		    	if(labelHtml) {
@@ -2664,6 +2659,10 @@ function devicePlottingClass_gmap() {
 				    		if(!allMarkersObject_gmap['sub_station'][key].map) {
 				      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
 				    		}
+
+				    		if(tooltipInfoLabel[key] && !tooltipInfoLabel[key].map) {
+			      				tooltipInfoLabel[key].setMap(mapInstance);
+			      			}
 				    	} else {
 				    		// If SS Marker shown then hide the SS Marker
 				    		if(allMarkersObject_gmap['sub_station'][key].map) {
@@ -2703,6 +2702,9 @@ function devicePlottingClass_gmap() {
 		    	var bs_marker = allMarkersObject_gmap['base_station'][key],
 		      		isMarkerExist = mapInstance.getBounds().contains(bs_marker.getPosition());
 	      		if(isMarkerExist) {
+	      			if(tooltipInfoLabel[key] && !tooltipInfoLabel[key].map) {
+	      				tooltipInfoLabel[key].setMap(mapInstance);
+	      			}
 		    		// If BS Marker not shown then show the BS Marker
 		    		if(!allMarkersObject_gmap['base_station'][key].map) {
 		      			allMarkersObject_gmap['base_station'][key].setMap(mapInstance);
@@ -4536,7 +4538,14 @@ function devicePlottingClass_gmap() {
 	 */
 	this.addPinPoint = function(index, pos) {
 		if($('#pin-point-'+index+'').length == 0) {
-			$('#pin-points-container').append('<div id="pin-point-'+index+'" class="pin-point col-md-5" pointid="'+ index +'"><span class="pin-point-name">Point '+ index +' - <input name="pinpoint'+ index +'" class="userpinpoint" type="text" size="2" value="0" /> m at <span class="point-distance'+ index +'">'+ parseFloat(latLongArray[index][3]).toFixed(2) +'</span> Km</span>  <span id="pin-point-remove'+index+'" class="pin-point-remove">X</span></div>');
+			var pin_point_html = '<div id="pin-point-'+index+'" class="pin-point col-md-5" \
+								  pointid="'+ index +'"><span class="pin-point-name">Point \
+								  '+ index +' - <input name="pinpoint'+ index +'" class="userpinpoint" \
+								  type="text" size="2" value="0" /> m at <span class="point-distance'+ index +'">\
+								  '+ parseFloat(latLongArray[index][3]).toFixed(2) +'</span> Km</span>\
+								  <span id="pin-point-remove'+index+'" class="pin-point-remove">X</span></div>';
+
+			$('#pin-points-container').append(pin_point_html);
 			
 			$('input[name="pinpoint'+ index +'"]').change(function() {
 				var height =  parseFloat($(this).val());
@@ -4571,23 +4580,25 @@ function devicePlottingClass_gmap() {
 	 */
 	this.heightChanged = function() {
 		
-		HEIGHT_CHANGED = true;
-		isDialogOpen = false;
-		latLongArrayCopy = latLongArray;
-		antenaHight1 = $("#antinaVal1").val();
-		antenaHight2 = $("#antinaVal2").val();
-		clear_factor = $("#clear-factor_val").val();
+		if((antenaHight1 != $("#antinaVal1").val()) || (antenaHight2 != $("#antinaVal2").val())) {
+			HEIGHT_CHANGED = true;
+			isDialogOpen = false;
+			latLongArrayCopy = latLongArray;
+			antenaHight1 = $("#antinaVal1").val();
+			antenaHight2 = $("#antinaVal2").val();
+			clear_factor = $("#clear-factor_val").val();
 
-		var sector_ss_obj = {
-			"sector_name" : bts1_name,
-			"ss_name" : bts2_name,
-			"sector_Alias" : fresnelData.bts1_alias,
-			"ss_customerName" : fresnelData.bts2_customerName,
-			"ss_circuitId" : fresnelData.bts2_circuitId,
-			"isBSLeft" : fresnel_isBSLeft
-		};
+			var sector_ss_obj = {
+				"sector_name" : bts1_name,
+				"ss_name" : bts2_name,
+				"sector_Alias" : fresnelData.bts1_alias,
+				"ss_customerName" : fresnelData.bts2_customerName,
+				"ss_circuitId" : fresnelData.bts2_circuitId,
+				"isBSLeft" : fresnel_isBSLeft
+			};
 
-		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
+			gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
+		}
 	};
 
 	/**
@@ -5762,6 +5773,110 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
+	 * This function creates HTML for live polling selected devices
+	 * @method createLivePollingHtml
+	 * @param polygonSelectedDevices {Array}, It contains the selected devices(markers) object array
+	 * @return devicesTemplate {String}, It contains the HTML string
+	 */
+	this.createLivePollingHtml = function(polygonSelectedDevices) {
+		var devicesTemplate = "",
+			num_counter = 0;
+
+		if(!polygonSelectedDevices || polygonSelectedDevices.length == 0) {
+			return devicesTemplate;
+		}
+
+		devicesTemplate = "<div class='deviceWellContainer'>";
+
+		for(var i=0;i<polygonSelectedDevices.length;i++) {
+			
+			var new_device_name = "";
+			var current_technology = polygonSelectedDevices[i].technology ? $.trim(polygonSelectedDevices[i].technology.toLowerCase()) : "";
+			
+			if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
+				new_device_name = polygonSelectedDevices[i].device_name.split(".");
+				new_device_name = new_device_name.join("-");
+			} else {
+				new_device_name = polygonSelectedDevices[i].device_name;
+			}
+
+			var devices_counter = "";
+			
+			if(ptp_tech_list.indexOf(current_technology) > -1) {
+				if(polygonSelectedDevices[i].pointType == 'sub_station') {
+					devices_counter = polygonSelectedDevices[i].bs_sector_device;
+				} else {
+					devices_counter = polygonSelectedDevices[i].device_name;
+				}
+
+                if(!polled_device_count[devices_counter]) {
+					polled_device_count[devices_counter]  = 1;
+				} else {
+					polled_device_count[devices_counter] += 1;
+				}
+			}
+
+			if((ptp_tech_list.indexOf(current_technology) > -1) && polygonSelectedDevices[i].pointType == 'sub_station') {
+
+				if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
+					var new_device_name2 = polygonSelectedDevices[i].bs_sector_device.split(".");
+					new_device_name2 = new_device_name2.join("-");
+				} else {
+					var new_device_name2 = polygonSelectedDevices[i].bs_sector_device;
+				}
+
+				if(polled_device_count[devices_counter] <= 1) {
+					var display_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].sector_ip;
+					num_counter++;
+					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>'+num_counter+'.) NE. -'+display_name+'</h5>';
+					devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
+					devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
+					devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
+				}
+				var ss_display_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].ss_ip;
+				num_counter++;
+				devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) FE. -'+ss_display_name+'</h5>';
+				devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+				devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
+				devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+
+			} else {
+				var device_end_txt = "",
+					point_name = "";
+
+                if(polled_device_count[devices_counter] == 1) {
+					if(ptp_tech_list.indexOf(current_technology) > -1) {
+						if(polygonSelectedDevices[i].pointType == 'sub_station') {
+							device_end_txt = "FE";
+							point_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].ss_ip;
+						} else {
+							device_end_txt = "NE";
+							point_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].sectorName;
+						}
+						num_counter++;
+						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+device_end_txt+' - '+point_name+'</h5>';
+						devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+						devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
+						devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+					}
+				} else {
+
+					point_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].ss_ip;
+					num_counter++;
+					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+point_name+'</h5>';
+					devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+					devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
+					devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+				}
+			}
+		}
+
+		devicesTemplate += "</div>";
+
+		return devicesTemplate;
+	};
+
+	/**
      * This function makes an array from the selected filters
      * @method makeFiltersArray
      * @param mapPageType {String}, It contains the string value by which we can get the page information
@@ -6449,94 +6564,7 @@ function devicePlottingClass_gmap() {
 								bootbox.alert("Max. limit for selecting devices is 200.");
 
 							} else {
-
-								var devicesTemplate = "<div class='deviceWellContainer'>";
-								var num_counter = 0;
-								for(var i=0;i<polygonSelectedDevices.length;i++) {
-									
-									var new_device_name = "";
-									var current_technology = polygonSelectedDevices[i].technology ? $.trim(polygonSelectedDevices[i].technology.toLowerCase()) : "";
-									
-									if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
-										new_device_name = polygonSelectedDevices[i].device_name.split(".");
-										new_device_name = new_device_name.join("-");
-									} else {
-										new_device_name = polygonSelectedDevices[i].device_name;
-									}
-
-									var devices_counter = "";
-									
-									if(ptp_tech_list.indexOf(current_technology) > -1) {
-										if(polygonSelectedDevices[i].pointType == 'sub_station') {
-											devices_counter = polygonSelectedDevices[i].bs_sector_device;
-										} else {
-											devices_counter = polygonSelectedDevices[i].device_name;
-										}
-
-	                                    if(!polled_device_count[devices_counter]) {
-											polled_device_count[devices_counter]  = 1;
-										} else {
-											polled_device_count[devices_counter] += 1;
-										}
-									}
-
-									if((ptp_tech_list.indexOf(current_technology) > -1) && polygonSelectedDevices[i].pointType == 'sub_station') {
-									// if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
-
-										if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
-											var new_device_name2 = polygonSelectedDevices[i].bs_sector_device.split(".");
-											new_device_name2 = new_device_name2.join("-");
-										} else {
-											var new_device_name2 = polygonSelectedDevices[i].bs_sector_device;
-										}
-
-										if(polled_device_count[devices_counter] <= 1) {
-											var display_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].sector_ip;
-											num_counter++;
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>'+num_counter+'.) Near End -'+display_name+'</h5>';
-											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
-											devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
-											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
-										}
-										var ss_display_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].ss_ip;
-										num_counter++;
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) Far End -'+ss_display_name+'</h5>';
-										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
-										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
-
-									} else {
-										var device_end_txt = "",
-											point_name = "";
-
-                                        if(polled_device_count[devices_counter] == 1) {
-											if(ptp_tech_list.indexOf(current_technology) > -1) {
-												if(polygonSelectedDevices[i].pointType == 'sub_station') {
-													device_end_txt = "Far End";
-													point_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].ss_ip;
-												} else {
-													device_end_txt = "Near End";
-													point_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].sectorName;
-												}
-												num_counter++;
-												devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+device_end_txt+' - '+point_name+'</h5>';
-												devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-												devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
-												devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
-											}
-										} else {
-
-											point_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].ss_ip;
-											num_counter++;
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+point_name+'</h5>';
-											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-											devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
-											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
-										}
-									}
-								}
-
-								devicesTemplate += "</div>";
+								var devicesTemplate = gmap_self.createLivePollingHtml(polygonSelectedDevices);
 
 								$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html(devicesTemplate);
 							}
@@ -9361,7 +9389,7 @@ function devicePlottingClass_gmap() {
 		if(not_ss_param_labels.indexOf(last_selected_label) > -1) {
 			elements_type = 'base_station';
 			remove_element_keys = 'sub_station';
-			dataset_key = 'bsInfo';
+			dataset_key = 'alias';
 			param_label_gritter_title = 'BS Parameter Label';
 		}
 
@@ -9382,16 +9410,20 @@ function devicePlottingClass_gmap() {
 		if(Object.keys(tooltipInfoLabel).length < 1) {
 
 			for(key in markers_list) {
-
 				var marker = markers_list[key],
-					labelHtml = "",
-					item_index = marker.item_index > -1 ? marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false,item_index);
+					labelHtml = "";
 
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
-                }
+				if(elements_type == 'base_station') {
+					labelHtml = marker[dataset_key];
+				} else {
+					var item_index = marker.item_index > -1 ? marker.item_index : 0,
+						labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false,item_index);
+
+	            	if(labelInfoObject) {
+	            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+	                    labelHtml += shownVal;
+	                }
+				}
 
                 // If labelHtml
                 if(labelHtml) {
@@ -9411,10 +9443,9 @@ function devicePlottingClass_gmap() {
 						
 
 						ccpl_map.addPopup(toolTip_infobox);
-
-						if(hide_flag) {
-							toolTip_infobox.hide();
-						}
+						// if(hide_flag) {
+						// 	toolTip_infobox.hide();
+						// }
 
 						// Remove height prop from div's
 	        	    	$('.olPopupContent').css('height','');
@@ -9433,7 +9464,7 @@ function devicePlottingClass_gmap() {
 	                        -120,
 	                        -10,
 	                        marker.getPosition(),
-	                        hide_flag
+	                        false
 	                    );
 
 		                toolTip_infobox.open(mapInstance, marker);
@@ -9443,18 +9474,21 @@ function devicePlottingClass_gmap() {
             	}
 			}
 		} else {
-
 			for(key in markers_list) {
 				var marker = markers_list[key],
-					labelHtml = "",
-					item_index = marker.item_index > -1 ? marker.item_index : 0,
-					labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false, item_index);
+					labelHtml = "";
 
-            	if(labelInfoObject) {
-            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
-                    labelHtml += shownVal;
+				if(elements_type == 'base_station') {
+					labelHtml = marker[dataset_key];
+				} else {
+					var item_index = marker.item_index > -1 ? marker.item_index : 0,
+						labelInfoObject = gisPerformanceClass.getKeyValue(marker[dataset_key],last_selected_label,false, item_index);
+
+	            	if(labelInfoObject) {
+	            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+	                    labelHtml += shownVal;
+	                }
                 }
-
                 // if labelHtml
                 if(labelHtml) {
 
@@ -9476,9 +9510,9 @@ function devicePlottingClass_gmap() {
 
 							ccpl_map.addPopup(toolTip_infobox);
 
-							if(hide_flag) {
-								toolTip_infobox.hide();
-							}
+							// if(hide_flag) {
+							// 	toolTip_infobox.hide();
+							// }
 
 							// Remove height prop from div's
 		        	    	$('.olPopupContent').css('height','');
@@ -9503,7 +9537,7 @@ function devicePlottingClass_gmap() {
 		                        -120,
 		                        -10,
 		                        marker.getPosition(),
-		                        hide_flag
+		                        false
 		                    );
 
 			                toolTip_infobox.open(mapInstance, marker);

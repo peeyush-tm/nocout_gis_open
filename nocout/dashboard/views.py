@@ -195,13 +195,6 @@ class DashbaordSettingsDeleteView(SuperUserRequiredMixin, UserLogDeleteMixin, De
 class PerformanceDashboardMixin(object):
     """
     Provide common method get for Performance Dashboard.
-
-    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
-
-        - data_source_config
-        - technology
-        - devices_method_to_call
-        - devices_method_kwargs
     """
 
     def get(self, request):
@@ -211,13 +204,22 @@ class PerformanceDashboardMixin(object):
         :param request:
         :return Http response object:
         """
-        data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh = self.get_init_data()
+        data_source_config, tech_name, is_bh = self.get_init_data()
         template_dict = {
             'data_sources': json.dumps(data_source_config.keys()),
             'parallel_calling_count' : PERIODIC_POLL_PROCESS_COUNT
         }
+        try:
+            technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        except Exception, e:
+            technology = ""
 
         data_source = request.GET.get('data_source')
+        data_source=str(data_source)
+        dashboard_name=data_source+'_'+tech_name
+        if is_bh:
+            dashboard_name=dashboard_name+'_bh'
+        
         if not data_source:
             return render(self.request, self.template_name, dictionary=template_dict)
 
@@ -237,23 +239,26 @@ class PerformanceDashboardMixin(object):
                 "success": 0
             }))
 
+
         # Get User's organizations
         # (admin : organization + sub organization)
         # (operator + viewer : same organization)
         user_organizations = logged_in_user_organizations(self)
-        if 'rssi' in data_source and is_bh:
-            devices_method_kwargs = dict(specify_ptp_bh_type='all')
+        dashboard_status_dict, processed_for_key = view_range_status(dashboard_name, user_organizations)
+        chart_series = []
+        colors = []
+        response_dict ={
+                "message": "Corresponding Dashboard data is not available.",
+                "success": 0
+            }
+        if len(dashboard_status_dict):
+            # Get the dictionay of chart data for the dashbaord.
+            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, dashboard_status_dict)
+            # Add timestamp with API response
+            if 'timestamp' not in response_dict['data']['objects']:
+                response_dict['data']['objects']['timestamp'] = ''
 
-        # Get Devices of User's Organizations. [and are Sub Station]
-        user_devices = devices_method_to_call(user_organizations, technology, **devices_method_kwargs)
-
-        service_status_results = get_service_status_results(
-            user_devices, model=model, service_name=service_name, data_source=data_source
-        )
-
-        range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
-
-        response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+            response_dict['data']['objects']['timestamp'] = processed_for_key
 
         return HttpResponse(json.dumps(response_dict))
 
@@ -261,17 +266,12 @@ class PerformanceDashboardMixin(object):
 class WiMAX_Performance_Dashboard(PerformanceDashboardMixin, View):
     """
     The Class based View to get performance dashboard page requested.
-
     """
 
     template_name = 'rf_performance/wimax.html'
-
     def get_init_data(self):
         """
-        Handles the get request
-
-        :param request:
-        :return Http response object:
+        The Class based View to get performance dashboard page requested.
         """
         data_source_config = {
             'ul_rssi': {'service_name': 'wimax_ul_rssi', 'model': ServiceStatus},
@@ -281,20 +281,16 @@ class WiMAX_Performance_Dashboard(PerformanceDashboardMixin, View):
             'modulation_ul_fec': {'service_name': 'wimax_modulation_ul_fec', 'model': ServiceStatus},
             'modulation_dl_fec': {'service_name': 'wimax_modulation_dl_fec', 'model': ServiceStatus},
         }
-        technology = DeviceTechnology.objects.get(name__icontains='WiMAX').id
-        devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='all')
-        is_bh = False
-        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
+        tech_name = 'WiMAX'
+        is_bh = False        
+        return data_source_config, tech_name, is_bh
 
 
 class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
     """
     The Class based View to get performance dashboard page requested.
-
     """
     template_name = 'rf_performance/pmp.html'
-
     def get_init_data(self):
         """
         Provide data for mixin's get method.
@@ -307,20 +303,17 @@ class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
             'ul_rssi': {'service_name': 'cambium_ul_rssi', 'model': ServiceStatus},
             'dl_rssi': {'service_name': 'cambium_dl_rssi', 'model': ServiceStatus},
         }
-        technology = DeviceTechnology.objects.get(name='PMP').id
-        devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='all')
+        tech_name = 'PMP'
         is_bh = False
-        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
+
+        return data_source_config, tech_name, is_bh
 
 
 class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
     """
     The Class based View to get performance dashboard page requested.
-
     """
     template_name = 'rf_performance/ptp.html'
-
     def get_init_data(self):
         """
         Provide data for mixin's get method.
@@ -330,11 +323,10 @@ class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
             'rssi': {'service_name': 'radwin_rssi', 'model': ServiceStatus},
             'uas': {'service_name': 'radwin_uas', 'model': ServiceStatus},
         }
-        technology = DeviceTechnology.objects.get(name='P2P').id
-        devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='all')
+        tech_name = 'P2P'
         is_bh = False
-        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
+
+        return data_source_config, tech_name, is_bh
 
 
 class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
@@ -343,7 +335,6 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
 
     """
     template_name = 'rf_performance/ptp_bh.html'
-
     def get_init_data(self):
         """
         Provide data for mixin's get method.
@@ -354,11 +345,10 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
             'availability': {'service_name': 'availability', 'model': NetworkAvailabilityDaily},
             'uas': {'service_name': 'radwin_uas', 'model': ServiceStatus},
         }
-        technology = DeviceTechnology.objects.get(name='P2P').id
-        devices_method_to_call = organization_network_devices
-        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
+        tech_name = 'P2P'
         is_bh = True
-        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
+
+        return data_source_config, tech_name, is_bh
 
 
 # ####################################### MFR DFR Reports ########################################
@@ -1804,8 +1794,10 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
                 count_color = getattr(dashboard_settings, '%s_color_hex_value' % item['title'])
                 start_range = getattr(dashboard_settings, '%s_start' % item['title'])
                 end_range = getattr(dashboard_settings, '%s_end' % item['title'])
-                if start_range and end_range:
+                if dashboard_settings.dashboard_type == 'INT' and start_range and end_range:              
                     range_param = '(%s,%s)' %(start_range, end_range)
+                elif dashboard_settings.dashboard_type == 'STR' and start_range:
+                    range_param = '%s' %start_range
                 else:
                     continue    
             else:
@@ -1886,6 +1878,7 @@ class MonthlyTrendBackhaulMixin(object):
         :retun dictionary containing data used for main dashboard Monthly charts.
         '''
         tech_name = self.tech_name
+        y_axis_text = 'Number of Base Station'
         organization = logged_in_user_organizations(self)
         # Getting Technology ID
         try:
@@ -1909,11 +1902,14 @@ class MonthlyTrendBackhaulMixin(object):
             chart_series = dashboard_status_dict
 
             response = get_highchart_response(
-                dictionary={'type': 'column',
-                            'valuesuffix': '',
-                            'chart_series': chart_series,
-                            'name': '%s Backhaul Capacity' % tech_name.upper(),
-                            'valuetext': ''})
+                dictionary={
+                    'type': 'column',
+                    'valuesuffix': '',
+                    'chart_series': chart_series,
+                    'name': '%s Backhaul Capacity' % tech_name.upper(),
+                    'valuetext': y_axis_text
+                }
+            )
 
         return HttpResponse(response)
 
@@ -1944,6 +1940,7 @@ class MonthlyTrendSectorMixin(object):
 
     def get(self, request):
         tech_name = self.tech_name
+        y_axis_text = 'Number of Sectors'
         organization = logged_in_user_organizations(self)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
@@ -1954,11 +1951,15 @@ class MonthlyTrendSectorMixin(object):
         chart_series = []
         chart_series = processed_key_dict
 
-        response = get_highchart_response(dictionary={'type': 'column',
-                                                      'valuesuffix': '',
-                                                      'chart_series': chart_series,
-                                                      'name': '%s Sector Capacity' % tech_name.upper(),
-                                                      'valuetext': ''})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'column',
+                'valuesuffix': '',
+                'chart_series': chart_series,
+                'name': '%s Sector Capacity' % tech_name.upper(),
+                'valuetext': y_axis_text
+            }
+        )
 
         return HttpResponse(response)
 
@@ -1986,7 +1987,7 @@ class MonthlyTrendSalesMixin(object):
         '''
         is_bh = False
         tech_name = self.tech_name
-
+        y_axis_text = 'Number of Sectors'
         data_source_config = {
             'topology': {'service_name': 'topology', 'model': Topology},
         }
@@ -2022,11 +2023,14 @@ class MonthlyTrendSalesMixin(object):
 
         chart_series = dashboard_status_dict
         # Sending Final response
-        response = get_highchart_response(dictionary={'type': 'column',
-                                                      'valuesuffix': '',
-                                                      'chart_series': chart_series,
-                                                      'name': '%s Sales Opportunity' % tech_name.upper(),
-                                                      'valuetext': ''})
+        response = get_highchart_response(
+            dictionary={
+            'type': 'column',
+            'valuesuffix': '',
+            'chart_series': chart_series,
+            'name': '%s Sales Opportunity' % tech_name.upper(),
+            'valuetext': y_axis_text
+        })
 
         return HttpResponse(response)
 
@@ -2043,6 +2047,58 @@ class MonthlyTrendSalesWIMAX(MonthlyTrendSalesMixin, View):
     tech_name = 'WIMAX'
 
 
+#************************************ Monthly Trend RF Performance Dashboard
+class GetMonthlyRFTrendData(View):
+    '''
+    Class Based View for the Monthly Trend of RF Performance Dashboard for all services.
+    '''
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param:
+            - dashboard_name: name of the dashboard.
+
+        :retun dictionary containing data used for main dashboard charts.
+        """
+        # Get Request for getting url name passed in URL
+        dashboard_name = self.request.GET.get('dashboard_name')
+        is_bh = self.request.GET.get('is_bh',0)
+        tech_name = self.request.GET.get('technology')
+        dashboard_status_name=dashboard_name
+        response=''
+        technology = DeviceTechnology.objects.get(name=tech_name).id
+        if "#" in dashboard_name:
+            dashboard_name = dashboard_name.replace('#', '')
+
+        dashboard_status_name=dashboard_name+'_'+tech_name
+        if int(is_bh):
+            dashboard_status_name=dashboard_status_name+'_bh'
+        organization = logged_in_user_organizations(self)
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology,
+                                                             page_name='rf_dashboard',
+                                                             name=dashboard_name, is_bh=is_bh)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success": 0
+            }))
+
+        dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_status_name, organizations=organization, dashboard_settings=dashboard_setting)
+
+        if dashboard_status_dict:
+            chart_series = dashboard_status_dict
+            dashboard_name=dashboard_name.replace('_', ' ')
+            # Sending Final response
+            response = get_highchart_response(dictionary={'type': 'column',
+                                                          'valuesuffix': '',
+                                                          'chart_series': chart_series,
+                                                          'name': '%s ' % dashboard_name.upper(),
+                                                          'valuetext': ''})
+
+        return HttpResponse(response)
 # *********************************** Dashboard Device Status Monthly Trend
 
 
@@ -2062,6 +2118,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
         """
         # Get Request for getting url name passed in URL
         dashboard_name = self.request.GET['dashboard_name']
+        y_axis_text = 'Number of Network Devices (WiMAX+PMP)'
         # remove '#' from the dashboard_name.
         if "#" in dashboard_name:
             dashboard_name = dashboard_name.replace('#', '')
@@ -2078,6 +2135,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
         dashboard_status_name = dashboard_name
         if 'temperature' in dashboard_name:
             dashboard_name = 'temperature'
+            y_axis_text = 'Number of IDU'
             # replace the '-wimax' with ''. (e.g: 'dash-wimax' => 'dash')
             dashboard_status_name = dashboard_status_name.replace('-wimax', '')
         # Finding Organization of user   
@@ -2095,14 +2153,23 @@ class MonthlyTrendDashboardDeviceStatus(View):
 
 
         # Get the dictionary of dashboard status.
-        dashboard_status_dict = view_range_status_dashboard_monthly(dashboard_name=dashboard_status_name,
-                                                          organizations=organizations,
-                                                          dashboard_settings=dashboard_setting)
+        dashboard_status_dict = view_range_status_dashboard_monthly(
+            dashboard_name=dashboard_status_name,
+            organizations=organizations,
+            dashboard_settings=dashboard_setting
+        )
         chart_series = dashboard_status_dict
         # Trend Items for matching range
 
-        response = get_highchart_response(dictionary={'type': 'column', 'valuesuffix': '', 'chart_series': chart_series,
-                                                      'name': dashboard_name, 'valuetext': ''})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'column',
+                'valuesuffix': '',
+                'chart_series': chart_series,
+                'name': dashboard_name,
+                'valuetext': y_axis_text
+            }
+        )
 
         return HttpResponse(response)
 

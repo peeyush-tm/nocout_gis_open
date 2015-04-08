@@ -62,6 +62,21 @@ function rf_getChartData(ds_name, chunk_counter) {
                 }
 
                 if(response.success == 1) {
+
+                    var timestamp = response.data.objects.timestamp ? response.data.objects.timestamp : "";
+
+                    if(timestamp) {
+                        console.log($("#"+ds_name+"_timestamp").length);
+                        if($("#"+ds_name+"_timestamp").length > 0) {
+                            var timestamp_html = '<small>('+timestamp+')</small>';
+                            $("#"+ds_name+"_timestamp").html(timestamp_html);
+                        }
+                    } else {
+                        if($("#"+ds_name+"_timestamp").length > 0) {
+                            $("#"+ds_name+"_timestamp").html("");
+                        }
+                    }
+
                     var pie_chart = $('#' + ds_name).highcharts({
                         chart: {
                             plotBackgroundColor: null,
@@ -212,3 +227,86 @@ function convertChunksToNormalArray(chunks_array) {
 
     return non_null_array;
 }
+
+/**
+ * This event trigger when any trends icon is clicked
+ * @event click
+ */
+$(".tab-content h3 i").click(function(e) {
+    
+    // show the loader
+    showSpinner();
+
+    var trends_id = e.currentTarget.id ? $.trim(e.currentTarget.id) : "",
+        ds_name = trends_id ? e.currentTarget.id.split("_trend")[0] : "";
+
+    if(ds_name && trends_ajax_url) {
+        var get_params = "dashboard_name="+ds_name+"&is_bh="+is_bh+"&technology="+tech_name;
+
+        $.ajax({
+            url : base_url+""+trends_ajax_url+"?"+get_params,
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+
+                if(response.success == 1) {
+                    var useful_data = response.data.objects,
+                        condition = useful_data && useful_data.chart_data && useful_data.chart_data.length > 0;
+
+                    if(condition) {
+
+                        var popup_html = "";
+
+                        popup_html += "<div class='trends_chart_container' align='center' style='position:relative;overflow:auto;'>";
+                        popup_html += "<div id='trends_chart' style='position:relative;width:100%;'></div>";
+                        popup_html += "<div class='clearfix'></div>";
+                        popup_html += "</div>";
+
+                        /*Call the bootbox to show the popup with datatable*/
+                        bootbox.dialog({
+                            message: popup_html,
+                            title: '<i class="fa fa-signal">&nbsp;</i> '+ds_name.toUpperCase()+' Trends'
+                        });
+
+
+                        // Update Modal width to 90%;
+                        $(".modal-dialog").css("width","90%");
+                        
+                        // Create Chart
+                        createHighChart_nocout(useful_data,'trends','#333333', false, function(status) {
+                            // 
+                        });
+
+                        try {
+                            setTimeout(function() {
+                                // Resize the window to show highchart in proper bounds
+                                $(window).resize();
+                            },100)
+                        } catch(e) {
+                            // Pass
+                        }
+                    }
+                } else {
+                    $.gritter.add({
+                        title: ds_name.toUpperCase()+' Trends',
+                        text: response.message,
+                        sticky: false,
+                        time : 1000
+                    });
+                }
+            },
+            error : function(err) {
+                console.log(err.statusText);
+            },
+            complete : function() {
+                // hide the loader
+                hideSpinner();
+            }
+        });
+    }
+});
