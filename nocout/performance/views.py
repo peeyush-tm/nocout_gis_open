@@ -1978,25 +1978,12 @@ class Get_Service_Type_Performance_Data(View):
         # date time settings
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
-        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
+
         if not isSet:
             now_datetime = datetime.datetime.now()
-
             end_date = float(format(now_datetime, 'U'))
-            # In case of 'bihourly' & 'hourly' start date will be start of today(i.e '%Y-%m-%d 00:00:00')
-            if data_for in ['bihourly', 'hourly']:
-                start_date = float(format(now_datetime.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
-            elif data_for == 'daily':
-                last_30_days = now_datetime - datetime.timedelta(days=30)
-                start_date = float(format(last_30_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
-            elif data_for == 'weekly':
-                last_12_months = now_datetime - datetime.timedelta(days=365)
-                start_date = float(format(last_12_months.replace(hour=0, minute=0, second=0, microsecond=0), 'U'))
-            elif data_for in ['monthly', 'yearly']:
-                start_date = ''
-                end_date = ''
-            else:
-                start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
+            start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
 
 
         if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
