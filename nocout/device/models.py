@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models.signals import pre_save, post_save, m2m_changed
+from django.db.models.signals import pre_save, post_save, post_delete
 
 from machine.models import Machine
 from organization.models import Organization
@@ -272,6 +272,9 @@ pre_save.connect(device_signals.update_site_on_devicetype_change, sender=DeviceT
 
 # set site instance 'is_device_change' bit on device type service modified or created
 post_save.connect(device_signals.update_site_on_service_change, sender=DeviceTypeService)
+
+# set site instance 'is_device_change' bit on device type service deletion
+post_delete.connect(device_signals.update_site_on_service_change, sender=DeviceTypeService)
 
 post_save.connect(device_signals.update_device_type_service, sender=DeviceTypeService)
 

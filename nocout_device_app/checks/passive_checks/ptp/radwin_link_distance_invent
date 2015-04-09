@@ -48,7 +48,7 @@ def check_radwin_link_distance_invent(item, _no_params, info):
             if link_distance == -1:
                 infotext = "link_not_established"
                 state = 0
-            elif link_distance > 0:
+            elif link_distance >= 0:
                 state = 0
                 infotext = "%d" % link_distance
             else:

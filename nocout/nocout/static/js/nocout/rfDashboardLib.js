@@ -62,6 +62,21 @@ function rf_getChartData(ds_name, chunk_counter) {
                 }
 
                 if(response.success == 1) {
+
+                    var timestamp = response.data.objects.timestamp ? response.data.objects.timestamp : "";
+
+                    if(timestamp) {
+                        console.log($("#"+ds_name+"_timestamp").length);
+                        if($("#"+ds_name+"_timestamp").length > 0) {
+                            var timestamp_html = '<small>('+timestamp+')</small>';
+                            $("#"+ds_name+"_timestamp").html(timestamp_html);
+                        }
+                    } else {
+                        if($("#"+ds_name+"_timestamp").length > 0) {
+                            $("#"+ds_name+"_timestamp").html("");
+                        }
+                    }
+
                     var pie_chart = $('#' + ds_name).highcharts({
                         chart: {
                             plotBackgroundColor: null,

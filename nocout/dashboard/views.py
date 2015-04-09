@@ -254,7 +254,11 @@ class PerformanceDashboardMixin(object):
         if len(dashboard_status_dict):
             # Get the dictionay of chart data for the dashbaord.
             response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, dashboard_status_dict)
-            
+            # Add timestamp with API response
+            if 'timestamp' not in response_dict['data']['objects']:
+                response_dict['data']['objects']['timestamp'] = ''
+
+            response_dict['data']['objects']['timestamp'] = processed_for_key
 
         return HttpResponse(json.dumps(response_dict))
 
