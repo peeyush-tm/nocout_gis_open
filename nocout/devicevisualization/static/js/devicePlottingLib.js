@@ -3305,7 +3305,10 @@ function devicePlottingClass_gmap() {
 
 				var report_download_btn = "";
 				if(path_circuit_id) {
-					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
+					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" \
+										   data-complete-text="Download L2 Report"\
+									  	   data-loading-text="Please Wait..."\
+										   ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
 				}
 				/*SS Info End*/
 				infoTable += '</div>';
@@ -3347,7 +3350,9 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info' \
+									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  data-complete-text='Fresnel Zone'\
+									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
 									  	"+contentObject.nearLat+",\
 									  	"+contentObject.nearLon+",\
@@ -3364,7 +3369,9 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info' \
+									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  data-complete-text='Fresnel Zone'\
+									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
 									  	"+contentObject.ss_lat+",\
 									  	"+contentObject.ss_lon+",\
@@ -3969,6 +3976,10 @@ function devicePlottingClass_gmap() {
 			console.log("Calculate Fresnel Zone");
 			console.log("Calculate Fresnel Zone Start Time :- "+ new Date().toLocaleString());
 		}
+
+		// Disable Fresnel Zone Button
+		$(".fresnel_btn").button("loading");
+
 		/*Save sector & ss name in global variables*/
 		bts1_name = sector_ss_obj.sector_name;
 		bts2_name = sector_ss_obj.ss_name;
@@ -4324,10 +4335,17 @@ function devicePlottingClass_gmap() {
 				title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
 			});
 
+			$(".modal-dialog").css("width","80%");
+
 		} else {
 
 			isDialogOpen = true;
 		}
+
+		// Enable Fresnel Zone Button after 0.5 sec
+		setTimeout(function() {
+			$(".fresnel_btn").button("complete");
+		},500);
 
 		/*Initialize antina1 height slider*/
 		$("#antina_height1").slider({
@@ -4376,8 +4394,6 @@ function devicePlottingClass_gmap() {
 	    		gmap_self.heightChanged();
 	    	}
 	    });
-
-		$(".modal-dialog").css("width","80%");
 
 		/*Plotting chart with points array using jquery.flot.js*/
 		var fresnelChart = $.plot(
