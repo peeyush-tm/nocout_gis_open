@@ -3320,7 +3320,7 @@ class DeviceServiceDetail(View):
         # if is_sector:
         dr_device = None
 
-        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, 'live')
         if not isSet:
             end_date = format(datetime.datetime.now(), 'U')
             start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
