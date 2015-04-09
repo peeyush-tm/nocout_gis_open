@@ -5828,14 +5828,14 @@ function devicePlottingClass_gmap() {
 				if(polled_device_count[devices_counter] <= 1) {
 					var display_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].sector_ip+")";
 					num_counter++;
-					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>'+num_counter+'.) NE. - '+display_name+'</h5>';
+					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>'+num_counter+') NE - '+display_name+'</h5>';
 					devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 					devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 					devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 				}
 				var ss_display_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].ss_ip+")";
 				num_counter++;
-				devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) FE. - '+ss_display_name+'</h5>';
+				devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+') FE - '+ss_display_name+'</h5>';
 				devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 				devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 				devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -5854,7 +5854,7 @@ function devicePlottingClass_gmap() {
 							point_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].sectorName+")";
 						}
 						num_counter++;
-						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+device_end_txt+' - '+point_name+'</h5>';
+						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+') '+device_end_txt+' - '+point_name+'</h5>';
 						devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 						devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 						devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -5863,7 +5863,7 @@ function devicePlottingClass_gmap() {
 
 					point_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].ss_ip+")";
 					num_counter++;
-					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+point_name+'</h5>';
+					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+') '+point_name+'</h5>';
 					devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 					devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 					devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
