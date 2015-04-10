@@ -4437,14 +4437,16 @@ class GisWizardSubStationListing(SubStationListingTable):
 
 def gis_wizard_sub_station_select(request, bs_pk, selected_technology, sector_pk):
     technologies = DeviceTechnology.objects.order_by('-name').filter(name__in=['WiMAX', 'PMP'])
+    base_station = BaseStation.objects.get(id=bs_pk)
     return render(request, 'gis_wizard/sub_station.html',
         {
             'select_view': True,
             'bs_pk': bs_pk,
+            'base_station' : base_station,
             'selected_technology': selected_technology,
             'sector_pk': sector_pk,
             'technologies': technologies,
-            'organization': BaseStation.objects.get(id=bs_pk).organization
+            'organization': base_station.organization
         }
     )
 
@@ -4456,7 +4458,9 @@ class GisWizardSubStationDetailView(SubStationDetail):
         context = super(GisWizardSubStationDetailView, self).get_context_data(**kwargs)
         context['selected_technology'] = self.kwargs['selected_technology']
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        sector = Sector.objects.get(id=self.kwargs['sector_pk'])
         context['base_station'] = base_station
+        context['sector'] = sector
         context['sector_pk'] = self.kwargs['sector_pk']
         if self.object.antenna:
             context['sub_station_antenna'] = self.object.antenna
@@ -4503,11 +4507,16 @@ class GisWizardSubStationMixin(object):
     def get_context_data(self, **kwargs):
         context = super(GisWizardSubStationMixin, self).get_context_data(**kwargs)
         technologies = DeviceTechnology.objects.order_by('-name').filter(name__in=['WiMAX', 'PMP'])
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        sector = Sector.objects.get(id=self.kwargs['sector_pk'])
+
         context['bs_pk'] = self.kwargs['bs_pk']
         context['selected_technology'] = self.kwargs['selected_technology']
         context['sector_pk'] = self.kwargs['sector_pk']
         context['technologies'] = technologies
-        context['organization'] = BaseStation.objects.get(id=self.kwargs['bs_pk']).organization
+        context['base_station'] = base_station
+        context['sector'] = sector
+        context['organization'] = base_station.organization
         if self.object:
             form_kwargs = self.get_form_kwargs()
             context['sub_station_antenna_id'] = self.object.antenna.id if self.object.antenna else ''
