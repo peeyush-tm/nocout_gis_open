@@ -127,7 +127,6 @@ function hard_delete_confirmation(id) {
  */
 // show message for soft deletion success/failure
 function show_response_message(responseResult) {
-    bootbox.alert(responseResult.result.message);
     location.reload(true);
 //    if (typeof responseResult.result.data.objects.datatable_headers == undefined){
 //        datatable_headers= responseResult.result.data.objects.datatable_headers
@@ -521,7 +520,7 @@ function get_service_edit_form(content) {
                         service_edit_html += '<p class="text-dark">'+content.result.data.objects.services[i].value+'</p>';
                         service_edit_html += '</label>';
                         service_edit_html += '<div id="show_old_configuration_' + content.result.data.objects.services[i].key + '"></div>';
-                        service_edit_html += '<div id="template_options_id_' + content.result.data.objects.services[i].key + '" onchange="show_new_configuration_for_svc_edit(' + content.result.data.objects.services[i].key + ');"></div>';
+                        service_edit_html += '<div id="template_options_id_' + content.result.data.objects.services[i].key + '" onchange="show_new_configuration_for_svc_edit(' + content.result.data.objects.services[i].key + ', ' + content.result.data.objects.device_id + ');"></div>';
                         service_edit_html += '<div id="show_new_configuration_' + content.result.data.objects.services[i].key + '"></div>';
                         service_edit_html += '<hr />';
                         service_edit_html += '</div>';
@@ -571,8 +570,7 @@ function get_service_edit_form(content) {
                                 "pl_critical": parseInt($("#pl_critical").text()),
                                 "packets": parseInt($("#packets").text()),
                                 "timeout": parseInt($("#timeout").text()),
-                                "normal_check_interval": parseInt($("#normal_check_interval").text()),
-                                "device_id": parseInt($("#device_id").val())
+                                "normal_check_interval": parseInt($("#normal_check_interval").text())
                             };
                         }
                         else {
@@ -585,7 +583,10 @@ function get_service_edit_form(content) {
                             $this.children(".checkbox").find("input:checked").each(function () {
                                 service_id = $(this).prop("value");
                                 svc_val = $("#service_template_" + service_id).val();
-                                svc = {"device_id": $("#device_id").val(), "service_id": $(this).prop("value"), "template_id": svc_val};
+                                svc = {
+                                    "service_id": $(this).prop("value"),
+                                    "template_id": svc_val
+                                };
                             });
                             var data_sources = [];
                             // loop through all the elements with class 'data_source_field'
@@ -652,7 +653,11 @@ function get_service_edit_form(content) {
                             }
                         ]
                          */
-                        Dajaxice.device.edit_services(edit_services_message, {'svc_data': service_data, 'svc_ping': ping_data});
+                        Dajaxice.device.edit_services(edit_services_message, {
+                            'svc_data': service_data,
+                            'svc_ping': ping_data,
+                            'device_id': parseInt($("#device_id").val())
+                        });
                     }
                     else{
                         if ($("#ping_checkbox").is(":checked")) {
@@ -664,14 +669,15 @@ function get_service_edit_form(content) {
                                 "packets": parseInt($("#packets").text()),
                                 "timeout": parseInt($("#timeout").text()),
                                 "normal_check_interval": parseInt($("#normal_check_interval").text()),
-                                "device_id": parseInt($("#device_id").val())
                             };
                         }
                         else {
                             var ping_data = {};
                         }
-                        Dajaxice.device.edit_services(edit_services_message, {'svc_data': "", 'svc_ping': ping_data});
-                        //$(".bootbox").modal("hide");
+                        Dajaxice.device.edit_services(edit_services_message, {
+                            'svc_data': "",
+                            'svc_ping': ping_data,
+                            'device_id': parseInt($("#device_id").val())});
                     }
                 }
             },
@@ -718,10 +724,12 @@ function show_old_configuration_for_svc_edit(value) {
 
 
 // display service parameters table
-function show_new_configuration_for_svc_edit(value){
+function show_new_configuration_for_svc_edit(value, device_id){
     service_id = value;
     template_id = $("#service_template_"+value).val();
-    Dajaxice.device.get_new_configuration_for_svc_edit(Dajax.process, {'service_id': service_id, 'template_id': template_id});
+    Dajaxice.device.get_new_configuration_for_svc_edit(Dajax.process, {'service_id': service_id,
+        'template_id': template_id,
+        'device_id': device_id});
 }
 
 
@@ -758,7 +766,7 @@ function get_service_delete_form(content) {
                     for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                         service_delete_html += '<div class="service">';
                         service_delete_html += '<label class="checkbox">';
-                        service_delete_html += '<input class="uniform" id="svc_' + content.result.data.objects.services[i].key + '" type="checkbox" value="' + content.result.data.objects.services[i].key + '" onchange="show_old_configuration_for_svc_edit(' + content.result.data.objects.services[i].key + ');">';
+                        service_delete_html += '<input class="uniform" id="svc_' + content.result.data.objects.services[i].key + '" type="checkbox" value="' + content.result.data.objects.services[i].key + '" >';
                         service_delete_html += '<p class="text-dark">'+content.result.data.objects.services[i].value+'</p>';
                         service_delete_html += '</label>';
                         service_delete_html += '<hr />';
@@ -794,7 +802,7 @@ function get_service_delete_form(content) {
                             var $this = $(this);
                             $this.children(".checkbox").find("input:checked").each(function () {
                                 service_id = $(this).prop("value");
-                                svc = {"device_id": $("#device_id").val(), "service_id": $(this).prop("value")};
+                                svc = $(this).prop("value");
                                 service_data.push(svc);
                             });
                         });
@@ -821,7 +829,7 @@ function get_service_delete_form(content) {
                             }
                         ]
                          */
-                        Dajaxice.device.delete_services(delete_services_message, {'service_data': service_data});
+                        Dajaxice.device.delete_services(delete_services_message, {'device_id': $("#device_id").val(), 'service_data': service_data});
                     }
                     else{
                         $(".bootbox").modal("hide");
