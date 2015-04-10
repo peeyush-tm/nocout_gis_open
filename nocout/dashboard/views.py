@@ -1175,10 +1175,19 @@ def view_severity_status(dashboard_name, organizations):
     )
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
-        processed_for_key_utc = dashboard_status_dict[0].processed_for
-        processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
+        # from time
+        try:
+            pre_processed_for = dashboard_status_dict[1].processed_for
+        except Exception, e:
+            pre_processed_for = "N/A"
+
         # get the latest processed_for(datetime) from the database.
+        # to time
         processed_for = dashboard_status_dict[0].processed_for
+
+        if processed_for:
+            processed_for_key_localtime = get_dashboard_timestamp_string(pre_processed_for, processed_for)
+
         # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
             Normal=Sum('ok'),
@@ -1188,6 +1197,74 @@ def view_severity_status(dashboard_name, organizations):
         )
 
     return dashboard_status_dict, str(processed_for_key_localtime)
+
+
+def get_dashboard_timestamp_string(from_time, to_time):
+    """
+    :This function returns timestamp string as per given params for dashboard charts
+    :param from_time: Start Time
+    :param to_time: End Time
+    :return timestamp_string:
+    """
+
+    timestamp_string = ''
+
+    if not from_time or not to_time:
+        return timestamp_string
+
+    from_datetime = 'N/A'
+    current_date = ''
+    from_datetime = ''
+    to_datetime = ''
+    html_seperator = ' - '
+    start_braces = '('
+    end_braces = ')'
+
+    if from_time != 'N/A':
+        if to_time.date() == from_time.date():
+            current_date = datetime.datetime.strftime(
+                to_time,"%d-%m-%Y"
+            )
+            
+            from_datetime = datetime.datetime.strftime(
+                from_time,"%H:%M"
+            )
+
+            to_datetime = datetime.datetime.strftime(
+                to_time,"%H:%M"
+            )
+
+        else:
+            current_date = ''
+            
+            from_datetime = datetime.datetime.strftime(
+                from_time,"%d-%m-%Y %H:%M"
+            )
+
+            to_datetime = datetime.datetime.strftime(
+                to_time,"%d-%m-%Y %H:%M"
+            )
+
+            html_seperator = '<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+            start_braces = ''
+            end_braces = ''
+    else:
+        current_date = ''
+            
+        from_datetime = 'N/A'
+
+        to_datetime = datetime.datetime.strftime(
+            to_time,"%d-%m-%Y %H:%M"
+        )
+
+    timestamp_string = str(current_date)+\
+                       start_braces+\
+                       str(from_datetime)+\
+                       html_seperator+\
+                       str(to_datetime)+\
+                       end_braces
+
+    return timestamp_string
 
 
 def view_range_status(dashboard_name, organizations):
@@ -1204,16 +1281,6 @@ def view_range_status(dashboard_name, organizations):
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
         
-        # Init Variables
-        processed_for_key_localtime = ''
-        from_datetime = 'N/A'
-        current_date = ''
-        from_datetime = ''
-        to_datetime = ''
-        html_seperator = ' - '
-        start_braces = '('
-        end_braces = ')'
-
         # from time
         try:
             pre_processed_for = dashboard_status_dict[1].processed_for
@@ -1224,50 +1291,8 @@ def view_range_status(dashboard_name, organizations):
         # to time
         processed_for = dashboard_status_dict[0].processed_for
 
-        if pre_processed_for and pre_processed_for != 'N/A':
-            if processed_for.date() == pre_processed_for.date():
-                current_date = datetime.datetime.strftime(
-                    processed_for,"%d-%m-%Y"
-                )
-                
-                from_datetime = datetime.datetime.strftime(
-                    pre_processed_for,"%H:%M"
-                )
-
-                to_datetime = datetime.datetime.strftime(
-                    processed_for,"%H:%M"
-                )
-
-            else:
-                current_date = ''
-                
-                from_datetime = datetime.datetime.strftime(
-                    pre_processed_for,"%d-%m-%Y %H:%M"
-                )
-
-                to_datetime = datetime.datetime.strftime(
-                    processed_for,"%d-%m-%Y %H:%M"
-                )
-
-                html_seperator = '<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
-                start_braces = ''
-                end_braces = ''
-        else:
-            current_date = ''
-                
-            from_datetime = 'N/A'
-
-            to_datetime = datetime.datetime.strftime(
-                processed_for,"%d-%m-%Y %H:%M"
-            )
-
         if processed_for:
-            processed_for_key_localtime = str(current_date)+""+start_braces+""+str(from_datetime)+""+html_seperator+""+str(to_datetime)+""+end_braces
-
-        # try:
-        #     processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
-        # except:
-        #     processed_for_key_localtime = processed_for_key_utc
+            processed_for_key_localtime = get_dashboard_timestamp_string(pre_processed_for, processed_for)
 
         # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(
