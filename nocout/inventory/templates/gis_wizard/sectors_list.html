@@ -7,6 +7,7 @@
     {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
     {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
+    {% breadcrumb_safe "BS : "|add:base_station.alias "gis-wizard-base-station-update" bs_pk %}
     {% breadcrumb_safe "PTP Listing : "|add:base_station.alias "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
