@@ -601,7 +601,15 @@ function nocoutPerfLib() {
                                     }
                                 });
                             }
-                            if(!show_historical_on_performance) {
+                            if(
+                                !show_historical_on_performance
+                                ||
+                                serviceId.indexOf('availability') > -1
+                                ||
+                                serviceId.indexOf('utilization_top') > -1
+                                ||
+                                serviceId.indexOf('topology') > -1
+                            ) {
                                 perfInstance.initGetServiceData(serviceDataUrl, serviceId, current_device);
                             }
                         });
