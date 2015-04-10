@@ -85,8 +85,8 @@ def raise_alarms(service_status_list, org, required_levels):
 
     g_jobs = list()
     ret = False
-    new_data_create = list()
-    new_data_update = list()
+    # new_data_create = list()
+    data_update = list()
     s_sds = ServiceSpecificDataSource.objects.prefetch_related(
         'service_data_sources',
         'service'
@@ -194,7 +194,7 @@ def raise_alarms(service_status_list, org, required_levels):
 
                 obj.old_status = new_status
                 obj.new_status = old_status
-                new_data_update.append(obj)
+                data_update.append(obj)
             elif created:  # the object has been created for the first time
                 # if the object has been just created
                 # check for the current status as in good or bad
@@ -209,22 +209,14 @@ def raise_alarms(service_status_list, org, required_levels):
                         g_jobs.append(
                             alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
                         )
-                new_data_create.append(obj)                        
 
             else:  # don't know what this means
                 continue
-            # new_data.append(obj)
         else:
             continue
 
-    # bulk_data_list.append(EscalationStatus(**new_data))
-    if len(new_data_create):
-        # call the method to bulk create the onjects.
-        bulk_update_create.delay(bulky=new_data_create,
-                                 action='create',
-                                 model=EscalationStatus)
-    elif len(new_data_update):
-        bulk_update_create.delay(bulky=new_data_update,
+    if len(data_update):
+        bulk_update_create.delay(bulky=data_update,
                                  action='update',
                                  model=EscalationStatus)
     else:
@@ -255,11 +247,11 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
     :param levels:
     :return:
     """
-    changed=False
     bulkyobject= list()
     g_jobs = list()
     ret = False
     for level in levels:
+        changed=False
         method_to_call_email = ''
         method_to_call_phone = ''
         if getattr(alarm_object, 'l%d_email_status' % level.name) == 1:
@@ -304,12 +296,14 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
         if method_to_call_email and method_to_call_phone:
             g_jobs.append(method_to_call_email.s(alarm=alarm_object, level=level))
             g_jobs.append(method_to_call_phone.s(alarm=alarm_object, level=level))
-    # alarm_object.save()
-    if changed:
-        bulkyobject.append(alarm_object)
+        # alarm_object.save()
+        if changed:
+            bulkyobject.append(alarm_object)
+
+    if len(bulkyobject):
         bulk_update_create.delay(bulky=bulkyobject,
-                                     action='update',
-                                     model=EscalationStatus)
+                                 action='update',
+                                 model=EscalationStatus)
 
     if not len(g_jobs):
         return ret
