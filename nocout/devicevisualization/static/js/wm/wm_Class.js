@@ -738,96 +738,8 @@ function WhiteMapClass() {
 				bootbox.alert("Max. limit for selecting devices is 200.");
 
 			} else {
-
-				var devicesTemplate = "<div class='deviceWellContainer'>";
-				var num_counter = 0;
-				for(var i=0;i<polygonSelectedDevices.length;i++) {
-					
-					var new_device_name = "";
-					var current_technology = $.trim(polygonSelectedDevices[i].technology.toLowerCase());
-					
-					if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
-						new_device_name = polygonSelectedDevices[i].device_name.split(".");
-						new_device_name = new_device_name.join("-");
-					} else {
-						new_device_name = polygonSelectedDevices[i].device_name;
-					}
-
-					var devices_counter = "";
-					if(ptp_tech_list.indexOf(current_technology)  > -1) {
-						if(polygonSelectedDevices[i].pointType == 'sub_station') {
-							devices_counter = polygonSelectedDevices[i].bs_sector_device;
-						} else {
-							devices_counter = polygonSelectedDevices[i].device_name;
-						}
-
-						if(!polled_device_count[devices_counter]) {
-							polled_device_count[devices_counter]  = 1;
-						} else {
-							polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
-						}
-					}
-
-
-					if((ptp_tech_list.indexOf(current_technology)  > -1) && polygonSelectedDevices[i].pointType == 'sub_station') {
-
-						if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
-							var new_device_name2 = polygonSelectedDevices[i].bs_sector_device.split(".");
-							new_device_name2 = new_device_name2.join("-");
-						} else {
-							var new_device_name2 = polygonSelectedDevices[i].bs_sector_device;
-						}
-
-						if(polled_device_count[devices_counter] <= 1) {
-							num_counter++;
-							devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].sector_ip+'</h5>';
-							devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
-							devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
-							devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
-						}
-
-						num_counter++;
-
-						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].ss_ip+'</h5>';
-						devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-						devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
-						devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
-
-					} else {
-						var device_end_txt = "",
-							point_name = "";
-
-						if(ptp_tech_list.indexOf(current_technology)  > -1) {
-							if(polled_device_count[devices_counter] <= 1) {
-								if(polygonSelectedDevices[i].pointType == 'sub_station') {
-									device_end_txt = "Far End";
-									point_name = polygonSelectedDevices[i].ss_ip
-								} else {
-									device_end_txt = "Near End";
-									point_name = polygonSelectedDevices[i].sectorName
-								}
-
-								num_counter++;
-								devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
-								devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-								devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
-								devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
-							}
-						} else {
-							device_end_txt = "Far End";
-							point_name = polygonSelectedDevices[i].ss_ip
-
-							num_counter++;
-							devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
-							devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-							devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
-							devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
-						}
-					}
-				}
-
-				devicesTemplate += "</div>";
-
+								
+				var devicesTemplate = gmap_self.createLivePollingHtml(polygonSelectedDevices);
 				$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html(devicesTemplate);
 			}
 		}
@@ -2268,9 +2180,15 @@ function WhiteMapClass() {
 					
 						var ss_marker_obj = sector_child[k],
 							ss_item_info_index = ss_marker_obj.data.item_index > -1 ? ss_marker_obj.data.item_index : k,
-							ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
+							// ckt_id_val = gisPerformanceClass.getKeyValue(ss_infoWindow_content,"cktid",true,ss_item_info_index),
+							ckt_id_val = ss_marker_obj.data.circuit_id ? ss_marker_obj.data.circuit_id : "",
 							ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 							ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
+
+						// Set the ckt id to sector marker object (only in case of PTP)
+						if(ptp_tech_list.indexOf(sector_tech) > -1) {
+							allMarkersObject_wmap['sector_device']['sector_'+sector_array[j].sector_configured_on]["cktId"] = ckt_id_val;
+						}
 
 						/*Create SS Marker Object*/
 						var ss_marker_object = {
@@ -2297,6 +2215,7 @@ function WhiteMapClass() {
 					    	bs_sector_device 	:  sector_array[j].sector_configured_on_device,
 					    	filter_data 	 	:  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 					    	device_name 	 	:  ss_marker_obj.device_name,
+					    	cktId 			 	:  ckt_id_val,
 					    	ss_ip 	 		 	:  ss_marker_obj.data.substation_device_ip_address,
 					    	sector_ip 		 	:  sector_array[j].sector_configured_on,
 					    	zIndex 			 	:  200,

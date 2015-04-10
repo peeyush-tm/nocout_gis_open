@@ -6,11 +6,12 @@
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
-    {% if object.alias %} 
-        {% breadcrumb_safe "Sub Station Wizard : "|add:object.alias "javascript:;" %}
-    {% else %}
-        {% breadcrumb_safe "Sub Station Wizard : New" "javascript:;" %}
-    {% endif%}
+    {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
+    {% breadcrumb_safe "BS : "|add:base_station.alias "gis-wizard-base-station-update" base_station.id %}
+    {% breadcrumb_safe "Sectors Listing : "|add:base_station.alias "gis-wizard-sector-list" base_station.id %}
+    {% breadcrumb_safe "Sector : "|add:sector.sector_id "gis-wizard-sector-update" base_station.id selected_technology sector_pk %}
+    {% breadcrumb_safe "SS Listing" "gis-wizard-sub-station-list" base_station.id selected_technology sector_pk %}
+    {% breadcrumb_safe "Sub Station : "|add:object.alias "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -51,7 +52,9 @@
 
                                         <!-- :START: Radio Buttons for SS to choose existing or create new -->
                                         <div class="form-group">
-                                            <label class="control-label pull-left">SubStation &nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                            <label class="control-label pull-left" id="ss_form_1">
+                                                SubStation
+                                            </label>
                                             <div class="pull-left">
                                                 &nbsp;&nbsp;<label class="radio-inline">
                                                     <input type="radio" id="id_sub_station_radio" class="radioField" value="existing" name="sub_station_radio"> Choose Existing
@@ -72,7 +75,9 @@
                                         <!-- END : Choose Existing SS Selectbox -->
                                     {% else %}
                                         <div class="form-group">
-                                            <label class="control-label pull-left">SubStation &nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                            <label class="control-label pull-left" id="ss_form_2">
+                                                SubStation
+                                            </label>
                                             <div class="clearfix"></div>
                                         </div>
                                     {% endif %} {# if not sector_has_sub_station #}
@@ -83,7 +88,9 @@
                                         <!-- :START: Antenna Form -->
                                         <hr style="border-width:4px;">
                                         <div class="form-group">
-                                            <label class="control-label pull-left">Antenna &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                            <label class="control-label pull-left" id="ss_form_3">
+                                                Antenna
+                                            </label>
                                             {% if sub_station_antenna_form %}
                                         </div>
                                         {% include "gis_wizard/form.html" with form=sub_station_antenna_form only %}
@@ -112,7 +119,9 @@
                                         <!-- :START: Circuit Form -->
                                         <hr style="border-width:4px;">
                                         <div class="form-group">
-                                            <label class="control-label pull-left">Circuit &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                            <label class="control-label pull-left" id="ss_form_4">
+                                                Circuit
+                                            </label>
                                             {% if circuit_form %}
                                         </div>
                                         {% include "gis_wizard/form.html" with form=circuit_form only %}
@@ -141,7 +150,9 @@
                                         <!-- :START: Customer Form -->
                                         <hr style="border-width:4px;">
                                         <div class="form-group">
-                                            <label class="control-label pull-left">Customer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                                            <label class="control-label pull-left" id="ss_form_5">
+                                                Customer
+                                            </label>
                                             {% if customer_form %}
                                         </div>
                                         {% include "gis_wizard/form.html" with form=customer_form only %}
@@ -167,21 +178,30 @@
                                             {% endif %}
                                         <!-- :END: Customer Form -->
 
-                                                                <div class="form-group">
-                                                                    <div class="col-sm-offset-3 col-sm-9">
-                                                                        <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
-                                                                        &nbsp;
-                                                                        <button type="submit" id="id_update_and_show" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Show</button>
-                                                                        &nbsp;
-                                                                        {% url 'gis-wizard-list' as skip_url %}
-                                                                        <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')"><i class="fa fa-times"></i>Skip</button>
-                                                                        {% if sector_has_sub_station %}
-                                                                        &nbsp;
-                                                                        <button type="reset" class="btn btn-danger" onclick="delete_and_show()"><i class="fa fa-times"></i>Delete &amp; Show</button>
-                                                                        {% endif %}
-                                                                    </div>
-                                                                </div>
-                                                            </form>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fa fa-pencil"></i> {{ save_text }} &amp; Next
+                                                </button>
+
+                                                <button type="submit" id="id_update_and_show" class="btn btn-success">
+                                                    <i class="fa fa-pencil"></i> {{ save_text }} &amp; Show
+                                                </button>
+
+                                                {% url 'gis-wizard-list' as skip_url %}
+
+                                                <!-- <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')">
+                                                    <i class="fa fa-times"></i> Skip
+                                                </button> -->
+                                                {% if sector_has_sub_station %}
+
+                                                <button type="reset" class="btn btn-danger" onclick="delete_and_show()">
+                                                    <i class="fa fa-times"></i> Delete &amp; Show
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </form>
                                     {% endif %}
                                 </div>
                                 <div class="clearfix"></div>
