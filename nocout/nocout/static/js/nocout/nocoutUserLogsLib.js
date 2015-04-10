@@ -327,9 +327,11 @@ function prepareSelectBoxesData(select_boxes) {
         } else {
             if(typeof values_array == 'object') {
                 selected_values = values_array ? values_array.text : "";
-                // For some select2 the key is device_alias not text.
-                if(!selected_values && values_array.hasOwnProperty('device_alias')) {
-                    selected_values = values_array['device_alias'];
+                if(values_array) {
+                    // For some select2 the key is device_alias not text.
+                    if(!selected_values && values_array.hasOwnProperty('device_alias')) {
+                        selected_values = values_array['device_alias'];
+                    }
                 }
             } else {
                 selected_values = values_array;
