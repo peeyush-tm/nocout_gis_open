@@ -1962,6 +1962,12 @@ class Get_Service_Type_Performance_Data(View):
 
         # GET param to check the the data is requested for live data or historical data
         data_for = self.request.GET.get('data_for','live')
+        # initialize historical data flag
+        is_historical_data = False
+
+        # If call is for historical data then enable "is_historical_data" flag
+        if data_for != 'live':
+            is_historical_data = True
 
         # for wimax devices special case
         dr_device = None
@@ -2102,6 +2108,7 @@ class Get_Service_Type_Performance_Data(View):
                                                          )
             else:
 
+                # result = self.get_performance_data_result(performance_data,'',is_historical_data)
                 result = self.get_performance_data_result(performance_data)
 
         elif service_data_source_type == 'rf':
@@ -2169,6 +2176,7 @@ class Get_Service_Type_Performance_Data(View):
                     performance_data_ss=performance_data
                 )
             else:
+                # result = self.get_performance_data_result(performance_data,'',is_historical_data)
                 result = self.get_performance_data_result(performance_data)
 
         elif "availability" in service_name or service_data_source_type in ['availability']:
@@ -2176,11 +2184,11 @@ class Get_Service_Type_Performance_Data(View):
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
 
-            parameters.update({
-                'model': NetworkAvailabilityDaily,
-                'start_time': start_date,
-                'end_time': end_date
-            })
+            # parameters.update({
+            #     'model': NetworkAvailabilityDaily,
+            #     'start_time': start_date,
+            #     'end_time': end_date
+            # })
 
             # gather performance data
             performance_data = self.get_performance_data(
