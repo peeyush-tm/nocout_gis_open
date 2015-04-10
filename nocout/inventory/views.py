@@ -4974,13 +4974,13 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device perf page url
                     perf_page_url = reverse(
                         'SingleDevicePerf',
-                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id},
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].sector_configured_on_id},
                         current_app='performance'
                     )
                     # Single Device alert page url
                     alert_page_url = reverse(
                         'SingleDeviceAlertsInit',
-                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].sector_configured_on_id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )
 

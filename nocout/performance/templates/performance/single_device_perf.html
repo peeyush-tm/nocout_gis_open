@@ -286,6 +286,14 @@
 
             var current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
 
+
+            // Show/hide live polling button & chart container
+            live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
+            live_poll_condition2 = page_type_val == 'customer';
+            if(!live_poll_condition1 && !live_poll_condition2) {
+                $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+            }
+
             if(inventory_url) {
                 $("#inventory_link_tag").attr("href",inventory_url);
                 $("#inventory_link_tag").removeClass("hide");
