@@ -107,9 +107,24 @@ function populateServiceStatus_nocout(domElement,info) {
         /********** Service Status Without Live Polling  - END     ********************/
     } else {
         /********** LIVE POLLING CODE  - START     ********************/
+        var left_tab_txt = '';
+
+        try {
+            left_tab_txt = $.trim($("#"+domElement.split("_block")[0].split("last_updated_")[1]+"_tab").text());
+        } catch(e) {
+            // console.log(e);
+        }
 
         // Clear status block when we are on utilization or availablility tabs
-        if(domElement.indexOf('availability') > -1 || domElement.indexOf('utilization_top') > -1 || domElement.indexOf('topology') > -1) {
+        if(
+            domElement.indexOf('availability') > -1
+            ||
+            domElement.indexOf('utilization_top') > -1
+            ||
+            domElement.indexOf('topology') > -1
+            ||
+            left_tab_txt == 'RF Latency'
+        ) {
 
             $("#"+domElement).html("");
 

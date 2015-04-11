@@ -366,15 +366,20 @@
                 $('#reservationtime').val('');
                 startDate = "";
                 endDate = "";
-                
-                // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
-                // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
 
-                var service_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id").slice(0, -4),
-                    get_service_data_url = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("url");
+                if(show_historical_on_performance) {
+                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+                        service_id = active_inner_tab.attr("id").slice(0, -4),
+                        get_service_data_url = active_inner_tab.attr("url");
+                } else {
+                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                        service_id = active_inner_tab.attr("id").slice(0, -4),
+                        get_service_data_url = active_inner_tab.attr("url");
+                }
 
                 if(get_service_data_url && service_id && current_device) {
-                    perfInstance.getServiceData(get_service_data_url, service_id, current_device);
+                    // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
+                    perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
                 }
             }
         });

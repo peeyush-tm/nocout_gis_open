@@ -782,6 +782,12 @@ WHITE_MAP_CONFIGURATION = json.dumps({
 # 4 April 2015
 HISTORICAL_ON_PERFORMANCE = False
 
+####################### Chart type for min, max & avg values #######################
+# 11 April 2015
+MIN_CHART_TYPE = 'spline'
+MAX_CHART_TYPE = 'spline'
+AVG_CHART_TYPE = 'spline'
+
 # Import the local_settings.py file to override global settings
 
 # #### Enable Disable Service Impacting Alarms from GUI #### #
