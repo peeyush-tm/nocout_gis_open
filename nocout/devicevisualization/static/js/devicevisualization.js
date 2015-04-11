@@ -1471,7 +1471,11 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
 $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
     var ckt_id = e.currentTarget.attributes['ckt_id'] ? e.currentTarget.attributes['ckt_id'].value : "";
     // If ckt id exist then fetch l2 report url
+
     if(ckt_id) {
+        
+        // Disbale Download Report Button
+        $(".download_report_btn").button("loading");
 
         $.ajax({
             url: base_url+'/network_maps/l2_report/'+encodeURIComponent(ckt_id)+'/',
@@ -1500,6 +1504,10 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
             },
             error : function(err) {
                 // console.log(err)max-;
+            },
+            complete : function() {
+                // Disbale Download Report Button
+                $(".download_report_btn").button("complete");
             }
         });
     }

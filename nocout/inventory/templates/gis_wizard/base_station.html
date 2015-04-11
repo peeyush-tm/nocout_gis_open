@@ -8,7 +8,7 @@
     {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
     {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
     {% if object.alias %}
-        {% breadcrumb_safe "Base Station Wizard : "|add:object.alias "javascript:;" %}
+        {% breadcrumb_safe "BS : "|add:object.alias "javascript:;" %}
     {% else %}
         {% breadcrumb_safe "New Base Station Wizard" "javascript:;" %}
     {% endif %}
@@ -18,7 +18,7 @@
 
 {% load staticfiles %}
 {% block content_title %}GIS Wizard: Base Station{% endblock %}
-{% block content_description %}gis wizard: base station{% endblock %}
+{% block content_description %}GIS Wizard: Base Station{% endblock %}
 {% block content %}
     <p>
         <a href="javascript:void(0)" onclick="window.history.go(-1);">
