@@ -735,8 +735,14 @@ class MFRCauseCodeView(View):
                     year_month_str = unicode(date_object.strftime('%B'))+" - "+unicode(date_object.year)
         else:
             # get the chart_data for the pie chart.
-            response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                                                          'title': 'MFR Cause Code', 'name': ''})
+            response = get_highchart_response(
+                dictionary={
+                    'type': 'pie',
+                    'chart_series': chart_series,
+                    'title': 'MFR Cause Code',
+                    'name': ''
+                }
+            )
             return HttpResponse(response)
 
         results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
@@ -747,8 +753,14 @@ class MFRCauseCodeView(View):
             ])
 
         # get the chart_data for the pie chart.
-        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                                                      'title': 'MFR Cause Code', 'name': ''})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'pie',
+                'chart_series': chart_series,
+                'title': 'MFR Cause Code',
+                'name': ''
+            }
+        )
 
         # Add year month string of Uploaded MFR caused code report to updated dict
         json_response = json.loads(response)
@@ -871,8 +883,14 @@ class MFRProcesedView(View):
             })
 
         # get the chart_data for the area chart.
-        response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
-                                                      'title': 'MFR Processed', 'valuesuffix': ' Minutes'})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'areaspline',
+                'chart_series': area_chart_series,
+                'title': 'MFR Processed',
+                'valuesuffix': ' Minutes'
+            }
+        )
 
         return HttpResponse(response)
 
@@ -924,9 +942,15 @@ class SectorCapacityMixin(object):
             color.append('rgb(0, 255, 0)')
             color.append('#d3d3d3')
         # get the chart_data for the pie chart.
-        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                                                      'title': '%s Sector Capacity' % tech_name.upper(), 'name': '',
-                                                      'colors': color, 'processed_for_key': processed_for_key})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'pie',
+                'chart_series': chart_series,
+                'title': '%s Sector Capacity' % tech_name.upper(), 'name': '',
+                'colors': color,
+                'processed_for_key': processed_for_key
+            }
+        )
 
         return HttpResponse(response)
 
@@ -1001,10 +1025,15 @@ class BackhaulCapacityMixin(object):
                 color.append('rgb(0, 255, 0)')
                 color.append('#d3d3d3')
             # get the chart_data for the pie chart.
-            response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                                                          'title': '%s Backhaul Capacity' % tech_name.upper(),
-                                                          'name': '', 'colors': color,
-                                                          'processed_for_key': processed_for_key})
+            response = get_highchart_response(
+                dictionary={
+                    'type': 'pie',
+                    'chart_series': chart_series,
+                    'title': '%s Backhaul Capacity' % tech_name.upper(),
+                    'name': '', 'colors': color,
+                    'processed_for_key': processed_for_key
+                }
+            )
 
         return HttpResponse(response)
 
@@ -1099,9 +1128,15 @@ class SalesOpportunityMixin(object):
             colors = response_dict['data']['objects']['colors']
 
         # get the chart_data for the pie chart.
-        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-                                                      'title': tech_name + ' Sales Oppurtunity', 'name': '',
-                                                      'colors': colors, 'processed_for_key': processed_for_key})
+        response = get_highchart_response(
+            dictionary={
+                'type': 'pie',
+                'chart_series': chart_series,
+                'title': tech_name + ' Sales Oppurtunity', 'name': '',
+                'colors': colors,
+                'processed_for_key': processed_for_key
+            }
+        )
 
         return HttpResponse(response)
 
@@ -1140,10 +1175,19 @@ def view_severity_status(dashboard_name, organizations):
     )
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
-        processed_for_key_utc = dashboard_status_dict[0].processed_for
-        processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
+        # from time
+        try:
+            pre_processed_for = dashboard_status_dict[1].processed_for
+        except Exception, e:
+            pre_processed_for = "N/A"
+
         # get the latest processed_for(datetime) from the database.
+        # to time
         processed_for = dashboard_status_dict[0].processed_for
+
+        if processed_for:
+            processed_for_key_localtime = get_dashboard_timestamp_string(pre_processed_for, processed_for)
+
         # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
             Normal=Sum('ok'),
@@ -1153,6 +1197,74 @@ def view_severity_status(dashboard_name, organizations):
         )
 
     return dashboard_status_dict, str(processed_for_key_localtime)
+
+
+def get_dashboard_timestamp_string(from_time, to_time):
+    """
+    :This function returns timestamp string as per given params for dashboard charts
+    :param from_time: Start Time
+    :param to_time: End Time
+    :return timestamp_string:
+    """
+
+    timestamp_string = ''
+
+    if not from_time or not to_time:
+        return timestamp_string
+
+    from_datetime = 'N/A'
+    current_date = ''
+    from_datetime = ''
+    to_datetime = ''
+    html_seperator = ' - '
+    start_braces = '('
+    end_braces = ')'
+
+    if from_time != 'N/A':
+        if to_time.date() == from_time.date():
+            current_date = datetime.datetime.strftime(
+                to_time,"%d-%m-%Y"
+            )
+            
+            from_datetime = datetime.datetime.strftime(
+                from_time,"%H:%M"
+            )
+
+            to_datetime = datetime.datetime.strftime(
+                to_time,"%H:%M"
+            )
+
+        else:
+            current_date = ''
+            
+            from_datetime = datetime.datetime.strftime(
+                from_time,"%d-%m-%Y %H:%M"
+            )
+
+            to_datetime = datetime.datetime.strftime(
+                to_time,"%d-%m-%Y %H:%M"
+            )
+
+            html_seperator = '<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+            start_braces = ''
+            end_braces = ''
+    else:
+        current_date = ''
+            
+        from_datetime = 'N/A'
+
+        to_datetime = datetime.datetime.strftime(
+            to_time,"%d-%m-%Y %H:%M"
+        )
+
+    timestamp_string = str(current_date)+\
+                       start_braces+\
+                       str(from_datetime)+\
+                       html_seperator+\
+                       str(to_datetime)+\
+                       end_braces
+
+    return timestamp_string
 
 
 def view_range_status(dashboard_name, organizations):
@@ -1168,13 +1280,20 @@ def view_range_status(dashboard_name, organizations):
     )
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
-        processed_for_key_utc = dashboard_status_dict[0].processed_for
+        
+        # from time
         try:
-            processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
-        except:
-            processed_for_key_localtime = processed_for_key_utc
+            pre_processed_for = dashboard_status_dict[1].processed_for
+        except Exception, e:
+            pre_processed_for = "N/A"
+
         # get the latest processed_for(datetime) from the database.
+        # to time
         processed_for = dashboard_status_dict[0].processed_for
+
+        if processed_for:
+            processed_for_key_localtime = get_dashboard_timestamp_string(pre_processed_for, processed_for)
+
         # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(
             processed_for=processed_for
@@ -1337,8 +1456,15 @@ class DashboardDeviceStatus(View):
         # Get the maximun range value and the range from the dashboard_setting.
         max_range, chart_stops = get_guege_chart_max_n_stops(dashboard_setting)
 
-        chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count,
-                           'max': max_range, 'stops': chart_stops, 'processed_for_key': processed_for_key}
+        chart_data_dict = {
+            'type': 'gauge',
+            'name': dashboard_name,
+            'color': count_color,
+            'count': count,
+            'max': max_range,
+            'stops': chart_stops,
+            'processed_for_key': processed_for_key
+        }
 
         # get the chart_data for the gauge chart.
         response = get_highchart_response(chart_data_dict)
@@ -2092,11 +2218,15 @@ class GetMonthlyRFTrendData(View):
             chart_series = dashboard_status_dict
             dashboard_name=dashboard_name.replace('_', ' ')
             # Sending Final response
-            response = get_highchart_response(dictionary={'type': 'column',
-                                                          'valuesuffix': '',
-                                                          'chart_series': chart_series,
-                                                          'name': '%s ' % dashboard_name.upper(),
-                                                          'valuetext': ''})
+            response = get_highchart_response(
+                dictionary={
+                    'type': 'column',
+                    'valuesuffix': '',
+                    'chart_series': chart_series,
+                    'name': '%s ' % dashboard_name.upper(),
+                    'valuetext': ''
+                }
+            )
 
         return HttpResponse(response)
 # *********************************** Dashboard Device Status Monthly Trend
