@@ -43,7 +43,8 @@ from performance.utils import util as perf_utils
 
 from service.utils.util import service_data_sources
 
-from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION
+from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
+MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE
 
 from performance.formulae import display_time, rta_null
 from nocout.mixins.permissions import PermissionsRequiredMixin
@@ -2276,7 +2277,7 @@ class Get_Service_Type_Performance_Data(View):
                 **parameters
             ).using(alias=inventory_device_machine_name)
 
-            result = self.get_perf_table_result(performance_data)
+            result = self.get_perf_table_result(performance_data,None, is_historical_data)
 
         elif '_invent' in service_name:
             if not isSet:
@@ -2313,7 +2314,7 @@ class Get_Service_Type_Performance_Data(View):
                 **parameters
             ).using(alias=inventory_device_machine_name)
 
-            result = self.get_perf_table_result(performance_data)
+            result = self.get_perf_table_result(performance_data, None, is_historical_data)
 
         elif '_kpi' in service_name:
 
@@ -2332,7 +2333,8 @@ class Get_Service_Type_Performance_Data(View):
             if not show_chart:  # show the table
                 result = self.get_perf_table_result(
                     performance_data=performance_data,
-                    formula=formula
+                    formula=formula,
+                    is_historical_data=is_historical_data
                 )
             else:  # show the chart
                 if dr_device:
@@ -2351,7 +2353,8 @@ class Get_Service_Type_Performance_Data(View):
             if not show_chart: # show the table
                 result = self.get_perf_table_result(
                     performance_data=performance_data,
-                    formula=formula
+                    formula=formula,
+                    is_historical_data=is_historical_data
                 )
             else: # show the chart
                 if dr_device:
@@ -2420,27 +2423,69 @@ class Get_Service_Type_Performance_Data(View):
             table_data = data_list
         return table_data, table_header
 
-    def get_perf_table_result(self, performance_data, formula=None):
+    def get_perf_table_result(self, performance_data, formula=None, is_historical_data=False):
 
         result_data, aggregate_data = list(), dict()
         for data in performance_data:
             temp_time = data.sys_timestamp
 
-            if temp_time in aggregate_data:
-                continue
-            else:
-                aggregate_data[temp_time] = data.sys_timestamp
+            if is_historical_data:
+                min_val = eval(str(formula) + "(" + str(data.min_value) + ")") \
+                if formula else data.min_value
 
-                value = eval(str(formula) + "(" + str(data.current_value) + ")") \
-                                if formula \
-                                else data.current_value
+                max_val = eval(str(formula) + "(" + str(data.max_value) + ")") \
+                if formula else data.max_value
+
+                avg_val = eval(str(formula) + "(" + str(data.avg_value) + ")") \
+                if formula else data.avg_value
+
+                current_val = eval(str(formula) + "(" + str(data.current_value) + ")") \
+                if formula else data.current_value
+
+                # Min Value
+                result_data.append({
+                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+                    'ip_address': data.ip_address,
+                    'value': str(min_val)+"(Min. val)"
+                })
+                # Max Val
+                result_data.append({
+                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+                    'ip_address': data.ip_address,
+                    'value': str(max_val)+"(Max. val)"
+                })
+                # Avg Val
+                result_data.append({
+                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+                    'ip_address': data.ip_address,
+                    'value': str(avg_val)+"(Avg. val)"
+                })
 
                 result_data.append({
                     # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
                     'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
                     'ip_address': data.ip_address,
-                    'value': value,
+                    'value': str(current_val)+"(Current val)"
                 })
+            else:
+                if temp_time in aggregate_data:
+                    continue
+                else:
+                    aggregate_data[temp_time] = data.sys_timestamp
+
+                    value = eval(str(formula) + "(" + str(data.current_value) + ")") \
+                                    if formula \
+                                    else data.current_value
+
+                    result_data.append({
+                        # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+                        'ip_address': data.ip_address,
+                        'value': value,
+                    })
 
         self.result['success'] = 1
         self.result[
@@ -3248,28 +3293,31 @@ class Get_Service_Type_Performance_Data(View):
                                 {
                                     'name': self.result['data']['objects']['display_name']+"(Min. Val)",
                                     'data': data_list_min,
-                                    'type': self.result['data']['objects']['type'],
+                                    'type': MIN_CHART_TYPE,
                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                     'valuetext': self.result['data']['objects']['valuetext'],
-                                    'is_inverted': self.result['data']['objects']['is_inverted']
+                                    'is_inverted': self.result['data']['objects']['is_inverted'],
+                                    'marker': { 'enabled': False }
                                 },
                                 # Max Value
                                 {
                                     'name': self.result['data']['objects']['display_name']+"(Max. Val)",
                                     'data': data_list_max,
-                                    'type': self.result['data']['objects']['type'],
+                                    'type': MAX_CHART_TYPE,
                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                     'valuetext': self.result['data']['objects']['valuetext'],
-                                    'is_inverted': self.result['data']['objects']['is_inverted']
+                                    'is_inverted': self.result['data']['objects']['is_inverted'],
+                                    'marker': { 'enabled': False }
                                 },
                                 # Avg Value
                                 {
                                     'name': self.result['data']['objects']['display_name']+"(Avg. Val)",
                                     'data': data_list_avg,
-                                    'type': self.result['data']['objects']['type'],
+                                    'type': AVG_CHART_TYPE,
                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                     'valuetext': self.result['data']['objects']['valuetext'],
-                                    'is_inverted': self.result['data']['objects']['is_inverted']
+                                    'is_inverted': self.result['data']['objects']['is_inverted'],
+                                    'marker': { 'enabled': False }
                                 },
                                 # Current Value
                                 {
