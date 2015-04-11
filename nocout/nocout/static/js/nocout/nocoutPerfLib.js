@@ -492,9 +492,10 @@ function nocoutPerfLib() {
                                             var inner_tab_ids = [],
                                                 inner_inner_tabs = tabs_with_historical;
 
-                                            if(unique_item_key.indexOf('inventory_status') > -1) {
+                                            if(unique_item_key.indexOf('_status') > -1) {
                                                 inner_inner_tabs = inventory_status_inner_inner_tabs;                                                
                                             }
+                                            
                                             // CREATE SUB INNER TAB HTML
                                             if(inner_inner_tabs && inner_inner_tabs.length > 0) {
                                                 for(var x=0;x<inner_inner_tabs.length;x++) {
