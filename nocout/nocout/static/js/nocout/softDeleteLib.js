@@ -493,7 +493,7 @@ function get_service_edit_form(content) {
                 // display port select menu
                 //service_edit_html += '<h5 class="text-warning">You can edit service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
                 // show service information
-                service_edit_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+                service_edit_html += '<h5 class=""><b>Device Info:</b></h5>';
                 service_edit_html += '<dl class="dl-horizontal">';
                 service_edit_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_alias+'</dd>';
                 service_edit_html += '<dt>Services</dt><dd>';
@@ -505,10 +505,10 @@ function get_service_edit_form(content) {
 
                 // service display
                 if (!(typeof content.result.data.objects.services === 'undefined')) {
-                    service_edit_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
+                    service_edit_html += '<label class="control-label"><h5 class=""><b>Services:</b></h5></label>';
                     service_edit_html += '<label class="checkbox">';
                     service_edit_html += '<input class="uniform" id="ping_checkbox" type="checkbox" value="" onchange="hide_and_show_ping();">';
-                    service_edit_html += '<p class="text-dark">Ping</p>';
+                    service_edit_html += '<p class="text-primary"><b>ping</b></p>';
                     service_edit_html += '</label>';
                     service_edit_html += '<div id="ping_svc" style="display: none;">';
                     service_edit_html += '</div>';
@@ -554,7 +554,7 @@ function get_service_edit_form(content) {
 
     bootbox.dialog({
         message: service_edit_html,
-        title: "<span class='text-danger'><i class='fa fa-pencil'></i> Edit services from nms core.</span>",
+        title: "<span class='text-primary'><i class='fa fa-pencil'></i> Edit services from nms core.</span>",
         buttons: {
             success: {
                 label: "Yes!",
@@ -728,8 +728,8 @@ function show_new_configuration_for_svc_edit(value, device_id){
     service_id = value;
     template_id = $("#service_template_"+value).val();
     Dajaxice.device.get_new_configuration_for_svc_edit(Dajax.process, {'service_id': service_id,
-        'template_id': template_id,
-        'device_id': device_id});
+        'template_id': template_id
+    });
 }
 
 
@@ -750,7 +750,7 @@ function get_service_delete_form(content) {
                 // display port select menu
                 //service_delete_html += '<h5 class="text-warning">You can edit service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
                 // show service information
-                service_delete_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+                service_delete_html += '<h5 class=""><b>Device Info:</b></h5>';
                 service_delete_html += '<dl class="dl-horizontal">';
                 service_delete_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_alias+'</dd>';
                 service_delete_html += '<dt>Services</dt><dd>';
@@ -762,7 +762,7 @@ function get_service_delete_form(content) {
 
                 // service display
                 if (!(typeof content.result.data.objects.services === 'undefined')) {
-                    service_delete_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
+                    service_delete_html += '<label class="control-label"><h5 class=""><b>Services:</b></h5></label>';
                     for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                         service_delete_html += '<div class="service">';
                         service_delete_html += '<label class="checkbox">';
@@ -865,7 +865,7 @@ function get_service_add_form(content) {
                 // display port select menu
                 //service_add_html += '<h5 class="text-warning">You can add service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
                 // show service information
-                service_add_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+                service_add_html += '<h5 class=""><b>Device Info:</b></h5>';
                 service_add_html += '<dl class="dl-horizontal">';
                 service_add_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_alias+'</dd>';
                 service_add_html += '<dt>Services</dt><dd>';
@@ -877,7 +877,7 @@ function get_service_add_form(content) {
 
                 // service display
                 if (!(typeof content.result.data.objects.services === 'undefined')) {
-                    service_add_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
+                    service_add_html += '<label class="control-label"><h5 class="text"><b>Services:</b></h5></label>';
                     for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                         service_add_html += '<div class="service">';
                         service_add_html += '<label class="checkbox">';
@@ -893,7 +893,7 @@ function get_service_add_form(content) {
                 }
             }
             else {
-                service_add_html += '<h5 class="text-warning">All service are operational for device ' + '"' + content.result.data.objects.device_alias + '". </h5>';
+                service_add_html += '<h5 class="">All service are operational for device ' + '"' + content.result.data.objects.device_alias + '". </h5>';
             }
         }
         else{
@@ -906,7 +906,7 @@ function get_service_add_form(content) {
 
     bootbox.dialog({
         message: service_add_html,
-        title: "<span class='text-danger'><i class='fa fa-plus'></i> Add services to nms core.</span>",
+        title: "<span class='text-green'><b></b><i class='fa fa-plus'></i> Add services to nms core.</span>",
         buttons: {
             success: {
                 label: "Yes!",
@@ -922,7 +922,7 @@ function get_service_add_form(content) {
                                 $this.children(".checkbox").find("input:checked").each(function () {
                                     service_id = $(this).prop("value");
                                     svc_val = $("#service_template_" + service_id).val();
-                                    svc = {"device_id": $("#device_id").val(), "service_id": $(this).prop("value"), "template_id": svc_val};
+                                    svc = {"service_id": $(this).prop("value"), "template_id": svc_val};
                                 });
                                 var data_sources = [];
                                 // loop through all the elements with class 'data_source_field'
@@ -989,7 +989,8 @@ function get_service_add_form(content) {
                             }
                         ]
                          */
-                        Dajaxice.device.add_services(add_services_message, {'svc_data': service_data});
+                        Dajaxice.device.add_services(add_services_message, {'device_id': $("#device_id").val(),
+                            'svc_data': service_data});
                     }
                     else{
                         $(".bootbox").modal("hide");
@@ -1041,7 +1042,7 @@ function add_services_message(responseResult) {
 // add services on nms core
 function device_services_status_frame(content) {
     var services_status_html = "";
-    services_status_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+    services_status_html += '<h5 class=""><b>Device Info:</b></h5>';
     services_status_html += '<dl class="dl-horizontal">';
     services_status_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_name+'</dd>';
     services_status_html += '<dt>Machine</dt><dd>'+content.result.data.objects.machine+'</dd>';
@@ -1050,7 +1051,7 @@ function device_services_status_frame(content) {
     services_status_html += '<dt>Device Type</dt><dd>'+content.result.data.objects.device_type+'</dd>';
     services_status_html += '</dd></dl>';
     if (!(typeof content.result.data.objects.active_services === 'undefined') && !(Object.keys(content.result.data.objects.active_services).length === 0)) {
-        services_status_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
+        services_status_html += '<div class=""><div class="box border green"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
         services_status_html += '<div class="box-body"><table class="table">';
         services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
         services_status_html += '<tbody>';
@@ -1064,19 +1065,19 @@ function device_services_status_frame(content) {
         services_status_html += '</div></div></div>';
     }
     else{
-        services_status_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
+        services_status_html += '<div class=""><div class="box border green"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
         services_status_html += '<div class="box-body"><table class="table">';
         services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
         services_status_html += '<tbody>';
         services_status_html += '<tr>';
-        services_status_html += '<td align="right"><span class="text-danger">No service is operational on this device or there is no service for this device.</span></td>';
+        services_status_html += '<td align="right"><span class="text-danger">No service is operational on this device.</span></td>';
         services_status_html += '</tr>';
         services_status_html += '</tbody></table>';
         services_status_html += '</div></div></div>';
     }
 
     if (!(typeof content.result.data.objects.inactive_services === 'undefined') && !(Object.keys(content.result.data.objects.inactive_services).length === 0)) {
-        services_status_html += '<div class=""><div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Non Operational Services</h4></div>';
+        services_status_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Non Operational Services</h4></div>';
         services_status_html += '<div class="box-body"><table class="table">';
         services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
         services_status_html += '<tbody>';
@@ -1090,12 +1091,12 @@ function device_services_status_frame(content) {
         services_status_html += '</div></div></div>';
     }
     else{
-        services_status_html += '<div class=""><div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Non Operational Services</h4></div>';
+        services_status_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Non Operational Services</h4></div>';
         services_status_html += '<div class="box-body"><table class="table">';
         services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
         services_status_html += '<tbody>';
         services_status_html += '<tr>';
-        services_status_html += '<td align="right"><span class="text-danger">All services are operational for this device or there is no service for this device.</span></td>';
+        services_status_html += '<td align="right"><span class="text-danger">All services are operational for this device.</span></td>';
         services_status_html += '</tr>';
         services_status_html += '</tbody></table>';
         services_status_html += '</div></div></div>';
@@ -1103,7 +1104,7 @@ function device_services_status_frame(content) {
 
     bootbox.dialog({
         message: services_status_html,
-        title: "<span class='text-danger'><i class='fa fa-list-alt'></i> Device Services Status</span>",
+        title: "<span class='text-green'><i class='fa fa-list-alt'></i> Device Services Status</span>",
         buttons: {
             success: {
                 label: "Yes!",

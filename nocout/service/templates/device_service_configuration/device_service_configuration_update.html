@@ -6,16 +6,16 @@
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "Device Inventory" "javascript:;" %}
-    {% breadcrumb_safe "SNMP Parameter" "protocols_list" %}
-    {% breadcrumb_safe "Update SNMP Parameter : "|add:object.name "javascript:;" %}
+    {% breadcrumb_safe "Device Service Configuration" "device_service_configuration_list" %}
+    {% breadcrumb_safe "Update Device Service Configuration : "|add:object.device_name "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
 
 {% load staticfiles %}
 
-{% block content_title %}Edit SNMP Parameters{% endblock %}
-{% block content_description %}Edit SNMP Parameters{% endblock %}
+{% block content_title %}Edit Device Service Configuration{% endblock %}
+{% block content_description %}Edit Device Service Configuration{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -23,7 +23,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> SNMP PARAMETERS : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i> DEVICE SERVICE CONFIGURATION : {{ object.device_name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
@@ -47,7 +47,7 @@
                                             <div class="col-sm-offset-3 col-sm-9">
                                                 <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/protocol/')"><i class="fa fa-times"></i> Cancel</button>
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device_service_configuration_list/')"><i class="fa fa-times"></i> Cancel</button>
                                             </div>
                                         </div>
                                     </form>
