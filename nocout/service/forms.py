@@ -6,7 +6,8 @@ from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from django.forms.util import ErrorList
 from django.core.exceptions import ValidationError
 
-from service.models import Service, ServiceParameters, ServiceDataSource, Protocol, ServiceSpecificDataSource
+from service.models import Service, ServiceParameters, ServiceDataSource, Protocol, ServiceSpecificDataSource, \
+    DeviceServiceConfiguration
 from device.forms import BaseDeviceTypeServiceFormset
 
 from performance import formulae
@@ -329,5 +330,53 @@ class ProtocolForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+
+# ************************************** Device Service Configuration Update *****************************************
+class DeviceServiceConfigurationForm(forms.ModelForm):
+    """
+    Class Based Protocol Model Form.
+    """
+    def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(DeviceServiceConfigurationForm, self).__init__(*args, **kwargs)
+
+        self.fields['device_name'].widget.attrs['readonly'] = True
+        self.fields['service_name'].widget.attrs['readonly'] = True
+        self.fields['agent_tag'].widget.attrs['readonly'] = True
+        self.fields['port'].widget.attrs['readonly'] = True
+        self.fields['data_source'].widget.attrs['readonly'] = True
+        self.fields['version'].widget.attrs['readonly'] = True
+        self.fields['read_community'].widget.attrs['readonly'] = True
+        self.fields['svc_template'].widget.attrs['readonly'] = True
+        self.fields['normal_check_interval'].widget.attrs['readonly'] = True
+        self.fields['retry_check_interval'].widget.attrs['readonly'] = True
+        self.fields['max_check_attempts'].widget.attrs['readonly'] = True
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        """
+        Meta Information.
+        """
+        model = DeviceServiceConfiguration
+        exclude = ['operation', 'added_on', 'modified_on', 'is_added']
+
 
 
