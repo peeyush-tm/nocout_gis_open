@@ -214,6 +214,7 @@ class DevicePingConfiguration(models.Model):
     rta_critical = models.IntegerField('RTA Critical', null=True, blank=True)
     pl_warning = models.IntegerField('PL Warning', null=True, blank=True)
     pl_critical = models.IntegerField('PL Critical', null=True, blank=True)
+    operation = models.CharField('Opeartion', max_length=1, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
 
