@@ -189,12 +189,9 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
             self.object = form.save(commit=False)
             self.object.created_by = user
             self.object.organization = user.organization
-            print 'SAVED - 1 '*20
-            save_response = self.object.save()
-            print save_response
-            print 'SAVED M2M - 1 '*20
-            save_m2m_response = form.save_m2m()
-            print save_m2m_response
+            self.object.save()
+            form.save_m2m()
+
             return HttpResponseRedirect(EventCreate.success_url)
         else:
             return self.render_to_response(
@@ -357,6 +354,7 @@ def event_today_status(dic):
     # Case to repeat the event on weekly basis.
     elif event.repeat == 'wee':
         # get the days of weeks to repeat the event.
+        # Monday = 1, Tuesday = 2, So (-1) from id is used
         weekday = tuple([int(x.id)-1 for x in event.repeat_on.all()])
         execution_dates = list(rrule(WEEKLY, dtstart=start, interval=interval, count=count, until=end, byweekday=weekday))
         if today in execution_dates:
