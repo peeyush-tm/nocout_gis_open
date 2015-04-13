@@ -1,6 +1,21 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
+    {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
+    {% breadcrumb_safe "Base Station Wizard : "|add:object.alias "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}GIS Wizard: Base Station{% endblock %}
+{% block content_description %}Base Station Detail{% endblock %}
+
 {% block content %}
-<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
     <style type="text/css">
         #user_profile table tr td:first-child {
             font-weight: bold;
@@ -9,12 +24,17 @@
             font-weight: normal;
         }
     </style>
+    <p>
+        <a href="javascript:void(0)" onclick="window.history.go(-1);">
+            <i class="fa fa-arrow-left">&nbsp;</i> Previous Page
+        </a>
+    </p>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> Base Station - {{ object.name }}</h4>
+            <h4><i class="fa fa-table"></i> Base Station - {{ object.alias }}</h4>
         </div>
         <div class="box-body">
-            <div id="user_profile" class="col-md-6 col-md-offset-3">
+            <div id="user_profile" class="col-md-8 col-md-offset-2">
                 <table class="table table-hover table-bordered">
                     <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Base Station Alias </td>

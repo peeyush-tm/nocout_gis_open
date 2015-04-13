@@ -3305,7 +3305,10 @@ function devicePlottingClass_gmap() {
 
 				var report_download_btn = "";
 				if(path_circuit_id) {
-					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
+					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" \
+										   data-complete-text="Download L2 Report"\
+									  	   data-loading-text="Please Wait..."\
+										   ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
 				}
 				/*SS Info End*/
 				infoTable += '</div>';
@@ -3347,7 +3350,9 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info' \
+									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  data-complete-text='Fresnel Zone'\
+									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
 									  	"+contentObject.nearLat+",\
 									  	"+contentObject.nearLon+",\
@@ -3364,7 +3369,9 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info' \
+									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  data-complete-text='Fresnel Zone'\
+									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
 									  	"+contentObject.ss_lat+",\
 									  	"+contentObject.ss_lon+",\
@@ -3969,6 +3976,10 @@ function devicePlottingClass_gmap() {
 			console.log("Calculate Fresnel Zone");
 			console.log("Calculate Fresnel Zone Start Time :- "+ new Date().toLocaleString());
 		}
+
+		// Disable Fresnel Zone Button
+		$(".fresnel_btn").button("loading");
+
 		/*Save sector & ss name in global variables*/
 		bts1_name = sector_ss_obj.sector_name;
 		bts2_name = sector_ss_obj.ss_name;
@@ -4324,10 +4335,17 @@ function devicePlottingClass_gmap() {
 				title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
 			});
 
+			$(".modal-dialog").css("width","80%");
+
 		} else {
 
 			isDialogOpen = true;
 		}
+
+		// Enable Fresnel Zone Button after 0.5 sec
+		setTimeout(function() {
+			$(".fresnel_btn").button("complete");
+		},500);
 
 		/*Initialize antina1 height slider*/
 		$("#antina_height1").slider({
@@ -4376,8 +4394,6 @@ function devicePlottingClass_gmap() {
 	    		gmap_self.heightChanged();
 	    	}
 	    });
-
-		$(".modal-dialog").css("width","80%");
 
 		/*Plotting chart with points array using jquery.flot.js*/
 		var fresnelChart = $.plot(
@@ -5826,16 +5842,16 @@ function devicePlottingClass_gmap() {
 				}
 
 				if(polled_device_count[devices_counter] <= 1) {
-					var display_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].sector_ip;
+					var display_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].sector_ip+")";
 					num_counter++;
-					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>'+num_counter+'.) NE. -'+display_name+'</h5>';
+					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>'+num_counter+') NE - '+display_name+'</h5>';
 					devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 					devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 					devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 				}
-				var ss_display_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].ss_ip;
+				var ss_display_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].ss_ip+")";
 				num_counter++;
-				devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) FE. -'+ss_display_name+'</h5>';
+				devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+') FE - '+ss_display_name+'</h5>';
 				devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 				devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 				devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -5848,22 +5864,22 @@ function devicePlottingClass_gmap() {
 					if(ptp_tech_list.indexOf(current_technology) > -1) {
 						if(polygonSelectedDevices[i].pointType == 'sub_station') {
 							device_end_txt = "FE";
-							point_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].ss_ip;
+							point_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].ss_ip+")";
 						} else {
 							device_end_txt = "NE";
-							point_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].sectorName;
+							point_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].sectorName+")";
 						}
 						num_counter++;
-						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+device_end_txt+' - '+point_name+'</h5>';
+						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+') '+device_end_txt+' - '+point_name+'</h5>';
 						devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 						devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 						devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 					}
 				} else {
 
-					point_name = "Ckt. - "+polygonSelectedDevices[i].cktId+") "+polygonSelectedDevices[i].ss_ip;
+					point_name = "Ckt. ("+polygonSelectedDevices[i].cktId+") : IP ("+polygonSelectedDevices[i].ss_ip+")";
 					num_counter++;
-					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+point_name+'</h5>';
+					devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+') '+point_name+'</h5>';
 					devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 					devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 					devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
