@@ -530,7 +530,8 @@ function updatePieChart(chartData, domElement, callback) {
                     dataLabels: {
                         enabled: false
                     },
-                    showInLegend: true
+                    showInLegend: true,
+                    size: 150
                 }
             },
             tooltip: {
