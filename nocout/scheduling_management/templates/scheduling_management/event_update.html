@@ -17,6 +17,7 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/schedule_style.css" %} >
     <link rel="stylesheet" type="text/css" href={% static "css/bootstrap-timepicker.min.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} >
 {% endblock %}
 {% block content %}
     <div class="row formContainer">
@@ -453,10 +454,10 @@
                                 ids : id
                             }
                         }).done(function(data) {
-                                callback(
-                                    data.device_result
-                                    );
-                            });
+                            callback(
+                                data.device_result
+                                );
+                        });
                     }
                 },
                 formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
