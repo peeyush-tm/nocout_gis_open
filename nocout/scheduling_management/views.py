@@ -76,11 +76,11 @@ class EventListingTable(PermissionsRequiredMixin,
     """
     model = Event
     # columns are used for list of fields which should be displayed on data table.
-    columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device_specification']
+    columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type']
     #search_columns is used for list of fields which is used for searching the data table.
-    search_columns = ['name', 'repeat', 'created_by__username', 'scheduling_type', 'device_specification']
+    search_columns = ['name', 'repeat', 'created_by__username', 'scheduling_type']
     #order_columns is used for list of fields which is used for sorting the data table.
-    order_columns = ['name', 'created_at', 'repeat', 'start_on', 'created_by__username', 'scheduling_type', 'device_specification']
+    order_columns = columns
     required_permissions = ('scheduling_management.view_event',)
 
     def get_initial_queryset(self):
@@ -101,30 +101,41 @@ class EventListingTable(PermissionsRequiredMixin,
         repeat_choice = dict(Event.REPEAT)
         scheduling_type_choice = dict(Event.SCHEDULING_TYPE)
         json_data = []
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        is_super_user = self.request.user.is_superuser
         for obj in qs:
             dct = {}
-            dct.update(name=obj.name)
-            dct.update(created_at=obj.created_at)
             repeat = repeat_choice["%s"%(obj.repeat)]
-            dct.update(repeat=repeat)
-            dct.update(start_on=obj.start_on)
-            dct.update(created_by__username=obj.created_by.username)
             scheduling_type = scheduling_type_choice["%s"%(obj.scheduling_type)]
-            dct.update(scheduling_type=scheduling_type)
+            dev_list = ''
+            no_of_devices = ''
+            
             # display the device with ip address upto 5 devices.
             # when there are more than 5 devices than limit it to 5 devices and show with their ip_address.
             if obj.scheduling_type != "dety":
                 dev_list = ["{}-{}".format(dev.device_alias,dev.ip_address) for i,dev in enumerate(obj.device.all()) if i < 5 ]
-                dct.update(device_specification=', '.join(dev_list))
-                dct.update(no_of_devices=obj.device.count())
+                no_of_devices = obj.device.count()
+
             else:
                 dev_list = ["{0}".format(dev.alias) for i,dev in enumerate(obj.device_type.all()) if i < 5 ]
-                dct.update(device_specification=', '.join(dev_list))
-                dct.update(
-                    no_of_devices = Device.objects.filter(device_type__in=DeviceType.objects.filter(alias__in=tuple(dev_list)).values_list('id')).count()
-                )
-            dct.update(actions='<a href="/scheduling/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/scheduling/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
+                no_of_devices = Device.objects.filter(
+                    device_type__in=DeviceType.objects.filter(alias__in=tuple(dev_list)
+                ).values_list('id')).count()
+            
+            dct.update(
+                name=obj.name,
+                created_at=obj.created_at,
+                repeat=repeat,
+                start_on=obj.start_on,
+                created_by__username=obj.created_by.username,
+                scheduling_type=scheduling_type,
+                device_specification=', '.join(dev_list),
+                no_of_devices = no_of_devices
+            )
+
+            if 'admin' in user_role or is_super_user:
+                dct.update(actions='<a href="/scheduling/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                    <a href="/scheduling/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
             json_data.append(dct)
         return json_data
 
@@ -133,6 +144,7 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
     """
     Render event create view
     """
+
     template_name = 'scheduling_management/event_new.html'
     model = Event
     form_class = EventForm
@@ -155,7 +167,6 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
         self.object = None
         form_class = self.get_form_class()
         form = self.get_form(form_class)
-
         # querydict contain the device id as a comma seperated single string
         # i.e: device = ['1,2,3,4,5,6...'] and should be ['1','2','3','4',..]
         # get the device id from the querydict.
@@ -178,8 +189,12 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
             self.object = form.save(commit=False)
             self.object.created_by = user
             self.object.organization = user.organization
-            self.object.save()
-            form.save_m2m()
+            print 'SAVED - 1 '*20
+            save_response = self.object.save()
+            print save_response
+            print 'SAVED M2M - 1 '*20
+            save_m2m_response = form.save_m2m()
+            print save_m2m_response
             return HttpResponseRedirect(EventCreate.success_url)
         else:
             return self.render_to_response(
@@ -205,10 +220,20 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
         form_class = self.get_form_class()
         # device id need to in format ['1,2,3,...'] when rendering the templates so,
         # set initial of device in the required format.
+        
         device_initial = ','.join([str(device_id) for device_id in self.object.device.values_list('id', flat=True)])
         device_type_initial = ','.join([str(device_id) for device_id in self.object.device_type.values_list('id', flat=True)])
-        form = EventForm(instance=self.object, initial={'device': device_initial, 'device_type': device_type_initial})
-            
+        repeat_on_initial = ','.join([str(device_id) for device_id in self.object.repeat_on.values_list('id', flat=True)])
+        
+        form = EventForm(
+            instance=self.object,
+            initial={
+                'device': device_initial,
+                'device_type': device_type_initial,
+                'repeat_on' : repeat_on_initial
+            }
+        )
+
         return self.render_to_response(
             self.get_context_data(form=form))
 
