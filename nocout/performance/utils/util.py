@@ -633,14 +633,14 @@ def get_time(start_date, end_date, date_format, data_for):
         now_datetime = datetime.datetime.now()
         end_date = format(now_datetime, 'U')
         # In case of 'bihourly' & 'hourly' start date will be start of today(i.e '%Y-%m-%d 00:00:00')
-        if data_for in ['bihourly', 'hourly']:
-            start_date = format(now_datetime.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
-        elif data_for == 'daily':
-            last_30_days = now_datetime - datetime.timedelta(days=30)
-            start_date = format(last_30_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
-        elif data_for == 'weekly':
-            last_12_months = now_datetime - datetime.timedelta(days=365)
-            start_date = format(last_12_months.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
+        if data_for in ['bihourly']:
+            last_4_days = now_datetime - datetime.timedelta(days=4)
+            start_date = format(last_4_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
+        elif data_for in ['hourly']:
+            last_7_days = now_datetime - datetime.timedelta(days=7)
+            start_date = format(last_7_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
+        elif data_for in ['daily', 'weekly', 'monthly', 'yearly']:
+            end_date = 0
         else:
             # The end date is the end limit we need to make query till.
             end_date_object = now_datetime
@@ -651,7 +651,13 @@ def get_time(start_date, end_date, date_format, data_for):
             # Converting the date to epoch time or Unix Timestamp
             start_date = format(start_date_object, 'U')
 
-    return isSet, float(start_date), float(end_date)
+    if end_date:
+        end_date = float(end_date)
+
+    if start_date:
+        start_date = float(start_date)
+
+    return isSet, start_date, end_date
 
 
 def color_picker():
