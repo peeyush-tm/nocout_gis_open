@@ -1351,7 +1351,6 @@ def remove_sync_deadlock(request):
     return json.dumps({'result': result})
 
 
-
 @dajaxice_register(method='GET')
 def edit_single_service_form(request, dsc_id):
     """Edit single service for a device from nms core
@@ -3224,5 +3223,49 @@ def device_services_status(request, device_id):
         for ds in svc.service_data_sources.all():
             temp_svc['data_sources'] += "{}, ".format(ds.alias)
         result['data']['objects']['inactive_services'].append(temp_svc)
+
+    return json.dumps({'result': result})
+
+
+@dajaxice_register(method='GET')
+def reset_service_configuration(request):
+    """ Reset device service configuration
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+
+    Returns:
+        result (dict): dict of device info
+                   i.e. {
+                            "result": {
+                                "message": "Successfully reset device service configuration.",
+                                "data": {
+                                    "meta": ""
+                                },
+                                "success": 1
+                            }
+                        }
+
+    """
+
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Failed to reset device service configuration."
+    result['data']['meta'] = ''
+
+    # get last id of 'DeviceSyncHistory'
+    try:
+        # truncate 'service_deviceserviceconfiguration'
+        DeviceServiceConfiguration.objects.all().delete()
+
+        # truncate 'service_devicepingconfiguration'
+        DevicePingConfiguration.objects.all().delete()
+
+        result['success'] = 1
+        result['message'] = "Successfully reset device service configuration."
+
+    except Exception as e:
+        pass
 
     return json.dumps({'result': result})

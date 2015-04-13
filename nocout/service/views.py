@@ -563,6 +563,16 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
         Preparing the Context Variable required in the template rendering.
         """
         context = super(DeviceServiceConfigurationList, self).get_context_data(**kwargs)
+
+        # show device service configuration reset button
+        dsc_reset = "no"
+
+        # check records exist in device service configuration table or not
+        # device service configuration data
+        dsc_data = DeviceServiceConfiguration.objects.all()
+        if dsc_data.count() > 0:
+            dsc_reset = "yes"
+
         datatable_headers = [
             {'mData': 'device_name', 'sTitle': 'Device', 'sWidth': 'null', },
             {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'null', },
@@ -593,8 +603,9 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
-
         context['deleted_datatable_headers'] = json.dumps(deleted_datatable_headers)
+        context['dsc_reset'] = dsc_reset
+
         return context
 
 
