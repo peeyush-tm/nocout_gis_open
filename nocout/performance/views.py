@@ -1992,7 +1992,6 @@ class Get_Service_Type_Performance_Data(View):
             end_date = float(format(now_datetime, 'U'))
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
 
-
         if service_data_source_type.strip() not in ['topology', 'rta', 'pl', 'availability', 'rf']:
             sds_name = service_name.strip() + "_" + service_data_source_type.strip()
         else:
@@ -2102,6 +2101,11 @@ class Get_Service_Type_Performance_Data(View):
                 **parameters
             ).using(alias=inventory_device_machine_name)
 
+            # GET Severity Count
+            severity_count_data = self.get_performance_severity_count(
+                **parameters
+            ).using(alias=inventory_device_machine_name)
+
             if dr_device:
                 result = self.dr_performance_data_result(performance_data=performance_data,
                                                          sector_device=device,
@@ -2111,6 +2115,10 @@ class Get_Service_Type_Performance_Data(View):
 
                 result = self.get_performance_data_result(performance_data,'',is_historical_data)
                 # result = self.get_performance_data_result(performance_data)
+
+            print "RESULT == "*5
+            print len(result['data']['objects']['chart_data'])
+            print "RESULT == "*5
 
         elif service_data_source_type == 'rf':
             sector_device = None
@@ -2403,6 +2411,50 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = model.objects.filter(where_condition).order_by('sys_timestamp')
 
         return performance_data
+
+    # This function get severity count as per given params
+    def get_performance_severity_count(self, model=None, start_time=None, end_time=None, devices=None, services=None, sds=None):
+
+        severity_count_data = list()
+        if services:
+            where_condition = ''
+            if start_time and end_time:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(service_name__in=services) & Q(data_source__in=sds)
+                    &
+                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
+                )
+            else:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(service_name__in=services) & Q(data_source__in=sds)
+                )
+            severity_count_data = model.objects.filter(where_condition).values('severity').annotate(
+                severity_count=Count('device_name')
+            )
+        else:
+            if start_time and end_time:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(data_source__in=sds)
+                    &
+                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
+                )
+            else:
+                where_condition = (
+                    Q(device_name__in=devices)
+                    &
+                    Q(data_source__in=sds)
+                )
+            severity_count_data = model.objects.filter(where_condition).values('severity').annotate(
+                severity_count=Count('device_name')
+            )
+
+        return severity_count_data
 
     def return_table_header_and_table_data(self, service_name, result):
 
