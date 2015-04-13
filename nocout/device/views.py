@@ -317,7 +317,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status\
                                         (device_services_status_frame, {{\'device_id\': {0}}})">\
                                         <i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
-                                        <a href="javascript:;" onclick="delete_device({0});">\
+                                        <a href="javascript:;" onclick="modify_device_state({0});">\
                                         <i class="fa fa-ban {1}" title="Disable Device"></i></a>\
                                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form\
                                         (get_service_add_form, {{\'value\': {0}}})">\
