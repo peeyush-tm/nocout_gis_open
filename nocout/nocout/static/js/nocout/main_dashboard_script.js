@@ -529,7 +529,7 @@ function updatePieChart(chartData, domElement, callback) {
                 }
             },
             chart_size = 150;
-        
+
         if(domElement.indexOf('capacity') == -1) {
             pie_chart_legends['itemWidth'] = Number(legends_size)/2;
             pie_chart_legends['width'] = legends_size;
@@ -599,11 +599,6 @@ function updatePieChart(chartData, domElement, callback) {
                 }
             },
             series: [{
-                type: 'pie',
-                name: chartData.chart_data[0].name,
-                colors: colors_list,
-                data: chartData.chart_data[0].data
-            },{
                 type: 'pie',
                 name: chartData.chart_data[0].name,
                 colors: colors_list,
