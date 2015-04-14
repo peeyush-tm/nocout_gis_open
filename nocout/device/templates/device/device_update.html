@@ -183,30 +183,33 @@
 
         // update 'device vendor' on selecting 'device technology'
         $("#id_device_technology").change(function () {
+//            Reset Corresponding fields
+            $("#id_device_vendor").select2("val","");
+            $("#id_device_vendor").empty();
+            $("#id_device_model").select2("val","");
+            $("#id_device_model").empty();
+            $("#id_device_type").select2("val","");
+            $("#id_device_type").empty();
+            $("#id_ports").select2("val","");
+            $("#id_ports").empty();
+            $("#extra_fields").empty();
 
             if ($("#id_device_technology").val()) {
                 Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
-                $("#id_device_model").empty();
-                $("#id_device_type").empty();
-                $("#extra_fields").empty();
-            }
-            else{
-                $("#id_device_vendor").select2("val","");
-                $("#id_device_vendor").empty();
                 $("#id_device_model").select2("val","");
-                $("#id_device_model").empty();
                 $("#id_device_type").select2("val","");
+                $("#id_device_model").empty();
                 $("#id_device_type").empty();
-                $("#id_ports").select2("val","");
-                $("#id_ports").empty();
                 $("#extra_fields").empty();
             }
+
         });
 
         // update 'device model' on selecting 'device vendor'
         $("#id_device_vendor").change(function () {
             if ($('#id_device_vendor').val()){
                 Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+                $("#id_device_type").select2("val","");
                 $("#id_device_type").empty();
                 $("#extra_fields").empty();
             }
