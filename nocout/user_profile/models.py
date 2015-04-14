@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User, UserManager
+from django.db.models.signals import post_save
 from mptt.models import MPTTModel, TreeForeignKey
 from organization.models import Organization
+import signals as user_signals
 
 
 # user profile class
@@ -40,3 +42,7 @@ class UserPasswordRecord(models.Model):
     user_id = models.IntegerField('User Id', null=True, blank=True)
     password_used = models.CharField('Password', max_length=100, null=True, blank=True)
     password_used_on = models.DateTimeField('Password Used On', auto_now_add=True)
+
+# ************************************ USER PROFILE SIGNALS ************************************
+# set site instance 'is_device_change' bit on device type service modified or created
+post_save.connect(user_signals.assign_default_thematics_to_user, sender=UserProfile)
