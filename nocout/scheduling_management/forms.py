@@ -14,6 +14,7 @@ class EventForm(forms.ModelForm):
     """
     Rendering form for Scheduling event
     """
+
     repeat_every_list = []  # Create the list from 1 to 30 as (i,i)
     for i in range(1,31):
         repeat_every_list.append((i,i))
@@ -22,8 +23,7 @@ class EventForm(forms.ModelForm):
 
     repeat_every = forms.ChoiceField(initial=1, choices=REPEAT_EVERY, required=False)
     repeat_by = forms.ChoiceField(widget=forms.RadioSelect(), choices=Event.REPEAT_BY, required=False)
-    repeat_on = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(),
-                queryset=Weekdays.objects.filter().order_by('id'), required=False)
+    repeat_on = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), choices = Weekdays.WEEKDAYS, required=False)
     end_never = forms.BooleanField(initial=True, required=False)
     start_on_time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
     end_on_time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
