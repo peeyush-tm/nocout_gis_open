@@ -4,6 +4,7 @@ import ast
 import json
 from datetime import datetime
 import time
+from machine.models import Machine
 import requests
 import logging
 import urllib
@@ -135,6 +136,79 @@ def update_ports(request, option):
     for port in ports:
         out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
     dajax.assign('#id_ports', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_sites(request, option):
+    """ Updating sites corresponding to selected machine
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+    # selected machine
+    machine = Machine.objects.get(pk=int(option))
+
+    # vendors associated to the selected technology
+    sites = machine.siteinstance_set.all()
+
+    out = list()
+    out.append("<option value='' selected>Select</option>")
+
+    for site in sites:
+        out.append("<option value='%d'>%s</option>" % (site.id, site.alias))
+    dajax.assign('#id_site_instance', 'innerHTML', ''.join(out))
+
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def after_update_site(request, option, selected=''):
+    """ Get site selection menu with last time selected site as selected option after unsuccessful form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        option (unicode): selected option value
+
+    Kwargs:
+        selected (unicode): option value selected before unsuccessful form submission
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+
+    # selected machine
+    machine = Machine.objects.get(pk=int(option))
+
+    # sites associated to selected technology
+    sites = machine.siteinstance_set.all()
+
+    out = list()
+    out.append("<option value=''>Select</option>")
+    for site in sites:
+        if site.id == int(selected):
+            out.append("<option value='%d' selected>%s</option>" % (site.id, site.alias))
+        else:
+            out.append("<option value='%d'>%s</option>" % (site.id, site.alias))
+
+    dajax.assign('#id_site_instance', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
