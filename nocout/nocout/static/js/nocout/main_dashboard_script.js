@@ -153,7 +153,25 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     },
     all_charts_array = [],
     charts_info_list_chunks = [],
-    dashboard_call_counter = 0;
+    dashboard_call_counter = 0,
+    cause_code_chart_size = 220,
+    cause_code_legends = {
+        itemDistance : 15,
+        itemMarginBottom : 5,
+        borderColor : "#CCCCCC",
+        borderWidth : "1",
+        borderRadius : "8",
+        itemStyle: {
+            color: '#555555',
+            fontSize : '10px'
+        },
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'top'
+        // width : "100%"
+    },
+    legends_size = 160,
+    capacity_legend_items_part = 1;
 
 /**
  * This function initialize main dashboard & it is recursive function
@@ -498,6 +516,30 @@ function updatePieChart(chartData, domElement, callback) {
             }
         }
     } else {
+
+        var pie_chart_legends = {
+                itemDistance : 15,
+                itemMarginBottom : 5,
+                borderColor : "#CCCCCC",
+                borderWidth : "1",
+                borderRadius : "8",
+                itemStyle: {
+                    color: '#555555',
+                    fontSize : '10px'
+                }
+            },
+            chart_size = 150;
+
+        if(domElement.indexOf('capacity') == -1) {
+            pie_chart_legends['itemWidth'] = Number(legends_size)/2;
+            pie_chart_legends['width'] = legends_size;
+        }
+
+        if(domElement == '#mfr_cause_code') {
+            pie_chart_legends = cause_code_legends;
+            chart_size = cause_code_chart_size;
+        }
+
         var pie_chart = $(domElement).highcharts({
             chart: {
                 plotBackgroundColor: null,
@@ -511,18 +553,7 @@ function updatePieChart(chartData, domElement, callback) {
             credits: {
                 enabled: false
             },
-            legend:{
-                itemDistance : 15,
-                itemMarginBottom : 5,
-                // itemWidth : 138,
-                borderColor : "#CCCCCC",
-                borderWidth : "1",
-                borderRadius : "8",
-                itemStyle: {
-                    color: '#555555',
-                    fontSize : '10px'
-                }
-            },
+            legend: pie_chart_legends,
             plotOptions: {
                 pie: {
                     allowPointSelect: true,
@@ -531,7 +562,7 @@ function updatePieChart(chartData, domElement, callback) {
                         enabled: false
                     },
                     showInLegend: true,
-                    size: 150
+                    size: chart_size
                 }
             },
             tooltip: {

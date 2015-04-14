@@ -11,16 +11,16 @@ class Weekdays(models.Model):
     Display the weekdays if repeat of event is by Weeks.
     """
     WEEKDAYS = (
-        ('Mon', 'Monday'),
-        ('Tue', 'Tuesday'),
-        ('Wed', 'Wednesday'),
-        ('Thu', 'Thursday'),
-        ('Fri', 'Friday'),
-        ('Sat', 'Saturday'),
-        ('Sun', 'Sunday'),
+        ('1', 'Monday'),
+        ('2', 'Tuesday'),
+        ('3', 'Wednesday'),
+        ('4', 'Thursday'),
+        ('5', 'Friday'),
+        ('6', 'Saturday'),
+        ('7', 'Sunday'),
     )
-    name = models.CharField('Weekdays', max_length=128, null=True, blank=True,
-                            choices=WEEKDAYS, unique=True)
+    name = models.CharField('Weekdays', max_length=128, null=True, blank=True, choices=WEEKDAYS)
+                            
 
     def __unicode__(self):
         return self.name
@@ -55,10 +55,12 @@ class Event(models.Model):
         ('netw', 'Network Device'),
         ('back', 'Backhaul Device'),
     )
+
+
     name = models.CharField('Title', max_length=255)
     repeat = models.CharField('Repeats', max_length=10, choices=REPEAT, default='dai')
     repeat_every = models.IntegerField('Repeat every', max_length=2, null=True, blank=True)
-    repeat_on = models.ManyToManyField(Weekdays, 'Repeat on')
+    repeat_on = models.ManyToManyField(Weekdays, null=True, blank=True)
     repeat_by = models.CharField('Repeat by', max_length=10, null=True, blank=True, choices=REPEAT_BY, default='dofm')
     created_at = models.DateTimeField('Created at', auto_now_add=True)
     start_on = models.DateField('Starts on')

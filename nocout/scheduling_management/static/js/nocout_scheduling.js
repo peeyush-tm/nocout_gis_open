@@ -1,5 +1,4 @@
 /*This is a temporary code which is replace when data for data table is provided*/
-$(".datatable").DataTable();
 
 /*Code for Calender*/
 var date = new Date();

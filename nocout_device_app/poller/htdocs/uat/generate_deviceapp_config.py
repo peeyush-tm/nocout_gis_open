@@ -518,7 +518,8 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     !isnull(inventory_circuit.sector_id) and
     inventory_sector.id = inventory_circuit.sector_id
     )
-    where device_device.is_deleted=0 and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KSS', 'CanopyPM100SS', 'CanopySM100SS', 'StarmaxSS')) as dupli
+    where device_device.is_deleted=0 and
+    device_device.host_state <> 'Disable' and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KSS', 'CanopyPM100SS', 'CanopySM100SS', 'StarmaxSS')) as dupli
     )
     on (original.id = dupli.matcher)
         """
