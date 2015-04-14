@@ -763,6 +763,14 @@ def device_restore(request, device_id):
     if device.is_deleted == 1:
         device.is_deleted = 0
         device.save()
+
+        # modify site instance 'is_device_change' bit to relect corresponding site for sync
+        try:
+            device.site_instance.is_device_change = 1
+            device.site_instance.save()
+        except Exception as e:
+            pass
+
         result['success'] = 1
         result['message'] = "Successfully restored device ({}).".format(device.device_alias)
     else:
