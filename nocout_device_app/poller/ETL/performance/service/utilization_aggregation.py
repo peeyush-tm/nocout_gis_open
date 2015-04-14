@@ -103,6 +103,7 @@ def quantify_utilization_data(host_specific_data):
     #print '## Docs len ##'
     #print len(data_values)
     for doc in host_specific_data:
+	doc = type_caste(doc)
         aggr_data = {}
         find_query = {}
 
@@ -174,10 +175,10 @@ def quantify_utilization_data(host_specific_data):
                 'check_time': check_time
                 }
 	if read_from == 'mysql':
-	    try:
-	        mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
-	    except:
-	        mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
+	    #try:
+	     #   mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
+	   # except:
+	    mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
             aggr_data.update({
                 'min': mn,
                 'max': mx,
@@ -203,8 +204,12 @@ def quantify_utilization_data(host_specific_data):
         #print existing_doc
         if existing_doc:
             existing_doc = existing_doc[0]
+	    existing_doc = type_caste(existing_doc)
             values_list = [existing_doc.get('max'), aggr_data.get('max'), 
                     existing_doc.get('min'), aggr_data.get('min')]
+	    values_list = [x for x in values_list if x != None]
+	    if not values_list:
+		values_list = [None]
 	    if service in freq_based_util_services:
 		# Calculation based on number of occurrences
 		occur = collections.defaultdict(int)
@@ -216,8 +221,9 @@ def quantify_utilization_data(host_specific_data):
                 avg_val = None
 	    else:
 		# Calculation based on normal min, max and avg
-                min_val = min(values_list) 
-                max_val = max(values_list) 
+		if values_list:
+			min_val = min(values_list) 
+			max_val = max(values_list) 
                 if existing_doc.get('avg') and aggr_data.get('avg'):
                     avg_val = (float(str((existing_doc.get('avg')))) + float(str((aggr_data.get('avg')))))/ 2.0
 		elif aggr_data.get('avg'):
@@ -245,6 +251,27 @@ def quantify_utilization_data(host_specific_data):
         host_specific_aggregated_data.append(aggr_data)
     
     return host_specific_aggregated_data
+
+
+def type_caste(data):
+    #if isinstance(data, basestring):
+#       try:
+#           return eval(data)
+#       except:
+#           return data
+ #   elif isinstance(data, collections.Mapping):
+  #      return dict(map(type_caste, data.iteritems()))
+   # elif isinstance(data, collections.Iterable):
+    #    return type(data)(map(type_caste, data))
+    #else:
+   #     return data
+    for k, v in data.iteritems():
+        try:
+            v = eval(v)
+        except:
+            pass
+        data.update({k: v})
+    return data
 
 
 def find_existing_entry(find_query, host_specific_aggregated_data):

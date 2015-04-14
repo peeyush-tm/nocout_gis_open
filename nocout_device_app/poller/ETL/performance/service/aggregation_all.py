@@ -111,6 +111,8 @@ def quantify_perf_data(host_specific_data):
     #print '## Docs len ##'
     #print len(host_specific_data)
     for doc in host_specific_data:
+	# need to convert `str` into proper int, float values, where ever possible
+	doc = type_caste(doc)
         # These services contain perf which can't be evaluated using regular `min`, `max` functions
         wimax_mrotek_services = ['wimax_ss_sector_id', 'wimax_ss_mac', 'wimax_dl_intrf', 'wimax_ul_intrf', 'wimax_ss_ip',
                 'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec', 'wimax_ss_frequency',
@@ -192,10 +194,10 @@ def quantify_perf_data(host_specific_data):
                 'check_time': check_time
                 }
         if read_from == 'mysql':
-	    try:
-	        mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
-	    except:
-	        mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
+	    #try:
+	     #   mn, mx, ag = eval(doc.get('min_value')), eval(doc.get('max_value')), eval(doc.get('avg_value'))
+	    #except:
+	    mn, mx, ag = doc.get('min_value'), doc.get('max_value'), doc.get('avg_value')
             aggr_data.update({
                 'min': mn,
                 'max': mx,
@@ -220,12 +222,17 @@ def quantify_perf_data(host_specific_data):
         #print existing_doc, existing_doc_index
         if existing_doc:
             existing_doc = existing_doc[0]
-            values_list = [existing_doc.get('max'), aggr_data.get('max'), 
-                    existing_doc.get('min'), aggr_data.get('min')]
+	    existing_doc = type_caste(existing_doc)
+            values_list = [existing_doc.get('max'), aggr_data.get('max'), existing_doc.get('min'), aggr_data.get('min')]
+	    values_list = [x for x in values_list if x != None]
+	    if not values_list:
+		values_list = [None]
 	    # we calculate values for latency as 0 for pd = 100% cases
 	    # we need to remove those values for min, max calculations
 	    if str(ds) == 'rta':
 		values_list = [x for x in values_list if x != 0]
+		if not values_list:
+		    values_list = [0.0]
             if service in wimax_mrotek_services or '_status' in service or '_invent' in service:
                 occur = collections.defaultdict(int)
                 for val in values_list:
@@ -235,8 +242,10 @@ def quantify_perf_data(host_specific_data):
                 max_val = freq_dist[-1]
                 avg_val = None
             else:
-                min_val = min(values_list) 
-                max_val = max(values_list) 
+		if values_list:
+			min_val = min(values_list) 
+		if values_list:
+			max_val = max(values_list) 
                 if aggr_data.get('avg'):
                     try:
                         avg_val = (float(existing_doc.get('avg')) + float(aggr_data.get('avg')))/ 2.0
@@ -264,6 +273,27 @@ def quantify_perf_data(host_specific_data):
             pass
         host_specific_aggregated_data.append(aggr_data)
     return host_specific_aggregated_data
+
+
+def type_caste(data):
+    #if isinstance(data, basestring):
+#	try:
+#	    return eval(data)
+#	except:
+#	    return data
+ #   elif isinstance(data, collections.Mapping):
+  #      return dict(map(type_caste, data.iteritems()))
+   # elif isinstance(data, collections.Iterable):
+    #    return type(data)(map(type_caste, data))
+    #else:
+   #     return data
+    for k, v in data.iteritems():
+	try:
+	    v = eval(v)
+	except:
+	    pass
+	data.update({k: v})
+    return data
 
 
 def find_existing_entry(find_query, host_specific_aggregated_data):
