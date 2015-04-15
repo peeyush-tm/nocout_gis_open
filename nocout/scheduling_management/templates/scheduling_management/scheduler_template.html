@@ -21,15 +21,6 @@
 	<div class="box border lite">
         <div class="box-title">
             <h4><i class="fa fa-calendar"></i>SCHEDULING</h4>
-
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
         </div>
 
         <div class="box-body">
@@ -45,19 +36,10 @@
             	</div>
             </div>
 
-                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="EventListingTable">
-                    <thead>
-                        <th>Name</th>
-                        <th>Created At</th>
-                        <th>Repeat</th>
-                        <th>Execute On</th>
-                        <th>Created By</th>
-                        <th>Scheduling Type</th>
-                        <th>Device Specification</th>
-                        <th>Actions</th>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+            <table class="datatable table table-striped table-bordered table-hover" id="EventsListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
 
             <!-- scheduling_container End-->
             <div class="clearfix"></div>
@@ -68,64 +50,63 @@
 
 
 {% block load_js %}
-	<!-- FULL CALENDAR -->
-	<script type="text/javascript" src={% static "js/fullcalendar/fullcalendar.min.js" %}></script>
-	<!-- Custom Script-->
-	<script type="text/javascript" src={% static "js/nocout_scheduling.js" %}></script>
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- FULL CALENDAR -->
+    <script type="text/javascript" src={% static "js/fullcalendar/fullcalendar.min.js" %}></script>
+    <!-- Custom Script-->
+    <script type="text/javascript" src={% static "js/nocout_scheduling.js" %}></script>
 	<script>
+        var dataTableInstance = "";
 	    $(document).ready(function () {
 	        App.setPage("");  //Set current page
 	        App.init(); //Initialise plugins and elements
 
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
 
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
                 ajax_url = '{% url "EventListingTable" %}';
 
-            var destroy=false;
-            dataTableInstance.createDataTable("EventListingTable", gridHeadersObj, ajax_url, destroy);
-
-
+            dataTableInstance.createDataTable("EventsListingTable", gridHeadersObj, ajax_url, false);
             // get the event list on load of the page.
             event_month_list()
 
-            //on change of the month to previous month.
-            $(".fc-button-prev").click(function(){
-                event_month_list()
-            })
+        });
+        
+        //on change of the month to previous month.
+        $(".fc-button-prev").click(function(){
+            event_month_list()
+        })
 
-            //on change of the month to next month.
-            $(".fc-button-next").click(function(){
-                event_month_list()
-            })
+        //on change of the month to next month.
+        $(".fc-button-next").click(function(){
+            event_month_list()
+        })
 
-            //function to get the list of the parent according to the ogranisation.
-            function event_month_list(){
-                var moment = $('#scheduling_calendar').fullCalendar('getDate');
-                var month = moment.getMonth()
-                var year = moment.getFullYear()
-                $.ajax({
-                    url : "/scheduling/month/",
-                    type : "GET",
-                    dataType: "json",
-                    data: {
-                        month: month,
-                        year: year,
-                    },
-                    success : function(response) {
-                        var events = response['month_schedule_list']
-                        $('#scheduling_calendar').fullCalendar("removeEvents");
-                        $('#scheduling_calendar').fullCalendar('addEventSource', events);
-                        $('#calendar').fullCalendar('refetchEvents');
-                    },
-                    error : function(xhr,errmsg,err) {
-                        console.log(err);
-                    }
-                });
-                return false;
-            }
-	    });
+        //function to get the list of the parent according to the ogranisation.
+        function event_month_list(){
+            var moment = $('#scheduling_calendar').fullCalendar('getDate');
+            var month = moment.getMonth()
+            var year = moment.getFullYear()
+            $.ajax({
+                url : "/scheduling/month/",
+                type : "GET",
+                dataType: "json",
+                data: {
+                    month: month,
+                    year: year,
+                },
+                success : function(response) {
+                    var events = response['month_schedule_list']
+                    $('#scheduling_calendar').fullCalendar("removeEvents");
+                    $('#scheduling_calendar').fullCalendar('addEventSource', events);
+                    $('#calendar').fullCalendar('refetchEvents');
+                },
+                error : function(xhr,errmsg,err) {
+                    // console.log(err);
+                }
+            });
+            return false;
+        }
 
 	</script>
 {% endblock %}

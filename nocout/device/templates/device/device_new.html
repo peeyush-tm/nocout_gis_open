@@ -117,6 +117,13 @@
                 Dajaxice.device.after_update_vendor(Dajax.process, {'option': $('#id_device_technology').val(), 'selected': vendor_val});
             }
 
+            // update 'site instances' if it is already selected
+            // i.e. after validation if form is invalid
+            if ($('#id_site_instance').val()) {
+                Dajaxice.device.after_update_site(Dajax.process, {'option': $('#id_machine').val(),
+                    'selected': $('#id_site_instance').val()});
+            }
+
             // update 'device vendor' if it is already selected corresponding to 'device technology'
             // i.e. after validation if form is invalid
             // or just empty the selection menu
@@ -231,6 +238,22 @@
             if ($("#id_device_model").length == 1) {
                 Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
             }
+        });
+
+        // update 'site' on selecting 'machine'
+        $("#id_machine").change(function (e) {
+
+            $("#id_site_instance").select2("val","");
+            $("#id_site_instance").empty();
+            if ($('#id_machine').val()){
+                Dajaxice.device.update_sites(Dajax.process, {'option': $('#id_machine').val()});
+            }
+//        }).click(function () {
+//            $("#id_site_instance").select2("val","");
+//            $("#id_site_instance").empty();
+//            if ($("#id_machine").length == 1) {
+//                Dajaxice.device.update_sites(Dajax.process, {'option': $('#id_machine').val()});
+//            }
         });
 
         // update 'ports' on selecting 'device type'

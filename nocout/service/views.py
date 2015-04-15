@@ -14,9 +14,9 @@ from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet,\
-                DTServiceDataSourceUpdateFormSet
+                DTServiceDataSourceUpdateFormSet, DeviceServiceConfigurationForm
 from device.forms import DeviceTypeServiceDataSourceUpdateFormset
-from device.models import DeviceTypeService
+from device.models import DeviceTypeService, Device
 
 # ########################################################
 from django.conf import settings
@@ -549,7 +549,7 @@ class ProtocolDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     obj_alias = 'protocol_name'
 
 
-#**************************************** DeviceServiceConfiguration *********************************************
+# **************************************** DeviceServiceConfiguration *********************************************
 class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to list the Device Service Configuration page.
@@ -562,46 +562,107 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
         """
         Preparing the Context Variable required in the template rendering.
         """
-        context=super(DeviceServiceConfigurationList, self).get_context_data(**kwargs)
+        context = super(DeviceServiceConfigurationList, self).get_context_data(**kwargs)
+
+        # show device service configuration reset button
+        dsc_reset = "no"
+
+        # check records exist in device service configuration table or not
+        # device service configuration data
+        dsc_data = DeviceServiceConfiguration.objects.all()
+        if dsc_data.count() > 0:
+            dsc_reset = "yes"
+
         datatable_headers = [
-            {'mData':'device_name',             'sTitle' : 'Device',                'sWidth':'null',},
-            {'mData':'service_name',            'sTitle' : 'Service',               'sWidth':'null',},
-            {'mData':'agent_tag',               'sTitle' : 'Agent Tag',             'sWidth':'null',},
-            {'mData':'port',                    'sTitle' : 'Port',                  'sWidth':'null',},
-            {'mData':'version',                 'sTitle' : 'Version',               'sWidth':'null',},
-            {'mData':'read_community',          'sTitle' : 'Read Community',        'sWidth':'null',},
-            {'mData':'svc_template',            'sTitle' : 'Template',              'sWidth':'null',},
-            {'mData':'normal_check_interval',   'sTitle' : 'Normal CI',             'sWidth':'null',},
-            {'mData':'retry_check_interval',    'sTitle' : 'Retry CI',              'sWidth':'null',},
-            {'mData':'max_check_attempts',      'sTitle' : 'Max Attempts',          'sWidth':'null',},
-            {'mData':'data_source',             'sTitle' : 'DS',                    'sWidth':'null',},
-            {'mData':'warning',                 'sTitle' : 'Warning',               'sWidth':'null',},
-            {'mData':'critical',                'sTitle' : 'Critical',              'sWidth':'null',},
-            {'mData':'added_on',                'sTitle' : 'Added On',              'sWidth':'null',},
-            {'mData':'modified_on',             'sTitle' : 'Updated On',            'sWidth':'null',},
+            {'mData': 'device_name', 'sTitle': 'Device', 'sWidth': 'null', },
+            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'null', },
+            {'mData': 'agent_tag', 'sTitle': 'Agent Tag', 'sWidth': 'null', },
+            {'mData': 'port', 'sTitle': 'Port', 'sWidth': 'null', },
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'null', },
+            {'mData': 'read_community', 'sTitle': 'Read Community', 'sWidth': 'null', },
+            {'mData': 'svc_template', 'sTitle': 'Template', 'sWidth': 'null', },
+            {'mData': 'normal_check_interval', 'sTitle': 'Normal CI', 'sWidth': 'null', },
+            {'mData': 'retry_check_interval', 'sTitle': 'Retry CI', 'sWidth': 'null', },
+            {'mData': 'max_check_attempts', 'sTitle': 'Max Attempts', 'sWidth': 'null', },
+            {'mData': 'data_source', 'sTitle': 'DS', 'sWidth': 'null', },
+            {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'null', },
+            {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'null', },
+            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'null', },
+            {'mData': 'modified_on', 'sTitle': 'Updated On', 'sWidth': 'null', },
+        ]
+
+        deleted_datatable_headers = [
+            {'mData': 'device_name', 'sTitle': 'Device', 'sWidth': 'null', },
+            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'null', },
+            {'mData': 'data_sources', 'sTitle': 'Data Sources', 'sWidth': 'null', },
+            {'mData': 'agent_tag', 'sTitle': 'Agent Tag', 'sWidth': 'null', },
+            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'null', },
+            {'mData': 'modified_on', 'sTitle': 'Updated On', 'sWidth': 'null', },
         ]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
+        context['deleted_datatable_headers'] = json.dumps(deleted_datatable_headers)
+        context['dsc_reset'] = dsc_reset
+
         return context
 
-class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+
+class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin,
+                                             BaseDatatableView):
     """
     Class based View render the Device Service Configuration Table.
     """
     model = DeviceServiceConfiguration
     required_permissions = ('service.view_deviceserviceconfiguration',)
-    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
-               'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
+    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'read_community', 'svc_template',
+               'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning',
                'critical', 'added_on', 'modified_on']
-    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
-                     'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
+    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'read_community', 'svc_template',
+                     'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning',
                      'critical', 'added_on', 'modified_on']
-    search_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
-               'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
-               'critical']
+    search_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'read_community', 'svc_template',
+                      'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning',
+                      'critical']
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
+        # fields list those are excluded from search
+        exclude_columns = []
+
+        # search keyword
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % self.model.__name__
+            for column in self.columns:
+                # avoid search on columns in exclude list
+                if column in exclude_columns:
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").filter(operation__in=['c', 'e']).values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return self.model.objects.filter(operation__in=['c', 'e']).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """
@@ -611,14 +672,114 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Datatable
         :return qs
         """
 
-
-        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form,\
-                               {{\'dsc_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="#" onclick="Dajaxice.device.delete_single_service_form(get_single_service_delete_form,\
-                                {{\'dsc_id\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')),
+            try:
+                device = Device.objects.get(device_name=dct['device_name'])
+                dct['device_name'] = "{} ({})".format(device.device_alias, device.ip_address)
+            except Exception as e:
+                pass
+
+            dct.update(actions='<a href="/device_service_configuration/{0}/edit/">\
+                                <i class="fa fa-pencil text-dark"></i></a>'.format(dct.pop('id')),
                        added_on=dct['added_on'].strftime("%Y-%m-%d %H:%M:%S"),
                        modified_on=dct['modified_on'].strftime("%Y-%m-%d %H:%M:%S"))
 
         return json_data
+
+
+class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin,
+                                                    BaseDatatableView):
+    """
+    Class based View render the Device Service Configuration Table.
+    """
+    model = DeviceServiceConfiguration
+    required_permissions = ('service.view_deviceserviceconfiguration',)
+    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'read_community', 'svc_template',
+               'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning',
+               'critical', 'added_on', 'modified_on']
+    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'read_community', 'svc_template',
+                     'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning',
+                     'critical', 'added_on', 'modified_on']
+    search_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'read_community', 'svc_template',
+                      'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning',
+                      'critical']
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
+        # fields list those are excluded from search
+        exclude_columns = []
+
+        # search keyword
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % self.model.__name__
+            for column in self.columns:
+                # avoid search on columns in exclude list
+                if column in exclude_columns:
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").filter(operation__in=['d']).values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return self.model.objects.filter(operation__in=['d']).values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            try:
+                device = Device.objects.get(device_name=dct['device_name'])
+                dct['device_name'] = "{} ({})".format(device.device_alias, device.ip_address)
+            except Exception as e:
+                pass
+
+            dct['data_sources'] = ""
+
+            try:
+                data_sources = Service.objects.get(name=dct['service_name']).service_data_sources.all()
+                if data_sources:
+                    for ds in data_sources:
+                        dct['data_sources'] += "{} <br />".format(ds.name)
+            except Exception as e:
+                pass
+
+            dct.update(added_on=dct['added_on'].strftime("%Y-%m-%d %H:%M:%S"),
+                       modified_on=dct['modified_on'].strftime("%Y-%m-%d %H:%M:%S"))
+
+        return json_data
+
+
+class DeviceServiceConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
+    """
+    Class Based View to update the protocol.
+    """
+    template_name = 'device_service_configuration/device_service_configuration_update.html'
+    model = DeviceServiceConfiguration
+    form_class = DeviceServiceConfigurationForm
+    success_url = reverse_lazy('device_service_configuration_list')
+

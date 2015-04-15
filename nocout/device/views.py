@@ -317,7 +317,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status\
                                         (device_services_status_frame, {{\'device_id\': {0}}})">\
                                         <i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
-                                        <a href="javascript:;" onclick="delete_device({0});">\
+                                        <a href="javascript:;" onclick="modify_device_state({0});">\
                                         <i class="fa fa-ban {1}" title="Disable Device"></i></a>\
                                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form\
                                         (get_service_add_form, {{\'value\': {0}}})">\
@@ -1206,7 +1206,7 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         # if 'site_instance' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
         try:
             if (initial_field_dict['site_instance'] != form.cleaned_data['site_instance'].id) and (
-                self.object.is_added_to_nms == 1):
+                        self.object.is_added_to_nms == 1):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
@@ -1215,12 +1215,11 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         # if 'ip_address' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
         try:
             if (initial_field_dict['ip_address'] != form.cleaned_data['ip_address']) and (
-                self.object.is_added_to_nms == 1):
+                        self.object.is_added_to_nms == 1):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
             logger.exception(e.message)
-
 
         def cleaned_data_field():
             """

@@ -178,6 +178,7 @@ class DeviceServiceConfiguration(models.Model):
     max_check_attempts = models.IntegerField('Max Check Attempts', null=True, blank=True)
     warning = models.CharField('Warning', max_length=20, null=True, blank=True)
     critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+    operation = models.CharField('Operation', max_length=1, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
     is_added = models.IntegerField('Is Added', default=0)
@@ -213,6 +214,7 @@ class DevicePingConfiguration(models.Model):
     rta_critical = models.IntegerField('RTA Critical', null=True, blank=True)
     pl_warning = models.IntegerField('PL Warning', null=True, blank=True)
     pl_critical = models.IntegerField('PL Critical', null=True, blank=True)
+    operation = models.CharField('Opeartion', max_length=1, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
 
