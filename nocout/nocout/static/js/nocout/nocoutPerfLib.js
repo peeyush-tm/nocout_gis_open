@@ -834,11 +834,11 @@ function nocoutPerfLib() {
             get_service_data_url = "/"+get_service_data_url;
         }
 
-        var draw_type = "chart",
+        var draw_type = $("input[name='item_type']:checked").val(),
             listing_ajax_url = "";
 
-        if(!$("#display_table")[0].checked) {
-            draw_type = "table";
+        if(!draw_type) {
+            draw_type = "chart";
         }
 
         // Decrement the tabs click on evert click counter
@@ -989,23 +989,47 @@ function nocoutPerfLib() {
                                 $("#display_type_container").addClass("hide")
                             }
 
-                            $('#'+service_id+'_chart').html("");
+                            if(typeof(grid_headers[0]) == 'string') {
+                                var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
+                                if($("#other_perf_table").length == 0) {
+                                    initNormalDataTable_nocout(
+                                        'other_perf_table',
+                                        grid_headers,
+                                        service_id
+                                    );
+                                }
 
-                            initChartDataTable_nocout(
-                                "other_perf_table",
-                                grid_headers,
-                                service_id,
-                                listing_ajax_url,
-                                true
-                            );
+                                // Call addDataToNormalTable_nocout (utilities) function to add data to initialize datatable
+                                addDataToNormalTable_nocout(
+                                    table_data,
+                                    grid_headers,
+                                    'other_perf_table'
+                                );
+                            } else {
+                                $('#'+service_id+'_chart').html("");
+
+                                initChartDataTable_nocout(
+                                    "other_perf_table",
+                                    grid_headers,
+                                    service_id,
+                                    listing_ajax_url,
+                                    true
+                                );
+                            }
                         } else {
                             var chart_config = result.data.objects;
 
-                            if(listing_ajax_url.indexOf('servicedetail') > -1) {
+                            if(
+                                listing_ajax_url.indexOf('service/rf/') > -1
+                                ||
+                                listing_ajax_url.indexOf('servicedetail') > -1
+                                ||
+                                listing_ajax_url.indexOf('availability') > -1) {
                                 // Show display type option from only table tabs
                                 if(!$("#display_type_container").hasClass("hide")) {
                                     $("#display_type_container").addClass("hide")
                                 }
+                                draw_type = 'chart';
                             } else {
                                 // Show display type option from only table tabs
                                 if($("#display_type_container").hasClass("hide")) {
@@ -1065,7 +1089,7 @@ function nocoutPerfLib() {
                                         $('#'+service_id+'_chart').html("");
                                         var table_headers = default_live_table_headers;
 
-                                        if(show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
+                                        if(show_historical_on_performance && listing_ajax_url.indexOf("availability")  == -1 && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
                                             table_headers = default_hist_table_headers;
                                         }
                                         initChartDataTable_nocout(
@@ -1081,11 +1105,19 @@ function nocoutPerfLib() {
                         }
                     } else {
 
-                        if(listing_ajax_url.indexOf('servicedetail') > -1) {
+                        if(
+                            listing_ajax_url.indexOf('service/rf/') > -1
+                            ||
+                            listing_ajax_url.indexOf('servicedetail') > -1
+                            ||
+                            listing_ajax_url.indexOf('availability') > -1
+                        ) {
                             // Show display type option from only table tabs
                             if(!$("#display_type_container").hasClass("hide")) {
                                 $("#display_type_container").addClass("hide")
                             }
+
+                            draw_type = 'chart';
                         } else {
                             // Show display type option from only table tabs
                             if($("#display_type_container").hasClass("hide")) {
@@ -1171,10 +1203,6 @@ function nocoutPerfLib() {
                     });
 
                     hideSpinner();
-                },
-                complete : function() {
-                    // Enable bootstrap switch
-                    $("#display_table").bootstrapSwitch('disabled',false,false);
                 }
             });
         }
@@ -1260,4 +1288,21 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
         perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
     }
 
+});
+
+// Change event on display type radio buttons
+$('input[name="item_type"]').change(function(e) {
+    if(show_historical_on_performance) {
+        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+            service_id = active_inner_tab.attr("id").slice(0, -4),
+            get_service_data_url = active_inner_tab.attr("url");
+    } else {
+        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+            service_id = active_inner_tab.attr("id").slice(0, -4),
+            get_service_data_url = active_inner_tab.attr("url");
+    }
+
+    if(get_service_data_url && service_id && current_device) {
+        perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+    }
 });

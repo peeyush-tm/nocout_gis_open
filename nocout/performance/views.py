@@ -1955,6 +1955,10 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     isHistorical = False
 
+    formula = None
+
+    data_source = ''
+
     def get_initial_queryset(self, parameters, machine_name):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -1982,11 +1986,47 @@ class ServiceDataSourceListing(BaseDatatableView):
             if item['sys_timestamp']:
                 datetime_obj = datetime.datetime.fromtimestamp(item['sys_timestamp'])
 
+            current_val = item['current_value']
+            
+            if self.data_source == 'uptime':
+                if item['current_value']:
+                    tt_sec = float(item['current_value'])
+                    current_val = display_time(tt_sec)
+              
             item.update(
+                current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
                     '%d-%m-%Y %H:%M'
                 ) if item['sys_timestamp'] != "" else ""
             )
+
+            if self.isHistorical:
+
+                min_val = item['min_value']
+                max_val = item['max_value']
+                avg_val = item['avg_value']
+
+                if self.data_source == 'uptime':
+                    if item['min_value']:
+                        tt_sec = float(item['min_value'])
+                        min_val = display_time(tt_sec)
+
+                if self.data_source == 'uptime':
+                    if item['max_value']:
+                        tt_sec = float(item['max_value'])
+                        max_val = display_time(tt_sec)
+
+                if self.data_source == 'uptime':
+                    if item['avg_value']:
+                        tt_sec = float(item['avg_value'])
+                        avg_val = display_time(tt_sec)
+
+                item.update(
+                    min_value=min_val,
+                    max_value=max_val,
+                    avg_value=avg_val
+                )
+
             # Add data to list
             data.append(item)
 
@@ -2024,6 +2064,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         device_id = self.kwargs['device_id']
         service = self.kwargs['service_name']
         data_source = self.kwargs['service_data_source_type']
+        self.data_source = self.kwargs['service_data_source_type']
         
         data_for = self.request.GET.get('data_for','live')
         
@@ -2049,6 +2090,10 @@ class ServiceDataSourceListing(BaseDatatableView):
             now_datetime = datetime.datetime.now()
             end_date = float(format(now_datetime, 'U'))
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
+
+        # check for the formula
+        if data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[data_source]['formula']:
+            self.formula = SERVICE_DATA_SOURCE[data_source]['formula']
 
         if data_for == 'bihourly':
             self.model = PerformanceServiceBiHourly
@@ -2083,6 +2128,9 @@ class ServiceDataSourceListing(BaseDatatableView):
         
 
         if "_status" in service:
+            if not isSet and data_for == 'live':
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
 
             if data_for == 'daily':
                 self.model = PerformanceStatusDaily
@@ -2096,6 +2144,11 @@ class ServiceDataSourceListing(BaseDatatableView):
                 self.model = PerformanceStatus
 
         elif '_invent' in service:
+
+            if not isSet and data_for == 'live':
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+
             if data_for == 'daily':
                 self.model = PerformanceInventoryDaily
             elif data_for == 'weekly':
@@ -2322,10 +2375,11 @@ class Get_Service_Type_Performance_Data(View):
             ).using(alias=inventory_device_machine_name)
 
             if dr_device:
-                result = self.dr_performance_data_result(performance_data=performance_data,
-                                                         sector_device=device,
-                                                         dr_device=dr_device
-                                                         )
+                result = self.dr_performance_data_result(
+                    performance_data=performance_data,
+                    sector_device=device,
+                    dr_device=dr_device
+                )
             else:
 
                 result = self.get_performance_data_result(performance_data,'',is_historical_data)
@@ -2424,30 +2478,6 @@ class Get_Service_Type_Performance_Data(View):
                 result = self.get_performance_data_result(performance_data,'',is_historical_data)
                 # result = self.get_performance_data_result(performance_data)
 
-            # Show severity pie chart only when it is enabled from settings.py
-            if DISPLAY_SEVERITY_PIE_CHART:
-                # If any data exists then add severity data with it.
-                if(
-                    int(result['success']) == 1
-                    and
-                    len(result['data']['objects']) > 0
-                    and
-                    'chart_data' in result['data']['objects']
-                ):
-                    # GET Severity Count
-                    severity_count_data = self.get_performance_severity_count(
-                        **parameters
-                    ).using(alias=inventory_device_machine_name)
-
-                    severity_result = list()
-
-
-                    if len(severity_count_data) > 0:
-                        severity_result = self.prepare_severity_count_result(severity_count_data)
-
-                        if severity_result:
-                            result['data']['objects']['chart_data'].append(severity_result)
-
         elif "availability" in service_name or service_data_source_type in ['availability']:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
@@ -2508,7 +2538,7 @@ class Get_Service_Type_Performance_Data(View):
 
 
         elif '_status' in service_name:
-            if not isSet and not is_historical_data:
+            if not isSet and data_for == 'live':
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
 
@@ -2545,7 +2575,7 @@ class Get_Service_Type_Performance_Data(View):
             result = self.get_perf_table_result(performance_data,None, is_historical_data)
 
         elif '_invent' in service_name:
-            if not isSet and not is_historical_data:
+            if not isSet and data_for == 'live':
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
 
@@ -2814,7 +2844,7 @@ class Get_Service_Type_Performance_Data(View):
 
             if 'crit' in data['severity'] or 'down' in data['severity']:
                 color = '#FF0000'
-            elif 'up' in data['severity'] or 'normal' in data['severity'] or 'success' in data['severity']:
+            elif 'up' in data['severity'] or 'normal' in data['severity'] or 'success' in data['severity'] or 'ok' in data['severity']:
                 color = '#00FF66'
                 # color = '#83FD02'
             elif 'warn' in data['severity'] or 'warning' in data['severity']:

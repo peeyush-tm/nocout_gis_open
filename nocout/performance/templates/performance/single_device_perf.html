@@ -103,16 +103,12 @@
                     </button>
                 </li>
                 <li id="display_type_container">
-                    <!-- <label class="checkbox-inline">
+                    <label class="checkbox-inline">
                         <input type="radio" id="display_chart" name="item_type" value="chart" checked="checked"/>  Display Chart
                     </label>
                     <label class="checkbox-inline">
                         <input type="radio" id="display_table" name="item_type" value="table"/>  Display Table
-                    </label> -->
-                    <div class="make-switch switch-large" title="Display Table">
-                        <input type="checkbox" id="display_table" checked>
-                    </div>
-
+                    </label>
                 </li>
                 <li>
                     <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
@@ -311,40 +307,6 @@
             }
 
             var current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
-
-            // Init bootstrap switch
-            $("#display_table").bootstrapSwitch({
-                "offText" : "<i class='fa fa-bar-chart-o'></i>",
-                "onText" : "<i class='fa fa-table fa-fw'></i>",
-                "onColor" : "primary",
-                "offColor" : "primary",
-                "disabled" : true,
-                onSwitchChange : function(e) {
-                    var title_text = "Display Chart";
-                    
-                    if(this.checked) {
-                        title_text = "Display Table";
-                    }
-
-                    $("#display_table").closest('.make-switch')[0].attributes.title.value = title_text;
-
-                    if(show_historical_on_performance) {
-                        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
-                            service_id = active_inner_tab.attr("id").slice(0, -4),
-                            get_service_data_url = active_inner_tab.attr("url");
-                    } else {
-                        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                            service_id = active_inner_tab.attr("id").slice(0, -4),
-                            get_service_data_url = active_inner_tab.attr("url");
-                    }
-
-                    if(get_service_data_url && service_id && current_device) {
-                        // Disable bootstrap switch
-                        $("#display_table").bootstrapSwitch('disabled',true,true);
-                        perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
-                    }
-                }
-            });
 
 
             // Show/hide live polling button & chart container
