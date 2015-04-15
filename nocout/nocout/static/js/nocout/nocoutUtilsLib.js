@@ -259,63 +259,90 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  * @param headers {Array}, It contains the headers object array for table
  * @param service_id {String}, It contains the service dom id in which the table is to be populate.
  */
-function initChartDataTable_nocout(table_id, headers, service_id) {
+function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
-    var excel_columns = [];
+    var data_in_table = "<table id='"+table_id+"' class='datatable table table-striped table-bordered table-hover'><thead>";
 
-    if($('#'+table_id).length > 0) {
+    if($("#"+table_id).length > 0) {
         $("#"+table_id).dataTable().fnDestroy();
         $("#"+table_id).remove();
     }
 
-    var data_in_table = "<table id='"+table_id+"' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
-    /*Make table headers*/
-    for (var i = 0; i < headers.length; i++) {
-        data_in_table += '<td colspan="2" align="center"><b>' + headers[i].name + '</b></td>';
-        excel_columns.push(i);
-        if(headers.length <= i+1) {
-            excel_columns.push(i+1);
-        }
-
-    }
-    data_in_table += '</tr><tr>';
-
-    for (var i = 0; i < headers.length; i++) {
-        data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
-    }
-
-    data_in_table += '</tr></thead></table>';
     /*Table header creation end*/
     if(service_id) {
         $('#'+service_id+'_bottom_table').html(data_in_table);
     }
 
-    $("#"+table_id).DataTable({
-        sDom: 'T<"clear">lfrtip',
-        oTableTools: {
-            sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-            aButtons: [
-                {
-                    sExtends: "xls",
-                    sButtonText: "Download Excel",
-                    sFileName: "*.xls",
-                    mColumns: excel_columns
-                }
-            ]
-        },
-        fnInitComplete: function(oSettings) {
-            var row_per_pages_selectbox = '#'+table_id+'_wrapper div.dataTables_length label select',
-                search_box = '#'+table_id+'_wrapper div.dataTables_filter label input';
-            // Update search txt box & row per pages dropdown style
-            $(row_per_pages_selectbox+' , '+search_box).addClass("form-control");
-            $(row_per_pages_selectbox+' , '+search_box).addClass("input-sm");
-            $(row_per_pages_selectbox+' , '+search_box).css("max-width","150px");
-        },
-        bPaginate: true,
-        bDestroy: true,
-        aaSorting : [[0,'desc']],
-        sPaginationType: "full_numbers"
-    });
+    var splitted_url = ajax_url.split("/performance/");
+
+    splitted_url[1] = "listing/"+splitted_url[1];
+
+    var updated_url = splitted_url.join("/performance/"),
+        tableheaders = [];
+
+    if(!has_headers) {
+        for(var i=0;i<headers_config.length;i++) {
+            var header_key = headers_config[i].name.replace(/ /g,'_').toLowerCase();
+
+            // Condition check for current value
+            if(
+                header_key.indexOf('warning_threshold') == -1
+                &&
+                header_key.indexOf('critical_threshold') == -1
+                &&
+                header_key.indexOf('min_value') == -1
+                &&
+                header_key.indexOf('max_value') == -1
+                &&
+                header_key.indexOf('avg_value') == -1
+                &&
+                header_key.indexOf('severity') == -1
+            ) {
+                header_key = 'current_value';
+            }
+
+            if(header_key.indexOf('min_value') > -1) {
+                header_key = 'min_value';
+            }
+
+            if(header_key.indexOf('max_value') > -1) {
+                header_key = 'max_value';
+            }
+
+            if(header_key.indexOf('avg_value') > -1) {
+                header_key = 'avg_value';
+            }
+
+            var header_dict = {
+                'mData': header_key,
+                'sTitle': headers_config[i].name,
+                'sWidth': 'auto',
+                'bSortable': false
+            };
+
+            tableheaders.push(header_dict);
+        }
+
+        // Add sys_timestamp
+        tableheaders.push({
+            'mData': 'sys_timestamp',
+            'sTitle': 'Time',
+            'sWidth': 'auto',
+            'bSortable': false
+        });
+    } else {
+        tableheaders = headers_config;
+    }
+
+
+
+    /*Call createDataTable function to create the data table for specified dom element with given data*/
+    dataTableInstance.createDataTable(
+        table_id,
+        tableheaders,
+        updated_url,
+        false
+    );
 }
 
 /**
@@ -332,20 +359,21 @@ function addDataToChartTable_nocout(table_obj, table_id) {
     for(var i = 0; i < data.length; i++) {
         var row_val = [];
         for (var j = 0; j < table_obj.length; j++) {
-            var inner_data = table_obj[j].data[i];
-
-            if(inner_data) {
-                if(inner_data.constructor == Array) {
-                    if(inner_data[0]) {
-                        row_val.push(new Date(inner_data[0]).toLocaleString());
-                        var chart_val = inner_data[1];
-                        row_val.push(chart_val);
-                    }
-                } else if(inner_data.constructor == Object) {
-                    if(inner_data.x) {
-                        row_val.push(new Date(inner_data.x).toLocaleString());
-                        var chart_val = inner_data.y;
-                        row_val.push(chart_val);
+            if(table_obj[j].type != 'pie') {
+                var inner_data = table_obj[j].data[i];
+                if(inner_data) {
+                    if(inner_data.constructor == Array) {
+                        if(inner_data[0]) {
+                            row_val.push(new Date(inner_data[0]).toLocaleString());
+                            var chart_val = inner_data[1];
+                            row_val.push(chart_val);
+                        }
+                    } else if(inner_data.constructor == Object) {
+                        if(inner_data.x) {
+                            row_val.push(new Date(inner_data.x).toLocaleString());
+                            var chart_val = inner_data.y;
+                            row_val.push(chart_val);
+                        }
                     }
                 }
             }
@@ -418,8 +446,43 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             }
         },
         tooltip: {
-            headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
-            pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+            // headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
+            // pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+            formatter: function () {
+                var this_date = new Date(this.x),
+                    tooltip_string = "";
+
+                if(this.x && this_date != 'Invalid Date') {
+                    var date_str_options = {
+                        timezone : "Asia/Kolkata",
+                        year: 'numeric',
+                        month : 'numeric',
+                        day : 'numeric',
+                        hour : 'numeric',
+                        minute : 'numeric',
+                        hour12 : true
+                    }
+                    try {
+                        tooltip_string = '<b>' + this_date.toLocaleString(date_str_options).toUpperCase()+ '</b>';
+                    } catch(e) {
+                        tooltip_string = '<b>' + this_date.toLocaleString()+ '</b>';
+                    }
+                } else {
+                    var key_name = this.point.series.name ? this.point.series.name : this.key;
+                    tooltip_string = '<b>' + key_name+ '</b>'
+                }
+                if(this.points && this.points.length > 0) {
+                    for(var i=0;i<this.points.length;i++) {
+                        tooltip_string += '<br/><span style="color:'+this.points[i].series.color+'">\
+                                          '+this.points[i].series.name+'</span>: <strong>' +this.points[i].y+'</strong>';
+                    }
+                } else {
+                    tooltip_string += '<br/><span style="color:'+this.point.color+'">\
+                                      '+this.point.name+'</span>: <strong>' +this.point.y+'</strong>';
+                }
+
+                return tooltip_string;
+            },
             shared: true,
             crosshairs: true,
             useHTML: true,

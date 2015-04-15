@@ -68,6 +68,64 @@ var perf_that = "",
             "id" : "yearly",
             "title" : "Yearly",
         }
+    ],
+    default_live_table_headers = [
+        {
+            'mData': 'current_value',
+            'sTitle': 'Current Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'severity',
+            'sTitle': 'Severity',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'sys_timestamp',
+            'sTitle': 'Time',
+            'sWidth': 'auto',
+            'bSortable': false
+        }
+    ],
+    default_hist_table_headers = [
+        {
+            'mData': 'current_value',
+            'sTitle': 'Current Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'min_value',
+            'sTitle': 'Min. Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'max_value',
+            'sTitle': 'Max. Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'avg_value',
+            'sTitle': 'Avg. Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'severity',
+            'sTitle': 'Severity',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'sys_timestamp',
+            'sTitle': 'Time',
+            'sWidth': 'auto',
+            'bSortable': false
+        }
     ];
 
 /*Set the base url of application for ajax calls*/
@@ -364,9 +422,8 @@ function nocoutPerfLib() {
         }
 
         content_html += '<div class="chart_container">\
-                        <div id="'+chart_id+'" style="height:350px;width:100%;">\
+                        <div id="'+chart_id+'" style="width:100%;">\
                         <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
-                        <div class="divide-20"></div>\
                         <div id="'+bottom_table_id+'"></div></div></div>';
 
         return content_html;
@@ -777,6 +834,13 @@ function nocoutPerfLib() {
             get_service_data_url = "/"+get_service_data_url;
         }
 
+        var draw_type = "chart",
+            listing_ajax_url = "";
+
+        if(!$("#display_table")[0].checked) {
+            draw_type = "table";
+        }
+
         // Decrement the tabs click on evert click counter
         tabs_click_counter--;
 
@@ -788,20 +852,25 @@ function nocoutPerfLib() {
 
         showSpinner();
 
-        // window.location.href = '#' + get_service_data_url.split('/')[3] + "#" + get_service_data_url.split('/')[5];
-
         get_url = base_url + "" + get_service_data_url;
+        listing_ajax_url = get_service_data_url;
 
         start_date = "";
         end_date = "";
+
+        var get_param_start_date = "", 
+            get_param_end_date = "";
 
         if(startDate && endDate) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
 
-            start_date = new Date(myStartDate.getTime()),
-            end_date = new Date(myEndDate.getTime());
+            // start_date = new Date(myStartDate.getTime()),
+            // end_date = new Date(myEndDate.getTime());
+
+            start_date = myStartDate.getTime(),
+            end_date = myEndDate.getTime();
 
             try {
                 if($("#"+service_id+"_chart").highcharts()) {
@@ -822,15 +891,26 @@ function nocoutPerfLib() {
                 if($("#"+service_id+"_bottom_table").length) {
                     $("#"+service_id+"_bottom_table").html("");
                 }
+
+                get_param_start_date = getDateInEpochFormat(start_date);
+                get_param_end_date = getDateInEpochFormat(end_date)
+
             } catch(e) {
                 // console.log(e);
             }
-
-            // Send ajax call
-            sendAjax(start_date, end_date);
         } else {
-            sendAjax('', '');
+            start_date = '';
+            end_date = '';
         }
+
+        if(listing_ajax_url.indexOf("?") > -1) {
+            listing_ajax_url = listing_ajax_url+"&start_date="+get_param_start_date+"&end_date="+get_param_end_date;
+        } else {
+            listing_ajax_url = listing_ajax_url+"?start_date="+get_param_start_date+"&end_date="+get_param_end_date;
+        }
+        
+        // Send ajax call
+        sendAjax(start_date, end_date);
 
         // This function returns date object as per given date string
         function getDate(date) {
@@ -891,7 +971,6 @@ function nocoutPerfLib() {
                 success: function (response) {
                     // TESTING DATA JSON
                     // $.getJSON(base_url+"/static/js/nocout/dummy_data/bs_temperature.json",function(response) {
-
                     var result = "";
                     // Type check of response
                     if(typeof response == 'string') {
@@ -902,84 +981,182 @@ function nocoutPerfLib() {
 
                     if(result.success == 1) {
 
-                        var table_headers = result.data.objects.table_data_header;
+                        var grid_headers = result.data.objects.table_data_header;
 
-                        if(table_headers && table_headers.length > 0) {
-                            var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
-                            if($("#other_perf_table").length == 0) {
-                                initNormalDataTable_nocout(
-                                    'other_perf_table',
-                                    table_headers,
-                                    service_id
-                                );
+                        if(grid_headers && grid_headers.length > 0) {
+                            // Hide display type option from only table tabs
+                            if(!$("#display_type_container").hasClass("hide")) {
+                                $("#display_type_container").addClass("hide")
                             }
 
-                            // Call addDataToNormalTable_nocout (utilities) function to add data to initialize datatable
-                            addDataToNormalTable_nocout(
-                                table_data,
-                                table_headers,
-                                'other_perf_table'
+                            $('#'+service_id+'_chart').html("");
+
+                            initChartDataTable_nocout(
+                                "other_perf_table",
+                                grid_headers,
+                                service_id,
+                                listing_ajax_url,
+                                true
                             );
                         } else {
                             var chart_config = result.data.objects;
-                            // If any data available then plot chart & table
-                            if(chart_config.chart_data.length > 0) {
-                                if(!$('#'+service_id+'_chart').highcharts()) {
-                                    createHighChart_nocout(chart_config,service_id, false, false, function(status) {
-                                        // 
-                                    });
-                                    initChartDataTable_nocout("perf_data_table", chart_config.chart_data,service_id);
-                                } else {
-                                    addPointsToChart_nocout(chart_config.chart_data,service_id);
-                                }
-                                if ($("#perf_data_table").length > 0) {
-                                    addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table')
+
+                            if(listing_ajax_url.indexOf('servicedetail') > -1) {
+                                // Show display type option from only table tabs
+                                if(!$("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").addClass("hide")
                                 }
                             } else {
-                                if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
-                                    if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
-                                        $('#'+service_id+'_chart').html(result.message);
+                                // Show display type option from only table tabs
+                                if($("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").removeClass("hide")
+                                }
+                            }
+
+                            // If any data available then plot chart & table
+                            if(chart_config.chart_data.length > 0) {
+                                if(draw_type == 'chart') {
+
+                                    if($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                        $("#perf_data_table").dataTable().fnDestroy();
+                                        $("#perf_data_table").remove();
+                                    }
+
+                                    if(!$('#'+service_id+'_chart').highcharts()) {
+                                        createHighChart_nocout(chart_config,service_id, false, false, function(status) {
+                                            // 
+                                        });
+                                    } else {
+                                        addPointsToChart_nocout(chart_config.chart_data,service_id);
+                                    }
+                                } else {
+                                    // Destroy highchart if exists
+                                    if($('#'+service_id+'_chart').highcharts()) {
+                                        $('#'+service_id+'_chart').highcharts().destroy();
+                                    }
+                                    // Clear CHART DIV HTML
+                                    $('#'+service_id+'_chart').html("");
+
+                                    if(listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        initChartDataTable_nocout(
+                                            "perf_data_table",
+                                            chart_config.chart_data,
+                                            service_id,
+                                            listing_ajax_url,
+                                            false
+                                        );
+                                    }
+                                }
+                            } else {
+                                if(draw_type == 'chart') {
+                                    if($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                        $("#perf_data_table").dataTable().fnDestroy();
+                                        $("#perf_data_table").remove();
+                                    }
+
+                                    if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
+                                        if (!$('#'+service_id+'_chart').highcharts()) {
+                                            $('#'+service_id+'_chart').html(result.message);
+                                        }
+                                    }
+                                } else {
+
+                                    if(listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        $('#'+service_id+'_chart').html("");
+                                        var table_headers = default_live_table_headers;
+
+                                        if(show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
+                                            table_headers = default_hist_table_headers;
+                                        }
+                                        initChartDataTable_nocout(
+                                            "perf_data_table",
+                                            table_headers,
+                                            service_id,
+                                            listing_ajax_url,
+                                            true
+                                        );
                                     }
                                 }
                             }
                         }
                     } else {
-                        if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
-                            if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
-                                $('#'+service_id+'_chart').html(result.message);
+
+                        if(listing_ajax_url.indexOf('servicedetail') > -1) {
+                            // Show display type option from only table tabs
+                            if(!$("#display_type_container").hasClass("hide")) {
+                                $("#display_type_container").addClass("hide")
                             }
+                        } else {
+                            // Show display type option from only table tabs
+                            if($("#display_type_container").hasClass("hide")) {
+                                $("#display_type_container").removeClass("hide")
+                            }
+                        }
+
+                        if(draw_type == 'chart') {
+                            if($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                $("#perf_data_table").dataTable().fnDestroy();
+                                $("#perf_data_table").remove();
+                            }
+
+                            if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
+                                if(!$('#'+service_id+'_chart').highcharts()) {
+                                    $('#'+service_id+'_chart').html(result.message);
+                                }
+                            }
+                        } else {
+                            // Clear chart DIV HTML
+                            $('#'+service_id+'_chart').html("");
+
+                            var table_headers = default_live_table_headers;
+
+                            if(show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
+                                table_headers = default_hist_table_headers;
+                            }
+
+                            initChartDataTable_nocout(
+                                "perf_data_table",
+                                table_headers,
+                                service_id,
+                                listing_ajax_url,
+                                true
+                            );
                         }
                     }
 
-                    //check condition if start date and end date is defined.
-                    if($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                    if(draw_type == 'chart') {
+                        //check condition if start date and end date is defined.
+                        if($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                            //if last date
+                            if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
-                        //if last date
-                        if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
+                                if($('#'+service_id+'_chart').highcharts()) {
+                                    $('#' + service_id + '_chart').highcharts().redraw();
+                                }
 
-                            if($('#'+service_id+'_chart').highcharts()) {
-                                $('#' + service_id + '_chart').highcharts().redraw();
+                                if (!$('#'+service_id+'_chart').highcharts()) {
+                                    $('#'+service_id+'_chart').html(result.message);
+                                }
+
+                                hideSpinner();
+                            //Else sendAjax request for next Date
+                            } else {
+
+                                var nextDay = moment(ajax_start_date).add(1, 'd');
+                                var ohayoo = nextDay.startOf('day');
+                                timeInterval = setTimeout(function () {
+                                    (function(ohayoo) {
+                                        sendAjax(ohayoo.toDate(), ajax_end_date);
+                                    })(ohayoo);
+                                }, 400);
                             }
-
-                            if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
-                                $('#'+service_id+'_chart').html(result.message);
-                            }
-
-                            hideSpinner();
-                        //Else sendAjax request for next Date
                         } else {
-
-                            var nextDay = moment(ajax_start_date).add(1, 'd');
-                            var ohayoo = nextDay.startOf('day');
-                            timeInterval = setTimeout(function () {
-                                (function(ohayoo) {
-                                    sendAjax(ohayoo.toDate(), ajax_end_date);
-                                })(ohayoo);
-                            }, 400);
+                            hideSpinner();
                         }
                     } else {
                         hideSpinner();
                     }
+
                     // });
                 },
                 error : function(err) {
@@ -994,6 +1171,10 @@ function nocoutPerfLib() {
                     });
 
                     hideSpinner();
+                },
+                complete : function() {
+                    // Enable bootstrap switch
+                    $("#display_table").bootstrapSwitch('disabled',false,false);
                 }
             });
         }
@@ -1039,16 +1220,6 @@ function nocoutPerfLib() {
         /*Reset Variables & counters */
         if(timeInterval) {
             clearTimeout(timeInterval);
-        }
-        if($("#other_perf_table").length > 0) {
-            $("#other_perf_table").dataTable().fnDestroy();
-            $("#other_perf_table").remove();
-        }
-
-
-        if($("#perf_data_table").length > 0) {
-            $("#perf_data_table").dataTable().fnDestroy();
-            $("#perf_data_table").remove();
         }
 
         if($('#'+service_id+'_chart').highcharts()) {

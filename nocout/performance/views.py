@@ -44,7 +44,8 @@ from performance.utils import util as perf_utils
 from service.utils.util import service_data_sources
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
-MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE
+MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
+AVG_CHART_COLOR, DISPLAY_SEVERITY_PIE_CHART
 
 from performance.formulae import display_time, rta_null
 from nocout.mixins.permissions import PermissionsRequiredMixin
@@ -1934,6 +1935,225 @@ class Get_Service_Status(View):
             return current_value
 
 
+class ServiceDataSourceListing(BaseDatatableView):
+    """
+    A generic class based view for the single device page ServiceDataSourceListing rendering.
+
+    """
+    model = PerformanceService
+
+    columns = [
+        'ip_address',
+        'current_value',
+        'warning_threshold',
+        'critical_threshold',
+        'severity',
+        'sys_timestamp'
+    ]
+
+    order_columns = columns
+
+    isHistorical = False
+
+    def get_initial_queryset(self, parameters, machine_name):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        perf_data_instance = Get_Service_Type_Performance_Data()
+
+        resultset = perf_data_instance.get_performance_data(
+            **parameters
+        ).using(alias=machine_name)
+
+        columns = str(self.columns)[1:-1]
+
+        updated_resultset = resultset.values(*self.columns).order_by('-sys_timestamp')
+
+        return updated_resultset
+
+
+    def prepare_results(self, qs):
+        data = []
+        for item in qs:
+            datetime_obj = ''
+            if item['sys_timestamp']:
+                datetime_obj = datetime.datetime.fromtimestamp(item['sys_timestamp'])
+
+            item.update(
+                sys_timestamp=datetime_obj.strftime(
+                    '%d-%m-%Y %H:%M'
+                ) if item['sys_timestamp'] != "" else ""
+            )
+            # Add data to list
+            data.append(item)
+
+        return data
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+
+        # REQUIRED GET PARAMS
+        device_id = self.kwargs['device_id']
+        service = self.kwargs['service_name']
+        data_source = self.kwargs['service_data_source_type']
+        
+        data_for = self.request.GET.get('data_for','live')
+        
+        start_date = self.request.GET.get('start_date','')
+        end_date = self.request.GET.get('end_date','')
+        
+        date_format = DATE_TIME_FORMAT
+        device = Device.objects.get(id=int(device_id))
+        inventory_device_name = device.device_name
+        inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+
+        if data_for != 'live':
+            self.isHistorical = True
+            # Append min, max & avg columns in case of historical tab
+            self.columns.append('min_value')
+            self.columns.append('max_value')
+            self.columns.append('avg_value')
+            inventory_device_machine_name = 'default'
+
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
+
+        if not isSet and not self.isHistorical:
+            now_datetime = datetime.datetime.now()
+            end_date = float(format(now_datetime, 'U'))
+            start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
+
+        if data_for == 'bihourly':
+            self.model = PerformanceServiceBiHourly
+        elif data_for == 'hourly':
+            self.model = PerformanceServiceHourly
+        elif data_for == 'daily':
+            self.model = PerformanceServiceDaily
+        elif data_for == 'weekly':
+            self.model = PerformanceServiceWeekly
+        elif data_for == 'monthly':
+            self.model = PerformanceServiceMonthly
+        elif data_for == 'yearly':
+            self.model = PerformanceServiceYearly
+
+
+
+        if data_source in ['pl','rta']:
+            if data_for == 'bihourly':
+                self.model = PerformanceNetworkBiHourly
+            elif data_for == 'hourly':
+                self.model = PerformanceNetworkHourly
+            elif data_for == 'daily':
+                self.model = PerformanceNetworkDaily
+            elif data_for == 'weekly':
+                self.model = PerformanceNetworkWeekly
+            elif data_for == 'monthly':
+                self.model = PerformanceNetworkMonthly
+            elif data_for == 'yearly':
+                self.model = PerformanceNetworkYearly
+            else:
+                self.model = PerformanceNetwork
+        
+
+        if "_status" in service:
+
+            if data_for == 'daily':
+                self.model = PerformanceStatusDaily
+            elif data_for == 'weekly':
+                self.model = PerformanceStatusWeekly
+            elif data_for == 'monthly':
+                self.model = PerformanceStatusMonthly
+            elif data_for == 'yearly':
+                self.model = PerformanceStatusYearly
+            else:
+                self.model = PerformanceStatus
+
+        elif '_invent' in service:
+            if data_for == 'daily':
+                self.model = PerformanceInventoryDaily
+            elif data_for == 'weekly':
+                self.model = PerformanceInventoryWeekly
+            elif data_for == 'monthly':
+                self.model = PerformanceInventoryMonthly
+            elif data_for == 'yearly':
+                self.model = PerformanceInventoryYearly
+            else:
+                self.model = PerformanceInventory
+        elif '_kpi' in service:
+            if data_for == 'bihourly':
+                self.model = UtilizationBiHourly
+            elif data_for == 'hourly':
+                self.model = UtilizationHourly
+            elif data_for == 'daily':
+                self.model = UtilizationDaily
+            elif data_for == 'weekly':
+                self.model = UtilizationWeekly
+            elif data_for == 'monthly':
+                self.model = UtilizationMonthly
+            elif data_for == 'yearly':
+                self.model = UtilizationYearly
+            else:
+                self.model = Utilization
+
+        parameters = {
+            'model': self.model,
+            'start_time': start_date,
+            'end_time': end_date,
+            'devices': [inventory_device_name],
+            'services': [service],
+            'sds': [data_source]
+        }
+
+        qs = self.get_initial_queryset(parameters, inventory_device_machine_name)
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        aaData = self.prepare_results(qs)
+
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        
+
+        return ret
 
 class Get_Service_Type_Performance_Data(View):
     """
@@ -2101,11 +2321,6 @@ class Get_Service_Type_Performance_Data(View):
                 **parameters
             ).using(alias=inventory_device_machine_name)
 
-            # GET Severity Count
-            severity_count_data = self.get_performance_severity_count(
-                **parameters
-            ).using(alias=inventory_device_machine_name)
-
             if dr_device:
                 result = self.dr_performance_data_result(performance_data=performance_data,
                                                          sector_device=device,
@@ -2116,9 +2331,30 @@ class Get_Service_Type_Performance_Data(View):
                 result = self.get_performance_data_result(performance_data,'',is_historical_data)
                 # result = self.get_performance_data_result(performance_data)
 
-            print "RESULT == "*5
-            print len(result['data']['objects']['chart_data'])
-            print "RESULT == "*5
+            # Show severity pie chart only when it is enabled from settings.py
+            if DISPLAY_SEVERITY_PIE_CHART:
+                # If any data exists then add severity data with it.
+                if(
+                    int(result['success']) == 1
+                    and
+                    len(result['data']['objects']) > 0
+                    and
+                    'chart_data' in result['data']['objects']
+                ):
+                    # GET Severity Count
+                    severity_count_data = self.get_performance_severity_count(
+                        **parameters
+                    ).using(alias=inventory_device_machine_name)
+
+                    severity_result = list()
+
+
+                    if len(severity_count_data) > 0:
+                        severity_result = self.prepare_severity_count_result(severity_count_data)
+
+                        if severity_result:
+                            result['data']['objects']['chart_data'].append(severity_result)
+                
 
         elif service_data_source_type == 'rf':
             sector_device = None
@@ -2188,16 +2424,34 @@ class Get_Service_Type_Performance_Data(View):
                 result = self.get_performance_data_result(performance_data,'',is_historical_data)
                 # result = self.get_performance_data_result(performance_data)
 
+            # Show severity pie chart only when it is enabled from settings.py
+            if DISPLAY_SEVERITY_PIE_CHART:
+                # If any data exists then add severity data with it.
+                if(
+                    int(result['success']) == 1
+                    and
+                    len(result['data']['objects']) > 0
+                    and
+                    'chart_data' in result['data']['objects']
+                ):
+                    # GET Severity Count
+                    severity_count_data = self.get_performance_severity_count(
+                        **parameters
+                    ).using(alias=inventory_device_machine_name)
+
+                    severity_result = list()
+
+
+                    if len(severity_count_data) > 0:
+                        severity_result = self.prepare_severity_count_result(severity_count_data)
+
+                        if severity_result:
+                            result['data']['objects']['chart_data'].append(severity_result)
+
         elif "availability" in service_name or service_data_source_type in ['availability']:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-
-            # parameters.update({
-            #     'model': NetworkAvailabilityDaily,
-            #     'start_time': start_date,
-            #     'end_time': end_date
-            # })
 
             # gather performance data
             performance_data = self.get_performance_data(
@@ -2205,11 +2459,12 @@ class Get_Service_Type_Performance_Data(View):
             ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
 
             if dr_device:
-                result = self.dr_performance_data_result(performance_data=performance_data,
-                                                         sector_device=device,
-                                                         dr_device=dr_device,
-                                                         availability=True
-                                                         )
+                result = self.dr_performance_data_result(
+                    performance_data=performance_data,
+                    sector_device=device,
+                    dr_device=dr_device,
+                    availability=True
+                )
             else:
 
                 result = self.get_performance_data_result(performance_data, data_source="availability")
@@ -2238,20 +2493,22 @@ class Get_Service_Type_Performance_Data(View):
                 **parameters
             )
             if dr_device:
-                result = self.get_topology_result(performance_data,
-                                                  dr_ip=dr_device.ip_address,
-                                                  technology=technology,
-                                                  sectors=sector_object
+                result = self.get_topology_result(
+                    performance_data,
+                    dr_ip=dr_device.ip_address,
+                    technology=technology,
+                    sectors=sector_object
                 )
             else:
-                result = self.get_topology_result(performance_data,
-                                                  technology=technology,
-                                                  sectors=sector_object
+                result = self.get_topology_result(
+                    performance_data,
+                    technology=technology,
+                    sectors=sector_object
                 )
 
 
         elif '_status' in service_name:
-            if not isSet:
+            if not isSet and not is_historical_data:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
 
@@ -2284,11 +2541,11 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = self.get_performance_data(
                 **parameters
             ).using(alias=inventory_device_machine_name)
-
+            
             result = self.get_perf_table_result(performance_data,None, is_historical_data)
 
         elif '_invent' in service_name:
-            if not isSet:
+            if not isSet and not is_historical_data:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
 
@@ -2334,6 +2591,31 @@ class Get_Service_Type_Performance_Data(View):
                 'sds': [service_data_source_type]
             })
 
+            if data_for == 'bihourly':
+                parameters.update({
+                    'model' : UtilizationBiHourly
+                })
+            elif data_for == 'hourly':
+                parameters.update({
+                    'model' : UtilizationHourly
+                })
+            elif data_for == 'daily':
+                parameters.update({
+                    'model' : UtilizationDaily
+                })
+            elif data_for == 'weekly':
+                parameters.update({
+                    'model' : UtilizationWeekly
+                })
+            elif data_for == 'monthly':
+                parameters.update({
+                    'model' : UtilizationMonthly
+                })
+            elif data_for == 'yearly':
+                parameters.update({
+                    'model' : UtilizationYearly
+                })
+
             performance_data = self.get_performance_data(
                 **parameters
             ).using(alias=inventory_device_machine_name)
@@ -2346,12 +2628,37 @@ class Get_Service_Type_Performance_Data(View):
                 )
             else:  # show the chart
                 if dr_device:
-                    result = self.dr_performance_data_result(performance_data=performance_data,
-                                                             sector_device=device,
-                                                             dr_device=dr_device
-                                                             )
+                    result = self.dr_performance_data_result(
+                        performance_data=performance_data,
+                        sector_device=device,
+                        dr_device=dr_device
+                    )
                 else:
                     result = self.get_performance_data_result(performance_data,'',is_historical_data)
+
+            # Show severity pie chart only when it is enabled from settings.py
+            if show_chart and DISPLAY_SEVERITY_PIE_CHART:
+                # If any data exists then add severity data with it.
+                if(
+                    int(result['success']) == 1
+                    and
+                    len(result['data']['objects']) > 0
+                    and
+                    'chart_data' in result['data']['objects']
+                ):
+                    # GET Severity Count
+                    severity_count_data = self.get_performance_severity_count(
+                        **parameters
+                    ).using(alias=inventory_device_machine_name)
+
+                    severity_result = list()
+
+
+                    if len(severity_count_data) > 0:
+                        severity_result = self.prepare_severity_count_result(severity_count_data)
+
+                        if severity_result:
+                            result['data']['objects']['chart_data'].append(severity_result)
 
         else:
             performance_data = self.get_performance_data(
@@ -2366,12 +2673,37 @@ class Get_Service_Type_Performance_Data(View):
                 )
             else: # show the chart
                 if dr_device:
-                    result = self.dr_performance_data_result(performance_data=performance_data,
-                                                             sector_device=device,
-                                                             dr_device=dr_device
-                                                             )
+                    result = self.dr_performance_data_result(
+                        performance_data=performance_data,
+                        sector_device=device,
+                        dr_device=dr_device
+                    )
                 else:
                     result = self.get_performance_data_result(performance_data,'',is_historical_data)
+
+            # Show severity pie chart only when it is enabled from settings.py
+            if show_chart and DISPLAY_SEVERITY_PIE_CHART:
+                # If any data exists then add severity data with it.
+                if(
+                    int(result['success']) == 1
+                    and
+                    len(result['data']['objects']) > 0
+                    and
+                    'chart_data' in result['data']['objects']
+                ):
+                    # GET Severity Count
+                    severity_count_data = self.get_performance_severity_count(
+                        **parameters
+                    ).using(alias=inventory_device_machine_name)
+
+                    severity_result = list()
+
+
+                    if len(severity_count_data) > 0:
+                        severity_result = self.prepare_severity_count_result(severity_count_data)
+
+                        if severity_result:
+                            result['data']['objects']['chart_data'].append(severity_result)
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
@@ -2456,6 +2788,50 @@ class Get_Service_Type_Performance_Data(View):
 
         return severity_count_data
 
+    # This function prepares severity count data as per hightcharts format
+    def prepare_severity_count_result(self, severity_data):
+
+        severity_result = {
+            "type": "pie",
+            "data": [],
+            "name": "Severity",
+            "center": [40, 40],
+            "size": 100,
+            "showInLegend": False,
+            "dataLabels": {
+                "enabled": True
+            },
+            'valuesuffix': ""
+        }        
+
+        if not severity_data:
+            return severity_result
+
+
+        for data in severity_data:
+            
+            color = '#808080'
+
+            if 'crit' in data['severity'] or 'down' in data['severity']:
+                color = '#FF0000'
+            elif 'up' in data['severity'] or 'normal' in data['severity'] or 'success' in data['severity']:
+                color = '#00FF66'
+                # color = '#83FD02'
+            elif 'warn' in data['severity'] or 'warning' in data['severity']:
+                color = '#FF6600'
+                # color = '#FFA342'
+
+            data_dict = {
+                "y" : data['severity_count'],
+                "name" : data['severity'].title(),
+                "color" : color
+            }
+
+            severity_result['data'].append(data_dict)
+
+        return severity_result
+
+
     def return_table_header_and_table_data(self, service_name, result):
 
         if '_invent' in service_name or '_status' in service_name:
@@ -2477,73 +2853,99 @@ class Get_Service_Type_Performance_Data(View):
 
     def get_perf_table_result(self, performance_data, formula=None, is_historical_data=False):
 
-        result_data, aggregate_data = list(), dict()
-        for data in performance_data:
-            temp_time = data.sys_timestamp
+        # result_data, aggregate_data = list(), dict()
+        # for data in performance_data:
+        #     temp_time = data.sys_timestamp
 
-            if is_historical_data:
-                min_val = eval(str(formula) + "(" + str(data.min_value) + ")") \
-                if formula else data.min_value
+        #     if is_historical_data:
+        #         min_val = eval(str(formula) + "(" + str(data.min_value) + ")") \
+        #         if formula else data.min_value
 
-                max_val = eval(str(formula) + "(" + str(data.max_value) + ")") \
-                if formula else data.max_value
+        #         max_val = eval(str(formula) + "(" + str(data.max_value) + ")") \
+        #         if formula else data.max_value
 
-                avg_val = eval(str(formula) + "(" + str(data.avg_value) + ")") \
-                if formula else data.avg_value
+        #         avg_val = eval(str(formula) + "(" + str(data.avg_value) + ")") \
+        #         if formula else data.avg_value
 
-                current_val = eval(str(formula) + "(" + str(data.current_value) + ")") \
-                if formula else data.current_value
+        #         current_val = eval(str(formula) + "(" + str(data.current_value) + ")") \
+        #         if formula else data.current_value
 
-                # Min Value
-                result_data.append({
-                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
-                    'ip_address': data.ip_address,
-                    'value': str(min_val)+"(Min. val)"
-                })
-                # Max Val
-                result_data.append({
-                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
-                    'ip_address': data.ip_address,
-                    'value': str(max_val)+"(Max. val)"
-                })
-                # Avg Val
-                result_data.append({
-                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
-                    'ip_address': data.ip_address,
-                    'value': str(avg_val)+"(Avg. val)"
-                })
+        #         # Min Value
+        #         result_data.append({
+        #             # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+        #             'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+        #             'ip_address': data.ip_address,
+        #             'value': str(min_val)+"(Min value)"
+        #         })
+        #         # Max Val
+        #         result_data.append({
+        #             # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+        #             'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+        #             'ip_address': data.ip_address,
+        #             'value': str(max_val)+"(Max value)"
+        #         })
+        #         # Avg Val
+        #         result_data.append({
+        #             # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+        #             'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+        #             'ip_address': data.ip_address,
+        #             'value': str(avg_val)+"(Avg value)"
+        #         })
 
-                result_data.append({
-                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
-                    'ip_address': data.ip_address,
-                    'value': str(current_val)+"(Current val)"
-                })
-            else:
-                if temp_time in aggregate_data:
-                    continue
-                else:
-                    aggregate_data[temp_time] = data.sys_timestamp
+        #         result_data.append({
+        #             # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+        #             'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+        #             'ip_address': data.ip_address,
+        #             'value': str(current_val)+"(Current value)"
+        #         })
+        #     else:
+        #         if temp_time in aggregate_data:
+        #             continue
+        #         else:
+        #             aggregate_data[temp_time] = data.sys_timestamp
 
-                    value = eval(str(formula) + "(" + str(data.current_value) + ")") \
-                                    if formula \
-                                    else data.current_value
+        #             value = eval(str(formula) + "(" + str(data.current_value) + ")") \
+        #                             if formula \
+        #                             else data.current_value
 
-                    result_data.append({
-                        # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
-                        'ip_address': data.ip_address,
-                        'value': value,
-                    })
+        #             result_data.append({
+        #                 # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+        #                 'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
+        #                 'ip_address': data.ip_address,
+        #                 'value': value,
+        #             })
+
+        # self.result['success'] = 1
+        # self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
+        # self.result['data']['objects']['table_data'] = result_data
+        # self.result['data']['objects']['table_data_header'] = ['time', 'ip_address', 'value']
+
+        grid_headers = list()
+        if is_historical_data:
+            # Grid Headers List
+            grid_headers = [
+                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': False}
+            ]
+        else:
+            # Grid Headers List
+            grid_headers = [
+                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': False},
+                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': False}
+            ]
 
         self.result['success'] = 1
-        self.result[
-            'message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
-        self.result['data']['objects']['table_data'] = result_data
-        self.result['data']['objects']['table_data_header'] = ['time', 'ip_address', 'value']
+        self.result['message'] = 'Headers fetched successfully.'
+        self.result['data']['objects']['table_data_header'] = grid_headers
+
+
         return self.result
 
     def get_topology_result(self, performance_data, dr_ip=None, technology=None, sectors=None):
@@ -3251,8 +3653,8 @@ class Get_Service_Type_Performance_Data(View):
                                 crit_val = float(data.critical_threshold) if data.critical_threshold else val
 
                                 min_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Min. Val.)",
-                                    "color": compare_point(val, warn_val, crit_val),
+                                    "name": str(sds_display_name)+"(Min Value)",
+                                    "color": MIN_CHART_COLOR,
                                     "y": eval(str(formula) + "(" + str(val) + ")")
                                     if formula
                                     else float(data.min_value),
@@ -3260,7 +3662,7 @@ class Get_Service_Type_Performance_Data(View):
                                 }
                             else:
                                 min_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Min. Val.)",
+                                    "name": str(sds_display_name)+"(Min Value)",
                                     "color": '#70AFC4',
                                     "y": None,
                                     "x": js_time
@@ -3275,8 +3677,8 @@ class Get_Service_Type_Performance_Data(View):
                                 crit_val = float(data.critical_threshold) if data.critical_threshold else val
 
                                 max_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Max. Val.)",
-                                    "color": compare_point(val, warn_val, crit_val),
+                                    "name": str(sds_display_name)+"(Max Value)",
+                                    "color": MAX_CHART_COLOR,
                                     "y": eval(str(formula) + "(" + str(val) + ")")
                                     if formula
                                     else float(data.max_value),
@@ -3284,7 +3686,7 @@ class Get_Service_Type_Performance_Data(View):
                                 }
                             else:
                                 max_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Max. Val.)",
+                                    "name": str(sds_display_name)+"(Max Value)",
                                     "color": '#70AFC4',
                                     "y": None,
                                     "x": js_time
@@ -3299,8 +3701,8 @@ class Get_Service_Type_Performance_Data(View):
                                 crit_val = float(data.critical_threshold) if data.critical_threshold else val
 
                                 avg_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Avg. Val.)",
-                                    "color": compare_point(val, warn_val, crit_val),
+                                    "name": str(sds_display_name)+"(Avg Value)",
+                                    "color": AVG_CHART_COLOR,
                                     "y": eval(str(formula) + "(" + str(val) + ")")
                                     if formula
                                     else float(data.avg_value),
@@ -3308,7 +3710,7 @@ class Get_Service_Type_Performance_Data(View):
                                 }
                             else:
                                 avg_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Avg. Val.)",
+                                    "name": str(sds_display_name)+"(Avg Value)",
                                     "color": '#70AFC4',
                                     "y": None,
                                     "x": js_time
@@ -3323,7 +3725,7 @@ class Get_Service_Type_Performance_Data(View):
                                 crit_val = float(data.critical_threshold) if data.critical_threshold else val
 
                                 current_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Current Val.)",
+                                    "name": str(sds_display_name)+"(Current Value)",
                                     "color": compare_point(val, warn_val, crit_val),
                                     "y": eval(str(formula) + "(" + str(val) + ")")
                                     if formula
@@ -3332,7 +3734,7 @@ class Get_Service_Type_Performance_Data(View):
                                 }
                             else:
                                 current_formatter_data_point = {
-                                    "name": str(sds_display_name)+"(Current Val.)",
+                                    "name": str(sds_display_name)+"(Current Value)",
                                     "color": '#70AFC4',
                                     "y": None,
                                     "x": js_time
@@ -3343,9 +3745,10 @@ class Get_Service_Type_Performance_Data(View):
                             chart_data = [
                                 # Min Value
                                 {
-                                    'name': self.result['data']['objects']['display_name']+"(Min. Val)",
+                                    'name': self.result['data']['objects']['display_name']+"(Min Value)",
                                     'data': data_list_min,
                                     'type': MIN_CHART_TYPE,
+                                    'color' : MIN_CHART_COLOR,
                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                     'valuetext': self.result['data']['objects']['valuetext'],
                                     'is_inverted': self.result['data']['objects']['is_inverted'],
@@ -3353,9 +3756,10 @@ class Get_Service_Type_Performance_Data(View):
                                 },
                                 # Max Value
                                 {
-                                    'name': self.result['data']['objects']['display_name']+"(Max. Val)",
+                                    'name': self.result['data']['objects']['display_name']+"(Max Value)",
                                     'data': data_list_max,
                                     'type': MAX_CHART_TYPE,
+                                    'color' : MAX_CHART_COLOR,
                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                     'valuetext': self.result['data']['objects']['valuetext'],
                                     'is_inverted': self.result['data']['objects']['is_inverted'],
@@ -3363,9 +3767,10 @@ class Get_Service_Type_Performance_Data(View):
                                 },
                                 # Avg Value
                                 {
-                                    'name': self.result['data']['objects']['display_name']+"(Avg. Val)",
+                                    'name': self.result['data']['objects']['display_name']+"(Avg Value)",
                                     'data': data_list_avg,
                                     'type': AVG_CHART_TYPE,
+                                    'color' : AVG_CHART_COLOR,
                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                     'valuetext': self.result['data']['objects']['valuetext'],
                                     'is_inverted': self.result['data']['objects']['is_inverted'],
@@ -3373,7 +3778,7 @@ class Get_Service_Type_Performance_Data(View):
                                 },
                                 # Current Value
                                 {
-                                    'name': self.result['data']['objects']['display_name']+"(Current Val)",
+                                    'name': self.result['data']['objects']['display_name']+"(Current Value)",
                                     'data': data_list,
                                     'type': self.result['data']['objects']['type'],
                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
