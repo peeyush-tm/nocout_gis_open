@@ -4,6 +4,7 @@ import ast
 import json
 from datetime import datetime
 import time
+from machine.models import Machine
 import requests
 import logging
 import urllib
@@ -135,6 +136,79 @@ def update_ports(request, option):
     for port in ports:
         out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
     dajax.assign('#id_ports', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_sites(request, option):
+    """ Updating sites corresponding to selected machine
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+    # selected machine
+    machine = Machine.objects.get(pk=int(option))
+
+    # vendors associated to the selected technology
+    sites = machine.siteinstance_set.all()
+
+    out = list()
+    out.append("<option value='' selected>Select</option>")
+
+    for site in sites:
+        out.append("<option value='%d'>%s</option>" % (site.id, site.alias))
+    dajax.assign('#id_site_instance', 'innerHTML', ''.join(out))
+
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def after_update_site(request, option, selected=''):
+    """ Get site selection menu with last time selected site as selected option after unsuccessful form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        option (unicode): selected option value
+
+    Kwargs:
+        selected (unicode): option value selected before unsuccessful form submission
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+
+    # selected machine
+    machine = Machine.objects.get(pk=int(option))
+
+    # sites associated to selected technology
+    sites = machine.siteinstance_set.all()
+
+    out = list()
+    out.append("<option value=''>Select</option>")
+    for site in sites:
+        if site.id == int(selected):
+            out.append("<option value='%d' selected>%s</option>" % (site.id, site.alias))
+        else:
+            out.append("<option value='%d'>%s</option>" % (site.id, site.alias))
+
+    dajax.assign('#id_site_instance', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
@@ -689,6 +763,14 @@ def device_restore(request, device_id):
     if device.is_deleted == 1:
         device.is_deleted = 0
         device.save()
+
+        # modify site instance 'is_device_change' bit to relect corresponding site for sync
+        try:
+            device.site_instance.is_device_change = 1
+            device.site_instance.save()
+        except Exception as e:
+            pass
+
         result['success'] = 1
         result['message'] = "Successfully restored device ({}).".format(device.device_alias)
     else:
@@ -1349,7 +1431,6 @@ def remove_sync_deadlock(request):
         logger.error("DeviceSyncHistory table has no entry. Exception: ", e.message)
 
     return json.dumps({'result': result})
-
 
 
 @dajaxice_register(method='GET')
@@ -3224,5 +3305,49 @@ def device_services_status(request, device_id):
         for ds in svc.service_data_sources.all():
             temp_svc['data_sources'] += "{}, ".format(ds.alias)
         result['data']['objects']['inactive_services'].append(temp_svc)
+
+    return json.dumps({'result': result})
+
+
+@dajaxice_register(method='GET')
+def reset_service_configuration(request):
+    """ Reset device service configuration
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+
+    Returns:
+        result (dict): dict of device info
+                   i.e. {
+                            "result": {
+                                "message": "Successfully reset device service configuration.",
+                                "data": {
+                                    "meta": ""
+                                },
+                                "success": 1
+                            }
+                        }
+
+    """
+
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Failed to reset device service configuration."
+    result['data']['meta'] = ''
+
+    # get last id of 'DeviceSyncHistory'
+    try:
+        # truncate 'service_deviceserviceconfiguration'
+        DeviceServiceConfiguration.objects.all().delete()
+
+        # truncate 'service_devicepingconfiguration'
+        DevicePingConfiguration.objects.all().delete()
+
+        result['success'] = 1
+        result['message'] = "Successfully reset device service configuration."
+
+    except Exception as e:
+        pass
 
     return json.dumps({'result': result})

@@ -172,3 +172,38 @@ function delete_single_service_message(responseResult) {
         location.reload();
     });
 }
+
+
+// reset device service configuration
+function reset_service_configuration() {
+    bootbox.dialog({
+        message: "Reset device service configuration.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Reset device service configuration to default settings. </span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.reset_service_configuration(reset_service_configuration_message);
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+        }
+    });
+}
+
+
+// show message for resetting devices services configurations
+function reset_service_configuration_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function() {
+        // reload page after clicking "OK!"
+        location = window.location.origin + "/device_service_configuration/";
+        location.reload();
+    });
+}
