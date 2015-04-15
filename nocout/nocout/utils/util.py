@@ -536,7 +536,11 @@ left join (
         frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
         frequency.value as SECTOR_FREQUENCY,
 
-        dport.name as SECTOR_PORT
+        dport.name as SECTOR_PORT,
+
+        drd.id as DR_CONF_ON_ID,
+        drd.device_name as DR_CONF_ON,
+        drd.ip_address as DR_CONF_ON_IP
 
         from inventory_sector as sector
         join (
@@ -562,6 +566,14 @@ left join (
         ) left join ( device_deviceport as dport )
         on (
             dport.id = sector.sector_configured_on_port_id
+        ) left join (
+			inventory_sector as dr,
+            device_device as drd
+        )
+        on (
+			dr.id = sector.id
+            and
+            drd.id = dr.dr_configured_on_id
         )
 {0}
     ) as sector_info
