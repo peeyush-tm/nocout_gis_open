@@ -16,7 +16,117 @@ var perf_that = "",
     getServiceDataUrl = "",
     chart_instance = "",
     old_table = "",
-    base_url = "";
+    base_url = "",
+    tabs_with_historical = [
+        {
+            "id" : "live",
+            "title" : "Live",
+        },
+        {
+            "id" : "bihourly",
+            "title" : "Bi-Hourly",
+        },
+        {
+            "id" : "hourly",
+            "title" : "Hourly",
+        },
+        {
+            "id" : "daily",
+            "title" : "Daily",
+        },
+        {
+            "id" : "weekly",
+            "title" : "Weekly",
+        },
+        {
+            "id" : "monthly",
+            "title" : "Monthly",
+        },
+        {
+            "id" : "yearly",
+            "title" : "Yearly",
+        }
+    ],
+    inventory_status_inner_inner_tabs = [
+        {
+            "id" : "live",
+            "title" : "Live",
+        },
+        {
+            "id" : "daily",
+            "title" : "Daily",
+        },
+        {
+            "id" : "weekly",
+            "title" : "Weekly",
+        },
+        {
+            "id" : "monthly",
+            "title" : "Monthly",
+        },
+        {
+            "id" : "yearly",
+            "title" : "Yearly",
+        }
+    ],
+    default_live_table_headers = [
+        {
+            'mData': 'current_value',
+            'sTitle': 'Current Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'severity',
+            'sTitle': 'Severity',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'sys_timestamp',
+            'sTitle': 'Time',
+            'sWidth': 'auto',
+            'bSortable': false
+        }
+    ],
+    default_hist_table_headers = [
+        {
+            'mData': 'current_value',
+            'sTitle': 'Current Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'min_value',
+            'sTitle': 'Min. Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'max_value',
+            'sTitle': 'Max. Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'avg_value',
+            'sTitle': 'Avg. Value',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'severity',
+            'sTitle': 'Severity',
+            'sWidth': 'auto',
+            'bSortable': false
+        },
+        {
+            'mData': 'sys_timestamp',
+            'sTitle': 'Time',
+            'sWidth': 'auto',
+            'bSortable': false
+        }
+    ];
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -254,6 +364,72 @@ function nocoutPerfLib() {
     };
 
     /**
+     * This function make HTML for LI element of TAB
+     * @method make_tab_li_html
+     * @param tab_config "{Object}", It contains the configuration for creating tab html
+     * @return li_html {String}, It contains the required HTML string
+     */
+    this.make_tab_li_html = function(tab_config) {
+        var li_html = "";
+
+        if(!tab_config || $.isEmptyObject(tab_config)) {
+            return li_html;
+        }
+
+        var active_class = tab_config.active_class ? tab_config.active_class : "",
+            unique_key = tab_config.unique_key ? tab_config.unique_key : "",
+            content_href = unique_key ? unique_key+"_block" : "",
+            id = unique_key ? unique_key+"_tab" : "",
+            api_url = tab_config.api_url ? tab_config.api_url : "",
+            title = tab_config.title ? tab_config.title : "",
+            icon_class = tab_config.icon_class ? tab_config.icon_class : "";
+
+        li_html = '<li class="'+active_class+'"><a href="#'+content_href+'" \
+                   url="'+api_url+'" id="'+id+'" data-toggle="tab">\
+                   <i class="'+icon_class+'">&nbsp;</i>'+title+'\
+                   </a></li>';
+
+        return li_html;
+    };
+
+    /**
+     * This function make HTML for TAB content
+     * @method make_tab_content_html
+     * @param tab_content_config "{Object}", It contains the configuration for creating tab content html
+     * @return content_html {String}, It contains the required HTML string
+     */
+    this.make_tab_content_html = function(tab_content_config) {
+        var content_html = "";
+
+        if(!tab_content_config || $.isEmptyObject(tab_content_config)) {
+            return content_html;
+        }
+
+        var active_class = tab_content_config.active_class ? tab_content_config.active_class : "",
+            unique_key = tab_content_config.unique_key ? tab_content_config.unique_key : "",
+            id = unique_key ? unique_key+"_block" : "",
+            show_last_updated = tab_content_config.show_last_updated != undefined ? tab_content_config.show_last_updated : true,
+            last_updated_id = unique_key ? "last_updated_"+unique_key+"_block" : "",
+            chart_id = unique_key ? unique_key+"_chart" : "",
+            bottom_table_id = unique_key ? unique_key+"_bottom_table" : "";
+
+        content_html += '<div class="tab-pane '+active_class+'" id="'+id+'">';
+
+        if(show_last_updated) {
+            content_html += '<div align="center" class="last_updated_container" id="'+last_updated_id+'">\
+                            <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
+                            </div>';
+        }
+
+        content_html += '<div class="chart_container">\
+                        <div id="'+chart_id+'" style="width:100%;">\
+                        <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                        <div id="'+bottom_table_id+'"></div></div></div>';
+
+        return content_html;
+    };
+
+    /**
      * This function fetch the list of services
      * @method getServices
      * @param get_service_url "String", It contains the url to fetch the services.
@@ -286,119 +462,181 @@ function nocoutPerfLib() {
 
                 if (result.success == 1) {
 
-                    var device_services_tab = Object.keys(result.data.objects);
-
-                    /*Loop to get services from object*/
-                    var li_style = "background: #f5f5f5; width:100%; border:1px solid #dddddd;"
-                    var li_a_style = "background: none; border:none;";
-
                     var first_loop = 0;
+                    // If any data exists
+                    if(result.data.objects && !$.isEmptyObject(result.data.objects)) {
+                        /*Loop to get services from object*/
+                        for(service_key in result.data.objects) {
 
-                    if (device_services_tab.length > 0) {
-                        for (var i = 0; i < device_services_tab.length; i++) {
-                            device_services = "";
-                            tabs_with_data = "";
-                            var tab_id = device_services_tab[i].split("_tab")[0];
+                            var tab_id = service_key.split("_tab")[0];
+                            // If dom element exists
+                            if($("#"+service_key).length > 0 && $("#"+tab_id).length > 0) {
+                                // Reset Variables
+                                device_services = "";
+                                tabs_with_data = "";
 
-                            if ($("#" + device_services_tab[i]).hasClass("active")) {
-                                $("#" + device_services_tab[i]).removeClass("active");
-                            }
-
-                            if ($("#" + tab_id).parent("li").hasClass("active")) {
-                                $("#" + tab_id).parent("li").removeClass("active");
-                            }
-
-                            device_services = result.data.objects[device_services_tab[i]].info;
-                            if(device_services && device_services.length > 0) {
-                                var left_section_class = "col-md-3",
-                                    right_section_class = "col-md-9"
-                                
-                                if(device_services.length == 1) {
-                                    left_section_class = "hide",
-                                    right_section_class = "col-md-12"
+                                if ($("#"+service_key).hasClass("active")) {
+                                    $("#"+service_key).removeClass("active");
                                 }
 
-                                var tabs_with_data = "";
-                                var service_tabs = '<div class="left_tabs_container '+left_section_class+'"><ul class="nav nav-tabs">';
-
-                                var service_tabs_data = '<div class="'+right_section_class+'" style="padding:0px 0px 0px 10px;">';
-                                service_tabs_data += '<div class="tab-content">';
-
-                                var is_first_tab = 0;
-                                if (result.data.objects[device_services_tab[i]].isActive == 1) {
-                                    is_first_tab = 1;
-                                    $("#" + tab_id).parent("li").addClass("active");
-                                    $("#" + device_services_tab[i]).addClass("active");
+                                if ($("#"+tab_id).parent("li").hasClass("active")) {
+                                    $("#"+tab_id).parent("li").removeClass("active");
                                 }
 
-                                var count = 0;
-
-                                $.each(device_services, function (key, value) {
-
-                                    if (is_first_tab == 1 && count == 0) {
-                                        active_tab_id = device_services_tab[i]+'_'+String(count)+'_'+String(i);
-                                        active_tab_content_dom_id = device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block';
-                                        active_tab_url = "/" + value.url;
-
-                                        service_tabs += '<li class="active" style="'+ li_style + '">';
-                                        service_tabs += '<a href="#'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block" ';
-                                        service_tabs += ' url="' + value.url + '" id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_tab" data-toggle="tab" style="';
-                                        service_tabs += li_a_style+'">' + value.title + '</a></li>';
-
-                                        service_tabs_data += '<div class="tab-pane active" id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">\
-                                                              <div align="center" class="last_updated_container" id="last_updated_'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">\
-                                                              <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3></div>\
-                                                              <div class="chart_container">\
-                                                              <div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_chart" style="height:350px;width:100%;">\
-                                                              <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
-                                                              <div class="divide-20"></div>\
-                                                              <div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_bottom_table"></div></div></div>';
-
-                                    } else {
-
-                                        service_tabs += '<li class="" style="' + li_style + '">';
-                                        service_tabs += '<a href="#'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block" ';
-                                        service_tabs += 'url="' + value.url + '" id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_tab" ';
-                                        service_tabs += 'data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
-
-                                        service_tabs_data += '<div class="tab-pane" id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">\
-                                                              <div align="center" class="last_updated_container" id="last_updated_'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">\
-                                                              <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3></div>\
-                                                              <div class="chart_container" style="width:100%;">\
-                                                              <div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_chart" style="height:350px;width:100%;">\
-                                                              <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
-                                                              <div class="divide-20"></div>\
-                                                              <div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_bottom_table"></div></div></div>';
+                                device_services = result.data.objects[service_key].info;
+                                if(device_services && device_services.length > 0) {
+                                    var tabs_hidden_class = "";
+                                    
+                                    if(device_services.length == 1) {
+                                        tabs_hidden_class = "hide";
                                     }
-                                    count++;
-                                });
 
-                                service_tabs += '</ul></div>';
-                                service_tabs_data += '</div>';
-                                tabs_with_data = service_tabs + " " + service_tabs_data;
-                            } else {
-                                if(!$("#"+tab_id).hasClass("hide")) {
-                                    $("#"+tab_id).addClass("hide")
+                                    var count = 0,
+                                        tabs_with_data = "",
+                                        service_tabs_data = '<div class="tab-content" style="overflow:auto;">',
+                                        service_tabs = '<ul class="left_tabs_container nav nav-tabs '+tabs_hidden_class+'">';
+
+                                    var is_first_tab = 0;
+                                    if (result.data.objects[service_key].isActive == 1) {
+                                        is_first_tab = 1;
+                                        $("#"+tab_id).parent("li").addClass("active");
+                                        $("#"+service_key).addClass("active");
+                                    }
+
+                                    $.each(device_services, function (key, value) {
+
+                                        var unique_item_key = service_key+'_'+String(count)+'_'+String(i),
+                                            active_class = '';
+
+                                        if(is_first_tab == 1 && count == 0) {
+                                            // Save the active tab data in global variables
+                                            active_tab_id = unique_item_key;
+                                            active_tab_content_dom_id = unique_item_key+'_block';
+                                            active_tab_url = "/" + value.url;
+
+                                            // add 'active' class for active i.e first tab
+                                            active_class = 'active';
+                                        }
+
+                                        var tab_info_obj = {
+                                                'active_class' : active_class,
+                                                'unique_key' : unique_item_key,
+                                                'icon_class' : 'fa fa-arrow-circle-o-right',
+                                                'api_url' : value.url,
+                                                'title' : value.title
+                                            },
+                                            content_info_obj = {
+                                                'active_class' : active_class,
+                                                'unique_key' : unique_item_key,
+                                                'show_last_updated' : true
+                                            };
+
+
+                                        // Create Tab HTML
+                                        service_tabs += perf_that.make_tab_li_html(tab_info_obj);
+
+                                        var all_tabs_condition_1 = unique_item_key.indexOf('availability') == -1,
+                                            all_tabs_condition_2 = unique_item_key.indexOf('topology') == -1,
+                                            all_tabs_condition_3 = unique_item_key.indexOf('utilization') == -1;
+
+                                        // Create tab content HTML
+                                        if(show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
+
+                                            service_tabs_data += '<div class="tab-pane '+active_class+'" id="'+unique_item_key+'_block">\
+                                                                  <div align="center" class="last_updated_container" id="last_updated_'+unique_item_key+'_block">\
+                                                                  <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
+                                                                  </div><div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">'
+                                            var inner_tab_ids = [],
+                                                inner_inner_tabs = tabs_with_historical;
+
+                                            if(unique_item_key.indexOf('_status') > -1) {
+                                                inner_inner_tabs = inventory_status_inner_inner_tabs;                                                
+                                            }
+                                            
+                                            // CREATE SUB INNER TAB HTML
+                                            if(inner_inner_tabs && inner_inner_tabs.length > 0) {
+                                                for(var x=0;x<inner_inner_tabs.length;x++) {
+                                                    var inner_active_class = '';
+                                                    if(x == 0) {
+                                                        inner_active_class = 'active';
+                                                    }
+                                                    var current_item = inner_inner_tabs[x],
+                                                        id = current_item.id,
+                                                        title = current_item.title,
+                                                        inner_tab_info_obj = {
+                                                            'active_class' : inner_active_class,
+                                                            'unique_key' : id+"_"+unique_item_key,
+                                                            'icon_class' : 'fa fa-caret-right',
+                                                            'api_url' : value.url+"?data_for="+id,
+                                                            'title' : title
+                                                        };
+                                                    
+                                                    service_tabs_data += perf_that.make_tab_li_html(inner_tab_info_obj);
+                                                    if(inner_tab_ids.indexOf(id) == -1) {
+                                                        inner_tab_ids.push(id);
+                                                    }
+                                                }
+
+                                            } else {
+                                                var inner_tab_info_obj = {
+                                                    'active_class' : 'active',
+                                                    'unique_key' : "live_"+unique_item_key,
+                                                    'icon_class' : 'fa fa-caret-right',
+                                                    'api_url' : value.url+"?data_for=live",
+                                                    'title' : "Live"
+                                                };
+                                                service_tabs_data += perf_that.make_tab_li_html(inner_tab_info_obj);
+                                                inner_tab_ids.push('live');
+                                            }
+                                            service_tabs_data += '</ul><div class="divide-20"></div><div class="tab-content">';
+                                            // CREATE SUB INNER TAB CONTENT HTML
+                                            for(var y=0;y<inner_tab_ids.length;y++) {
+                                                var current_key = inner_tab_ids[y],
+                                                    inner_content_info_obj = {
+                                                        'active_class' : '',
+                                                        'unique_key' : current_key+"_"+unique_item_key,
+                                                        'show_last_updated' : false
+                                                    };
+                                                if(y==0) {
+                                                    inner_content_info_obj['active_class'] = 'active';
+                                                }
+                                                service_tabs_data += perf_that.make_tab_content_html(inner_content_info_obj);
+                                            }
+                                            service_tabs_data += '</div></div><div class="clearfix"></div></div>'
+                                        } else {
+                                            service_tabs_data += perf_that.make_tab_content_html(content_info_obj);
+                                        }
+
+                                        // Increment the counter
+                                        count++;
+                                    });
+
+                                    service_tabs += '</ul>';
+                                    // service_tabs_data += '</div>';
+                                    tabs_with_data = service_tabs + " " + service_tabs_data;
+                                } else {
+                                    if(!$("#"+tab_id).hasClass("hide")) {
+                                        $("#"+tab_id).addClass("hide")
+                                    }
                                 }
-                            }
 
-                            $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
+                                $("#"+service_key+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
+                            }
                         }
 
                         /*Bind click event on tabs*/
-                        $('.inner_tab_container .nav-tabs li a').click(function (e) {
-
+                        $('.inner_tab_container > .panel-body > .tabs-left > ul.nav-tabs > li > a').click(function (e) {
                             // show loading spinner
                             // showSpinner();
 
-                            var serviceId = e.currentTarget.id.slice(0, -4),
-                                splitted_local_id = e.currentTarget.attributes.href.value.split("#"),
+                            var current_target = e.currentTarget,
+                                current_attr = current_target.attributes,
+                                serviceId = current_target.id.slice(0, -4),
+                                splitted_local_id = current_attr.href.value.split("#"),
                                 tab_content_dom_id = splitted_local_id.length > 1 ? splitted_local_id[1] : splitted_local_id[0];
-
-                            perf_that.resetLivePolling("last_updated_"+tab_content_dom_id);
                             
                             //@TODO: all the ursl must end with a / - django style
-                            var service_data_url_val = e.currentTarget.attributes.url ? $.trim(e.currentTarget.attributes.url.value) : "";
+                            var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
                                 serviceDataUrl = "";
 
                             if(service_data_url_val) {
@@ -408,43 +646,30 @@ function nocoutPerfLib() {
                                     serviceDataUrl = service_data_url_val;
                                 }
                             }
-                            /*Reset Variables & counters */
-                            clearTimeout(timeInterval);
-                            if($("#other_perf_table").length > 0) {
-                                $("#other_perf_table").dataTable().fnDestroy();
-                                $("#other_perf_table").remove();
+
+                            if($("#last_updated_"+tab_content_dom_id).length > 0) {
+                                perf_that.resetLivePolling("last_updated_"+tab_content_dom_id);
+                                // get the service status for that service
+                                perfInstance.getServiceStatus(serviceDataUrl,function(response_type,data_obj) {
+                                    if(response_type == 'success') {
+                                        // Call function to populate latest status for this service
+                                        populateServiceStatus_nocout("last_updated_"+tab_content_dom_id,data_obj);
+                                    } else {
+                                        $("#last_updated_"+tab_content_dom_id).html("");
+                                    }
+                                });
                             }
-
-
-                            if($("#perf_data_table").length > 0) {
-                                $("#perf_data_table").dataTable().fnDestroy();
-                                $("#perf_data_table").remove();
+                            if(
+                                !show_historical_on_performance
+                                ||
+                                serviceId.indexOf('availability') > -1
+                                ||
+                                serviceId.indexOf('utilization_top') > -1
+                                ||
+                                serviceId.indexOf('topology') > -1
+                            ) {
+                                perfInstance.initGetServiceData(serviceDataUrl, serviceId, current_device);
                             }
-
-                            if($('#'+serviceId+'_chart').highcharts()) {
-                                $('#'+serviceId+'_chart').highcharts().destroy();
-                            }
-
-                            for(var i=0;i<Highcharts.charts.length;i++) {
-                                if(Highcharts.charts[i]) {
-                                    Highcharts.charts[i].destroy();
-                                }
-                            }
-                            
-                            Highcharts.charts = [];
-
-                            // First get the service status then get the data for that service
-                            perfInstance.getServiceStatus(serviceDataUrl,function(response_type,data_obj) {
-                                if(response_type == 'success') {
-                                    // Call function to populate latest status for this service
-                                    populateServiceStatus_nocout("last_updated_"+tab_content_dom_id,data_obj);
-                                } else {
-                                    $("#last_updated_"+tab_content_dom_id).html("");
-                                }
-                            });
-                            /*Call getServiceData function to fetch the data for clicked service tab*/
-                            perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
-
                         });
                     }
                 } else {
@@ -496,16 +721,23 @@ function nocoutPerfLib() {
                     } else {
                         // show loading spinner
                         // showSpinner();
-                        perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
-                            if(response_type == 'success') {
-                                // Call function to populate latest status for this service
-                                populateServiceStatus_nocout("last_updated_"+active_tab_content_dom_id,data_obj);
-                            } else {
-                                $("#last_updated_"+active_tab_content_dom_id).html("");
-                            }
+                        if($("#last_updated_"+active_tab_content_dom_id).length > 0) {
+                            perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
+                                if(response_type == 'success') {
+                                    // Call function to populate latest status for this service
+                                    populateServiceStatus_nocout("last_updated_"+active_tab_content_dom_id,data_obj);
+                                } else {
+                                    $("#last_updated_"+active_tab_content_dom_id).html("");
+                                }
+                            });
+                        }
+
+                        if(show_historical_on_performance) {
+                            $("#live_"+active_tab_id+"_tab").trigger('click');
+                        } else {
                             /*Call getServiceData function to fetch the data for currently active service*/
                             perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
-                        });
+                        }
                     }
                 }
             }
@@ -520,8 +752,9 @@ function nocoutPerfLib() {
      */
     this.getServiceStatus = function(service_status_url,callback) {
 
-        var updated_url = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url+"/" : service_status_url,
-            device_id = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url.split("/")[service_status_url.split("/").length -1] : service_status_url.split("/")[service_status_url.split("/").length -2];
+        var splitted_status_url = service_status_url.split("/"),
+            updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url+"/" : service_status_url,
+            device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
 
         if(updated_url.indexOf("/servicedetail/") > -1) {
             if(updated_url.indexOf("rssi") > -1) {
@@ -601,6 +834,13 @@ function nocoutPerfLib() {
             get_service_data_url = "/"+get_service_data_url;
         }
 
+        var draw_type = "chart",
+            listing_ajax_url = "";
+
+        if(!$("#display_table")[0].checked) {
+            draw_type = "table";
+        }
+
         // Decrement the tabs click on evert click counter
         tabs_click_counter--;
 
@@ -612,20 +852,25 @@ function nocoutPerfLib() {
 
         showSpinner();
 
-        // window.location.href = '#' + get_service_data_url.split('/')[3] + "#" + get_service_data_url.split('/')[5];
-
         get_url = base_url + "" + get_service_data_url;
+        listing_ajax_url = get_service_data_url;
 
         start_date = "";
         end_date = "";
+
+        var get_param_start_date = "", 
+            get_param_end_date = "";
 
         if(startDate && endDate) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
 
-            start_date = new Date(myStartDate.getTime()),
-            end_date = new Date(myEndDate.getTime());
+            // start_date = new Date(myStartDate.getTime()),
+            // end_date = new Date(myEndDate.getTime());
+
+            start_date = myStartDate.getTime(),
+            end_date = myEndDate.getTime();
 
             try {
                 if($("#"+service_id+"_chart").highcharts()) {
@@ -646,15 +891,26 @@ function nocoutPerfLib() {
                 if($("#"+service_id+"_bottom_table").length) {
                     $("#"+service_id+"_bottom_table").html("");
                 }
+
+                get_param_start_date = getDateInEpochFormat(start_date);
+                get_param_end_date = getDateInEpochFormat(end_date)
+
             } catch(e) {
                 // console.log(e);
             }
-
-            // Send ajax call
-            sendAjax(start_date, end_date);
         } else {
-            sendAjax('', '');
+            start_date = '';
+            end_date = '';
         }
+
+        if(listing_ajax_url.indexOf("?") > -1) {
+            listing_ajax_url = listing_ajax_url+"&start_date="+get_param_start_date+"&end_date="+get_param_end_date;
+        } else {
+            listing_ajax_url = listing_ajax_url+"?start_date="+get_param_start_date+"&end_date="+get_param_end_date;
+        }
+        
+        // Send ajax call
+        sendAjax(start_date, end_date);
 
         // This function returns date object as per given date string
         function getDate(date) {
@@ -713,7 +969,8 @@ function nocoutPerfLib() {
                 type: "GET",
                 dataType: "json",
                 success: function (response) {
-
+                    // TESTING DATA JSON
+                    // $.getJSON(base_url+"/static/js/nocout/dummy_data/bs_temperature.json",function(response) {
                     var result = "";
                     // Type check of response
                     if(typeof response == 'string') {
@@ -724,84 +981,183 @@ function nocoutPerfLib() {
 
                     if(result.success == 1) {
 
-                        var table_headers = result.data.objects.table_data_header;
+                        var grid_headers = result.data.objects.table_data_header;
 
-                        if(table_headers && table_headers.length > 0) {
-                            var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
-                            if($("#other_perf_table").length == 0) {
-                                initNormalDataTable_nocout(
-                                    'other_perf_table',
-                                    table_headers,
-                                    service_id
-                                );
+                        if(grid_headers && grid_headers.length > 0) {
+                            // Hide display type option from only table tabs
+                            if(!$("#display_type_container").hasClass("hide")) {
+                                $("#display_type_container").addClass("hide")
                             }
 
-                            // Call addDataToNormalTable_nocout (utilities) function to add data to initialize datatable
-                            addDataToNormalTable_nocout(
-                                table_data,
-                                table_headers,
-                                'other_perf_table'
+                            $('#'+service_id+'_chart').html("");
+
+                            initChartDataTable_nocout(
+                                "other_perf_table",
+                                grid_headers,
+                                service_id,
+                                listing_ajax_url,
+                                true
                             );
                         } else {
                             var chart_config = result.data.objects;
-                            // If any data available then plot chart & table
-                            if(chart_config.chart_data.length > 0) {
-                                if(!$('#'+service_id+'_chart').highcharts()) {
-                                    createHighChart_nocout(chart_config,service_id, false, false, function(status) {
-                                        // 
-                                    });
-                                    initChartDataTable_nocout("perf_data_table", chart_config.chart_data,service_id);
-                                } else {
-                                    addPointsToChart_nocout(chart_config.chart_data,service_id);
-                                }
-                                if ($("#perf_data_table").length > 0) {
-                                    addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table')
+
+                            if(listing_ajax_url.indexOf('servicedetail') > -1) {
+                                // Show display type option from only table tabs
+                                if(!$("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").addClass("hide")
                                 }
                             } else {
-                                if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
-                                    if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
-                                        $('#'+service_id+'_chart').html(result.message);
+                                // Show display type option from only table tabs
+                                if($("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").removeClass("hide")
+                                }
+                            }
+
+                            // If any data available then plot chart & table
+                            if(chart_config.chart_data.length > 0) {
+                                if(draw_type == 'chart') {
+
+                                    if($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                        $("#perf_data_table").dataTable().fnDestroy();
+                                        $("#perf_data_table").remove();
+                                    }
+
+                                    if(!$('#'+service_id+'_chart').highcharts()) {
+                                        createHighChart_nocout(chart_config,service_id, false, false, function(status) {
+                                            // 
+                                        });
+                                    } else {
+                                        addPointsToChart_nocout(chart_config.chart_data,service_id);
+                                    }
+                                } else {
+                                    // Destroy highchart if exists
+                                    if($('#'+service_id+'_chart').highcharts()) {
+                                        $('#'+service_id+'_chart').highcharts().destroy();
+                                    }
+                                    // Clear CHART DIV HTML
+                                    $('#'+service_id+'_chart').html("");
+
+                                    if(listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        initChartDataTable_nocout(
+                                            "perf_data_table",
+                                            chart_config.chart_data,
+                                            service_id,
+                                            listing_ajax_url,
+                                            false
+                                        );
+                                    }
+                                }
+                            } else {
+                                if(draw_type == 'chart') {
+                                    if($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                        $("#perf_data_table").dataTable().fnDestroy();
+                                        $("#perf_data_table").remove();
+                                    }
+
+                                    if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
+                                        if (!$('#'+service_id+'_chart').highcharts()) {
+                                            $('#'+service_id+'_chart').html(result.message);
+                                        }
+                                    }
+                                } else {
+
+                                    if(listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        $('#'+service_id+'_chart').html("");
+                                        var table_headers = default_live_table_headers;
+
+                                        if(show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
+                                            table_headers = default_hist_table_headers;
+                                        }
+                                        initChartDataTable_nocout(
+                                            "perf_data_table",
+                                            table_headers,
+                                            service_id,
+                                            listing_ajax_url,
+                                            true
+                                        );
                                     }
                                 }
                             }
                         }
                     } else {
-                        if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
-                            if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
-                                $('#'+service_id+'_chart').html(result.message);
+
+                        if(listing_ajax_url.indexOf('servicedetail') > -1) {
+                            // Show display type option from only table tabs
+                            if(!$("#display_type_container").hasClass("hide")) {
+                                $("#display_type_container").addClass("hide")
                             }
+                        } else {
+                            // Show display type option from only table tabs
+                            if($("#display_type_container").hasClass("hide")) {
+                                $("#display_type_container").removeClass("hide")
+                            }
+                        }
+
+                        if(draw_type == 'chart') {
+                            if($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                $("#perf_data_table").dataTable().fnDestroy();
+                                $("#perf_data_table").remove();
+                            }
+
+                            if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
+                                if(!$('#'+service_id+'_chart').highcharts()) {
+                                    $('#'+service_id+'_chart').html(result.message);
+                                }
+                            }
+                        } else {
+                            // Clear chart DIV HTML
+                            $('#'+service_id+'_chart').html("");
+
+                            var table_headers = default_live_table_headers;
+
+                            if(show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
+                                table_headers = default_hist_table_headers;
+                            }
+
+                            initChartDataTable_nocout(
+                                "perf_data_table",
+                                table_headers,
+                                service_id,
+                                listing_ajax_url,
+                                true
+                            );
                         }
                     }
 
-                    //check condition if start date and end date is defined.
-                    if($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                    if(draw_type == 'chart') {
+                        //check condition if start date and end date is defined.
+                        if($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                            //if last date
+                            if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
-                        //if last date
-                        if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
+                                if($('#'+service_id+'_chart').highcharts()) {
+                                    $('#' + service_id + '_chart').highcharts().redraw();
+                                }
 
-                            if($('#'+service_id+'_chart').highcharts()) {
-                                $('#' + service_id + '_chart').highcharts().redraw();
+                                if (!$('#'+service_id+'_chart').highcharts()) {
+                                    $('#'+service_id+'_chart').html(result.message);
+                                }
+
+                                hideSpinner();
+                            //Else sendAjax request for next Date
+                            } else {
+
+                                var nextDay = moment(ajax_start_date).add(1, 'd');
+                                var ohayoo = nextDay.startOf('day');
+                                timeInterval = setTimeout(function () {
+                                    (function(ohayoo) {
+                                        sendAjax(ohayoo.toDate(), ajax_end_date);
+                                    })(ohayoo);
+                                }, 400);
                             }
-
-                            if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
-                                $('#'+service_id+'_chart').html(result.message);
-                            }
-
-                            hideSpinner();
-                        //Else sendAjax request for next Date
                         } else {
-
-                            var nextDay = moment(ajax_start_date).add(1, 'd');
-                            var ohayoo = nextDay.startOf('day');
-                            timeInterval = setTimeout(function () {
-                                (function(ohayoo) {
-                                    sendAjax(ohayoo.toDate(), ajax_end_date);
-                                })(ohayoo);
-                            }, 400);
+                            hideSpinner();
                         }
                     } else {
                         hideSpinner();
                     }
+
+                    // });
                 },
                 error : function(err) {
                     // console.log(err.statusText);
@@ -815,6 +1171,10 @@ function nocoutPerfLib() {
                     });
 
                     hideSpinner();
+                },
+                complete : function() {
+                    // Enable bootstrap switch
+                    $("#display_table").bootstrapSwitch('disabled',false,false);
                 }
             });
         }
@@ -848,4 +1208,56 @@ function nocoutPerfLib() {
             // console.error(e);
         }
     };
+
+    /**
+     * This function initializes
+     * @method initGetServiceData
+     * @param get_service_data_url "String", It contains the url to fetch the status of current device.
+     * @param service_id "String", It contains unique name for service.
+     * @param device_id "INT", It contains the ID of current device.
+     */
+    this.initGetServiceData = function(get_service_data_url, service_id, device_id) {
+        /*Reset Variables & counters */
+        if(timeInterval) {
+            clearTimeout(timeInterval);
+        }
+
+        if($('#'+service_id+'_chart').highcharts()) {
+            $('#'+service_id+'_chart').highcharts().destroy();
+        }
+
+        for(var i=0;i<Highcharts.charts.length;i++) {
+            if(Highcharts.charts[i]) {
+                Highcharts.charts[i].destroy();
+            }
+        }
+        
+        Highcharts.charts = [];
+
+        /*Call getServiceData function to fetch the data for clicked service tab*/
+        perfInstance.getServiceData(get_service_data_url, service_id, device_id);
+    };
 }
+
+
+$('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e) {
+    var current_target = e.currentTarget,
+        current_attr = current_target.attributes,
+        tab_service_id = current_target.id.slice(0, -4);
+
+    var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
+        serviceDataUrl = "";
+
+    if(service_data_url_val) {
+        if(service_data_url_val[0] != "/") {
+            serviceDataUrl = "/"+service_data_url_val;
+        } else {
+            serviceDataUrl = service_data_url_val;
+        }
+    }
+
+    if(show_historical_on_performance) {
+        perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
+    }
+
+});
