@@ -788,6 +788,16 @@ MIN_CHART_TYPE = 'spline'
 MAX_CHART_TYPE = 'spline'
 AVG_CHART_TYPE = 'spline'
 
+####################### Chart color for min, max & avg values #######################
+# 15 April 2015
+MIN_CHART_COLOR = '#0000FF'
+MAX_CHART_COLOR = '#FF00FF'
+AVG_CHART_COLOR = '#00FFFF'
+
+####################### Display flag for severity distrubution pie chart #######################
+# 15 April 2015
+DISPLAY_SEVERITY_PIE_CHART = False
+
 # Import the local_settings.py file to override global settings
 
 # #### Enable Disable Service Impacting Alarms from GUI #### #

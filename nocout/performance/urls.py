@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from performance import views
 from performance.views import Get_Service_Type_Performance_Data, \
-    Get_Service_Status, DeviceServiceDetail
+    Get_Service_Status, DeviceServiceDetail, ServiceDataSourceListing
 
 from django.views.decorators.cache import cache_page
 
@@ -39,6 +39,11 @@ urlpatterns = patterns('',
                            r'^service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)$',
                            Get_Service_Type_Performance_Data.as_view(),
                            name='GetServiceTypePerformanceData'
+                       ),
+                       url(
+                           r'^listing/service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)$',
+                           ServiceDataSourceListing.as_view(),
+                           name='ServiceDataSourceListing'
                        ),
                        # url(r'gismap_data/$','', name='performance_gismap_data')
                        url(
