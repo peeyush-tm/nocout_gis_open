@@ -1,0 +1,51 @@
+[
+{
+    "pk": 1, 
+    "model": "scheduling_management.weekdays", 
+    "fields": {
+        "name": "Monday"
+    }
+},
+{
+    "pk": 2, 
+    "model": "scheduling_management.weekdays", 
+    "fields": {
+        "name": "Tuesday"
+    }
+},
+{
+    "pk": 3, 
+    "model": "scheduling_management.weekdays", 
+    "fields": {
+        "name": "Wednesday"
+    }
+},
+{
+    "pk": 4, 
+    "model": "scheduling_management.weekdays", 
+    "fields": {
+        "name": "Thursday"
+    }
+},
+{
+    "pk": 5, 
+    "model": "scheduling_management.weekdays", 
+    "fields": {
+        "name": "Friday"
+    }
+},
+{
+    "pk": 6, 
+    "model": "scheduling_management.weekdays", 
+    "fields": {
+        "name": "Saturday"
+    }
+},
+{
+    "pk": 7, 
+    "model": "scheduling_management.weekdays", 
+    "fields": {
+        "name": "Sunday"
+    }
+}
+]

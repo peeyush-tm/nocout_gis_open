@@ -563,6 +563,16 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
         Preparing the Context Variable required in the template rendering.
         """
         context = super(DeviceServiceConfigurationList, self).get_context_data(**kwargs)
+
+        # show device service configuration reset button
+        dsc_reset = "no"
+
+        # check records exist in device service configuration table or not
+        # device service configuration data
+        dsc_data = DeviceServiceConfiguration.objects.all()
+        if dsc_data.count() > 0:
+            dsc_reset = "yes"
+
         datatable_headers = [
             {'mData': 'device_name', 'sTitle': 'Device', 'sWidth': 'null', },
             {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'null', },
@@ -584,6 +594,7 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
         deleted_datatable_headers = [
             {'mData': 'device_name', 'sTitle': 'Device', 'sWidth': 'null', },
             {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'null', },
+            {'mData': 'data_sources', 'sTitle': 'Data Sources', 'sWidth': 'null', },
             {'mData': 'agent_tag', 'sTitle': 'Agent Tag', 'sWidth': 'null', },
             {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'null', },
             {'mData': 'modified_on', 'sTitle': 'Updated On', 'sWidth': 'null', },
@@ -593,8 +604,9 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
-
         context['deleted_datatable_headers'] = json.dumps(deleted_datatable_headers)
+        context['dsc_reset'] = dsc_reset
+
         return context
 
 
@@ -743,6 +755,16 @@ class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Da
             try:
                 device = Device.objects.get(device_name=dct['device_name'])
                 dct['device_name'] = "{} ({})".format(device.device_alias, device.ip_address)
+            except Exception as e:
+                pass
+
+            dct['data_sources'] = ""
+
+            try:
+                data_sources = Service.objects.get(name=dct['service_name']).service_data_sources.all()
+                if data_sources:
+                    for ds in data_sources:
+                        dct['data_sources'] += "{} <br />".format(ds.name)
             except Exception as e:
                 pass
 

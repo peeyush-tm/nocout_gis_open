@@ -15,6 +15,19 @@
 
 {% block content_title %}Device Service Configuration{% endblock %}
 {% block content_description %}List of running services{% endblock %}
+{% block page_setting_block %}
+    {% if request.user.is_superuser %}
+        <span class="pull-right">
+            <span class="btn-group">
+                {% if dsc_reset == 'yes' %}
+                    <i class="red-dot">Reset: <a class="" href="#" onclick="reset_service_configuration();"><i class="fa fa-times-circle red-dot" title="Reset device service configurations."></i></a></i>
+                {% else %}
+                    <i class="green-dot">No service configuration exists.</i>
+                {% endif %}
+            </span>
+        </span>
+    {% endif %}
+{% endblock %}
 {% block content %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
