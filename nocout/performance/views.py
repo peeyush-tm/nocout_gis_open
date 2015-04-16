@@ -1960,6 +1960,8 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     data_source = ''
 
+    perf_data_instance = ''
+
     def get_initial_queryset(self, parameters, machine_name):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -1967,9 +1969,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        perf_data_instance = Get_Service_Type_Performance_Data()
-
-        resultset = perf_data_instance.get_performance_data(
+        resultset = self.perf_data_instance.get_performance_data(
             **parameters
         ).using(alias=machine_name)
 
@@ -2033,23 +2033,39 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         return data
 
-    def filter_queryset(self, qs):
+    def filter_queryset(self, qs, parameters, machine_name):
         """ Filter datatable as per requested value """
 
         sSearch = self.request.GET.get('sSearch', None)
 
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                # avoid search on 'added_on'
-                if column == 'added_on':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
+        if sSearch:
+    
+            try:
+
+                main_resultset = self.perf_data_instance.get_performance_data(
+                    **parameters
+                ).using(alias=machine_name)
+
+                qs = main_resultset.filter(
+                    Q(max_value__icontains=sSearch)
+                    |
+                    Q(min_value__icontains=sSearch)
+                    |
+                    Q(current_value__icontains=sSearch)
+                    |
+                    Q(ip_address__icontains=sSearch)
+                    |
+                    Q(severity__icontains=sSearch)
+                    |
+                    Q(warning_threshold__icontains=sSearch)
+                    |
+                    Q(critical_threshold__icontains=sSearch)
+                ).values(*self.columns).order_by('-sys_timestamp')
+
+            except Exception, e:
+                pass
+
         return qs
 
     def ordering(self, qs):
@@ -2114,6 +2130,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        self.perf_data_instance = Get_Service_Type_Performance_Data()
 
         try:
             # Create Ordering columns from GET request
@@ -2243,7 +2260,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         # number of records before filtering
         total_records = qs.count()
 
-        qs = self.filter_queryset(qs)
+        qs = self.filter_queryset(qs, parameters, inventory_device_machine_name)
 
         # number of records after filtering
         total_display_records = qs.count()
