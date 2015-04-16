@@ -2052,6 +2052,44 @@ class ServiceDataSourceListing(BaseDatatableView):
             exec exec_query
         return qs
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.order_columns
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
     def get_context_data(self, *args, **kwargs):
         """
         The main method call to fetch, search, ordering , prepare and display the data on the data table.
@@ -2059,7 +2097,6 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         request = self.request
         self.initialize(*args, **kwargs)
-
 
         # REQUIRED GET PARAMS
         device_id = self.kwargs['device_id']
@@ -2076,6 +2113,19 @@ class ServiceDataSourceListing(BaseDatatableView):
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+
+
+        # Create Ordering columns from GET request
+        total_columns_count = int(self.request.GET.get('iColumns',len(self.columns)))
+        new_ordering_columns = list()
+        
+        for i in range(total_columns_count):
+            if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
+                new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
+
+        # Update new ordering columns in global variable
+        self.order_columns = new_ordering_columns
+
 
         if data_for != 'live':
             self.isHistorical = True
@@ -2955,21 +3005,21 @@ class Get_Service_Type_Performance_Data(View):
         if is_historical_data:
             # Grid Headers List
             grid_headers = [
-                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': False}
+                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True}
             ]
         else:
             # Grid Headers List
             grid_headers = [
-                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': False}
+                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True}
             ]
 
         self.result['success'] = 1
