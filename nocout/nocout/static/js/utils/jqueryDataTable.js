@@ -94,7 +94,11 @@ function ourDataTableWidget()
                 }
                 // Ensure we clear the search if they backspace far enough
                 if(this.value == "") {
-                    dtable.fnFilter("");
+                    try {
+                        dtable.fnFilter("");
+                    } catch(e) {
+                        // console.log(e);
+                    }
                 }
                 return;
             });
@@ -102,7 +106,11 @@ function ourDataTableWidget()
         $("#page_content_div").delegate("#"+tableId+"_search_btn",'click',function() {
             var search_text = $(".dataTables_filter input").val();
             if(search_text.length >= 2) {
-                dtable.fnFilter(search_text);
+                try {
+                    dtable.fnFilter(search_text);
+                } catch(e) {
+                    // console.log(e);
+                }
             }
         });
 
