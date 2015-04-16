@@ -778,6 +778,26 @@ WHITE_MAP_CONFIGURATION = json.dumps({
     "initial_bounds"        :   [68.14339447036186,6.748584270488672,97.40963745103579,37.07349395945833],
 })
 
+####################### FLAG To SHOW/HIDE HISTORICAL DATA ON PERFORMANCE PAGE #######################
+# 4 April 2015
+HISTORICAL_ON_PERFORMANCE = False
+
+####################### Chart type for min, max & avg values #######################
+# 11 April 2015
+MIN_CHART_TYPE = 'spline'
+MAX_CHART_TYPE = 'spline'
+AVG_CHART_TYPE = 'spline'
+
+####################### Chart color for min, max & avg values #######################
+# 15 April 2015
+MIN_CHART_COLOR = '#0000FF'
+MAX_CHART_COLOR = '#FF00FF'
+AVG_CHART_COLOR = '#00FFFF'
+
+####################### Display flag for severity distrubution pie chart #######################
+# 15 April 2015
+DISPLAY_SEVERITY_PIE_CHART = False
+
 # Import the local_settings.py file to override global settings
 
 # #### Enable Disable Service Impacting Alarms from GUI #### #
@@ -795,7 +815,8 @@ SETTINGS_EXPORT = [
     'SIA_ENABLED',
     'GLOBAL_SEARCH_FLAG',
     'DATATABLES_DOWNLOAD_FLAG',
-    'WHITE_MAP_CONFIGURATION'
+    'WHITE_MAP_CONFIGURATION',
+    'HISTORICAL_ON_PERFORMANCE'
 ]
 # #### Access Variables in Templates
 

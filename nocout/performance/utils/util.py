@@ -199,13 +199,24 @@ def map_results(perf_result, qs):
 @cache_for(300)
 def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, type_rf=None):
     """
-    indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
+    indexes={
+            'sector': 'SECTOR_CONF_ON_NAME',
+            'ss': 'SSDEVICENAME',
+            'bh': 'BHCONF',
+            'pop': 'POP',
+            'aggr': 'AGGR',
+            'bsconv': 'BSCONV',
+            'dr': 'DR_CONF_ON'
+        }
     :return:
     """
 
     indexed_sector = {}
     indexed_ss = {}
     indexed_bh = {}
+
+    # dr case
+    indexed_dr = {}
 
     #pop, aggrigation, bs conveter
     indexed_bh_pop = {}
@@ -224,14 +235,26 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
             defined_bh_aggr_index = result[indexes['aggr']]
             defined_bh_conv_index = result[indexes['bsconv']]
 
-            #indexing sector
+            # adding for DR
+            defined_dr_conv_index = result[indexes['dr']]
+
+            # indexing sector
             if defined_sector_index not in indexed_sector:
                 indexed_sector[defined_sector_index] = []
             try:
                 indexed_sector[defined_sector_index].append(result)
             except:
                 pass
-            #indexing ss
+
+            # indexing DR
+            if defined_dr_conv_index and defined_dr_conv_index not in indexed_dr:
+                indexed_dr[defined_dr_conv_index] = list()
+            try:
+                indexed_dr[defined_dr_conv_index].append(result)
+            except:
+                pass
+
+            # indexing ss
             if defined_ss_index not in indexed_ss:
                 indexed_ss[defined_ss_index] = []
             try:
@@ -239,7 +262,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
             except:
                 pass
 
-            #indexing bh
+            # indexing bh
             if defined_bh_index and defined_bh_index not in indexed_bh:
                 indexed_bh[defined_bh_index] = []
             try:
@@ -247,8 +270,8 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
             except:
                 pass
 
-            #pop, aggrigation, bs conveter
-            #indexing pop
+            # pop, aggrigation, bs conveter
+            # indexing pop
             if defined_bh_pop_index and defined_bh_pop_index not in indexed_bh_pop:
                 indexed_bh_pop[defined_bh_pop_index] = []
             try:
@@ -256,14 +279,14 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
             except:
                 pass
 
-            #indexing bsconv
+            # indexing bsconv
             if defined_bh_conv_index and defined_bh_conv_index not in indexed_bh_conv:
                 indexed_bh_conv[defined_bh_conv_index] = []
             try:
                 indexed_bh_conv[defined_bh_conv_index].append(result)
             except:
                 pass
-            #indexing aggregation
+            # indexing aggregation
             if defined_bh_aggr_index and defined_bh_aggr_index not in indexed_bh_aggr:
                 indexed_bh_aggr[defined_bh_aggr_index] = []
             try:
@@ -271,7 +294,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
             except:
                 pass
 
-    return indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv
+    return indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv, indexed_dr
 
 
 @cache_for(300)
@@ -280,6 +303,7 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     map the devices with gis data
     :return:
     """
+
     # ##binary search instead
     # from bisect import bisect_left
     #
@@ -289,18 +313,19 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     #     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
     # ##binary search instead
 
-
-    indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv = \
-        combined_indexed_gis_devices(indexes={
-                                                'sector': 'SECTOR_CONF_ON_NAME',
-                                                'ss': 'SSDEVICENAME',
-                                                'bh': 'BHCONF',
-                                                'pop': 'POP',
-                                                'aggr': 'AGGR',
-                                                'bsconv': 'BSCONV'
-                                            },
-                                     monitored_only=monitored_only, technology=technology, type_rf=type_rf
-                                    )
+    indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv, indexed_dr = \
+        combined_indexed_gis_devices(
+            indexes={
+                'sector': 'SECTOR_CONF_ON_NAME',
+                'ss': 'SSDEVICENAME',
+                'bh': 'BHCONF',
+                'pop': 'POP',
+                'aggr': 'AGGR',
+                'bsconv': 'BSCONV',
+                'dr': 'DR_CONF_ON'
+            },
+            monitored_only=monitored_only, technology=technology, type_rf=type_rf
+        )
 
 
     # gis_result = indexed_gis_devices(page_type=page_type)
@@ -327,6 +352,9 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
         is_pop = False
         is_aggr = False
         is_conv = False
+
+        # M7: 15th April 2014 #1308
+        is_dr = False
 
         sector_id = []
 
@@ -356,13 +384,17 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
         elif device_name in indexed_bh_conv:
             is_conv = True
             raw_result = indexed_bh_conv[device_name]
+        # DR # M7: 15th April 2014 #1308
+        elif device_name in indexed_dr:
+            is_dr = True
+            raw_result = indexed_dr[device_name]
         else:
             continue
 
         sector_details = []
         apnd = ""
 
-        if is_sector:
+        if is_sector or is_dr:
             for bs_row in raw_result:
                 if bs_row['SECTOR_SECTOR_ID'] and bs_row['SECTOR_SECTOR_ID'] not in sector_id:
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
@@ -614,7 +646,7 @@ def get_performance_data(device_list, machine, model):
     return device_result
 
 
-def get_time(start_date, end_date, date_format):
+def get_time(start_date, end_date, date_format, data_for):
 
     isSet = False
 
@@ -630,17 +662,34 @@ def get_time(start_date, end_date, date_format):
             end_date = format(end_date_object, 'U')
 
     else:
-        # The end date is the end limit we need to make query till.
-        end_date_object = datetime.datetime.now()
-        # The start date is the last monday of the week we need to calculate from.
-        start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-        # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-        start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-        # Converting the date to epoch time or Unix Timestamp
-        end_date = format(end_date_object, 'U')
-        start_date = format(start_date_object, 'U')
+        now_datetime = datetime.datetime.now()
+        end_date = format(now_datetime, 'U')
+        # In case of 'bihourly' & 'hourly' start date will be start of today(i.e '%Y-%m-%d 00:00:00')
+        if data_for in ['bihourly']:
+            last_4_days = now_datetime - datetime.timedelta(days=4)
+            start_date = format(last_4_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
+        elif data_for in ['hourly']:
+            last_7_days = now_datetime - datetime.timedelta(days=7)
+            start_date = format(last_7_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
+        elif data_for in ['daily', 'weekly', 'monthly', 'yearly']:
+            end_date = 0
+        else:
+            # The end date is the end limit we need to make query till.
+            end_date_object = now_datetime
+            # The start date is the last monday of the week we need to calculate from.
+            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+            # Converting the date to epoch time or Unix Timestamp
+            start_date = format(start_date_object, 'U')
 
-    return isSet, float(start_date), float(end_date)
+    if end_date:
+        end_date = float(end_date)
+
+    if start_date:
+        start_date = float(start_date)
+
+    return isSet, start_date, end_date
 
 
 def color_picker():

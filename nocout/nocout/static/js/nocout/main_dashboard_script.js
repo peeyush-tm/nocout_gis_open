@@ -602,7 +602,11 @@ function updatePieChart(chartData, domElement, callback) {
                 type: 'pie',
                 name: chartData.chart_data[0].name,
                 colors: colors_list,
-                data: chartData.chart_data[0].data
+                data: chartData.chart_data[0].data,
+                showInLegend: false,
+                dataLabels: {
+                    enabled: true
+                }
             }],
             lang: {
                 noData: 'Data is not available.'
