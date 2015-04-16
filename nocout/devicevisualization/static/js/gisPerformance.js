@@ -1677,7 +1677,9 @@ function GisPerformance() {
                     if(condition1 && condition2) {
                         var sector_tech = connected_sectors[i].technology ? $.trim(connected_sectors[i].technology.toLowerCase()) : "",
                             sector_vendor = connected_sectors[i].vendor ? $.trim(connected_sectors[i].vendor.toLowerCase()) : "",
-                            sector_frequency = connected_sectors[i].planned_frequency ? $.trim(connected_sectors[i].planned_frequency) : "",
+                            sector_frequency_1 = connected_sectors[i].planned_frequency ? $.trim(connected_sectors[i].planned_frequency) : "",
+                            // sector_frequency_2 = connected_sectors[i].frequency ? $.trim(connected_sectors[i].frequency) : "",
+                            sector_frequency_2 = "",
                             sector_polarization = connected_sectors[i].orientation ? $.trim(connected_sectors[i].orientation.toLowerCase()) : "";
 
                         if(isBasicFilterApplied) {
@@ -1693,7 +1695,10 @@ function GisPerformance() {
                                 if(isAdvanceFilterApplied) {
                                     var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_tech) > -1 : true,
                                         advance_filter_condition2 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
-                                        advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter.indexOf(sector_frequency) > -1 : true,
+                                        // frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1,
+                                        frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
+                                        // advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter.indexOf(sector_frequency) > -1 : true,
+                                        advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter_condition : true,
                                         advance_filter_condition4 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true;
 
                                     if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4) {
@@ -1705,7 +1710,10 @@ function GisPerformance() {
                         } else if(isAdvanceFilterApplied) {
                             var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_tech) > -1 : true,
                                 advance_filter_condition2 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
-                                advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter.indexOf(sector_frequency) > -1 : true,
+                                // frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1,
+                                frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
+                                // advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter.indexOf(sector_frequency) > -1 : true,
+                                advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter_condition : true,
                                 advance_filter_condition4 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true;
 
                             if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4) {

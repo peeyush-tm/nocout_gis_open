@@ -1548,31 +1548,41 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
 
                     if(table_headers) {
 
-                        var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
                         
-                        contentHtml += createTableHtml_nocout(
-                            'other_perf_table',
-                            table_headers,
-                            table_data,
-                            false
-                        );
+                        if(typeof(table_headers[0]) == 'string') {
 
-                        contentHtml += "</div>";
-                        /*Call the bootbox to show the popup with datatable*/
+                            var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
+
+                            contentHtml += createTableHtml_nocout(
+                                'other_perf_table',
+                                table_headers,
+                                table_data,
+                                false
+                            );
+
+                            contentHtml += "</div>";
+                        } else {
+
+                            contentHtml += "<div id='map_bottom_table'></div><div class='clearfix'></div>"
+                        }
+                        // /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
                             message: contentHtml,
                             title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance    '
                         });
 
-                        // Update Modal width to 90%;
+                        // // Update Modal width to 90%;
                         $(".modal-dialog").css("width","90%");
 
-                        $("#other_perf_table").DataTable({
-                            bPaginate: true,
-                            bDestroy: true,
-                            aaSorting : [[0,'desc']],
-                            sPaginationType: "full_numbers"
-                        });
+                        if(typeof(table_headers[0]) != 'string') {
+                            initChartDataTable_nocout(
+                                "other_perf_table",
+                                table_headers,
+                                "map",
+                                "/"+api_url,
+                                true
+                            );
+                        }
 
                     } else {
 

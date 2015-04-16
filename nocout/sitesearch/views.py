@@ -386,7 +386,7 @@ def prepare_raw_sector(sectors=None,with_data=False):
                 # Polled Frequency
                 sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
                 # Planned Frequency
-                sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']))
+                # sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']))
 
                 # If with_data flag is true then send tooltip data
                 if with_data:

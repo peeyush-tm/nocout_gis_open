@@ -510,7 +510,9 @@
     <script type="text/javascript" src={% static "js/tooltipLib.js" %}></script>
     <!--Our Common Utilities Script-->
     <script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
-    
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+
     <script type="text/javascript">
 
         var networkMapInstance = "",
@@ -520,7 +522,8 @@
             gmap_self = "",
             deviceName = "",
             is_super_admin = "",
-            default_polling = true;
+            default_polling = true,
+            dataTableInstance = "";
 
         google.load("earth", "1");
 
@@ -544,6 +547,9 @@
             } catch(e) {
                 // pass
             }
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
 
             /*Show page controls page*/
             $("#headerToggleBtn").trigger('click');
