@@ -5,7 +5,7 @@ def mysql_conn():
                         host='121.244.255.107',
                         user='nocout_root',
                         password='nocout_root_master_UA@123',
-                        database='nocout_22_10_14',
+                        database='nocout_m6',
                         port=3200
                         )
     return db
