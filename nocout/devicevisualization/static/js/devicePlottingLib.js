@@ -1482,13 +1482,15 @@ function devicePlottingClass_gmap() {
 					sector_vendor = $.trim(bs_sectors[y].vendor.toLowerCase()),
 					// sector_frequency = $.trim(bs_sectors[y].planned_frequency),
 					sector_frequency_1 = $.trim(bs_sectors[y].planned_frequency),
-					sector_frequency_2 = $.trim(bs_sectors[y].frequency),
+					// sector_frequency_2 = $.trim(bs_sectors[y].frequency),
+					sector_frequency_2 = "",
 					sector_polarization = bs_sectors[y].orientation ? $.trim(bs_sectors[y].orientation.toLowerCase()) : "";
 
 				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
 					var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_technology) > -1 : true,
 						advance_filter_condition2 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
-						frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1,
+						// frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1,
+						frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
 						advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter_condition : true,
 						// advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter.indexOf(sector_frequency) > -1 : true,
 						advance_filter_condition4 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true;
@@ -1607,8 +1609,9 @@ function devicePlottingClass_gmap() {
 								if(isAdvanceFilterApplied) {
 
 									var sector_frequency_1 = sectors[i].planned_frequency ? $.trim(sectors[i].planned_frequency) : "",
-										sector_frequency_2 = sectors[i].frequency ? $.trim(sectors[i].frequency) : "",
-										frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1;
+										sector_frequency_2 = "",
+										frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1;
+										// frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1;
 
 									var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology.toLowerCase()) > -1 : true,
 						                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor.toLowerCase()) > -1 : true,
@@ -1655,8 +1658,10 @@ function devicePlottingClass_gmap() {
 					        		for(var i=0;i<sectors.length;i++) {
 
 					        			var sector_frequency_1 = sectors[i].planned_frequency ? $.trim(sectors[i].planned_frequency) : "",
-											sector_frequency_2 = sectors[i].frequency ? $.trim(sectors[i].frequency) : "",
-											frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1;
+											// sector_frequency_2 = sectors[i].frequency ? $.trim(sectors[i].frequency) : "",
+											sector_frequency_2 = "",
+											frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1;
+											// frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1;
 
 						        		var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology.toLowerCase()) > -1 : true,
 							                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor.toLowerCase()) > -1 : true,
@@ -1705,8 +1710,10 @@ function devicePlottingClass_gmap() {
 		        		for(var i=0;i<sectors.length;i++) {
 
 		        			var sector_frequency_1 = sectors[i].planned_frequency ? $.trim(sectors[i].planned_frequency) : "",
-								sector_frequency_2 = sectors[i].frequency ? $.trim(sectors[i].frequency) : "",
-								frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1;
+								// sector_frequency_2 = sectors[i].frequency ? $.trim(sectors[i].frequency) : "",
+								sector_frequency_2 = "",
+								frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1;
+								// frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1 || frequency_filter.indexOf(sector_frequency_2) > -1;
 
 			        		var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology.toLowerCase()) > -1 : true,
 				                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor.toLowerCase()) > -1 : true,
