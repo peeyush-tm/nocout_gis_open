@@ -97,7 +97,7 @@ agents_dir                         = '/usr/share/check_mk/agents'
 check_manpages_dir                 = '/usr/share/doc/check_mk/checks'
 modules_dir                        = '/usr/share/check_mk/modules'
 var_dir                            = '/var/lib/check_mk'
-tmp_dir                            = '/tmp'
+#tmp_dir                            = '/tmp'
 autochecksdir                      = var_dir + '/autochecks'
 snmpwalks_dir                      = var_dir + '/snmpwalks'
 precompiled_hostchecks_dir         = var_dir + '/precompiled'
@@ -115,13 +115,13 @@ logwatch_notes_url                 = "/nagios/logwatch.php?host=%s&file=%s"
 
 ########## NOCOUT Modifications
 ######### we will generate files in tmp directory and then overwrite var folders
-tmp_autochecksdir                      = tmp_dir + var_dir + '/autochecks'
-tmp_snmpwalks_dir                      = tmp_dir + var_dir + '/snmpwalks'
-tmp_precompiled_hostchecks_dir         = tmp_dir + var_dir + '/precompiled'
-tmp_counters_directory                 = tmp_dir + var_dir + '/counters'
-tmp_tcp_cache_dir                      = tmp_dir + var_dir + '/cache'
-tmp_logwatch_dir                       = tmp_dir + var_dir + '/logwatch'
-tmp_nagios_objects_file                = tmp_dir + var_dir + '/check_mk_objects.cfg'
+#tmp_autochecksdir                      = tmp_dir + var_dir + '/autochecks'
+#tmp_snmpwalks_dir                      = tmp_dir + var_dir + '/snmpwalks'
+#tmp_precompiled_hostchecks_dir         = tmp_dir + var_dir + '/precompiled'
+#tmp_counters_directory                 = tmp_dir + var_dir + '/counters'
+#tmp_tcp_cache_dir                      = tmp_dir + var_dir + '/cache'
+#tmp_logwatch_dir                       = tmp_dir + var_dir + '/logwatch'
+#tmp_nagios_objects_file                = tmp_dir + var_dir + '/check_mk_objects.cfg'
 
 
 
@@ -145,7 +145,7 @@ if len(sys.argv) >= 2 and sys.argv[1] == '--defaults':
     del sys.argv[1:3]
 elif __name__ == "__main__":
     defaults_path = os.path.dirname(sys.argv[0]) + "/defaults"
-    sys.stdout.write(defaults_path)
+    #sys.stdout.write(defaults_path)
 if opt_debug:
     sys.stderr.write("Reading default settings from %s\n" % defaults_path)
 try:
@@ -175,7 +175,7 @@ if __name__ == "__main__":
                 check_mk_basedir = check_mk_configfile.rsplit('/',1)[0]
             else:
                 check_mk_basedir = "." # no / contained in filename
-            sys.stdout.write(check_mk_basedir)
+            #sys.stdout.write(check_mk_basedir)
             if not os.path.exists(check_mk_basedir):
                 sys.stderr.write("Directory %s does not exist.\n" % check_mk_basedir)
                 sys.exit(1)
