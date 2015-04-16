@@ -4988,14 +4988,18 @@ function devicePlottingClass_gmap() {
         		});
 
 		        var data = {results: []}, i, j, s;
-		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        // var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	var technology_list = filtered_data[i].sector_ss_technology.split("|");
         			for(var j=0;j<technology_list.length;j++) {
         				if(searchPattern.test(technology_list[j])) {
-				        	if(bs_technology_array.indexOf(technology_list[j]) < 0) {
-				        		bs_technology_array.push(technology_list[j]);
-				            	data.results.push({id: technology_list[j], text: technology_list[j], value : technology_list[j]});
+        					if(data.results.length >= 40) {
+        						break;
+        					} else {
+					        	if(bs_technology_array.indexOf(technology_list[j]) < 0) {
+					        		bs_technology_array.push(technology_list[j]);
+					            	data.results.push({id: technology_list[j], text: technology_list[j], value : technology_list[j]});
+					        	}
 				        	}
 			        	}
     				}
@@ -5023,15 +5027,19 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	var sectors = filtered_data[i].data.param.sector;
         			for(var j=0;j<sectors.length;j++) {
         				var condition = selected_technology.length > 0 ? selected_technology.indexOf(sectors[j].technology) > -1 : true;
         				if(condition) {
 	        				if(searchPattern.test(sectors[j].vendor)) {
-					        	if(bs_vendor_array.indexOf(sectors[j].vendor) < 0) {
-					        		bs_vendor_array.push(sectors[j].vendor);
-					            	data.results.push({id: sectors[j].vendor, text: sectors[j].vendor, value : sectors[j].vendor});
+	        					if(data.results.length >= 40) {
+	        						break;
+	        					} else {
+						        	if(bs_vendor_array.indexOf(sectors[j].vendor) < 0) {
+						        		bs_vendor_array.push(sectors[j].vendor);
+						            	data.results.push({id: sectors[j].vendor, text: sectors[j].vendor, value : sectors[j].vendor});
+						        	}
 					        	}
 				        	}
         				}
@@ -5057,10 +5065,18 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	if(showing_states.indexOf(filtered_data[i].data.state) < 0) {
-		        		showing_states.push(filtered_data[i].data.state);
-		            	data.results.push({id: filtered_data[i].data.state, text: filtered_data[i].data.state, value : filtered_data[i].data.state});
+		        		if(data.results.length >= 40) {
+    						break;
+    					} else {
+			        		showing_states.push(filtered_data[i].data.state);
+			            	data.results.push({
+			            		id: filtered_data[i].data.state,
+			            		text: filtered_data[i].data.state,
+			            		value : filtered_data[i].data.state
+		            		});
+		            	}
 		        	}
 		        }
 		        query.callback(data);
@@ -5085,17 +5101,21 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
-		        		if(selected_state.length > 0) {
-		        			if(selected_state.indexOf(filtered_data[i].data.state) > -1) {
-				            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
-		        			}
-		        		} else {
-			            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});		        			
+		        		if(data.results.length >= 40) {
+    						break;
+    					} else {
+			        		if(selected_state.length > 0) {
+			        			if(selected_state.indexOf(filtered_data[i].data.state) > -1) {
+					            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+			        			}
+			        		} else {
+				            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});		        			
+			        		}
+			        		// Push city data to array
+			        		showing_cities.push(filtered_data[i].data.city);
 		        		}
-		        		// Push city data to array
-		        		showing_cities.push(filtered_data[i].data.city);
 		        	}
 		        }
 		        query.callback(data);
@@ -5119,15 +5139,19 @@ function devicePlottingClass_gmap() {
         		});
 
 		        var data = {results: []}, i, j, s;
-		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        // var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	var freq_list = filtered_data[i].sector_planned_frequencies.split("|");
         			for(var j=0;j<freq_list.length;j++) {
         				if(searchPattern.test(freq_list[j])) {
-				        	if(sector_freq_array.indexOf(freq_list[j]) < 0 && freq_list[j] != 'NA') {
-				        		sector_freq_array.push(freq_list[j]);
-				            	data.results.push({id: freq_list[j], text: freq_list[j], value : freq_list[j]});
-				        	}
+        					if(data.results.length >= 40) {
+        						break;
+        					} else {
+					        	if(sector_freq_array.indexOf(freq_list[j]) < 0 && freq_list[j] != 'NA') {
+					        		sector_freq_array.push(freq_list[j]);
+					            	data.results.push({id: freq_list[j], text: freq_list[j], value : freq_list[j]});
+					        	}
+        					}
 			        	}
     				}
 		        }
@@ -5155,13 +5179,17 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	var sectors = filtered_data[i].data.param.sector;
         			for(var j=0;j<sectors.length;j++) {
         				if(searchPattern.test(sectors[j].orientation)) {
-				        	if(polarization_array.indexOf(sectors[j].orientation.toLowerCase()) < 0 && sectors[j].orientation != 'NA') {
-				        		polarization_array.push(sectors[j].orientation.toLowerCase());
-				            	data.results.push({id: sectors[j].orientation, text: sectors[j].orientation, value : sectors[j].orientation});
+        					if(data.results.length >= 40) {
+        						break;
+        					} else {
+					        	if(polarization_array.indexOf(sectors[j].orientation.toLowerCase()) < 0 && sectors[j].orientation != 'NA') {
+					        		polarization_array.push(sectors[j].orientation.toLowerCase());
+					            	data.results.push({id: sectors[j].orientation, text: sectors[j].orientation, value : sectors[j].orientation});
+					        	}
 				        	}
 			        	}
     				}
