@@ -652,8 +652,8 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
     try:
         if update_id:
             sync_finished_at = str(datetime.utcnow())
-            query = "UPDATE device_devicesynchistory SET status=%s, message='%s', completed_on='%s'"\
-                     % (status, detailed_message, sync_finished_at)
+            query = "UPDATE device_devicesynchistory SET status=%s, message='%s', completed_on='%s' WHERE id = %s"\
+                     % (status, detailed_message, sync_finished_at, update_id)
             cur = db.cursor()
             cur.execute(query)
             db.commit()
