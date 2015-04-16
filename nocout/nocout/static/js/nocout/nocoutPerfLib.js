@@ -126,7 +126,8 @@ var perf_that = "",
             'sWidth': 'auto',
             'bSortable': false
         }
-    ];
+    ],
+    date_range_picker_html = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -134,6 +135,11 @@ if(window.location.origin) {
 } else {
     base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
 }
+
+// Daterangepicker HTML String
+date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
+                          class="form-control input-large search-query" value=""/>';
+
 
 $.urlParam = function (name) {
     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);

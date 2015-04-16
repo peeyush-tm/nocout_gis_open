@@ -413,19 +413,19 @@
          */
         $("#reset_filter").on('click', function () {
             if(startDate && endDate) {
-                $('#reservationtime').val('');
+
                 startDate = "";
                 endDate = "";
+                
+                // Remove daterangepicker from DOM
+                $('#'+dateRangePicker_domId).daterangepicker().remove();
+                
+                // Add daterangepicker to DOM
+                $(".date_range_filter_container .input-group").append(date_range_picker_html);
+                
+                /*To initialize date range picker*/
+                perfInstance.initDateRangePicker(dateRangePicker_domId);
 
-                // if(show_historical_on_performance) {
-                //     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
-                //         service_id = active_inner_tab.attr("id").slice(0, -4),
-                //         get_service_data_url = active_inner_tab.attr("url");
-                // } else {
-                //     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                //         service_id = active_inner_tab.attr("id").slice(0, -4),
-                //         get_service_data_url = active_inner_tab.attr("url");
-                // }
                 var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
                     top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
                 
