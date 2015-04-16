@@ -26,7 +26,8 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     PerformanceServiceMonthly, PerformanceServiceYearly, PerformanceNetworkBiHourly, PerformanceNetworkHourly, \
     PerformanceNetworkDaily, PerformanceNetworkWeekly, PerformanceNetworkMonthly, PerformanceNetworkYearly, \
     PerformanceStatusDaily, PerformanceStatusWeekly, PerformanceStatusMonthly, PerformanceStatusYearly, \
-    PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly
+    PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly,\
+    UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly
 
 from nocout.utils import logged_in_user_organizations
 
@@ -2086,7 +2087,7 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
 
-        if not isSet and not self.isHistorical:
+        if not isSet and data_for == 'live':
             now_datetime = datetime.datetime.now()
             end_date = float(format(now_datetime, 'U'))
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
@@ -2260,7 +2261,7 @@ class Get_Service_Type_Performance_Data(View):
         end_date = self.request.GET.get('end_date', '')
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
 
-        if not isSet and not is_historical_data:
+        if not isSet and data_for == 'live':
             now_datetime = datetime.datetime.now()
             end_date = float(format(now_datetime, 'U'))
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
