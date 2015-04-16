@@ -74,19 +74,19 @@ var perf_that = "",
             'mData': 'current_value',
             'sTitle': 'Current Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'severity',
             'sTitle': 'Severity',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'sys_timestamp',
             'sTitle': 'Time',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         }
     ],
     default_hist_table_headers = [
@@ -94,37 +94,37 @@ var perf_that = "",
             'mData': 'current_value',
             'sTitle': 'Current Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'min_value',
             'sTitle': 'Min. Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'max_value',
             'sTitle': 'Max. Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'avg_value',
             'sTitle': 'Avg. Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'severity',
             'sTitle': 'Severity',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'sys_timestamp',
             'sTitle': 'Time',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         }
     ],
     date_range_picker_html = "";

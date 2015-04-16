@@ -317,7 +317,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
                 'mData': header_key,
                 'sTitle': headers_config[i].name,
                 'sWidth': 'auto',
-                'bSortable': false
+                'bSortable': true
             };
 
             tableheaders.push(header_dict);
@@ -328,7 +328,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             'mData': 'sys_timestamp',
             'sTitle': 'Time',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         });
     } else {
         tableheaders = headers_config;
