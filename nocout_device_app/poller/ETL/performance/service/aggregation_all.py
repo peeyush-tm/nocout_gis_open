@@ -114,8 +114,8 @@ def quantify_perf_data(host_specific_data):
         # These services contain perf which can't be evaluated using regular `min`, `max` functions
         wimax_mrotek_services = ['wimax_ss_sector_id', 'wimax_ss_mac', 'wimax_dl_intrf', 'wimax_ul_intrf', 'wimax_ss_ip',
                 'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec', 'wimax_ss_frequency',
-                'rici_line_1_port_state', 'rici_fe_port_state', 'rici_e1_interface_alarm',
-                'rici_device_type', 'mrotek_line_1_port_state', 'mrotek_fe_port_state',
+                'rici_line1_port_state', 'rici_fe_port_state', 'rici_e1_interface_alarm',
+                'rici_device_type', 'mrotek_line1_port_state', 'mrotek_fe_port_state',
                 'mrotek_e1_interface_alarm', 'mrotek_device_type']
         aggr_data = {}
         find_query = {}
@@ -296,8 +296,8 @@ def quantify_perf_data(host_specific_data):
 def calc_values(data):
     wimax_mrotek_services = ['wimax_ss_sector_id', 'wimax_ss_mac', 'wimax_dl_intrf', 'wimax_ul_intrf', 'wimax_ss_ip',
                 'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec', 'wimax_ss_frequency',
-                'rici_line_1_port_state', 'rici_fe_port_state', 'rici_e1_interface_alarm',
-                'rici_device_type', 'mrotek_line_1_port_state', 'mrotek_fe_port_state',
+                'rici_line1_port_state', 'rici_fe_port_state', 'rici_e1_interface_alarm',
+                'rici_device_type', 'mrotek_line1_port_state', 'mrotek_fe_port_state',
                 'mrotek_e1_interface_alarm', 'mrotek_device_type']
     for doc in data:
 	current_value = doc.get('current_value')
