@@ -1057,7 +1057,13 @@ function nocoutPerfLib() {
                                     }
 
                                     // To show the table in case of utilization_top tab
-                                    if(listing_ajax_url.indexOf('servicedetail') > -1) {
+                                    if(
+                                        listing_ajax_url.indexOf('servicedetail') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('service/rf/') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('availability') > -1
+                                    ) {
                                         var contentHtml = createChartDataTableHtml_nocout(
                                             "perf_data_table",
                                             chart_config.chart_data
