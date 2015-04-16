@@ -1,0 +1,69 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Devices" "device_list" %}
+    {% breadcrumb_safe "Devices Tree View" "" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}Device Tree View{% endblock %}
+{% block content_description %}Tree view of devices.{% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+       {% if perms.inventory.add_antenna %}
+
+    <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
+       {% endif %}
+    <p><a href="/device"><i class="fa fa-table"></i> Devices List View</a></p>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-sitemap"></i>DEVICES TREE VIEW</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="box-body">
+            <div id="waitContainer">
+                <i class="fa fa-spinner fa-2x fa-spin"></i> Please Wait...
+            </div>
+            <div id="devicesTree" class="tree">
+
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+
+{% endblock %}
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/fuelux-tree/fuelux.tree.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/loadTreeLib.js" %}></script>
+    <script type="text/javascript">
+
+        $(document).ready(function(e) {
+
+            var infoObject = {};
+            infoObject["domElement"] = "devicesTree";
+
+            /*Make a instance of deviceTreeInstance */
+            var deviceTreeInstance = new loadDeviceTreeLib();
+            deviceTreeInstance.getDevices(infoObject);
+
+        });
+
+    </script>
+
+{% endblock %}

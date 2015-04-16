@@ -1,0 +1,57 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Model" "device_model_list" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Device Model Management{% endblock %}
+{% block content_description %}List of device models{% endblock %}
+{% block content %}
+    <p><a href="/model/new"><i class="fa fa-plus">&nbsp;</i> Create Device Model</a></p>
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> DEVICE MODEL LISTING</h4>
+{#            <div class="tools hidden-xs">#}
+{#                <a href="#box-config" data-toggle="modal" class="config">#}
+{#                    <i class="fa fa-cog"></i>#}
+{#                </a>#}
+{#                <a href="javascript:;" class="reload">#}
+{#                    <i class="fa fa-refresh"></i>#}
+{#                </a>#}
+{#            </div>#}
+        </div>
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceModelListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "DeviceModelListingTable" %}';
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("DeviceModelListingTable", gridHeadersObj, ajax_url, destroy);
+        });
+    </script>
+{% endblock %}

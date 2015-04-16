@@ -1,0 +1,93 @@
+#!/usr/bin/python
+import re
+import time
+"""
+Downlink utilizationPoller script.
+
+This is part of device application. 
+Poller script determines the port current Downlink utilization in terms of number of octets in downlink direction.
+poller script takes the snmp value of OID .1.3.6.1.2.1.2.2.1.16 from snmp agent of device at specific interval.
+Total Downlink utilization is sent to device application 
+
+"""
+# #######################################################################
+# Function : check_switch_ul_utilization
+#
+# Parameters: info (SNMP otuput ,_no_params (NO parameters))
+#
+# Output: service state,plugin output and performance data
+# #######################################################################
+
+
+def check_switch_ul_utilization(item, _no_params, info):
+    """
+                check_switch_ul_utilization function calculates the downlink utilization
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : OK - [Management_Port_on_Odu] ul_utilization:2994339289
+
+                        performance_data  (list):
+                                        performance data
+                                        Example: Management_Port_on_Odu=2994339289;;;; Radio_Interface=;;;;
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    rate = None
+    link_out_octets = None
+    wrapped = False
+    infotext = "unknown_value"
+    status_list = []
+    port_string = "fe_"
+    try:
+	if info:
+		infotext = ""
+        	for index in range(len(info[0][0])):
+			link_up = info[0][0][index]
+			if link_up:
+				link_out_octets = int(info[1][0][index])
+				this_time = int(time.time())
+				try:
+					timedif, rate = get_counter("switch_ul_utilization_%s" % (port_string+str(index+1)), 
+					this_time, saveint(link_out_octets))
+					rate = (rate * 8)/(1024.0 * 1024)
+    					state = 0
+				except MKCounterWrapped:
+					wrapped=True
+                		status_list.append((port_string+str(index+1),"%.4f" % rate))
+                		infotext += "ul_utilization: %s=%s " % (port_string+str(index+1),rate)
+    except ValueError:
+        infotext = "type_mismatch_error"
+    except:
+	infotext = "unknown_value"
+    if wrapped:
+        infotext = "Counter wrapped"
+    return (state, infotext, status_list)
+
+
+check_info["switch_ul_utilization"] = {
+    'check_function': check_switch_ul_utilization,
+    'service_description': 'switch_ul_utilization',
+    'has_perfdata': True,
+}
+
+##############################################################################
+#SNMP OID for the Downlink utilization
+##############################################################################
+
+
+snmp_info["switch_ul_utilization"] = [( ".1.3.6.1.2.1.2.2.1",["8"]),
+				   ( ".1.3.6.1.2.1.2.2.1", ["16"] )]

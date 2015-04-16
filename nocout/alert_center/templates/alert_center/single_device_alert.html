@@ -1,0 +1,381 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe page_type|title|add:" Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "Down"  "alert_list_without_tabname"  page_type "down" %}
+
+    {% if page_type == 'network' and device_technology_name|upper == 'P2P'  %}
+        {% breadcrumb_safe "PTP BH"  "alert_list_without_tabname"  page_type "down" %}
+    {% else %}
+        {% if page_type == 'customer' and device_technology_name|upper == 'P2P'  %}
+            {% breadcrumb_safe "PTP"  "alert_list_without_tabname"  page_type "down" %}
+        {% else %}
+            {% breadcrumb_safe device_technology_name|upper  "alert_list_with_tabname"  page_type "down" device_technology_name %}
+        {% endif %}
+    {% endif %}
+
+
+    {% breadcrumb_safe device_alias|upper "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}
+    {{ page_type | title }} Alert <span style="font-size: 25px;">{{ device_alias }}</span>
+{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    
+{% endblock %}
+
+{% load sds %}
+
+{% block content %}
+    <style>
+        .perfContainerBlock .box-title .pull-right .list-inline > li {
+            max-width: 200px !important;
+        }
+        .top_perf_tabs {
+            top: 0px !important;
+            float: left;
+            padding-left: 15px;
+            margin-right: 0px !important;
+        }
+        .box .header-tabs .top_perf_tabs > li > a {
+            padding: 7px 5px !important;
+        }
+        .top_perf_tab_content, .top_perf_tab_content .panel .panel-body {
+            overflow: auto;
+        }
+    </style>
+
+    <div class="well well-sm" id="status_container" style="overflow:auto;">
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
+        </div>
+        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!--Single Device Live Perf Start-->
+    <div class='box border lite perfContainerBlock'>
+        <div class='box-title'>
+            <h4 class="hide"><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
+            <!-- Filters Block - Start-->
+            <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+                <li class="date_range_filter_container">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <i class="fa fa-calendar"></i>
+                        </span>
+                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
+                    </div>
+                </li>
+                <li>
+                    <button id="apply_filter" class="btn  btn-default btn-sm">
+                        <i class="fa fa-filter"></i> Apply Filter
+                    </button>
+                </li>
+                <li>
+                    <button id="reset_filter" class="btn  btn-warning btn-sm">
+                        <i class="fa fa-times"></i> Reset Filter
+                    </button>
+                </li>
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
+                        <i class="fa fa-dropbox text-primary"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="perf_link_tag" title="Performance" target="_blank">
+                        <i class="fa fa-bar-chart-o text-primary"></i>
+                    </a>
+                </li>
+            </ul>
+            <!-- Filters Block - End-->
+            <div class="clearfix"></div>
+        </div>
+        <div class='box-body' id="single_device_alert_container">
+            <div class="tabbable header-tabs">
+                <ul id="" class="nav nav-tabs top_perf_tabs">
+                    <li>
+                        <a href="#network_alert_service_block" id="network_alert_service_tab" title="Polling Alerts" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Polling Alerts</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#network_alert_down_block" id="network_alert_down_tab" title="Down" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Down</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#network_alert_packet_block" id="network_alert_packet_tab" title="Packet Drop" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Packet Drop</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#network_alert_latency_block" id="network_alert_latency_tab" title="Latency" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Latency</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#network_alert_ping_block" id="network_alert_ping_tab" title="Ping Details" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Ping Details</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="tab-content top_perf_tab_content">
+                <div class="tab-pane" id="network_alert_service_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <table id="network_alert_service_table" class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="network_alert_down_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <table id="network_alert_down_table" class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="network_alert_packet_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <table id="network_alert_packet_table" class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="network_alert_latency_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <table id="network_alert_latency_table" class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane active" id="network_alert_ping_block">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <table id="network_alert_ping_table" class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
+    <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
+    <!--Our Common Utilities Script-->
+    <script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+
+    <script type="text/javascript">
+
+        var startDate = "",
+            endDate = "",
+            base_url = "",
+            perfInstance = "",
+            current_device_id = "",
+            service_name = "",
+            excel_columns = [],
+            isDateFilterApplied = false;
+
+        $(document).ready(function (e) {
+
+            var current_device = "{{ current_device_name }}",
+                statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
+                service_status_url = "",
+                page_type = "{{ page_type }}",
+                inventory_url = "{{ inventory_page_url }}",
+                perf_page_url = "{{ perf_page_url }}",
+                device_technology = "{{ device_technology_name }}",
+                gridHeadersObj = '{{ table_headers|safe }}',
+                ping_gridHeadersObj = '{{ ping_table_headers|safe }}',
+                polling_alert_gridHeadersObj = '{{ polling_alerts_headers|safe }}',
+                oldStartDate = new Date().setDate(new Date().getDate()-1),
+                oldENdData = new Date(),
+                location_array = window.location.href.split("#");
+
+            if(location_array.length > 1) {
+                window.location.href = location_array[0];
+            }
+
+            // if($.cookie('filter_start_date') && $.cookie('filter_end_date')) {
+            //     isDateFilterApplied = true;
+            // }
+
+            current_device_id = "{{ current_device_id }}";
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            //Create instance of nocoutPerfLib
+            perfInstance = new nocoutPerfLib();
+
+            /*To initialize date range picker*/
+            perfInstance.initDateRangePicker("reservationtime");
+
+            /*To populate the status table*/
+            perfInstance.getStatus(statusUrl, current_device);
+
+            // Ajax url to get grid data
+            var ajax_url = '{% url "SingleDeviceAlertsListing_clone" page_type current_device_id %}';
+
+            $("#network_alert_service_tab").attr("data_url", ajax_url);
+            $("#network_alert_service_tab").attr("data_header", polling_alert_gridHeadersObj);
+
+            $("#network_alert_down_tab").attr("data_url", ajax_url);
+            $("#network_alert_down_tab").attr("data_header", gridHeadersObj);
+
+            $("#network_alert_packet_tab").attr("data_url", ajax_url);
+            $("#network_alert_packet_tab").attr("data_header", gridHeadersObj);
+
+            $("#network_alert_latency_tab").attr("data_url", ajax_url);
+            $("#network_alert_latency_tab").attr("data_header", gridHeadersObj);
+
+            $("#network_alert_ping_tab").attr("data_url", ajax_url);
+            $("#network_alert_ping_tab").attr("data_header", ping_gridHeadersObj);
+
+            if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+                /*Trigger click event on active tab to load its data*/
+                $("#network_alert_ping_tab").trigger('click', true);
+            }
+        });
+
+        // When any filter is applied
+        $("#apply_filter").on('click', function () {
+            if(startDate && endDate) {
+                // isDateFilterApplied = true;
+                //epoch function
+                var myStartDate = startDate.toDate(),
+                    myEndDate = endDate.toDate();
+                startDate = myStartDate.getTime();
+                endDate = myEndDate.getTime();
+
+                // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+                // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+
+                var active_tab = $("#single_device_alert_container li.active").children("a"),
+                    active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
+                if(active_tab_id) {
+                    $("#"+active_tab_id).trigger("click",true);
+                }
+            } else {
+                alert("Select Start & End Date");
+            }
+        });
+
+        // When filter reset
+        $("#reset_filter").on('click', function () {
+            // isDateFilterApplied = false;
+
+            $('#reservationtime').val("")
+            startDate = "";
+            endDate = "";
+            
+            // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
+            // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
+            var active_tab = $("#single_device_alert_container li.active").children("a"),
+                active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
+
+            if(active_tab_id) {
+                $("#"+active_tab_id).trigger("click",true);
+            }
+        });
+
+        function findStringFromUrl() {
+            var uri = $.url();
+            var path = uri.attr('path').split('/');
+            return path[path.length - 2 ]
+        }
+
+        function replaceString(mainString, toReplace, replaceWith) {
+            var str = mainString, res;
+            if (toReplace === "service") {
+                res = str.replace(toReplace + "/", replaceWith + "/");
+            } else {
+                res = str.replace(toReplace, replaceWith);
+            }
+
+            return res;
+        }
+
+        function selectTab(tabId) {
+            $(tabId).parent().addClass('active').siblings().removeClass('active');
+        }
+
+        /**
+         * This  function get the device service(PL) status i.e. Status & AGE
+         * @method getPlServiceStatus
+         * @param url {String}, It contains the API url to fetch the service status.
+         */
+        function getPlServiceStatus(url) {
+            if(url) {
+                $.ajax({
+                    url: base_url + "" + url,
+                    type: "GET",
+                    success: function (response) {
+
+                        var result = "";
+                        if (typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        if (result.data && result.data.objects) {                            
+                            // Call function to populate latest status info
+                            populateDeviceStatus_nocout("latestStatusContainer",result.data.objects);
+                        }
+                    },
+                    error: function (err) {
+                        // console.log(err.statusText);
+                    }
+                });
+            }
+        }
+    </script>
+
+{% endblock %}
+
+{% block load_js %}
+    <script>
+        App.init(); //Initialise plugins and elements
+    </script>
+{% endblock %}

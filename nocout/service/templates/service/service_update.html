@@ -1,0 +1,164 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Service" "services_list" %}
+    {% breadcrumb_safe "Update Service : "|add:object.alias  "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Edit Service{% endblock %}
+{% block content_description %}Edit service{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> EDIT SERVICE : {{ object.alias }}</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+
+                                            {{ service_data_form.management_form }}
+                                            {% for field in service_data_form %}
+                                            {{field.id}}
+                                            <div class="row inline {{ service_data_form.prefix }}">
+                                            <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.service_data_sources}}{{ service_data_form.non_form_errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.warning}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.critical}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {{ field.DELETE }}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/service/')"><i class="fa fa-times"></i> Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/service.js" %}></script>
+        <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function(){
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+
+            // if srvice data source is already selected
+            var sds = $('form select[name|="servicespecificdatasource_set"]')
+            if (sds.length){
+                sds.each(function() {
+                var sds_id = $(this).find("option:selected").val()
+                var sds_location = $(this).parents(".row .inline")
+                get_sds_value(sds_id, sds_location)
+                })
+            }
+
+            // if the data source is changed by the user
+            $('form select[name|="servicespecificdatasource_set"]').change(function() {
+                var sds_id = $(this).find("option:selected").val()
+                var sds_location = $(this).parents(".row .inline")
+                get_sds_value(sds_id, sds_location)
+            })
+
+            //  Get the value of the data source selected by the user.
+            function get_sds_value(sds_id, sds_location){
+                var sds_id = sds_id
+                if (!sds_id.length){
+                    console.log("No service data source is selected")
+                }
+                else{
+                    $.ajax({
+                        url : "/service/select/value/data_source/",
+                        type : "GET",
+                        dataType: "json",
+                        data: {
+                            sds_id : sds_id,
+                        },
+                        success : function(sds) {
+                            var p = sds_location.children().slice(1)
+                            var w = sds.sds_values_list[0]['warning']
+                            var c = sds.sds_values_list[0]['critical']
+                            // if the data source is empty
+                            if (!w.length){ w = null }
+                            if (!c.length){ c = null }
+                            p.find('[id="id_value"]').remove()
+                            p.first().find('input').parent().append('<label id="id_value">( '+w+' )</label>')
+
+                            p.first().next().find('input').parent().append('<label id="id_value">( '+c+' )</label>')
+                        },
+                        error : function(xhr,errmsg,err) {
+                            console.log(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
+
+                    return false;
+                }
+            }
+        })
+    </script>
+    <script type="text/javascript">
+   $(function() {
+       $(".inline.{{ service_data_form.prefix }}").formset({
+           prefix: "{{ service_data_form.prefix }}",
+       })
+   })
+</script>
+{% endblock %}

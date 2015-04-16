@@ -1,0 +1,198 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "GIS Wizard" "javascript:;" %}
+    {% breadcrumb_safe "Base Station Wizard" "gis-wizard-base-station-list" %}
+    {% breadcrumb_safe "BS : "|add:base_station.alias "gis-wizard-base-station-update" bs_pk %}
+    {% if object.alias %}
+        {% breadcrumb_safe "Backhaul : "|add:object.alias "javascript:;" %}
+    {% else %}
+        {% breadcrumb_safe "Add New Backhaul" "javascript:;" %}
+    {% endif %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+{% block content_title %}GIS Wizard: Backhaul{% endblock %}
+{% block content_description %}gis wizard: backhaul{% endblock %}
+{% block content %}
+    <p>
+        <a href="javascript:void(0)" class="previous_page_url">
+            <i class="fa fa-arrow-left">&nbsp;</i> Previous Page
+        </a>
+    </p>
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {{ object.alias }} (BACKHAUL)</h4>
+                        </div>
+                        <div class="box-body">
+                            <div class="col-md-8">
+                                {% if not base_station_has_backhaul %}
+                                <!-- :START: Radio Buttons to choose existing or create new -->
+                                <div class="form-group">
+                                    <label class="control-label pull-left">Backhaul &nbsp;&nbsp;&nbsp;</label>
+                                    <div class="pull-left">
+
+                                        <label class="radio-inline">
+                                            <input type="radio" id="id_backhaul_radio" class="radioField" value="existing" name="backhaul_radio"> Choose Existing
+                                        </label>
+                                        <label class="radio-inline">
+                                            <input type="radio" id="id_backhaul_radio" class="radioField" value="new" name="backhaul_radio"> Create New
+                                        </label>
+                                    </div>
+                                    <div class="clearfix"></div>
+                                </div>
+                                <!-- :END: Radio Buttons to choose existing or create new -->
+
+                                <!-- :START: BH Selectbox -->
+                                <div class="form-group">
+                                    <input class="tip-focus col-md-6" data-placement="right" data-toggle="tooltip" id="id_backhaul" name="backhaul" title="" type="hidden" value="{% if object %}{{ object.id }}{% endif %}"/>
+                                    <div class="clearfix"></div>
+                                </div>
+                                <!-- :END: BH Selectbox -->
+                                
+                                
+                                {% endif %}
+
+                                {% if form %}
+                                <!--NEW BH FORM - START -->
+                                <form id="id_backhaul_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                    {% include "gis_wizard/form.html" with form=form only %}
+                                    <div class="form-group">
+                                        <div class="col-sm-offset-3 col-sm-9">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-pencil"></i>{{ save_text }} &amp; Next
+                                            </button>
+                                            <button type="submit" id="id_update_and_show" class="btn btn-success">
+                                                <i class="fa fa-pencil"></i>{{ save_text }} &amp; Show
+                                            </button>
+                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('/gis-wizard/base-station/{{ bs_pk }}/sectors/')">
+                                                <i class="fa fa-times"></i> Skip
+                                            </button>
+                                            {% if base_station_has_backhaul %}
+                                            <button type="reset" class="btn btn-danger" onclick="delete_and_show()">
+                                                <i class="fa fa-times"></i> Delete &amp; Show
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </form>
+                                <!--NEW BH FORM - END -->
+                                {% else %}
+                                <div class="clearfix"></div>
+                                <div class="form-group">
+                                    <div class="col-sm-offset-0 col-sm-9">
+                                        <button type="reset" class="btn btn-warning" onclick="window.location.replace('/gis-wizard/base-station/{{ bs_pk }}/sectors/')"><i class="fa fa-times"></i>Skip</button>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+
+    {% if form %}
+    {% url 'gis-wizard-backhaul-delete' bs_pk=bs_pk as delete_url %}
+        <script type="text/javascript" src={% static "js/gis_wizard/wizardNewBHLib.js" %}></script>
+    {% endif %}
+
+    <script type="text/javascript">
+        var delete_bh_url = '{{ delete_url }}';
+        // Radio specific functions only, nothing to do with form fields.
+        $(function() {
+            var $radios = $('input:radio[name=backhaul_radio]');
+            {% if select_view or object %}
+                $radios.filter('[value=existing]').prop('checked', true);
+
+                {% if not base_station_has_backhaul %}
+                    $("#id_backhaul").select2({
+                        placeholder: "Search for a backhaul.",
+                        minimumInputLength: 2,
+                        width: "resolve",
+                        ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                            url: "/backhaul/select2/elements/",
+                            dataType: 'json',
+                            quietMillis: 250,
+                            data: function (term, page) {
+                                return {
+                                    sSearch: term, // search term
+                                    org: 0,
+                                };
+                            },
+                            results: function (data, page) { // parse the results into the format expected by Select2.
+                                // since we are using custom formatting functions we do not need to alter the remote JSON data
+                                return { results: data.items };
+                            },
+                            cache: false
+                        },
+                        initSelection: function(element, callback) {
+                            // the input tag has a value attribute preloaded that points to a preselected repository's id
+                            // this function resolves that id attribute to an object that select2 can render
+                            // using its formatResult renderer - that way the repository name is shown preselected
+                            var id = $(element).val() ? $.trim($(element).val()) : "";
+                            if (id) {
+                                $.ajax("/backhaul/select2/elements/", {
+                                    dataType: "json",
+                                    data: {'obj_id': id}
+                                }).done(function(data) {
+                                    callback({id: id, alias: data[0]});
+                                });
+                            }
+                        },
+                        formatResult: function(backhaul) {
+                            return backhaul.alias;
+                        },
+                        formatSelection: function(backhaul) {
+                            return backhaul.alias;
+                        }
+                    }).on("select2-selecting", function(el) {
+                        location.href="/gis-wizard/base-station/{{ bs_pk }}/backhaul/" + el.val + "/";
+                    });
+                {% else %}
+                    $radios.attr('disabled',true);
+                {% endif %}
+            {% else %}
+                $radios.filter('[value=new]').prop('checked', true);
+            {% endif %}
+
+            $("input:radio[name=backhaul_radio]").change(function (){
+                {% if select_view or object %}
+                    location.href="{% url 'gis-wizard-backhaul-create' bs_pk=bs_pk %}";
+                {% else %}
+                    location.href="{% url 'gis-wizard-backhaul-select' bs_pk=bs_pk %}";
+                {% endif %}
+            });
+        });
+
+        // previous url redirection on base station
+        $(".previous_page_url").click(function() {
+            // split current window url by taking slash as a seperator
+            required_url = window.location.href.split('/');
+
+            // remove last three elements of url
+            required_url.splice(-3);
+
+            // join array elements to create url
+            required_url = required_url.join('/');
+
+            // redirect to 'required_url'
+            window.location.href = required_url;
+        });
+    </script>
+{% endblock %}

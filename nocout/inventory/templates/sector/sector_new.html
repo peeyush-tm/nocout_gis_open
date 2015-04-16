@@ -1,0 +1,266 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "GIS Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Sector" "sectors_list" %}
+    {% breadcrumb_safe "Add Sector" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Add Sector{% endblock %}
+{% block content_description %}Add sector{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> ADD SECTOR</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="/sector/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {# field.help_text #}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/sector/')"><i class="fa fa-times"></i>Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function() {
+            // Changing labels of form fields
+            $("label[for=id_bs_technology]").html('<span class="mandatory">* </span>BS Technology');
+            $("label[for=id_sector_id]").text('Sector ID');
+            $("label[for=id_mrc]").text('MRC');
+            $("label[for=id_tx_power]").text('TX Power');
+            $("label[for=id_rx_power]").text('RX Power');
+            $("label[for=id_rf_bandwidth]").text('RF Bandwidth');
+
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
+
+            $("#id_sector_configured_on").select2({
+                placeholder: "Search for a sector config on.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/device/select2/elements/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_base_station").select2({
+                placeholder: "Search for a base station.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/base_station/select2/elements/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/base_station/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
+                        }).done(function(data) {
+                            callback({id: id, alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoBSFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoBSFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_antenna").select2({
+                placeholder: "Search for a antenna.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/antenna/select2/elements/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/antenna/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
+                        }).done(function(data) {
+                            callback({id: id, alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoAntennaFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_dr_configured_on").select2({
+                placeholder: "Search for a dr config on.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/device/select2/elements/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
+            });
+        });
+
+        function repoDeviceFormatResult(device) {
+          return device.device_alias;
+        }
+
+        function repoDeviceFormatSelection(device) {
+          return device.device_alias;
+        }
+
+        function repoBSFormatResult(basestation) {
+          return basestation.alias;
+        }
+
+        function repoBSFormatSelection(basestation) {
+          return basestation.alias;
+        }
+
+        function repoAntennaFormatResult(antenna) {
+          return antenna.alias;
+        }
+
+        function repoAntennaFormatSelection(antenna) {
+          return antenna.alias;
+        }
+
+    </script>
+{% endblock %}

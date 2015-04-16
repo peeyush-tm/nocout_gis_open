@@ -1,0 +1,63 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <a href="/home">Home</a> >
+    <li><a href="#">Performance Reports</a></li>
+    <li><a href="#">RF Performance Dashboard</a></li>
+    <li><b>PTP</b></li>
+{% endblock %}
+{% load staticfiles %}
+{% block page_setting_block %} {% endblock %}
+{% block content_title %} RF Performance Dashboard{% endblock %}
+{% block content_description %} RF Performance Dashboard{% endblock %}
+
+{% block content %}
+<div class="box border lite">
+    <div id="tableContainer_div" class="box-title">
+        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PTP</h4>
+    </div>
+    <div id="tableContainer" class="box-body">
+        <div class="tabbable header-tabs">
+            <ul class="nav nav-tabs">
+                <li><a href="#uas_block" id="uas_tab" data-toggle="tab"><span class="hidden-inline-mobile">UAS</span></a></li>
+                <li class="active"><a href="#rssi_block" id="rssi_tab" data-toggle="tab"><span class="hidden-inline-mobile">RSSI</span></a></li>
+            </ul>
+            <div class="tab-content" style="overflow-y:auto;">
+                <div class="tab-pane" id="uas_block" align="center">
+                    <div class=" col-md-10 col-md-offset-1">
+                        <div id="uas" class="rf_chart_style"></div>
+                    </div>
+                </div>
+                <div class="tab-pane active" id="rssi_block" align="center">
+                    <div class=" col-md-10 col-md-offset-1">
+                        <div id="rssi" class="rf_chart_style"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block load_js %}
+
+<!--Highcharts Library-->
+<script type="text/javascript" src={% static "js/highcharts.js" %}></script>
+<!-- Dashboard Custom CSS-->
+<script type="text/javascript" src={% static "js/nocout/rfDashboardLib.js" %}></script>
+
+<script>
+    var ds_list = [];
+    $(document).ready(function () {
+        alert("HII")
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+        
+        ds_list = {{ data_sources|safe }};
+        
+        if(ds_list.length > 0) {
+            // start API calling
+            rf_getChartData(0);
+        }
+    });
+</script>
+{% endblock %}

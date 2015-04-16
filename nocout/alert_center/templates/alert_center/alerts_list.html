@@ -1,0 +1,230 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe page_type|title|add:" Alert Center" "javascript:;" %}
+    {% breadcrumb_safe data_source|title  '' %}
+    {% if page_type == 'network' and data_tab|upper == 'P2P'  %}
+        {% breadcrumb_safe "PTP BH"  alert_list_with_tabname  page_type url_data_source data_tab %}
+    {% else %}
+        {% if page_type == 'customer' and data_tab|upper == 'P2P'  %}
+            {% breadcrumb_safe "PTP"  alert_list_with_tabname  page_type url_data_source data_tab %}
+        {% else %}
+            {% breadcrumb_safe data_tab|upper  alert_list_with_tabname  page_type url_data_source data_tab %}
+        {% endif %}
+    {% endif %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %} {{ page_type|title }} Alerts {% endblock %}
+{% block content_description %}{{ page_type|title }} Alerts List{% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+{% endblock %}
+
+{% block content %}
+
+    <div class="box border lite" style="background: #fff;">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-bell"></i>{{ page_type|upper }} ALERT - {{ data_source|upper }}</h4>
+        </div>
+
+        <div class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#network_WiMAX_block" id="network_wifi_tab" class="network_wimax_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">WiMAX</span>
+                        </a>
+                        </li>
+                    <li>
+                        <a href="#network_PMP_block" id="network_pmp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#network_PTP_block" id="network_ptp_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">
+                                {% if page_type == 'customer' %}
+                                    PTP
+                                {% else %}
+                                    PTP BH
+                                {% endif %}
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="tab-content" style="overflow:auto;">
+                    
+                    <!-- network_PTP_block Start -->
+                    <div class="tab-pane active" id="network_PTP_block">
+                        <table cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover"
+                               id="network_PTP_block_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <!-- network_PTP_block End -->
+
+                    <div class="tab-pane" id="network_PMP_block">
+                        <table id="network_pmp_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_WiMAX_block">
+                        <table id="network_wifi_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block jquery %}
+    <!-- Library to load tab content on tab click for Alert Center Listing-->
+    <script type="text/javascript" src={% static "js/nocout/alertOpenTab.js" %}></script>
+    <script type="text/javascript">
+        var dataTableInstance = "",
+                base_url = "",
+                excel_columns = [];
+        /*This is a temporary code which is replace when data for data table is provided*/
+        $(document).ready(function (e) {
+            var sort_index = 9;
+
+            /*Set the base url of application for ajax calls*/
+            if (window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+            }
+
+            /*Ajax url to get grid data*/
+            var ajax_url_get_parameter = "{{ url_data_source }}";
+
+            if(ajax_url_get_parameter == 'latency' || ajax_url_get_parameter == 'service') {
+                sort_index = 10;
+            }
+
+            /* Removing the pagination in the datatable*/
+            function ourDataTableWidget() {
+                /**
+                 * This function creates the jquery data table on given domElement
+                 * @class ourDataTableWidget
+                 * @method createDataTable
+                 * @param tableId "String" It contains the dom selector of table
+                 * @param tableheaders {JSON Object} It contains the grid headers object
+                 * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
+                 */
+                this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
+                    /*Show the spinner*/
+                    showSpinner();
+
+                    for (var i = 0; i < tableheaders.length; i++) {
+                        var current_column = tableheaders[i];
+                        if (current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
+                            excel_columns.push(i);
+                        }
+                    }
+
+                    destroy = typeof destroy !== 'undefined' ? destroy : true;
+
+                    if (destroy) {
+                        $("#" + tableId).dataTable().fnDestroy();
+                    }
+
+                    var dtable = $("#" + tableId).DataTable({
+                        sDom: 'T<"clear">lfrtip',
+                        oTableTools: {
+                            sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                            aButtons: [
+                                {
+                                    sExtends: "xls",
+                                    sButtonText: "Download Excel",
+                                    sFileName: "*.xls",
+                                    mColumns: excel_columns
+                                }
+                            ]
+                        },
+                        bAutoWidth: false,
+                        bDestroy: true,
+                        bPaginate: true,
+                        bProcessing: true,
+                        bServerSide: false,
+                        sAjaxSource: ajax_url,
+                        /*This is the callback funtion for data ajax call*/
+                        fnInitComplete: function (oSettings, json) {
+                            /*Hide the spinner*/
+                            hideSpinner();
+                            
+                            // Update search txt box & row per pages dropdown style
+                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
+                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("input-sm");
+                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').css("max-width","150px");
+                        },
+                        aoColumns: tableheaders,
+                        sPaginationType: "full_numbers",
+                        aaSorting: []
+                    });
+                };
+            }
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
+
+            var ajax_url_wifi = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX' + '&page_type={{ page_type }}';
+            var ajax_url_pmp = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'PMP' + '&page_type={{ page_type }}';
+            var ajax_url_p2p = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P' + '&page_type={{ page_type }}';
+
+            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+            $("#network_wifi_tab").attr("data_url", ajax_url_wifi);
+            $("#network_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
+            $("#network_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
+            $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            var lowered_case_url = window.location.href.toLowerCase();
+
+            if (lowered_case_url.indexOf("pmp") > -1) {
+                $("#network_pmp_tab").trigger('click');
+            } else if (lowered_case_url.indexOf("wimax") > -1) {
+                $("#network_wifi_tab").trigger('click');
+            } else {
+
+                $("#network_ptp_tab").trigger('click');
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

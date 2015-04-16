@@ -1,0 +1,103 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-map-marker'></i> Network Maps" "javascript:;" %}
+    {% breadcrumb_safe "KMZ" "kmz_list" %}
+    {% breadcrumb_safe "White Background View" "kmz_view_action" kmz_id "white_background" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}White Background Map{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+{% endblock %}
+
+
+{% block content %}
+
+    <div class="col-md-12">
+    <div class='box border lite mapContainerBlock'>
+        <div class='box-title'>
+            <h4>White Background Map - KMZ</h4>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class='box-body' style="position:relative">
+
+            <!--Map Container Start-->
+            <div id="deviceMap"></div>
+            <!--Map Container End-->
+        </div>
+        <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
+        </div>
+    </div>
+</div>
+
+    <!-- OpenLayers Map Library-->
+    <script type="text/javascript" src={% static "js/OpenLayers/OpenLayers.js" %}></script>
+    <!-- Script Library for COokies -->
+    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+
+    <script type="text/javascript">
+
+        var file_url = "",
+            base_url = "";
+
+        $(document).ready(function (e) {
+            file_url = "{{file_url}}";
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
+
+            var kmlUrl = base_url+'/media/'+file_url;
+
+            var ccpl_map = new OpenLayers.Map({
+                div: "deviceMap",
+                layers: [
+                    new OpenLayers.Layer.WMS(
+                        "WMS", "http://i.codescape.in:887/geoserver/wms",
+                        {layers: "Test2:IND_adm1"}
+                    ),
+                    new OpenLayers.Layer.Vector("KML", {
+                        strategies: [new OpenLayers.Strategy.Fixed()],
+                        protocol: new OpenLayers.Protocol.HTTP({
+                            url: kmlUrl,
+                            format: new OpenLayers.Format.KML({
+                                extractStyles: true, 
+                                extractAttributes: true,
+                                maxDepth: 2
+                            })
+                        })
+                    })
+                ]
+            });
+
+            ccpl_map.zoomToExtent(new OpenLayers.Bounds([68.498, 7.925, 97.335, 35.501]));
+        });
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

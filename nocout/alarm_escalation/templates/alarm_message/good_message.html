@@ -1,0 +1,36 @@
+<html>
+    <head>
+    </head>
+    <body>
+    <table>
+        <thead>
+            <tr>
+                <th>IP Address</th>
+                <th>Device Type</th>
+                <th>Service</th>
+                <th>Data Source</th>
+                <th>Region</th>
+                <th>State</th>
+                <th>City</th>
+                <th>Severity</th>
+                <th>Status Since</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ alarm.ip }}</td>
+                <td>{{ level.device_type.alias }}</td>
+                <td>{{ level.service.alias }}</td>
+                <td>{{ level.service_data_source.aliasd }}</td>
+                <td>{{ level.organization.alias }}</td>
+                <td>{{ level.organization.state }}</td>
+                <td>{{ level.organization.city }}</td>
+                <td>{{ alarm.severity|upper }}</td>
+                <td>{{ alarm.status_since }}</td>
+                <td>Device has recovered</td>
+            </tr>
+        </tbody>
+    </table>
+    </body>
+</html>

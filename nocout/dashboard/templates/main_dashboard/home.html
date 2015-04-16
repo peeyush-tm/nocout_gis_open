@@ -1,0 +1,580 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% if isOther == 0 %}
+        {% breadcrumb_safe "Main Dashboard" "home" %}
+    {% else %}
+        <!-- Create Breadcrumbs -->
+        {% breadcrumb_safe "RF Main Dashboard" "rf-main-dashbaord" %}
+    {% endif %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+{% block page_setting_block %} {% endblock %}
+{% block content_title %} {{ page_title }} {% endblock %}
+{% block content_description %} {{ page_title }} {% endblock %}
+
+{% block content %}
+
+<style type="text/css">
+    .box .header-tabs .nav-tabs {
+        top: -45px !important;
+    }
+    .rf_chart_style {
+        height: 300px;
+        margin: 0 auto;
+    }
+</style>
+
+<div class="box border lite" id="main_dashboard_container">
+    <div class="box-title">
+        <h4><i class="fa fa-dashboard"></i> {{ page_title }}</h4>
+    </div>
+    <div class="box-body">
+        <!-- ********** FIRST ROW START **********-->
+
+        <!-- Speedometers (Gauge) Charts Start -->
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="down-all_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="down-all" style="height: 165px;"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    Down
+                    <i class="fa fa-signal text-success" id="down-all_trend" title="Down Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="latency-all_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="latency-all" style="height: 165px;"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    Latency
+                    <i class="fa fa-signal text-success" id="latency-all_trend" title="Latency Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="packetloss-all_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="packetloss-all" style="height: 165px;"></div>
+            <!--CHART BLOCK - END -->
+            
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    Packet Drop
+                    <i class="fa fa-signal text-success" id="packetloss-all_trend" title="Packet Drop Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="temperature-idu-wimax_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="temperature-idu-wimax" style="height: 165px;"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    Temperature IDU Wimax
+                    <i class="fa fa-signal text-success" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <!-- Speedometers (Gauge) Charts End -->
+        <div class="clearfix"></div>
+        <!-- ********** FIRST ROW END **********-->
+        <hr/>
+
+        <!-- ********** SECOND ROW START **********-->
+
+        <div style="overflow:auto;">
+            <div class="col-md-12">
+                <h5>
+                    <strong>
+                        City Charter Report
+                        <i class="fa fa-signal text-success" id="city_charter_table_trend" title="City Charter Trends"> </i>
+                    </strong>
+                </h5>
+                <table class="datatable table table-striped table-bordered table-hover" id="city_charter_table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+
+        <hr/>
+
+        <!-- Capacity pie Charts & city table Start -->
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="wimax_sales_opportunity_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    Wimax Sales Opportunity
+                    <i class="fa fa-signal text-success" id="wimax_sales_opportunity_trend" title="Wimax Sales Opportunity Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="pmp_sales_opportunity_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    PMP Sales Opportunity
+                    <i class="fa fa-signal text-success" id="pmp_sales_opportunity_trend" title="PMP Sales Opportunity Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="wimax_sector_capacity_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    Wimax Sector Capacity
+                    <i class="fa fa-signal text-success" id="wimax_sector_capacity_trend" title="Wimax Sector Capacity Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="pmp_sector_capacity_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    PMP Sector Capacity
+                    <i class="fa fa-signal text-success" id="pmp_sector_capacity_trend" title="PMP Sector Capacity Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <!-- Capacity pie Charts & city table End -->
+
+        <div class="clearfix"></div>
+        <!-- ********** SECOND ROW END **********-->
+        <hr/>
+
+
+        <!-- ********** THIRD ROW START **********-->
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="wimax_backhaul_capacity_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="wimax_backhaul_capacity" class="rf_chart_style"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    Wimax Backhaul Capacity
+                    <i class="fa fa-signal text-success" id="wimax_backhaul_capacity_trend" title="Wimax Backhaul Capacity Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3" align="center">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="pmp_backhaul_capacity_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="pmp_backhaul_capacity" class="rf_chart_style"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    PMP Backhaul Capacity
+                    <i class="fa fa-signal text-success" id="pmp_backhaul_capacity_trend" title="PMP Backhaul Capacity Trends"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3">
+            <!--TIMESTAMP BLOCK - START -->
+            <div id="tcl_pop_backhaul_capacity_timestamp"></div>
+            <!--TIMESTAMP BLOCK - END -->
+            
+            <!--CHART BLOCK - START -->
+            <div id="tcl_pop_backhaul_capacity" class="rf_chart_style"></div>
+            <!--CHART BLOCK - END -->
+
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    TCL POP Backhaul Capacity
+                    <i class="fa fa-signal text-success" id="tcl_pop_backhaul_capacity_trend" title="TCL POP Backhaul Capacity"> </i>
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+        </div>
+        <div class="clearfix"></div>
+        <!-- ********** THIRD ROW END **********-->
+        <hr/>
+
+        <!-- ********** FOURTH ROW START **********-->
+        <div class="col-md-12">
+            <h4>
+                <strong>
+                    MFR Processed
+                </strong>
+            </h4>
+            <div id="id_mfr_processed_chart" class="rf_chart_style"></div>
+        </div>
+        <div class="clearfix"></div>
+        <!-- ********** FOURTH ROW END **********-->
+        <hr/>
+
+        <!-- ********** FIFTH ROW START **********-->
+        <div class="col-md-12">
+            <h4>
+                <strong>
+                    MFR Caused Code
+                </strong>
+            </h4>
+            <div id="mfr_cause_code" class=""></div>
+        </div>
+
+        <div class="clearfix"></div>
+        <!-- ********** FIFTH ROW END **********-->
+        <hr/>
+
+        <!-- ********** SIXTH ROW START **********-->
+        <!-- Speedometers (Gauge) Charts Start -->
+        <div class="col-md-3" align="center">
+            <div id="down-wimax" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Down Wimax
+                    <!-- <i class="fa fa-signal text-success" id="down-wimax_trend" title="Down Wimax Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="down-pmp" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Down PMP
+                    <!-- <i class="fa fa-signal text-success" id="down-pmp_trend" title="Down PMP Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="latency-wimax" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Latency Wimax
+                    <!-- <i class="fa fa-signal text-success" id="latency-wimax_trend" title="Latency Wimax Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="latency-pmp" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Latency PMP
+                    <!-- <i class="fa fa-signal text-success" id="latency-pmp_trend" title="Latency PMP Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <!-- Speedometers (Gauge) Charts End -->
+        <div class="clearfix"></div>
+        <!-- ********** SIXTH ROW END **********-->
+        <hr/>
+
+        <!-- ********** SEVENTH ROW START **********-->
+
+        <!-- Speedometers (Gauge) Charts Start -->
+        <div class="col-md-3" align="center">
+            <div id="packetloss-wimax" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Packet Drop Wimax
+                    <!-- <i class="fa fa-signal text-success" id="packetloss-wimax_trend" title="Packet Drop Wimax Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="packetloss-pmp" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Packet Drop PMP
+                    <!-- <i class="fa fa-signal text-success" id="packetloss-pmp_trend" title="Packet Drop PMP Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="temperature-fan-wimax" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Temperature Fan Wimax
+                    <!-- <i class="fa fa-signal text-success" id="temperature-fan-wimax_trend" title="Temperature Fan Wimax Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="temperature-acb-wimax" style="height: 165px;"></div>
+            <h5>
+                <strong>
+                    Temperature ACB Wimax
+                    <!-- <i class="fa fa-signal text-success" id="temperature-acb-wimax_trend" title="Temperature ACB Wimax Trends"> </i> -->
+                </strong>
+            </h5>
+        </div>
+        <!-- Speedometers (Gauge) Charts End -->
+        <div class="clearfix"></div>
+        <!-- ********** SEVENTH ROW END **********-->
+    </div>
+</div>
+
+{% endblock %}
+
+{% block load_js %}
+
+<!--Highcharts Library-->
+<script src={% static "js/highcharts.js" %}></script>
+<!-- <script src={% static "js/highcharttheme.js" %}></script> -->
+<script src={% static "js/highcharts-more.js" %}></script>
+<!-- Solid Gauge Chart highcharts -->
+<script src={% static "js/solid-gauge.js" %}></script>
+<!-- no data for highcharts -->
+<script src={% static "js/no-data-to-display.js" %}></script>
+<!--Our Common Utilities Script-->
+<script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<!-- Main Dashboard Custom Script-->
+<script type="text/javascript" src={% static "js/nocout/main_dashboard_script.js" %}></script>
+
+<script type="text/javascript">
+
+    var process_count = 1,
+        dataTableInstance = "";
+
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
+
+        var isOther = "{{ isOther }}" ? Number("{{ isOther }}") : 0,
+            isDebug = "{{ debug }}" ? Number("{{ debug }}") : 0;
+
+        process_count = "{{ process_count }}" ? Number("{{ process_count }}") : 1;
+
+        var hidden_ids = [];
+        if(isOther == 1) {
+            hidden_ids = [
+                'down-wimax',
+                'down-pmp',
+                'latency-wimax',
+                'packetloss-wimax',
+                'latency-pmp',
+                'packetloss-pmp',
+                'temperature-fan-wimax',
+                'temperature-acb-wimax',
+                // 'id_mfr_processed_chart',
+                'mfr_cause_code'
+            ];
+
+        } else if(isOther == 0 && isDebug == 0) {
+            hidden_ids = [
+                'down-wimax',
+                'down-pmp',
+                'latency-wimax',
+                'packetloss-wimax',
+                'latency-pmp',
+                'packetloss-pmp',
+                'temperature-fan-wimax',
+                'temperature-acb-wimax'
+            ];            
+        }
+        // Remove the div's from DOM
+        for(var i=0;i<hidden_ids.length;i++) {
+            if($("#"+hidden_ids[i]).length > 0) {
+                $("#"+hidden_ids[i]).parent().addClass("hide");
+                $("#"+hidden_ids[i]).parent().next('.clearfix').next().remove();
+                $("#"+hidden_ids[i]).parent().remove();
+            }
+        }
+
+        // Update the main url & trends url of charts in dict
+        // City Charters Datatables
+        city_charter_tbl_obj["city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'yes' %}";
+        city_charter_tbl_obj["city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'no' %}";
+        city_charter_tbl_obj["city_charter_table"]["headers"] = JSON.parse('{{ city_charter_headers|safe }}');
+
+
+        /***************** GAUGE CHART START ************************/
+
+        solid_gauge_url_obj["down-all"]["url"] = "{% url 'down-all' %}";
+        solid_gauge_url_obj["down-all"]["trends_url"] = "{% url 'trend-monthly-down-all' %}" + "?dashboard_name=down-all";
+
+        solid_gauge_url_obj["latency-all"]["url"] = "{% url 'latency-all' %}";
+        solid_gauge_url_obj["latency-all"]["trends_url"] = "{% url 'trend-monthly-latency-all' %}" + "?dashboard_name=latency-all";
+
+        solid_gauge_url_obj["packetloss-all"]["url"] = "{% url 'packet-loss-all' %}";
+        solid_gauge_url_obj["packetloss-all"]["trends_url"] = "{% url 'trend-monthly-packet-loss-all' %}" + "?dashboard_name=packetloss-all";
+
+        solid_gauge_url_obj["temperature-idu-wimax"]["url"] = "{% url 'temperatue-idu-wimax' %}";
+        solid_gauge_url_obj["temperature-idu-wimax"]["trends_url"] = "{% url 'trend-monthly-temperature-idu-wimax' %}" + "?dashboard_name=temperature-idu-wimax";
+
+        if(isOther == 0 && isDebug == 1) {
+            solid_gauge_url_obj["down-wimax"]["url"] = "{% url 'down-wimax' %}";
+            solid_gauge_url_obj["down-wimax"]["trends_url"] = "";
+
+            solid_gauge_url_obj["down-pmp"]["url"] = "{% url 'down-pmp' %}";
+            solid_gauge_url_obj["down-pmp"]["trends_url"] = "";
+
+            solid_gauge_url_obj["latency-wimax"]["url"] = "{% url 'latency-wimax' %}";
+            solid_gauge_url_obj["latency-wimax"]["trends_url"] = "";
+
+            solid_gauge_url_obj["latency-pmp"]["url"] = "{% url 'latency-pmp' %}";
+            solid_gauge_url_obj["latency-pmp"]["trends_url"] = "";
+
+            solid_gauge_url_obj["packetloss-wimax"]["url"] = "{% url 'packet-loss-wimax' %}";
+            solid_gauge_url_obj["packetloss-wimax"]["trends_url"] = "";
+
+            solid_gauge_url_obj["packetloss-pmp"]["url"] = "{% url 'packet-loss-pmp' %}";
+            solid_gauge_url_obj["packetloss-pmp"]["trends_url"] = "";
+
+            solid_gauge_url_obj["temperature-fan-wimax"]["url"] = "{% url 'temperatue-fan-wimax' %}";
+            solid_gauge_url_obj["temperature-fan-wimax"]["trends_url"] = "";
+
+            solid_gauge_url_obj["temperature-acb-wimax"]["url"] = "{% url 'temperatue-acb-wimax' %}";
+            solid_gauge_url_obj["temperature-acb-wimax"]["trends_url"] = "";
+        }
+
+        /***************** GAUGE CHART END ************************/
+
+
+        /***************** AREA CHART START ************************/
+        if(isOther == 0) {
+            area_chart_url_obj["id_mfr_processed_chart"]["url"] = "{% url 'processed-mfr' %}";
+            area_chart_url_obj["id_mfr_processed_chart"]["trends_url"] = "";
+        } else {
+            area_chart_url_obj["id_mfr_processed_chart"]["url"] = "{% url 'GetRfNetworkAvailData' %}";
+            area_chart_url_obj["id_mfr_processed_chart"]["trends_url"] = "";
+            area_chart_url_obj["id_mfr_processed_chart"]["text"] = "RF Network Availability"
+
+            try {
+                $("#id_mfr_processed_chart").parent().find("h4").find("strong").html("RF Network Availability")
+            } catch(e) {
+                // pass
+            }
+
+        }
+
+        /***************** AREA CHART END ************************/
+        
+
+        /***************** PIE CHART START ************************/
+
+        pie_chart_url_obj["pmp_sales_opportunity"]["url"] = "{% url 'sales-opportunity-pmp' %}";
+        pie_chart_url_obj["pmp_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-pmp' %}";
+        
+        pie_chart_url_obj["wimax_sales_opportunity"]["url"] = "{% url 'sales-opportunity-wimax' %}";
+        pie_chart_url_obj["wimax_sales_opportunity"]["trends_url"] = "{% url 'trend-monthly-sales-wimax' %}";
+        
+        pie_chart_url_obj["pmp_sector_capacity"]["url"] = "{% url 'sector-capacity-pmp' %}";
+        pie_chart_url_obj["pmp_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-pmp' %}";
+
+        pie_chart_url_obj["wimax_sector_capacity"]["url"] = "{% url 'sector-capacity-wimax' %}";
+        pie_chart_url_obj["wimax_sector_capacity"]["trends_url"] = "{% url 'trend-monthly-sector-wimax' %}";
+
+        pie_chart_url_obj["wimax_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-wimax' %}";
+        pie_chart_url_obj["wimax_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-wimax' %}";
+
+        pie_chart_url_obj["pmp_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-pmp' %}";
+        pie_chart_url_obj["pmp_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-pmp' %}";
+
+        if(isOther == 0) {
+            pie_chart_url_obj["mfr_cause_code"]["url"] = "{% url 'cause-code-mfr' %}";
+        }
+
+        pie_chart_url_obj["tcl_pop_backhaul_capacity"]["url"] = "{% url 'backhaul-capacity-tclpop' %}";
+        pie_chart_url_obj["tcl_pop_backhaul_capacity"]["trends_url"] = "{% url 'trend-monthly-backhaul-tclpop' %}";
+       
+
+        /***************** PIE CHART END ************************/
+
+
+        // Set Global Option for Highcharts
+        if(window.Highcharts) {
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+        }
+        // Initialize Dashboard
+        initDashboard();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,113 @@
+<!-- Extends header.html-->
+{% extends "nocout/header.html" %}
+<!--Load Static Files-->
+{% load staticfiles %}
+<!-- Main Block Start-->
+{% block main_block %}
+    <!-- PAGE -->
+    <section id="page">
+
+        <!-- SIDEBAR -->
+        {% include 'nocout/sidemenu.html' %}
+        <!-- /SIDEBAR -->
+
+        <div id="main-content">
+            <div class="container">
+                <div class="row">
+                    <div id="page_content_div">
+
+                        <!-- Global Search Panel Start -->
+                        <div class="global_search_container hide" id="global_search_container">
+                            <ul class="list-unstyled list-inline">
+                                <li>
+                                    <select  id="searchBy" style="min-width:130px;max-width:150px;">
+                                        <option value="">Search Criteria</option>
+                                        <option value="ip_address">IP Address</option>
+                                        <option value="circuit_id">Circuit ID</option>
+                                        <option value="mac_address">MAC Address</option>
+                                        <option value="sector_id">Sector ID</option>
+                                    </select>
+                                </li>
+                                <li>
+                                    <input type="hidden" id="global_search_txt"  style="min-width:130px;max-width:150px;">
+                                </li>
+                                <li>
+                                    <button class="btn btn-info btn-sm" id="global_search_btn" title="Search">
+                                        <i class='fa fa-search'> </i>
+                                    </button>
+                                </li>
+                                <li>
+                                    <div id="redirect_link_container"></div>
+                                </li>
+                            </ul>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <!-- Global Search Panel End -->
+
+                        <div id="content" class="col-lg-12">
+                            <!-- PAGE HEADER-->
+                            <div class="row" id="page_header_container" style="display:none;">
+                                <div class="col-sm-12">
+                                    <div class="page-header">
+                                        <!-- BREADCRUMBS -->
+                                        <!-- <ul class="breadcrumb"> -->
+                                            <!-- <li>
+                                                <i class="fa fa-home"></i>
+
+                                            </li> -->
+                                            {% block breadcrumb_title %}
+                                                <!-- BREADCRUMB -->
+                                                {% include 'nocout/breadcrumb.html' %}
+                                                <!-- /BREADCRUMB -->
+                                            {% endblock %}
+                                        <!-- </ul> -->
+                                        <!-- /BREADCRUMBS -->
+                                        <div class="clearfix">
+                                            <h3 class="content-title pull-left toUpper">
+                                                {% block content_title %}Dashboard{% endblock %}
+                                            </h3>
+                                            {% block page_setting_block %}{% endblock %}
+                                        </div>
+                                        <div class="description">{% block content_description %}Overview, Statistics and more{% endblock %}</div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- /PAGE HEADER -->
+                            
+                            <!-- PAGE CONTENT -->
+                            <!-- Widget Full Screen Button-->
+                            <button type="button" class="btn btn-sm btn-info pull-right" id="goFullScreen">
+                                <i class="fa fa-arrows-alt"></i> View Full Screen
+                            </button>
+                            <!-- /Widget Full Screen Button-->
+                            <!-- Page Toggle Button-->
+                            <button class="btn btn-info btn-sm pull-right" type="button" id="headerToggleBtn">
+                                <i class="fa fa-eye"></i> Show Page Controls
+                            </button>
+                            <div class="clearfix"></div>
+                            <!-- /Page Toggle Button-->
+                            {% block content %}
+                                <p>Default Content.</p>
+                                {% block content_js %}{% endblock %}
+                            {% endblock %}
+                            <div class="clearfix"></div>
+                        <!-- /PAGE CONTENT -->
+                        </div>
+                        <div class="hide" id="ajax_spinner" align="center"></div>
+                    </div>
+                    <!-- /CONTENT-->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- session_security dialog html -->
+    {% include 'session_security/dialog.html' %}
+    <!-- session_security dialog html -->
+
+    <!--/PAGE END-->
+
+{% endblock %}
+<!--Main Block End-->

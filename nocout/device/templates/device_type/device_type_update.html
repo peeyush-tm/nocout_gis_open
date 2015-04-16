@@ -1,0 +1,284 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+
+{% block content_title %}Edit Device Type{% endblock %}
+{% block content_description %}Edit device type{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> EDIT DEVICE TYPE : {{ object.alias }}</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="" method="post" class="form-horizontal" role="form"  enctype="multipart/form-data">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                            {{ device_type_service_form.management_form }}
+                                            {% for field in device_type_service_form %}
+                                                {{ field.id }}
+                                            <div class="row inline {{ device_type_service_form.prefix }}">
+                                                <hr>
+                                                <div id="id_service" class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.service}}{{ device_type_service_form.non_form_errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="id_parameter" class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Parameter </label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.parameter}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/type/')"><i class="fa fa-times"></i> Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
+        <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function(){
+            // modify image upload field
+            var device_icon = "#id_device_icon";
+            var device_gmap_icon = "#id_device_gmap_icon";
+            $(device_icon).bootstrapFileInput();
+            $(device_icon).prev().text("Search for a file to add");
+            $(device_gmap_icon).bootstrapFileInput();
+            $(device_gmap_icon).prev().text("Search for a file to add");
+
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+        });
+        counter = -1
+        var dts_value = []
+        var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"][value]')
+
+        // if service is already selected
+        if ($("#id_service").find("option:selected").val()){
+            var service = $("form").find(".row").find("#id_service").slice(dts_value.length)
+            service.each(function() {
+              var service_id = $(this).find("option:selected").val()
+              var parameter = $(this).parent(".row .inline").find("#id_parameter")
+              var row_inline = $(this).parent(".row .inline")
+              var p_div = row_inline.parent().children('div .row .inline')
+              var service_counter = p_div.index(row_inline) + 1
+
+              get_attribute_of_service(service_id, parameter, row_inline, service_counter)
+            });
+        }
+
+        // if there is device_type_service formset of the device type
+        if (dts_value){
+            var service = $("form").find(".row").find("#id_service").slice(0,dts_value.length)
+            service.each(function(index) {
+              var row_inline = $(this).parent(".row .inline")
+              var dts_id = dts_value[index].value
+              var p_div = row_inline.parent().children('div .row .inline')
+              var service_counter = p_div.index(row_inline) + 1
+
+              get_attribute_of_device_type_service(row_inline, dts_id, service_counter)
+            });
+        }
+
+        // if service is changed by the user
+        $("form").find(".row").find("#id_service").change(function(){
+            var service_id = $(this).find("option:selected").val()
+            var parameter = $(this).parent(".row .inline").find("#id_parameter")
+            var row_inline = $(this).parent(".row .inline")
+            var p_div = row_inline.parent().children('div .row .inline')
+            var service_counter = p_div.index(row_inline) + 1
+
+            get_attribute_of_service(service_id, parameter, row_inline, service_counter)
+        });
+
+        function get_attribute_of_service(service_id, parameter, row_inline, service_counter){
+            var service_counter = service_counter - 1
+            counter = counter + 1
+            if(service_id == '' ){
+                console.log('Select the service')
+            }
+            else{
+                $.ajax({
+                    url : "/service/select/service/data_source/"+service_id+'/',
+                    type : "GET",
+                    dataType: "json",
+                    data: {
+                        service_id : service_id,
+                        service_counter : service_counter,
+                        counter : counter,
+                    },
+                    success : function(service) {
+                        var parameter_option = parameter.find("select option:selected")
+                        parameter_option.val(service.parameters_id)
+                        parameter_option.html(service.parameters_name)
+                        row_inline.children().slice(3).remove()
+
+                        row_inline.append(service.service_attributes)
+                        row_inline.children().slice(3).find("select").attr('readonly', true);
+                        input_fields = row_inline.find('.form-group input')
+                        input_fields.each(function(index){
+                            var location = $(this).parent().parent()
+                            var value = $(this).val()
+                            if (value.length){
+                                location.append( '( '+value+' )')
+                                $(this).val('')
+                            }
+                            else{
+                                location.append( '( null )')
+                            }
+                        });
+                        x = $("form input[class='form-control'][name|='dts'][type='text']")
+                        x.change(function(){
+                            console.log('asd')
+                            var ele = $(this).attr('name')  // input field warning/critical
+                            var ele_val = $(this).val()     // get the value of input field
+                            if (ele.indexOf('warning')>0){
+                                var c = $(this).parent().parent().parent().next()
+                                if (ele_val.length){
+                                    c.find('input[name$="critical"]').prop('required', true);
+                                }
+                                else{
+                                    c.find('input[name$="critical"]').prop('required', false);
+                                }
+                            }
+                            else{
+                                var w = $(this).parent().parent().parent().prev()
+                                if (ele_val.length){
+                                    w.find('input[name$="warning"]').prop('required', true);
+                                }
+                                else{
+                                    w.find('input[name$="warning"]').prop('required', false);
+                                }
+                            }
+                        });
+                    },
+                    error : function(xhr,errmsg,err) {
+                        console.log(xhr.status + ": " + xhr.responseText);
+                    }
+                });
+
+                return false;
+            }
+        }
+        function get_attribute_of_device_type_service(row_inline, dts_id, service_counter){
+            var service_counter = service_counter - 1
+            counter = counter + 1
+            if(dts_id == '' ){
+                console.log('no instance is found')
+            }
+            else{
+                console.log()
+                $.ajax({
+                    url : "/service/select/data_source/",
+                    type : "GET",
+                    dataType: "json",
+                    data: {
+                        dts_id : dts_id,
+                        service_counter : service_counter,
+                        counter : counter,
+                    },
+                    success : function(service) {
+                        row_inline.children().slice(3).remove()
+                        row_inline.append(service.service_attributes)
+                        row_inline.children().slice(3).find("select").attr('readonly', true);
+                        input_fields = row_inline.find('.form-group input')
+                        input_fields.each(function(index){
+                            var location = $(this).parent().parent()
+                            var value = $(this).val()
+                            if (value.length){
+                                location.append( '( '+value+' )')
+                            }
+                            else{
+                                location.append( '( null )')
+                            }
+                        });
+                        x = $("form input[class='form-control'][name|='dts'][type='text']")
+                        x.change(function(){
+                            console.log('asd')
+                            var ele = $(this).attr('name')  // input field warning/critical
+                            var ele_val = $(this).val()     // get the value of input field
+                            if (ele.indexOf('warning')>0){
+                                var c = $(this).parent().parent().parent().next()
+                                if (ele_val.length){
+                                    c.find('input[name$="critical"]').prop('required', true);
+                                }
+                                else{
+                                    c.find('input[name$="critical"]').prop('required', false);
+                                }
+                            }
+                            else{
+                                var w = $(this).parent().parent().parent().prev()
+                                if (ele_val.length){
+                                    w.find('input[name$="warning"]').prop('required', true);
+                                }
+                                else{
+                                    w.find('input[name$="warning"]').prop('required', false);
+                                }
+                            }
+                        });
+                    },
+                    error : function(xhr,errmsg,err) {
+                        console.log(xhr.status + ": " + xhr.responseText);
+                    }
+                });
+
+                return false;
+            }
+        }
+    </script>
+    <script type="text/javascript">
+
+        alert("")
+        // Changing labels of form fields
+        $("label[for=id_rta_warning]").text('Latency Warning (ms)');
+        $("label[for=id_rta_critical]").text('Latency Critical (ms)');
+        $("label[for=id_pl_warning]").text('PD Warning (%)');
+        $("label[for=id_pl_critical]").text('PD Critical (%)');
+        $("label[for=id_packets]").text('Packet Count');
+        $("label[for=id_timeout]").text('Timeout (ms)');
+
+       $(function() {
+           $(".inline.{{ device_type_service_form.prefix }}").formset({
+               prefix: "{{ device_type_service_form.prefix }}",
+           })
+       })
+    </script>
+{% endblock %}

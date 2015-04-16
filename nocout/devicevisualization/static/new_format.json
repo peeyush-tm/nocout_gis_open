@@ -1,0 +1,386 @@
+{
+	"success" : 1,
+	"message" : "Data Fetached Successfully.",
+	"data" : {
+		"meta" : {
+			"total_count" : 0,
+			"limit" : 1
+		},
+		"objects" : {
+			"id" : "mainNode",
+			"name" : "mainNodeName",
+			"data" : {
+				"unspiderfy_icon" : "static/img/marker/slave01.png"
+			},
+			"children" : [
+				{
+					"id":7,
+					"name":"TTSL_BTS_Bagahati",
+					"data":{
+						"lat" : 26.2800,
+						"lon" : 73.0200,
+						"markerUrl" : "static/img/marker/icon2_small.png",
+						"technology" : "PMP",
+						"vendor" : "cambium",
+						"city" : "jodhpur",
+						"state" : "rajasthan",
+						"antena_height" : 40,
+						"circle_color" : "rgba(250,95,113,0.90)",
+						"param" : {
+							"base_station" : [
+								{
+									"name" : "alias",
+									"title" : "Alias",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "title",
+									"title" : "Title",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								}
+							],
+							"backhual" : [
+								{
+									"name" : "configured_on",
+									"title" : "Configured On",
+									"show" : 1,
+									"value" : "Converter"
+								},
+								{
+									"name" : "capacity",
+									"title" : "Capacity",
+									"show" : 1,
+									"value" : "4MB"
+								}
+							],
+							"sector" : [
+								{
+									"color" : "rgba(250,95,113,0.90)",
+									"radius" : 4,
+									"azimuth_angle" : 60,
+									"beam_width" : 60,
+									"orientation" : "horizontal",
+									"info" : [
+										{
+											"name" : "sector_name",
+											"title" : "Sector Name",
+											"show" : 1,
+											"value" : "V2"
+										}
+									],
+									"sub_station" : [
+										{
+											"id": 8,
+											"name":"TTSL_BTS_Bagahati",
+											"data":{
+												"lat" : 25.6110,
+												"lon" : 85.1440,
+												"antena_height" : 50,
+												"markerUrl" : "static/img/marker/icon4_small.png",
+												"show_link" : 1,
+												"link_color" : "rgba(94,135,176,0.70)",
+												"param" : {
+													"sub_station" : [
+														{
+															"name" : "alias",
+															"title" : "Alias",
+															"show" : 1,
+															"value" : "TTSL BTS: Nurpur_001"
+														},
+														{
+															"name" : "title",
+															"title" : "Title",
+															"show" : 1,
+															"value" : "TTSL BTS: Nurpur_001"
+														}
+													],
+													"labels" : [
+														{
+															"name" : "Freq.",
+															"value" : "1233136",
+															"position" : "up",
+															"show" : 0 
+														}
+													]
+												}
+											}
+										}
+									]
+								},
+								{
+									"color" : "rgba(74,250,194,0.90)",
+									"radius" : 4,
+									"azimuth_angle" : 150,
+									"beam_width" : 60,
+									"orientation" : "vertical",
+									"info" : [
+										{
+											"name" : "sector_name",
+											"title" : "Sector Name",
+											"show" : 1,
+											"value" : "WTTIL_TTSL_WEBNOR0615"
+										}
+									],
+									"sub_station" : [
+										{
+											"id": 9,
+											"name":"TTSL_BTS_Bagahati999",
+											"data":{
+												"lat" : 18.5203,
+												"lon" : 73.8567,
+												"antena_height" : 60,
+												"markerUrl" : "static/img/marker/icon3_small.png",
+												"show_link" : 1,
+												"link_color" : "rgba(253,242,112,0.90)",
+												"param" : {
+													"sub_station" : [
+														{
+															"name" : "alias",
+															"title" : "Alias",
+															"show" : 1,
+															"value" : "TTSL BTS: Nurpur_001"
+														},
+														{
+															"name" : "title",
+															"title" : "Title",
+															"show" : 1,
+															"value" : "TTSL BTS: Nurpur_001"
+														}
+													],
+													"labels" : [
+														{
+															"name" : "Perf",
+															"value" : "80%",
+															"position" : "down",
+															"show" : 0
+														}
+													]
+												}
+											}
+										}
+									]
+								},
+								{
+									"color" : "rgba(253,242,112,0.90)",
+									"radius" : 4,
+									"azimuth_angle" : 240,
+									"beam_width" : 30,
+									"orientation" : "horizontal",
+									"info" : [
+										{
+											"name" : "sector_name",
+											"title" : "Sector Name",
+											"show" : 1,
+											"value" : "TTSLBTSBagahati"
+										}
+									],
+									"sub_station" : []
+								}
+							]
+						}
+					}
+				},
+				{
+					"id":15,
+					"name":"TTSL_BTS:_Nurpur_001",
+					"data":{
+						"technology" : "P2P",
+						"vendor" : "radwin",
+						"city" : "gurgaon",
+						"state" : "haryana",
+						"lat" : 22.61818056,
+						"lon" : 88.46806111,
+						"markerUrl" : "static/img/marker/icon3_small.png",
+						"antena_height" : 45,
+						"param" : {
+							"base_station" : [
+								{
+									"name" : "alias",
+									"title" : "Alias",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "title",
+									"title" : "Title",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								}
+							],
+							"backhual" : [
+								{
+									"name" : "configured_on",
+									"title" : "Configured On",
+									"show" : 1,
+									"value" : "Switch"
+								},
+								{
+									"name" : "capacity",
+									"title" : "Capacity",
+									"show" : 1,
+									"value" : "8MB"
+								}
+							],
+							"sector" : [
+								{
+									"color" : "rgba(250,95,113,0.90)",
+									"radius" : 4,
+									"azimuth_angle" : 215,
+									"beam_width" : 60,
+									"orientation" : "horizontal",
+									"info" : [
+										{
+											"name" : "sector_name",
+											"title" : "Sector Name",
+											"show" : 1,
+											"value" : "V2"
+										}
+									],
+									"sub_station" : [
+										{
+											"id":12,
+											"name":"TTSL_BTS_Nurpur_001",
+											"data":{
+												"lat" : 22.62444444,
+												"lon" : 88.48061111,
+												"antena_height" : 65,
+												"markerUrl" : "static/img/marker/icon1_small.png",
+												"show_link" : 1,											
+												"link_color" : "rgba(64,200,253,0.90)",
+												"param" : {
+													"sub_station" : [
+														{
+															"name" : "alias",
+															"title" : "Alias",
+															"show" : 1,
+															"value" : "TTSL BTS: Nurpur_001"
+														},
+														{
+															"name" : "title",
+															"title" : "Title",
+															"show" : 1,
+															"value" : "TTSL BTS: Nurpur_001"
+														}
+													],
+													"labels" : [
+														{
+															"name" : "Freq.",
+															"value" : "1233136",
+															"position" : "up",
+															"show" : 0 
+														}
+													]
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				},
+				{
+					"id":221,
+					"name":"TTSL_Nurpur_001",
+					"data":{
+						"technology" : "P2P",
+						"vendor" : "radwin",
+						"city" : "bangalore",
+						"state" : "karnataka",
+						"lat" : 26.847,
+						"lon" : 80.947,
+						"markerUrl" : "static/img/marker/icon2_small.png",
+						"antena_height" : 68,
+						"param" : {
+							"base_station" : [
+								{
+									"name" : "alias",
+									"title" : "Alias",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "title",
+									"title" : "Title",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								}
+							],
+							"backhual" : [
+								{
+									"name" : "configured_on",
+									"title" : "Configured On",
+									"show" : 1,
+									"value" : "Switch"
+								},
+								{
+									"name" : "capacity",
+									"title" : "Capacity",
+									"show" : 1,
+									"value" : "8MB"
+								}
+							],
+							"sector" : [
+								{
+									"color" : "rgba(250,95,113,0.90)",
+									"radius" : 4,
+									"azimuth_angle" : 215,
+									"beam_width" : 60,
+									"orientation" : "horizontal",
+									"info" : [
+										{
+											"name" : "sector_name",
+											"title" : "Sector Name",
+											"show" : 1,
+											"value" : "V2"
+										}
+									],
+									"sub_station" : [
+										{
+											"id":121,
+											"name":"TTSL_Nurpur_001",
+											"data" : {
+												"lat" : 12.9667,
+												"lon" : 77.5667,
+												"markerUrl" : "static/img/marker/icon4_small.png",
+												"link_color" : "rgba(250,95,113,0.90)",
+												"show_link" : 1,
+												"antena_height" : 48,
+												"param" : {
+													"sub_station" : [
+														{
+															"name" : "alias",
+															"title" : "Alias",
+															"show" : 1,
+															"value" : "TTSL: Nurpur_001"
+														},
+														{
+															"name" : "title",
+															"title" : "Title",
+															"show" : 1,
+															"value" : "TTSL BTS: Nurpur_001"
+														}
+													],
+													"labels" : [
+														{
+															"name" : "Freq.",
+															"value" : "1233136",
+															"position" : "up",
+															"show" : 0 
+														}
+													]
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	}
+}

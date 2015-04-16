@@ -1,0 +1,272 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing_url" page_type %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}{{ page_type }} Live{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> {{ page_type|upper }} LISTING</h4>
+        </div>
+
+        {% ifequal page_type 'other' %}
+            <div id="tableContainer" class="box-body">
+                <div class="tabbable header-tabs">
+                    <ul class="nav nav-tabs">
+                        <li>
+                            <a href="#{{ page_type|slugify|lower }}_other_block" id="{{ page_type|slugify|lower }}_other_tab" data-toggle="tab">
+                                <span class="hidden-inline-mobile">Others</span>
+                            </a>
+                        </li>
+                        <li class="active">
+                            <a href="#{{ page_type|slugify|lower }}_backhaul_block" id="{{ page_type|slugify|lower }}_backhaul_tab" data-toggle="tab">
+                                <span class="hidden-inline-mobile">Backhaul</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" style="overflow-y:auto;">
+                        <div class="tab-pane" id="{{ page_type|slugify|lower }}_other_block">
+                        <table id="{{ page_type|slugify|lower }}_other_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
+                                   class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane active" id="{{ page_type|slugify|lower }}_backhaul_block">
+                            <table id="{{ page_type|slugify|lower }}_backhaul_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
+                                   class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            <div id="tableContainer" class="box-body">
+                <div class="tabbable header-tabs">
+                    <ul class="nav nav-tabs">
+                        <li><a href="#{{ page_type|slugify|lower }}_wifi_block"
+                               id="{{ page_type|slugify|lower }}_wifi_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#{{ page_type|slugify|lower }}_pmp_block"
+                               id="{{ page_type|slugify|lower }}_pmp_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#{{ page_type|slugify|lower }}_p2p_block"
+                                              id="{{ page_type|slugify|lower }}_ptp_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">
+                                {% if page_type == 'customer' %}
+                                PTP
+                                {% else %}
+                                PTP BH
+                                {% endif %}
+                                </span></a></li>
+                    </ul>
+                    <div class="tab-content" style="overflow-y:auto;">
+                        <div class="tab-pane" id="{{ page_type|slugify|lower }}_wifi_block">
+                            <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
+                                   class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane" id="{{ page_type|slugify|lower }}_pmp_block">
+                            <table id="{{ page_type|slugify|lower }}_pmp_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
+                                   class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane active" id="{{ page_type|slugify|lower }}_p2p_block">
+                            <table id="{{ page_type|slugify|lower }}_p2p_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
+                                   class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endifequal %}
+
+    </div>
+    <div class="clearfix"></div>
+
+{% endblock %}
+
+{% block jquery %}
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+    <!-- Custom Script for soft delete-->
+    <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
+    <script type="text/javascript">
+
+        var dataTableInstance = "";
+
+        $(document).ready(function (e) {
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
+            ajax_url_get_parameter = "{{ page_type|slugify|lower }}";
+
+            /*Ajax url to get grid data*/
+            var destroy = false,
+                location_array = window.location.href.split("#");
+            ///for backhaul devices
+            if (ajax_url_get_parameter == "other") {
+
+                tables_info = {
+                    "other_backhaul_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Other Live - Backhaul",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'backhaul', 'download_excel': 'yes' }"
+                    },
+                    "other_other_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Other Live - Others",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'other', 'download_excel': 'yes' }"
+                    }
+                };
+
+                var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&other_type=backhaul';
+
+                $("#other_backhaul_tab").attr("data_url", ajax_url_bh);
+                $("#other_backhaul_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                var ajax_url_other = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&other_type=other';
+
+                $("#other_other_tab").attr("data_url", ajax_url_other);
+                $("#other_other_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+                    /*Trigger click event on active tab to load its data*/
+                    $("#" + ajax_url_get_parameter + "_backhaul_tab").trigger('click', true);
+                }
+
+            } else {
+
+                tables_info = {
+                    "network_wifi_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Network Live - WiMAX",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'download_excel': 'yes' }"
+                    },
+                    "network_ptp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Network Live - PTP BH",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'download_excel': 'yes' }"
+                    },
+                    "network_pmp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Network Live - PMP",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'download_excel': 'yes' }"
+                    },
+                    "customer_wifi_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Customer Live - WiMAX",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'download_excel': 'yes' }"
+                    },
+                    "customer_ptp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Customer Live - PTP",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'download_excel': 'yes' }"
+                    },
+                    "customer_pmp_tab" : {
+                        "app_name" : "performance",
+                        "table_title" : "Customer Live - PMP",
+                        "header_class_name" : "Live_Performance",
+                        "data_class_name" : "LivePerformanceListing",
+                        "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'download_excel': 'yes' }"
+                    }
+                };
+
+                ///for network and cusotmer devices
+                var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
+                var ajax_url_pmp = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'PMP';
+                var ajax_url_p2p = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'P2P';
+                ///end: for network and cusotmer devices
+                /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+                $("#network_wifi_tab").attr("data_url", ajax_url_wifi);
+                $("#network_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
+                $("#network_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
+                $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+
+                $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
+                $("#customer_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                $("#customer_pmp_tab").attr("data_url", ajax_url_pmp);
+                $("#customer_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                $("#customer_ptp_tab").attr("data_url", ajax_url_p2p);
+                $("#customer_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+                    /*Trigger click event on active tab to load its data*/
+                    $("#" + ajax_url_get_parameter + "_ptp_tab").trigger('click', true);
+                }
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+
+        });
+    </script>
+{% endblock %}

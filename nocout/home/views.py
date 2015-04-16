@@ -1,4 +1,8 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render
+
 
 def home(request):
-    return render_to_response('home.html')
+    """
+    Renders the Home Page.
+    """
+    return render(request,'home/home.html')

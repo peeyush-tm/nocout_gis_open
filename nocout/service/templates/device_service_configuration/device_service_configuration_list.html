@@ -1,0 +1,92 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Service Configuration" "device_service_configuration_list" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Device Service Configuration{% endblock %}
+{% block content_description %}List of running services{% endblock %}
+{% block page_setting_block %}
+    {% if request.user.is_superuser %}
+        <span class="pull-right">
+            <span class="btn-group">
+                {% if dsc_reset == 'yes' %}
+                    <i class="red-dot">Reset: <a class="" href="#" onclick="reset_service_configuration();"><i class="fa fa-times-circle red-dot" title="Reset device service configurations."></i></a></i>
+                {% else %}
+                    <i class="green-dot">No service configuration exists.</i>
+                {% endif %}
+            </span>
+        </span>
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>DEVICE SERVICE CONFIGURATION</h4>
+        </div>
+        <div class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li><a href="#DeletedDeviceServiceConfigurationListing" id="DeletedDeviceServiceConfigurationListing_tab" data-toggle="tab"><span class="hidden-inline-mobile">Deleted</span></a></li>
+                    <li><a href="#DeviceServiceConfigurationListing" id="DeviceServiceConfigurationListing_tab" data-toggle="tab"><span class="hidden-inline-mobile">Edited</span></a></li>
+                </ul>
+                <div class="tab-content" style="overflow:auto;">
+                    <div class="tab-pane" id="DeletedDeviceServiceConfigurationListing">
+                        <table id="DeletedDeviceServiceConfigurationListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="DeviceServiceConfigurationListing">
+                        <table id="DeviceServiceConfigurationListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+    <script type="text/javascript" src={% static "js/service.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+            /*Ajax url to get grid data*/
+            var ajax_url_deviceserviceconfiguration_listing = '{% url "DeviceServiceConfigurationListingTable" %}';
+            var ajax_url_deleteddeviceserviceconfiguration_listing = '{% url "DeletedDeviceServiceConfigurationListingTable" %}';
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+
+            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+            $("#DeviceServiceConfigurationListing_tab").attr("data_url",ajax_url_deviceserviceconfiguration_listing);
+            $("#DeviceServiceConfigurationListing_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+            $("#DeletedDeviceServiceConfigurationListing_tab").attr("data_url",ajax_url_deleteddeviceserviceconfiguration_listing);
+            $("#DeletedDeviceServiceConfigurationListing_tab").attr("data_header",'{{ deleted_datatable_headers|safe }}');
+            var location_array = window.location.href.split("#");
+
+            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+
+                /*Trigger click event on active tab to load its data*/
+                $("#DeviceServiceConfigurationListing_tab").trigger('click',true);
+            }
+        });
+    </script>
+{% endblock %}

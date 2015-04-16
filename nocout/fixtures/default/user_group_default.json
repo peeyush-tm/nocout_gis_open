@@ -1,0 +1,24 @@
+[
+{
+  "pk": 1, 
+  "model": "user_group.usergroup", 
+  "fields": {
+    "rght": 0, 
+    "is_deleted": 0, 
+    "name": "default", 
+    "parent": null, 
+    "lft": 0, 
+    "tree_id": 0, 
+    "alias": "Default", 
+    "location": "", 
+    "address": "", 
+    "organization": 1, 
+    "level": 0, 
+    "users": [
+      2, 
+      3, 
+      4
+    ]
+  }
+}
+]

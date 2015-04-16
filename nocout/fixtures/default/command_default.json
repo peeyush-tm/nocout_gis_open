@@ -1,0 +1,11 @@
+[
+{
+  "pk": 1, 
+  "model": "command.command", 
+  "fields": {
+    "alias": "Ping", 
+    "command_line": "/omd/sites/nocout/lib/nagios/plugins/check_ping", 
+    "name": "ping"
+  }
+}
+]

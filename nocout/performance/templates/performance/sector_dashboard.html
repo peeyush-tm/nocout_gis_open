@@ -1,0 +1,218 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "Sector Spot Dashboard" "spotDashboard" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}Sector Spot Dashboard{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+	
+	<div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-table"></i> Sector Spot Dashboard</h4>
+        </div>
+        <div class="box-body">
+
+        	<div class="tabbable header-tabs">
+                
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#wimax_sector_spot_block" id="wimax_sector_spot_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">WiMAX</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#pmp_sector_spot_block" id="pmp_sector_spot_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#all_sector_spot_block" id="all_sector_spot_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" style="overflow-y:auto;">
+                    <div class="tab-pane" id="wimax_sector_spot_block">
+                        <table id="wimax_sector_spot_table" class="datatable table table-striped table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th colspan="3" style="text-align: center;">Sector</th>
+                                    <th colspan="6" style="text-align: center;">UL Issues (Last 6 Months)</th>
+                                    <th colspan="6" style="text-align: center;">SIA (Last 6 Months)</th>
+                                    <th colspan="6" style="text-align: center;">Augmentation (Last 6 Months)</th>
+                                </tr>
+                                <tr></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="pmp_sector_spot_block">
+                        <table id="pmp_sector_spot_table" class="datatable table table-striped table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th colspan="3" style="text-align: center;">Sector</th>
+                                    <th colspan="6" style="text-align: center;">UL Issues (Last 6 Months)</th>
+                                    <th colspan="6" style="text-align: center;">SIA (Last 6 Months)</th>
+                                    <th colspan="6" style="text-align: center;">Augmentation (Last 6 Months)</th>
+                                </tr>
+                                <tr></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane active" id="all_sector_spot_block">
+                        <table id="all_sector_spot_table" class="datatable table table-striped table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th colspan="3" style="text-align: center;">Sector</th>
+                                    <th colspan="6" style="text-align: center;">UL Issues (Last 6 Months)</th>
+                                    <th colspan="6" style="text-align: center;">SIA (Last 6 Months)</th>
+                                    <th colspan="6" style="text-align: center;">Augmentation (Last 6 Months)</th>
+                                </tr>
+                                <tr></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+    	</div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+<script type="text/javascript">
+    var dataTableInstance = "";
+    $(document).ready(function (e) {
+
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
+
+        var location_array = window.location.href.split("#");
+
+        /*Show the spinner*/
+        showSpinner();
+
+    	/*Make a instance of ourDataTableWidget class */
+        var months_index_list = $.parseJSON('{{ months_index|safe }}'),
+            table_ids = ['all_sector_spot_table','pmp_sector_spot_table','wimax_sector_spot_table'],
+        	all_ajax_url = "{% url 'spotDashboardListing' %}",
+            pmp_ajax_url = "{% url 'spotDashboardListing' %}"+"?technology=PMP",
+            wimax_ajax_url = "{% url 'spotDashboardListing' %}"+"?technology=WiMAX",
+        	headers_html_row = '';
+
+    	// All month name,alias list
+    	var all_months_list = [
+            {"name" : "jan","alias" : "Jan"},
+            {"name" : "feb","alias" : "Feb"},
+            {"name" : "march","alias" : "March"},
+            {"name" : "april","alias" : "April"},
+            {"name" : "may","alias" : "May"},
+            {"name" : "june","alias" : "June"},
+            {"name" : "july","alias" : "July"},
+            {"name" : "aug","alias" : "Aug"},
+            {"name" : "sept","alias" : "Sept"},
+            {"name" : "oct","alias" : "Oct"},
+            {"name" : "nov","alias" : "Nov"},
+            {"name" : "dec","alias" : "Dec"}
+        ];
+
+    	headers_html_row += '<th style="width:auto;" aria-label="Sector ID">Sector ID</th>\
+                             <th style="width:auto;" aria-label="Sector Configured On">Sector Configured On</th>\
+                             <th style="width:auto;" aria-label="Technology">Technology</th>';
+
+    	var month_headers = "";
+    	// Loop for UL issues, SIA & Augmentation header
+    	for(var i=0;i<months_index_list.length;i++) {
+    		var month_index = months_index_list[i],
+    			month_name = all_months_list[month_index]['name'],
+    			month_alias = all_months_list[month_index]['alias'];
+
+    		month_headers += '<th style="width:auto;" aria-label="'+month_alias+'">'+month_alias+'</th>';
+    	}
+
+    	headers_html_row += month_headers;
+    	headers_html_row += month_headers;
+    	headers_html_row += month_headers;
+
+        for(var i=0;i<table_ids.length;i++) {
+            var second_row_of_headers = $("#"+table_ids[i]+" thead tr")[1];
+        	// Append Second row of headers
+        	$(second_row_of_headers).html(headers_html_row);
+        }
+
+        tables_info = {
+            "all_sector_spot_tab" : {
+                "app_name" : "performance",
+                "table_title" : "Sector Spot Dashboard - All",
+                "header_class_name" : "SectorDashboard",
+                "data_class_name" : "SectorDashboardListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'download_excel': 'yes' }"
+            },
+            "pmp_sector_spot_tab" : {
+                "app_name" : "performance",
+                "table_title" : "Sector Spot Dashboard - PMP",
+                "header_class_name" : "SectorDashboard",
+                "data_class_name" : "SectorDashboardListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'technology': 'PMP', 'download_excel': 'yes' }"
+            },
+            "wimax_sector_spot_tab" : {
+                "app_name" : "performance",
+                "table_title" : "Sector Spot Dashboard - WiMAX",
+                "header_class_name" : "SectorDashboard",
+                "data_class_name" : "SectorDashboardListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'technology': 'WiMAX', 'download_excel': 'yes' }"
+            }
+        };
+
+        $("#all_sector_spot_tab").attr("data_url", all_ajax_url);
+        $("#all_sector_spot_tab").attr("data_header", '{{ table_headers|safe }}');
+
+        $("#pmp_sector_spot_tab").attr("data_url", pmp_ajax_url);
+        $("#pmp_sector_spot_tab").attr("data_header", '{{ table_headers|safe }}');
+
+        $("#wimax_sector_spot_tab").attr("data_url", wimax_ajax_url);
+        $("#wimax_sector_spot_tab").attr("data_header", '{{ table_headers|safe }}');
+
+        if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            /*Trigger click event on active tab to load its data*/
+            $("#all_sector_spot_tab").trigger('click', true);
+        }
+
+    	// Initialize jQuery Datatable
+        // dataTableInstance.createDataTable(table_id,gridHeadersObj,ajax_url_spot_dashboard_listing,false);
+	});
+</script>
+
+{% endblock %}
+
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

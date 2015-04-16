@@ -1,0 +1,120 @@
+#!/usr/bin/python
+import time
+import sys
+import os
+import socket
+"""
+Poller script which runs on ss and calculates the ul utilization of the ss connected from BS.
+
+Poller script determines the uplink utilization of the ss.
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.4.1.21 from snmp agent of device at specific interval.
+uplink utilization information is sent to device application 
+
+"""
+# ##################################################################
+# Function : check_switch_pmp1_dl_utilization_kpi
+#
+#  Parameters: info(SNMP output) ,params(parameters to check the service state) 
+#
+#  Output: service state,plugin output ,performance data
+##################################################################
+
+
+
+def extract_switch_dl_util_from_live(hostname,site):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+	mro_dl = None
+	mro_dl_dict =  {}
+	query = "GET services\nColumns: service_perf_data\n" + \
+		"Filter: service_description = switch_dl_utilization\n" + \
+		"Filter: host_name = %s\nOutputFormat: python\n" % (hostname)
+	try:
+        	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+		socket_path = "/omd/sites/%s/tmp/run/live" % site
+        	s.connect(socket_path)
+		s.send(query)
+       		s.shutdown(socket.SHUT_WR)
+        	query_output = s.recv(100000000)
+        	query_output.strip("\n")
+		query_output = eval(query_output)
+		query_output = query_output[0][0]
+		for param in query_output.split(" "):
+			param = param.strip("['\n', ' ']")
+			if param.partition('=')[2]:
+				mro_dl =param.split("=")[1]
+				port = param.split("=")[0]
+				mro_dl_dict[port] = mro_dl 
+	except Exception ,e:
+		mro_dl_dict = {}
+
+        return mro_dl_dict
+
+
+def live_query_switch_dl_util_kpi(hostname,site,war,crit,qos):
+    state = 3
+    dl_kpi = ''
+    perf = ''
+    plugin_message = ''
+    state_string = "unknown"
+    crit_flag = 0
+    warn_flag = 0
+    normal_flag = 0
+    qos_value = qos.split('|')[:-1]
+    try:
+	dl_util_dict= extract_switch_dl_util_from_live(hostname,site)
+
+	for index,entry in enumerate(sorted(dl_util_dict)):	
+		dl_kpi =  dl_util_dict[entry]
+		try:
+			dl_kpi = (float(dl_kpi)/float(qos_value[index]))) *100
+		except Exception,e:
+			continue
+		if dl_kpi:
+			perf += str(entry) + "=%s;%s;%s;%s " % (dl_kpi,war,crit,qos)
+			if dl_kpi >= crit:
+				crit_flag = 1
+			elif dl_kpi >= war and dl_kpi < crit:
+				warn_flag = 1
+			else:
+				normal_flag = 1
+	if crit_flag:
+		state =2
+		state_string = "critical"
+	elif warn_flag:
+		state =1
+		state_string = "warning"
+	elif normal_flag:
+		state = 0
+		state_string = "ok"
+		
+    except Exception ,e:
+	perf = '' 
+    plugin_message += "switch_dl_util_kpi %s - %s|%s" % (state_string,dl_kpi,perf)
+    sys.stdout.write(plugin_message)
+    sys.exit((state))
+		
+def  main():
+
+    state_string = "unknown"
+    dl_util=''
+    try:
+        host_name = sys.argv[1]
+        site = sys.argv[2]
+        war = sys.argv[3]
+        crit = sys.argv[4]
+	qos = sys.argv[5]
+    except:
+        perf =';;;%s ' % qos
+        plugin_message += "switch_dl_util_kpi %s - %s|%s" % (state_string,dl_util,perf)
+        sys.exit((3))
+
+    live_query_switch_dl_util_kpi(host_name,site,float(war),float(crit),float(qos))
+	
+
+if __name__ == '__main__':
+	main() 

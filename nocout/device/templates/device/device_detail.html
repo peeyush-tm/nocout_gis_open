@@ -1,0 +1,131 @@
+{% extends "inventory/inventory.html" %}
+{% block content_title %}Device Detail{% endblock %}
+{% block content_description %}Device Detail{% endblock %}
+{% block content %}
+    <style type="text/css">
+        #user_profile table tr td:first-child {
+            font-weight: bold;
+            width: 30%;
+        }
+        #user_profile table tr td {
+            font-weight: normal;
+        }
+    </style>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> Device Detail - {{ object.device_alias }}</h4>
+        </div>
+        <div class="box-body">
+            <div id="user_profile" class="col-md-8 col-md-offset-2">
+                <table class="table table-responsive table-hover table-bordered">
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Device Alias </td>
+                        <td>{{ object.device_alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Machine </td>
+                        <td>{{ object.machine.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Site Instance </td>
+                        <td>{{ object.site_instance.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Organization </td>
+                        <td>{{ object.organization.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Technology </td>
+                        <td>{{ device_technology }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Vendor </td>
+                        <td>{{ device_vendor }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Model </td>
+                        <td>{{ device_model }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Type </td>
+                        <td>{{ device_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Ports </td>
+                        <td>
+                            {% for port in object.ports.all %}
+                                {{ port.alias }}
+                                {% if not forloop.last %},{% else %}  {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Parent </td>
+                        <td>{{ object.parent.device_alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> IP Address </td>
+                        <td>{{ object.ip_address }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> MAC Address </td>
+                        <td>{{ object.mac_address }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Netmask </td>
+                        <td>{{ object.netmask }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Gateway </td>
+                        <td>{{ object.gateway }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> DHCP State </td>
+                        <td>{{ object.dhcp_state }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Host Priority </td>
+                        <td>{{ object.host_priority }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Host Monitoring State </td>
+                        <td>{{ object.host_state }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Latitude </td>
+                        <td>{{ object.latitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Longitude </td>
+                        <td>{{ object.longitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Timezone </td>
+                        <td>{{ object.timezone }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Country </td>
+                        <td>{{ object.country }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> State </td>
+                        <td>{{ object.state }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> City </td>
+                        <td>{{ object.city }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Address </td>
+                        <td>{{ object.address }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Description </td>
+                        <td>{{ object.description }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}

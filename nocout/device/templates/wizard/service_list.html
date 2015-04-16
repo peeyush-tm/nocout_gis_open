@@ -1,0 +1,56 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Type" "device_type_list" %}
+    {% if device_type.id %}
+        {% breadcrumb_safe "Update Device Type : "|add:device_type.alias|upper "javascript:;" %}
+    {% else %}
+        {% breadcrumb_safe "Add Device Type" "javascript:;" %}
+    {% endif %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Service Listing{% endblock %}
+{% block content_description %}List of service{% endblock %}
+{% block content %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4>
+                <i class="fa fa-table"></i> SERVICE LISTING
+                <a href="{% url 'wizard-device-type-update' pk=device_type.id %}">( {{device_type.alias|upper}} )</a>
+            </h4>
+        </div>
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="wizard-service-list-table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "wizard-service-list-table" dt_pk=device_type.id %}';
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("wizard-service-list-table", gridHeadersObj, ajax_url, destroy);
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,49 @@
+# mysite_uwsgi.ini file
+[uwsgi]
+
+# Django-related settings
+# the base directory (full path)
+chdir           = /apps/nocout/nocout/nocout
+uid             = nginx
+gid             = nginx
+
+# Django's wsgi file
+module          = nocout.wsgi
+
+# the virtualenv (full path)
+home            = /apps/nocout/nout
+
+# process-related settings
+# master
+master          = true
+# maximum number of worker processes
+processes       = 4
+
+#buffer-size for handelling large data packet
+buffer-size	= 65535
+
+# the socket (use the full path to be safe
+socket          = /apps/tmp/nocout.sock
+
+#pid file
+#pidfile		= /apps/tmp/nocout_uwsgi.pid
+
+#reload
+#reload		= /apps/tmp/nocout_reload
+
+#stop
+#stop		= /apps/tmp/nocout_stop
+
+#
+
+# ... with appropriate permissions - may be needed
+chmod-socket    = 666
+
+# clear environment on exit
+vacuum          = true
+
+#daemonize
+#daemonize       = true
+
+#logging
+#logger          = file:/apps/tmp/nocout.error

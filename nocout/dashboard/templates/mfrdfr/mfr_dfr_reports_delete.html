@@ -1,0 +1,41 @@
+{% extends "dashboard/dashboard_base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-download'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe "Network Reports" "javascript:;" %}
+    {% breadcrumb_safe "MFR DFR Reports" "mfr-dfr-reports-list" %}
+    {% breadcrumb_safe "Delete Report : "|add:object.name "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+
+{% block content_title %}MFR DFR Reports Management{% endblock %}
+{% block content_description %}Delete MFR DFR Reports{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> DELETE MFR DFR REPORTS</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="" method="post">{% csrf_token %}
+                                        <p>Are you sure you want to delete "{{ object }}" ?</p>
+                                        <input type="submit" value="Confirm"/>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

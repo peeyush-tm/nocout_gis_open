@@ -1,0 +1,13 @@
+[
+{
+  "pk": 1, 
+  "model": "machine.machine", 
+  "fields": {
+    "alias": "Default", 
+    "description": "This is nocout's default machine.", 
+    "name": "default", 
+    "agent_port": 6556, 
+    "machine_ip": "127.0.0.1"
+  }
+}
+]

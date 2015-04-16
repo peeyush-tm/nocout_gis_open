@@ -1,0 +1,60 @@
+{% extends "department/department.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-user'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "User Logs" "actionlist" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}User Logs{% endblock %}
+{% block content_description %} {% endblock %}
+{% block content %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>USER LOGS</h4>
+
+{#            <div class="tools hidden-xs">#}
+{#                <a href="#box-config" data-toggle="modal" class="config">#}
+{#                    <i class="fa fa-cog"></i>#}
+{#                </a>#}
+{#                <a href="javascript:;" class="reload">#}
+{#                    <i class="fa fa-refresh"></i>#}
+{#                </a>#}
+{##}
+{#            </div>#}
+        </div>
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ActionListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Grid headers object*/
+            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "actionlistingtable" %}';
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("ActionListingTable", tableObject, ajax_url, destroy);
+        });
+    </script>
+{% endblock %}

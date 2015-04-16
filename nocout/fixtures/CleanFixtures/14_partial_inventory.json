@@ -1,0 +1,801 @@
+[
+{
+    "pk": 1, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 1", 
+        "name": "tower1", 
+        "upload_image": "icons/mobilephonetower1.png"
+    }
+},
+{
+    "pk": 2, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 2", 
+        "name": "tower2", 
+        "upload_image": "icons/mobilephonetower2.png"
+    }
+},
+{
+    "pk": 3, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 3", 
+        "name": "tower3", 
+        "upload_image": "icons/mobilephonetower3.png"
+    }
+},
+{
+    "pk": 4, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 4", 
+        "name": "tower4", 
+        "upload_image": "icons/mobilephonetower4.png"
+    }
+},
+{
+    "pk": 5, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 5", 
+        "name": "tower5", 
+        "upload_image": "icons/mobilephonetower5.png"
+    }
+},
+{
+    "pk": 6, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 6", 
+        "name": "tower6", 
+        "upload_image": "icons/mobilephonetower6.png"
+    }
+},
+{
+    "pk": 7, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 7", 
+        "name": "tower7", 
+        "upload_image": "icons/mobilephonetower7.png"
+    }
+},
+{
+    "pk": 8, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 8", 
+        "name": "tower8", 
+        "upload_image": "icons/mobilephonetower8.png"
+    }
+},
+{
+    "pk": 9, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 9", 
+        "name": "tower9", 
+        "upload_image": "icons/mobilephonetower9.png"
+    }
+},
+{
+    "pk": 10, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Tower 10", 
+        "name": "tower10", 
+        "upload_image": "icons/mobilephonetower10.png"
+    }
+},
+{
+    "pk": 11, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 1", 
+        "name": "wifi1", 
+        "upload_image": "icons/wifi1.png"
+    }
+},
+{
+    "pk": 12, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 2", 
+        "name": "wifi2", 
+        "upload_image": "icons/wifi2.png"
+    }
+},
+{
+    "pk": 13, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 3", 
+        "name": "wifi3", 
+        "upload_image": "icons/wifi3.png"
+    }
+},
+{
+    "pk": 14, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 4", 
+        "name": "wifi4", 
+        "upload_image": "uploaded/icons/2014-09-26/2014-09-26-11-56-11_SM-GIF.gif"
+    }
+},
+{
+    "pk": 15, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 5", 
+        "name": "wifi5", 
+        "upload_image": "icons/wifi5.png"
+    }
+},
+{
+    "pk": 16, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 6", 
+        "name": "wifi6", 
+        "upload_image": "icons/wifi6.png"
+    }
+},
+{
+    "pk": 17, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 7", 
+        "name": "wifi7", 
+        "upload_image": "icons/wifi7.png"
+    }
+},
+{
+    "pk": 18, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 8", 
+        "name": "wifi8", 
+        "upload_image": "icons/wifi8.png"
+    }
+},
+{
+    "pk": 19, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Wifi 9", 
+        "name": "wifi9", 
+        "upload_image": "icons/wifi9.png"
+    }
+},
+{
+    "pk": 24, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Blinking Dot", 
+        "name": "BlinkingDot", 
+        "upload_image": "uploaded/icons/2014-09-24/2014-09-24-19-08-41_Radwin-Critical.ico"
+    }
+},
+{
+    "pk": 25, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "Test", 
+        "name": "Test", 
+        "upload_image": "uploaded/icons/2014-09-24/2014-09-24-19-09-22_speedhump.png"
+    }
+},
+{
+    "pk": 26, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "ConnectionOk", 
+        "name": "ConnectionOk", 
+        "upload_image": "uploaded/icons/2014-09-25/2014-09-25-13-55-41_SM-Green.png"
+    }
+},
+{
+    "pk": 27, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "ConnectionWarning", 
+        "name": "ConnectionWarning", 
+        "upload_image": "uploaded/icons/2014-09-25/2014-09-25-13-55-24_SM-Orange.png"
+    }
+},
+{
+    "pk": 28, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "ConnectionCritical", 
+        "name": "ConnectionCritical", 
+        "upload_image": "uploaded/icons/2014-09-25/2014-09-25-13-55-08_SM-Red.png"
+    }
+},
+{
+    "pk": 29, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "PTPCritical", 
+        "name": "PTPCritical", 
+        "upload_image": "uploaded/icons/2014-09-25/2014-09-25-13-58-16_P2P-Red.png"
+    }
+},
+{
+    "pk": 30, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "PTPWarning", 
+        "name": "PTPWarning", 
+        "upload_image": "uploaded/icons/2014-09-25/2014-09-25-13-58-37_P2P-Orange.png"
+    }
+},
+{
+    "pk": 31, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "PTPNormal", 
+        "name": "PTPNormal", 
+        "upload_image": "uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png"
+    }
+},
+{
+    "pk": 32, 
+    "model": "inventory.iconsettings", 
+    "fields": {
+        "alias": "accessdenied", 
+        "name": "accessdenied", 
+        "upload_image": "uploaded/icons/2014-09-25/2014-09-25-23-43-48_accesdenied.png"
+    }
+},
+{
+    "pk": 1, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "RadwinUAS", 
+        "data_source": 3, 
+        "technology": 2, 
+        "name": "RadwinUAS", 
+        "service": 5
+    }
+},
+{
+    "pk": 2, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "Radwin RSSI", 
+        "data_source": 1, 
+        "technology": 2, 
+        "name": "RadwinRSSI", 
+        "service": 1
+    }
+},
+{
+    "pk": 3, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "Estimated Throughput", 
+        "data_source": 4, 
+        "technology": 2, 
+        "name": "EstimatedThroughput", 
+        "service": 6
+    }
+},
+{
+    "pk": 4, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "Radwin Uptime", 
+        "data_source": 2, 
+        "technology": 2, 
+        "name": "RadwinUptime", 
+        "service": 4
+    }
+},
+{
+    "pk": 5, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "CambiumUptime", 
+        "data_source": 2, 
+        "technology": 4, 
+        "name": "CambiumUptime", 
+        "service": 28
+    }
+},
+{
+    "pk": 6, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "CambiumDLRSSI", 
+        "data_source": 33, 
+        "technology": 4, 
+        "name": "CambiumDLRSSI", 
+        "service": 33
+    }
+},
+{
+    "pk": 7, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "CambiumDLJitterLP", 
+        "data_source": 32, 
+        "technology": 4, 
+        "name": "CambiumDLJitterLP", 
+        "service": 34
+    }
+},
+{
+    "pk": 8, 
+    "model": "inventory.livepollingsettings", 
+    "fields": {
+        "alias": "Cambium", 
+        "data_source": 32, 
+        "technology": 4, 
+        "name": "CambiumUAT", 
+        "service": 34
+    }
+},
+{
+    "pk": 1, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "10", 
+        "range4_end": "7", 
+        "range8_start": "14", 
+        "range3_start": "4", 
+        "range1_start": "0", 
+        "range2_start": "2", 
+        "range7_start": "12", 
+        "range1_end": "1", 
+        "live_polling_template": 1, 
+        "range10_start": "18", 
+        "range5_start": "8", 
+        "range3_end": "5", 
+        "range9_end": "17", 
+        "range10_end": "19", 
+        "range8_end": "15", 
+        "range2_end": "3", 
+        "name": "RadwinUAS", 
+        "range5_end": "9", 
+        "range9_start": "16", 
+        "range6_end": "11", 
+        "alias": "Radwin UAS", 
+        "range7_end": "13", 
+        "range4_start": "6"
+    }
+},
+{
+    "pk": 2, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "-49", 
+        "range4_end": "-60", 
+        "range8_start": "-29", 
+        "range3_start": "-79", 
+        "range1_start": "-100", 
+        "range2_start": "-89", 
+        "range7_start": "-39", 
+        "range1_end": "-90", 
+        "live_polling_template": 2, 
+        "range10_start": "-9", 
+        "range5_start": "-59", 
+        "range3_end": "-70", 
+        "range9_end": "-10", 
+        "range10_end": "0", 
+        "range8_end": "-20", 
+        "range2_end": "-80", 
+        "name": "RadwinRSSI", 
+        "range5_end": "-50", 
+        "range9_start": "-19", 
+        "range6_end": "-40", 
+        "alias": "Radwin-P2P-RSSI-TH", 
+        "range7_end": "-30", 
+        "range4_start": "-69"
+    }
+},
+{
+    "pk": 3, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "", 
+        "range4_end": "", 
+        "range8_start": "", 
+        "range3_start": "201", 
+        "range1_start": "0", 
+        "range2_start": "101", 
+        "range7_start": "", 
+        "range1_end": "100", 
+        "live_polling_template": 3, 
+        "range10_start": "", 
+        "range5_start": "", 
+        "range3_end": "300", 
+        "range9_end": "", 
+        "range10_end": "", 
+        "range8_end": "", 
+        "range2_end": "200", 
+        "name": "EstimatedThroughput", 
+        "range5_end": "", 
+        "range9_start": "", 
+        "range6_end": "", 
+        "alias": "Estimated Throughput", 
+        "range7_end": "", 
+        "range4_start": ""
+    }
+},
+{
+    "pk": 4, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "", 
+        "range4_end": "", 
+        "range8_start": "", 
+        "range3_start": "", 
+        "range1_start": "0", 
+        "range2_start": "", 
+        "range7_start": "", 
+        "range1_end": "1000000", 
+        "live_polling_template": 4, 
+        "range10_start": "", 
+        "range5_start": "", 
+        "range3_end": "", 
+        "range9_end": "", 
+        "range10_end": "", 
+        "range8_end": "", 
+        "range2_end": "", 
+        "name": "RadwinUptime", 
+        "range5_end": "", 
+        "range9_start": "", 
+        "range6_end": "", 
+        "alias": "Radwin Uptime", 
+        "range7_end": "", 
+        "range4_start": ""
+    }
+},
+{
+    "pk": 5, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "", 
+        "range4_end": "", 
+        "range8_start": "", 
+        "range3_start": "-69", 
+        "range1_start": "-90", 
+        "range2_start": "-79", 
+        "range7_start": "", 
+        "range1_end": "-80", 
+        "live_polling_template": 2, 
+        "range10_start": "", 
+        "range5_start": "", 
+        "range3_end": "0", 
+        "range9_end": "", 
+        "range10_end": "", 
+        "range8_end": "", 
+        "range2_end": "-70", 
+        "name": "Normal_RSSI", 
+        "range5_end": "", 
+        "range9_start": "", 
+        "range6_end": "", 
+        "alias": "Normal_RSSI", 
+        "range7_end": "", 
+        "range4_start": ""
+    }
+},
+{
+    "pk": 6, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "", 
+        "range4_end": "-30", 
+        "range8_start": "", 
+        "range3_start": "-49", 
+        "range1_start": "-90", 
+        "range2_start": "-69", 
+        "range7_start": "", 
+        "range1_end": "-70", 
+        "live_polling_template": 2, 
+        "range10_start": "", 
+        "range5_start": "", 
+        "range3_end": "-40", 
+        "range9_end": "", 
+        "range10_end": "", 
+        "range8_end": "", 
+        "range2_end": "-50", 
+        "name": "RSSI-UAT", 
+        "range5_end": "", 
+        "range9_start": "", 
+        "range6_end": "", 
+        "alias": "RSSI-UAT", 
+        "range7_end": "", 
+        "range4_start": "-39"
+    }
+},
+{
+    "pk": 7, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "", 
+        "range4_end": "", 
+        "range8_start": "", 
+        "range3_start": "", 
+        "range1_start": "0", 
+        "range2_start": "10001", 
+        "range7_start": "", 
+        "range1_end": "10000", 
+        "live_polling_template": 5, 
+        "range10_start": "", 
+        "range5_start": "", 
+        "range3_end": "", 
+        "range9_end": "", 
+        "range10_end": "", 
+        "range8_end": "", 
+        "range2_end": "20000", 
+        "name": "CambiumUptimeTH", 
+        "range5_end": "", 
+        "range9_start": "", 
+        "range6_end": "", 
+        "alias": "CambiumUptimeTH", 
+        "range7_end": "", 
+        "range4_start": ""
+    }
+},
+{
+    "pk": 8, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "", 
+        "range4_end": "", 
+        "range8_start": "", 
+        "range3_start": "-29.9999", 
+        "range1_start": "-90", 
+        "range2_start": "-59.99999", 
+        "range7_start": "", 
+        "range1_end": "-60", 
+        "live_polling_template": 6, 
+        "range10_start": "", 
+        "range5_start": "", 
+        "range3_end": "0", 
+        "range9_end": "", 
+        "range10_end": "", 
+        "range8_end": "", 
+        "range2_end": "-30", 
+        "name": "CambiumDLRSSITH", 
+        "range5_end": "", 
+        "range9_start": "", 
+        "range6_end": "", 
+        "alias": "CambiumDLRSSITH", 
+        "range7_end": "", 
+        "range4_start": ""
+    }
+},
+{
+    "pk": 9, 
+    "model": "inventory.thresholdconfiguration", 
+    "fields": {
+        "range6_start": "", 
+        "range4_end": "", 
+        "range8_start": "", 
+        "range3_start": "6", 
+        "range1_start": "0", 
+        "range2_start": "3", 
+        "range7_start": "", 
+        "range1_end": "2.9999", 
+        "live_polling_template": 7, 
+        "range10_start": "", 
+        "range5_start": "", 
+        "range3_end": "10", 
+        "range9_end": "", 
+        "range10_end": "", 
+        "range8_end": "", 
+        "range2_end": "5.9999", 
+        "name": "CambiumDLJitterTC", 
+        "range5_end": "", 
+        "range9_start": "", 
+        "range6_end": "", 
+        "alias": "CambiumDLJitterTC", 
+        "range7_end": "", 
+        "range4_start": ""
+    }
+},
+{
+    "pk": 1, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 1, 
+        "alias": "Radwin UAS", 
+        "is_global": false, 
+        "icon_settings": "[{u'icon_settings10': u'icons/mobilephonetower1.png'}, {u'icon_settings1': u'icons/mobilephonetower10.png'}, {u'icon_settings3': u'icons/mobilephonetower8.png'}, {u'icon_settings2': u'icons/mobilephonetower9.png'}, {u'icon_settings5': u'icons/mobilephonetower6.png'}, {u'icon_settings4': u'icons/mobilephonetower7.png'}, {u'icon_settings7': u'icons/mobilephonetower4.png'}, {u'icon_settings6': u'icons/mobilephonetower5.png'}, {u'icon_settings9': u'icons/mobilephonetower2.png'}, {u'icon_settings8': u'icons/mobilephonetower3.png'}]", 
+        "name": "RadwinUAS"
+    }
+},
+{
+    "pk": 4, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 4, 
+        "alias": "Radwin Uptime", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'icons/mobilephonetower1.png'}]", 
+        "name": "RadwinUptime"
+    }
+},
+{
+    "pk": 5, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 2, 
+        "alias": "Radwin RSSI", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'icons/mobilephonetower1.png'}, {u'icon_settings3': u'icons/wifi8.png'}, {u'icon_settings2': u'icons/wifi9.png'}, {u'icon_settings5': u'icons/wifi6.png'}, {u'icon_settings4': u'icons/wifi7.png'}, {u'icon_settings6': u'icons/wifi5.png'}, {u'icon_settings9': u'icons/wifi2.png'}, {u'icon_settings8': u'icons/wifi3.png'}]", 
+        "name": "RadwinRSSI"
+    }
+},
+{
+    "pk": 6, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 3, 
+        "alias": "Radwin Estimated Throughput", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png'}, {u'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-13-58-16_P2P-Red.png'}, {u'icon_settings2': u'uploaded/icons/2014-09-25/2014-09-25-13-58-37_P2P-Orange.png'}]", 
+        "name": "RadwinEstimatedThroughput"
+    }
+},
+{
+    "pk": 7, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 5, 
+        "alias": "Normal_RSSI", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png'}, {u'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-13-58-16_P2P-Red.png'}, {u'icon_settings2': u'uploaded/icons/2014-09-25/2014-09-25-13-58-37_P2P-Orange.png'}]", 
+        "name": "Normal_RSSI"
+    }
+},
+{
+    "pk": 10, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 7, 
+        "alias": "CambiumUptimeTS", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'uploaded/icons/2014-09-25/2014-09-25-13-55-24_SM-Orange.png'}, {u'icon_settings2': u'uploaded/icons/2014-09-25/2014-09-25-13-55-08_SM-Red.png'}]", 
+        "name": "CambiumUptimeTS"
+    }
+},
+{
+    "pk": 11, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 8, 
+        "alias": "CambiumDLRSSITS", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'icons/wifi5.png'}, {u'icon_settings3': u'icons/wifi6.png'}, {u'icon_settings2': u'uploaded/icons/2014-09-26/2014-09-26-11-56-11_SM-GIF.gif'}]", 
+        "name": "CambiumDLRSSITS"
+    }
+},
+{
+    "pk": 12, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 9, 
+        "alias": "CambiumDLJitterTS", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'uploaded/icons/2014-09-25/2014-09-25-13-55-41_SM-Green.png'}, {u'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-13-55-08_SM-Red.png'}, {u'icon_settings2': u'uploaded/icons/2014-09-25/2014-09-25-13-55-24_SM-Orange.png'}]", 
+        "name": "CambiumDLJitterTS"
+    }
+},
+{
+    "pk": 13, 
+    "model": "inventory.thematicsettings", 
+    "fields": {
+        "threshold_template": 8, 
+        "alias": "UAT", 
+        "is_global": true, 
+        "icon_settings": "[{u'icon_settings1': u'uploaded/icons/2014-09-25/2014-09-25-23-43-48_accesdenied.png'}, {u'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-23-43-48_accesdenied.png'}, {u'icon_settings2': u'uploaded/icons/2014-09-25/2014-09-25-23-43-48_accesdenied.png'}]", 
+        "name": "UAT"
+    }
+},
+{
+    "pk": 31, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 2, 
+        "thematic_template": 7, 
+        "user_profile": 11
+    }
+},
+{
+    "pk": 39, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 4, 
+        "thematic_template": 13, 
+        "user_profile": 4
+    }
+},
+{
+    "pk": 43, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 4, 
+        "thematic_template": 11, 
+        "user_profile": 31
+    }
+},
+{
+    "pk": 51, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 2, 
+        "thematic_template": 5, 
+        "user_profile": 28
+    }
+},
+{
+    "pk": 52, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 2, 
+        "thematic_template": 7, 
+        "user_profile": 26
+    }
+},
+{
+    "pk": 53, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 4, 
+        "thematic_template": 13, 
+        "user_profile": 2
+    }
+},
+{
+    "pk": 57, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 4, 
+        "thematic_template": 11, 
+        "user_profile": 12
+    }
+},
+{
+    "pk": 59, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 2, 
+        "thematic_template": 7, 
+        "user_profile": 12
+    }
+},
+{
+    "pk": 61, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 4, 
+        "thematic_template": 12, 
+        "user_profile": 26
+    }
+},
+{
+    "pk": 62, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 4, 
+        "thematic_template": 12, 
+        "user_profile": 28
+    }
+},
+{
+    "pk": 65, 
+    "model": "inventory.userthematicsettings", 
+    "fields": {
+        "thematic_technology": 4, 
+        "thematic_template": 12, 
+        "user_profile": 11
+    }
+}
+]

@@ -1,0 +1,92 @@
+{% extends "department/department.html" %}
+{% load staticfiles %}
+
+{% block content_title %}User Detail{% endblock %}
+{% block content_description %}Detail of user{% endblock %}
+{% block content %}
+    <style type="text/css">
+        #user_profile table tr td:first-child {
+            font-weight: bold;
+        }
+        #user_profile table tr td {
+            font-weight: normal;
+        }
+    </style>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> USER Detail - {{ object.username }}</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+            </div>
+        </div>
+        <div class="box-body">
+            <div id="user_profile" class="col-md-6 col-md-offset-3">
+                <table class="table table-hover table-bordered">
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> First Name</td>
+                        <td>{{ object.first_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Last Name</td>
+                        <td>{{ object.last_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Email</td>
+                        <td>{{ object.email }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Role</td>
+                        <td>
+                            {% for role in object.role.all %}
+                                {{ role }}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Parent</td>
+                        <td>{{ object.parent }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> User Group</td>
+                        <td>
+                            {% for department in object.department_set.all %}
+                                {{ department.user_group }}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Company</td>
+                        <td>{{ object.company }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Designation</td>
+                        <td>{{ object.designation }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Phone Number</td>
+                        <td>{{ object.phone_number }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Address</td>
+                        <td>{{ object.address }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Created On</td>
+                        <td>{{ object.date_joined }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Last Login</td>
+                        <td>{{ object.last_login }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}

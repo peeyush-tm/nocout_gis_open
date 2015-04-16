@@ -1,0 +1,250 @@
+[
+{
+  "pk": 1, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 1", 
+    "name": "tower1", 
+    "upload_image": "icons/mobilephonetower1.png"
+  }
+},
+{
+  "pk": 2, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 2", 
+    "name": "tower2", 
+    "upload_image": "icons/mobilephonetower2.png"
+  }
+},
+{
+  "pk": 3, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 3", 
+    "name": "tower3", 
+    "upload_image": "icons/mobilephonetower3.png"
+  }
+},
+{
+  "pk": 4, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 4", 
+    "name": "tower4", 
+    "upload_image": "icons/mobilephonetower4.png"
+  }
+},
+{
+  "pk": 5, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 5", 
+    "name": "tower5", 
+    "upload_image": "icons/mobilephonetower5.png"
+  }
+},
+{
+  "pk": 6, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 6", 
+    "name": "tower6", 
+    "upload_image": "icons/mobilephonetower6.png"
+  }
+},
+{
+  "pk": 7, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 7", 
+    "name": "tower7", 
+    "upload_image": "icons/mobilephonetower7.png"
+  }
+},
+{
+  "pk": 8, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 8", 
+    "name": "tower8", 
+    "upload_image": "icons/mobilephonetower8.png"
+  }
+},
+{
+  "pk": 9, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 9", 
+    "name": "tower9", 
+    "upload_image": "icons/mobilephonetower9.png"
+  }
+},
+{
+  "pk": 10, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Tower 10", 
+    "name": "tower10", 
+    "upload_image": "icons/mobilephonetower10.png"
+  }
+},
+{
+  "pk": 11, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 1", 
+    "name": "wifi1", 
+    "upload_image": "icons/wifi1.png"
+  }
+},
+{
+  "pk": 12, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 2", 
+    "name": "wifi2", 
+    "upload_image": "icons/wifi2.png"
+  }
+},
+{
+  "pk": 13, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 3", 
+    "name": "wifi3", 
+    "upload_image": "icons/wifi3.png"
+  }
+},
+{
+  "pk": 14, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 4", 
+    "name": "wifi4", 
+    "upload_image": "icons/wifi4.png"
+  }
+},
+{
+  "pk": 15, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 5", 
+    "name": "wifi5", 
+    "upload_image": "icons/wifi5.png"
+  }
+},
+{
+  "pk": 16, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 6", 
+    "name": "wifi6", 
+    "upload_image": "icons/wifi6.png"
+  }
+},
+{
+  "pk": 17, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 7", 
+    "name": "wifi7", 
+    "upload_image": "icons/wifi7.png"
+  }
+},
+{
+  "pk": 18, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 8", 
+    "name": "wifi8", 
+    "upload_image": "icons/wifi8.png"
+  }
+},
+{
+  "pk": 19, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 9", 
+    "name": "wifi9", 
+    "upload_image": "icons/wifi9.png"
+  }
+},
+{
+  "pk": 20, 
+  "model": "inventory.iconsettings", 
+  "fields": {
+    "alias": "Wifi 10", 
+    "name": "wifi10", 
+    "upload_image": "icons/wifi10.png"
+  }
+},
+{
+  "pk": 1, 
+  "model": "inventory.livepollingsettings", 
+  "fields": {
+    "alias": "LP 1", 
+    "data_source": 3, 
+    "technology": 2, 
+    "name": "lp1", 
+    "service": 5
+  }
+},
+{
+  "pk": 2, 
+  "model": "inventory.livepollingsettings", 
+  "fields": {
+    "alias": "P2P-RSSI", 
+    "data_source": 1, 
+    "technology": 2, 
+    "name": "p2p-rssi", 
+    "service": 1
+  }
+},
+{
+  "pk": 1, 
+  "model": "inventory.thresholdconfiguration", 
+  "fields": {
+    "alias": "TC 1", 
+    "live_polling_template": 1, 
+    "warning": "-60", 
+    "critical": "-80", 
+    "name": "tc1"
+  }
+},
+{
+  "pk": 2, 
+  "model": "inventory.thresholdconfiguration", 
+  "fields": {
+    "alias": "P2P-RSSI-TH", 
+    "live_polling_template": 2, 
+    "warning": "-50", 
+    "critical": "-80", 
+    "name": "p2p-rssi-th"
+  }
+},
+{
+  "pk": 1, 
+  "model": "inventory.thematicsettings", 
+  "fields": {
+    "gt_warning": 1, 
+    "name": "ts1", 
+    "gt_critical": 2, 
+    "alias": "TS 1", 
+    "bt_w_c": 2, 
+    "threshold_template": 1
+  }
+},
+{
+  "pk": 2, 
+  "model": "inventory.thematicsettings", 
+  "fields": {
+    "gt_warning": 11, 
+    "name": "p2p-rssi-ts", 
+    "gt_critical": 13, 
+    "alias": "P2P-RSSI-TS", 
+    "bt_w_c": 12, 
+    "threshold_template": 2
+  }
+}
+]

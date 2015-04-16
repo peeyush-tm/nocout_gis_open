@@ -1,0 +1,515 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing_url" page_type %}
+
+    {% if page_type == 'network' and device_technology|upper == 'P2P'  %}
+        {% breadcrumb_safe "PTP BH" "performance_listing_url" page_type  %}
+    {% else %}
+        {% if page_type == 'customer' and device_technology|upper == 'P2P'  %}
+            {% breadcrumb_safe "PTP" "performance_listing_url" page_type  %}
+        {% else %}
+            {% breadcrumb_safe device_technology|upper "performance_listing_url" page_type  %}
+        {% endif %}
+    {% endif %}
+    {% breadcrumb_safe realdevice.ip_address "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}
+    {{ page_title }} Live <span style="font-size: 25px;">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</span>
+{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+
+    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
+{% endblock %}
+
+{% block content %}
+    <style>
+        .perfContainerBlock .box-title .pull-right .list-inline > li {
+            max-width: 200px !important;
+        }
+        .perfContainerBlock .left_tabs_container {
+            /*padding: 0px !important;*/
+        }
+        .inner_tab_container .panel-body {
+            padding: 10px !important;
+        }
+        #tableContainer {
+            padding-left: 0px;
+        }
+        .top_perf_tabs {
+            top: 0px !important;
+            float: left;
+            padding-left: 15px;
+            margin-right: 0px !important;
+        }
+        .box .header-tabs .top_perf_tabs > li > a {
+            padding: 7px 5px !important;
+        }
+        .top_perf_tab_content, .top_perf_tab_content .panel .panel-body {
+            overflow: auto;
+        }
+        .chart_container h3, .last_updated_container h3, #latestStatusContainer h3 {
+            margin-top: 0px;
+        }
+    </style>
+    <!--Device Status Block Start-->
+    <div class="well well-sm" id="status_container" style="overflow:auto;">
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
+        </div>
+        <div class="clearfix"></div>
+        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+        <div class="clearfix"></div>
+    </div>
+    <!--Device Status Block End-->
+    <!--Single Device Live Perf Start-->
+    <div class='box border lite perfContainerBlock'>
+        <div class='box-title'>
+            <h4 class="hide">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</h4>
+            <!-- Filters Block - Start-->
+            <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+                <li class="date_range_filter_container">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <i class="fa fa-calendar"></i>
+                        </span>
+                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
+                    </div>
+                </li>
+                <li>
+                    <button id="apply_filter" class="btn  btn-default btn-sm">
+                        <i class="fa fa-filter"></i> Apply Filter
+                    </button>
+                </li>
+                <li>
+                    <button id="reset_filter" class="btn  btn-warning btn-sm">
+                        <i class="fa fa-times"></i> Reset Filter
+                    </button>
+                </li>
+                <li id="display_type_container">
+                    <label class="checkbox-inline">
+                        <input type="radio" id="display_chart" name="item_type" value="chart" checked="checked"/>  Display Chart
+                    </label>
+                    <label class="checkbox-inline">
+                        <input type="radio" id="display_table" name="item_type" value="table"/>  Display Table
+                    </label>
+                </li>
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
+                        <i class="fa fa-dropbox text-primary"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="alerts_link_tag" title="Alerts" target="_blank">
+                        <i class="fa fa-warning text-danger"></i>
+                    </a>
+                </li>
+            </ul>
+            <!--Filters Block End-->
+            <div class="clearfix"></div>
+        </div>
+        <div class='box-body'>
+            <!-- <div id="tableContainer" class="box-body"> -->
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs top_perf_tabs">
+                    <li>
+                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Utilization</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">IA Table</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Availability</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Inventory Status</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Status</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#service_perf_tab" id="service_perf" title="Service Performance" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Performance</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Network Performance</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="tab-content top_perf_tab_content">
+                <div class="tab-pane active" id="network_perf_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Network Performance Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="service_perf_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Service Performance Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="service_status_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Service Status Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane" id="inventory_status_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Inventory Status Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="availability_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Availability Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane hide" id="topology_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching IA Table Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="utilization_top_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div class="tabbable tabs-left">
+                                <i class="fa fa-spinner fa-spin" title="Fetching Utilization Services"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+        <!-- </div> -->
+        <div class="clearfix"></div>
+    </div>
+    <!--Single Device Live Perf End-->
+    <!-- SPARKLINES -->
+    <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+    <!--Highcharts Library-->
+    <script src={% static "js/highcharts.js" %}></script>
+    <script src={% static "js/highcharttheme.js" %}></script>
+    <script src={% static "js/highchartstable.js" %}></script>
+    <script src={% static "js/exporting.js" %}></script>
+    <!--Our Custom Script-->
+    <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
+    <!--Our Common Utilities Script-->
+    <script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Bootstrap switch lib for BS maintenance infowindow -->
+    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <script type="text/javascript">
+        /*Global Variables*/
+        var perfInstance = "",
+            dateRangePicker_domId = "reservationtime",
+            current_device = "",
+            device_technology = "",
+            live_poll_condition1 = "",
+            live_poll_condition2 = "",
+            ptp_tech_list = ['ptp','p2p','ptp bh'],
+            is_perf_polling_enabled = false,
+            show_historical_on_performance = false,
+            base_url = "",
+            startDate = "",
+            endDate = "",
+            dataTableInstance = "";
+
+
+        $(document).ready(function (e) {
+
+            var statusUrl = "{{ get_status_url }}" ? base_url+"/"+"{{ get_status_url }}"+"/" : "",
+                serviceUrl = "{{ get_services_url }}" ? base_url+"/"+"{{ get_services_url }}" : "",
+                inventory_url = "{{ inventory_page_url }}" ? base_url+""+"{{ inventory_page_url }}" : "",
+                alert_url = "{{ alert_page_url }}" ? base_url+""+"{{ alert_page_url }}" : "",
+                page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer",
+                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
+
+            current_device = "{{ device.id }}";
+            device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
+            is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
+            is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            {% if settings.HISTORICAL_ON_PERFORMANCE %}
+                show_historical_on_performance = true;
+            {% endif %}
+            
+            // If call for utilization tab the reset tab cookie
+            if(is_util_tab) {
+                $.cookie('parent_tab_id', '', {path: '/', secure: true});
+            }
+
+            var current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
+
+
+            // Show/hide live polling button & chart container
+            live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
+            live_poll_condition2 = page_type_val == 'customer';
+            if(!live_poll_condition1 && !live_poll_condition2) {
+                $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+            }
+
+            if(inventory_url) {
+                $("#inventory_link_tag").attr("href",inventory_url);
+                $("#inventory_link_tag").removeClass("hide");
+            }
+
+            if(alert_url) {
+                $("#alerts_link_tag").attr("href",alert_url);
+                $("#alerts_link_tag").removeClass("hide");
+            }
+
+            // SET utc false for highcharts to show time in GMT+5:30
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+
+            // Create nocoutPerfLib instance to access its functions
+            perfInstance = new nocoutPerfLib();
+
+            perfInstance.togglePerfPageElements(page_type_val, current_device_technology)
+
+            /*To initialize date range picker*/
+            perfInstance.initDateRangePicker(dateRangePicker_domId);
+
+            /*To populate the status table*/
+            perfInstance.getStatus(statusUrl, current_device);
+
+            /*To populate the services tabs*/
+            perfInstance.getServices(serviceUrl, current_device);
+        });
+    
+        /**
+         * This event triggers when apply filter button clicked
+         * @event click
+         */
+        $("#apply_filter").on('click', function () {
+            if(startDate && endDate) {
+
+                if(show_historical_on_performance) {
+                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+                        service_id = active_inner_tab.attr("id").slice(0, -4),
+                        get_service_data_url = active_inner_tab.attr("url");
+                } else {
+                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                        service_id = active_inner_tab.attr("id").slice(0, -4),
+                        get_service_data_url = active_inner_tab.attr("url");
+                }
+
+                if(get_service_data_url && service_id && current_device) {
+                    perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                    // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
+                }
+            } else {
+                alert("Select Start & End Date");
+            }
+        });
+
+        /**
+         * This event triggers when reset filter button clicked
+         * @event click
+         */
+        $("#reset_filter").on('click', function () {
+            if(startDate && endDate) {
+                $('#reservationtime').val('');
+                startDate = "";
+                endDate = "";
+
+                if(show_historical_on_performance) {
+                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+                        service_id = active_inner_tab.attr("id").slice(0, -4),
+                        get_service_data_url = active_inner_tab.attr("url");
+                } else {
+                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                        service_id = active_inner_tab.attr("id").slice(0, -4),
+                        get_service_data_url = active_inner_tab.attr("url");
+                }
+
+                if(get_service_data_url && service_id && current_device) {
+                    // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
+                    perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                }
+            }
+        });
+
+        /**
+         * This event triggers when any parent tab is clicked and 
+           it loads first inner tab when any parent tab is clicked
+         * @event click
+         */
+        $("#network_perf,\
+           #service_perf,\
+           #service_status,\
+           #inventory_status,\
+           #availability,\
+           #topology,\
+           #utilization_top"
+        ).click(function (e) {
+            fetchFirstTabContent(this);
+        });
+
+        /**
+         * This function load the first inner tab content when any parent tab is clicked.
+         * @method fetchFirstTabContent
+         * @param this_pointer {Object}, It contains the clicked tab 'this' pointer object
+         */
+        function fetchFirstTabContent(this_pointer) {
+
+            var tab_id = $(this_pointer).attr("href") ? $(this_pointer).attr("href").split("#")[1] : "",
+                li_count = $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li").length;
+
+            // Save parent tab reference in cookie
+            $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
+
+            if (li_count > 0) {
+                var activeTabId = $.cookie('activeTabId');
+                //if activeTabId is stored in cookie and tabEL exist.
+                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length) {
+                    $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
+                } else {
+                    $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
+                }
+            }
+        }
+
+
+        /**
+         * This function load the first inner inner tab content when any inner tab is clicked.
+         * @event click
+         */
+        $("body").delegate('.left_tabs_container li','click',function(e) {
+            var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
+            if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
+                $(".inner_tab_container #"+tab_content_id+"_block .inner_inner_tab li:first-child a").trigger('click');
+            }
+        });
+
+        /**
+         * This event triggers when poll now button clicked
+         * @event click
+         */
+        $("body").delegate('.perf_poll_now','click',function(e) {
+            
+            var sparkline_dom_id = 'perf_live_poll_chart',
+                hidden_input_dom_id = 'perf_live_poll_input',
+                polled_val_shown_dom_id = "last_polled_val",
+                device_name = "{{ device.device_name }}",
+                current_active_tab_url = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("url"),
+                service_name = "",
+                ds_name = "",
+                container_id = "",
+                block_dom_id_str = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("href");
+
+            if(current_active_tab_url && current_active_tab_url.indexOf("service/") > -1 && current_active_tab_url.indexOf("service_data_source/") > -1 ) {
+                service_name = current_active_tab_url ? current_active_tab_url.split("service/")[1].split("/")[0] : "";
+                ds_name = current_active_tab_url ? current_active_tab_url.split("service_data_source/")[1].split("/")[0] : "";
+            }
+
+            if(block_dom_id_str && block_dom_id_str.indexOf("#") > -1) {
+                container_id = "last_updated_"+block_dom_id_str.split("#")[1];
+            }
+
+            if(live_poll_condition1 || live_poll_condition2) {
+                if(device_name.length > 0 && service_name.length > 0 && ds_name.length > 0) {
+                    // Disable the "Poll Now" button
+                    $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
+
+                    // Call function to fetch live polling data
+                    nocout_livePollCurrentDevice(
+                        service_name,
+                        ds_name,
+                        [device_name],
+                        container_id,
+                        sparkline_dom_id,
+                        hidden_input_dom_id,
+                        polled_val_shown_dom_id,
+                        function(response) {
+                            // console.log(response);
+                        }
+                    );
+                }
+            }
+
+        });
+    </script>
+
+{% endblock %}
+
+
+{% block load_js %}
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

@@ -2,8 +2,32 @@
 *.pot
 *.pyc
 local_settings.py
+local_requirements.txt
 nout/
 nout/*
+
+# vim.gitignore
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
 *~
 nocout/.pydevproject
 nocout/.project
+nocout/.idea
+nocout/venv
+
+.idea/
+.idea/*
+
+^static/*
+^media/*
+^nocout/static/*
+^nocout/media/*
+
+##newrelic conf file
+newrelic.ini
+
+##uwsgi touch reload file
+true

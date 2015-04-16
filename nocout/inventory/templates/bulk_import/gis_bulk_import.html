@@ -1,0 +1,619 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Bulk Import" "javascript:;" %}
+    {% breadcrumb_safe "Gis Inventory" "gis_inventory_bulk_import_list" %}
+    {% breadcrumb_safe "Import Inventory" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+{% block content_title %}GIS Import Bulk Import{% endblock %}
+{% block content_description %}GIS Import Bulk Import{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> SELECT FILE</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form enctype="multipart/form-data" action="/bulk_import/gis_inventory/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {# field.help_text #}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/bulk_import/')"><i class="fa fa-times"></i>Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row hide" id="preview_table">
+                <div class="col-md-12">
+                    <!-- BOX -->
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bar-chart-o"></i>Excel Preview</h4>
+                        </div>
+                        <div class="box-body" style="overflow-x: scroll">
+                            <table id="example-stats"
+                                   class="table table-stats table-condensed table-striped table-sortable">
+                                <thead id="excel_table_header"></thead>
+                                <tbody id="excel_table_table"></tbody>
+                                <thead id="excel_table_header_bottom"></thead>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- /BOX -->
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
+        <script type="text/javascript" src={% static "js/lodash/lodash.js" %}></script>
+        <script type="text/javascript" src={% static "js/shim/shim.js" %}></script>
+        <script type="text/javascript" src={% static "js/jszip/jszip.js" %}></script>
+        <script type="text/javascript" src={% static "js/js-xls/xls.js" %}></script>
+        <script type="text/javascript" src={% static "js/js-xlsx/xlsx.js" %}></script>
+        <script type="text/javascript" src={% static "js/js-xlsx/xlsx-reader.js" %}></script>
+    {% endblock %}
+    <script>
+        // dictionary containing all 'pts bs' fields
+        var ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
+                         'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance',
+                         'Throughput during acceptance', 'Date of acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU used',
+                         'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP',
+                         'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                         'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type',
+                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'TTSL CIRCUIT ID'];
+
+        // dictionary containing all 'pmp bs' fields
+        var pmp_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
+                         'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
+                         'ODU IP', 'Sector_name', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                         'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Sync Splitter Used(Y/N)',
+                         'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+                         'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                         'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
+                         'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID'];
+
+        // dictionary containing all 'wimax bs' fields
+        var wimax_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
+                           'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
+                           'IDU IP', 'Sector_name', 'PMP', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                           'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Installation of Splitter',
+                           'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+                           'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                           'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
+                           'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID'];
+
+        // dictionary containing all 'ptp ss' fields
+        var ptp_ss_fields = ['City', 'State', 'Ckt ID', 'Customer Name', 'Customer Address', 'BS NAME', 'Qos(BW)',
+                         'Latitide', 'Longitude', 'MIMO/Diversity', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance', 'Throughput during acceptance',
+                         'Date of acceptance', 'BH BSO', 'IP', 'MAC'];
+
+        // dictionary containing all 'pmp ss' fields
+        var pmp_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                         'Tower/Pole height', 'Antenna height', 'Polarisation', 'Antenna Type', 'SS mount type',
+                         'Ethernet Extender', 'Cable Length', 'DL RSSI during acceptance', 'DL CINR during acceptance',
+                         'Customer Address', 'Date of acceptance', 'SS IP', 'Lens/Reflector', 'Antenna Beamwidth'];
+
+        // dictionary containing all 'wimax ss' fields
+        var wimax_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                           'Tower/Pole height', 'Antenna height', 'Polarisation(Horizontal/Vertical)',
+                           'Antenna Type(Narrowbeam/Normal)', 'SS mount type (Wallmount/pole mount/Mast)',
+                           'Ethernet Extender (Yes/no)', 'Cable Length', 'DL RSSI during acceptance',
+                           'DL CINR during acceptance', 'Customer Address', 'Date of acceptance', 'SS IP'];
+
+        // regex for splitting a string by commas but ignore commas within double-quotes
+        var csvRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
+        // initialize excel file (workbook)
+        var wb;
+
+        // initialize field settings
+        $(document).ready(function () {
+
+            // changing labels of form fields
+            $("label[for=id_bs_sheet]").text('Wimax/PMP BS Sheet');
+            $("label[for=id_ss_sheet]").text('Wimax/PMP SS Sheet');
+            $("label[for=id_ptp_sheet]").text('PTP Sheet');
+
+            // modify image upload field
+            var image_uploader = "#id_file_upload";
+            $(image_uploader).bootstrapFileInput();
+            $(image_uploader).prev().text("Upload file");
+
+            // initialize the select2 selectbox.
+            $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
+
+            $("#example-stats").tablecloth({
+                theme: "default",
+                sortable: true,
+                condensed: true,
+                striped: true,
+                clean: true
+            });
+
+            // initialize select fields with 'Select' option
+            $("#id_bs_sheet").empty().append('<option value="">Select</option>');
+            $("#id_ss_sheet").empty().append('<option value="">Select</option>');
+            $("#id_ptp_sheet").empty().append('<option value="">Select</option>');
+            $("#id_backhaul_sheet").empty().append('<option value="">Select</option>');
+        });
+
+        // execute this everytime after uploading file
+        $('#id_file_upload').on('change', function (e) {
+
+            // if uploaded file extension is '.xls' or '.XLS' then execute this
+            if (this.files[0].name.split('.').pop().toUpperCase() === 'XLS') {
+                readFile(this.files[0], function (e) {
+                    // use result in callback...
+                    data = e.target.result;
+
+                    // reading excel(workbook) file
+                    wb = XLS.read(data, {type: 'binary'});
+
+                    // array containing excel file sheetnames
+                    var sheets = wb.SheetNames;
+
+                    // preparing bs sheets select menu options
+                    bs_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('BS') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        bs_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing ss sheets select menu options
+                    ss_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if ((sheets[i].indexOf('SM') != -1) || (sheets[i].indexOf('SS') != -1)) {
+                            ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        }
+                    }
+
+                    // preparing ptp sheets select menu options
+                    ptp_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('PTP') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        ptp_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing backhaul sheet select menu options
+                    backhaul_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('Backhaul') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        backhaul_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // modifying sheet select options to current file sheet names
+                    $("#id_bs_sheet").empty().append(bs_sheets_options);
+                    $("#id_ss_sheet").empty().append(ss_sheets_options);
+                    $("#id_ptp_sheet").empty().append(ptp_sheets_options);
+                    $("#id_backhaul_sheet").empty().append(backhaul_sheets_options);
+                });
+            }
+
+            // if uploaded file extension is '.xlsx' or '.XLSX'
+            else if (this.files[0].name.split('.').pop().toUpperCase() === 'XLSX') {
+                readFile(this.files[0], function (e) {
+                    // use result in callback...
+                    data = e.target.result;
+
+                    // reading excel(workbook) file
+                    wb = XLSX.read(data, {type: 'binary'});
+
+                    // array containing excel file sheetnames
+                    var sheets = wb.SheetNames;
+                    // preparing bs sheets select menu options
+                    bs_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('BS') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        bs_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing ss sheets select menu options
+                    ss_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if ((sheets[i].indexOf('SM') != -1) || (sheets[i].indexOf('SS') != -1)) {
+                            ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        }
+                    }
+
+                    // preparing ptp sheets select menu options
+                    ptp_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('PTP') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        ptp_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing backhaul sheet select menu options
+                    backhaul_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('Backhaul') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        backhaul_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // modifying sheet select options to current file sheet names
+                    $("#id_bs_sheet").empty().append(bs_sheets_options);
+                    $("#id_ss_sheet").empty().append(ss_sheets_options);
+                    $("#id_ptp_sheet").empty().append(ptp_sheets_options);
+                    $("#id_backhaul_sheet").empty().append(backhaul_sheets_options);
+                });
+            }
+
+            // if uploaded file extension is other than '.xls' or '.xlsx'
+            else {
+                bootbox.alert("Please only choose microsoft excel (.xls or .xlsx) files.");
+
+                // reset file upload field
+                $('#id_file_upload').val('');
+
+                // reset sheet select menu options
+                sheets_options = '<option value="">Select</option>';
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").empty().append(sheets_options);
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_ss_sheet").empty().append(sheets_options);
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").empty().append(sheets_options);
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").empty().append(sheets_options);
+            }
+        });
+
+        // file reader
+        function readFile(file, onLoadCallback) {
+            var reader = new FileReader();
+            reader.onload = onLoadCallback;
+            reader.readAsBinaryString(file);
+        }
+
+        // reset 'PTP' select menu if either of 'BS', 'SS' or 'Backhaul' has value (i.e. selected value)
+        $("#id_ss_sheet").change(function () {
+            if ($("#id_ss_sheet").val()) {
+
+                // get sheet name
+                var sheet_name = $("#id_ss_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#excel_table_table").empty().html(output);
+
+                // changing content of table header
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
+
+                // reset bs sheet select menu
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").prop('selectedIndex',0);
+
+                // reset ptp sheet select menu
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").prop('selectedIndex', 0);
+
+                // reset backhaul sheet select menu
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").prop('selectedIndex',0);
+            }
+        });
+        $("#id_bs_sheet").change(function () {
+            if ($("#id_bs_sheet").val()) {
+
+                // get sheet name
+                var sheet_name = $("#id_bs_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#excel_table_table").empty().html(output);
+
+                // changing content of table header
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
+
+                // reset ss sheet select menu
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_ss_sheet").prop('selectedIndex',0);
+
+                // reset ptp sheet select menu
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").prop('selectedIndex', 0);
+
+                // reset backhaul sheet select menu
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").prop('selectedIndex',0);
+            }
+        });
+
+        // reset 'BS', 'SS' and 'Backhaul' select menu if 'PTP' has value (i.e. selected value)
+        $("#id_ptp_sheet").change(function () {
+            if ($("#id_ptp_sheet").val()) {
+                // get sheet name
+                var sheet_name = $("#id_ptp_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#excel_table_table").empty().html(output);
+
+                // changing content of table header
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
+
+                // reset bs sheet select menu
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").prop('selectedIndex',0);
+
+                // reset ss sheet select menu
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_ss_sheet").prop('selectedIndex',0);
+
+                // reset backhaul sheet select menu
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").prop('selectedIndex',0);
+            }
+        });
+
+        // reset 'BS', 'SS' and 'PTP' select menu if 'Backhaul' has value (i.e. selected value)
+        $("#id_backhaul_sheet").change(function () {
+            if ($("#id_backhaul_sheet").val()) {
+                // get sheet name
+                var sheet_name = $("#id_backhaul_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#excel_table_table").empty().html(output);
+
+                // changing content of table header
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
+
+                // reset bs sheet select menu
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").prop('selectedIndex',0);
+
+                // reset ss sheet select menu
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_ss_sheet").prop('selectedIndex',0);
+
+                // reset ptp sheet select menu
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").prop('selectedIndex',0);
+            }
+        });
+    </script>
+{% endblock %}

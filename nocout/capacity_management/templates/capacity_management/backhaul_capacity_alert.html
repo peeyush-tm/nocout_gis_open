@@ -1,0 +1,101 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-flask'></i> Capacity Management" "javascript:;" %}
+    {% breadcrumb_safe "Daily Alerts" "javascript:;" %}
+    {% breadcrumb_safe "Backhaul Augmentation" "BackhaulAugmentationAlertsHeaders" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}Backhaul Augmentation{% endblock %}
+{% block content_description %} Backhaul Augmentation List {% endblock %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+    <div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-flask"></i>BACKHAUL AUGMENTATION ALERT</h4>
+
+{#            <div class="tools hidden-xs">#}
+{#                <a href="#box-config" data-toggle="modal" class="config">#}
+{#                    <i class="fa fa-cog"></i>#}
+{#                </a>#}
+{#                <a href="javascript:;" class="reload">#}
+{#                    <i class="fa fa-refresh"></i>#}
+{#                </a>#}
+{#            </div>#}
+        </div>
+
+        <div class="box-body">
+            <!-- backhaul_capacity_alert_container Start-->
+            <div id="backhaul_capacity_alert_container" class="" style="overflow:auto;">
+                
+                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="backhaulAlertCapacityList">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+
+            </div>
+            <!-- backhaul_capacity_alert_container End-->
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<script type="text/javascript">
+    var dataTableInstance = "";
+    $(document).ready(function(e) {
+        /*Show the spinner*/
+        showSpinner();
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
+        /*Grid headers object*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+            ajax_url = '{% url "BackhaulAugmentationAlertsListing" %}';
+
+        var datatable_param_info = {
+            "table_title" : "Backhaul Augmentation Alerts",
+            "app_name" : "capacity_management",
+            "header_class_name" : "BackhaulAugmentationAlertsHeaders",
+            "data_class_name" : "BackhaulAugmentationAlertsListing",
+            "header_extra_param" : "{'download_excel': 'yes' }",
+            "data_extra_param" : "{'download_excel': 'yes' }"
+        };
+
+        dataTableInstance.createDataTable(
+            "backhaulAlertCapacityList",
+            gridHeadersObj,
+            ajax_url,
+            false,
+            datatable_param_info['table_title'],
+            datatable_param_info['app_name'],
+            datatable_param_info['header_class_name'],
+            datatable_param_info['data_class_name'],
+            datatable_param_info['header_extra_param'],
+            datatable_param_info['data_extra_param']
+        );
+    });
+
+</script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}

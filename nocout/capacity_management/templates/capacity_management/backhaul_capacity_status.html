@@ -1,0 +1,155 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-flask'></i> Capacity Management" "javascript:;" %}
+    {% breadcrumb_safe "Utilization Status" "javascript:;" %}
+    {% breadcrumb_safe "Backhaul Status" "BackhaulStatusHeaders" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+
+{% block content_title %}Backhaul Status{% endblock %}
+{% block content_description %}Backhaul Status List {% endblock %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+    <div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-flask"></i>BACKHAUL STATUS</h4>
+
+{#            <div class="tools hidden-xs">#}
+{#                <a href="#box-config" data-toggle="modal" class="config">#}
+{#                    <i class="fa fa-cog"></i>#}
+{#                </a>#}
+{#                <a href="javascript:;" class="reload">#}
+{#                    <i class="fa fa-refresh"></i>#}
+{#                </a>#}
+{#            </div>#}
+        </div>
+
+        <div class="box-body">
+            <!-- backaul_capacity_status_container Start-->
+            <div id="backaul_capacity_status_container" class="" style="overflow:auto;">
+                
+                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="backhaulStatusTable">
+                    <thead>
+                        <tr>
+                            <th class="hide" colspan="4" style="width:auto;" aria-label=""></th>
+
+                            <th colspan="7" style="text-align: center;">BACKHAUL</th>
+
+                            <th colspan="2" style="text-align: center;" aria-label="">Current DL</th>
+
+                            <th colspan="5" style="text-align: center;">DL (Last Day)</th>
+
+                            <th colspan="2" style="text-align: center;" aria-label="">Current UL</th>
+
+                            <th colspan="5" style="text-align: center;">UL (Last Day)</th>
+
+                            <th style="width:auto;" aria-label=""></th>
+                        </tr>
+                        <tr>
+                            <th class="hide" style="width:auto;" aria-label="Device ID">Device ID</th>
+                            <th class="hide" style="width:auto;" aria-label="severity">severity</th>
+                            <th class="hide" style="width:auto;" aria-label="age">age</th>
+                            <th class="hide" style="width:auto;" aria-label="organization">organization</th>
+
+                            <th style="width:auto;" aria-label="BH IP">BH IP</th>
+                            <th style="width:auto;" aria-label="Backhaul">Backhaul</th>
+                            <th style="width:auto;" aria-label="BS Name">BS Name</th>
+                            <th style="width:auto;" aria-label="BS Type">BH Type</th>
+                            <th style="width:auto;" aria-label="Onnet/Offnet">Onnet/Offnet</th>
+                            <th style="width:auto;" aria-label="Configured On Port">Configured On Port</th>
+                            <th style="width:auto;" aria-label="Technology">Technology</th>
+                            <th style="width:auto;" aria-label="City">BS City</th>
+                            <th style="width:auto;" aria-label="State">BS State</th>
+                            <th style="width:auto;" aria-label="Capacity">BH Capacity (mbps)</th>
+
+                            <th style="width:auto;" aria-label="DL (%)">DL (%)</th>
+                            <th style="width:auto;" aria-label="DL (mbps)">DL (mbps)</th>
+
+                            <th style="width:auto;" aria-label="AVG DL (%)">AVG DL (%)</th>
+                            <th style="width:auto;" aria-label="AVG DL (mbps)">AVG DL (mbps)</th>
+                            <th style="width:auto;" aria-label="PEAK DL (%)">PEAK DL (%)</th>
+                            <th style="width:auto;" aria-label="PEAK DL (mbps)">PEAK DL (mbps)</th>
+                            <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+
+                            <th style="width:auto;" aria-label="UL (%)">UL (%)</th>
+                            <th style="width:auto;" aria-label="UL (mbps)">UL (mbps)</th>
+
+                            <th style="width:auto;" aria-label="AVG UL (%)">AVG UL (%)</th>
+                            <th style="width:auto;" aria-label="AVG UL (mbps)">AVG UL (mbps)</th>
+                            <th style="width:auto;" aria-label="PEAK UL (%)">PEAK UL (%)</th>
+                            <th style="width:auto;" aria-label="PEAK UL (mbps)">PEAK UL (mbps)</th>
+                            <th style="width:auto;" aria-label="PEAK Time">PEAK Time</th>
+                            <th style="width:auto;" aria-label="Actions">Actions</th>
+                        </tr>
+
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+            </div>
+            <!-- backhaul_capacity_status_container End-->
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<script type="text/javascript">
+    var dataTableInstance = "";
+    $(document).ready(function(e) {
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
+        /*Show the spinner*/
+        showSpinner();
+
+        /*Grid headers object & ajax url*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+            ajax_url = '{% url "BackhaulStatusListingClass" %}';
+
+        var datatable_param_info = {
+            "table_title" : "Backhaul Utilization Status",
+            "app_name" : "capacity_management",
+            "header_class_name" : "BackhaulStatusHeaders",
+            "data_class_name" : "BackhaulStatusListing",
+            "header_extra_param" : "{'download_excel': 'yes' }",
+            "data_extra_param" : "{'download_excel': 'yes' }"
+        };
+
+        dataTableInstance.createDataTable(
+            "backhaulStatusTable",
+            gridHeadersObj,
+            ajax_url,
+            false,
+            datatable_param_info['table_title'],
+            datatable_param_info['app_name'],
+            datatable_param_info['header_class_name'],
+            datatable_param_info['data_class_name'],
+            datatable_param_info['header_extra_param'],
+            datatable_param_info['data_extra_param']
+        );
+    });
+</script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}

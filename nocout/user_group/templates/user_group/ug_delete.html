@@ -1,0 +1,14 @@
+{% extends "department/department.html" %}
+{% block breadcrumb_title %}
+	<li>User Management</li>
+    <li>User Groups</li>
+    <li>Delete</li>
+{% endblock %}
+{% block content_title %}Delete User Group{% endblock %}
+{% block content_description %}Delete user group{% endblock %}
+{% block content %}
+    <form action="" method="post">{% csrf_token %}
+        <p>Are you sure you want to delete "{{ object }}" ?</p>
+        <input type="submit" value="Confirm"/>
+    </form>
+{% endblock %}

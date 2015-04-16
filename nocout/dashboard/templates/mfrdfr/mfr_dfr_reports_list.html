@@ -1,0 +1,38 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% load staticfiles %}
+
+{% block content_title %}MFR DFR Reports Management{% endblock %}
+{% block content_description %}List of MFR DFR Reports{% endblock %}
+{% block content %}
+    {% if perms.dashboard.add_mfrdfrreports %}
+    <p><a href="{% url 'mfr-dfr-reports-upload' %}"><i class="fa fa-plus">&nbsp;</i> Upload MFR DFR Reports</a></p>
+    {% endif %}
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>MFR DFR REPORTS LISTING</h4>
+        </div>
+        <div id="tableContainer" class="box-body" style="overflow-x:auto;">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="MFRDFRReportsListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "mfr-dfr-reports-table" %}';
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("MFRDFRReportsListingTable", gridHeadersObj, ajax_url, destroy);
+        });
+    </script>
+{% endblock %}

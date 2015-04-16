@@ -1,0 +1,329 @@
+.navbar .nav.navbar-nav.pull-right {
+  min-width: 0;
+}
+.topUserInfo li:first-child span
+{
+  color: #FFF;
+}
+.topUserInfo > li > a
+{
+  padding: 8px;
+  text-align: right;
+  line-height: 16px;
+}
+.topUserInfo > li > a > span
+{
+  margin-right: 5px;
+}
+.topUserInfo > li > a > span.username
+{
+  margin-right: 20px;
+}
+.topUserInfo > li > a > i
+{
+  position: relative;
+  top: -10px;
+}
+.orgTitleBlock
+{
+  z-index: 9999;
+}
+.orgTitleBlock li span.username
+{
+  vertical-align: text-bottom;
+  font-weight: 600;
+}
+.orgTitleBlock, .topUserInfo li
+{
+    float:  none; 
+    color:  #FFF;
+}
+.topUserInfo li ul.dropdown-menu
+{
+  width:100% !important;
+}
+
+/* forms style */
+
+.errorlist {
+    padding: 0px;
+    margin-top: 5px;
+    list-style: none;
+}
+
+.errorlist li {
+    color: #b94a48;
+}
+
+li.org, span.dept {
+  font-weight: 300; 
+}
+
+li.org {
+  font-size: 24px;
+  margin: 8px;
+}
+
+span.dept {
+  font-size: 18px;
+  margin: 14px 0 0 10px;
+}
+
+/*CSS for Tabs on the widget header (To show the widget setting menu icons)*/
+.box .header-tabs .nav-tabs {
+  margin-right: 35px;
+}
+
+/*CSS for side menu*/
+#sidebar ul.sub li.has-sub-sub ul.sub-sub li.current {
+  background: #f4f4f4 !important;
+}
+
+/*Side menu arrow*/
+.sidebar-menu ul li ul li a .arrow:before {
+  float: right;
+  margin-top: 1px;
+  margin-right: 5px;
+  display: inline;
+  font-size: 16px;
+  font-family: FontAwesome;
+  height: auto;
+  content: "\f0d9";
+  font-weight: 300;
+  text-shadow: none;
+}
+.sidebar-menu ul li ul li a .arrow.open:before {
+  float: right;
+  margin-top: 1px;
+  margin-right: 5px;
+  display: inline;
+  font-family: FontAwesome;
+  height: auto;
+  font-size: 16px;
+  content: "\f0d7";
+  font-weight: 300;
+  text-shadow: none;
+}
+
+#svc_template_error_msg {
+    padding-bottom: 5px;
+}
+
+/*ERROR ICONS*/
+
+.alert_critical {
+    height: 20px;
+    width: 20px;
+    background: url("../img/nms_icons/big/circle_red.png");
+    background-size: 20px 20px;
+
+}
+
+.alert_major {
+    height: 20px;
+    width: 20px;
+    background: url("../img/nms_icons/big/circle_orange.png");
+    background-size: 20px 20px;
+}
+
+.alert_minor {
+    height: 20px;
+    width: 20px;
+    background: url("../img/nms_icons/big/circle_yellow.png");
+    background-size: 20px 20px;
+}
+
+.alert_normal {
+    height: 20px;
+    width: 20px;
+    background: url("../img/nms_icons/big/circle_green.png");
+    background-size: 20px 20px;
+}
+
+.alert_informational {
+    height: 20px;
+    width: 20px;
+    background: url("../img/nms_icons/big/circle_grey.png");
+    background-size: 20px 20px;
+}
+
+/* color for fa-circle */
+.red-dot {
+    color: #FF0000;
+}
+
+.green-dot {
+    color: #009933;
+}
+
+.orange-dot {
+    color: #FFA319;
+}
+
+.grey-dot {
+    color: #A8B0B0;
+}
+
+.blue-dot {
+    color: #0066FF;
+}
+
+.light-green-dot {
+    color: #7DCA97;
+}
+
+@media only screen and (max-width: 1100px) {
+  #scheduling_calendar {overflow: auto;}
+}
+
+
+#content .page-header {
+  margin: 0 -15px 5px;
+}
+#headerToggleBtn, #goFullScreen {
+  margin: 5px;
+}
+
+
+/*Block Full Screen CSS*/
+:-webkit-full-screen {
+    background-color: rgba(255,255,255,1);
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+}
+:-moz-full-screen {
+    background-color: rgba(255,255,255,1);
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+}
+:-ms-full-screen{
+    background-color: rgba(255,255,255,1);
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+}
+:fullscreen {
+    background-color: rgba(255,255,255,1);
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+}
+
+/*Box Tools*/
+.status_box .box-title .tools_status {
+  display: inline-block;
+  padding: 0;
+  margin-bottom: 7px;
+  float: right;
+  clear: both;
+  min-height: 30px;
+}
+.status_box .box-title .tools_status > a {
+  display: inline-block;
+  font-size: 14px;
+  line-height: 24px;
+  text-decoration: none;
+  color: #ababab;
+  margin-right: 5px;
+}
+.status_box .box-title .tools_status > a :hover {
+  color: #919191;
+}
+
+.zero_padding_margin {
+  padding: 0px !important;
+  margin: 0px !important;
+}
+
+/*Side menu items overflow issue*/
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a {
+  padding-left: 20px !important;
+}
+
+/*by navi 011114*/
+.Tbl_FixHeight {
+  height:588px;
+}
+
+/*for laptop screen*/
+@media screen and (max-width:1366px), screen and (max-height: 768px) { 
+  .Tbl_FixHeight {
+    height:458px;
+  }
+}
+/*for 1024*768 resolution*/
+@media screen and (width:1024px), screen and (height: 768px) { 
+  .Tbl_FixHeight {
+    height:540px;
+  }
+}
+
+.toUpper {
+  text-transform: uppercase;
+}
+.toLower {
+  text-transform: lowercase;
+}
+
+iframe {
+  position:absolute; 
+  top:10px; 
+  right:10px; 
+  overflow: auto; 
+  padding:0px; 
+  height:100%; 
+  max-height: 850px; 
+  overflow:auto; 
+  z-index:100;
+  border: 0px none;
+}
+
+.global_search_container {
+  position: absolute;
+  top: 10px;
+  left: 37%;
+}
+.global_search_container .select2-container .select2-choice {
+  height: 30px !important;
+  line-height: 25px !important;
+}
+.global_search_container ul li:last-child {
+  margin-left: 25px;
+}
+.global_search_container ul li:last-child #redirect_link_container a {
+   margin-right: 5px;
+}
+.date_range_filter_container {
+  float:left;
+  max-width: 250px !important;
+  margin-bottom:5px;
+}
+.date_range_filter_container .form-control {
+  height:31px !important;
+}
+#main_dashboard_container .box-body h5, #main_dashboard_container .box-body h4 {
+  margin-top: 0px !important;
+}
+#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .box-body h4 strong i {
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.polling_chart_container {
+  max-width:25%;
+  overflow: auto;
+  vertical-align: middle;
+}
+
+#per_live_poll_chart {
+  overflow:auto;
+  width:100%;
+}
+
+#last_polled_val {
+  font-size:15px;
+  font-weight:bold;
+  vertical-align:middle;
+}

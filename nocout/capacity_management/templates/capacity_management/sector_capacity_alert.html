@@ -1,0 +1,151 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-flask'></i> Capacity Management" "javascript:;" %}
+    {% breadcrumb_safe "Daily Alerts" "javascript:;" %}
+    {% breadcrumb_safe "Sector Augmentation" "SectorAugmentationAlertsHeaders" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}Sector Augmentation{% endblock %}
+{% block content_description %} Sector Augmentation List {% endblock %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+    <div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-flask"></i>SECTOR AUGMENTATION ALERT</h4>
+        </div>
+
+        <div class="box-body">
+
+            <div class="tabbable header-tabs">
+                
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#wimax_augment_block" id="wimax_augment_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">WiMAX</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#pmp_augment_block" id="pmp_augment_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#all_augment_block" id="all_augment_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" style="overflow-y:auto;">
+                    
+                    <div class="tab-pane" id="wimax_augment_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="wimax_augment_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="pmp_augment_block">
+                    <table class="datatable table table-striped table-bordered table-hover" id="pmp_augment_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane active" id="all_augment_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="all_augment_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block jquery %}
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+<script type="text/javascript">
+    var dataTableInstance = "";
+    $(document).ready(function(e) {
+
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
+
+        var location_array = window.location.href.split("#");
+
+        /*Show the spinner*/
+        showSpinner();
+
+        /*Grid headers object & ajax url*/
+        var all_ajax_url = '{% url "SectorAugmentationAlertsListing" %}',
+            pmp_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=PMP',
+            wimax_ajax_url = '{% url "SectorAugmentationAlertsListing" %}'+'?technology=WiMAX';
+
+
+        tables_info = {
+            "all_augment_tab" : {
+                "app_name" : "capacity_management",
+                "table_title" : "Sector Augmentation Alerts - All",
+                "header_class_name" : "SectorAugmentationAlertsHerders",
+                "data_class_name" : "SectorAugmentationAlertsListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'download_excel': 'yes' }"
+            },
+            "pmp_augment_tab" : {
+                "app_name" : "capacity_management",
+                "table_title" : "Sector Augmentation Alerts - PMP",
+                "header_class_name" : "SectorAugmentationAlertsHerders",
+                "data_class_name" : "SectorAugmentationAlertsListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'technology': 'PMP', 'download_excel': 'yes' }"
+            },
+            "wimax_augment_tab" : {
+                "app_name" : "capacity_management",
+                "table_title" : "Sector Augmentation Alerts - WiMAX",
+                "header_class_name" : "SectorAugmentationAlertsHerders",
+                "data_class_name" : "SectorAugmentationAlertsListing",
+                "header_extra_param" : "{'download_excel': 'yes' }",
+                "data_extra_param" : "{'technology': 'WiMAX', 'download_excel': 'yes' }"
+            }
+        };
+
+
+        $("#all_augment_tab").attr("data_url", all_ajax_url);
+        $("#all_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#pmp_augment_tab").attr("data_url", pmp_ajax_url);
+        $("#pmp_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#wimax_augment_tab").attr("data_url", wimax_ajax_url);
+        $("#wimax_augment_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            /*Trigger click event on active tab to load its data*/
+            $("#all_augment_tab").trigger('click', true);
+        }
+    });
+</script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}

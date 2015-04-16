@@ -1,0 +1,24 @@
+{
+	"success" : 1,
+	"message" : "Live Polling Data Fetched Successfully",
+	"data" : {
+		"lp_templates": [
+		    {
+		        "id": 1,
+		        "value": "tst_1"
+		    },
+		    {
+		        "id": 2,
+		        "value": "tst_2"
+		    },
+		    {
+		        "id": 3,
+		        "value": "tst_3"
+		    },
+		    {
+		        "id": 4,
+		        "value": "tst_4"
+		    }
+		]
+	}
+}

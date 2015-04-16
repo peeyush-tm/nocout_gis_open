@@ -1,0 +1,119 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "RF Performance Dashboard: PTP BH" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+{% block page_setting_block %} {% endblock %}
+{% block content_title %} RF Performance Dashboard: PTP BH {% endblock %}
+{% block content_description %} RF Performance Dashboard: PTP BH {% endblock %}
+
+{% block content %}
+<style type="text/css">
+    i.fa-signal {
+        cursor: pointer;
+    }
+</style>
+<div class="box border lite">
+    <div id="tableContainer_div" class="box-title">
+        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PTP BH</h4>
+    </div>
+    <div id="tableContainer" class="box-body">
+        <div class="tabbable header-tabs">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#ptp_bh_block" id="ptp_bh_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-wimax' %}" id="wimax_tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-ptp' %}" id="ptp_tab"><span class="hidden-inline-mobile">PTP</span></a></li>
+            </ul>
+            <div class="tab-content" style="overflow-y:auto;">
+                <div class="tab-pane active" id="ptp_bh_block">
+                    <div class="col-md-12">
+                        <div class="col-md-6 box-container ui-sortable">
+                            <div class="box">
+                                <div class="box-title" style="background-color: transparent;">
+                                    <h3>
+                                        RSSI <span id="rssi_timestamp"></span>
+                                        <i class="fa fa-signal text-success pull-right" id="rssi_trend" title="RSSI Trends">&nbsp;</i>
+                                    </h3>
+                                </div>
+                                <div class="box-body">
+                                    <div id="rssi" class="rf_chart_style"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 box-container ui-sortable">
+                            <div class="box">
+                                <div class="box-title" style="background-color: transparent;">
+                                    <h3>
+                                        Availability <span id="availability_timestamp"></span>
+                                        <i class="fa fa-signal text-success pull-right" id="availability_trend" title="AVAILABILITY Trends">&nbsp;</i>
+                                    </h3>
+                                </div>
+                                <div class="box-body">
+                                    <div id="availability" class="rf_chart_style"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 box-container ui-sortable">
+                            <div class="box">
+                                <div class="box-title" style="background-color: transparent;">
+                                    <h3>
+                                        UAS <span id="uas_timestamp"></span>
+                                        <i class="fa fa-signal text-success pull-right" id="uas_trend" title="UAS Trends">&nbsp;</i>
+                                    </h3>
+                                </div>
+                                <div class="box-body">
+                                    <div id="uas" class="rf_chart_style"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block load_js %}
+
+<!--Highcharts Library-->
+<script src={% static "js/highcharts.js" %}></script>
+<!-- RF Performance Dashboard Custom JS-->
+<script type="text/javascript" src={% static "js/nocout/rfDashboardLib.js" %}></script>
+<!-- Custom Utilities JS-->
+<script type="text/javascript" src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
+
+<script type="text/javascript">
+    var ds_list = [],
+        chunk_size = 1,
+        ajax_url = "";
+        trends_ajax_url = "",
+        is_bh = 1,
+        tech_name = "P2P";
+    $(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+        
+        ajax_url = "{% url 'dashboard-rf-performance-ptp-bh' %}";
+
+        trends_ajax_url = "{% url 'GetMonthlyRFTrendData' %}";
+
+        ds_list = {{ data_sources|safe }};
+        chunk_size = {{ parallel_calling_count }} ? {{ parallel_calling_count }} : 1;
+        
+        /*Show spinner*/
+        showSpinner();
+        // Initialize Dashboard
+        initRfDashboard();
+    });
+</script>
+{% endblock %}

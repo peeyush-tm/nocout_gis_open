@@ -1,0 +1,104 @@
+/* select2 select box styles */
+
+/* single select menu styles */
+.select2-container .select2-choice {
+    background-color: #ffffff;
+    background-image: none;
+    border: 1px solid rgb(204, 204, 204);
+    border-radius: 2px;
+    height: 35px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+    padding-top: 1px;
+    padding-left: 12px;
+}
+.select2-drop {
+    border-color: -moz-use-text-color rgb(204, 204, 204) rgb(204, 204, 204);
+    border-image: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.15);
+}
+
+.select2-container .select2-choice .select2-arrow {
+    background: none;
+    border-left: none;
+    padding-top: 2px;
+}
+
+/* multi select menu styles */
+.select2-container-multi .select2-choices {
+    background-color: rgb(255, 255, 255);
+    background-image: none;
+    border: 1px solid rgb(204, 204, 204);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+    cursor: text;
+    height: auto !important;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+    padding-top: 3px;
+}
+
+.select2-container-multi .select2-choices {
+    min-height: 35px;
+}
+
+.select2-container-multi.select2-container-active .select2-choices {
+    border: 1px solid rgb(204, 204, 204);
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.15);
+    outline: 0 none;
+}
+
+.mandatory {
+    color: #cc010d;
+}
+/* help text for form fields
+.help_text{
+    color: #0055cc;
+}
+*/
+
+.si_unit {
+    color: #FF9900;
+    padding-right: 5px;
+}
+
+#id_gt_warning option {
+    background-repeat:no-repeat;
+    background-position:bottom left;
+    padding-left:30px;
+    margin-right:30px;
+    height: 24px;
+}
+
+#id_bt_w_c option {
+    background-repeat:no-repeat;
+    background-position:bottom left;
+    padding-left:30px;
+    margin-right:30px;
+    height: 24px;
+}
+
+#id_gt_critical option {
+    background-repeat:no-repeat;
+    background-position:bottom left;
+    padding-left:30px;
+    margin-right:30px;
+    height: 24px;
+}
+.tooltip {
+    position: relative;
+}
+.tooltip-inner {
+    position: absolute;
+    top: -10px;
+    left: 5px;
+    text-align: left;
+    max-width: 100%;
+}
+.has-error .form-control,  .has-error .select2-container {
+    border: 1px solid #b94a48 !important;
+    border-radius: 2px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}

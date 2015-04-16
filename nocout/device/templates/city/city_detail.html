@@ -1,0 +1,23 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+
+{% block content_title %}City Detial{% endblock %}
+{% block content_description %}Detail of city{% endblock %}
+{% block content %}
+    <h1>{{ object.city_name }}</h1><br/>
+    <div id="device">
+        <table>
+            <tr>
+                <td><strong>State Name:</strong></td>
+                <td>{{ object.state }}</td>
+            </tr>
+            <tr>
+                <td><strong>City Name:</strong></td>
+                <td>{{ object.city_name }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

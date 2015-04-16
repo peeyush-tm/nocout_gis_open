@@ -1,0 +1,111 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <a href="/home">Home</a> >
+    <li><a href="#">Alert Center</a></li>
+    <li><a href="#">Network Alerts</a></li>
+    <li><a href="#">{{ data_source }}</a></li>
+    <li><b><span id="nav_tab_name"></span></b></li>
+{% endblock %}
+{% block content_title %}Alarms{% endblock %}
+{% block content_description %}{{ page_type|title }} Alarms List{% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+{% endblock %}
+
+{% block content %}
+    <div class="box border lite" style="background: #fff;">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-bell"></i>{{ page_type|upper }} ALARM </h4>
+        </div>
+
+        <div class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li><a href="#network_history_block" id="network_history_tab" data-toggle="tab"><span
+                            class="hidden-inline-mobile">History</span></a></li>
+                    <li><a href="#network_clear_block" id="network_clear_tab" data-toggle="tab"><span
+                            class="hidden-inline-mobile">Clear</span></a></li>
+                    <li class="active"><a href="#network_current_block" id="network_current_tab" data-toggle="tab"><span
+                            class="hidden-inline-mobile">Current</span></a></li>
+                </ul>
+                <div class="tab-content" style="overflow:auto;">
+                    <div class="tab-pane active" id="network_current_block">
+                        <table cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover"
+                               id="network_current_block_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_clear_block">
+                        <table id="network_clear_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_history_block">
+                        <table id="network_history_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript">
+        var dataTableInstance = "";
+        /*This is a temporary code which is replace when data for data table is provided*/
+        $(document).ready(function (e) {
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
+            var ajax_url_history = '{% url "history-alarms" %}',
+                ajax_url_clear = '{% url "clear-alarms" %}',
+                ajax_url_current = '{% url "current-alarms" %}';
+
+            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+            $("#network_history_tab").attr("data_url", ajax_url_history);
+            $("#network_history_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_clear_tab").attr("data_url", ajax_url_clear);
+            $("#network_clear_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_current_tab").attr("data_url", ajax_url_current);
+            $("#network_current_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            
+            var current_href = window.location.href;
+            if(current_href.indexOf("#") == -1 || current_href.split("#")[1] == "") {
+                $("#network_current_tab").trigger("click");
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

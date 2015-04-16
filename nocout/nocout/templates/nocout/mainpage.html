@@ -1,0 +1,179 @@
+{% load staticfiles %}
+
+<!-- Header Block Start-->
+{% block header_block %}
+    Header Block
+{% endblock %}
+<!-- Header Block End-->
+
+{% block footer_block %}
+    <!-- JAVASCRIPTS -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- CUSTOM SCRIPT -->
+    <script src={% static "js/script.js" %}></script>
+    <!-- JQUERY UI-->
+    <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+    <!-- BOOTSTRAP -->
+    <script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+    <!-- DATA TABLES -->
+    <script type="text/javascript" src={% static "js/datatables/media/js/jquery.dataTables.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/datatables/media/assets/js/datatables.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/TableTools.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/ZeroClipboard.min.js" %}></script>
+    <!-- BLOCK UI -->
+    <script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
+    <!-- TYPEHEAD -->
+    <script type="text/javascript" src={% static "js/typeahead/typeahead.min.js" %}></script>
+    <!-- AUTOSIZE -->
+    <script type="text/javascript" src={% static "js/autosize/jquery.autosize.min.js" %}></script>
+    <!-- COUNTABLE -->
+    <script type="text/javascript" src={% static "js/countable/jquery.simplyCountable.min.js" %}></script>
+    <!-- INPUT MASK -->
+    <script type="text/javascript" src={% static "js/bootstrap-inputmask/bootstrap-inputmask.min.js" %}></script>
+    <!-- FILE UPLOAD -->
+    <script type="text/javascript" src={% static "js/bootstrap-fileupload/bootstrap-fileupload.min.js" %}></script>
+    <!-- UNIFORM -->
+    <script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
+    <!-- BOOTBOX -->
+    <script type="text/javascript" src={% static "js/bootbox/bootbox.min.js" %}></script>
+    <!-- AJAX CSRF -->
+    <script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
+    <!-- GRITTER -->
+    <script type="text/javascript" src={% static "js/gritter/js/jquery.gritter.min.js" %}></script>
+    <!-- Table Cloth -->
+    <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablecloth.js" %}></script>
+    <!-- Table Cloth -->
+    <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablesorter.min.js" %}></script>
+    <!-- SELECT2 -->
+    <script type="text/javascript" src={% static "js/select2/select2.min.js" %}></script>
+    <!-- SELECTED SIDE MENU-->
+    <script type="text/javascript" src={% static "js/nocout/selected_side_menu.js" %}></script>
+    <!-- Custom Script to save User Logs-->
+    <script type="text/javascript" src={% static "js/nocout/nocoutUserLogsLib.js" %}></script>
+    <!-- Custom Script to save User Logs for only GIS Wizard-->
+    <script type="text/javascript" src={% static "js/nocout/nocoutGisWizardLogsLib.js" %}></script>
+    <!-- Custom Script for page fullscren -->
+    <script type="text/javascript" src={% static "js/nocout/nocoutFullScreenLib.js" %}></script>
+    <!-- Library for page spinner-->
+    <script type="text/javascript" src={% static "js/spin/spin.js" %}></script>
+    <!-- Custom library for page spinner-->
+    <script type="text/javascript" src={% static "js/nocout/nocoutSpinnerLib.js" %}></script>
+    <!-- PURL Liberary for parsing URLS -->
+    <script src={% static "js/purl.js" %}></script>
+    <!-- Script Library for COokies -->
+    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+    <!-- session_security script files -->
+    {% include "session_security/all.html" %}
+    <!-- session_security script files -->
+    <!-- SPECTRUM COLOR PICKER -->
+    <script type="text/javascript" src={% static "js/spectrum/spectrum.js" %}></script>
+    <!-- User Logs -->
+    <script src={% static "js/actions_create.js" %}></script>
+    <!-- Custom library for Global Search -->
+    <script type="text/javascript" src={% static "js/nocout/globalSearchLib.js" %}></script>
+
+    <!-- CUSTOM SCRIPT -->
+    {% block jquery %}{% endblock %}
+    <!-- CUSTOM JAVASCRIPTS IMPORT BLOCK -->
+    {% block load_js %}
+        <script type="text/javascript">
+            $(document).ready(function () {
+                App.setPage("");  //Set current page
+                App.init(); //Initialise plugins and elements
+            });
+        </script>
+    {% endblock %}
+    <script type="text/javascript">
+
+        var datatables_download_flag = false;
+
+        $(document).ready(function() {
+
+            var isMenuOpen = +($.cookie("isMenuOpen"));
+            if(isMenuOpen === 0) {
+                /*Collapse the menu*/
+                $("#sidebar-collapse").trigger("click");
+            }
+
+            var checkInterval = 500000,
+            do_session_check = true;
+
+            function session_check(do_session_check){
+                if (do_session_check) {
+                    $.ajax({
+                        url:"/sm/dialog_for_page_refresh/",
+                        type:"GET",
+                        dataType:"json",
+                        success:function(data){
+
+                            if (data.success == 1){
+                                do_session_check = false;
+
+                                if(data.data.objects.dialog){
+                                        bootbox.dialog({
+                                        message: "Your session has been ended by the administrator & your account has been locked." +
+                                                 "You will be redirected to login page",
+                                        title: "Session Expired",
+                                        closeButton: false,
+                                        buttons: {
+                                            main: {
+                                                label: "Ok",
+                                                className: "btn-primary",
+                                                callback: function() {
+                                                    $.ajax({
+                                                        url:"/sm/dialog_expired_logout_user/",
+                                                        type:"GET",
+                                                        dataType:"json",
+                                                        success:function(data){
+                                                            if(data.data.objects.refresh){
+                                                                location.replace('/')
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+
+                                    }, window.clearInterval(session_in_check));//bootbox ends
+                                }
+                            }
+                        }//success ends
+                    });
+                    //ajax ends
+                }
+                else {
+                    window.clearInterval(session_in_check);
+                }
+            }//function ends
+
+            session_in_check = setInterval(function(){session_check(do_session_check)}, checkInterval);
+            
+            // 26th March : Conditional
+            var global_search_flag = false;
+
+            {% if settings.DATATABLES_DOWNLOAD_FLAG %}
+                datatables_download_flag = true;
+            {% endif %}
+
+            {% if settings.GLOBAL_SEARCH_FLAG %}
+                global_search_flag = true;
+            {% endif %}
+
+            // Enable/Disable global search as per the flag
+            if(!global_search_flag) {
+                // Remove search container from dom
+                $("#global_search_container").remove();
+            } else {
+                // Show Search Box & Button
+                $("#global_search_container").removeClass("hide");
+                // Initialize Global Search
+                initGlobalSearch();
+            }
+
+        });
+    </script>
+
+    </body>
+    </html>
+
+{% endblock %}

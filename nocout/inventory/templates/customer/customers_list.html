@@ -1,0 +1,86 @@
+{% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "GIS Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Customer" "customers_list" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% load staticfiles %}
+
+{% block content_title %}Customer Management{% endblock %}
+{% block content_description %}List of customer{% endblock %}
+{% block content %}
+
+        {% if perms.inventory.add_customer %}
+            <p><a href="/customer/new"><i class="fa fa-plus">&nbsp;</i> Create Customer</a></p>
+        {% endif %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>CUSTOMER LISTING</h4>
+        </div>
+        <div class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li><a href="#AllCustomers" id="allCustomerListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
+                    <li><a href="#UnusedCustomers" id="unusedCustomerListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
+                </ul>
+                <div class="tab-content" style="overflow:auto;">
+                    <div class="tab-pane" id="AllCustomers">
+                        <table id="AllCustomersListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="UnusedCustomers">
+                        <table id="UnusedCustomersListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+    <script type="text/javascript">
+
+        var dataTableInstance = "";
+
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            //var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            var ajax_url_all_customers = '{% url "CustomerListingTable" %}' + '?tab=all';
+            var ajax_url_unused_customers = '{% url "CustomerListingTable" %}' + '?tab=unused';
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            //dataTableInstance.createDataTable("CustomerListingTable", gridHeadersObj, ajax_url, destroy);
+            $("#allCustomerListingTab").attr("data_url", ajax_url_all_customers);
+            $("#allCustomerListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#unusedCustomerListingTab").attr("data_url", ajax_url_unused_customers);
+            $("#unusedCustomerListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            var location_array = window.location.href.split("#");
+
+            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+
+                /*Trigger click event on active tab to load its data*/
+                $("#allCustomerListingTab").trigger('click',true);
+            }
+        });
+    </script>
+{% endblock %}
