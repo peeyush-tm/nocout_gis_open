@@ -52,7 +52,7 @@ def check_cambium_ss_frequency_invent(item, _no_params, info):
                     infotext = "invalid_value_%d" % frequency
                 else:
                     state = 0
-                    infotext = "%d" % frequency
+                    infotext = "%.3f" % frequency
     except ValueError:
         infotext = "type_mismatch_value"
     except:
