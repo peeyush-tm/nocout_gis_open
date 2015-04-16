@@ -13,8 +13,11 @@ import socket,json
 import time
 import imp
 import re
+from collections import defaultdict
+from itertools import groupby
+from operator import itemgetter
 
-
+from datetime import datetime, timedelta
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -92,6 +95,10 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	device_down_output = eval(get_from_socket(site, device_down_query))
 	device_down_list =[str(item) for sublist in device_down_output for item in sublist]
 	s_device_down_list = set(device_down_list)
+	
+	unknown_svc_data = filter(lambda x: x[4] == 3,query_output)
+	unknwn_state_svc_data = filter(lambda x: x[0] not in s_device_down_list,unknown_svc_data)
+	unknwn_state_svc_data  = calculate_avg_value(unknwn_state_svc_data,db)
 
 	for entry in query_output:
 		if str(entry[0]) in s_device_down_list:
@@ -129,27 +136,47 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 			try:
 				ds_list = map(lambda x: x.split("=")[0],plugin_output)
 				value_list = map(lambda x: x.split("=")[1],plugin_output)
-			except:
+			except Exception,e:
 				continue
 
 			for index in range(len(ds_list)):
-				if value_list[index]:
-					invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,
-					device_name=host,
-					service_name=service,current_value=value_list[index],min_value=0,max_value=0,avg_value=0,
-					data_source=ds_list[index],severity=service_state,site_name=site,warning_threshold=0,
-					critical_threshold=0,ip_address=host_ip)
+				if value_list[index] and value_list[index] != 'unknown_value':
+					value = value_list[index]
+				elif  value_list[index] == '' or value_list[index] == 'unknown_value':
+					try:
+						value = unknwn_state_svc_data[(host,service,ds_list[index])]
+					except:
+						value = value_list[index]
+				else:
+					value = value_list[index]
+					if not value:
+						continue	
+				invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,
+				device_name=host,
+				service_name=service,current_value=value,min_value=0,max_value=0,avg_value=0,
+				data_source=ds_list[index],severity=service_state,site_name=site,warning_threshold=0,
+				critical_threshold=0,ip_address=host_ip)
 				
-					matching_criteria.update({'device_name':str(host),'service_name':service,
-					'data_source':ds_list[index]})
+				matching_criteria.update({'device_name':str(host),'service_name':service,
+				'data_source':ds_list[index]})
 					
-					mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
-					invent_data_list.append(invent_service_dict)
-					matching_criteria ={}
-					invent_service_dict = {}
+				mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+				invent_data_list.append(invent_service_dict)
+				matching_criteria ={}
+				invent_service_dict = {}
 		else:
+			try:
+				if plugin_output[0] == '' or plugin_output[0] == 'unknown_value':
+					value = unknwn_state_svc_data[(host,service,ds)]
+				else:
+					value = plugin_output[0]	
+			except:
+				value = plugin_output[0]
+					
+	
+				
 			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host,
-					service_name=service,current_value=plugin_output[0],min_value=0,max_value=0,avg_value=0,
+					service_name=service,current_value=value,min_value=0,max_value=0,avg_value=0,
 					data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 					critical_threshold=0,ip_address=host_ip)
 			matching_criteria.update({'device_name':host,'service_name':service,'data_source':ds})
@@ -188,6 +215,61 @@ def get_from_socket(site_name, query):
      output += out
 
     return output
+
+
+
+def calculate_avg_value(unknwn_state_svc_data,db):
+	end_time = datetime.now()
+	start_time = end_time - timedelta(days=10)
+	start_epoch = int(time.mktime(start_time.timetuple()))
+	end_epoch = int(time.mktime(end_time.timetuple()))
+	host_svc_ds_dict ={}
+	svc_host_key={}
+	host_list = []
+	avg = None
+	service_list = []
+	#print unknwn_state_svc_data
+	for doc in unknwn_state_svc_data:
+		host_list.append(str(doc[0]))
+		service_list.append(str(doc[3]))
+	host_list = list(set(host_list))
+	service_list = list(set(service_list))
+	#print unknwn_state_svc_data
+	query_results = db.nocout_inventory_service_perf_data.aggregate([
+        {
+         "$match" :{"device_name": {"$in": host_list},"service_name":{"$in": service_list},"sys_timestamp":{"$gte":start_epoch,"$lte":end_epoch} }
+
+
+        }
+        ])
+	#print query_results
+	for key,entry in groupby(sorted(query_results['result'],key=itemgetter('device_name','service_name','data_source')),
+                key=itemgetter('device_name','service_name','data_source')):
+                doc_list = list(entry)
+                try:
+                        value_list =[str(x['current_value']) for x in doc_list if x['current_value'] != '']
+			#print x['service_name'], x['device_name'],value_list
+                        #print len(doc_list),doc_list[len(doc_list)-1]['host'],doc_list[len(doc_list)-1]['service_name'],value_list
+                        if '_invent' in  x['service_name'] :
+                                # calculating the Maximum number of times value has occured
+				c = defaultdict(int)
+				for item in value_list:
+					c[item] += 1
+				if len(value_list):
+					avg= max(c.iteritems(), key=itemgetter(1))
+					avg =avg[0]
+		except Exception,e:
+			avg= None
+                        #print e, x['service_name'], x['device_name'],value_list
+			continue
+                #svc_host_key[key]=avg
+		if key not in host_svc_ds_dict:
+			if avg:
+				host_svc_ds_dict[key] =avg
+		avg= None
+                #svc_host_key={}
+        #print host_svc_ds_dict
+        return host_svc_ds_dict
 
 
 
