@@ -5227,10 +5227,16 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
-		        	if(bs_name_array.indexOf(filtered_data[i].alias) < 0) {
-		        		bs_name_array.push(filtered_data[i].alias);
-		            	data.results.push({id: filtered_data[i].alias, text: filtered_data[i].alias, value : filtered_data[i].alias});
+		        for (i = 0; i < filtered_data.length; i++) {
+		        	if(filtered_data[i].alias) {
+		        		if(data.results.length >= 40) {
+    						break;
+    					} else {
+				        	if(bs_name_array.indexOf(filtered_data[i].alias) < 0) {
+				        		bs_name_array.push(filtered_data[i].alias);
+				            	data.results.push({id: filtered_data[i].alias, text: filtered_data[i].alias, value : filtered_data[i].alias});
+				        	}
+			        	}
 		        	}
 		        }
 		        query.callback(data);
@@ -5255,13 +5261,17 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	var ips = filtered_data[i].sector_configured_on_devices.split("|");
 		        	for(var j=0;j<ips.length;j++) {
 		        		if(searchPattern.test(ips[j])) {
-		        			if(ip_address_array.indexOf(ips[j]) < 0) {
-		        				ip_address_array.push(ips[j]);
-		            			data.results.push({id: ips[j], text: ips[j], value : ips[j]});
+		        			if(data.results.length >= 40) {
+        						break;
+        					} else {
+			        			if(ip_address_array.indexOf(ips[j]) < 0) {
+			        				ip_address_array.push(ips[j]);
+			            			data.results.push({id: ips[j], text: ips[j], value : ips[j]});
+			        			}
 		        			}
 		        		}
 		        	}
@@ -5288,13 +5298,17 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	var circuit_ids = filtered_data[i].circuit_ids.split("|");
 		        	for(var j=0;j<circuit_ids.length;j++) {
 		        		if(searchPattern.test(circuit_ids[j])) {
-		        			if(circuit_id_array.indexOf(circuit_ids[j]) === -1) {
-		        				circuit_id_array.push(circuit_ids[j]);
-		            			data.results.push({id: circuit_ids[j], text: circuit_ids[j], value : circuit_ids[j]});
+		        			if(data.results.length >= 40) {
+        						break;
+        					} else {
+			        			if(circuit_id_array.indexOf(circuit_ids[j]) === -1) {
+			        				circuit_id_array.push(circuit_ids[j]);
+			            			data.results.push({id: circuit_ids[j], text: circuit_ids[j], value : circuit_ids[j]});
+			        			}
 		        			}
 		        		}
 		        	}
@@ -5323,11 +5337,15 @@ function devicePlottingClass_gmap() {
 
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
-		        for (i = 0; i < limit; i++) {
+		        for (i = 0; i < filtered_data.length; i++) {
 		        	if(filtered_data[i].data.city) {
-			        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
-			        		showing_cities.push(filtered_data[i].data.city);
-			            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+		        		if(data.results.length >= 40) {
+    						break;
+    					} else {
+				        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
+				        		showing_cities.push(filtered_data[i].data.city);
+				            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+				        	}
 			        	}
 		        	}
 		        }
