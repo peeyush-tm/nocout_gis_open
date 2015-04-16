@@ -334,8 +334,6 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         tableheaders = headers_config;
     }
 
-
-
     /*Call createDataTable function to create the data table for specified dom element with given data*/
     dataTableInstance.createDataTable(
         table_id,
