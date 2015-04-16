@@ -2115,16 +2115,19 @@ class ServiceDataSourceListing(BaseDatatableView):
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
 
-        # Create Ordering columns from GET request
-        total_columns_count = int(self.request.GET.get('iColumns',len(self.columns)))
-        new_ordering_columns = list()
-        
-        for i in range(total_columns_count):
-            if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
-                new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
+        try:
+            # Create Ordering columns from GET request
+            total_columns_count = int(self.request.GET.get('iColumns',len(self.columns)))
+            new_ordering_columns = list()
+            
+            for i in range(total_columns_count):
+                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
+                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
 
-        # Update new ordering columns in global variable
-        self.order_columns = new_ordering_columns
+            # Update new ordering columns in global variable
+            self.order_columns = new_ordering_columns
+        except Exception, e:
+            pass
 
 
         if data_for != 'live':
