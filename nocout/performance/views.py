@@ -1985,45 +1985,49 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     def prepare_results(self, qs):
         data = []
+        
         for item in qs:
             datetime_obj = ''
+
             if item['sys_timestamp']:
                 datetime_obj = datetime.datetime.fromtimestamp(item['sys_timestamp'])
 
-            current_val = item['current_value']
-            min_val = item['min_value']
-            max_val = item['max_value']
-            avg_val = item['avg_value']
+            current_val = eval(str(self.formula) + "(" + str(item['current_value']) + ")") \
+                          if self.formula else item['current_value']
             
-            if self.data_source == 'uptime':
-                if item['current_value']:
-                    tt_sec = float(item['current_value'])
-                    current_val = display_time(tt_sec)
+            min_val = eval(str(self.formula) + "(" + str(item['min_value']) + ")") \
+                      if self.formula else item['min_value']
 
-            if self.data_source == 'uptime':
-                if item['min_value']:
-                    tt_sec = float(item['min_value'])
-                    min_val = display_time(tt_sec)
-
-            if self.data_source == 'uptime':
-                if item['max_value']:
-                    tt_sec = float(item['max_value'])
-                    max_val = display_time(tt_sec)
-
-            if self.data_source == 'uptime':
-                if item['avg_value']:
-                    tt_sec = float(item['avg_value'])
-                    avg_val = display_time(tt_sec)
+            max_val = eval(str(self.formula) + "(" + str(item['max_value']) + ")") \
+                      if self.formula else item['max_value']
 
             item.update(
-                min_value=min_val,
-                max_value=max_val,
-                avg_value=avg_val,
                 current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
                     '%d-%m-%Y %H:%M'
                 ) if item['sys_timestamp'] != "" else ""
             )
+
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
+                item.update(
+                    min_value=min_val
+                )
+
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
+                item.update(
+                    max_value=max_val
+                )
+
+            if self.isHistorical:
+
+                avg_val = eval(str(self.formula) + "(" + str(item['avg_value']) + ")") \
+                          if self.formula else item['avg_value']
+
+                item.update(
+                    min_value=min_val,
+                    max_value=max_val,
+                    avg_value=avg_val
+                )
 
             # Add data to list
             data.append(item)
@@ -2144,6 +2148,7 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         if data_for != 'live':
             self.isHistorical = True
+
             # Append min, max & avg columns in case of historical tab
             self.columns.append('min_value')
             self.columns.append('max_value')
@@ -2157,9 +2162,21 @@ class ServiceDataSourceListing(BaseDatatableView):
             end_date = float(format(now_datetime, 'U'))
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
 
+        # Update the DS name when it is not in 'pl','rta' or 'availability' (<SERVICE_NAM>_<DS_NAME>)
+        if self.data_source not in ['pl','rta','availability']:
+            self.data_source = str(service)+"_"+str(self.data_source)
+        
         # check for the formula
-        if data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[data_source]['formula']:
-            self.formula = SERVICE_DATA_SOURCE[data_source]['formula']
+        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
+            self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
+
+        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
+            if 'min_value' not in self.columns:
+                self.columns.append('min_value')
+
+        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
+            if 'max_value' not in self.columns:
+                self.columns.append('max_value')
 
         if data_for == 'bihourly':
             self.model = PerformanceServiceBiHourly
@@ -2173,8 +2190,6 @@ class ServiceDataSourceListing(BaseDatatableView):
             self.model = PerformanceServiceMonthly
         elif data_for == 'yearly':
             self.model = PerformanceServiceYearly
-
-
 
         if data_source in ['pl','rta']:
             if data_for == 'bihourly':
@@ -2190,8 +2205,7 @@ class ServiceDataSourceListing(BaseDatatableView):
             elif data_for == 'yearly':
                 self.model = PerformanceNetworkYearly
             else:
-                self.model = PerformanceNetwork
-        
+                self.model = PerformanceNetwork        
 
         if "_status" in service:
             if not isSet and data_for == 'live':
