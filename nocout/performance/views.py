@@ -1946,6 +1946,9 @@ class ServiceDataSourceListing(BaseDatatableView):
     columns = [
         'ip_address',
         'current_value',
+        'min_value',
+        'max_value',
+        'avg_value',
         'warning_threshold',
         'critical_threshold',
         'severity',
@@ -1988,45 +1991,39 @@ class ServiceDataSourceListing(BaseDatatableView):
                 datetime_obj = datetime.datetime.fromtimestamp(item['sys_timestamp'])
 
             current_val = item['current_value']
+            min_val = item['min_value']
+            max_val = item['max_value']
+            avg_val = item['avg_value']
             
             if self.data_source == 'uptime':
                 if item['current_value']:
                     tt_sec = float(item['current_value'])
                     current_val = display_time(tt_sec)
-              
+
+            if self.data_source == 'uptime':
+                if item['min_value']:
+                    tt_sec = float(item['min_value'])
+                    min_val = display_time(tt_sec)
+
+            if self.data_source == 'uptime':
+                if item['max_value']:
+                    tt_sec = float(item['max_value'])
+                    max_val = display_time(tt_sec)
+
+            if self.data_source == 'uptime':
+                if item['avg_value']:
+                    tt_sec = float(item['avg_value'])
+                    avg_val = display_time(tt_sec)
+
             item.update(
+                min_value=min_val,
+                max_value=max_val,
+                avg_value=avg_val,
                 current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
                     '%d-%m-%Y %H:%M'
                 ) if item['sys_timestamp'] != "" else ""
             )
-
-            if self.isHistorical:
-
-                min_val = item['min_value']
-                max_val = item['max_value']
-                avg_val = item['avg_value']
-
-                if self.data_source == 'uptime':
-                    if item['min_value']:
-                        tt_sec = float(item['min_value'])
-                        min_val = display_time(tt_sec)
-
-                if self.data_source == 'uptime':
-                    if item['max_value']:
-                        tt_sec = float(item['max_value'])
-                        max_val = display_time(tt_sec)
-
-                if self.data_source == 'uptime':
-                    if item['avg_value']:
-                        tt_sec = float(item['avg_value'])
-                        avg_val = display_time(tt_sec)
-
-                item.update(
-                    min_value=min_val,
-                    max_value=max_val,
-                    avg_value=avg_val
-                )
 
             # Add data to list
             data.append(item)
@@ -2038,11 +2035,9 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         sSearch = self.request.GET.get('sSearch', None)
 
-
         if sSearch:
-    
-            try:
 
+            try:
                 main_resultset = self.perf_data_instance.get_performance_data(
                     **parameters
                 ).using(alias=machine_name)
