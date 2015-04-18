@@ -26,7 +26,8 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     PerformanceServiceMonthly, PerformanceServiceYearly, PerformanceNetworkBiHourly, PerformanceNetworkHourly, \
     PerformanceNetworkDaily, PerformanceNetworkWeekly, PerformanceNetworkMonthly, PerformanceNetworkYearly, \
     PerformanceStatusDaily, PerformanceStatusWeekly, PerformanceStatusMonthly, PerformanceStatusYearly, \
-    PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly
+    PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly,\
+    UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly
 
 from nocout.utils import logged_in_user_organizations
 
@@ -1945,6 +1946,9 @@ class ServiceDataSourceListing(BaseDatatableView):
     columns = [
         'ip_address',
         'current_value',
+        'min_value',
+        'max_value',
+        'avg_value',
         'warning_threshold',
         'critical_threshold',
         'severity',
@@ -1959,6 +1963,8 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     data_source = ''
 
+    perf_data_instance = ''
+
     def get_initial_queryset(self, parameters, machine_name):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -1966,9 +1972,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        perf_data_instance = Get_Service_Type_Performance_Data()
-
-        resultset = perf_data_instance.get_performance_data(
+        resultset = self.perf_data_instance.get_performance_data(
             **parameters
         ).using(alias=machine_name)
 
@@ -1987,68 +1991,114 @@ class ServiceDataSourceListing(BaseDatatableView):
                 datetime_obj = datetime.datetime.fromtimestamp(item['sys_timestamp'])
 
             current_val = item['current_value']
+            min_val = item['min_value']
+            max_val = item['max_value']
+            avg_val = item['avg_value']
             
             if self.data_source == 'uptime':
                 if item['current_value']:
                     tt_sec = float(item['current_value'])
                     current_val = display_time(tt_sec)
-              
+
+            if self.data_source == 'uptime':
+                if item['min_value']:
+                    tt_sec = float(item['min_value'])
+                    min_val = display_time(tt_sec)
+
+            if self.data_source == 'uptime':
+                if item['max_value']:
+                    tt_sec = float(item['max_value'])
+                    max_val = display_time(tt_sec)
+
+            if self.data_source == 'uptime':
+                if item['avg_value']:
+                    tt_sec = float(item['avg_value'])
+                    avg_val = display_time(tt_sec)
+
             item.update(
+                min_value=min_val,
+                max_value=max_val,
+                avg_value=avg_val,
                 current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
                     '%d-%m-%Y %H:%M'
                 ) if item['sys_timestamp'] != "" else ""
             )
 
-            if self.isHistorical:
-
-                min_val = item['min_value']
-                max_val = item['max_value']
-                avg_val = item['avg_value']
-
-                if self.data_source == 'uptime':
-                    if item['min_value']:
-                        tt_sec = float(item['min_value'])
-                        min_val = display_time(tt_sec)
-
-                if self.data_source == 'uptime':
-                    if item['max_value']:
-                        tt_sec = float(item['max_value'])
-                        max_val = display_time(tt_sec)
-
-                if self.data_source == 'uptime':
-                    if item['avg_value']:
-                        tt_sec = float(item['avg_value'])
-                        avg_val = display_time(tt_sec)
-
-                item.update(
-                    min_value=min_val,
-                    max_value=max_val,
-                    avg_value=avg_val
-                )
-
             # Add data to list
             data.append(item)
 
         return data
 
-    def filter_queryset(self, qs):
+    def filter_queryset(self, qs, parameters, machine_name):
         """ Filter datatable as per requested value """
 
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                # avoid search on 'added_on'
-                if column == 'added_on':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
+            try:
+                main_resultset = self.perf_data_instance.get_performance_data(
+                    **parameters
+                ).using(alias=machine_name)
+
+                qs = main_resultset.filter(
+                    Q(max_value__icontains=sSearch)
+                    |
+                    Q(min_value__icontains=sSearch)
+                    |
+                    Q(current_value__icontains=sSearch)
+                    |
+                    Q(ip_address__icontains=sSearch)
+                    |
+                    Q(severity__icontains=sSearch)
+                    |
+                    Q(warning_threshold__icontains=sSearch)
+                    |
+                    Q(critical_threshold__icontains=sSearch)
+                ).values(*self.columns).order_by('-sys_timestamp')
+
+            except Exception, e:
+                pass
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.order_columns
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -2058,7 +2108,6 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         request = self.request
         self.initialize(*args, **kwargs)
-
 
         # REQUIRED GET PARAMS
         device_id = self.kwargs['device_id']
@@ -2076,6 +2125,23 @@ class ServiceDataSourceListing(BaseDatatableView):
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        self.perf_data_instance = Get_Service_Type_Performance_Data()
+
+        try:
+            # Create Ordering columns from GET request
+            total_columns_count = int(self.request.GET.get('iColumns',len(self.columns)))
+            new_ordering_columns = list()
+            
+            for i in range(total_columns_count):
+                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
+                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
+
+            # Update new ordering columns in global variable
+            self.order_columns = new_ordering_columns
+        except Exception, e:
+            pass
+
+
         if data_for != 'live':
             self.isHistorical = True
             # Append min, max & avg columns in case of historical tab
@@ -2086,7 +2152,7 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
 
-        if not isSet and not self.isHistorical:
+        if not isSet and data_for == 'live':
             now_datetime = datetime.datetime.now()
             end_date = float(format(now_datetime, 'U'))
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
@@ -2189,7 +2255,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         # number of records before filtering
         total_records = qs.count()
 
-        qs = self.filter_queryset(qs)
+        qs = self.filter_queryset(qs, parameters, inventory_device_machine_name)
 
         # number of records after filtering
         total_display_records = qs.count()
@@ -2260,7 +2326,7 @@ class Get_Service_Type_Performance_Data(View):
         end_date = self.request.GET.get('end_date', '')
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
 
-        if not isSet and not is_historical_data:
+        if not isSet and data_for == 'live':
             now_datetime = datetime.datetime.now()
             end_date = float(format(now_datetime, 'U'))
             start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
@@ -2954,21 +3020,21 @@ class Get_Service_Type_Performance_Data(View):
         if is_historical_data:
             # Grid Headers List
             grid_headers = [
-                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': False}
+                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True}
             ]
         else:
             # Grid Headers List
             grid_headers = [
-                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': False},
-                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': False}
+                {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True}
             ]
 
         self.result['success'] = 1

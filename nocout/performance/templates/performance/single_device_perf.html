@@ -355,15 +355,48 @@
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
 
+                // if(show_historical_on_performance) {
+                //     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+                //         service_id = active_inner_tab.attr("id").slice(0, -4),
+                //         get_service_data_url = active_inner_tab.attr("url");
+                // } else {
+                //     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                //         service_id = active_inner_tab.attr("id").slice(0, -4),
+                //         get_service_data_url = active_inner_tab.attr("url");
+                // }
+                var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
+                    top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
+                
+
                 if(show_historical_on_performance) {
-                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+                    var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
+                        left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
+
+                    var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a"),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
+
                 } else {
+
+                    var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
+                        active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                        service_id = left_active_tab_anchor.attr("id").slice(0, -4),
+                        get_service_data_url = left_active_tab_anchor.attr("url");
+                }
+
+                if(
+                    service_id.indexOf('availability') > -1
+                    ||
+                    service_id.indexOf('utilization_top') > -1
+                    ||
+                    service_id.indexOf('topology') > -1
+                ) {
+
                     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
-                }
+
+                } 
 
                 if(get_service_data_url && service_id && current_device) {
                     perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
@@ -380,19 +413,52 @@
          */
         $("#reset_filter").on('click', function () {
             if(startDate && endDate) {
-                $('#reservationtime').val('');
+
                 startDate = "";
                 endDate = "";
+                
+                // Remove daterangepicker from DOM
+                $('#'+dateRangePicker_domId).daterangepicker().remove();
+                
+                // Add daterangepicker to DOM
+                $(".date_range_filter_container .input-group").append(date_range_picker_html);
+                
+                /*To initialize date range picker*/
+                perfInstance.initDateRangePicker(dateRangePicker_domId);
+
+                var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
+                    top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
+                
 
                 if(show_historical_on_performance) {
-                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+                    var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
+                        left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
+
+                    var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a"),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
+
                 } else {
+
+                    var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
+                        active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                        service_id = left_active_tab_anchor.attr("id").slice(0, -4),
+                        get_service_data_url = left_active_tab_anchor.attr("url");
+                }
+
+                if(
+                    service_id.indexOf('availability') > -1
+                    ||
+                    service_id.indexOf('utilization_top') > -1
+                    ||
+                    service_id.indexOf('topology') > -1
+                ) {
+
                     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
-                }
+
+                } 
 
                 if(get_service_data_url && service_id && current_device) {
                     // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
@@ -431,6 +497,17 @@
             $.cookie('parent_tab_id', tab_id.slice(0, -4), {path: '/', secure: true});
 
             if (li_count > 0) {
+
+                if($("#other_perf_table").length > 0) {
+                    $("#other_perf_table").dataTable().fnDestroy();
+                    $("#other_perf_table").remove();
+                }
+
+                if($("#perf_data_table").length > 0) {
+                    $("#perf_data_table").dataTable().fnDestroy();
+                    $("#perf_data_table").remove();
+                }
+
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
                 if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length) {
@@ -449,6 +526,17 @@
         $("body").delegate('.left_tabs_container li','click',function(e) {
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
+
+                if($("#other_perf_table").length > 0) {
+                    $("#other_perf_table").dataTable().fnDestroy();
+                    $("#other_perf_table").remove();
+                }
+
+                if($("#perf_data_table").length > 0) {
+                    $("#perf_data_table").dataTable().fnDestroy();
+                    $("#perf_data_table").remove();
+                }
+
                 $(".inner_tab_container #"+tab_content_id+"_block .inner_inner_tab li:first-child a").trigger('click');
             }
         });

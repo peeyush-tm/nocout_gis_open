@@ -514,6 +514,8 @@
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
     <!-- JQUERY UI-->
     <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %} ></script>
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 
     <script type="text/javascript">
 
@@ -522,7 +524,8 @@
             advJustSearch= "",
             is_super_admin = "",
             deviceName = "",
-            default_polling = true;
+            default_polling = true,
+            dataTableInstance = "";
 
         $(document).ready(function (e) {
             
@@ -546,6 +549,9 @@
                 // pass
                 // console.error(e);
             }
+
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
 
             /*Show page controls page*/
             $("#headerToggleBtn").trigger('click');

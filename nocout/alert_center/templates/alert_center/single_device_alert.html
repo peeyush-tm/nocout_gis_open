@@ -214,6 +214,7 @@
             current_device_id = "",
             service_name = "",
             excel_columns = [],
+            dateRangePicker_domId = "reservationtime",
             isDateFilterApplied = false;
 
         $(document).ready(function (e) {
@@ -249,7 +250,7 @@
             perfInstance = new nocoutPerfLib();
 
             /*To initialize date range picker*/
-            perfInstance.initDateRangePicker("reservationtime");
+            perfInstance.initDateRangePicker(dateRangePicker_domId);
 
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
@@ -304,10 +305,17 @@
         // When filter reset
         $("#reset_filter").on('click', function () {
             // isDateFilterApplied = false;
-
-            $('#reservationtime').val("")
             startDate = "";
             endDate = "";
+
+            // Remove daterangepicker from DOM
+            $('#'+dateRangePicker_domId).daterangepicker().remove();
+            
+            // Add daterangepicker to DOM
+            $(".date_range_filter_container .input-group").append(date_range_picker_html);
+            
+            /*To initialize date range picker*/
+            perfInstance.initDateRangePicker(dateRangePicker_domId);
             
             // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
             // $.cookie('filter_end_date', endDate, {path: '/', secure: true});

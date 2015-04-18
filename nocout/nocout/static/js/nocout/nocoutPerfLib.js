@@ -74,19 +74,19 @@ var perf_that = "",
             'mData': 'current_value',
             'sTitle': 'Current Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'severity',
             'sTitle': 'Severity',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'sys_timestamp',
             'sTitle': 'Time',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         }
     ],
     default_hist_table_headers = [
@@ -94,39 +94,40 @@ var perf_that = "",
             'mData': 'current_value',
             'sTitle': 'Current Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'min_value',
             'sTitle': 'Min. Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'max_value',
             'sTitle': 'Max. Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'avg_value',
             'sTitle': 'Avg. Value',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'severity',
             'sTitle': 'Severity',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         },
         {
             'mData': 'sys_timestamp',
             'sTitle': 'Time',
             'sWidth': 'auto',
-            'bSortable': false
+            'bSortable': true
         }
-    ];
+    ],
+    date_range_picker_html = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -134,6 +135,11 @@ if(window.location.origin) {
 } else {
     base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
 }
+
+// Daterangepicker HTML String
+date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
+                          class="form-control input-large search-query" value=""/>';
+
 
 $.urlParam = function (name) {
     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -1030,6 +1036,8 @@ function nocoutPerfLib() {
                                     $("#display_type_container").addClass("hide")
                                 }
                                 draw_type = 'chart';
+                                // Checked the chart type radio
+                                $('#display_chart')[0].checked = true
                             } else {
                                 // Show display type option from only table tabs
                                 if($("#display_type_container").hasClass("hide")) {
@@ -1053,6 +1061,30 @@ function nocoutPerfLib() {
                                     } else {
                                         addPointsToChart_nocout(chart_config.chart_data,service_id);
                                     }
+
+                                    // To show the table in case of utilization_top tab
+                                    if(
+                                        listing_ajax_url.indexOf('servicedetail') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('service/rf/') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('availability') > -1
+                                    ) {
+                                        var contentHtml = createChartDataTableHtml_nocout(
+                                            "perf_data_table",
+                                            chart_config.chart_data
+                                        );
+
+                                        $('#'+service_id+'_bottom_table').html(contentHtml);
+
+                                        $("#perf_data_table").DataTable({
+                                            bPaginate: true,
+                                            bDestroy: true,
+                                            aaSorting : [[0,'desc']],
+                                            sPaginationType: "full_numbers"
+                                        });
+                                    }
+
                                 } else {
                                     // Destroy highchart if exists
                                     if($('#'+service_id+'_chart').highcharts()) {
@@ -1118,6 +1150,8 @@ function nocoutPerfLib() {
                             }
 
                             draw_type = 'chart';
+                            // Checked the chart type radio
+                            $('#display_chart')[0].checked = true
                         } else {
                             // Show display type option from only table tabs
                             if($("#display_type_container").hasClass("hide")) {
@@ -1292,17 +1326,53 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
 
 // Change event on display type radio buttons
 $('input[name="item_type"]').change(function(e) {
+
+    var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
+        top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
+    
+
     if(show_historical_on_performance) {
-        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
+        var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
+            left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
+
+        var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a"),
             service_id = active_inner_tab.attr("id").slice(0, -4),
             get_service_data_url = active_inner_tab.attr("url");
+
     } else {
+
+        var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
+            active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+            service_id = left_active_tab_anchor.attr("id").slice(0, -4),
+            get_service_data_url = left_active_tab_anchor.attr("url");
+    }
+
+    if(
+        service_id.indexOf('availability') > -1
+        ||
+        service_id.indexOf('utilization_top') > -1
+        ||
+        service_id.indexOf('topology') > -1
+    ) {
+
         var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
             service_id = active_inner_tab.attr("id").slice(0, -4),
             get_service_data_url = active_inner_tab.attr("url");
-    }
+
+    } 
 
     if(get_service_data_url && service_id && current_device) {
+
+        if($("#other_perf_table").length > 0) {
+            $("#other_perf_table").dataTable().fnDestroy();
+            $("#other_perf_table").remove();
+        }
+
+        if($("#perf_data_table").length > 0) {
+            $("#perf_data_table").dataTable().fnDestroy();
+            $("#perf_data_table").remove();
+        }
+
         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
     }
 });
