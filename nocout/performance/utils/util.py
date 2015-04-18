@@ -646,7 +646,7 @@ def get_performance_data(device_list, machine, model):
     return device_result
 
 
-def get_time(start_date, end_date, date_format):
+def get_time(start_date, end_date, date_format, data_for):
 
     isSet = False
 
@@ -662,17 +662,34 @@ def get_time(start_date, end_date, date_format):
             end_date = format(end_date_object, 'U')
 
     else:
-        # The end date is the end limit we need to make query till.
-        end_date_object = datetime.datetime.now()
-        # The start date is the last monday of the week we need to calculate from.
-        start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-        # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-        start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-        # Converting the date to epoch time or Unix Timestamp
-        end_date = format(end_date_object, 'U')
-        start_date = format(start_date_object, 'U')
+        now_datetime = datetime.datetime.now()
+        end_date = format(now_datetime, 'U')
+        # In case of 'bihourly' & 'hourly' start date will be start of today(i.e '%Y-%m-%d 00:00:00')
+        if data_for in ['bihourly']:
+            last_4_days = now_datetime - datetime.timedelta(days=4)
+            start_date = format(last_4_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
+        elif data_for in ['hourly']:
+            last_7_days = now_datetime - datetime.timedelta(days=7)
+            start_date = format(last_7_days.replace(hour=0, minute=0, second=0, microsecond=0), 'U')
+        elif data_for in ['daily', 'weekly', 'monthly', 'yearly']:
+            end_date = 0
+        else:
+            # The end date is the end limit we need to make query till.
+            end_date_object = now_datetime
+            # The start date is the last monday of the week we need to calculate from.
+            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+            # Converting the date to epoch time or Unix Timestamp
+            start_date = format(start_date_object, 'U')
 
-    return isSet, float(start_date), float(end_date)
+    if end_date:
+        end_date = float(end_date)
+
+    if start_date:
+        start_date = float(start_date)
+
+    return isSet, start_date, end_date
 
 
 def color_picker():

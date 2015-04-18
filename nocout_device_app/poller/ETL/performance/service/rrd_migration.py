@@ -15,12 +15,13 @@ from datetime import datetime, timedelta
 import subprocess
 import pymongo
 import imp
+import sys
 import time
 import socket
 import json
-import sys
+from collections import defaultdict
 from itertools import groupby
-
+from operator import itemgetter
 try:
         import nocout_settings
         from nocout_settings import _LIVESTATUS, _DATABASES
@@ -52,7 +53,7 @@ def load_file(file_path):
         pass
     return host_vars
 
-def build_export(site, network_result, service_result,mrc_hosts,device_down_output, db):
+def build_export(site, network_result, service_result,mrc_hosts,device_down_output,unknwn_state_svc_data, db):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
 	and stores them in mongodb in particular structure)
@@ -87,6 +88,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	refer = ''
 	threshold_values = {}
 	severity = 'unknown'
+	first_down_crit = {}
 	host_severity = 'unknown'
 	device_first_down_entry =[]
 	host_state = "unknown"
@@ -104,7 +106,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	if db:
 		cur = db.device_first_down.find()
 		for dict_entry in cur:
-			device_first_down_list.append(dict_entry)		
+			device_first_down_list.append(dict_entry)
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -120,7 +122,9 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		# Age of last service state change
 		    last_state_change = entry[-2]
 		    age =last_state_change
-                except:
+                except Exception,e:
+		    #if str(entry[0]) == '12278':
+		#	print e
                     continue
 		for ds, ds_values in threshold_values.items():
 			check_time = datetime.fromtimestamp(entry[3]) 
@@ -284,7 +288,16 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			check_time = datetime.fromtimestamp(entry[4])
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp = pivot_timestamp_fwd(check_time)
-			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
+			try:
+				if  not ds_values.get('cur'):
+					#print unknwn_state_svc_data
+					value = unknwn_state_svc_data[(str(entry[0]),str(entry[2]),str(ds))]
+					#print str(entry[0]), str(entry[2]),value
+				else:
+					value = ds_values.get('cur')
+			except:
+				value =  ds_values.get('cur')
+			data_values = [{'time': check_time, 'value': value}]
 			data_dict.update({
 				'site': site,
 				'host': str(entry[0]),
@@ -506,27 +519,16 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ _status\n"+\
                             "Filter: service_description ~ Check_MK\n"+\
                             "Filter: service_description ~ PING\n"+\
-                            "Filter: service_description ~ wimax_pmp1_dl_util_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp1_ul_util_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp2_dl_util_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp2_ul_util_kpi\n"+\
-                            "Filter: service_description ~ cambium_ul_util_kpi\n"+\
-                            "Filter: service_description ~ cambium_dl_util_kpi\n"+\
-                            "Filter: service_description ~ radwin_dl_util_kpi\n"+\
-                            "Filter: service_description ~ radwin_ul_util_kpi\n"+\
+                            "Filter: service_description ~ .*_kpi\n"+\
+                            "Filter: service_description ~ wimax_ss_port_params\n"+\
+                            "Filter: service_description ~ wimax_bs_ss_params\n"+\
+                            "Filter: service_description ~ wimax_aggregate_bs_params\n"+\
+                            "Filter: service_description ~ wimax_bs_ss_vlantag\n"+\
+                            "Filter: service_description ~ wimax_topology\n"+\
+                            "Filter: service_description ~ cambium_topology_discover\n"+\
                             "Filter: service_description ~ mrotek_port_values\n"+\
-			    "Filter: service_description ~ mrotek_ul_util_kpi\n"+\
-	                    "Filter: service_description ~ mrotek_dl_util_kpi\n"+\
-                            "Filter: service_description ~ rici_ul_util_kpi\n"+\
-                            "Filter: service_description ~ rici_dl_util_kpi\n"+\
-		            "Filter: service_description ~ radwin_ss_provis_kpi\n"+\
-                            "Filter: service_description ~ cambium_ss_provis_kpi\n"+\
-                            "Filter: service_description ~ wimax_ss_provis_kpi\n"+\
-                            "Filter: service_description ~ wimax_ss_ul_issue_kpi\n"+\
-                            "Filter: service_description ~ cambium_ss_ul_issue_kpi\n"+\
-                            "Filter: service_description ~ cambium_bs_ul_issue_kpi\n"+\
-                            "Filter: service_description ~ wimax_bs_ul_issue_kpi\n"+\
-                            "Or: 24\nNegate:\nOutputFormat: python\n"
+                            "Filter: service_description ~ rici_port_values\n"+\
+                            "Or: 13\nNegate:\nOutputFormat: python\n"
 	    device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
 				"And: 2\nOutputFormat: python\n"
 
@@ -545,10 +547,29 @@ def get_host_services_name(site_name=None, db=None):
                                         mrc_hosts.append(mrc_qry_output[index][0])
                 except:
                         continue
-            build_export(
+
+  	    # Code has been added to take average value of last 10 entries if device is not down and still unknown values
+	    # comes because of packet lost in network for service.
+	    unknown_svc_data = filter(lambda x: x[3] == 3,serv_qry_output)
+	    #print unknown_svc_data
+	    unknwn_state_svc_data = filter(lambda x: x[0] not in device_down_list ,unknown_svc_data)
+	    #print '............................................'
+            #print unknwn_state_svc_data
+	    #print '............................................'
+	    #print device_down_list
+	    frequency_based_service_list =['wimax_ss_ip','wimax_modulation_dl_fec','wimax_modulation_ul_fec','wimax_dl_intrf',
+		'wimax_ul_intrf','wimax_ss_sector_id','wimax_ss_mac','wimax_ss_frequency','mrotek_e1_interface_alarm',
+		'mrotek_fe_port_state','mrotek_line1_port_state','mrotek_device_type','rici_device_type','rici_e1_interface_alarm',
+		'rici_fe_port_state','rici_line1_port_state']
+	    uptime_service =['wimax_ss_session_uptime','wimax_ss_uptime',
+		'wimax_bs_uptime','cambium_session_uptime_system','cambium_uptime','radwin_uptime']
+
+	    unknwn_state_svc_data  =  calculate_avg_value(unknwn_state_svc_data,frequency_based_service_list,db)
+	    #print unknwn_state_svc_data
+	    build_export(
                        site_name,
                        nw_qry_output,
-                       serv_qry_output,mrc_hosts,device_down_list,
+                       serv_qry_output,mrc_hosts,device_down_list,unknwn_state_svc_data,
                        db
             )
 	    elapsed = int(time.time()) - current
@@ -560,6 +581,68 @@ def get_host_services_name(site_name=None, db=None):
         except ValueError, val_err:
                 print 'Error in serv/nw qry output'
                 print val_err.message
+
+def calculate_avg_value(unknwn_state_svc_data,frequency_based_service_list,db):
+	end_time = datetime.now()
+	start_time = end_time - timedelta(minutes=60) 
+	steps= 300
+	host_svc_ds_dict ={}
+	svc_host_key={}
+	host_list = []
+	avg = 0
+	service_list = []
+	for doc in unknwn_state_svc_data:
+		host_list.append(doc[0])
+		service_list.append(doc[2])
+	query_results = db.service_perf.aggregate([
+        {"$unwind":"$data"},
+        {
+         "$match" :{"host": {"$in": host_list},"service":{"$in": service_list},"local_timestamp":{"$gte":start_time,"$lte":end_time} }
+
+        }
+	])
+	for key,entry in groupby(sorted(query_results['result'],key=itemgetter('host','service','ds')),
+		key=itemgetter('host','service','ds')):
+		doc_list = list(entry)
+        	try:
+                	value_list =[str(x['data'].get('value')) for x in doc_list if x['data'].get('value') != '']
+			#print value_list
+			#print len(doc_list),doc_list[len(doc_list)-1]['host'],doc_list[len(doc_list)-1]['service'],value_list
+                	if x['service'] in frequency_based_service_list:
+				# calculating the Maximum number of times value has occured
+				c = defaultdict(int)
+    				for item in value_list:
+        				c[item] += 1
+				if len(value_list):
+    					avg= max(c.iteritems(), key=itemgetter(1))
+					avg=avg[0]
+				#print avg
+			elif 'uptime' in x['service']:
+				if len(value_list):
+					avg = value_list[len(value_list)-1]
+					avg=int(avg)+steps
+                	elif 'util' in x['service'] or x['service'] == 'radwin_service_throughput':
+                        	value_list = map(float,value_list)
+				if len(value_list):
+                        		avg = format(sum(value_list)/len(value_list),'.2f')
+                	else:
+                        	value_list = map(int,value_list)
+				if len(value_list):
+                        		avg =  int(sum(value_list)/len(value_list))
+        	except Exception,e:
+			avg= None
+                	print e 
+			#print x['service'], x['host'],value_list
+                	continue
+		#svc_host_key[key]=avg
+		if key not in host_svc_ds_dict:
+			if avg:
+        			host_svc_ds_dict[key] =avg
+		avg= None
+        	#svc_host_key={}
+	#print host_svc_ds_dict
+	return host_svc_ds_dict
+	
 
 def get_from_socket(site_name, query):
     """
