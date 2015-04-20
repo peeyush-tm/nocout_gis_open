@@ -157,10 +157,19 @@ def update_site_on_svcconf_change(sender, instance=None, created=False, **kwargs
     """
 
     # import model inside function to avoid circular dependency
-    from site_instance.models import SiteInstance
+    from device.models import Device
 
-    # modify all site instances 'is_device_change' bit to 1
-    SiteInstance.objects.all().update(is_device_change=1)
+    # get device
+    device = None
+    try:
+        device = Device.objects.get(device_name=instance.device_name)
+    except Exception as e:
+        pass
+
+    if device:
+        # set site instance bit corresponding to the device
+        device.site_instance.is_device_change = 1
+        device.site_instance.save()
 
 
 def update_site_on_pingconf_change(sender, instance=None, created=False, **kwargs):

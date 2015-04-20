@@ -18,7 +18,6 @@ class UserForm(forms.ModelForm):
     password1 = PasswordField(label='Password')
     password2 = PasswordField(label='Password confirmation')
 
-
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         initial = kwargs.setdefault('initial',{})
@@ -162,7 +161,6 @@ class UserForm(forms.ModelForm):
                             raise forms.ValidationError("This password is recently used")
 
             return password1
-
 
 
 class UserPasswordForm(forms.Form):
