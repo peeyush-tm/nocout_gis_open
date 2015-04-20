@@ -17,7 +17,12 @@ var green_color = "#468847",
     val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
     time_icon = '<i class="fa fa-clock-o"></i>',
     perf_page_live_polling_call = "",
-    isLatestStatusUpdated = false;
+    isLatestStatusUpdated = false,
+    table_title = 'Service Datasource Report',
+    app_name = 'performance',
+    header_class_name = 'ServiceDataSourceHeaders',
+    data_class_name = 'ServiceDataSourceListing',
+    header_extra_param = "{'download_excel': 'yes' }";
 
 
 /**
@@ -334,12 +339,55 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         tableheaders = headers_config;
     }
 
+    var service_name = updated_url.split("/service/")[1].split("/")[0],
+        ds_name = updated_url.split("/service/")[1].split("/")[2],
+        get_param_string = updated_url.split("?")[1].split("&"),
+        data_for = 'live',
+        get_param_data = "",
+        data_extra_param = "";
+
+    for(var i=0;i<get_param_string.length;i++) {
+        var splitted_string = get_param_string[i].split("=");
+        if(splitted_string[1]) {
+            if(i == get_param_string.length-1) {
+                get_param_data += "'"+splitted_string[0]+"':'"+splitted_string[1]
+            } else {
+                get_param_data += "'"+splitted_string[0]+"':'"+splitted_string[1]+"',"
+            }
+        }
+    }
+    
+    if(show_historical_on_performance) {
+        data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
+        data_extra_param += "'device_id' : '"+current_device+"',";
+        data_extra_param += "'download_excel': 'yes'";
+        if(get_param_data) {
+            data_extra_param += get_param_data;
+        }
+        data_extra_param += " }";
+
+    } else {
+        data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
+        data_extra_param += "'device_id' : '"+current_device+"', 'data_for' : '"+data_for+"',";
+        data_extra_param += "'download_excel': 'yes'";
+        if(get_param_data) {
+            data_extra_param += get_param_data;
+        }
+        data_extra_param += " }";
+    }
+
     /*Call createDataTable function to create the data table for specified dom element with given data*/
     dataTableInstance.createDataTable(
         table_id,
         tableheaders,
         updated_url,
-        false
+        false,
+        table_title,
+        app_name,
+        header_class_name,
+        data_class_name,
+        header_extra_param,
+        data_extra_param
     );
 }
 
