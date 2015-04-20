@@ -2563,6 +2563,12 @@ class Get_Service_Type_Performance_Data(View):
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
 
+            parameters.update({
+                'model': NetworkAvailabilityDaily,
+                'start_time': start_date,
+                'end_time': end_date
+            })
+
             # gather performance data
             performance_data = self.get_performance_data(
                 **parameters
