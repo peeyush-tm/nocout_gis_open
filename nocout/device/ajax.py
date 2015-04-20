@@ -2934,7 +2934,7 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
                     device = Device.objects.get(pk=device_id)
                     service = Service.objects.get(pk=service_id)
                     params.append("<br />")
-                    svc_templates.append("<p class='text-warning'><b>Select service template:</b></p> ")
+                    svc_templates.append("<p class='text-green'><b>Select service template:</b></p> ")
                     svc_templates.append("<select class='form-control' id='service_template_%d'>" % option)
                     svc_templates.append("<option value='' selected>Select</option>")
                     for svc_param in svc_params:
@@ -2942,11 +2942,11 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
                                                                                  svc_param.parameter_description))
                     svc_templates.append("</select>")
                 else:
-                    params.append("<h5 class='text-warning'>No data source associated.</h5> ")
+                    params.append("<h5 class='text-green'>No data source associated.</h5> ")
             except:
                 logger.info("No data source available.")
     else:
-        params.append("<h5 class='text-warning'>No data source associated.</h5> ")
+        params.append("<h5 class='text-green'>No data source associated.</h5> ")
     dajax.assign(template_options_id, 'innerHTML', ''.join(svc_templates))
     return dajax.json()
 
@@ -2974,9 +2974,9 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
     service = Service.objects.get(pk=service_id)
     template = ServiceParameters.objects.get(pk=template_id)
     params.append("<br />")
-    params.append("<h5 class='text-warning'><b>Selected configuration:</b></h5>")
+    params.append("<h5 class='text-green'><b>Selected configuration:</b></h5>")
     params.append("<div class=''>\
-                   <div class='box border orange'>\
+                   <div class='box border green'>\
                    <div class='box-title'>\
                        <h4><i class='fa fa-table'></i>Selected Service Parameters</h4>\
                    </div>")
@@ -2994,12 +2994,20 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
     # data sources associated with service
     data_sources = service.service_data_sources.all()
     for sds in data_sources:
-        params.append("<tr class='data_source_field'><td class='ds_name'>{}</td>\
-                       <td contenteditable='true' class='ds_warning'>{}</td>\
-                       <td contenteditable='true' class='ds_critical'>{}</td></tr>"
-                      .format(sds.name if sds.name else "",
-                              int(sds.warning) if sds.warning else "",
-                              int(sds.critical) if sds.critical else ""))
+        try:
+            params.append("<tr class='data_source_field'><td class='ds_name'>{}</td>\
+                           <td contenteditable='true' class='ds_warning'>{}</td>\
+                           <td contenteditable='true' class='ds_critical'>{}</td></tr>"
+                          .format(sds.name if sds.name else "",
+                                  int(sds.warning) if sds.warning else "",
+                                  int(sds.critical) if sds.critical else ""))
+        except Exception as e:
+            params.append("<tr class='data_source_field'><td class='ds_name'>{}</td>\
+                           <td contenteditable='false' title='Non editable.' class='ds_warning'>{}</td>\
+                           <td contenteditable='false' title='Non editable.' class='ds_critical'>{}</td></tr>"
+                          .format(sds.name if sds.name else "",
+                                  sds.warning if sds.warning else "",
+                                  sds.critical if sds.critical else ""))
     params.append("</tbody></table></div></div></div>")
     dajax.assign(field_id, 'innerHTML', ''.join(params))
     return dajax.json()
