@@ -2937,7 +2937,7 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
                     device = Device.objects.get(pk=device_id)
                     service = Service.objects.get(pk=service_id)
                     params.append("<br />")
-                    svc_templates.append("<p class='text-warning'><b>Select service template:</b></p> ")
+                    svc_templates.append("<p class='text-green'><b>Select service template:</b></p> ")
                     svc_templates.append("<select class='form-control' id='service_template_%d'>" % option)
                     svc_templates.append("<option value='' selected>Select</option>")
                     for svc_param in svc_params:
@@ -2945,7 +2945,7 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
                                                                                  svc_param.parameter_description))
                     svc_templates.append("</select>")
                 else:
-                    params.append("<h5 class='text-warning'>No data source associated.</h5> ")
+                    params.append("<h5 class='text-green'>No data source associated.</h5> ")
             except:
                 logger.info("No data source available.")
     else:
@@ -2977,9 +2977,9 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
     service = Service.objects.get(pk=service_id)
     template = ServiceParameters.objects.get(pk=template_id)
     params.append("<br />")
-    params.append("<h5 class='text-warning'><b>Selected configuration:</b></h5>")
+    params.append("<h5 class='text-green'><b>Selected configuration:</b></h5>")
     params.append("<div class=''>\
-                   <div class='box border orange'>\
+                   <div class='box border green'>\
                    <div class='box-title'>\
                        <h4><i class='fa fa-table'></i>Selected Service Parameters</h4>\
                    </div>")
