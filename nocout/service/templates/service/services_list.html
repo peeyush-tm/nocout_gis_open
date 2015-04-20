@@ -28,14 +28,6 @@
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> SERVICE LISTING</h4>
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
         </div>
 
         <div id="tableContainer" class="box-body">
@@ -53,13 +45,34 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "ServiceListingTable" %}';
+
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "Service Listing",
+                app_name = "service",
+                header_class_name = "ServiceList",
+                data_class_name = "ServiceListingTable",
+                extra_param = "{"+common_extra_param+"}",
+                destroy = false;
+                
             /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
-            dataTableInstance.createDataTable("ServiceListingTable", gridHeadersObj, ajax_url, destroy);
+            dataTableInstance.createDataTable(
+                "ServiceListingTable",
+                gridHeadersObj,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
         });
     </script>
 {% endblock %}

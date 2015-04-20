@@ -67,8 +67,41 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                     }
                 }
             }
+
+            if(!tables_info[anchor_id]) {
+                /*Call createDataTable function to create the data table for specified dom element with given data*/
+                dataTableInstance.createDataTable(
+                    table_id,
+                    grid_headers,
+                    ajax_url,
+                    destroy
+                );
+            } else {
+                if(tables_info[anchor_id]) {
+                    var table_title = tables_info[anchor_id].table_title ? tables_info[anchor_id].table_title : false,
+                        app_name = tables_info[anchor_id].app_name ? tables_info[anchor_id].app_name : false,
+                        header_class_name = tables_info[anchor_id].header_class_name ? tables_info[anchor_id].header_class_name : false,
+                        data_class_name = tables_info[anchor_id].data_class_name ? tables_info[anchor_id].data_class_name : false,
+                        header_extra_param = tables_info[anchor_id].header_extra_param ? encodeURIComponent(tables_info[anchor_id].header_extra_param) : false,
+                        data_extra_param = tables_info[anchor_id].data_extra_param ? encodeURIComponent(tables_info[anchor_id].data_extra_param) : false;
+                    /*Call createDataTable function to create the data table for specified dom element with given data*/
+                    dataTableInstance.createDataTable(
+                        table_id,
+                        grid_headers,
+                        ajax_url,
+                        destroy,
+                        table_title,
+                        app_name,
+                        header_class_name,
+                        data_class_name,
+                        header_extra_param,
+                        data_extra_param
+                    );
+                }
+            } 
+
             /*Call createDataTable function to create the data table for specified dom element with given data*/
-            dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, destroy);
+            // dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, destroy);
         }
     } else {
         // Hide Spinner(Loading)

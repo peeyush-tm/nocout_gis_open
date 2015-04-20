@@ -22,14 +22,6 @@
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>ANTENNA LISTING</h4>
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
         </div>
         <div id="tableContainer" class="box-body">
             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="AntennaListingTable">
@@ -50,9 +42,30 @@
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "AntennaListingTable" %}';
+            
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "Antenna",
+                app_name = "inventory",
+                header_class_name = "AntennaList",
+                data_class_name = "AntennaListingTable",
+                extra_param = "{"+common_extra_param+"}";
+
             /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
-            dataTableInstance.createDataTable("AntennaListingTable", gridHeadersObj, ajax_url, destroy);
+            var destroy = false;
+
+
+            dataTableInstance.createDataTable(
+                "AntennaListingTable",
+                gridHeadersObj,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
         });
     </script>
 {% endblock %}

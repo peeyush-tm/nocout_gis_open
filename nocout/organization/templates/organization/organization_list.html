@@ -46,21 +46,29 @@ $(document).ready(function(e)
         var dataTableInstance = new ourDataTableWidget();
 
         /*Call createDataTable function of ourDataTableWidget class*/
-		var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
-        var ajax_url = '{% url "OrganizationListingTable" %}'
-        var destroy=false;
-        dataTableInstance.createDataTable("OrganizationTable", tableObject, ajax_url, destroy);
+		var tableObject = $.parseJSON('{{ datatable_headers|safe }}'),
+            ajax_url = '{% url "OrganizationListingTable" %}',
+            destroy=false;
 
-        $('.datatable').each(function(){
-			var datatable = $(this);
-			// SEARCH - Add the placeholder for Search and Turn this into in-line form control
-			var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
-			search_input.attr('placeholder', 'Search');
-			search_input.addClass('form-control input-sm');
-			// LENGTH - Inline-Form control
-			var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
-			length_sel.addClass('form-control input-sm');
-		});
+        var common_extra_param = "'download_excel': 'yes'",
+            table_title = "Organization Listing",
+            app_name = "organization",
+            header_class_name = "OrganizationList",
+            data_class_name = "OrganizationListingTable",
+            extra_param = "{"+common_extra_param+"}";
+
+        dataTableInstance.createDataTable(
+            "OrganizationTable",
+            tableObject,
+            ajax_url,
+            destroy,
+            table_title,
+            app_name,
+            header_class_name,
+            data_class_name,
+            extra_param,
+            extra_param
+        );
 	});
 
 </script>

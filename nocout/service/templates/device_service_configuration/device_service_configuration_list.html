@@ -41,13 +41,13 @@
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane" id="DeletedDeviceServiceConfigurationListing">
-                        <table id="DeletedDeviceServiceConfigurationListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="DeletedDeviceServiceConfigurationListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="DeviceServiceConfigurationListing">
-                        <table id="DeviceServiceConfigurationListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="DeviceServiceConfigurationListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -66,24 +66,45 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
+
             /*Ajax url to get grid data*/
-            var ajax_url_deviceserviceconfiguration_listing = '{% url "DeviceServiceConfigurationListingTable" %}';
-            var ajax_url_deleteddeviceserviceconfiguration_listing = '{% url "DeletedDeviceServiceConfigurationListingTable" %}';
+            var ajax_url_deviceserviceconfiguration_listing = '{% url "DeviceServiceConfigurationListingTable" %}',
+                ajax_url_deleteddeviceserviceconfiguration_listing = '{% url "DeletedDeviceServiceConfigurationListingTable" %}',
+                destroy=false,
+                common_extra_param = "'download_excel': 'yes'";
 
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
+            tables_info = {
+                "DeviceServiceConfigurationListing_tab" : {
+                    "app_name" : "service",
+                    "table_title" : "Edited Device Service Configuration Listing",
+                    "header_class_name" : "DeviceServiceConfigurationList",
+                    "data_class_name" : "DeviceServiceConfigurationListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{"+common_extra_param+"}"
+                },
+                "DeletedDeviceServiceConfigurationListing_tab" : {
+                    "app_name" : "service",
+                    "table_title" : "Deleted Device Service Configuration Listing",
+                    "header_class_name" : "DeviceServiceConfigurationList",
+                    "data_class_name" : "DeletedDeviceServiceConfigurationListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{"+common_extra_param+"}"
+                }
+            };
 
-            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+            // Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag. -- START
 
             $("#DeviceServiceConfigurationListing_tab").attr("data_url",ajax_url_deviceserviceconfiguration_listing);
             $("#DeviceServiceConfigurationListing_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
             $("#DeletedDeviceServiceConfigurationListing_tab").attr("data_url",ajax_url_deleteddeviceserviceconfiguration_listing);
             $("#DeletedDeviceServiceConfigurationListing_tab").attr("data_header",'{{ deleted_datatable_headers|safe }}');
+
+            // Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag. -- END
+
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#DeviceServiceConfigurationListing_tab").trigger('click',true);
             }

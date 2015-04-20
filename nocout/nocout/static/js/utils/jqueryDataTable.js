@@ -53,16 +53,17 @@ function ourDataTableWidget()
                 /*Hide the spinner*/
                 hideSpinner();
                 var search_btn_html = '';
+
+                search_btn_html += '<button id="'+tableId+'_search_btn" class="btn btn-sm btn-default">\
+                                    <i class="fa fa-search"></i></button>';
+
                 // If download is enabled from settings then show download button else not
                 if(datatables_download_flag) {
                     if(app_name && header_class_name && data_class_name) {
-                        search_btn_html += '<button id="'+tableId+'_download_btn" class="btn btn-sm btn-default pull-right" title="Download">\
+                        search_btn_html += '<button id="'+tableId+'_download_btn" class="btn btn-sm btn-default" title="Download">\
                                             <i class="fa fa-download"></i></button>';
                     }
                 }
-
-                search_btn_html += '<button id="'+tableId+'_search_btn" class="btn btn-sm btn-default pull-right">\
-                                    <i class="fa fa-search"></i></button>';
 
                 // Add search button near search txt box
                 $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);

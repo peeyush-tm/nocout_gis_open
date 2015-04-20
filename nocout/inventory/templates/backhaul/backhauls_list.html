@@ -40,13 +40,35 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "BackhaulListingTable" %}';
+
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "Backhaul",
+                app_name = "inventory",
+                header_class_name = "BackhaulList",
+                data_class_name = "BackhaulListingTable",
+                extra_param = "{"+common_extra_param+"}";
+
             /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
-            dataTableInstance.createDataTable("BackhaulListingTable", gridHeadersObj, ajax_url, destroy);
+            var destroy = false;
+
+            dataTableInstance.createDataTable(
+                "BackhaulListingTable",
+                gridHeadersObj,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
         });
     </script>
 {% endblock %}

@@ -1935,6 +1935,33 @@ class Get_Service_Status(View):
         else:
             return current_value
 
+class ServiceDataSourceHeaders(ListView):
+    """
+    A generic class based view for the single device page ServiceDataSourceHeaders.
+    """
+    model = PerformanceService
+    template_name = 'performance/single_device_perf.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super(ServiceDataSourceHeaders, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'},
+            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
+            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
+            {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
+            {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
+            {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto'},
+            {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto'},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto'},
+            {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'}
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        return context
+
 
 class ServiceDataSourceListing(BaseDatatableView):
     """
@@ -1945,6 +1972,8 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     columns = [
         'ip_address',
+        'service_name',
+        'data_source',
         'current_value',
         'min_value',
         'max_value',
@@ -1965,7 +1994,11 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     perf_data_instance = ''
 
-    def get_initial_queryset(self, parameters, machine_name):
+    parameters = {}
+
+    inventory_device_machine_name = ""
+
+    def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
@@ -1973,8 +2006,8 @@ class ServiceDataSourceListing(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         resultset = self.perf_data_instance.get_performance_data(
-            **parameters
-        ).using(alias=machine_name)
+            **self.parameters
+        ).using(alias=self.inventory_device_machine_name)
 
         columns = str(self.columns)[1:-1]
 
@@ -2034,7 +2067,7 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         return data
 
-    def filter_queryset(self, qs, parameters, machine_name):
+    def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
         sSearch = self.request.GET.get('sSearch', None)
@@ -2043,8 +2076,8 @@ class ServiceDataSourceListing(BaseDatatableView):
 
             try:
                 main_resultset = self.perf_data_instance.get_performance_data(
-                    **parameters
-                ).using(alias=machine_name)
+                    **self.parameters
+                ).using(alias=self.inventory_device_machine_name)
 
                 qs = main_resultset.filter(
                     Q(max_value__icontains=sSearch)
@@ -2112,7 +2145,7 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         request = self.request
         self.initialize(*args, **kwargs)
-
+        
         # REQUIRED GET PARAMS
         device_id = self.kwargs['device_id']
         service = self.kwargs['service_name']
@@ -2127,7 +2160,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         date_format = DATE_TIME_FORMAT
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
-        inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+        self.inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
         self.perf_data_instance = Get_Service_Type_Performance_Data()
 
@@ -2153,7 +2186,7 @@ class ServiceDataSourceListing(BaseDatatableView):
             self.columns.append('min_value')
             self.columns.append('max_value')
             self.columns.append('avg_value')
-            inventory_device_machine_name = 'default'
+            self.inventory_device_machine_name = 'default'
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
 
@@ -2255,7 +2288,7 @@ class ServiceDataSourceListing(BaseDatatableView):
             else:
                 self.model = Utilization
 
-        parameters = {
+        self.parameters = {
             'model': self.model,
             'start_time': start_date,
             'end_time': end_date,
@@ -2264,12 +2297,12 @@ class ServiceDataSourceListing(BaseDatatableView):
             'sds': [data_source]
         }
 
-        qs = self.get_initial_queryset(parameters, inventory_device_machine_name)
+        qs = self.get_initial_queryset()
 
         # number of records before filtering
         total_records = qs.count()
 
-        qs = self.filter_queryset(qs, parameters, inventory_device_machine_name)
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = qs.count()

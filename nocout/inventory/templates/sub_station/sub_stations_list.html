@@ -57,8 +57,11 @@
 {% endblock %}
 
 {% block jquery %}
+    <!-- Custom script for data table-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click -->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+
     <script type="text/javascript">
 
         var dataTableInstance = "";
@@ -66,25 +69,58 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            //var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
-            var ajax_url_all_subs_stations = '{% url "SubStationListingTable" %}' + '?tab=all';
-            var ajax_url_unused_subs_stations = '{% url "SubStationListingTable" %}' + '?tab=unused';
-            var ajax_url_corrupted_subs_stations = '{% url "SubStationListingTable" %}' + '?tab=corrupted';
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
+            var ajax_url_all_subs_stations = '{% url "SubStationListingTable" %}' + '?tab=all',
+                ajax_url_unused_subs_stations = '{% url "SubStationListingTable" %}' + '?tab=unused',
+                ajax_url_corrupted_subs_stations = '{% url "SubStationListingTable" %}' + '?tab=corrupted';
+
+            var common_extra_param = "'download_excel': 'yes'",
+                all_extra_param = "{'tab' : 'all', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused', "+common_extra_param+"}",
+                corrupted_extra_param = "{'tab' : 'corrupted', "+common_extra_param+"}";
+
+            tables_info = {
+                "allSubStationListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Sub Station - All",
+                    "header_class_name" : "SubStationList",
+                    "data_class_name" : "SubStationListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : all_extra_param
+                },
+                "unusedSubStationListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Sub Station - Unused",
+                    "header_class_name" : "SubStationList",
+                    "data_class_name" : "SubStationListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : unused_extra_param
+                },
+                "corruptedSubStationListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Sub Station - Corrupted",
+                    "header_class_name" : "SubStationList",
+                    "data_class_name" : "SubStationListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : corrupted_extra_param
+                }
+            };
+
+            var destroy = false;
+
             $("#allSubStationListingTab").attr("data_url", ajax_url_all_subs_stations);
             $("#allSubStationListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#unusedSubStationListingTab").attr("data_url", ajax_url_unused_subs_stations);
             $("#unusedSubStationListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#corruptedSubStationListingTab").attr("data_url", ajax_url_corrupted_subs_stations);
             $("#corruptedSubStationListingTab").attr("data_header", '{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#allSubStationListingTab").trigger('click',true);
             }
