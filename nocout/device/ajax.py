@@ -2747,10 +2747,6 @@ def delete_services(request, device_id, service_data):
                 dsc.operation = "d"
                 dsc.save()
 
-                # set site instance bit corresponding to the device
-                device.site_instance.is_device_change = 1
-                device.site_instance.save()
-
                 # delete service rows form 'service_deviceserviceconfiguration' table
                 DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
                                                           service_name=service.name,
@@ -2766,6 +2762,7 @@ def delete_services(request, device_id, service_data):
 
         except Exception as e:
             result['message'] += e.message
+
     result['message'] = messages
     return json.dumps({'result': result})
 
@@ -3338,6 +3335,26 @@ def reset_service_configuration(request):
 
     # get last id of 'DeviceSyncHistory'
     try:
+        # get all devices list from 'service_devicepingconfiguration'
+        ping_devices = DevicePingConfiguration.objects.all().values_list('device_name', flat=True)
+
+        # get list of sites associated with 'ping_devices'
+        ping_sites = Device.objects.filter(device_name__in=list(set(ping_devices))).values_list('site_instance__id',
+                                                                                              flat=True)
+
+        # get all devices list from 'service_deviceserviceconfiguration'
+        svc_devices = DeviceServiceConfiguration.objects.all().values_list('device_name', flat=True)
+
+        # get list of sites associated with 'svc_devices'
+        svc_sites = Device.objects.filter(device_name__in=list(set(svc_devices))).values_list('site_instance__id',
+                                                                                              flat=True)
+
+        # effected sites
+        effected_sites = set(list(ping_sites) + list(svc_sites))
+
+        # set 'is_device_change' bit og corresponding sites
+        SiteInstance.objects.filter(id__in=effected_sites).update(is_device_change=1)
+
         # truncate 'service_deviceserviceconfiguration'
         DeviceServiceConfiguration.objects.all().delete()
 
@@ -3348,6 +3365,6 @@ def reset_service_configuration(request):
         result['message'] = "Successfully reset device service configuration."
 
     except Exception as e:
-        pass
+        logger.info(e.message)
 
     return json.dumps({'result': result})
