@@ -38,64 +38,67 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def getCustomerAlertDetail(request):
+class CustomerAlertDetailHeaders(ListView):
     """
-    get request to render customer detail list
-    :params request object:
-    :return Http Response Object::
+    A generic class view for the network alert details view
 
     """
+    model = EventService
+    template_name = 'alert_center/customer_alert_details_list.html'
 
-    starting_headers = [
-        {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
-    ]
+    def get_context_data(self, **kwargs):
 
-    specific_headers = [
-        {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True}
-    ]
+        starting_headers = [
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+        ]
 
-    common_headers = [
-        {'mData': 'near_end_ip', 'sTitle': 'Near End IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True}
-    ]
+        specific_headers = [
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True}
+        ]
 
-    polled_headers = [
-        {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
-    ]
+        common_headers = [
+            {'mData': 'near_end_ip', 'sTitle': 'Near End IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True}
+        ]
 
-    other_headers = [
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': False}
-    ]
+        polled_headers = [
+            {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
+        ]
 
-    datatable_headers = starting_headers
-    datatable_headers += specific_headers
-    datatable_headers += common_headers
-    datatable_headers += polled_headers
-    datatable_headers += other_headers
+        other_headers = [
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': False}
+        ]
 
-    context = {'datatable_headers': json.dumps(datatable_headers)}
-    return render(request, 'alert_center/customer_alert_details_list.html', context)
+        datatable_headers = starting_headers
+        datatable_headers += specific_headers
+        datatable_headers += common_headers
+        datatable_headers += polled_headers
+        datatable_headers += other_headers
+
+        context = {'datatable_headers': json.dumps(datatable_headers)}
+
+        return context
 
 
 class GetCustomerAlertDetail(BaseDatatableView):
@@ -446,149 +449,153 @@ class GetCustomerAlertDetail(BaseDatatableView):
         }
         return ret
 
-
-def getNetworkAlertDetail(request):
+class NetworkAlertDetailHeaders(ListView):
     """
-    get request to render network detail list
-    :params request object:
-    :return Http Response Object:
+    A generic class view for the network alert details view
+
     """
+    model = EventNetwork
+    template_name = 'alert_center/network_alert_details_list.html'
 
-    starting_headers = [
-        {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
-    ]
+    def get_context_data(self, **kwargs):
 
-    specific_headers = [
-        {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True}
-    ]
+        starting_headers = [
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+        ]
 
-    ul_issue_specific_headers = [
-        {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True}
-    ]
+        specific_headers = [
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True}
+        ]
 
-    bh_specific_headers = [
-        {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True}
-    ]
+        ul_issue_specific_headers = [
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'refer', 'sTitle': 'Affected Sectors', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True}
+        ]
 
-    common_headers = [
-        {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True}
-    ]
+        bh_specific_headers = [
+            {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True}
+        ]
 
-    polled_headers = [
-        {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
-    ]
+        common_headers = [
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True}
+        ]
 
-    other_headers = [
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': False}
-    ]
+        polled_headers = [
+            {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
+        ]
 
-    datatable_headers = []
-    datatable_headers += starting_headers
-    datatable_headers += specific_headers
-    datatable_headers += common_headers
-    datatable_headers += polled_headers
-    datatable_headers += other_headers
+        other_headers = [
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': False}
+        ]
 
-
-    ul_issue_datatable_headers = []
-    ul_issue_datatable_headers += starting_headers
-    ul_issue_datatable_headers += ul_issue_specific_headers
-    ul_issue_datatable_headers += common_headers
-    ul_issue_datatable_headers += polled_headers
-    ul_issue_datatable_headers += other_headers
-
-    bh_dt_headers = []
-    bh_dt_headers += starting_headers
-    bh_dt_headers += bh_specific_headers
-    bh_dt_headers += common_headers
-    bh_dt_headers += polled_headers
-    bh_dt_headers += other_headers
-
-    # Sector Utilization Headers
-    sector_util_hidden_headers = [
-        {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-        {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-        {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-    ]
-
-    sector_util_common_headers = [
-        {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-    ]
-
-    sector_utils_headers = []
-    sector_utils_headers += sector_util_hidden_headers
-    sector_utils_headers += sector_util_common_headers
-
-    bh_util_hidden_headers = [
-        {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-        {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-    ]
-
-    bh_util_common_headers = [
-        {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-        {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-    ]
-
-    bh_utils_headers = []
-    bh_utils_headers += bh_util_hidden_headers
-    bh_utils_headers += bh_util_common_headers
+        datatable_headers = []
+        datatable_headers += starting_headers
+        datatable_headers += specific_headers
+        datatable_headers += common_headers
+        datatable_headers += polled_headers
+        datatable_headers += other_headers
 
 
+        ul_issue_datatable_headers = []
+        ul_issue_datatable_headers += starting_headers
+        ul_issue_datatable_headers += ul_issue_specific_headers
+        ul_issue_datatable_headers += common_headers
+        ul_issue_datatable_headers += polled_headers
+        ul_issue_datatable_headers += other_headers
 
-    context = {
-        'datatable_headers': json.dumps(datatable_headers),
-        'bh_utils_headers' : json.dumps(bh_utils_headers),
-        'ul_issue_headers' : json.dumps(ul_issue_datatable_headers),
-        'bh_headers': json.dumps(bh_dt_headers),
-        'sector_utils_headers': json.dumps(sector_utils_headers)
-    }
-    return render(request, 'alert_center/network_alert_details_list.html', context)
+        bh_dt_headers = []
+        bh_dt_headers += starting_headers
+        bh_dt_headers += bh_specific_headers
+        bh_dt_headers += common_headers
+        bh_dt_headers += polled_headers
+        bh_dt_headers += other_headers
+
+        # Sector Utilization Headers
+        sector_util_hidden_headers = [
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+        ]
+
+        sector_util_common_headers = [
+            {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_in_per', 'sTitle': '% DL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        ]
+
+        sector_utils_headers = []
+        sector_utils_headers += sector_util_hidden_headers
+        sector_utils_headers += sector_util_common_headers
+
+        bh_util_hidden_headers = [
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+        ]
+
+        bh_util_common_headers = [
+            {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        ]
+
+        bh_utils_headers = []
+        bh_utils_headers += bh_util_hidden_headers
+        bh_utils_headers += bh_util_common_headers
+
+
+
+        context = {
+            'datatable_headers': json.dumps(datatable_headers),
+            'bh_utils_headers' : json.dumps(bh_utils_headers),
+            'ul_issue_headers' : json.dumps(ul_issue_datatable_headers),
+            'bh_headers': json.dumps(bh_dt_headers),
+            'sector_utils_headers': json.dumps(sector_utils_headers)
+        }
+
+        return context
+    # return render(request, 'alert_center/network_alert_details_list.html', context)
 
 
 class GetNetworkAlertDetail(BaseDatatableView):

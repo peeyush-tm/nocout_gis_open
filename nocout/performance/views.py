@@ -1946,7 +1946,7 @@ class ServiceDataSourceHeaders(ListView):
 
         context = super(ServiceDataSourceHeaders, self).get_context_data(**kwargs)
 
-        table_headers = [
+        datatable_headers = [
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'},
             {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
@@ -1958,7 +1958,7 @@ class ServiceDataSourceHeaders(ListView):
             {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'}
         ]
 
-        context['table_headers'] = json.dumps(table_headers)
+        context['datatable_headers'] = json.dumps(datatable_headers)
 
         return context
 
@@ -2145,7 +2145,7 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         request = self.request
         self.initialize(*args, **kwargs)
-
+        
         # REQUIRED GET PARAMS
         device_id = self.kwargs['device_id']
         service = self.kwargs['service_name']

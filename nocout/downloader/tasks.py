@@ -102,6 +102,10 @@ def get_datatable_response(payload):
         headers_req_obj.request = headers_req
         headers_req_obj.object_list = []
         headers_req_obj.kwargs = payload['headers_data']
+        # @priyesh-teramatrix :- Please verify. Here a we use dynamic 'headers_data_key' instead 
+        #                        for fixed hardcoded key.
+        header_data_key = payload['headers_data']['headers_data_key'] \
+                          if 'headers_data_key' in payload['headers_data'] else 'datatable_headers'
 
         # get headers
         headers_data = headers_req_obj.get_context_data()
@@ -109,17 +113,32 @@ def get_datatable_response(payload):
         # fetch headers
         headers_list = ""
         file_headers_list = ""
+        non_display_headers = [
+            'action',
+            'actions',
+            'nms_actions',
+            'device_icon',
+            'device_gmap_icon'
+        ]
         try:
             headers_list = list()
             file_headers_list = list()
-            datatable_headers = simplejson.loads(headers_data['datatable_headers'])
+            datatable_headers = simplejson.loads(headers_data[header_data_key])
             for headers_dict in datatable_headers:
-                if 'sClass' in headers_dict:
-                    if headers_dict['sClass'] != 'hide':
+                # @priyesh-teramatrix :- Please verify. Here a condition added by which the 
+                #                        action column will be not added to downloaded report.
+                if headers_dict['mData'] not in non_display_headers:
+                    if 'sClass' in headers_dict:
+                        if headers_dict['sClass'] != 'hide':
+                            headers_list.append(headers_dict['mData'])
+                            file_headers_list.append(headers_dict['sTitle'])
+                    # @priyesh-teramatrix :- Please verify. Here 'else' condition added because it is not 
+                    #                        necessary that we have 'sClass' key in grid headers.
+                    else:
                         headers_list.append(headers_dict['mData'])
                         file_headers_list.append(headers_dict['sTitle'])
         except Exception as e:
-            logger.error(e.message)
+            logger.info(e.message)
 
         # exclude parameters from excel sheet
         if payload['excluded']:
@@ -131,17 +150,25 @@ def get_datatable_response(payload):
         # create view class object (for rows data)
         rows_req_obj = eval("{}()".format(payload['rows']))
         rows_req_obj.request = rows_req
-        rows_req_obj.kwargs = payload['rows']
+        
+        # @priyesh-teramatrix :- Please verify. Here wrong key is used, which is corrected(use 'rows_data' instead or 'rows').
+        rows_req_obj.kwargs = payload['rows_data'] 
 
-        # get datatable data
-        query_set_length = len(rows_req_obj.get_initial_queryset())
 
-        rows_req.REQUEST['iDisplayLength'] = query_set_length
+        # @priyesh-teramatrix :- Please verify. Try catch added to resolved the flow break.
+        #                        Why 'get_initial_queryset()' is called?
+        try:
+            # get datatable data
+            query_set_length = len(rows_req_obj.get_initial_queryset())
 
-        if payload['max_rows']:
-            rows_req_obj.max_display_length = int(payload['max_rows'])
-        else:
-            rows_req_obj.max_display_length = query_set_length
+            rows_req.REQUEST['iDisplayLength'] = query_set_length
+
+            if payload['max_rows']:
+                rows_req_obj.max_display_length = int(payload['max_rows'])
+            else:
+                rows_req_obj.max_display_length = query_set_length
+        except Exception, e:
+            logger.error(e.message)
 
         result = rows_req_obj.get_context_data()
 

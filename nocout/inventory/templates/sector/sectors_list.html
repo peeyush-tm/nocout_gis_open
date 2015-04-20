@@ -58,7 +58,9 @@
 {% endblock %}
 
 {% block jquery %}
+    <!-- Custom script for data table-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click -->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
 
@@ -67,25 +69,59 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            //var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
-            var ajax_url_all_sectors = '{% url "SectorListingTable" %}' + '?tab=all';
-            var ajax_url_unused_sectors = '{% url "SectorListingTable" %}' + '?tab=unused';
-            var ajax_url_corrupted_sectors = '{% url "SectorListingTable" %}' + '?tab=corrupted';
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
+            var ajax_url_all_sectors = '{% url "SectorListingTable" %}' + '?tab=all',
+                ajax_url_unused_sectors = '{% url "SectorListingTable" %}' + '?tab=unused',
+                ajax_url_corrupted_sectors = '{% url "SectorListingTable" %}' + '?tab=corrupted';
+
+            var destroy = false;
+
+            var common_extra_param = "'download_excel': 'yes'",
+                all_extra_param = "{'tab' : 'all', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused', "+common_extra_param+"}",
+                corrupted_extra_param = "{'tab' : 'corrupted', "+common_extra_param+"}";
+
+            tables_info = {
+                "allSectorListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Sector - All",
+                    "header_class_name" : "SectorList",
+                    "data_class_name" : "SectorListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : all_extra_param
+                },
+                "unusedSectorListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Sector - Unused",
+                    "header_class_name" : "SectorList",
+                    "data_class_name" : "SectorListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : unused_extra_param
+                },
+                "corruptedSectorListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Sector - Corrupted",
+                    "header_class_name" : "SectorList",
+                    "data_class_name" : "SectorListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : corrupted_extra_param
+                }
+            };
+
+            
             $("#allSectorListingTab").attr("data_url", ajax_url_all_sectors);
             $("#allSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#unusedSectorListingTab").attr("data_url", ajax_url_unused_sectors);
             $("#unusedSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#corruptedSectorListingTab").attr("data_url", ajax_url_corrupted_sectors);
             $("#corruptedSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#allSectorListingTab").trigger('click',true);
             }

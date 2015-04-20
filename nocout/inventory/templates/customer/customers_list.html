@@ -61,23 +61,46 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            //var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
-            var ajax_url_all_customers = '{% url "CustomerListingTable" %}' + '?tab=all';
-            var ajax_url_unused_customers = '{% url "CustomerListingTable" %}' + '?tab=unused';
-            /*Call createDataTable function of ourDataTableWidget class*/
+            var ajax_url_all_customers = '{% url "CustomerListingTable" %}' + '?tab=all',
+                ajax_url_unused_customers = '{% url "CustomerListingTable" %}' + '?tab=unused';
+
+
             var destroy=false;
-            //dataTableInstance.createDataTable("CustomerListingTable", gridHeadersObj, ajax_url, destroy);
+
+            var common_extra_param = "'download_excel': 'yes'",
+                all_extra_param = "{'tab' : 'all', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused', "+common_extra_param+"}";
+
+            tables_info = {
+                "allCustomerListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Customer - All",
+                    "header_class_name" : "CustomerList",
+                    "data_class_name" : "CustomerListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : all_extra_param
+                },
+                "unusedCustomerListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Customer - Unused",
+                    "header_class_name" : "CustomerList",
+                    "data_class_name" : "CustomerListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : unused_extra_param
+                }
+            };
+
             $("#allCustomerListingTab").attr("data_url", ajax_url_all_customers);
             $("#allCustomerListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#unusedCustomerListingTab").attr("data_url", ajax_url_unused_customers);
             $("#unusedCustomerListingTab").attr("data_header", '{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#allCustomerListingTab").trigger('click',true);
             }

@@ -360,19 +360,19 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
     if(show_historical_on_performance) {
         data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
         data_extra_param += "'device_id' : '"+current_device+"',";
-        data_extra_param += "'download_excel': 'yes'";
         if(get_param_data) {
             data_extra_param += get_param_data;
         }
+        data_extra_param += "'download_excel': 'yes'";
         data_extra_param += " }";
 
     } else {
         data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
         data_extra_param += "'device_id' : '"+current_device+"', 'data_for' : '"+data_for+"',";
-        data_extra_param += "'download_excel': 'yes'";
         if(get_param_data) {
             data_extra_param += get_param_data;
         }
+        data_extra_param += "'download_excel': 'yes'";
         data_extra_param += " }";
     }
 

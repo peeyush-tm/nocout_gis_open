@@ -57,20 +57,44 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            var ajax_url_all_circuits = '{% url "CircuitListingTable" %}' + '?tab=all';
-            var ajax_url_unused_circuits = '{% url "CircuitListingTable" %}' + '?tab=unused';
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
+
+            var ajax_url_all_circuits = '{% url "CircuitListingTable" %}' + '?tab=all',
+                ajax_url_unused_circuits = '{% url "CircuitListingTable" %}' + '?tab=unused';
+
+            var destroy = false;
+
+            var common_extra_param = "'download_excel': 'yes'",
+                all_extra_param = "{'tab' : 'all', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused', "+common_extra_param+"}";
+
+            tables_info = {
+                "allCircuitListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Circuit - All",
+                    "header_class_name" : "CircuitList",
+                    "data_class_name" : "CircuitListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : all_extra_param
+                },
+                "unusedCircuitListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : "Circuit - Unused",
+                    "header_class_name" : "CircuitList",
+                    "data_class_name" : "CircuitListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : unused_extra_param
+                }
+            };
 
             $("#allCircuitListingTab").attr("data_url", ajax_url_all_circuits);
             $("#allCircuitListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#unusedCircuitListingTab").attr("data_url", ajax_url_unused_circuits);
             $("#unusedCircuitListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#allCircuitListingTab").trigger('click',true);
             }
