@@ -22,7 +22,7 @@ def get_datatable_response(payload):
                                 {
                                     'username': u'priyesh',
                                     'rows': u'LivePerformanceListing',
-                                    'app': u'performance',
+                                    'app': u'',
                                     'object_id': 3L,
                                     'headers': u'Live_Performance',
                                     'rows_data': {
@@ -104,8 +104,8 @@ def get_datatable_response(payload):
         headers_req_obj.kwargs = payload['headers_data']
         # @priyesh-teramatrix :- Please verify. Here a we use dynamic 'headers_data_key' instead 
         #                        for fixed hardcoded key.
-        header_data_key = payload['headers_data']['headers_data_key'] \
-                          if 'headers_data_key' in payload['headers_data'] else 'datatable_headers'
+        headers_data_key = payload['headers_data']['headers_data_key'] \
+            if 'headers_data_key' in payload['headers_data'] else 'datatable_headers'
 
         # get headers
         headers_data = headers_req_obj.get_context_data()
@@ -123,7 +123,7 @@ def get_datatable_response(payload):
         try:
             headers_list = list()
             file_headers_list = list()
-            datatable_headers = simplejson.loads(headers_data[header_data_key])
+            datatable_headers = simplejson.loads(headers_data[headers_data_key])
             for headers_dict in datatable_headers:
                 # @priyesh-teramatrix :- Please verify. Here a condition added by which the 
                 #                        action column will be not added to downloaded report.
