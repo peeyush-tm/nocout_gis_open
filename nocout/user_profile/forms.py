@@ -100,7 +100,7 @@ class UserForm(forms.ModelForm):
         """
 
         """
-        if 'username' in [key for key,values in self.cleaned_data.items()]:
+        if 'username' in [key for key, values in self.cleaned_data.items()]:
             parent = self.cleaned_data['parent']
             username = self.cleaned_data['username']
 
