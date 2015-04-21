@@ -22,7 +22,7 @@ def get_datatable_response(payload):
                                 {
                                     'username': u'priyesh',
                                     'rows': u'LivePerformanceListing',
-                                    'app': u'',
+                                    'app': u'performance',
                                     'object_id': 3L,
                                     'headers': u'Live_Performance',
                                     'rows_data': {
