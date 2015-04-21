@@ -24,32 +24,37 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li><a href="#network_history_block" id="network_history_tab" data-toggle="tab"><span
-                            class="hidden-inline-mobile">History</span></a></li>
-                    <li><a href="#network_clear_block" id="network_clear_tab" data-toggle="tab"><span
-                            class="hidden-inline-mobile">Clear</span></a></li>
-                    <li class="active"><a href="#network_current_block" id="network_current_tab" data-toggle="tab"><span
-                            class="hidden-inline-mobile">Current</span></a></li>
+                    <li>
+                        <a href="#network_history_block" id="network_history_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">History</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#network_clear_block" id="network_clear_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Clear</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#network_current_block" id="network_current_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Current</span>
+                        </a>
+                    </li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane active" id="network_current_block">
-                        <table cellpadding="0" cellspacing="0" border="0"
-                               class="datatable table table-striped table-bordered table-hover"
-                               id="network_current_block_table">
+                        <table class="datatable table table-striped table-bordered table-hover" id="network_current_block_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="network_clear_block">
-                        <table id="network_clear_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
-                               class="datatable table table-striped table-bordered table-hover">
+                        <table id="network_clear_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="network_history_block">
-                        <table id="network_history_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
-                               class="datatable table table-striped table-bordered table-hover">
+                        <table id="network_history_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -74,11 +79,44 @@
             dataTableInstance = new ourDataTableWidget();
 
             /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-
-            var ajax_url_history = '{% url "history-alarms" %}',
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+                ajax_url_history = '{% url "history-alarms" %}',
                 ajax_url_clear = '{% url "clear-alarms" %}',
                 ajax_url_current = '{% url "current-alarms" %}';
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
+
+            var common_extra_param = "'download_excel': 'yes'";
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
+
+            tables_info = {
+                "network_history_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : "SIA Alarms - History",
+                    "header_class_name" : "SIAListing",
+                    "data_class_name" : "HistoryAlarmsListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{"+common_extra_param+"}"
+                },
+                "network_clear_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : "SIA Alarms - Clear",
+                    "header_class_name" : "SIAListing",
+                    "data_class_name" : "ClearAlarmsListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{"+common_extra_param+"}"
+                },
+                "network_current_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : "SIA Alarms - Current",
+                    "header_class_name" : "SIAListing",
+                    "data_class_name" : "CurrentAlarmsListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{"+common_extra_param+"}"
+                }
+            };
+
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
