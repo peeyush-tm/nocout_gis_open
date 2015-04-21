@@ -280,7 +280,29 @@ function initCityChartersDatatables() {
             ajax_url = city_charter_tbl_obj[table_id]['few_url'];
             grid_headers = city_charter_tbl_obj[table_id]['headers'];
 
-            dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, false);
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "City Charter Listing",
+                app_name = "download_center",
+                header_class_name = "CityCharterReportHeaders",
+                data_class_name = "CityCharterReportListing",
+                extra_param = "{"+common_extra_param+"}",
+                destroy = false;
+                
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable(
+                table_id,
+                grid_headers,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
+
+            // dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, false);
         }
     }
 

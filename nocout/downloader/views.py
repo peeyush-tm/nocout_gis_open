@@ -567,7 +567,10 @@ class DownloaderCompleteListing(BaseDatatableView):
         Preparing  Initial Queryset for the for rendering the data table.
 
         """
-        return Downloader.objects.filter(downloaded_by=self.request.user.username).values(*self.columns + ['id'])
+        # @priyesh-teramatrix :- Please varify. Returned the latest queryset first as per 'requested_on' time
+        return Downloader.objects.filter(
+            downloaded_by=self.request.user.username
+        ).values(*self.columns + ['id']).order_by('-requested_on')
 
     def prepare_results(self, qs):
         """
