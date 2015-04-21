@@ -78,6 +78,10 @@ def check_wimax_idu_serial_invent(item, _no_params, info):
     try:
         idu_serial_1, idu_serial_2 = live_query_idu_serial(g_hostname)
         if idu_serial_1 or idu_serial_2:
+		if idu_serial_1:
+			idu_serial_1 = idu_serial_1.replace('-','_')
+		if idu_serial_2:
+			idu_serial_2 = idu_serial_2.replace('-','_')
                 infotext = "Chassis=%s Carrier_Board=%s" % (idu_serial_1, idu_serial_2)
                 state = 0
 
