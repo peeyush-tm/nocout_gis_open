@@ -616,6 +616,10 @@ class DownloaderCompleteListing(BaseDatatableView):
         :param qs:
         :return qs
         """
+        success_html = '<span class="text-success">Success</span>'
+        fail_html = '<span class="text-danger">Failed</span>'
+        pending_html = '<span class="text-warning">Pending</span>'
+
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
@@ -633,11 +637,14 @@ class DownloaderCompleteListing(BaseDatatableView):
             # modified module name
             modified_module_name = "[{}] : [{}]".format(app_name, module_name)
 
-            # icon for excel file
+            # green icon for excel file
             excel_green = static("img/ms-office-icons/excel_2013_green.png")
 
-            # icon for excel file
+            # red icon for excel file
             excel_red = static("img/ms-office-icons/excel_2013_red.png")
+
+            # grey icon for excel file
+            excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
 
             # File name which will be downloaded
             try:
@@ -664,19 +671,19 @@ class DownloaderCompleteListing(BaseDatatableView):
 
             try:
                 if not dct.get('status'):
-                    dct.update(status='<span class="text-warning">Pending</span>')
+                    dct.update(status=pending_html)
             except Exception as e:
                 logger.info(e.message)
 
             try:
                 if dct.get('status') == 1:
-                    dct.update(status='<span class="text-success">Success</span>')
+                    dct.update(status=success_html)
             except Exception as e:
                 logger.info(e.message)
 
             try:
                 if dct.get('status') == 2:
-                    dct.update(status='<span class="text-danger">Failed</span>')
+                    dct.update(status=fail_html)
             except Exception as e:
                 logger.info(e.message)
 
@@ -708,34 +715,31 @@ class DownloaderCompleteListing(BaseDatatableView):
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
-            # try:
-            #     if dct.get('status') == "Success":
-            #         dct.update(
-            #             file_path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-            #                 download_path, excel_green))
-            #     else:
-            #         dct.update(
-            #             file_path='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-            #                 excel_red))
-            # except Exception as e:
-            #     dct.update(
-            #         file_path='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-            #             excel_red))
-            #     pass
+            download_img_str = ''
 
-            if dct['file_path']:
-                dct.update(
-                    file_name=file_name,
-                    actions='<a href="{0}" title="Download Report"><i class="fa fa-download text-primary">&nbsp;&nbsp;&nbsp;</i></a>\
-                            <a href="/downloader/delete/{1}" title="Delete Report"><i class="fa fa-trash-o text-danger">&nbsp;</i></a>\
-                            '.format(download_path, dct.pop('id'))
-                )
-            else:
-                dct.update(
-                    file_name=file_name,
-                    actions='<a href="/downloader/delete/{0}" title="Delete Report"><i class="fa fa-trash-o text-danger">&nbsp;</i></a>\
-                            '.format(dct.pop('id'))
-                )
+            try:
+                if dct.get('status') == success_html:
+                    download_img_str = '<a href="{}" title="Download Report"><img src="{}" \
+                                       style="width:25px;"></a>'.format(download_path, excel_green)
+
+                elif dct.get('status') == pending_html:
+
+                    download_img_str = '<img src="{}" style="width:25px;" title="Please Wait...">'.format(excel_grey)
+
+                else:
+
+                    download_img_str = '<img src="{}" style="width:25px;">'.format(excel_red)
+
+            except Exception as e:
+                
+                download_img_str = '<img src="{}" style="width:25px;">'.format(excel_red)
+                pass
+
+            dct.update(
+                file_name=unicode(download_img_str)+"&nbsp;&nbsp;"+unicode(file_name),
+                actions='<a href="/downloader/delete/{0}" title="Delete Report"><i class="fa fa-trash-o text-danger">&nbsp;</i></a>\
+                        '.format(dct.pop('id'))
+            )
         return qs
 
     def get_context_data(self, *args, **kwargs):
