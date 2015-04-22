@@ -248,7 +248,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	dr_host_entry = []
 	original_dr_host_list = []
 	dr_flag = 0
-        serv_qry_output = service_result
+	present_time = datetime.now()
+	serv_qry_output = service_result
 	for host_row in host_var['all_hosts']:
 		if 'dr:'in host_row:
 			dr_host_entry.append(host_row)
@@ -289,7 +290,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp = pivot_timestamp_fwd(check_time)
 			try:
-				if  not ds_values.get('cur'):
+				if  not ds_values.get('cur') or ((present_time - local_timestamp) >= timedelta(minutes=4)):
 					#print unknwn_state_svc_data
 					value = unknwn_state_svc_data[(str(entry[0]),str(entry[2]),str(ds))]
 					#print str(entry[0]), str(entry[2]),value
@@ -297,6 +298,11 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					value = ds_values.get('cur')
 			except:
 				value =  ds_values.get('cur')
+			# Code has been Added to figure out if check is executed or not..if check not executed then take current value
+			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
+				local_timestamp = present_time
+				check_time = local_timestamp - timedelta(minutes=2)
+				#print local_timestamp,check_time,str(entry[1]), str(entry[2]) 	
 			data_values = [{'time': check_time, 'value': value}]
 			data_dict.update({
 				'site': site,
@@ -550,8 +556,7 @@ def get_host_services_name(site_name=None, db=None):
 
   	    # Code has been added to take average value of last 10 entries if device is not down and still unknown values
 	    # comes because of packet lost in network for service.
-	    unknown_svc_data = filter(lambda x: x[3] == 3,serv_qry_output)
-	    #print unknown_svc_data
+	    unknown_svc_data = filter(lambda x:(x[3] == 3) or ((st - pivot_timestamp_fwd(datetime.fromtimestamp(x[4]))) >= timedelta(minutes=4)),serv_qry_output)
 	    unknwn_state_svc_data = filter(lambda x: x[0] not in device_down_list ,unknown_svc_data)
 	    #print '............................................'
             #print unknwn_state_svc_data
