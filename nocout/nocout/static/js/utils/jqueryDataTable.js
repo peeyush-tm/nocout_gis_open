@@ -16,7 +16,7 @@ function ourDataTableWidget()
         tableheaders,
         ajax_url,
         destroy,
-        table_title,
+        current_table_title,
         app_name,
         header_class_name,
         data_class_name,
@@ -61,7 +61,14 @@ function ourDataTableWidget()
                 // If download is enabled from settings then show download button else not
                 if(datatables_download_flag) {
                     if(app_name && header_class_name && data_class_name) {
-                        search_btn_html += '<button id="'+tableId+'_download_btn" class="btn btn-sm btn-default" title="Download">\
+                        search_btn_html += '<button id="'+tableId+'_download_btn" \
+                                            current_table_title="'+current_table_title+'" \
+                                            app_name="'+app_name+'" \
+                                            header_class_name="'+header_class_name+'" \
+                                            data_class_name="'+data_class_name+'" \
+                                            header_extra_param="'+header_extra_param+'" \
+                                            data_extra_param="'+data_extra_param+'" \
+                                            class="btn btn-sm btn-default" title="Download">\
                                             <i class="fa fa-download"></i></button>';
                     }
                 }
@@ -116,14 +123,22 @@ function ourDataTableWidget()
             }
         });
 
-        $("#page_content_div").delegate("#"+tableId+"_download_btn",'click',function() {
-
-            var main_url = base_url+"/downloader/datatable/?",
-                url_get_param = "app="+app_name+"&rows="+data_class_name+"&headers="+header_class_name+"&headers_data="+header_extra_param+"&rows_data="+data_extra_param,
-                download_url = main_url+""+url_get_param;
+        $("#page_content_div").delegate("#"+tableId+"_download_btn",'click',function(e) {
+            
             
 
             if(!downloader_api_call) {
+                
+                var main_url = base_url+"/downloader/datatable/?",
+                    attributes_dict = e.currentTarget.attributes,
+                    popup_title = attributes_dict.current_table_title ? attributes_dict.current_table_title.value : "Report",
+                    app_name = attributes_dict.app_name ? attributes_dict.app_name.value : "",
+                    data_class_name = attributes_dict.data_class_name ? attributes_dict.data_class_name.value : "",
+                    header_class_name = attributes_dict.header_class_name ? attributes_dict.header_class_name.value : "",
+                    header_extra_param = attributes_dict.header_extra_param ? attributes_dict.header_extra_param.value : "",
+                    data_extra_param = attributes_dict.data_extra_param ? attributes_dict.data_extra_param.value : "",
+                    url_get_param = "app="+app_name+"&rows="+data_class_name+"&headers="+header_class_name+"&headers_data="+header_extra_param+"&rows_data="+data_extra_param,
+                    download_url = main_url+""+url_get_param;
                 
                 if(!$("#"+tableId+"_download_btn").hasClass('disabled')) {
                     $("#"+tableId+"_download_btn").addClass('disabled');
@@ -144,7 +159,7 @@ function ourDataTableWidget()
 
                         $.gritter.add({
                             // (string | mandatory) the heading of the notification
-                            title: table_title,
+                            title: popup_title,
                             // (string | mandatory) the text inside the notification
                             text: response.message,
                             // (bool | optional) if you want it to fade out on its own or just sit there
@@ -154,7 +169,7 @@ function ourDataTableWidget()
                     error : function(err) {
                         $.gritter.add({
                             // (string | mandatory) the heading of the notification
-                            title: table_title,
+                            title: popup_title,
                             // (string | mandatory) the text inside the notification
                             text: err.statusText,
                             // (bool | optional) if you want it to fade out on its own or just sit there

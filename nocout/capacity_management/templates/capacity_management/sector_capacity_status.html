@@ -229,33 +229,37 @@
         /*Grid headers object & ajax url*/
         var all_ajax_url = '{% url "SectorStatusListingClass" %}',
             pmp_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=PMP',
-            wimax_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=WiMAX';
+            wimax_ajax_url = '{% url "SectorStatusListingClass" %}'+'?technology=WiMAX',
+            common_param = "'download_excel': 'yes'",
+            all_title = "Sector Utilization Status - All",
+            pmp_title = "Sector Utilization Status - PMP",
+            wimax_title = "Sector Utilization Status - WiMAX";
 
 
         tables_info = {
             "all_status_tab" : {
                 "app_name" : "capacity_management",
-                "table_title" : "Sector Utilization Status - All",
+                "table_title" : all_title,
                 "header_class_name" : "SectorStatusHeaders",
                 "data_class_name" : "SectorStatusListing",
-                "header_extra_param" : "{'download_excel': 'yes' }",
-                "data_extra_param" : "{'download_excel': 'yes' }"
+                "header_extra_param" : "{"+common_param+"}",
+                "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_param+"}"
             },
             "pmp_status_tab" : {
                 "app_name" : "capacity_management",
-                "table_title" : "Sector Utilization Status - PMP",
+                "table_title" : pmp_title,
                 "header_class_name" : "SectorStatusHeaders",
                 "data_class_name" : "SectorStatusListing",
-                "header_extra_param" : "{'download_excel': 'yes' }",
-                "data_extra_param" : "{'technology': 'PMP', 'download_excel': 'yes' }"
+                "header_extra_param" : "{"+common_param+"}",
+                "data_extra_param" : "{'technology': 'PMP', 'report_title' : '"+pmp_title+"', "+common_param+"}"
             },
             "wimax_status_tab" : {
                 "app_name" : "capacity_management",
-                "table_title" : "Sector Utilization Status - WiMAX",
+                "table_title" : wimax_title,
                 "header_class_name" : "SectorStatusHeaders",
                 "data_class_name" : "SectorStatusListing",
-                "header_extra_param" : "{'download_excel': 'yes' }",
-                "data_extra_param" : "{'technology': 'WiMAX', 'download_excel': 'yes' }"
+                "header_extra_param" : "{"+common_param+"}",
+                "data_extra_param" : "{'technology': 'WiMAX', 'report_title' : '"+wimax_title+"', "+common_param+"}"
             }
         };
 
