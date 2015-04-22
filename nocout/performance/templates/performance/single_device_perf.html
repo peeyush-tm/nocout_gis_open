@@ -277,7 +277,8 @@
             base_url = "",
             startDate = "",
             endDate = "",
-            dataTableInstance = "";
+            dataTableInstance = "",
+            current_device_ip = "";
 
 
         $(document).ready(function (e) {
@@ -291,6 +292,7 @@
 
             current_device = "{{ device.id }}";
             device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
+            current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
 

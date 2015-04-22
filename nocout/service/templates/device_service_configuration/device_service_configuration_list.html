@@ -71,24 +71,26 @@
             var ajax_url_deviceserviceconfiguration_listing = '{% url "DeviceServiceConfigurationListingTable" %}',
                 ajax_url_deleteddeviceserviceconfiguration_listing = '{% url "DeletedDeviceServiceConfigurationListingTable" %}',
                 destroy=false,
-                common_extra_param = "'download_excel': 'yes'";
+                common_extra_param = "'download_excel': 'yes'",
+                edited_title = "Edited Device Service Configuration Listing",
+                deleted_title = "Deleted Device Service Configuration Listing";
 
             tables_info = {
                 "DeviceServiceConfigurationListing_tab" : {
                     "app_name" : "service",
-                    "table_title" : "Edited Device Service Configuration Listing",
+                    "table_title" : edited_title,
                     "header_class_name" : "DeviceServiceConfigurationList",
                     "data_class_name" : "DeviceServiceConfigurationListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+edited_title+"', "+common_extra_param+"}"
                 },
                 "DeletedDeviceServiceConfigurationListing_tab" : {
                     "app_name" : "service",
-                    "table_title" : "Deleted Device Service Configuration Listing",
+                    "table_title" : deleted_title,
                     "header_class_name" : "DeviceServiceConfigurationList",
                     "data_class_name" : "DeletedDeviceServiceConfigurationListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+deleted_title+"', "+common_extra_param+"}"
                 }
             };
 

@@ -135,48 +135,53 @@
                 ajax_url_archived_listing = '{% url "ArchivedDeviceListingTable" %}',
                 ajax_url_all_listing = '{% url "AllDeviceListingTable" %}';
 
-            var common_extra_param = "'download_excel': 'yes'";
+            var common_extra_param = "'download_excel': 'yes'",
+                operational_title = "Operational Devices Report",
+                non_operational_title = "Non Operational Devices Report",
+                disabled_title = "Disabled Devices Report",
+                archived_title = "Archived Devices Report",
+                all_title = "All Devices Report";
 
             tables_info = {
                 "operationalDeviceListing_tab" : {
                     "app_name" : "device",
-                    "table_title" : "Operational Devices Listing",
+                    "table_title" : operational_title,
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "OperationalDeviceListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+operational_title+"', "+common_extra_param+"}"
                 },
                 "nonOperationalDeviceListing_tab" : {
                     "app_name" : "device",
-                    "table_title" : "Non Operational Devices Listing",
+                    "table_title" : non_operational_title,
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "NonOperationalDeviceListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+non_operational_title+"', "+common_extra_param+"}"
                 },
                 "disabledDeviceListing_tab" : {
                     "app_name" : "device",
-                    "table_title" : "Disabled Devices Listing",
+                    "table_title" : disabled_title,
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "DisabledDeviceListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+disabled_title+"', "+common_extra_param+"}"
                 },
                 "archivedDeviceListing_tab" : {
                     "app_name" : "device",
-                    "table_title" : "Archived Devices Listing",
+                    "table_title" : archived_title,
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "ArchivedDeviceListingTable",
                     "header_extra_param" : "{'headers_data_key' : 'datatable_headers_no_nms_actions', "+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+archived_title+"', "+common_extra_param+"}"
                 },
                 "allDeviceListing_tab" : {
                     "app_name" : "device",
-                    "table_title" : "All Devices Listing",
+                    "table_title" : all_title,
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "AllDeviceListingTable",
                     "header_extra_param" : "{'headers_data_key' : 'datatable_headers_no_nms_actions', "+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_extra_param+"}"
                 }
             };
 

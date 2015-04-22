@@ -318,9 +318,9 @@ function prepareSelectBoxesData(select_boxes) {
         if(values_array && values_array.constructor == Array) {
             $.grep(values_array,function(data){
                 if(selected_values.length > 0) {
-                    selected_values +=  data.text ? ","+data.text() : "";
+                    selected_values +=  data.text ? ","+data.text : "";
                 } else {
-                    selected_values += data.text ? data.text() : "";
+                    selected_values += data.text ? data.text : "";
                 }
             });
         } else {
