@@ -1231,13 +1231,13 @@ class EventNetworkStatus(models.Model):
     """
     Event Network Table columns declared
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
-    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True, db_index=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
     max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
@@ -1251,21 +1251,24 @@ class EventNetworkStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
-    #class Meta:
-    #    ordering = ['-sys_timestamp']
+    class Meta:
+       # ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
 
 
 class EventServiceStatus(models.Model):
     """
     Event Service Table columns declared
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
-    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True, db_index=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
     max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
@@ -1279,8 +1282,11 @@ class EventServiceStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
-    #class Meta:
-    #    ordering = ['-sys_timestamp']
+    class Meta:
+       # ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
 
 
 class EventStatusStatus(models.Model):
