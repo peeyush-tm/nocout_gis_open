@@ -26,7 +26,7 @@
             <h4><i class="fa fa-table"></i>BACKHAUL LISTING</h4>
         </div>
         <div id="tableContainer" class="box-body" style="overflow:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="BackhaulListingTable">
+            <table class="datatable table table-striped table-bordered table-hover" id="BackhaulListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -48,11 +48,11 @@
             var ajax_url = '{% url "BackhaulListingTable" %}';
 
             var common_extra_param = "'download_excel': 'yes'",
-                table_title = "Backhaul",
+                table_title = "Backhaul Listing",
                 app_name = "inventory",
                 header_class_name = "BackhaulList",
                 data_class_name = "BackhaulListingTable",
-                extra_param = "{"+common_extra_param+"}";
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
 
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy = false;

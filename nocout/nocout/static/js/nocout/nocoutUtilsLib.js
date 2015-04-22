@@ -357,24 +357,45 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         }
     }
     
+
+    var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
+        top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
+        left_tab_content_href = $("#"+top_tab_id+" .left_tabs_container li.active a").attr("href"),
+        left_tab_id = left_tab_content_href.split("#").length > 1 ? left_tab_content_href.split("#")[1] : left_tab_content_href.split("#")[0],
+        top_tab_text = $.trim($(".top_perf_tabs > li.active a").text()),
+        left_tab_txt = $.trim($("#"+top_tab_id+" .left_tabs_container > li.active a").text()),
+        report_title = "";
+    
     if(show_historical_on_performance) {
-        data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
-        data_extra_param += "'device_id' : '"+current_device+"',";
-        if(get_param_data) {
-            data_extra_param += get_param_data;
+        try {
+            var content_tab_text = $.trim($("#"+left_tab_id+" .inner_inner_tab li.active a").text());
+            report_title += top_tab_text+" > "+left_tab_txt+" > "+content_tab_text+"("+current_device_ip+")";
+        } catch(e) {
+            report_title += top_tab_text+" > "+left_tab_txt+"("+current_device_ip+")";
         }
-        data_extra_param += "'download_excel': 'yes'";
-        data_extra_param += " }";
 
     } else {
-        data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
-        data_extra_param += "'device_id' : '"+current_device+"', 'data_for' : '"+data_for+"',";
-        if(get_param_data) {
-            data_extra_param += get_param_data;
-        }
-        data_extra_param += "'download_excel': 'yes'";
-        data_extra_param += " }";
+        report_title += top_tab_text+" > "+left_tab_txt+"("+current_device_ip+")";
     }
+
+    if(top_tab_text && left_tab_txt && current_device_ip) {
+        table_title = report_title;
+    }
+    
+    data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"', 'report_title' : '"+table_title+"',";
+
+    if(show_historical_on_performance) {
+        data_extra_param += "'device_id' : '"+current_device+"',";
+    } else {
+        data_extra_param += "'device_id' : '"+current_device+"', 'data_for' : '"+data_for+"',";
+    }
+
+    if(get_param_data) {
+        data_extra_param += get_param_data;
+    }
+
+    data_extra_param += "'download_excel': 'yes'";
+    data_extra_param += " }";
 
     /*Call createDataTable function to create the data table for specified dom element with given data*/
     dataTableInstance.createDataTable(

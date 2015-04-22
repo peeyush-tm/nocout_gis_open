@@ -30,7 +30,7 @@
             <h4><i class="fa fa-table"></i>SERVICE DATA SOURCE LISTING</h4>
         </div>
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ServiceDataSourceListingTable">
+            <table class="datatable table table-striped table-bordered table-hover" id="ServiceDataSourceListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -56,7 +56,7 @@
                 app_name = "service",
                 header_class_name = "ServiceDataSourceList",
                 data_class_name = "ServiceDataSourceListingTable",
-                extra_param = "{"+common_extra_param+"}",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
                 destroy = false;
                 
             /*Call createDataTable function of ourDataTableWidget class*/

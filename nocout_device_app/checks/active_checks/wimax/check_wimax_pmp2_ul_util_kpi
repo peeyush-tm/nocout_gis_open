@@ -143,6 +143,7 @@ def  main():
 
     state_string = "unknown"
     pmp2_ul=''
+    plugin_message = ''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]

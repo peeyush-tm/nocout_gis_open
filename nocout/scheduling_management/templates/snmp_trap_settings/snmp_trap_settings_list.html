@@ -15,9 +15,9 @@
 {% block content_title %}SNMP Trap Settings Management{% endblock %}
 {% block content_description %}List of SNMP trap settings{% endblock %}
 {% block content %}
-            {% if perms.inventory.add_snmp_trap_settings %}
-            <p><a href="/snmp_trap_settings/new"><i class="fa fa-plus">&nbsp;</i> Create SNMP Trap Settings</a></p>
-            {% endif %}
+    {% if perms.inventory.add_snmp_trap_settings %}
+    <p><a href="/snmp_trap_settings/new"><i class="fa fa-plus">&nbsp;</i> Create SNMP Trap Settings</a></p>
+    {% endif %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SNMP TRAP SETTINGS LISTING</h4>
@@ -49,7 +49,7 @@
                 app_name = "scheduling_management",
                 header_class_name = "SNMPTrapSettingsList",
                 data_class_name = "SNMPTrapSettingsListingTable",
-                extra_param = "{"+common_extra_param+"}",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
                 destroy = false;
                 
             /*Call createDataTable function of ourDataTableWidget class*/

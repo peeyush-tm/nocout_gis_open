@@ -110,14 +110,17 @@
             // Report Download Feature -- START
 
             var common_extra_param = "'download_excel': 'yes'",
-                pmp_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'PMP', "+common_extra_param+"}",
-                wimax_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', "+common_extra_param+"}",
-                ptp_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'P2P', "+common_extra_param+"}";
+                pmp_title = "Customer Alert Details: PMP",
+                wimax_title = "Customer Alert Details: WiMAX",
+                ptp_title = "Customer Alert Details: PTP",
+                pmp_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+pmp_title+"', "+common_extra_param+"}",
+                wimax_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'report_title' : '"+wimax_title+"', "+common_extra_param+"}",
+                ptp_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'report_title' : '"+ptp_title+"', "+common_extra_param+"}";
             
             tables_info = {
                 "customer_wifi_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Customer Alert Details: WiMAX",
+                    "table_title" : wimax_title,
                     "header_class_name" : "CustomerAlertDetailHeaders",
                     "data_class_name" : "GetCustomerAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
@@ -125,7 +128,7 @@
                 },
                 "customer_pmp_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Customer Alert Details: PMP",
+                    "table_title" : pmp_title,
                     "header_class_name" : "CustomerAlertDetailHeaders",
                     "data_class_name" : "GetCustomerAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
@@ -133,7 +136,7 @@
                 },
                 "customer_ptp_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Customer Alert Details: PTP",
+                    "table_title" : ptp_title,
                     "header_class_name" : "CustomerAlertDetailHeaders",
                     "data_class_name" : "GetCustomerAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
