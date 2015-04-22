@@ -28,18 +28,26 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li><a href="#AllCustomers" id="allCustomerListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
-                    <li><a href="#UnusedCustomers" id="unusedCustomerListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
+                    <li>
+                        <a href="#AllCustomers" id="allCustomerListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#UnusedCustomers" id="unusedCustomerListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Unused</span>
+                        </a>
+                    </li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane" id="AllCustomers">
-                        <table id="AllCustomersListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="AllCustomersListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="UnusedCustomers">
-                        <table id="UnusedCustomersListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="UnusedCustomersListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -70,13 +78,15 @@
             var destroy=false;
 
             var common_extra_param = "'download_excel': 'yes'",
-                all_extra_param = "{'tab' : 'all', "+common_extra_param+"}",
-                unused_extra_param = "{'tab' : 'unused', "+common_extra_param+"}";
+                all_title = "Customer Listing - All",
+                unused_title = "Customer Listing - Unused",
+                all_extra_param = "{'tab' : 'all','report_title' : '"+all_title+"', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused','report_title' : '"+unused_title+"', "+common_extra_param+"}";
 
             tables_info = {
                 "allCustomerListingTab" : {
                     "app_name" : "inventory",
-                    "table_title" : "Customer - All",
+                    "table_title" : all_title,
                     "header_class_name" : "CustomerList",
                     "data_class_name" : "CustomerListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
@@ -84,7 +94,7 @@
                 },
                 "unusedCustomerListingTab" : {
                     "app_name" : "inventory",
-                    "table_title" : "Customer - Unused",
+                    "table_title" : unused_title,
                     "header_class_name" : "CustomerList",
                     "data_class_name" : "CustomerListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",

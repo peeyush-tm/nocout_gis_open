@@ -25,13 +25,16 @@
     {% endfor %}
 
     <div class="box border lite">
-    <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-table"></i>ORGANIZATION LISTING</h4>
-    </div>
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>ORGANIZATION LISTING</h4>
+        </div>
 
-    <div id="tableContainer" class="box-body" style="overflow:auto;">
-        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="OrganizationTable"><thead></thead><tbody></tbody></table>
-    </div>
+        <div id="tableContainer" class="box-body" style="overflow:auto;">
+            <table class="datatable table table-striped table-bordered table-hover" id="OrganizationTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}
 
@@ -55,7 +58,7 @@ $(document).ready(function(e)
             app_name = "organization",
             header_class_name = "OrganizationList",
             data_class_name = "OrganizationListingTable",
-            extra_param = "{"+common_extra_param+"}";
+            extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
 
         dataTableInstance.createDataTable(
             "OrganizationTable",

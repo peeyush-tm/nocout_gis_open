@@ -24,7 +24,7 @@
             <h4><i class="fa fa-table"></i>ANTENNA LISTING</h4>
         </div>
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="AntennaListingTable">
+            <table class="datatable table table-striped table-bordered table-hover" id="AntennaListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -44,11 +44,11 @@
             var ajax_url = '{% url "AntennaListingTable" %}';
             
             var common_extra_param = "'download_excel': 'yes'",
-                table_title = "Antenna",
+                table_title = "Antenna Listing",
                 app_name = "inventory",
                 header_class_name = "AntennaList",
                 data_class_name = "AntennaListingTable",
-                extra_param = "{"+common_extra_param+"}";
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}";
 
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy = false;

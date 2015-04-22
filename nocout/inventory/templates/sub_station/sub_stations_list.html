@@ -27,25 +27,37 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li><a href="#AllSubStations" id="allSubStationListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
-                    <li><a href="#UnusedSubStations" id="unusedSubStationListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
-                    <li><a href="#CorruptedSubStations" id="corruptedSubStationListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Corrupted</span></a></li>
+                    <li>
+                        <a href="#AllSubStations" id="allSubStationListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#UnusedSubStations" id="unusedSubStationListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Unused</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#CorruptedSubStations" id="corruptedSubStationListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Corrupted</span>
+                        </a>
+                    </li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane" id="AllSubStations">
-                        <table id="AllSubStationListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="AllSubStationListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="UnusedSubStations">
-                        <table id="UnusedSubStationListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="UnusedSubStationListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="CorruptedSubStations">
-                        <table id="CorruptedSubStationListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="CorruptedSubStationListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -76,14 +88,17 @@
                 ajax_url_corrupted_subs_stations = '{% url "SubStationListingTable" %}' + '?tab=corrupted';
 
             var common_extra_param = "'download_excel': 'yes'",
-                all_extra_param = "{'tab' : 'all', "+common_extra_param+"}",
-                unused_extra_param = "{'tab' : 'unused', "+common_extra_param+"}",
-                corrupted_extra_param = "{'tab' : 'corrupted', "+common_extra_param+"}";
+                all_title = "Sub Station Listing - All",
+                unused_title = "Sub Station Listing - Unused",
+                corrupted_title = "Sub Station Listing - Corrupted",
+                all_extra_param = "{'tab' : 'all','report_title' : '"+all_title+"', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused','report_title' : '"+unused_title+"', "+common_extra_param+"}",
+                corrupted_extra_param = "{'tab' : 'corrupted','report_title' : '"+corrupted_title+"', "+common_extra_param+"}";
 
             tables_info = {
                 "allSubStationListingTab" : {
                     "app_name" : "inventory",
-                    "table_title" : "Sub Station - All",
+                    "table_title" : all_title,
                     "header_class_name" : "SubStationList",
                     "data_class_name" : "SubStationListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
@@ -91,7 +106,7 @@
                 },
                 "unusedSubStationListingTab" : {
                     "app_name" : "inventory",
-                    "table_title" : "Sub Station - Unused",
+                    "table_title" : unused_title,
                     "header_class_name" : "SubStationList",
                     "data_class_name" : "SubStationListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
@@ -99,7 +114,7 @@
                 },
                 "corruptedSubStationListingTab" : {
                     "app_name" : "inventory",
-                    "table_title" : "Sub Station - Corrupted",
+                    "table_title" : corrupted_title,
                     "header_class_name" : "SubStationList",
                     "data_class_name" : "SubStationListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
