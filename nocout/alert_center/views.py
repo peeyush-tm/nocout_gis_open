@@ -10,6 +10,8 @@ from django.shortcuts import render_to_response, render
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceTechnology, DeviceType
+# For SIA Listing
+from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
 
 from performance.models import EventNetwork, EventService
 
@@ -23,7 +25,7 @@ from inventory.utils import util as inventory_utils
 from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import P2P, WiMAX, PMP, DEBUG, DATE_TIME_FORMAT
+from nocout.settings import P2P, WiMAX, PMP, DEBUG, DATE_TIME_FORMAT, TRAPS_DATABASE
 
 #utilities core
 from nocout.utils import util as nocout_utils
@@ -1322,27 +1324,6 @@ class SingleDeviceAlertsInit(ListView):
         polling_alerts_table_headers += current_val_list
         polling_alerts_table_headers += column_list_2
 
-        # table_headers = [
-        #     {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
-        #     {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
-        #     {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
-        #     {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
-        #     {"mData": "current_value", "sTitle": "Current Value", "sWidth": "auto"},
-        #     {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
-        #     {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
-        # ]
-
-        # ping_table_headers = [
-        #     {"mData": "ip_address", "sTitle": "IP Address", "sWidth": "auto"},
-        #     {"mData": "service_name", "sTitle": "Service Name", "sWidth": "auto"},
-        #     # {"mData": "data_source", "sTitle": "Data Source", "sWidth": "auto"},
-        #     {"mData": "severity", "sTitle": "Severity", "sWidth": "auto"},
-        #     {"mData": "latency", "sTitle": "Latency", "sWidth": "auto"},
-        #     {"mData": "packet_loss", "sTitle": "Packet Loss", "sWidth": "auto"},
-        #     {"mData": "sys_timestamp", "sTitle": "Alert Datetime", "sWidth": "auto"},
-        #     {"mData": "description", "sTitle": "Description", "sWidth": "auto"}
-        # ]
-
         device_obj = Device.objects.get(id=device_id)
         device_name = device_obj.device_name
         device_alias = device_obj.device_alias + "(" + device_obj.ip_address + ")"
@@ -1719,3 +1700,79 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                'aaData': aaData
         }
         return ret
+
+# SIA LISTING CODE
+class SIAListing(ListView):
+    """
+    View to render service impacting alarms page with appropriate column headers.
+    """
+
+    # need to associate ListView class with a model here
+    model = CurrentAlarms
+    template_name = 'alert_center/current_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SIAListing, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'trapoid', 'sTitle': 'Trap OID', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'eventname', 'sTitle': 'Event Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'traptime', 'sTitle': 'Trap Time', 'sWidth': 'auto', 'bSortable': True},
+        ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        return context
+
+
+class SIAListingTable(BaseDatatableView):
+    """
+    View to render service impacting alarms;
+    namely history, current and clear alarms for all the devices.
+    """
+
+    model = None
+    columns = ['device_name', 'ip_address', 'device_type', 'trapoid', 'eventname',
+               'severity', 'traptime']
+    order_columns = ['device_name', 'ip_address', 'device_type', 'trapoid', 'eventname',
+                     'severity', 'traptime']
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        total_records = total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        final_data = list(qs)
+
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': final_data
+               }
+
+        return ret
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return self.model.objects.using(TRAPS_DATABASE).values(*self.columns).all()
+
+
+class CurrentAlarmsListingTable(SIAListingTable):
+    model = CurrentAlarms
+
+
+class ClearAlarmsListingTable(SIAListingTable):
+    model = ClearAlarms
+
+
+class HistoryAlarmsListingTable(SIAListingTable):
+    model = HistoryAlarms
