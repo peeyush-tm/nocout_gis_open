@@ -79,6 +79,7 @@ def check_wimax_ss_speed_status(item, _no_params, info):
 	ss_speed =live_query_ss_speed(g_hostname)
 	if ss_speed:
 		ss_speed = ss_speed.strip('\r')
+		ss_speed = ss_speed.replace(' ',"_")
 		infotext = "SS ethernet speed is %s" % ss_speed	
 		state = 0
     except ValueError:

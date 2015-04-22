@@ -9,7 +9,10 @@ Provide celery tasks for Alarm Escalation.
 from celery import task, group
 from django.utils import timezone
 from django.utils.dateformat import format
+#email
 from django.core.mail import send_mail
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+#email end
 from django.conf import settings
 from django.template.loader import render_to_string
 import datetime
@@ -324,7 +327,10 @@ def alert_emails_for_bad_performance(alarm, level):
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
-    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
+    msg.content_subtype = "html"  # Main content is now text/html
+    msg.send()
+    #send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
     return True
 
 
@@ -344,13 +350,19 @@ def alert_emails_for_good_performance(alarm, level):
     """
     Sends Emails for good performance.
     """
+    #msg = EmailMessage(subject, html_content, from_email, [to])
+    #msg.content_subtype = "html"  # Main content is now text/html
+    #msg.send()
     emails = level.get_emails()
     context_dict = {'alarm' : alarm}
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/good_message.html', context_dict)
-    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+    msg = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, emails)
+    #send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
+    msg.content_subtype = "html"  # Main content is now text/html
+    msg.send()
     return True
 
 
