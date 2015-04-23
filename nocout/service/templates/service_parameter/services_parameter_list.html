@@ -55,7 +55,7 @@
                 app_name = "service",
                 header_class_name = "ServiceParametersList",
                 data_class_name = "ServiceParametersListingTable",
-                extra_param = "{"+common_extra_param+"}",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
                 destroy = false;
                 
             /*Call createDataTable function of ourDataTableWidget class*/

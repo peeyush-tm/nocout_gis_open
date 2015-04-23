@@ -1,4 +1,15 @@
 {% extends "inventory/inventory.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-download'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe "User Downloaded Reports" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% load staticfiles %}
 
 {% block content_title %}User Downloaded Reports{% endblock %}
@@ -9,9 +20,8 @@
             <h4><i class="fa fa-table"></i>Downloaded Reports</h4>
         </div>
 
-        <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0"
-                   class="datatable table table-striped table-bordered table-hover" id="DownloaderCompleteListing">
+        <div id="tableContainer" class="box-body" style="overflow:auto;">
+            <table class="datatable table table-striped table-bordered table-hover" id="DownloaderCompleteListing">
                 <thead></thead>
                 <tbody></tbody>
             </table>

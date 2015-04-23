@@ -1,11 +1,15 @@
 {% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
 {% block breadcrumb_title %}
-    <a href="/home">Home</a> >
-    <li><a href="#">Alert Center</a></li>
-    <li><a href="#">Network Alerts</a></li>
-    <li><a href="#">{{ data_source }}</a></li>
-    <li><b><span id="nav_tab_name"></span></b></li>
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "SIA Alarms" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+
 {% block content_title %}Alarms{% endblock %}
 {% block content_description %}{{ page_type|title }} Alarms List{% endblock %}
 {% load staticfiles %}
@@ -86,34 +90,37 @@
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
 
-            var common_extra_param = "'download_excel': 'yes'";
+            var common_extra_param = "'download_excel': 'yes'",
+                history_title = "SIA Alarms - History",
+                clear_title = "SIA Alarms - Clear",
+                current_title = "SIA Alarms - Current";
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 
             tables_info = {
                 "network_history_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "SIA Alarms - History",
+                    "table_title" : history_title,
                     "header_class_name" : "SIAListing",
                     "data_class_name" : "HistoryAlarmsListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+history_title+"', "+common_extra_param+"}"
                 },
                 "network_clear_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "SIA Alarms - Clear",
+                    "table_title" : clear_title,
                     "header_class_name" : "SIAListing",
                     "data_class_name" : "ClearAlarmsListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+clear_title+"', "+common_extra_param+"}"
                 },
                 "network_current_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "SIA Alarms - Current",
+                    "table_title" : current_title,
                     "header_class_name" : "SIAListing",
                     "data_class_name" : "CurrentAlarmsListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{"+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+current_title+"', "+common_extra_param+"}"
                 }
             };
 

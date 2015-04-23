@@ -1,5 +1,6 @@
 import os
 import json
+import simplejson
 import time
 import operator
 from django.db.models import Q
@@ -17,6 +18,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
 from nocout.utils.util import convert_utc_to_local_timezone
 import logging
+from operator import itemgetter
 
 logger = logging.getLogger(__name__)
 
@@ -102,15 +104,15 @@ class DataTableDownloader(View):
             d_obj.headers_view = headers
             d_obj.rows_view = rows
             d_obj.downloaded_by = username
-            d_obj.status = 0
+            d_obj.status = 2
             d_obj.description = "Failed to download on {}.".format(fulltime)
 
             # get rows and headers request data
             headers_data = ""
             rows_data = ""
             try:
-                headers_data = eval(self.request.GET.get('headers_data', None))
                 rows_data = eval(self.request.GET.get('rows_data', None))
+                headers_data = eval(self.request.GET.get('headers_data', None))
                 response['message'] = "Inventory download started. Please check status \
                 <a href='/downloader/' target='_blank'>Here</a>."
                 response['success'] = 1
@@ -393,19 +395,19 @@ class DownloaderListing(BaseDatatableView):
 
             try:
                 if dct.get('status') == 0:
-                    dct.update(status='Pending')
+                    dct.update(status='<span class="text-warning">Pending</span>')
             except Exception as e:
                 logger.info(e.message)
 
             try:
                 if dct.get('status') == 1:
-                    dct.update(status='Success')
+                    dct.update(status='<span class="text-success">Success</span>')
             except Exception as e:
                 logger.info(e.message)
 
             try:
                 if dct.get('status') == 2:
-                    dct.update(status='Failed')
+                    dct.update(status='<span class="text-danger">Failed</span>')
             except Exception as e:
                 logger.info(e.message)
 
@@ -493,9 +495,9 @@ class DownloaderCompleteHeaders(ListView):
         context = super(DownloaderCompleteHeaders, self).get_context_data(**kwargs)
 
         datatable_headers = [
-            {'mData': 'file_path', 'sTitle': 'File', 'sWidth': 'auto'},
+            {'mData': 'file_name', 'sTitle': 'Filename', 'sWidth': 'auto'},
             {'mData': 'file_type', 'sTitle': 'File Type', 'sWidth': 'auto'},
-            {'mData': 'rows_view', 'sTitle': 'Module', 'sWidth': 'auto'},
+            {'mData': 'rows_view', 'sTitle': 'Module', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto'},
             {'mData': 'downloaded_by', 'sTitle': 'Downloaded By', 'sWidth': 'auto'},
@@ -515,23 +517,19 @@ class DownloaderCompleteListing(BaseDatatableView):
     A generic class based view for the reports data table rendering.
     """
     model = Downloader
-    columns = ['file_path',
-               'file_type',
-               'rows_view',
-               'status',
-               'description',
-               'downloaded_by',
-               'requested_on',
-               'request_completion_on']
+    columns = [
+        'file_path',
+        'file_type',
+        'rows_view',
+        'status',
+        'description',
+        'downloaded_by',
+        'requested_on',
+        'request_completion_on',
+        'rows_data'
+    ]
 
-    order_columns = ['file_path',
-                     'file_type',
-                     'rows_view',
-                     'status',
-                     'description',
-                     'downloaded_by',
-                     'requested_on',
-                     'request_completion_on']
+    order_columns = columns
 
     def filter_queryset(self, qs):
         """
@@ -562,6 +560,45 @@ class DownloaderCompleteListing(BaseDatatableView):
 
         return qs
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.order_columns
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -570,7 +607,7 @@ class DownloaderCompleteListing(BaseDatatableView):
         # @priyesh-teramatrix :- Please varify. Returned the latest queryset first as per 'requested_on' time
         return Downloader.objects.filter(
             downloaded_by=self.request.user.username
-        ).values(*self.columns + ['id']).order_by('-requested_on')
+        ).values(*self.columns + ['id', 'app_name']).order_by('-requested_on')
 
     def prepare_results(self, qs):
         """
@@ -579,34 +616,51 @@ class DownloaderCompleteListing(BaseDatatableView):
         :param qs:
         :return qs
         """
+        success_html = '<span class="text-success">Success</span>'
+        fail_html = '<span class="text-danger">Failed</span>'
+        pending_html = '<span class="text-warning">Pending</span>'
+
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
         for dct in qs:
-            # get downloader object
-            downloader_obj = None
-            try:
-                downloader_obj = Downloader.objects.get(id=dct['id'])
-            except Exception as e:
-                pass
 
             # modified module name
             modified_module_name = ""
 
-            if downloader_obj:
-                # get app name
-                app_name = downloader_obj.app_name.replace("_", " ").title().replace(" ", "")
+            # get app name
+            app_name = dct['app_name'].replace("_", " ").title().replace(" ", "")
 
-                # module name
-                module_name = dct['rows_view'].replace("Listing", "").replace("Table", "")
+            # module name
+            module_name = dct['rows_view'].replace("Listing", "").replace("Table", "")
 
-                # modified module name
-                modified_module_name = "[{}] : [{}]".format(app_name, module_name)
+            # modified module name
+            modified_module_name = "[{}] : [{}]".format(app_name, module_name)
 
-            # icon for excel file
+            # green icon for excel file
             excel_green = static("img/ms-office-icons/excel_2013_green.png")
 
-            # icon for excel file
+            # red icon for excel file
             excel_red = static("img/ms-office-icons/excel_2013_red.png")
+
+            # grey icon for excel file
+            excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
+
+            # File name which will be downloaded
+            try:
+                file_name = dct['file_path'].split("/")[1] if dct['file_path'] else "N/A"
+            except Exception, e:
+                file_name = dct['file_path']
+
+            # File type
+            dct['file_type'] = dct['file_type'] if dct['file_type'] else "N/A"
+
+            # Title for report
+            try:
+                rows_data = eval(dct["rows_data"])
+                report_title = rows_data['report_title'] if "report_title" in rows_data else False
+            except Exception, e:
+                report_title = False
 
             # full path of download
             download_path = ""
@@ -616,28 +670,38 @@ class DownloaderCompleteListing(BaseDatatableView):
                 logger.info(e.message)
 
             try:
-                if dct.get('status') == 0:
-                    dct.update(status='Pending')
+                if not dct.get('status'):
+                    dct.update(status=pending_html)
             except Exception as e:
                 logger.info(e.message)
 
             try:
                 if dct.get('status') == 1:
-                    dct.update(status='Success')
+                    dct.update(status=success_html)
             except Exception as e:
                 logger.info(e.message)
 
             try:
                 if dct.get('status') == 2:
-                    dct.update(status='Failed')
+                    dct.update(status=fail_html)
             except Exception as e:
                 logger.info(e.message)
 
-            if modified_module_name:
-                try:
-                    dct['rows_view'] = modified_module_name
-                except Exception as e:
-                    pass
+            # Module name for which the report is downloaded
+            if not report_title:
+                if modified_module_name:
+                    try:
+                        dct['rows_view'] = modified_module_name
+                    except Exception as e:
+                        pass
+            else:
+                dct['rows_view'] = report_title
+
+
+            # try:
+            #     dct.update(status=dct['status']+" : "+dct['description'])
+            # except Exception, e:
+            #     raise e
 
             # 'requested on' field timezone conversion from 'utc' to 'local'
             try:
@@ -651,24 +715,31 @@ class DownloaderCompleteListing(BaseDatatableView):
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
+            download_img_str = ''
+
             try:
-                if dct.get('status') == "Success":
-                    dct.update(
-                        file_path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                            download_path, excel_green))
+                if dct.get('status') == success_html:
+                    download_img_str = '<a href="{}" title="Download Report"><img src="{}" \
+                                       style="width:25px;"></a>'.format(download_path, excel_green)
+
+                elif dct.get('status') == pending_html:
+
+                    download_img_str = '<img src="{}" style="width:25px;" title="Please Wait...">'.format(excel_grey)
+
                 else:
-                    dct.update(
-                        file_path='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                            excel_red))
+
+                    download_img_str = '<img src="{}" style="width:25px;">'.format(excel_red)
+
             except Exception as e:
-                dct.update(
-                    file_path='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                        excel_red))
+                
+                download_img_str = '<img src="{}" style="width:25px;">'.format(excel_red)
                 pass
 
             dct.update(
-                actions='<a href="/downloader/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                    dct.pop('id')))
+                file_name=unicode(download_img_str)+"&nbsp;&nbsp;"+unicode(file_name),
+                actions='<a href="/downloader/delete/{0}" title="Delete Report"><i class="fa fa-trash-o text-danger">&nbsp;</i></a>\
+                        '.format(dct.pop('id'))
+            )
         return qs
 
     def get_context_data(self, *args, **kwargs):

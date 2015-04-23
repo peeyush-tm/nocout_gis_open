@@ -1,10 +1,21 @@
 {% extends "inventory/inventory.html" %}
 
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-download'></i> Download Center" "javascript:;" %}
+    {% breadcrumb_safe "User Downloaded Reports" "DownloaderCompleteHeaders" %}
+    {% breadcrumb_safe "Delete Reports : "|add:object.file_path "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% block content_title %}Downloads{% endblock %}
 {% block content_description %}Delete a download ....{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
-        <p>Are you sure you want to delete "{{ object }}" ?</p>
+        <p>Are you sure you want to delete "{{ object.file_path }}" ?</p>
         <input type="submit" value="Confirm"/>
     </form>
 {% endblock %}

@@ -261,50 +261,56 @@
                 polling_header_key = 'polling_alerts_headers',
                 ping_header_key = 'ping_table_headers',
                 page_type_param = "'page_type' : '"+page_type+"'",
-                device_id_param = "'device_id' : '"+current_device_id+"'";
+                device_id_param = "'device_id' : '"+current_device_id+"'",
+                current_device_alias = "{{ device_alias }}",
+                service_title = "Alert Center - Polling Alerts ["+current_device_alias+"]",
+                down_title = "Alert Center - Down ["+current_device_alias+"]",
+                pl_title = "Alert Center - Packet Drop ["+current_device_alias+"]",
+                rta_title = "Alert Center - Latency ["+current_device_alias+"]",
+                ping_title = "Alert Center - Ping Details ["+current_device_alias+"]";
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 
             tables_info = {
                 "network_alert_service_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Polling Alerts",
+                    "table_title" : service_title,
                     "header_class_name" : "SingleDeviceAlertsInit",
                     "data_class_name" : "SingleDeviceAlertsListing",
                     "header_extra_param" : "{'headers_data_key' : '"+polling_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
-                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'service', "+common_extra_param+"}"
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'service', 'report_title' : '"+service_title+"', "+common_extra_param+"}"
                 },
                 "network_alert_down_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Down",
+                    "table_title" : down_title,
                     "header_class_name" : "SingleDeviceAlertsInit",
                     "data_class_name" : "SingleDeviceAlertsListing",
                     "header_extra_param" : "{'headers_data_key' : '"+common_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
-                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'down', "+common_extra_param+"}"
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'down', 'report_title' : '"+down_title+"', "+common_extra_param+"}"
                 },
                 "network_alert_packet_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Packet Drop",
+                    "table_title" : pl_title,
                     "header_class_name" : "SingleDeviceAlertsInit",
                     "data_class_name" : "SingleDeviceAlertsListing",
                     "header_extra_param" : "{'headers_data_key' : '"+common_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
-                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'packet_drop', "+common_extra_param+"}"
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'packet_drop', 'report_title' : '"+pl_title+"', "+common_extra_param+"}"
                 },
                 "network_alert_latency_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Latency",
+                    "table_title" : rta_title,
                     "header_class_name" : "SingleDeviceAlertsInit",
                     "data_class_name" : "SingleDeviceAlertsListing",
                     "header_extra_param" : "{'headers_data_key' : '"+common_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
-                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'latency', "+common_extra_param+"}"
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'latency', 'report_title' : '"+rta_title+"', "+common_extra_param+"}"
                 },
                 "network_alert_ping_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : "Ping Details",
+                    "table_title" : ping_title,
                     "header_class_name" : "SingleDeviceAlertsInit",
                     "data_class_name" : "SingleDeviceAlertsListing",
                     "header_extra_param" : "{'headers_data_key' : '"+ping_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
-                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'ping', "+common_extra_param+"}"
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'ping', 'report_title' : '"+ping_title+"', "+common_extra_param+"}"
                 }
             };
 

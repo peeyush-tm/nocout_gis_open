@@ -147,11 +147,11 @@ function populateServiceStatus_nocout(domElement,info) {
                                 '+val_icon+' '+perf+'<br/>\
                                 '+time_icon+' '+last_updated+'</td>';
             
-            inner_status_html += '<td style="width:5%;vertical-align: middle;">\
+            inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
                                  <button class="btn btn-primary btn-xs perf_poll_now"\
-                                 title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
-                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
-                                 class="fa fa-hand-o-right"></i></button>\
+                                 title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
+                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
+                                 <i class="fa fa-flash"></i></button>\
                                  </td>';
 
             inner_status_html += '<td style="width:47.5%;">\
@@ -357,24 +357,45 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         }
     }
     
+
+    var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
+        top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
+        left_tab_content_href = $("#"+top_tab_id+" .left_tabs_container li.active a").attr("href"),
+        left_tab_id = left_tab_content_href.split("#").length > 1 ? left_tab_content_href.split("#")[1] : left_tab_content_href.split("#")[0],
+        top_tab_text = $.trim($(".top_perf_tabs > li.active a").text()),
+        left_tab_txt = $.trim($("#"+top_tab_id+" .left_tabs_container > li.active a").text()),
+        report_title = "";
+    
     if(show_historical_on_performance) {
-        data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
-        data_extra_param += "'device_id' : '"+current_device+"',";
-        if(get_param_data) {
-            data_extra_param += get_param_data;
+        try {
+            var content_tab_text = $.trim($("#"+left_tab_id+" .inner_inner_tab li.active a").text());
+            report_title += top_tab_text+" > "+left_tab_txt+" > "+content_tab_text+"("+current_device_ip+")";
+        } catch(e) {
+            report_title += top_tab_text+" > "+left_tab_txt+"("+current_device_ip+")";
         }
-        data_extra_param += "'download_excel': 'yes'";
-        data_extra_param += " }";
 
     } else {
-        data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"',";
-        data_extra_param += "'device_id' : '"+current_device+"', 'data_for' : '"+data_for+"',";
-        if(get_param_data) {
-            data_extra_param += get_param_data;
-        }
-        data_extra_param += "'download_excel': 'yes'";
-        data_extra_param += " }";
+        report_title += top_tab_text+" > "+left_tab_txt+"("+current_device_ip+")";
     }
+
+    if(top_tab_text && left_tab_txt && current_device_ip) {
+        table_title = report_title;
+    }
+    
+    data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"', 'report_title' : '"+table_title+"',";
+
+    if(show_historical_on_performance) {
+        data_extra_param += "'device_id' : '"+current_device+"',";
+    } else {
+        data_extra_param += "'device_id' : '"+current_device+"', 'data_for' : '"+data_for+"',";
+    }
+
+    if(get_param_data) {
+        data_extra_param += get_param_data;
+    }
+
+    data_extra_param += "'download_excel': 'yes'";
+    data_extra_param += " }";
 
     /*Call createDataTable function to create the data table for specified dom element with given data*/
     dataTableInstance.createDataTable(
@@ -714,12 +735,16 @@ function nocout_livePollCurrentDevice(
 
             if(result.success == 1) {
 
-                var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
-                var shown_val = "",
+                var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "",
+                    shown_val = "",
                     current_val_html = "",
                     dateObj = new Date(),
-                    current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+                    month = Number(dateObj.getMonth()) + 1,
+                    date_str = dateObj.getDate()+"-"+month+"-"+dateObj.getFullYear(),
+                    time_str = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+                    current_time = date_str+" "+time_str,
                     fetched_data = true;
+
                 if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
                     
                     if(typeof fetched_val == 'object') {
@@ -772,6 +797,10 @@ function nocout_livePollCurrentDevice(
 
 
                 } else {
+                    if(!fetched_val) {
+                        fetched_val = "N/A";
+                    }
+
                     fetched_data = {
                         "val" : fetched_val,
                         "time" : current_time
