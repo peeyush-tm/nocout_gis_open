@@ -5011,7 +5011,6 @@ class GISPerfInfo(View):
 
             # if device is down than don't show services data
             if device_pl != "100":
-
                 service_perf_data = [d for d in service_perf_data if d['device_name'] == device_name]
                 inventory_perf_data = [d for d in inventory_perf_data if d['device_name'] == device_name]
                 status_perf_data = [d for d in status_perf_data if d['device_name'] == device_name]
@@ -5022,17 +5021,30 @@ class GISPerfInfo(View):
 
                 perf_info += self.collect_performance(performance=inventory_perf_data,
                                                         device_id=device_id,
-                                                        processed=processed
-                )
+                                                        processed=processed)
 
                 perf_info += self.collect_performance(performance=status_perf_data,
                                                         device_id=device_id,
-                                                        processed=processed
-                )
+                                                        processed=processed)
+
+            # bs connected device
+            bs_connected_device = None
+            try:
+                bs_connected_device = Topology.objects.get(connected_device_ip=device.ip_address).ip_address
+            except Exception as e:
+                pass
+
+            perf_info.append({
+                "name": 'connected_bs_ip',
+                "title": 'BS Connected IP',
+                "show": True,
+                "url": "",
+                "value": bs_connected_device,
+            })
 
             for d in perf_info:
                 if '_mac_' in d['name']:
-                    d['name'] = d['value'].upper()
+                    d['value'] = d['value'].upper()
 
         return HttpResponse(json.dumps(perf_info))
 
