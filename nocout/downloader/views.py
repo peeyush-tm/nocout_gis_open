@@ -495,6 +495,7 @@ class DownloaderCompleteHeaders(ListView):
         context = super(DownloaderCompleteHeaders, self).get_context_data(**kwargs)
 
         datatable_headers = [
+            {'mData': 'file', 'sTitle': 'File', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'file_name', 'sTitle': 'Filename', 'sWidth': 'auto'},
             {'mData': 'file_type', 'sTitle': 'File Type', 'sWidth': 'auto'},
             {'mData': 'rows_view', 'sTitle': 'Module', 'sWidth': 'auto', 'bSortable': False},
@@ -519,6 +520,7 @@ class DownloaderCompleteListing(BaseDatatableView):
     model = Downloader
     columns = [
         'file_path',
+        'file_path',
         'file_type',
         'rows_view',
         'status',
@@ -526,7 +528,8 @@ class DownloaderCompleteListing(BaseDatatableView):
         'downloaded_by',
         'requested_on',
         'request_completion_on',
-        'rows_data'
+        'rows_data',
+        'app_name'
     ]
 
     order_columns = columns
@@ -561,7 +564,8 @@ class DownloaderCompleteListing(BaseDatatableView):
         return qs
 
     def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
+        """ 
+        Get parameters from the request and prepare order by clause
         """
         request = self.request
 
@@ -592,12 +596,18 @@ class DownloaderCompleteListing(BaseDatatableView):
                     order.append('%s%s' % (sdir, sc))
             else:
                 order.append('%s%s' % (sdir, sortcol))
+
         if order:
             key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            
+            # In case of null 'request_completion_on' field, it gives error.
+            try:
+                sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            except Exception, e:
+                sorted_device_data = qs
+
             return sorted_device_data
         return qs
-
 
     def get_initial_queryset(self):
         """
@@ -736,7 +746,8 @@ class DownloaderCompleteListing(BaseDatatableView):
                 pass
 
             dct.update(
-                file_name=unicode(download_img_str)+"&nbsp;&nbsp;"+unicode(file_name),
+                file=download_img_str,
+                file_name=file_name,
                 actions='<a href="/downloader/delete/{0}" title="Delete Report"><i class="fa fa-trash-o text-danger">&nbsp;</i></a>\
                         '.format(dct.pop('id'))
             )
