@@ -2035,6 +2035,7 @@ function devicePlottingClass_gmap() {
 						"technology" : sector_array[j].technology,
 						"vendor" : sector_array[j].vendor,
 						"sector_perf_url" : sector_perf_url,
+						"device_name" : sector_array[j].sector_configured_on_device,
 						"inventory_url" : sector_inventory_url,
 						"item_index" : sector_item_index
 					},
@@ -3093,6 +3094,8 @@ function devicePlottingClass_gmap() {
 			sWidth = 2;
 		}
 
+		var sector_device_name = sectorInfo.device_name ? sectorInfo.device_name : "";
+
 		var poly = new google.maps.Polygon({
 			path 		     : polyPathArray,
 			ptLat 		     : lat,
@@ -3113,6 +3116,7 @@ function devicePlottingClass_gmap() {
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,
+			device_name 	 : sector_device_name,
 			perf_url 		 : sectorInfo.sector_perf_url,
 			inventory_url 	 : sectorInfo.inventory_url,
 			startLat 	     : startLat,
