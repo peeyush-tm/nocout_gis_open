@@ -1287,10 +1287,10 @@ class CircuitL2Report_Init(ListView):
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'file_name', 'sTitle': 'Report', 'sWidth': 'auto', },
             {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
-            {'mData': 'user_id', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
+            {'mData': 'user_id__username', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
         ]
         if not ('circuit_id' in self.kwargs):
-            datatable_headers.append({'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', });
+            datatable_headers.append({'mData': 'circuit_id__alias', 'sTitle': 'Circuit ID', 'sWidth': 'auto', });
 
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1312,9 +1312,36 @@ class L2ReportListingTable(BaseDatatableView):
     """
     Class based View to render Circuit Data table.
     """
+
     model = CircuitL2Report
-    columns = ['name', 'file_name', 'added_on', 'user_id']
-    order_columns = ['name', 'file_name', 'added_on']
+
+    columns = [
+        'name',
+        'file_name',
+        'added_on',
+        'user_id__username',
+        'circuit_id__alias'
+    ]
+    
+    order_columns = columns
+
+    ckt_id = 0
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        condition = ""
+
+        if int(self.ckt_id) > 0:
+            # condition to fetch l2 reports data from db
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=self.ckt_id))
+        else:
+            condition = (Q(user_id=self.request.user) | Q(is_public=1))
+
+        queryset = self.model.objects.filter(condition).values(*self.columns+['id'])
+
+        return queryset
 
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
@@ -1322,118 +1349,50 @@ class L2ReportListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                # avoid search on 'added_on'
-                if column == 'added_on':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+            search_condition = (
+                Q(name__icontains=sSearch)
+                |
+                Q(user_id__username__icontains=sSearch)
+                |
+                Q(circuit_id__alias__icontains=sSearch)
+            )
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
+            qs = qs.filter(search_condition).values(
+                *self.columns+['id']
+            )
+
         return qs
-
-    def get_initial_queryset(self,circuit_id):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        condition = ""
-
-        if int(circuit_id) > 0:
-            circuit_instance = Circuit.objects.filter(id=circuit_id)
-            # condition to fetch l2 reports data from db
-            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=circuit_instance))
-        else:
-            condition = (Q(user_id=self.request.user) | Q(is_public=1))
-            self.columns.append('circuit_id')
-
-        # Query to fetch L2 reports data from db
-        l2ReportsResult = CircuitL2Report.objects.filter(condition).values(*self.columns + ['id'])
-
-        report_resultset = []
-        for data in l2ReportsResult:
-            report_object = {}
-            report_object['name'] = data['name'].title()
-            filename_str_array = data['file_name'].split('/')
-            report_object['file_name'] = filename_str_array[len(filename_str_array)-1]
-            report_object['file_url'] = data['file_name']
-            report_object['added_on'] = data['added_on']
-            username = UserProfile.objects.filter(id=data['user_id']).values('username')
-            # Append Circuit Alias when all listing is shown
-            if int(circuit_id) == 0:
-                circuit_alias = Circuit.objects.filter(id=data['circuit_id']).values('alias')
-                report_object['circuit_id'] = circuit_alias[0]['alias'].title()
-
-            report_object['user_id'] = username[0]['username'].title()
-            report_object['id'] = data['id']
-            #add data to report_resultset list
-            report_resultset.append(report_object)
-        return report_resultset
 
     def prepare_results(self, qs):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
-        if len(qs) > 0:
-            if('circuit_id' in qs[0]):
-                for dct in qs:
-                    dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
-                        <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                        '.format(dct.pop('id')),
-                       added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
+        if not len(qs):
+            return []
+
+        resultant_data = list()
+
+        for dct in qs:
+
+            file_path = dct['file_name']
+            splitted_name = file_path.split("/")
+            downloaded_file_name = splitted_name[len(splitted_name)-1]
+
+            dct.update(
+                file_name=downloaded_file_name,
+                added_on=dct['added_on'].strftime("%Y-%m-%d  %H:%M:%S") if dct['added_on'] != "" else ""
+            )
+
+            if int(self.ckt_id) == 0:
+                dct.update(actions='<a href="../../../media/'+file_path+'" target="_blank" title="Download Report">\
+                    <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
+                    '.format(dct.pop('id')))
             else:
-                for dct in qs:
-                    dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
-                        <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                        <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="{0}/delete/">\
-                        <i class="fa fa-trash-o text-danger"></i></a>\
-                        '.format(dct.pop('id')),
-                       added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
-
-        return qs
-
-    def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
-        """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
-        order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+                dct.update(actions='<a href="../../../media/'+file_path+'" target="_blank" title="Download Report">\
+                    <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
+                    <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="{0}/delete/">\
+                    <i class="fa fa-trash-o text-danger"></i></a>\
+                    '.format(dct.pop('id')))
+            resultant_data.append(dct)
+        return resultant_data
 
 
     def get_context_data(self, *args, **kwargs):
@@ -1445,31 +1404,31 @@ class L2ReportListingTable(BaseDatatableView):
         self.initialize(*args, **kwargs)
 
         if 'circuit_id' in self.kwargs:
-            ckt_id = self.kwargs['circuit_id']
-        else:
-            ckt_id = 0
+            self.ckt_id = self.kwargs['circuit_id']
 
-        qs = self.get_initial_queryset(ckt_id)
+        qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = len(qs)
+        total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
-        total_display_records = len(qs)
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
+
 
         aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
+
         return ret
 
 ## This class load all L2 reports datatable
