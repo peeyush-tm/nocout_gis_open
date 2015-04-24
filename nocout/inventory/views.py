@@ -1284,6 +1284,7 @@ class CircuitL2Report_Init(ListView):
         """
         context = super(CircuitL2Report_Init, self).get_context_data(**kwargs)
         datatable_headers = [
+            {'mData': 'file', 'sTitle': 'File', 'sWidth': 'auto', 'bSortable' : False},
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'file_name', 'sTitle': 'Report', 'sWidth': 'auto', },
             {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
@@ -1294,7 +1295,11 @@ class CircuitL2Report_Init(ListView):
 
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        if (
+            ('admin' in user_role or 'operator' in user_role)
+            and
+            ('circuit_id' in self.kwargs and self.kwargs['circuit_id'] != 0)
+        ):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1316,6 +1321,7 @@ class L2ReportListingTable(BaseDatatableView):
     model = CircuitL2Report
 
     columns = [
+        'name',
         'name',
         'file_name',
         'added_on',
@@ -1370,28 +1376,51 @@ class L2ReportListingTable(BaseDatatableView):
 
         resultant_data = list()
 
+        # EXCEL icon for excel file
+        excel_icon = static("img/ms-office-icons/excel_2013_green.png")
+
+        # PDF icon for excel file
+        pdf_icon = static("img/ms-office-icons/pdf_icon.png")
+
+        # DOC icon for excel file
+        doc_icon = static("img/ms-office-icons/doc_icon.png")
+
         for dct in qs:
 
+            file_type_icon = ''
             file_path = dct['file_name']
             splitted_name = file_path.split("/")
             downloaded_file_name = splitted_name[len(splitted_name)-1]
+            download_path = MEDIA_URL + file_path
+
+            try:
+                name_split = downloaded_file_name.split(".")
+                file_type = name_split[len(name_split)-1]
+            except Exception, e:
+                file_type = 'xls'
+
+            if file_type in ['doc', 'docx']:
+                file_type_icon = doc_icon
+            elif file_type in ['pdf']:
+                file_type_icon = pdf_icon
+            else:
+                file_type_icon = excel_icon
 
             dct.update(
+                file='<a href="{}" title="Download L2 Report" target="_blank">\
+                      <img src="{}" style="width:25px;"></a>'.format(download_path, file_type_icon),
                 file_name=downloaded_file_name,
-                added_on=dct['added_on'].strftime("%Y-%m-%d  %H:%M:%S") if dct['added_on'] != "" else ""
+                added_on=dct['added_on'].strftime("%Y-%m-%d  %H:%M:%S") if dct['added_on'] != "" else "",
+                actions=''
             )
 
-            if int(self.ckt_id) == 0:
-                dct.update(actions='<a href="../../../media/'+file_path+'" target="_blank" title="Download Report">\
-                    <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
+            if int(self.ckt_id) != 0:
+                dct.update(actions='<a class="delete_l2report" style="cursor:pointer;" title="Delete Report" \
+                                    url="{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>\
                     '.format(dct.pop('id')))
-            else:
-                dct.update(actions='<a href="../../../media/'+file_path+'" target="_blank" title="Download Report">\
-                    <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                    <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="{0}/delete/">\
-                    <i class="fa fa-trash-o text-danger"></i></a>\
-                    '.format(dct.pop('id')))
+
             resultant_data.append(dct)
+
         return resultant_data
 
 
