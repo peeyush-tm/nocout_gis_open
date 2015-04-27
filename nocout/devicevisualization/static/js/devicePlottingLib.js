@@ -2035,6 +2035,7 @@ function devicePlottingClass_gmap() {
 						"technology" : sector_array[j].technology,
 						"vendor" : sector_array[j].vendor,
 						"sector_perf_url" : sector_perf_url,
+						"device_name" : sector_array[j].sector_configured_on_device,
 						"inventory_url" : sector_inventory_url,
 						"item_index" : sector_item_index
 					},
@@ -3093,6 +3094,8 @@ function devicePlottingClass_gmap() {
 			sWidth = 2;
 		}
 
+		var sector_device_name = sectorInfo.device_name ? sectorInfo.device_name : "";
+
 		var poly = new google.maps.Polygon({
 			path 		     : polyPathArray,
 			ptLat 		     : lat,
@@ -3113,6 +3116,7 @@ function devicePlottingClass_gmap() {
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,
+			device_name 	 : sector_device_name,
 			perf_url 		 : sectorInfo.sector_perf_url,
 			inventory_url 	 : sectorInfo.inventory_url,
 			startLat 	     : startLat,
@@ -3221,9 +3225,9 @@ function devicePlottingClass_gmap() {
 					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
 					  </li>';
 
-		if(single_service_polling && (clickedType == 'sector_Marker' || clickedType == 'sub_station')) {
+		if(single_service_polling && (clickedType.indexOf('sector') > -1 || clickedType == 'sub_station')) {
 			infoTable += '<li class=""><a href="#poll_now_block" data-toggle="tab" id="poll_now_tab" \
-						  device_id="'+device_id+'" point_type="'+clickedType+'" \
+						  device_id="'+device_id+'" point_type="'+clickedType+'" >\
 						  <i class="fa fa-arrow-circle-o-right"></i> Poll Now \
 						  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
 						  </li>';
@@ -3457,7 +3461,8 @@ function devicePlottingClass_gmap() {
 			if(contentObject['poll_info']) {
 
 				var backend_polled_info = contentObject['poll_info'],
-					actual_polled_info = backend_polled_info;
+					actual_polled_info = backend_polled_info,
+					poll_now_info = poll_now_info = rearrangeTooltipArray(common_toolTip_poll_now,backend_polled_info);
 
 				if(ptp_tech_list.indexOf(sector_tech) > -1) {
 					actual_polled_info = rearrangeTooltipArray(ptp_sector_toolTip_polled,backend_polled_info);
@@ -3480,49 +3485,51 @@ function devicePlottingClass_gmap() {
 				infoTable += '</div>';
 				/*Polled Tab Content End*/
 
-				// IF PTP(i.e Only in case of PTP sector. Not for PMP & Wimax)
-				if(single_service_polling && ptp_tech_list.indexOf(sector_tech) > -1) {
+				// 
+				if(single_service_polling) {
 
 					/*Poll Now Tab Content Start*/
 					infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
 
 					infoTable += "<table class='table table-bordered table-hover'><tbody>";
 					
-					// Space for Poll Now Content
-					infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
-								  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
-								  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
-								  <span id='fetched_val_container'></span>\
-								  <span class='divide-10'></span>\
-								  <span id='sparkline_container'></span>\
-								  </td></tr>";
+					if(maps_themetics_poll_flag) {
+						// Space for Poll Now Content
+						infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
+									  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
+									  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
+									  <span id='fetched_val_container'></span>\
+									  <span class='divide-10'></span>\
+									  <span id='sparkline_container'></span>\
+									  </td></tr>";
+					}
 
 					/*Polled Parameter Info*/
-					for(var i=0; i< actual_polled_info.length; i++) {
+					for(var i=0; i< poll_now_info.length; i++) {
 						var url = "",
 							text_class = "",
 							service_name = "",
 							ds_name = "";
-						if(actual_polled_info[i]["show"]) {
+						if(poll_now_info[i]["show"]) {
 
 							// Url
-							url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
+							url = poll_now_info[i]["url"] ? poll_now_info[i]["url"] : "";
 							text_class = "text-primary";
-							service_name = actual_polled_info[i]["service_name"] ? actual_polled_info[i]["service_name"] : "";
-							ds_name = actual_polled_info[i]["ds"] ? actual_polled_info[i]["ds"] : "";
+							service_name = poll_now_info[i]["service_name"] ? poll_now_info[i]["service_name"] : "";
+							ds_name = poll_now_info[i]["ds"] ? poll_now_info[i]["ds"] : "";
 
 
 							infoTable += "<tr>";
-							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td>";
-							infoTable += "<td style='width:35px;max-width:50px;'>\
+							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+poll_now_info[i]['title']+"</td>";
+							infoTable += "<td style='text-align:center'>\
 										 <button class='btn btn-primary btn-xs perf_poll_now'\
 										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
-			                             title='Poll Now' data-complete-text='<i class=\"fa fa-hand-o-right\"></i>' \
+			                             title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
-			                             class='fa fa-hand-o-right'></i>\
+			                             class='fa fa-flash'></i>\
 			                             </button></td>";
 
-							infoTable += "<td>"+actual_polled_info[i]['value']+"</td>\
+							infoTable += "<td style='width:40%;'>"+poll_now_info[i]['value']+"</td>\
 										 </tr>";
 						}
 					}
@@ -3544,12 +3551,12 @@ function devicePlottingClass_gmap() {
 							  <h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4>";
 
 			// If enabled from settings.py only then show Poll Now Button.
-			if(maps_themetics_poll_flag && ptp_tech_list.indexOf(sector_tech) > -1) {
+			if(maps_themetics_poll_flag) {
 				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
-								  data-complete-text='<i class=\"fa fa-hand-o-right\"></i> Poll Now' \
+								  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
 								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sector_device'>\
-								  <i class='fa fa-hand-o-right'></i> Poll Now</button>";
+								  <i class='fa fa-flash'></i> Poll Now</button>";
 			}
 
 			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' title='Close' marker_type='sector_device' marker_key='"+marker_key+"'>\
@@ -3648,7 +3655,8 @@ function devicePlottingClass_gmap() {
 			if(contentObject['poll_info']) {
 
 				var backend_polled_info = contentObject['poll_info'],
-					actual_polled_info = backend_polled_info;
+					actual_polled_info = backend_polled_info,
+					poll_now_info = poll_now_info = rearrangeTooltipArray(common_toolTip_poll_now,backend_polled_info);
 
 				if(ptp_tech_list.indexOf(ss_tech) > -1) {
 					actual_polled_info = rearrangeTooltipArray(ptp_ss_toolTip_polled,backend_polled_info);
@@ -3680,41 +3688,43 @@ function devicePlottingClass_gmap() {
 
 					infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
-					// Space for Poll Now Content
-					infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
-								  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
-								  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
-								  <span id='fetched_val_container'></span>\
-								  <span class='divide-10'></span>\
-								  <span id='sparkline_container'></span>\
-								  </td></tr>";
+					if(maps_themetics_poll_flag) {
+						// Space for Poll Now Content
+						infoTable += "<tr><td colspan='3' style='word-break:break-word;'>\
+									  <h5 style='margin-top: 0px;text-decoration: underline;font-weight: bold;'>Polling Data :</h5>\
+									  <input type='hidden' name='sparkline_val_input' id='sparkline_val_input'/>\
+									  <span id='fetched_val_container'></span>\
+									  <span class='divide-10'></span>\
+									  <span id='sparkline_container'></span>\
+									  </td></tr>";
+					}
 
 					/*Polled Parameter Info*/
-					for(var i=0; i< actual_polled_info.length; i++) {
+					for(var i=0; i< poll_now_info.length; i++) {
 						var url = "",
 							text_class = "",
 							service_name = "",
 							ds_name = "";
-						if(actual_polled_info[i]["show"]) {
+						if(poll_now_info[i]["show"]) {
 
 							// Url
-							url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
+							url = poll_now_info[i]["url"] ? poll_now_info[i]["url"] : "";
 							text_class = "text-primary";
-							service_name = actual_polled_info[i]["service_name"] ? actual_polled_info[i]["service_name"] : "";
-							ds_name = actual_polled_info[i]["ds"] ? actual_polled_info[i]["ds"] : "";
+							service_name = poll_now_info[i]["service_name"] ? poll_now_info[i]["service_name"] : "";
+							ds_name = poll_now_info[i]["ds"] ? poll_now_info[i]["ds"] : "";
 
 
 							infoTable += "<tr>";
-							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td>";
-							infoTable += "<td style='width:35px;max-width:50px;'>\
+							infoTable += "<td class='"+text_class+"' url='"+url+"'>"+poll_now_info[i]['title']+"</td>";
+							infoTable += "<td style='text-align:center'>\
 										 <button class='btn btn-primary btn-xs perf_poll_now'\
 										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
-			                             title='Poll Now' data-complete-text='<i class=\"fa fa-hand-o-right\"></i>' \
+			                             title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
-			                             class='fa fa-hand-o-right'></i>\
+			                             class='fa fa-flash'></i>\
 			                             </button></td>";
 
-							infoTable += "<td>"+actual_polled_info[i]['value']+"</td>\
+							infoTable += "<td style='width:40%;'>"+poll_now_info[i]['value']+"</td>\
 										 </tr>";
 						}
 					}
@@ -3738,10 +3748,10 @@ function devicePlottingClass_gmap() {
 			// If enabled from settings.py only then show Poll Now Button.
 			if(maps_themetics_poll_flag) {
 				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
-								  data-complete-text='<i class=\"fa fa-hand-o-right\"></i> Poll Now' \
+								  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait' \
 								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sub_station'>\
-								  <i class='fa fa-hand-o-right'></i> Poll Now</button>";
+								  <i class='fa fa-flash'></i> Poll Now</button>";
 			}
 
 			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' marker_type='sub_station' marker_key='"+marker_key+"' title='Close'>\

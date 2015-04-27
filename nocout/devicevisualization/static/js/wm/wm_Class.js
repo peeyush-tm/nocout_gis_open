@@ -2037,6 +2037,7 @@ function WhiteMapClass() {
 							"device_info" : sector_array[j].device_info,
 							"technology" : sector_array[j].technology,
 							"vendor" : sector_array[j].vendor,
+							"device_name" : sector_array[j].sector_configured_on_device,
 							"sector_perf_url" : sector_perf_url,
 							"inventory_url" : sector_inventory_url,
 							"sector_info_index" : sector_item_index

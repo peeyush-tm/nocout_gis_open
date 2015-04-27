@@ -2102,6 +2102,27 @@ var wimax_sector_toolTip_polled = [
     }
 ];
 
+var common_toolTip_poll_now = [
+    {
+        'name'         : 'rta',
+        'title'        : 'Latency',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'ping',
+        'ds'           : 'rta'
+    },
+    {
+        'name'         : 'pl',
+        'title'        : 'Packet Loss',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'ping',
+        'ds'           : 'pl'
+    }
+]
+
 /**
  * This function return array of object in desired sequence as per given param.
  * @method rearrangeTooltipArray.
