@@ -1494,9 +1494,12 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
                         bootbox.alert("No L2 Report Found.");
                     } else {
                         var url = base_url+"/"+result['data'][0]['url'];
-                        // console.log(url);
-                        var win = window.open(url, '_blank');
-                        win.focus();
+                        
+                        try {
+                            window.open(url, '_blank').focus()
+                        } catch(e) {
+                            // console.log(e);
+                        }
                     }
                 } else {
                     bootbox.alert("No L2 Report Found.");
