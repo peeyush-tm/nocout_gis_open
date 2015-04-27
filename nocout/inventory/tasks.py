@@ -7447,17 +7447,17 @@ def create_device(device_payload):
                     except Exception as e:
                         logger.info("Device Alias: ({} - {})".format(device_alias, e.message))
                 # machine
-                if machine:
-                    try:
-                        device.machine = machine
-                    except Exception as e:
-                        logger.info("Machine: ({} - {})".format(machine, e.message))
+                # if machine:
+                #     try:
+                #         device.machine = machine
+                #     except Exception as e:
+                #         logger.info("Machine: ({} - {})".format(machine, e.message))
                 # site instance
-                if site_instance:
-                    try:
-                        device.site_instance = site_instance
-                    except Exception as e:
-                        logger.info("Site Instance: ({} - {})".format(site_instance, e.message))
+                # if site_instance:
+                #     try:
+                #         device.site_instance = site_instance
+                #     except Exception as e:
+                #         logger.info("Site Instance: ({} - {})".format(site_instance, e.message))
                 # organization
                 try:
                     device.organization = organization
