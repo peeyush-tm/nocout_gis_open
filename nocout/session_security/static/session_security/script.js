@@ -188,28 +188,14 @@ yourlabs.SessionSecurity.prototype = {
     },
     /*Triggers when 'Logout' button is clicked*/
     logoutFunction: function (e) {
-
-        var currentUrl = window.location.href.split("/");
-        currentUrl[3] = "logout";
-
-        window.location.href = currentUrl.join("/");
+        var logout_url = window.location.origin+"/logout/"
+        window.location.href = logout_url;
     },
     /*To show the countdown on the dialog*/
     startCountdown: function (timer) {
         if (timer > 0) {
             $("#counterVal > h1").html(timer + ' <i class="fa fa-clock-o">&nbsp;</i>');
-
-            /*Save the current point reference for further use*/
-//            var current = this;
-            /*Time out of 1 sec*/
-//            setTimeout(function () {
-//
-//                timer = timer - 1;
-                /*Recursive Calling*/
-//                current.startCountdown(timer);
-//            }, 1000);
-        }
-        else {
+        } else {
             $("#counterVal > h1").html("Session has expired, due to inactivity or this account has been logged in from a new location.");
             this.expire();
         }
