@@ -1,7 +1,8 @@
 /*Initialize the timer*/
 var timer = "";
+var count = 1;
 // Use 'yourlabs' as namespace.
-if (window.yourlabs == undefined) window.yourlabs = {};
+if(window.yourlabs == undefined) window.yourlabs = {};
 
 // Session security constructor. These are the required options:
 //
@@ -54,7 +55,7 @@ yourlabs.SessionSecurity = function (options) {
     // Initialize timers.
     this.apply("");
 
-    if (this.confirmFormDiscard) {
+    if(this.confirmFormDiscard) {
         window.onbeforeunload = $.proxy(this.onbeforeunload, this);
         $(document).on('change', ':input', $.proxy(this.formChange, this));
         $(document).on('submit', 'form', $.proxy(this.formSubmit, this));
@@ -74,10 +75,12 @@ yourlabs.SessionSecurity.prototype = {
     showWarning: function (countdown) {
 
         this.$warning.fadeIn('slow');
-        if (countdown) {
+
+        // $(".session_security_overlay").css("height", window.height+"px");
+
+        if(countdown) {
             this.startCountdown(timer);
-        }
-        else {
+        } else {
             this.startCountdown(0);
         }
     },
@@ -98,9 +101,9 @@ yourlabs.SessionSecurity.prototype = {
 
 
         var isVisible = $("#session_security_warning").attr("style");
-        if (isVisible != undefined) {
+        if(isVisible != undefined) {
             this.lastActivity = new Date();
-            if (this.$warning.is(':visible')) {
+            if(this.$warning.is(':visible')) {
                 // Inform the server that the user came back manually, this should
                 // block other browser tabs from expiring.
                 this.ping();
@@ -112,21 +115,25 @@ yourlabs.SessionSecurity.prototype = {
     // Hit the PingView with the number of seconds since last activity.
     ping: function () {
         var idleFor = Math.floor((new Date() - this.lastActivity) / 1000);
-        $.ajax(this.pingUrl, {
-            data: {idleFor: idleFor},
-            cache: false,
-            success: $.proxy(this.pong, this),
-            // In case of network error, we still want to hide potentially
-            // confidential data !!
-            error: $.proxy(this.apply, this),
-            dataType: 'json',
-            type: 'get'
-        });
+        if(idleFor) {
+            $.ajax(this.pingUrl, {
+                data: {idleFor: idleFor},
+                cache: false,
+                success: $.proxy(this.pong, this),
+                // In case of network error, we still want to hide potentially
+                // confidential data !!
+                error: $.proxy(this.apply, this),
+                dataType: 'json',
+                type: 'get'
+            });
+        } else {
+            $.proxy(this.apply, this)
+        }
     },
 
     // Callback to process PingView response.
     pong: function (data) {
-        if (data == 'logout') return this.expire();
+        if(data == 'logout') return this.expire();
 
         this.lastActivity = new Date();
         this.lastActivity.setSeconds(this.lastActivity.getSeconds() - data);
@@ -139,22 +146,23 @@ yourlabs.SessionSecurity.prototype = {
         // this change ensures that if somebidy else logs in
         // the user is logged off and redirected
 
-        if (keyVal.statusText === "error") {
+        if(keyVal.statusText === "error") {
             this.showWarning(false);
         }
 
         // Cancel timeout if any, since we're going to make our own
         clearTimeout(this.timeout);
+
         var idleFor = Math.floor((new Date() - this.lastActivity) / 1000);
 
-        if (idleFor >= this.expireAfter) {
-            return this.expire();
-        } else if (idleFor >= this.warnAfter) {
-            nextPing = 5; //this.expireAfter - idleFor;
+        nextPing = 5;
+
+        if(idleFor >= this.expireAfter) {
+            timer = this.expireAfter - idleFor;
+            this.showWarning(false);
+        } else if(idleFor >= this.warnAfter) {
             timer = this.expireAfter - idleFor;
             this.showWarning(true);
-        } else if (keyVal == 'logoutClicked') {
-            return this.expire();
         } else {
             // this.hideWarning();
             nextPing = this.warnAfter - idleFor;
@@ -166,7 +174,7 @@ yourlabs.SessionSecurity.prototype = {
 
     // onbeforeunload handler.
     onbeforeunload: function (e) {
-        if ($('form[data-dirty]').length && !this.expired) {
+        if($('form[data-dirty]').length && !this.expired) {
             return this.confirmFormDiscard;
         }
     },
@@ -193,11 +201,18 @@ yourlabs.SessionSecurity.prototype = {
     },
     /*To show the countdown on the dialog*/
     startCountdown: function (timer) {
-        if (timer > 0) {
+
+        if(timer > 0) {
             $("#counterVal > h1").html(timer + ' <i class="fa fa-clock-o">&nbsp;</i>');
         } else {
+            $("#session_bottom_content").hide();
             $("#counterVal > h1").html("Session has expired, due to inactivity or this account has been logged in from a new location.");
-            this.expire();
+            
+            var current_this = this;
+
+            setTimeout(function() {
+                current_this.expire();
+            }, 1500);
         }
     }
 };
