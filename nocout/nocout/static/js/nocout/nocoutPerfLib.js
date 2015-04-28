@@ -127,7 +127,8 @@ var perf_that = "",
             'bSortable': true
         }
     ],
-    date_range_picker_html = "";
+    date_range_picker_html = "",
+    spinner_html = '<h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>';
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -305,7 +306,7 @@ function nocoutPerfLib() {
                         var headers = "<tr>";
                         for(var i=0;i<device_status.headers.length;i++) {
                             var header_name = device_status.headers[i];
-                            headers += '<th>' + header_name + '</th>';
+                            headers += '<th class="vAlign_middle">' + header_name + '</th>';
                         }
 
                         headers += "</tr>";
@@ -329,7 +330,7 @@ function nocoutPerfLib() {
                                         url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
                                         display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
 
-                                    status_val += '<td>'+display_txt+'</td>';
+                                    status_val += '<td class="vAlign_middle">'+display_txt+'</td>';
                                 }   
                                 status_val += "</tr>";
                             }

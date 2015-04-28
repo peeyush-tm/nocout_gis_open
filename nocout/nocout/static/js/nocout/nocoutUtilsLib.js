@@ -8,6 +8,8 @@
 var green_color = "#468847",
     orange_color = "#f0ad4e",
     red_color = "#b94a48",
+    ok_severity_color = "#30B91A",
+    unknown_severity_color = "#555555",
     green_status_array = ['ok','success','up'],
     red_status_array = ['critical'],
     down_status_array = ['down'],
@@ -42,7 +44,11 @@ function populateDeviceStatus_nocout(domElement,info) {
         status_html = "",
         age = info.age ? info.age : "Unknown",
         lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
-        status = info.status ? info.status.toUpperCase() : "Unknown";
+        status = info.status ? info.status.toUpperCase() : "Unknown",
+        severity_up = info.severity && info.severity['ok'] ? Number(info.severity['ok']) : 0,
+        severity_warn = info.severity && info.severity['warn'] ? Number(info.severity['warn']) : 0,
+        severity_crit = info.severity && info.severity['crit'] ? Number(info.severity['crit']) : 0,
+        severity_unknown = info.severity && info.severity['unknown'] ? Number(info.severity['unknown']) : 0;
 
     if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
         txt_color = green_color;
@@ -64,13 +70,19 @@ function populateDeviceStatus_nocout(domElement,info) {
 
     status_html += '<table id="final_status_table" class="table table-responsive table-bordered" \
                     style="background:#FFFFFF;"><tr>\
-                    <td style="color:'+txt_color+';">\
-                    <i title = "'+status+'" class="fa '+fa_icon_class+'" style="vertical-align: middle;"> </i> \
-                    <b>Current Status</b> : '+status+'\
-                    </td><td style="color:'+txt_color+';">\
-                    <b>Current Status Since</b> : '+age+'</td>\
-                    <td style="color:'+txt_color+';">\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
+                    <i title = "'+status+'" class="fa '+fa_icon_class+'" \
+                    style="vertical-align: middle;"> </i> \
+                    <b>Current Status</b> : '+status+'</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
+                    <b>Status Since</b> : '+age+'</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
                     <b>Last Down Time</b> : '+lastDownTime+'</td>\
+                    <td title="OK" class="severity_block vAlign_middle" style="background:'+ok_severity_color+';">'+severity_up+'</td>\
+                    <td title="Warning" class="severity_block vAlign_middle" style="background:'+orange_color+';">'+severity_warn+'</td>\
+                    <td title="Critical" class="severity_block vAlign_middle" style="background:'+red_color+';">'+severity_crit+'</td>\
+                    <td title="Unknown" class="severity_block vAlign_middle" \
+                    style="background:'+unknown_severity_color+';">'+severity_unknown+'</td>\
                     </tr></table>';
 
     // Update Status Block HTML as per the device status
@@ -97,10 +109,10 @@ function populateServiceStatus_nocout(domElement,info) {
                 perf = info.perf ? info.perf : "N/A",
                 inner_status_html = '';
 
-            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
+            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered">';
             inner_status_html += '<tr>';
-            inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-            inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
+            inner_status_html += '<td><b>Performance Output</b> : '+perf+'</td>';
+            inner_status_html += '<td><b>Updated At</b> : '+last_updated+'</td>';
             inner_status_html += '</tr>';
             inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
 
