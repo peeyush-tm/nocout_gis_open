@@ -113,6 +113,7 @@ def get_datatable_response(payload):
         # fetch headers
         headers_list = ""
         file_headers_list = ""
+
         action_headers = [
             'action',
             'actions',
@@ -120,6 +121,11 @@ def get_datatable_response(payload):
             'device_icon',
             'device_gmap_icon'
         ]
+
+        # In case of user logs listing action colum is for changes made by user therefore we have to show it
+        if payload['app'] and payload['app'] == 'activity_stream':
+            action_headers = list()
+
         try:
             headers_list = list()
             file_headers_list = list()
@@ -223,8 +229,7 @@ def get_datatable_response(payload):
                 # saving bulk upload errors excel sheet
                 try:
                     # file path
-                    file_path = 'download_excels/{}_{}_{}.xls'.format(payload['app'],
-                                                                      payload['username'],
+                    file_path = 'download_excels/{}_{}.xls'.format(payload['username'],
                                                                       payload['fulltime'])
 
                     # saving workbook
