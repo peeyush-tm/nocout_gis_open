@@ -11,7 +11,11 @@
     {% breadcrumb_safe "Sectors Listing : "|add:base_station.alias "gis-wizard-sector-list" base_station.id %}
     {% breadcrumb_safe "Sector : "|add:sector.sector_id "gis-wizard-sector-update" base_station.id selected_technology sector_pk %}
     {% breadcrumb_safe "SS Listing" "gis-wizard-sub-station-list" base_station.id selected_technology sector_pk %}
-    {% breadcrumb_safe "Sub Station : "|add:object.alias "javascript:;" %}
+    {% if object.alias %}
+        {% breadcrumb_safe "Sub Station : "|add:object.alias "javascript:;" %}
+    {% else %}
+        {% breadcrumb_safe "Sub Station : New" "javascript:;" %}
+    {% endif %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
