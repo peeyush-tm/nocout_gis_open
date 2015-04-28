@@ -781,7 +781,8 @@ function nocoutPerfLib() {
             success : function(response) {
                 var result = "",
                     last_updated = "",
-                    perf = "";
+                    perf = "",
+                    status = "";
 
                 // Type check of response
                 if(typeof response == 'string') {
@@ -796,10 +797,12 @@ function nocoutPerfLib() {
 
                         last_updated = result.data.objects.last_updated ? result.data.objects.last_updated : "";
                         perf = result.data.objects.perf ? result.data.objects.perf : "";
+                        status = result.data.objects.status ? result.data.objects.status : "";
 
                         var response_obj = {
                             "last_updated" : last_updated,
-                            "perf" : perf
+                            "perf" : perf,
+                            "status" : status
                         };
 
                         callback("success",response_obj);

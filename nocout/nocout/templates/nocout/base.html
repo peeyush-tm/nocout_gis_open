@@ -75,18 +75,21 @@
                                 </div>
                             </div>
                             <!-- /PAGE HEADER -->
-                            
+                                
+                            <div>
+                                <!-- Widget Full Screen Button-->
+                                <button type="button" class="btn btn-sm btn-info pull-right" id="goFullScreen">
+                                    <i class="fa fa-arrows-alt"></i> View Full Screen
+                                </button>
+                                <!-- /Widget Full Screen Button-->
+                                <!-- Page Toggle Button-->
+                                <button class="btn btn-info btn-sm pull-right" type="button" id="headerToggleBtn">
+                                    <i class="fa fa-eye"></i> Show Page Controls
+                                </button>
+                                <div class="clearfix"></div>
+                            </div>
+
                             <!-- PAGE CONTENT -->
-                            <!-- Widget Full Screen Button-->
-                            <button type="button" class="btn btn-sm btn-info pull-right" id="goFullScreen">
-                                <i class="fa fa-arrows-alt"></i> View Full Screen
-                            </button>
-                            <!-- /Widget Full Screen Button-->
-                            <!-- Page Toggle Button-->
-                            <button class="btn btn-info btn-sm pull-right" type="button" id="headerToggleBtn">
-                                <i class="fa fa-eye"></i> Show Page Controls
-                            </button>
-                            <div class="clearfix"></div>
                             <!-- /Page Toggle Button-->
                             {% block content %}
                                 <p>Default Content.</p>
