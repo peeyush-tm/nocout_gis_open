@@ -8,6 +8,7 @@ import os
 import binascii
 import mysql.connector
 
+from mysql_connection import memc
 from mysql_connection import db
 try:
     import nocout_settings
@@ -15,10 +16,6 @@ try:
 except Exception as exp:
     print exp
 
-try:
-    from mysql_connection import memc
-except Exception ,e:
-   print e
 
 
 """
