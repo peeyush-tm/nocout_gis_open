@@ -106,8 +106,6 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
 
     g_jobs = list()
     ret = False
-    # new_data_create = list()
-    data_update = list()
     s_sds = ServiceSpecificDataSource.objects.prefetch_related(
         'service_data_sources',
         'service'
@@ -223,7 +221,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
 
                 obj.old_status = new_status
                 obj.new_status = old_status
-                data_update.append(obj)
+
             elif created:  # the object has been created for the first time
                 # if the object has been just created
                 # check for the current status as in good or bad
@@ -238,17 +236,11 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                         g_jobs.append(
                             alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj, service_status=service_status)  # call for task
                         )
-                        # Appending object in list, so that we dont have to use alarm_object.save() or bulk update in alarm_status_changed, when object attribute of email status is changed.
-                        data_update.append(obj)
+                        
             else:  # don't know what this means
                 continue
         else:
             continue
-
-    if len(data_update):
-        bulk_update_create.delay(bulky=data_update,
-                                 action='update',
-                                 model=EscalationStatus)
 
     if not(g_jobs):
         return ret
@@ -323,11 +315,16 @@ def alarm_status_changed(alarm_object, levels, alarm_invent_object, service_stat
          
         if method_to_call_email and method_to_call_phone:
             g_jobs.append(method_to_call_email.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level, service_status=service_status))
-            g_jobs.append(method_to_call_phone.s(alarm=alarm_object, level=level))
+            g_jobs.append(method_to_call_phone.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level, service_status=service_status))
 
         # we dont have to use this beacause of line 225 @peeyush-tm Right ??
-        # if changed:
-        #     alarm_object.save()
+        if changed:
+            bulkyobject.append(alarm_object)
+
+    if len(bulkyobject):
+        bulk_update_create.delay(bulky=bulkyobject,
+                                 action='update',
+                                 model=EscalationStatus)                
 
 
     if not len(g_jobs):
@@ -350,6 +347,7 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level, service_status)
     else:
         alarm_invent.update({'threshold' : service_status.warning_threshold})
     alarm_invent.update({'string_value': ' is still above threshold of '})
+    alarm_invent.update({'start_string': 'ALERT'})
     context_dict = {'alarm' : alarm}
     context_dict['level'] = level
     context_dict = {'alarm_invent' : alarm_invent}
@@ -364,7 +362,7 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level, service_status)
 
 
 @task
-def alert_phones_for_bad_performance(alarm, level):
+def alert_phones_for_bad_performance(alarm, alarm_invent, level, service_status):
     """
     Sends sms to phones for bad performance.
     >>> payload = {'key1': 'value1', 'key2': 'value2'}
@@ -375,9 +373,17 @@ def alert_phones_for_bad_performance(alarm, level):
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
+        alarm_invent.update({'current_value': service_status.current_value})
+        if service_status.severity in ['critical', 'crit', 'down']:
+            alarm_invent.update({'threshold' : service_status.critical_threshold})
+        else:
+            alarm_invent.update({'threshold' : service_status.warning_threshold})
+        alarm_invent.update({'string_value': ' is still above threshold of '})
+        alarm_invent.update({'start_string': 'ALERT'})
         context_dict = {'alarm' : alarm}
         context_dict['level'] = level
-        message = render_to_string('alarm_message/bad_subject.txt', context_dict)
+        context_dict = {'alarm_invent' : alarm_invent}
+        message = render_to_string('alarm_message/subject.txt', context_dict)
         #render_to_string('alarm_message/good_message.html', context_dict)
         payload['N'] = send_to
         payload['M'] = message
@@ -404,6 +410,7 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level, service_status
     else:
         alarm_invent.update({'threshold' : service_status.warning_threshold})
     alarm_invent.update({'string_value': ' is below from thresshold '})
+    alarm_invent.update({'start_string': 'RECOVERED'})
     context_dict = {'alarm' : alarm}
     context_dict = {'alarm_invent' : alarm_invent}
     context_dict['level'] = level
@@ -418,7 +425,7 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level, service_status
 
 
 @task
-def alert_phones_for_good_performance(alarm, level):
+def alert_phones_for_good_performance(alarm, alarm_invent, level, service_status):
     """
     Sends sms to phones for bad performance.
     """
@@ -427,9 +434,17 @@ def alert_phones_for_good_performance(alarm, level):
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
+        alarm_invent.update({'current_value': service_status.current_value})
+        if service_status.severity in ['critical', 'crit', 'down']:
+            alarm_invent.update({'threshold' : service_status.critical_threshold})
+        else:
+            alarm_invent.update({'threshold' : service_status.warning_threshold})
+        alarm_invent.update({'string_value': ' is still above threshold of '})
+        alarm_invent.update({'start_string': 'RECOVERED'})
         context_dict = {'alarm' : alarm}
+        context_dict = {'alarm_invent' : alarm_invent}
         context_dict['level'] = level
-        message = render_to_string('alarm_message/good_subject.txt', context_dict)
+        message = render_to_string('alarm_message/subject.txt', context_dict)
         #render_to_string('alarm_message/good_message.html', context_dict)
         payload['N'] = send_to
         payload['M'] = message
