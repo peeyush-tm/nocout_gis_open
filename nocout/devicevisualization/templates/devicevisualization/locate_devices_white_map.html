@@ -545,6 +545,9 @@
 
         $(document).ready(function (e) {
 
+            // Set 'isMapsPage' flag to true
+            isMapsPage = true;
+
             try {
 
                 var wmap_config = '{{ settings.WHITE_MAP_CONFIGURATION|safe }}';

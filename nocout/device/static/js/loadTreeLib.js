@@ -247,20 +247,20 @@ function loadDeviceTreeLib() {
 							cityObject["additionalParameters"]= {"children": []};
 							for(var j=0; j< baseStationsInCities.length; j++) {
 								var bsObject= {};
-								bsObject.name= baseStationsInCities[j]["name"];
+								bsObject.name= baseStationsInCities[j]["alias"];
 								
 								var bsSectors= baseStationsInCities[j]["data"]["param"]["sector"];
 								if(bsSectors && bsSectors.length > 0) {
 									bsObject["additionalParameters"]= {"children": []};
 									for(var k=0; k< bsSectors.length; k++) {
 										var bsSector= {};
-										bsSector.name= bsSectors[k]["info"][0]["value"];
+										bsSector.name= bsSectors[k].sector_configured_on;
 										var sectorSubStations= bsSectors[k]["sub_station"];
 										if(sectorSubStations && sectorSubStations.length > 0) {
 											bsSector["additionalParameters"]= {"children": []};
 											for(var l=0; l< sectorSubStations.length; l++) {
 												var ssObject= {};
-												ssObject.name= sectorSubStations[l]["name"];
+												ssObject.name= sectorSubStations[l]["data"]["circuit_id"];
 												ssObject.type="item";
 												bsSector["additionalParameters"]["children"].push(ssObject);
 											}
