@@ -70,3 +70,15 @@ TODO:
 2. Install : django-settings-export
 3. Link : https://github.com/jakubroztocil/django-settings-export
 4. Package Available in `requirements/requirements_user_app/Base/TempateSettings-March-25-15`
+
+**M7 DA New Package: python-memcached-1.54 29th April**
+
+1. For Deploying python-memcached
+2. Install :python-memcached-1.54
+3. Package Available in requirements/requirements_device_app/
+
+**M7 DA New Package: memcached-1.4.4-3 29th April**
+
+1. For Deploying python-memcached
+2. Install : memcached-1.4.4-3
+3. Package Available in requirements/requirements_user_app/Cache/24November/0-memcached/
