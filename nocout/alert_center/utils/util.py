@@ -305,7 +305,7 @@ def common_prepare_results(dct):
             or dct['severity'].upper() == 'CRITICAL':
         dct[
             'severity'
-        ] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+        ] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">DOWN</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
@@ -314,7 +314,7 @@ def common_prepare_results(dct):
             or "WARN" in dct['description'].upper():
         dct[
             'severity'
-        ] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+        ] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">WARNING</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
 
@@ -322,14 +322,14 @@ def common_prepare_results(dct):
             or "OK" in dct['description'].upper():
         dct[
             'severity'
-        ] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+        ] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">UP</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
 
     else:
         dct[
             'severity'
-        ] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+        ] = '<i class="fa fa-circle grey-dot" value="4" title="Unknown"><span style="display:none">Unknown</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
