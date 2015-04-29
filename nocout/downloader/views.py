@@ -4,7 +4,7 @@ import simplejson
 import time
 import operator
 from django.db.models import Q
-from nocout.settings import MEDIA_URL, MEDIA_ROOT
+from nocout.settings import MEDIA_URL, MEDIA_ROOT, USE_TZ
 from datetime import datetime, timedelta
 from django.http import HttpResponse
 from django.views.generic.base import View
@@ -660,12 +660,16 @@ class DownloaderCompleteListing(BaseDatatableView):
             excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
 
             # set pending status to failed if added_on time is more than 10 minutes
+
             # get added on timestamp
-            added_timestamp = ''
             time_difference = None
             try:
-                added_timestamp = dct['requested_on'].replace(tzinfo=None)
-                time_difference = datetime.utcnow() - added_timestamp
+                if USE_TZ:
+                    added_timestamp = dct['requested_on'].replace(tzinfo=None)
+                    time_difference = datetime.utcnow() - added_timestamp
+                else:
+                    added_timestamp = dct['requested_on']
+                    time_difference = datetime.now() - added_timestamp
             except Exception as e:
                 pass
 
@@ -694,6 +698,7 @@ class DownloaderCompleteListing(BaseDatatableView):
 
             try:
                 if not dct.get('status'):
+                    logger.info("*********************** time_difference - {}".format(time_difference))
                     if time_difference > timedelta(minutes=10, seconds=0):
                         dct.update(status=fail_html)
                     else:
