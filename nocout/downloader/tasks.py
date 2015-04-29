@@ -113,17 +113,27 @@ def get_datatable_response(payload):
         # fetch headers
         headers_list = ""
         file_headers_list = ""
-        non_display_headers = [
+
+        action_headers = [
             'action',
             'actions',
             'nms_actions',
             'device_icon',
             'device_gmap_icon'
         ]
+
+        # In case of user logs listing action colum is for changes made by user therefore we have to show it
+        if payload['app'] and payload['app'] == 'activity_stream':
+            action_headers = list()
+
         try:
             headers_list = list()
             file_headers_list = list()
             datatable_headers = simplejson.loads(headers_data[headers_data_key])
+            excluded_columns = payload['excluded'] if 'excluded' in payload and payload['excluded'] else []
+            # Headers which will not displayed in excel sheet
+            non_display_headers = action_headers + excluded_columns
+
             for headers_dict in datatable_headers:
                 # @priyesh-teramatrix :- Please verify. Here a condition added by which the 
                 #                        action column will be not added to downloaded report.
@@ -139,13 +149,6 @@ def get_datatable_response(payload):
                         file_headers_list.append(headers_dict['sTitle'])
         except Exception as e:
             logger.info(e.message)
-
-        # exclude parameters from excel sheet
-        if payload['excluded']:
-            try:
-                file_headers_list = [val for val in file_headers_list if val not in payload['excluded']]
-            except Exception as e:
-                pass
 
         # create view class object (for rows data)
         rows_req_obj = eval("{}()".format(payload['rows']))
@@ -226,8 +229,7 @@ def get_datatable_response(payload):
                 # saving bulk upload errors excel sheet
                 try:
                     # file path
-                    file_path = 'download_excels/{}_{}_{}.xls'.format(payload['app'],
-                                                                      payload['username'],
+                    file_path = 'download_excels/{}_{}.xls'.format(payload['username'],
                                                                       payload['fulltime'])
 
                     # saving workbook
