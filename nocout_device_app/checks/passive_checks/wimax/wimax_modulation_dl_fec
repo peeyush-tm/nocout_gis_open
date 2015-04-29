@@ -37,12 +37,13 @@ def live_query_modulation_dl_fec(mac):
     
         """
 	modulation_dl_fec = None
-	value_list = memc.get(mac)
-	if value_list:
-		try:
-			modulation_dl_fec = value_list[7]
-		except:
-			 modulation_dl_fec = None
+	if memc:
+		value_list = memc.get(mac)
+		if value_list:
+			try:
+				modulation_dl_fec = value_list[7]
+			except:
+				 modulation_dl_fec = None
 
 	if not modulation_dl_fec:
         	host_name = extract_host_from_wimax_topology(mac)
