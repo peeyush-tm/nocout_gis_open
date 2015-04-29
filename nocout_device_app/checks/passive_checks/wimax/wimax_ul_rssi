@@ -35,12 +35,13 @@ def live_query_ul_rssi(mac):
         """
 	exit_value = 3
 	ul_rssi = None
-	value_list = memc.get(mac)
-	if value_list:
-		try:
-			ul_rssi = int(value_list[2])
-		except:
-			ul_rssi = None
+	if memc:
+		value_list = memc.get(mac)
+		if value_list:
+			try:
+				ul_rssi = int(value_list[2])
+			except:
+				ul_rssi = None
         if not ul_rssi:
 		host_name = extract_host_from_wimax_topology(mac)
         	try:

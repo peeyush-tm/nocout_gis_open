@@ -95,13 +95,14 @@ def check_wimax_ss_session_uptime(item, _no_params, info):
                 index =index[0]
                 ss_mac = mac_list[index]
 	if ss_mac:
-		key = ss_mac + "_params"
-		value_list = memc.get(key)
-		if value_list:
-			try:
-				ss_session_uptime = value_list[4]
-			except:
-				ss_session_uptime = None
+		if memc:
+			key = ss_mac + "_params"
+			value_list = memc.get(key)
+			if value_list:
+				try:
+					ss_session_uptime = value_list[4]
+				except:
+					ss_session_uptime = None
 		if not ss_session_uptime:
 			host_name = extract_host_name_from_wimax_topology(ss_mac)
 			if host_name[0][0]:
