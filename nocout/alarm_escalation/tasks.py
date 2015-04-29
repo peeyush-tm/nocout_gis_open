@@ -30,6 +30,23 @@ from inventory.tasks import bulk_update_create
 import logging
 logger = logging.getLogger(__name__)
 
+### SMS Sending
+import requests
+#### SMS GATEWAY SETTINGS
+GATEWAY_SETTINGS = {
+    'URL': 'http://121.244.239.140/csend.dll'
+}
+GATEWAY_PARAMETERS = {
+    'Username': 'wirelessonetool',
+    'Password': '12345vgsmhttp',
+    'Priority': 3,
+    'Commmethod': 'cellent',
+    'Returnseq': 1,
+    'Sender': 'TATACOMM Anil . Now',
+    'N': '',
+    'M': ''
+}
+#### SMS GATEWAY SETTINGS
 
 
 status_dict = {
@@ -350,8 +367,23 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level, service_status)
 def alert_phones_for_bad_performance(alarm, level):
     """
     Sends sms to phones for bad performance.
+    >>> payload = {'key1': 'value1', 'key2': 'value2'}
+    >>> r = requests.get("http://httpbin.org/get", params=payload)
     """
+    payload =  GATEWAY_PARAMETERS
+    url = GATEWAY_SETTINGS['URL']
     phones = level.get_phones()
+    if len(phones):
+        send_to = ",".join(phones)
+        context_dict = {'alarm' : alarm}
+        context_dict['level'] = level
+        message = render_to_string('alarm_message/bad_subject.txt', context_dict)
+        #render_to_string('alarm_message/good_message.html', context_dict)
+        payload['N'] = send_to
+        payload['M'] = message
+        r = requests.get(url, params=payload)
+    else:
+        return False
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
@@ -390,7 +422,20 @@ def alert_phones_for_good_performance(alarm, level):
     """
     Sends sms to phones for bad performance.
     """
+    payload =  GATEWAY_PARAMETERS
+    url = GATEWAY_SETTINGS['URL']
     phones = level.get_phones()
+    if len(phones):
+        send_to = ",".join(phones)
+        context_dict = {'alarm' : alarm}
+        context_dict['level'] = level
+        message = render_to_string('alarm_message/good_subject.txt', context_dict)
+        #render_to_string('alarm_message/good_message.html', context_dict)
+        payload['N'] = send_to
+        payload['M'] = message
+        r = requests.get(url, params=payload)
+    else:
+        return False
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
