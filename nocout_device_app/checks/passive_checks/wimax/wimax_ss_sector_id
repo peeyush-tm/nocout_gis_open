@@ -34,13 +34,13 @@ def live_query_ss_sector_id(mac):
         Returns nothing.
     
         """
-        ss_sector_id = None
+	ss_sector_id = None
 	value_list = memc.get(mac)
-        if value_list:
-                try:
-                        ss_sector_id = value_list[9]
-                except:
-                        ss_sector_id = None
+	if value_list:
+		try:
+			ss_sector_id = value_list[9]
+		except:
+			ss_sector_id = None
 	if not ss_sector_id:
         	host_name = extract_host_from_wimax_topology(mac)
         	try:

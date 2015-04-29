@@ -33,10 +33,10 @@ def live_query_ul_rssi(mac):
         Returns nothing.
     
         """
-        exit_value = 3
-        ul_rssi = None
+	exit_value = 3
+	ul_rssi = None
 	value_list = memc.get(mac)
-        if value_list:
+	if value_list:
 		try:
 			ul_rssi = int(value_list[2])
 		except:

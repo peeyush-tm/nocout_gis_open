@@ -33,7 +33,7 @@ def live_query_ul_intrf(mac):
         Returns nothing.
     
         """
-        ul_intrf = None
+	ul_intrf = None
 	value_list = memc.get(mac)
 	if value_list:
 		try:

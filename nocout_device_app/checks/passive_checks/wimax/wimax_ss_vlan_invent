@@ -98,11 +98,11 @@ def check_wimax_ss_vlan_invent(item, _no_params, info):
 	if ss_mac:
 		key = ss_mac + "_vlan"
 		value = memc.get(key)
-                if value:
-                        try:
+		if value:
+			try:
 				ss_vlan = value
-                        except:
-                                ss_vlan = None
+			except:
+				ss_vlan = None
 		if not ss_vlan:
 			host_name = extract_host_name_from_wimax_topology(ss_mac)
 			if host_name[0][0]:

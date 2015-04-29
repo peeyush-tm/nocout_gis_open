@@ -35,8 +35,8 @@ def live_query_ul_cinr(mac):
         Returns nothing.
     
         """
-        exit_value = 3
-        ul_cinr = None
+	exit_value = 3
+	ul_cinr = None
 	value_list = memc.get(mac)
 	if value_list:
 		try:

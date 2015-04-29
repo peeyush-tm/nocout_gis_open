@@ -108,7 +108,7 @@ def live_query_dl_rssi(mac):
         Returns nothing.
     
         """
-        exit_value = 3
+	exit_value = 3
 	dl_rssi = None
 	value_list = memc.get(mac)
 	if value_list:

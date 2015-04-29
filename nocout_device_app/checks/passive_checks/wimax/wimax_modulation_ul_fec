@@ -36,13 +36,13 @@ def live_query_modulation_ul_fec(mac):
         Returns nothing.
     
         """
-        modulation_ul_fec = None
+	modulation_ul_fec = None
 	value_list = memc.get(mac)
-        if value_list:
-                try:
-                        modulation_ul_fec = value_list[8]
-                except:
-                        modulation_ul_fec = None
+	if value_list:
+		try:
+			modulation_ul_fec = value_list[8]
+		except:
+			modulation_ul_fec = None
 	if not modulation_ul_fec:
         	host_name = extract_host_from_wimax_topology(mac)
         	try:
