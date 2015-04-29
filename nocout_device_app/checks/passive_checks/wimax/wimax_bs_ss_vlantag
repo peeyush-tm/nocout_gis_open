@@ -61,6 +61,7 @@ def connection_telnet_for_ss_vlan(host_ip, port):
 	
 	ss_vlan = "vlan_miss"
 	result = ""
+	service_tag = "_vlan"
         try:
                 for i,row in enumerate(data.split("\n")):
 			if "SS Entry" in row:
@@ -72,6 +73,11 @@ def connection_telnet_for_ss_vlan(host_ip, port):
 				vlan_row = params_list[1]
 				ss_vlan  = vlan_row.split('=')[1].strip()
 				result = result + mac +"=" + str(ss_vlan) + " "
+				try:
+					key = mac + service_tag
+					memc.set(key,str(ss_vlan),360)
+				except:
+					pass
 				mac = ""
 			
         except:

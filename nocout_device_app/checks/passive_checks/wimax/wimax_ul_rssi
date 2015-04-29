@@ -33,29 +33,36 @@ def live_query_ul_rssi(mac):
         Returns nothing.
     
         """
-        exit_value = 3
-        ul_rssi = None
-        host_name = extract_host_from_wimax_topology(mac)
-        try:
-                if host_name[0][0]:
-                        query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+	exit_value = 3
+	ul_rssi = None
+	value_list = memc.get(mac)
+	if value_list:
+		try:
+			ul_rssi = int(value_list[2])
+		except:
+			ul_rssi = None
+        if not ul_rssi:
+		host_name = extract_host_from_wimax_topology(mac)
+        	try:
+                	if host_name[0][0]:
+                        	query_string = "GET services\nColumns: plugin_output\nFilter: " + \
                                 "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",host_name[0][0])
 			
-			site = host_name[0][1]
-                        machine_name = host_name[0][1].split('_')[0]
-                        socket_ip = _LIVESTATUS[machine_name]['host']
-                        socket_port = _LIVESTATUS[machine_name][site]['port']
+				site = host_name[0][1]
+                        	machine_name = host_name[0][1].split('_')[0]
+                        	socket_ip = _LIVESTATUS[machine_name]['host']
+                        	socket_port = _LIVESTATUS[machine_name][site]['port']
 
 
-                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
-                        if query_output[0][0]:
-                                plugin_output = str(query_output[0][0].split('OK -')[1])
-                                plugin_output = [entry for entry in plugin_output.split(' ')]
-                                entry=filter(lambda x: mac in x.lower(), plugin_output)
-                                ul_rssi = int(entry[0].split('=')[1].split(',')[1])
+                        	query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string,site,machine_name).strip())
+                        	if query_output[0][0]:
+                                	plugin_output = str(query_output[0][0].split('OK -')[1])
+                                	plugin_output = [entry for entry in plugin_output.split(' ')]
+                               		entry=filter(lambda x: mac in x.lower(), plugin_output)
+                                	ul_rssi = int(entry[0].split('=')[1].split(',')[1])
 
-	except:
-                ul_rssi= None
+		except:
+                	ul_rssi= None
         return ul_rssi
 
 
