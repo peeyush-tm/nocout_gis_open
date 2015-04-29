@@ -283,7 +283,8 @@
                 temp_extra_param = "{'data_source' : 'Temperature', 'report_title' : '"+temp_title+"' , "+common_extra_param+"}",
                 wimax_extra_param = "{'data_source' : 'WiMAX', 'report_title' : '"+wimax_title+"',  "+common_extra_param+"}",
                 pmp_extra_param = "{'data_source' : 'PMP', 'report_title' : '"+pmp_title+"', "+common_extra_param+"}",
-                ptp_extra_param = "{'data_source' : 'P2P', 'report_title' : '"+ptp_title+"' , "+common_extra_param+"}";
+                ptp_extra_param = "{'data_source' : 'P2P', 'report_title' : '"+ptp_title+"' , "+common_extra_param+"}",
+                common_hidden_columns = "'circuit_id', 'customer_name'";
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 
@@ -294,7 +295,8 @@
                     "header_class_name" : "BackhaulAugmentationAlertsHeaders",
                     "data_class_name" : "BackhaulAugmentationAlertsListing",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+network_bhUtil_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+network_bhUtil_title+"', "+common_extra_param+"}",
+                    "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per']"
                 },
                 "network_sectorUtil_tab" : {
                     "app_name" : "capacity_management",
@@ -302,7 +304,8 @@
                     "header_class_name" : "SectorAugmentationAlertsHerders",
                     "data_class_name" : "SectorAugmentationAlertsListing",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+network_sectorUtil_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+network_sectorUtil_title+"', "+common_extra_param+"}",
+                    "excluded" : "['id','sector__sector_id','organization__alias']"
                 },
                 "pmp_ulIssue_tab" : {
                     "app_name" : "alert_center",
@@ -310,7 +313,8 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'header_data_key' : 'ul_issue_headers',"+common_extra_param+"}",
-                    "data_extra_param" : pmp_ulIssue_extra_param
+                    "data_extra_param" : pmp_ulIssue_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "wimax_ulIssue_tab" : {
                     "app_name" : "alert_center",
@@ -318,7 +322,8 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'header_data_key' : 'ul_issue_headers',"+common_extra_param+"}",
-                    "data_extra_param" : wimax_ulIssue_extra_param
+                    "data_extra_param" : wimax_ulIssue_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_converter_tab" : {
                     "app_name" : "alert_center",
@@ -326,7 +331,8 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : converter_extra_param
+                    "data_extra_param" : converter_extra_param,
+                    "excluded" : "['sector_id',"+common_hidden_columns+"]"
                 },
                 "network_bh_temp_tab" : {
                     "app_name" : "alert_center",
@@ -342,7 +348,8 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : temp_extra_param
+                    "data_extra_param" : temp_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_wimax_tab" : {
                     "app_name" : "alert_center",
@@ -350,7 +357,8 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : wimax_extra_param
+                    "data_extra_param" : wimax_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_pmp_tab" : {
                     "app_name" : "alert_center",
@@ -358,7 +366,8 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : pmp_extra_param
+                    "data_extra_param" : pmp_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_ptp_tab" : {
                     "app_name" : "alert_center",
@@ -366,7 +375,8 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : ptp_extra_param
+                    "data_extra_param" : ptp_extra_param,
+                    "excluded" : "['sector_id']"
                 }
             };
 
@@ -406,22 +416,6 @@
             $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
             // Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag. -- END
-
-
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy = false;
-
-            /*Hide SECTOR ID Column*/
-            for (var i = 0; i < gridHeadersObj.length; i++) {
-                var column = gridHeadersObj[i];
-                if (column.mData.indexOf("sector_id") > -1) {
-                    if (column.sClass) {
-                        column.sClass = "hide";
-                    } else {
-                        column["sClass"] = "hide";
-                    }
-                }
-            }
 
             var location_array = window.location.href.split("#");
 
