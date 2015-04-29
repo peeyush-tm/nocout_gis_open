@@ -56,7 +56,8 @@
                 header_class_name = "SiteInstanceList",
                 data_class_name = "SiteInstanceListingTable",
                 extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
-                destroy = false;
+                destroy = false,
+                excluded_columns = "['status_icon']";
                 
             /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable(
@@ -69,7 +70,8 @@
                 header_class_name,
                 data_class_name,
                 extra_param,
-                extra_param
+                extra_param,
+                excluded_columns
             );
         });
     </script>

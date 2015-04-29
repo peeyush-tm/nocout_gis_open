@@ -140,7 +140,8 @@
                 non_operational_title = "Non Operational Devices Report",
                 disabled_title = "Disabled Devices Report",
                 archived_title = "Archived Devices Report",
-                all_title = "All Devices Report";
+                all_title = "All Devices Report",
+                common_excluded_columns = "['status_icon']";
 
             tables_info = {
                 "operationalDeviceListing_tab" : {
@@ -149,7 +150,8 @@
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "OperationalDeviceListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+operational_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+operational_title+"', "+common_extra_param+"}",
+                    "excluded" : common_excluded_columns
                 },
                 "nonOperationalDeviceListing_tab" : {
                     "app_name" : "device",
@@ -157,7 +159,8 @@
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "NonOperationalDeviceListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+non_operational_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+non_operational_title+"', "+common_extra_param+"}",
+                    "excluded" : common_excluded_columns
                 },
                 "disabledDeviceListing_tab" : {
                     "app_name" : "device",
@@ -165,7 +168,8 @@
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "DisabledDeviceListingTable",
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+disabled_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+disabled_title+"', "+common_extra_param+"}",
+                    "excluded" : common_excluded_columns
                 },
                 "archivedDeviceListing_tab" : {
                     "app_name" : "device",
@@ -173,7 +177,8 @@
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "ArchivedDeviceListingTable",
                     "header_extra_param" : "{'headers_data_key' : 'datatable_headers_no_nms_actions', "+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+archived_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+archived_title+"', "+common_extra_param+"}",
+                    "excluded" : common_excluded_columns
                 },
                 "allDeviceListing_tab" : {
                     "app_name" : "device",
@@ -181,7 +186,8 @@
                     "header_class_name" : "DeviceList",
                     "data_class_name" : "AllDeviceListingTable",
                     "header_extra_param" : "{'headers_data_key' : 'datatable_headers_no_nms_actions', "+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_extra_param+"}",
+                    "excluded" : common_excluded_columns
                 }
             };
 
