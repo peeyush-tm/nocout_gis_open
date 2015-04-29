@@ -327,3 +327,33 @@ iframe {
   font-weight:bold;
   vertical-align:middle;
 }
+
+.vAlign_middle {
+  vertical-align: middle !important;
+}
+.one_fourth_column {
+  width: 25%;
+}
+.severity_block {
+  color:#FFFFFF;
+  width:6.25%;
+  max-width: 60px;
+  min-width: 40px;
+  text-align:center;
+  font-weight:bold;
+  /*text-shadow: 1px 1px 1px #F5F5F5, 1px 1px 1px #000000;*/
+  /*box-shadow: inset 0 2px 3px rgba(255,255,255,0.3),inset 0 -2px 3px rgba(0,0,0,0.3),0 1px 1px rgba(255,255,255,0.9);*/
+}
+.device_status_tbl {
+  margin-bottom: 0px !important;
+}
+#latestStatusContainer {
+  margin-bottom: 9px;
+}
+.sidebar-menu > ul {
+  margin-top: 0px;
+  border-top: 0px none !important;
+}
+#status_container {
+  margin-bottom: 12px !important;
+}
