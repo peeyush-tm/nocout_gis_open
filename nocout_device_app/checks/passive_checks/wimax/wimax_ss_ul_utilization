@@ -34,13 +34,14 @@ def live_query_for_ul_utilization(mac):
         """
         exit_value = 3
         ul_utilization = None
-	key = mac + "_params"
-	value_list = memc.get(key)
-	if value_list:
-                try:
-                        ul_utilization = value_list[0]
-                except:
-                        ul_utilization = None
+	if memc:
+		key = mac + "_params"
+		value_list = memc.get(key)
+		if value_list:
+                	try:
+                        	ul_utilization = value_list[0]
+                	except:
+                        	ul_utilization = None
         if not ul_utilization:
 		try:
 			host_name = extract_host_name_from_wimax_topology(mac)

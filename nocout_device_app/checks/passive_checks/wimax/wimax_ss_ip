@@ -74,14 +74,15 @@ def check_wimax_ss_ip(item, _no_params, info):
                 index =index[0]
                 ss_mac = mac_list[index]
 	if ss_mac:
-		value_list = memc.get(ss_mac)
-		if value_list:
-			try:
-				ss_ip = value_list[10]
-				state = 0
-        			infotext = "%s" % ss_ip
-			except:
-				ss_ip = None
+		if memc:
+			value_list = memc.get(ss_mac)
+			if value_list:
+				try:
+					ss_ip = value_list[10]
+					state = 0
+        				infotext = "%s" % ss_ip
+				except:
+					ss_ip = None
 		if not ss_ip:
 			host_ip = extract_hostip_from_wimax_topology(ss_mac)
 			if host_ip[0][0]:

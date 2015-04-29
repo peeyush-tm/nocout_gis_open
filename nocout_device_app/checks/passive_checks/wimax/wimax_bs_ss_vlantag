@@ -74,8 +74,9 @@ def connection_telnet_for_ss_vlan(host_ip, port):
 				ss_vlan  = vlan_row.split('=')[1].strip()
 				result = result + mac +"=" + str(ss_vlan) + " "
 				try:
-					key = mac + service_tag
-					memc.set(key,str(ss_vlan),360)
+					if memc:
+						key = mac + service_tag
+						memc.set(key,str(ss_vlan),360)
 				except:
 					pass
 				mac = ""

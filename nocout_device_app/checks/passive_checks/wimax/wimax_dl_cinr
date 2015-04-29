@@ -37,12 +37,13 @@ def live_query_dl_cinr(mac):
         """
 	exit_value = 3
 	dl_cinr = None
-	value_list = memc.get(mac)
-	if value_list:
-		try:
-			dl_cinr = int(value_list[3])
-		except:
-			dl_cinr = None
+	if memc:
+		value_list = memc.get(mac)
+		if value_list:
+			try:
+				dl_cinr = int(value_list[3])
+			except:
+				dl_cinr = None
 	if not dl_cinr:
         	host_name = extract_host_from_wimax_topology(mac)
         	try:
