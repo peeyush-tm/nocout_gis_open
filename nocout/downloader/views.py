@@ -5,7 +5,7 @@ import time
 import operator
 from django.db.models import Q
 from nocout.settings import MEDIA_URL, MEDIA_ROOT
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.http import HttpResponse
 from django.views.generic.base import View
 from tasks import get_datatable_response
@@ -626,9 +626,12 @@ class DownloaderCompleteListing(BaseDatatableView):
         :param qs:
         :return qs
         """
+
         success_html = '<span class="text-success">Success</span>'
         fail_html = '<span class="text-danger">Failed</span>'
         pending_html = '<span class="text-warning">Pending</span>'
+        no_data_html = '<span class="text-danger">Data table has no data</span>'
+        wrong_para_html = '<span class="text-danger">Wrong parameters</span>'
 
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -656,6 +659,16 @@ class DownloaderCompleteListing(BaseDatatableView):
             # grey icon for excel file
             excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
 
+            # set pending status to failed if added_on time is more than 10 minutes
+            # get added on timestamp
+            added_timestamp = ''
+            time_difference = None
+            try:
+                added_timestamp = dct['requested_on'].replace(tzinfo=None)
+                time_difference = datetime.utcnow() - added_timestamp
+            except Exception as e:
+                pass
+
             # File name which will be downloaded
             try:
                 file_name = dct['file_path'].split("/")[1] if dct['file_path'] else "N/A"
@@ -681,7 +694,10 @@ class DownloaderCompleteListing(BaseDatatableView):
 
             try:
                 if not dct.get('status'):
-                    dct.update(status=pending_html)
+                    if time_difference > timedelta(minutes=10, seconds=0):
+                        dct.update(status=fail_html)
+                    else:
+                        dct.update(status=pending_html)
             except Exception as e:
                 logger.info(e.message)
 
@@ -697,6 +713,18 @@ class DownloaderCompleteListing(BaseDatatableView):
             except Exception as e:
                 logger.info(e.message)
 
+            try:
+                if dct.get('status') == 3:
+                    dct.update(status=no_data_html)
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if dct.get('status') == 4:
+                    dct.update(status=wrong_para_html)
+            except Exception as e:
+                logger.info(e.message)
+
             # Module name for which the report is downloaded
             if not report_title:
                 if modified_module_name:
@@ -706,12 +734,6 @@ class DownloaderCompleteListing(BaseDatatableView):
                         pass
             else:
                 dct['rows_view'] = report_title
-
-
-            # try:
-            #     dct.update(status=dct['status']+" : "+dct['description'])
-            # except Exception, e:
-            #     raise e
 
             # 'requested on' field timezone conversion from 'utc' to 'local'
             try:
@@ -724,8 +746,6 @@ class DownloaderCompleteListing(BaseDatatableView):
                 dct['request_completion_on'] = convert_utc_to_local_timezone(dct['request_completion_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
-
-            download_img_str = ''
 
             try:
                 if dct.get('status') == success_html:
