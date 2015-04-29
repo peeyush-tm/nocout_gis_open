@@ -166,7 +166,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         header_class_name = tables_info[anchor_id].header_class_name ? tables_info[anchor_id].header_class_name : false,
                         data_class_name = tables_info[anchor_id].data_class_name ? tables_info[anchor_id].data_class_name : false,
                         header_extra_param = tables_info[anchor_id].header_extra_param ? encodeURIComponent(tables_info[anchor_id].header_extra_param) : false,
-                        data_extra_param = tables_info[anchor_id].data_extra_param ? encodeURIComponent(tables_info[anchor_id].data_extra_param) : false;
+                        data_extra_param = tables_info[anchor_id].data_extra_param ? encodeURIComponent(tables_info[anchor_id].data_extra_param) : false,
+                        excluded_columns = tables_info[anchor_id].excluded ? encodeURIComponent(tables_info[anchor_id].excluded) : false;
                     /*Call createDataTable function to create the data table for specified dom element with given data*/
                     dataTableInstance.createDataTable(
                         table_id,
@@ -178,7 +179,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         header_class_name,
                         data_class_name,
                         header_extra_param,
-                        data_extra_param
+                        data_extra_param,
+                        excluded_columns
                     );
                 }
             }

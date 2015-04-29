@@ -127,11 +127,19 @@
 
             var page_type = "{{ page_type|title }}",
                 ds_name = "{{ data_source|title }}",
-                ptp_tech_txt = "PTP";
+                ptp_tech_txt = "PTP",
+                ptp_excluded_columns = "'sector_id'";
 
             // In case of netwok alert ptp will be treated as PTP BH
             if(page_type.toLowerCase() == 'network') {
-                ptp_tech_txt = "PTP BH"                
+                ptp_tech_txt = "PTP BH";
+
+                // NETWORK EXCLUDED COLUMNS
+                pmp_wimax_excluded_network = "'circuit_id'";
+
+            } else {
+                // CUSTOMER EXCLUDED COLUMNS
+                pmp_wimax_excluded_network = "";
             }
 
             var report_title_base = page_type+" Alert ["+ds_name+"]",
@@ -157,6 +165,10 @@
 
             var ptp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'P2P', 'page_type' : '{{ page_type }}', 'report_title' : '"+ptp_report_title+"', 'download_excel': 'yes' }";
 
+            if(page_type && page_type.toLowerCase() == 'network') {
+
+            }
+
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 
             tables_info = {
@@ -166,7 +178,8 @@
                     "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "AlertListingTable",
                     "header_extra_param" : wimax_extra_param,
-                    "data_extra_param" : wimax_extra_param
+                    "data_extra_param" : wimax_extra_param,
+                    "excluded" : "["+pmp_wimax_excluded_network+"]"
                 },
                 "network_ptp_tab" : {
                     "app_name" : "alert_center",
@@ -174,7 +187,8 @@
                     "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "AlertListingTable",
                     "header_extra_param" : ptp_extra_param,
-                    "data_extra_param" : ptp_extra_param
+                    "data_extra_param" : ptp_extra_param,
+                    "excluded" : "["+ptp_excluded_columns+"]"
                 },
                 "network_pmp_tab" : {
                     "app_name" : "alert_center",
@@ -182,7 +196,8 @@
                     "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "AlertListingTable",
                     "header_extra_param" : pmp_extra_param,
-                    "data_extra_param" : pmp_extra_param
+                    "data_extra_param" : pmp_extra_param,
+                    "excluded" : "["+pmp_wimax_excluded_network+"]"
                 }
             };
 

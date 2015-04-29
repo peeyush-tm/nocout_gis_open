@@ -8,6 +8,8 @@
 var green_color = "#468847",
     orange_color = "#f0ad4e",
     red_color = "#b94a48",
+    ok_severity_color = "#30B91A",
+    unknown_severity_color = "#555555",
     green_status_array = ['ok','success','up'],
     red_status_array = ['critical'],
     down_status_array = ['down'],
@@ -37,40 +39,39 @@ function populateDeviceStatus_nocout(domElement,info) {
         return true;
     }
 
-    var fa_icon_class = "fa-circle",
+    var fa_icon_class = "",
         txt_color = "",
         status_html = "",
         age = info.age ? info.age : "Unknown",
         lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
-        status = info.status ? info.status.toUpperCase() : "Unknown";
+        status = info.status ? info.status.toUpperCase() : "Unknown",
+        severity_up = info.severity && info.severity['ok'] ? Number(info.severity['ok']) : 0,
+        severity_warn = info.severity && info.severity['warn'] ? Number(info.severity['warn']) : 0,
+        severity_crit = info.severity && info.severity['crit'] ? Number(info.severity['crit']) : 0,
+        severity_unknown = info.severity && info.severity['unknown'] ? Number(info.severity['unknown']) : 0;
 
-    if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = green_color;
-        fa_icon_class = "fa-check-circle";
-    } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = red_color;
-        fa_icon_class = "fa-times-circle";
-    } else if(orange_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = orange_color;
-        fa_icon_class = "fa-warning";
-    } else if(down_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = red_color;
-        fa_icon_class = "fa-warning";
-    } else {
-        // pass
-    }
+    var severity_style_obj = nocout_getSeverityColorIcon(status);
+
+    txt_color = severity_style_obj['color'] ? severity_style_obj['color'] : "";
+    fa_icon_class = severity_style_obj['icon'] ? severity_style_obj['icon'] : "fa-circle";
 
     status_html = "";
 
-    status_html += '<table id="final_status_table" class="table table-responsive table-bordered" \
+    status_html += '<table id="final_status_table" class="device_status_tbl table table-responsive table-bordered" \
                     style="background:#FFFFFF;"><tr>\
-                    <td style="color:'+txt_color+';">\
-                    <i title = "'+status+'" class="fa '+fa_icon_class+'" style="vertical-align: middle;"> </i> \
-                    <b>Current Status</b> : '+status+'\
-                    </td><td style="color:'+txt_color+';">\
-                    <b>Current Status Since</b> : '+age+'</td>\
-                    <td style="color:'+txt_color+';">\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
+                    <i title = "'+status+'" class="fa '+fa_icon_class+'" \
+                    style="vertical-align: middle;"> </i> \
+                    <b>Current Status</b> : '+status+'</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
+                    <b>Since</b> : '+age+'</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
                     <b>Last Down Time</b> : '+lastDownTime+'</td>\
+                    <td title="OK" class="severity_block vAlign_middle" style="background:'+ok_severity_color+';">'+severity_up+'</td>\
+                    <td title="Warning" class="severity_block vAlign_middle" style="background:'+orange_color+';">'+severity_warn+'</td>\
+                    <td title="Critical" class="severity_block vAlign_middle" style="background:'+red_color+';">'+severity_crit+'</td>\
+                    <td title="Unknown" class="severity_block vAlign_middle" \
+                    style="background:'+unknown_severity_color+';">'+severity_unknown+'</td>\
                     </tr></table>';
 
     // Update Status Block HTML as per the device status
@@ -80,6 +81,39 @@ function populateDeviceStatus_nocout(domElement,info) {
         isLatestStatusUpdated = true;
     }
 }
+
+/**
+ * This function is used to get icon & color as per the severity
+ * @method nocout_getSeverityColorIcon
+ * @param status {String}, It contains the severity status
+ */
+
+function nocout_getSeverityColorIcon(status) {
+
+    var info_obj = {
+        "color" : "",
+        "icon" : "fa-circle",
+    };
+
+    if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = green_color;
+        info_obj["icon"] = "fa-check-circle";
+    } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = red_color;
+        info_obj["icon"] = "fa-times-circle";
+    } else if(orange_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = orange_color;
+        info_obj["icon"] = "fa-warning";
+    } else if(down_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = red_color;
+        info_obj["icon"] = "fa-warning";
+    } else {
+        // pass
+    }
+
+    return info_obj;
+}
+
 
 /**
  * This function is used to populate the latest status for any service as per given params
@@ -92,17 +126,26 @@ function populateServiceStatus_nocout(domElement,info) {
     if(!is_perf_polling_enabled) {
         /********** Service Status Without Live Polling  - START     ********************/
         if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
-            
             var last_updated = info.last_updated ? info.last_updated : "N/A",
                 perf = info.perf ? info.perf : "N/A",
+                status = info.status ? info.status.toUpperCase() : "",
+                txt_color = "",
+                fa_icon_class = "",
                 inner_status_html = '';
 
-            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-            inner_status_html += '<tr>';
-            inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-            inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
-            inner_status_html += '</tr>';
-            inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+            var severity_style_obj = nocout_getSeverityColorIcon(status);
+
+            txt_color = severity_style_obj['color'] ? severity_style_obj['color'] : "";
+            fa_icon_class = severity_style_obj['icon'] ? severity_style_obj['icon'] : "fa-circle";
+
+            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                  <tr><td>\
+                                  <i title = "'+status+'" class="fa '+fa_icon_class+'" \
+                                  style="vertical-align: middle;"> </i> \
+                                  <b>Performance Output</b> : '+perf+'</td>\
+                                  <td><b>Updated At</b> : '+last_updated+'</td>\
+                                  </tr>\
+                                  </table><div class="clearfix"></div><div class="divide-20"></div>';
 
             $("#"+domElement).html(inner_status_html);
         } else {
