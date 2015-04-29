@@ -184,11 +184,12 @@ def check_wimax_bs_ss_params(item, _no_params, info):
                                         infotext += str(entry.lower()) +"=" + str(ul_utilization) +","+ str(dl_utilization) + "," + str(ul_qos) +"," +\
                                                  str(dl_qos) +","+ str(uptime) + " "
 					try:
-						value_list= []
-						key = str(entry.lower()) + service_tag	
-						value_list.extend([str(ul_utilization),str(dl_utilization),
-						str(ul_qos),str(dl_qos),str(uptime)])
-                                		memc.set(key,value_list,360)
+						if memc:
+							value_list= []
+							key = str(entry.lower()) + service_tag	
+							value_list.extend([str(ul_utilization),str(dl_utilization),
+							str(ul_qos),str(dl_qos),str(uptime)])
+                                			memc.set(key,value_list,360)
                         		except:
                                 		pass
 

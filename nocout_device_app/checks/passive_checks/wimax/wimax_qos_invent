@@ -112,15 +112,16 @@ def check_wimax_qos_invent(item, _no_params, info):
                 index =index[0]
                 ss_mac = mac_list[index]
 	if ss_mac:
-		key = ss_mac + "_params"
-		value_list = memc.get(key)
-		if value_list:
-                	try:
-				ul_qos = value_list[2]
-				dl_qos = value_list[3]
-			except:
-				ul_qos = None
-				dl_qos = None
+		if memc:
+			key = ss_mac + "_params"
+			value_list = memc.get(key)
+			if value_list:
+                		try:
+					ul_qos = value_list[2]
+					dl_qos = value_list[3]
+				except:
+					ul_qos = None
+					dl_qos = None
 		if not ul_qos and not dl_qos:	
 			host_name = extract_host_name_from_wimax_topology(ss_mac)
 			if host_name[0][0]:

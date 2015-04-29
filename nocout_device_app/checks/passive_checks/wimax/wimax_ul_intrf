@@ -34,12 +34,13 @@ def live_query_ul_intrf(mac):
     
         """
 	ul_intrf = None
-	value_list = memc.get(mac)
-	if value_list:
-		try:
-			ul_intrf = value_list[6]
-		except:
-			ul_intrf = None
+	if memc:
+		value_list = memc.get(mac)
+		if value_list:
+			try:
+				ul_intrf = value_list[6]
+			except:
+				ul_intrf = None
 
 	if not ul_intrf:
         	host_name = extract_host_from_wimax_topology(mac)
