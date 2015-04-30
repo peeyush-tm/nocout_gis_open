@@ -171,10 +171,10 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                 continue
 
             invent_obj.update({'current_value': service_status.current_value})
+            invent_obj.update({'threshold' : service_status.warning_threshold})
             if service_status.severity.lower() in ['critical', 'crit', 'down']:
                 invent_obj.update({'threshold' : service_status.critical_threshold})
-            else:
-                invent_obj.update({'threshold' : service_status.warning_threshold})
+            
             # if object is get & not created,
             # then update the severity and ip_address of object as per the severity and ip_address of service_status.
             if not created:
@@ -399,7 +399,7 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     #msg.send()
     context_dict = dict()
     emails = level.get_emails()
-    alarm_invent.update({'string_value': ' is below from thresshold '})
+    alarm_invent.update({'string_value': ' is below from threshold '})
     alarm_invent.update({'start_string': 'RECOVERED'})
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
