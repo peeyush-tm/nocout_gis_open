@@ -286,7 +286,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.has_perm('device.delete_device'):
+            if self.request.user.is_superuser:
                 delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
                                  (get_soft_delete_form, {{\'value\': {0}}})">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
@@ -475,7 +475,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.has_perm('device.delete_device'):
+            if self.request.user.is_superuser:
                 delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
                                  (get_soft_delete_form, {{\'value\': {0}}})">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
@@ -646,7 +646,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.has_perm('device.delete_device'):
+            if self.request.user.is_superuser:
                 delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
                                  (get_soft_delete_form, {{\'value\': {0}}})">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
@@ -766,13 +766,15 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
+        # device object
+        device = None
+
         for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
-                    device_alias = Device.objects.get(pk=dct['id']).device_alias
-                    device_ip = Device.objects.get(pk=dct['id']).ip_address
-                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+                    device = Device.objects.get(pk=dct['id'])
+                    dct['device_name'] = "{} ({})".format(device.device_alias, device.ip_address)
             except Exception as e:
                 logger.exception("Device not present. Exception: ", e.message)
 
@@ -812,10 +814,9 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                (get_soft_delete_form, {{\'value\': {0}}})">\
-                <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>&nbsp'.format(dct['id'])
+            if self.request.user.is_superuser and device.device_name != 'default':
+                delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i>\
+                                 </a>&nbsp'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -959,7 +960,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.has_perm('device.delete_device'):
+            if self.request.user.is_superuser:
                 delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
                                  (get_soft_delete_form, {{\'value\': {0}}})">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])

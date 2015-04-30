@@ -23,6 +23,7 @@ from service.models import Service, ServiceDataSource, ServiceSpecificDataSource
 from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus, EscalationLevel
 
+from performance.utils.util import prepare_gis_devices
 from inventory.utils import util as inventory_utils
 from scheduling_management.views import get_today_event_list
 from inventory.tasks import bulk_update_create
@@ -96,7 +97,7 @@ def status_change(old_status, new_status):
         return -1
 
 @task
-def raise_alarms(service_status_list, org, required_levels):
+def raise_alarms(dict_devices_invent_info, service_status_list, org, required_levels):
     """
     Raise alarms for bad performance or good performance of device for a particular organization.
     """
@@ -127,8 +128,6 @@ def raise_alarms(service_status_list, org, required_levels):
             old_status = 0
             new_status = 0
 
-        # get the device of service_status.
-        device = Device.objects.get(device_name=service_status.device_name)
         # get the service - service data source mapping
         service_service_data_source = s_sds.get(
             service__name=service_status.service_name,
@@ -152,6 +151,8 @@ def raise_alarms(service_status_list, org, required_levels):
         changed_time = time_now - time_since  # in seconds the time since the status has changed
 
         if service_level_list.exists():  # if there are actually a level corrosponding to this alarm - lets talk
+            # get the device of service_status.
+            device = Device.objects.get(device_name=service_status.device_name)
             # device, device_type, service(get from service_status) and service_data_source(get from service_status).
             obj, created = escalation_status_data.get_or_create(
                 device=device,
@@ -166,12 +167,18 @@ def raise_alarms(service_status_list, org, required_levels):
                     'organization': org
                 }
             )
+
+            invent_obj = dict_devices_invent_info.get(service_status.device_name)
+            if not invent_obj:
+                continue
+
             # if object is get & not created,
             # then update the severity and ip_address of object as per the severity and ip_address of service_status.
             if not created:
                 obj.severity = service_status.severity
                 obj.ip = service_status.ip_address
                 obj.organization = org
+                obj.status_since = datetime.datetime.fromtimestamp(float(service_status.age))
 
                 old_status = obj.old_status
                 if service_status.severity == 'ok':
@@ -187,7 +194,7 @@ def raise_alarms(service_status_list, org, required_levels):
                         )  # this should exists to raise any alarm
                         if level_list.exists():
                             g_jobs.append(
-                                alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
+                                alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj, service_status=service_status)  # call for task
                             )
                     elif status_change(old_status, new_status) == status_dict['unchanged_good']:
                         continue  # everything is fine # keep on going
@@ -197,7 +204,7 @@ def raise_alarms(service_status_list, org, required_levels):
                         )  # this should exists to raise any alarm
                         if level_list.exists():
                             g_jobs.append(
-                                alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
+                                alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj, service_status=service_status)  # call for task
                             )
                     elif status_change(old_status, new_status) == status_dict['changed_good']:
                         level_list = service_level_list
@@ -206,6 +213,8 @@ def raise_alarms(service_status_list, org, required_levels):
                                 alarm_status_changed.s(
                                     alarm_object=obj,
                                     levels=level_list,
+                                    alarm_invent_object=invent_obj,
+                                    service_status=service_status,
                                     is_bad=False
                                 )
                             )  # append the task
@@ -227,9 +236,10 @@ def raise_alarms(service_status_list, org, required_levels):
                     # this should exists to raise any alarm
                     if level_list.exists():
                         g_jobs.append(
-                            alarm_status_changed.s(alarm_object=obj, levels=level_list)  # call for task
+                            alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj, service_status=service_status)  # call for task
                         )
-
+                        # Appending object in list, so that we dont have to use alarm_object.save() or bulk update in alarm_status_changed, when object attribute of email status is changed.
+                        data_update.append(obj)
             else:  # don't know what this means
                 continue
         else:
@@ -239,8 +249,6 @@ def raise_alarms(service_status_list, org, required_levels):
         bulk_update_create.delay(bulky=data_update,
                                  action='update',
                                  model=EscalationStatus)
-    else:
-        pass
 
     if not(g_jobs):
         return ret
@@ -258,7 +266,7 @@ def raise_alarms(service_status_list, org, required_levels):
 
 
 @task()
-def alarm_status_changed(alarm_object, levels, is_bad=True):
+def alarm_status_changed(alarm_object, levels, alarm_invent_object, service_status, is_bad=True):
     """
 
 
@@ -314,16 +322,13 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
         #     continue
          
         if method_to_call_email and method_to_call_phone:
-            g_jobs.append(method_to_call_email.s(alarm=alarm_object, level=level))
+            g_jobs.append(method_to_call_email.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level, service_status=service_status))
             g_jobs.append(method_to_call_phone.s(alarm=alarm_object, level=level))
-        # alarm_object.save()
-        if changed:
-            bulkyobject.append(alarm_object)
 
-    if len(bulkyobject):
-        bulk_update_create.delay(bulky=bulkyobject,
-                                 action='update',
-                                 model=EscalationStatus)
+        # we dont have to use this beacause of line 225 @peeyush-tm Right ??
+        # if changed:
+        #     alarm_object.save()
+
 
     if not len(g_jobs):
         return ret
@@ -334,13 +339,20 @@ def alarm_status_changed(alarm_object, levels, is_bad=True):
 
 
 @task
-def alert_emails_for_bad_performance(alarm, level):
+def alert_emails_for_bad_performance(alarm, alarm_invent, level, service_status):
     """
     Sends Emails for bad performance.
     """
     emails = level.get_emails()
+    alarm_invent.update({'current_value': service_status.current_value})
+    if service_status.severity in ['critical', 'crit', 'down']:
+        alarm_invent.update({'threshold' : service_status.critical_threshold})
+    else:
+        alarm_invent.update({'threshold' : service_status.warning_threshold})
+    alarm_invent.update({'string_value': ' is still above threshold of '})
     context_dict = {'alarm' : alarm}
     context_dict['level'] = level
+    context_dict = {'alarm_invent' : alarm_invent}
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
@@ -378,7 +390,7 @@ def alert_phones_for_bad_performance(alarm, level):
 
 
 @task
-def alert_emails_for_good_performance(alarm, level):
+def alert_emails_for_good_performance(alarm, alarm_invent, level, service_status):
     """
     Sends Emails for good performance.
     """
@@ -386,7 +398,14 @@ def alert_emails_for_good_performance(alarm, level):
     #msg.content_subtype = "html"  # Main content is now text/html
     #msg.send()
     emails = level.get_emails()
+    alarm_invent.update({'current_value': service_status.current_value})
+    if service_status.severity in ['critical', 'crit', 'down']:
+        alarm_invent.update({'threshold' : service_status.critical_threshold})
+    else:
+        alarm_invent.update({'threshold' : service_status.warning_threshold})
+    alarm_invent.update({'string_value': ' is below from thresshold '})
     context_dict = {'alarm' : alarm}
+    context_dict = {'alarm_invent' : alarm_invent}
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
@@ -421,7 +440,6 @@ def alert_phones_for_good_performance(alarm, level):
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
 
-
 @task
 def check_device_status():
     """
@@ -448,9 +466,13 @@ def check_device_status():
             device_list_qs = Device.objects.filter(organization__in=[org],
                                                    device_type__in=device_type_list,
                                                    is_added_to_nms=1
-            ).exclude(id__in=device_id_list)
+            ).exclude(id__in=device_id_list).values('device_name', 'machine__name')
 
             machine_dict = prepare_machines(device_list_qs)
+
+            list_devices_invent_info = prepare_gis_devices(device_list_qs, page_type=None)
+            dict_devices_invent_info = inventory_utils.list_to_indexed_dict(list_devices_invent_info, 'device_name')
+
             for machine_name, device_list in machine_dict.items():
                 service_status_list = ServiceStatus.objects.filter(
                     device_name__in=device_list,
@@ -461,7 +483,8 @@ def check_device_status():
 
                 if service_status_list.exists():
                     g_jobs.append(
-                        raise_alarms.s(service_status_list=service_status_list,
+                        raise_alarms.s(dict_devices_invent_info,
+                                       service_status_list=service_status_list,
                                        org=org,
                                        required_levels=required_objects
                         )
@@ -477,7 +500,6 @@ def check_device_status():
 
     return True
 
-
 def prepare_machines(device_list_qs):
     """
     Return dict of machine name keys containing values of related devices list.
@@ -485,11 +507,11 @@ def prepare_machines(device_list_qs):
     :param device_list_qs:
     :return machine_dict:
     """
-    unique_device_machine_list = {device.machine.name: True for device in device_list_qs}.keys()
+    unique_device_machine_list = {device['machine__name']: True for device in device_list_qs}.keys()
 
     machine_dict = {}
     for machine in unique_device_machine_list:
-        machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
+        machine_dict[machine] = [device['device_name'] for device in device_list_qs if device['machine__name'] == machine]
     return machine_dict
 
 

@@ -2,21 +2,30 @@
  * This file handle the page fullscreen featur
  * @for nocoutFullScreenLib
  */
-
+var isMapsPage = false;
 
 /*This event show/hide page header*/
 $("#headerToggleBtn").click(function(e) {
-    /*Get Current Style*/
-    var current_style = $.trim($("#page_header_container").attr("style"));
 
-    if($.trim($("#headerToggleBtn").html()) === '<i class="fa fa-eye"></i> Show Page Controls') {
-        $("#headerToggleBtn").html('<i class="fa fa-eye-slash"></i> Hide Page Controls');
-        $("#headerToggleBtn").removeClass('btn-info');
-        $("#headerToggleBtn").addClass('btn-danger');
+    if($(this).hasClass('show_ctrl')) {
+        // Change the icon
+        $(this).html('<i class="fa fa-eye-slash"></i>');
+        // remove 'btn-info' class and add 'btn-danger' class
+        $(this).removeClass('btn-info').addClass('btn-danger');
+        // Update the button title
+        $(this).attr('title','Hide Page Controls');
+        // remove 'show_ctrl' class
+        $(this).removeClass('show_ctrl');
     } else {
-        $("#headerToggleBtn").html('<i class="fa fa-eye"></i> Show Page Controls');
-        $("#headerToggleBtn").removeClass('btn-danger');
-        $("#headerToggleBtn").addClass('btn-info');
+        // Change the icon
+        $(this).html('<i class="fa fa-eye"></i>');
+        // remove 'btn-danger' class and // add 'btn-info' class
+        $(this).removeClass('btn-danger').addClass('btn-info');
+        // Update the button title
+        $(this).attr('title','Show Page Controls');
+        // Add 'show_ctrl' class
+        $(this).addClass('show_ctrl');
+        // Hide the page control block
         $("#page_content_div .box-title").removeClass('hide');
     }
 
@@ -56,8 +65,7 @@ function ShowControl(controlDiv) {
     controlText.innerHTML = '<b>Show Page Controls</b>';
     controlUI.appendChild(controlText);
 
-  // Setup the click event listeners: simply set the map to
-  // Chicago
+    // Setup the click event listeners: simply set the map to
     google.maps.event.addDomListener(controlUI, 'click', function() {
         $("#headerToggleBtn").trigger('click');
         if($(this).find('b').html() === "Show Page Controls") {
@@ -99,144 +107,45 @@ $("#goFullScreen").click(function() {
         document.mozFullScreenEnabled ||
         document.msFullscreenEnabled
     ) {
-        if($("#goFullScreen").html() !== '<i class="fa fa-compress"></i> Exit Full Screen') {
-            /*If page header is showing, hide it.*/
-            if($.trim($("#headerToggleBtn").html()) !== '<i class="fa fa-eye"></i> Show Page Controls') {
-                $("#headerToggleBtn").click();
+
+        if($(this).hasClass('normal_screen')) {
+            // Hide page controls if shown
+            if(!$("#headerToggleBtn").hasClass('show_ctrl')) {
+                $("#headerToggleBtn").trigger('click');
             }
-            
+            // Go to fullscreen view
             launchFullscreen(document.getElementById('page_content_div'));
+            
+            var screen_height = screen.height,
+                box_title_height = $("#page_content_div .box-title").height(),
+                header_height = $("#page_header_container").height();
 
-
-            var aa= screen.height;
-            var bb= $("#page_content_div .box-title").height();
-            var cc= $("#page_header_container").height();
-
-            if(window.location.pathname.indexOf("googleEarth") > -1) {
-
-                $("#content").addClass("zero_padding_margin");
-                $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
-
-                // toggleBoxTitle();
-                /*Set width-height for map div in fullscreen*/
-                var mapDiv = $("#google_earth_container");
-                mapDiv.attr('style', 'width: 100%; height:'+ screen.height+ 'px');
-                // mapDiv.attr('style', 'height: 100%;');
-                // mapDiv.style.width = "100%";
-                // mapDiv.style.height = screen.height+"px";
-                $("#content").css("min-height","200px");
-             
-            } else if (window.location.pathname.indexOf("white_background") > -1) {
-
-                $("#content").addClass("zero_padding_margin");
-                $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
-
-                // toggleBoxTitle();
-                /*Set width-height for map div in fullscreen*/
-                var mapDiv = $("#wmap_container");
-                mapDiv.attr('style', 'width: 100%; height:'+ screen.height+ 'px');
-                // mapDiv.attr('style', 'height: 100%;');
-                // mapDiv.style.width = "100%";
-                // mapDiv.style.height = screen.height+"px";
-                $("#content").css("min-height","200px");
+            if(isMapsPage) {
+                goMapsFullScreen();
             } else {
-                   /*Remove padding & margin*/
+                /*Add padding & margin*/
                 $("#content").addClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
 
-                // $("#deviceMap").height(aa-bb);
-                // $("#deviceMap").height(aa);
-                // toggleBoxTitle();
-                // toggleControlButtons();
-
-                /*Set width-height for map div in fullscreen*/
-                if($(".mapContainerBlock").length > 0) {
-                    var mapDiv = mapInstance.getDiv();
-                    mapDiv.style.width = "100%";
-                    mapDiv.style.height = screen.height+"px";
-                }
                 $("#content").css("min-height","200px");
-
-                if($(".mapContainerBlock").length > 0) {
-                    google.maps.event.trigger(mapInstance, 'resize');
-                    mapInstance.setCenter(mapInstance.getCenter());
-
-                    if(showControlDiv) {
-                        showControlDiv= "";
-                        mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
-                    }
-                    showControlDiv = document.createElement('div');
-                    var showControl = new ShowControl(showControlDiv, mapInstance);
-                    showControlDiv.index = 1;
-                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
-                    $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
-                }
-
             }
 
-            // Side info container
-            if($(".sideInfoContainer").length > 0) {
-                if($(".sideInfoContainer .box-body").hasClass("zero_padding_margin")) {
-                    $(".sideInfoContainer .box-body").removeClass("zero_padding_margin");
-                }
-
-                if($(".sideInfoContainer .box-title").hasClass('hide')) {
-                    $(".sideInfoContainer .box-title").removeClass('hide');
-                }
-            }
-
+            // update the button title
+            $(this).attr("title","Exit Fullscreen");
+            // Add 'normal_screen' class
+            $(this).removeClass('normal_screen');
         } else {
+            // update the button title
+            $(this).attr("title","Go Fullscreen");
+            // Remove 'normal_screen' class
+            $(this).addClass('normal_screen');
+            //  call 'exitFullscreen' method
             exitFullscreen();
-            if(window.location.pathname.indexOf("googleEarth") > -1) {
 
-                showControlDiv= "";
-                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
-                /*Reset width-height for map div in normal screen*/
-                var mapDiv = $("#google_earth_container");
-                mapDiv.attr('style', 'width: 100%; height: 550px');
-
-                $("#content").removeAttr("style");
-                $(".mapContainerBlock .box-title").removeClass('hide');
-
-                $("#goFullScreen").removeClass('hide');
-
-                $("#headerToggleBtn").removeClass('hide');
-             
-            } else if (window.location.pathname.indexOf("white_background") > -1) {
-                showControlDiv= "";
-                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
-                /*Reset width-height for map div in normal screen*/
-                var mapDiv = $("#wmap_container");
-                mapDiv.attr('style', 'width: 100%; height: 550px');
-
-                $("#content").removeAttr("style");
-                $(".mapContainerBlock .box-title").removeClass('hide');
-
-                $("#goFullScreen").removeClass('hide');
-
-                $("#headerToggleBtn").removeClass('hide');
-            } else if (window.location.pathname.indexOf("gis") > -1) {
-                showControlDiv= "";
-                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
-                if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
-                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
-                }
-                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
-                // $("#deviceMap").height(550);
-                // toggleBoxTitle();
-                toggleControlButtons();
-                
-                /*Reset width-height for map div in normal screen*/
-                var mapDiv = mapInstance.getDiv();
-                mapDiv.style.width = "100%";
-                mapDiv.style.height = "550px";
-                $("#content").removeAttr("style");
-
-                google.maps.event.trigger(mapInstance, 'resize');
-                mapInstance.setCenter(mapInstance.getCenter());
-
-                $(".mapContainerBlock .box-title").removeClass('hide');
+            if(isMapsPage) {
+                exitMapsFullScreen();
             }
+
             $("#content").removeClass("zero_padding_margin");
             $("#goFullScreen").removeClass('hide');
             $("#headerToggleBtn").removeClass('hide');
@@ -253,23 +162,33 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
         document.mozFullScreenElement ||
         document.msFullscreenElement
     ) {
-        $("#goFullScreen").html('<i class="fa fa-compress"></i> Exit Full Screen');
+        
+        $("#goFullScreen").html('<i class="fa fa-compress"></i>');
         $("#goFullScreen").removeClass('btn-info');
         $("#goFullScreen").addClass('btn-danger');
+
+        // update the button title
+        $("#goFullScreen").attr("title","Exit Fullscreen");
+
     } else {
-        $("#goFullScreen").html('<i class="fa fa-arrows-alt"></i> View Full Screen');
-        $("#goFullScreen").removeClass('btn-danger');
-        $("#goFullScreen").addClass('btn-info');
+
+        $("#goFullScreen").html('<i class="fa fa-arrows-alt"></i>');
+        $("#goFullScreen").removeClass('btn-danger').addClass('btn-info');
+        
+        // update the button title
+        $("#goFullScreen").attr("title","Go Fullscreen");
+
         if($("#deviceMap").length) {
 
             $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
 
             showControlDiv= "";
-            if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
+
+            if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length === 3) {
                 mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
             }
             $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
-            // $("#deviceMap").height(550);
+
             toggleControlButtons();
 
             /*Reset width-height for map div in normal screen*/
@@ -283,6 +202,7 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
             // toggleBoxTitle();
             $(".mapContainerBlock .box-title").removeClass('hide');
         }
+
         /*Remove padding & margin*/
         $("#content").removeClass("zero_padding_margin");
         /*Show Full Screen & Page control buttons*/
@@ -312,5 +232,102 @@ function exitFullscreen() {
         document.mozCancelFullScreen();
     } else if(document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
+    }
+}
+
+/**
+ * This function show maps in full screen mode
+ * @method goMapsFullScreen
+ */
+function goMapsFullScreen() {
+
+    $("#content").addClass("zero_padding_margin");
+    $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
+
+    $("#content").css("min-height","200px");
+
+    var screen_height = screen.height;
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        /*Set width-height for map div in fullscreen*/
+        var mapDiv = $("#google_earth_container");
+        mapDiv.attr('style', 'width: 100%; height:'+ screen_height+ 'px');
+     
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        /*Set width-height for map div in fullscreen*/
+        var mapDiv = $("#wmap_container");
+        mapDiv.attr('style', 'width: 100%; height:'+ screen_height+ 'px');
+    } else {
+        if($(".mapContainerBlock").length > 0) {
+            /*Set width-height for map div in fullscreen*/
+            var mapDiv = mapInstance.getDiv();
+            mapDiv.style.width = "100%";
+            mapDiv.style.height = screen_height+"px";
+
+            // Trigger map resize event
+            google.maps.event.trigger(mapInstance, 'resize');
+            // Update map center position
+            mapInstance.setCenter(mapInstance.getCenter());
+
+            if(showControlDiv) {
+                showControlDiv= "";
+                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+            }
+            showControlDiv = document.createElement('div');
+
+            var showControl = new ShowControl(showControlDiv, mapInstance);
+            showControlDiv.index = 1;
+
+            mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
+
+            $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
+        }
+    }
+}
+
+/**
+ * This function exits maps from full screen mode
+ * @method exitMapsFullScreen
+ */
+function exitMapsFullScreen() {
+
+    showControlDiv= "";
+    $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        /*Reset width-height for map div in normal screen*/
+        var mapDiv = $("#google_earth_container");
+        mapDiv.attr('style', 'width: 100%; height: 550px');
+
+        $("#content").removeAttr("style");
+        $(".mapContainerBlock .box-title").removeClass('hide');
+     
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        /*Reset width-height for map div in normal screen*/
+        var mapDiv = $("#wmap_container");
+        mapDiv.attr('style', 'width: 100%; height: 550px');
+
+        $("#content").removeAttr("style");
+        $(".mapContainerBlock .box-title").removeClass('hide');
+    } else if (window.location.pathname.indexOf("gis") > -1) {
+
+        if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
+            mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
+        }
+
+        $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
+
+        toggleControlButtons();
+        
+        /*Reset width-height for map div in normal screen*/
+        var mapDiv = mapInstance.getDiv();
+        mapDiv.style.width = "100%";
+        mapDiv.style.height = "550px";
+        $("#content").removeAttr("style");
+
+        google.maps.event.trigger(mapInstance, 'resize');
+        mapInstance.setCenter(mapInstance.getCenter());
+
+        $(".mapContainerBlock .box-title").removeClass('hide');
     }
 }

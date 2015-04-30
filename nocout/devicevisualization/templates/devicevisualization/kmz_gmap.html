@@ -47,6 +47,10 @@
     <script type="text/javascript">
 
         $(document).ready(function (e) {
+
+            // Set 'isMapsPage' flag to true
+            isMapsPage = true;
+
             var file_url = "{{file_url}}";
             /*Call function to load google map with given kmz or kml file*/
             createGoogleMap(file_url);

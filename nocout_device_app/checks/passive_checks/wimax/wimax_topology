@@ -5,6 +5,8 @@ from telnetlib import Telnet
 import socket
 import json
 import os
+import memcache
+from mysql_connection import memc
 import re
 """
 operating Frequency of ss device  Poller script.
@@ -124,6 +126,15 @@ def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
                 	exit_value = 0
                 	plugin_message += "%s=%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s " %(ss_mac,dl_rssi,ul_rssi,dl_cinr,ul_cinr,dl_intrf,
                                                         ul_intrf,dl_fec,ul_fec,sector_id,ss_ip,pmp_port)
+			try:
+				if memc:
+  					value_list= []
+					value_list.extend([ss_mac,dl_rssi,ul_rssi,dl_cinr,ul_cinr,dl_intrf,
+					ul_intrf,dl_fec,ul_fec,sector_id,ss_ip,pmp_port])
+                			memc.set(ss_mac,value_list,360)
+    			except:
+        			pass
+
 
 	except:
 		plugin_messgage = ""

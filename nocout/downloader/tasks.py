@@ -43,6 +43,14 @@ def get_datatable_response(payload):
                headers_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }&
                rows_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }"
 
+        Note:
+           - Bits used for download status:
+                - 0 -> Pending
+                - 1 -> Success
+                - 2 -> Failed
+                - 3 -> Data table has no data
+                - 4 -> Wrong parameters
+
     """
 
     # get downloader object
@@ -102,8 +110,6 @@ def get_datatable_response(payload):
         headers_req_obj.request = headers_req
         headers_req_obj.object_list = []
         headers_req_obj.kwargs = payload['headers_data']
-        # @priyesh-teramatrix :- Please verify. Here a we use dynamic 'headers_data_key' instead 
-        #                        for fixed hardcoded key.
         headers_data_key = payload['headers_data']['headers_data_key'] \
             if 'headers_data_key' in payload['headers_data'] else 'datatable_headers'
 
@@ -122,7 +128,7 @@ def get_datatable_response(payload):
             'device_gmap_icon'
         ]
 
-        # In case of user logs listing action colum is for changes made by user therefore we have to show it
+        # in case of user logs listing action colum is for changes made by user therefore we have to show it
         if payload['app'] and payload['app'] == 'activity_stream':
             action_headers = list()
 
@@ -154,12 +160,8 @@ def get_datatable_response(payload):
         rows_req_obj = eval("{}()".format(payload['rows']))
         rows_req_obj.request = rows_req
         
-        # @priyesh-teramatrix :- Please verify. Here wrong key is used, which is corrected(use 'rows_data' instead or 'rows').
-        rows_req_obj.kwargs = payload['rows_data'] 
+        rows_req_obj.kwargs = payload['rows_data']
 
-
-        # @priyesh-teramatrix :- Please verify. Try catch added to resolved the flow break.
-        #                        Why 'get_initial_queryset()' is called?
         try:
             # get datatable data
             query_set_length = len(rows_req_obj.get_initial_queryset())
@@ -250,10 +252,12 @@ def get_datatable_response(payload):
         else:
             # update downloader object (on success)
             d_obj.description += "\nData table has no data."
+            d_obj.status = 3
             d_obj.request_completion_on = datetime.now()
             d_obj.save()
     else:
         # update downloader object (on success)
         d_obj.description += "\nWrong parameters."
+        d_obj.status = 4
         d_obj.request_completion_on = datetime.now()
         d_obj.save()

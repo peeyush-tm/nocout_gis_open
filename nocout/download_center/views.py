@@ -9,6 +9,7 @@ from django.views.generic.edit import DeleteView
 from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon
 from django.db.models import Q
 from django.conf import settings
+from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.utils.util import convert_utc_to_local_timezone
 
 import os
@@ -46,7 +47,7 @@ class DownloadCenter(ListView):
             {'mData': 'created_on', 'sTitle': 'Created On', 'sWidth': 'auto'},
             {'mData': 'report_date', 'sTitle': 'Report Date', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -195,7 +196,7 @@ class DownloadCenterListing(BaseDatatableView):
         return ret
 
 
-class DownloadCenterReportDelete(DeleteView):
+class DownloadCenterReportDelete(SuperUserRequiredMixin, DeleteView):
     """
     Class based View to delete the GISInventoryBulkImport
     """
