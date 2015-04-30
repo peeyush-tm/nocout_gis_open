@@ -170,6 +170,11 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
             if not invent_obj:
                 continue
 
+            invent_obj.update({'current_value': service_status.current_value})
+            if service_status.severity.lower() in ['critical', 'crit', 'down']:
+                invent_obj.update({'threshold' : service_status.critical_threshold})
+            else:
+                invent_obj.update({'threshold' : service_status.warning_threshold})
             # if object is get & not created,
             # then update the severity and ip_address of object as per the severity and ip_address of service_status.
             if not created:
@@ -192,7 +197,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                         )  # this should exists to raise any alarm
                         if level_list.exists():
                             g_jobs.append(
-                                alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj, service_status=service_status)  # call for task
+                                alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj)  # call for task
                             )
                     elif status_change(old_status, new_status) == status_dict['unchanged_good']:
                         continue  # everything is fine # keep on going
@@ -202,7 +207,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                         )  # this should exists to raise any alarm
                         if level_list.exists():
                             g_jobs.append(
-                                alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj, service_status=service_status)  # call for task
+                                alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj)  # call for task
                             )
                     elif status_change(old_status, new_status) == status_dict['changed_good']:
                         level_list = service_level_list
@@ -212,7 +217,6 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                                     alarm_object=obj,
                                     levels=level_list,
                                     alarm_invent_object=invent_obj,
-                                    service_status=service_status,
                                     is_bad=False
                                 )
                             )  # append the task
@@ -234,7 +238,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                     # this should exists to raise any alarm
                     if level_list.exists():
                         g_jobs.append(
-                            alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj, service_status=service_status)  # call for task
+                            alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj)  # call for task
                         )
                         
             else:  # don't know what this means
@@ -258,7 +262,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
 
 
 @task()
-def alarm_status_changed(alarm_object, levels, alarm_invent_object, service_status, is_bad=True):
+def alarm_status_changed(alarm_object, levels, alarm_invent_object, is_bad=True):
     """
 
 
@@ -314,43 +318,37 @@ def alarm_status_changed(alarm_object, levels, alarm_invent_object, service_stat
         #     continue
          
         if method_to_call_email and method_to_call_phone:
-            g_jobs.append(method_to_call_email.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level, service_status=service_status))
-            g_jobs.append(method_to_call_phone.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level, service_status=service_status))
+            g_jobs.append(method_to_call_email.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level ))
+            g_jobs.append(method_to_call_phone.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level ))
 
         # we dont have to use this beacause of line 225 @peeyush-tm Right ??
         if changed:
             bulkyobject.append(alarm_object)
-
-    if len(bulkyobject):
-        bulk_update_create.delay(bulky=bulkyobject,
-                                 action='update',
-                                 model=EscalationStatus)                
-
 
     if not len(g_jobs):
         return ret
     else:
         job = group(g_jobs)
         result = job.apply_async()
+        if len(bulkyobject):
+            bulk_update_create.delay(bulky=bulkyobject,
+                                     action='update',
+                                     model=EscalationStatus)                
         return True
 
 
 @task
-def alert_emails_for_bad_performance(alarm, alarm_invent, level, service_status):
+def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     """
     Sends Emails for bad performance.
     """
+    context_dict = dict()
     emails = level.get_emails()
-    alarm_invent.update({'current_value': service_status.current_value})
-    if service_status.severity in ['critical', 'crit', 'down']:
-        alarm_invent.update({'threshold' : service_status.critical_threshold})
-    else:
-        alarm_invent.update({'threshold' : service_status.warning_threshold})
     alarm_invent.update({'string_value': ' is still above threshold of '})
     alarm_invent.update({'start_string': 'ALERT'})
-    context_dict = {'alarm' : alarm}
+    context_dict['alarm'] = alarm
+    context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
-    context_dict = {'alarm_invent' : alarm_invent}
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
     message = render_to_string('alarm_message/bad_message.html', context_dict)
@@ -362,27 +360,23 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level, service_status)
 
 
 @task
-def alert_phones_for_bad_performance(alarm, alarm_invent, level, service_status):
+def alert_phones_for_bad_performance(alarm, alarm_invent, level):
     """
     Sends sms to phones for bad performance.
     >>> payload = {'key1': 'value1', 'key2': 'value2'}
     >>> r = requests.get("http://httpbin.org/get", params=payload)
     """
+    context_dict = dict()
     payload =  GATEWAY_PARAMETERS
     url = GATEWAY_SETTINGS['URL']
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
-        alarm_invent.update({'current_value': service_status.current_value})
-        if service_status.severity in ['critical', 'crit', 'down']:
-            alarm_invent.update({'threshold' : service_status.critical_threshold})
-        else:
-            alarm_invent.update({'threshold' : service_status.warning_threshold})
         alarm_invent.update({'string_value': ' is still above threshold of '})
         alarm_invent.update({'start_string': 'ALERT'})
-        context_dict = {'alarm' : alarm}
+        context_dict['alarm'] = alarm
+        context_dict['alarm_invent'] = alarm_invent
         context_dict['level'] = level
-        context_dict = {'alarm_invent' : alarm_invent}
         message = render_to_string('alarm_message/subject.txt', context_dict)
         #render_to_string('alarm_message/good_message.html', context_dict)
         payload['N'] = send_to
@@ -396,23 +390,19 @@ def alert_phones_for_bad_performance(alarm, alarm_invent, level, service_status)
 
 
 @task
-def alert_emails_for_good_performance(alarm, alarm_invent, level, service_status):
+def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     """
     Sends Emails for good performance.
     """
     #msg = EmailMessage(subject, html_content, from_email, [to])
     #msg.content_subtype = "html"  # Main content is now text/html
     #msg.send()
+    context_dict = dict()
     emails = level.get_emails()
-    alarm_invent.update({'current_value': service_status.current_value})
-    if service_status.severity in ['critical', 'crit', 'down']:
-        alarm_invent.update({'threshold' : service_status.critical_threshold})
-    else:
-        alarm_invent.update({'threshold' : service_status.warning_threshold})
     alarm_invent.update({'string_value': ' is below from thresshold '})
     alarm_invent.update({'start_string': 'RECOVERED'})
-    context_dict = {'alarm' : alarm}
-    context_dict = {'alarm_invent' : alarm_invent}
+    context_dict['alarm'] = alarm
+    context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
@@ -425,24 +415,20 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level, service_status
 
 
 @task
-def alert_phones_for_good_performance(alarm, alarm_invent, level, service_status):
+def alert_phones_for_good_performance(alarm, alarm_invent, level ):
     """
     Sends sms to phones for bad performance.
     """
+    context_dict = dict()
     payload =  GATEWAY_PARAMETERS
     url = GATEWAY_SETTINGS['URL']
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
-        alarm_invent.update({'current_value': service_status.current_value})
-        if service_status.severity in ['critical', 'crit', 'down']:
-            alarm_invent.update({'threshold' : service_status.critical_threshold})
-        else:
-            alarm_invent.update({'threshold' : service_status.warning_threshold})
-        alarm_invent.update({'string_value': ' is still above threshold of '})
+        alarm_invent.update({'string_value': ' is below from threshold '})
         alarm_invent.update({'start_string': 'RECOVERED'})
-        context_dict = {'alarm' : alarm}
-        context_dict = {'alarm_invent' : alarm_invent}
+        context_dict['alarm'] = alarm
+        context_dict['alarm_invent'] = alarm_invent
         context_dict['level'] = level
         message = render_to_string('alarm_message/subject.txt', context_dict)
         #render_to_string('alarm_message/good_message.html', context_dict)
