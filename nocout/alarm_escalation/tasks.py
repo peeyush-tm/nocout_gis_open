@@ -344,7 +344,6 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     """
     context_dict = dict()
     emails = level.get_emails()
-    alarm_invent.update({'string_value': ' is still above threshold of '})
     alarm_invent.update({'start_string': 'ALERT'})
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
@@ -372,7 +371,6 @@ def alert_phones_for_bad_performance(alarm, alarm_invent, level):
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
-        alarm_invent.update({'string_value': ' is still above threshold of '})
         alarm_invent.update({'start_string': 'ALERT'})
         context_dict['alarm'] = alarm
         context_dict['alarm_invent'] = alarm_invent
@@ -399,7 +397,6 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     #msg.send()
     context_dict = dict()
     emails = level.get_emails()
-    alarm_invent.update({'string_value': ' is below from threshold '})
     alarm_invent.update({'start_string': 'RECOVERED'})
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
@@ -425,7 +422,6 @@ def alert_phones_for_good_performance(alarm, alarm_invent, level ):
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
-        alarm_invent.update({'string_value': ' is below from threshold '})
         alarm_invent.update({'start_string': 'RECOVERED'})
         context_dict['alarm'] = alarm
         context_dict['alarm_invent'] = alarm_invent
