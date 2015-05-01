@@ -344,7 +344,9 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     """
     context_dict = dict()
     emails = level.get_emails()
+    time = datetime.datetime.now().strftime("%d,%b %Y %H:%M")
     alarm_invent.update({'start_string': 'ALERT'})
+    alarm_invent.update({'time': time})
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
@@ -371,7 +373,9 @@ def alert_phones_for_bad_performance(alarm, alarm_invent, level):
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
+        time = datetime.datetime.now().strftime("%d,%b %Y %H:%M")
         alarm_invent.update({'start_string': 'ALERT'})
+        alarm_invent.update({'time': time})
         context_dict['alarm'] = alarm
         context_dict['alarm_invent'] = alarm_invent
         context_dict['level'] = level
@@ -397,7 +401,9 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     #msg.send()
     context_dict = dict()
     emails = level.get_emails()
+    time = datetime.datetime.now().strftime("%d,%b %Y %H:%M")
     alarm_invent.update({'start_string': 'RECOVERED'})
+    alarm_invent.update({'time': time})
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
@@ -422,7 +428,9 @@ def alert_phones_for_good_performance(alarm, alarm_invent, level ):
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
+        time = datetime.datetime.now().strftime("%d,%b %Y %H:%M")
         alarm_invent.update({'start_string': 'RECOVERED'})
+        alarm_invent.update({'time': time})
         context_dict['alarm'] = alarm
         context_dict['alarm_invent'] = alarm_invent
         context_dict['level'] = level
