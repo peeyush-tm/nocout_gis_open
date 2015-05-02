@@ -340,19 +340,18 @@
         // When any filter is applied
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-                // isDateFilterApplied = true;
                 //epoch function
                 var myStartDate = startDate.toDate(),
                     myEndDate = endDate.toDate();
+
                 startDate = myStartDate.getTime();
                 endDate = myEndDate.getTime();
 
-                // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
-                // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
-
                 var active_tab = $("#single_device_alert_container li.active").children("a"),
                     active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
+
                 if(active_tab_id) {
+                    isDateFilterApplied = true;
                     $("#"+active_tab_id).trigger("click",true);
                 }
             } else {
@@ -362,7 +361,7 @@
 
         // When filter reset
         $("#reset_filter").on('click', function () {
-            // isDateFilterApplied = false;
+            isDateFilterApplied = false;
             startDate = "";
             endDate = "";
 
