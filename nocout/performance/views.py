@@ -2081,6 +2081,10 @@ class ServiceDataSourceListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
+        # If params not initialized the init them by calling initialize_params
+        if not self.perf_data_instance or not self.parameters:
+            self.initialize_params()
+
         resultset = self.perf_data_instance.get_performance_data(
             **self.parameters
         ).using(alias=self.inventory_device_machine_name)
@@ -2091,6 +2095,149 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         return updated_resultset
 
+
+    def initialize_params(self):
+
+        """
+        This function initializes public variables of this class
+        """
+
+        # REQUIRED GET PARAMS
+        device_id = self.kwargs['device_id']
+        service = self.kwargs['service_name']
+        data_source = self.kwargs['service_data_source_type']
+        data_for = self.request.GET.get('data_for','live')
+        
+        start_date = self.request.GET.get('start_date','')
+        end_date = self.request.GET.get('end_date','')
+        
+        date_format = DATE_TIME_FORMAT
+        device = Device.objects.get(id=int(device_id))
+        inventory_device_name = device.device_name
+
+        self.data_source = self.kwargs['service_data_source_type']
+        self.inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+
+        # Create instance of "Get_Service_Type_Performance_Data" class
+        self.perf_data_instance = Get_Service_Type_Performance_Data()
+
+        if data_for != 'live':
+            self.isHistorical = True
+
+            # Append min, max & avg columns in case of historical tab
+            self.columns.append('min_value')
+            self.columns.append('max_value')
+            self.columns.append('avg_value')
+            self.inventory_device_machine_name = 'default'
+
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
+
+        if not isSet and data_for == 'live':
+            now_datetime = datetime.datetime.now()
+            end_date = float(format(now_datetime, 'U'))
+            start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
+
+        # Update the DS name when it is not in 'pl','rta' or 'availability' (<SERVICE_NAM>_<DS_NAME>)
+        if self.data_source not in ['pl','rta','availability']:
+            self.data_source = str(service)+"_"+str(self.data_source)
+        
+        # check for the formula
+        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
+            self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
+
+        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
+            if 'min_value' not in self.columns:
+                self.columns.append('min_value')
+
+        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
+            if 'max_value' not in self.columns:
+                self.columns.append('max_value')
+
+        if data_for == 'bihourly':
+            self.model = PerformanceServiceBiHourly
+        elif data_for == 'hourly':
+            self.model = PerformanceServiceHourly
+        elif data_for == 'daily':
+            self.model = PerformanceServiceDaily
+        elif data_for == 'weekly':
+            self.model = PerformanceServiceWeekly
+        elif data_for == 'monthly':
+            self.model = PerformanceServiceMonthly
+        elif data_for == 'yearly':
+            self.model = PerformanceServiceYearly
+
+        if data_source in ['pl','rta']:
+            if data_for == 'bihourly':
+                self.model = PerformanceNetworkBiHourly
+            elif data_for == 'hourly':
+                self.model = PerformanceNetworkHourly
+            elif data_for == 'daily':
+                self.model = PerformanceNetworkDaily
+            elif data_for == 'weekly':
+                self.model = PerformanceNetworkWeekly
+            elif data_for == 'monthly':
+                self.model = PerformanceNetworkMonthly
+            elif data_for == 'yearly':
+                self.model = PerformanceNetworkYearly
+            else:
+                self.model = PerformanceNetwork        
+
+        if "_status" in service:
+            if not isSet and data_for == 'live':
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
+
+            if data_for == 'daily':
+                self.model = PerformanceStatusDaily
+            elif data_for == 'weekly':
+                self.model = PerformanceStatusWeekly
+            elif data_for == 'monthly':
+                self.model = PerformanceStatusMonthly
+            elif data_for == 'yearly':
+                self.model = PerformanceStatusYearly
+            else:
+                self.model = PerformanceStatus
+
+        elif '_invent' in service:
+
+            if not isSet and data_for == 'live':
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+
+            if data_for == 'daily':
+                self.model = PerformanceInventoryDaily
+            elif data_for == 'weekly':
+                self.model = PerformanceInventoryWeekly
+            elif data_for == 'monthly':
+                self.model = PerformanceInventoryMonthly
+            elif data_for == 'yearly':
+                self.model = PerformanceInventoryYearly
+            else:
+                self.model = PerformanceInventory
+        elif '_kpi' in service:
+            if data_for == 'bihourly':
+                self.model = UtilizationBiHourly
+            elif data_for == 'hourly':
+                self.model = UtilizationHourly
+            elif data_for == 'daily':
+                self.model = UtilizationDaily
+            elif data_for == 'weekly':
+                self.model = UtilizationWeekly
+            elif data_for == 'monthly':
+                self.model = UtilizationMonthly
+            elif data_for == 'yearly':
+                self.model = UtilizationYearly
+            else:
+                self.model = Utilization
+
+        self.parameters = {
+            'model': self.model,
+            'start_time': start_date,
+            'end_time': end_date,
+            'devices': [inventory_device_name],
+            'services': [service],
+            'sds': [data_source]
+        }
 
     def prepare_results(self, qs):
         data = []
@@ -2221,24 +2368,10 @@ class ServiceDataSourceListing(BaseDatatableView):
 
         request = self.request
         self.initialize(*args, **kwargs)
-        
-        # REQUIRED GET PARAMS
-        device_id = self.kwargs['device_id']
-        service = self.kwargs['service_name']
-        data_source = self.kwargs['service_data_source_type']
-        self.data_source = self.kwargs['service_data_source_type']
-        
-        data_for = self.request.GET.get('data_for','live')
-        
-        start_date = self.request.GET.get('start_date','')
-        end_date = self.request.GET.get('end_date','')
-        
-        date_format = DATE_TIME_FORMAT
-        device = Device.objects.get(id=int(device_id))
-        inventory_device_name = device.device_name
-        self.inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
-        self.perf_data_instance = Get_Service_Type_Performance_Data()
+        # If params not initialized the init them by calling initialize_params
+        if not self.perf_data_instance or not self.parameters:
+            self.initialize_params()
 
         try:
             # Create Ordering columns from GET request
@@ -2253,125 +2386,6 @@ class ServiceDataSourceListing(BaseDatatableView):
             self.order_columns = new_ordering_columns
         except Exception, e:
             pass
-
-
-        if data_for != 'live':
-            self.isHistorical = True
-
-            # Append min, max & avg columns in case of historical tab
-            self.columns.append('min_value')
-            self.columns.append('max_value')
-            self.columns.append('avg_value')
-            self.inventory_device_machine_name = 'default'
-
-        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
-
-        if not isSet and data_for == 'live':
-            now_datetime = datetime.datetime.now()
-            end_date = float(format(now_datetime, 'U'))
-            start_date = float(format(now_datetime + datetime.timedelta(minutes=-180), 'U'))
-
-        # Update the DS name when it is not in 'pl','rta' or 'availability' (<SERVICE_NAM>_<DS_NAME>)
-        if self.data_source not in ['pl','rta','availability']:
-            self.data_source = str(service)+"_"+str(self.data_source)
-        
-        # check for the formula
-        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
-            self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
-
-        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
-            if 'min_value' not in self.columns:
-                self.columns.append('min_value')
-
-        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
-            if 'max_value' not in self.columns:
-                self.columns.append('max_value')
-
-        if data_for == 'bihourly':
-            self.model = PerformanceServiceBiHourly
-        elif data_for == 'hourly':
-            self.model = PerformanceServiceHourly
-        elif data_for == 'daily':
-            self.model = PerformanceServiceDaily
-        elif data_for == 'weekly':
-            self.model = PerformanceServiceWeekly
-        elif data_for == 'monthly':
-            self.model = PerformanceServiceMonthly
-        elif data_for == 'yearly':
-            self.model = PerformanceServiceYearly
-
-        if data_source in ['pl','rta']:
-            if data_for == 'bihourly':
-                self.model = PerformanceNetworkBiHourly
-            elif data_for == 'hourly':
-                self.model = PerformanceNetworkHourly
-            elif data_for == 'daily':
-                self.model = PerformanceNetworkDaily
-            elif data_for == 'weekly':
-                self.model = PerformanceNetworkWeekly
-            elif data_for == 'monthly':
-                self.model = PerformanceNetworkMonthly
-            elif data_for == 'yearly':
-                self.model = PerformanceNetworkYearly
-            else:
-                self.model = PerformanceNetwork        
-
-        if "_status" in service:
-            if not isSet and data_for == 'live':
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-
-            if data_for == 'daily':
-                self.model = PerformanceStatusDaily
-            elif data_for == 'weekly':
-                self.model = PerformanceStatusWeekly
-            elif data_for == 'monthly':
-                self.model = PerformanceStatusMonthly
-            elif data_for == 'yearly':
-                self.model = PerformanceStatusYearly
-            else:
-                self.model = PerformanceStatus
-
-        elif '_invent' in service:
-
-            if not isSet and data_for == 'live':
-                end_date = format(datetime.datetime.now(), 'U')
-                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-
-            if data_for == 'daily':
-                self.model = PerformanceInventoryDaily
-            elif data_for == 'weekly':
-                self.model = PerformanceInventoryWeekly
-            elif data_for == 'monthly':
-                self.model = PerformanceInventoryMonthly
-            elif data_for == 'yearly':
-                self.model = PerformanceInventoryYearly
-            else:
-                self.model = PerformanceInventory
-        elif '_kpi' in service:
-            if data_for == 'bihourly':
-                self.model = UtilizationBiHourly
-            elif data_for == 'hourly':
-                self.model = UtilizationHourly
-            elif data_for == 'daily':
-                self.model = UtilizationDaily
-            elif data_for == 'weekly':
-                self.model = UtilizationWeekly
-            elif data_for == 'monthly':
-                self.model = UtilizationMonthly
-            elif data_for == 'yearly':
-                self.model = UtilizationYearly
-            else:
-                self.model = Utilization
-
-        self.parameters = {
-            'model': self.model,
-            'start_time': start_date,
-            'end_time': end_date,
-            'devices': [inventory_device_name],
-            'services': [service],
-            'sds': [data_source]
-        }
 
         qs = self.get_initial_queryset()
 
