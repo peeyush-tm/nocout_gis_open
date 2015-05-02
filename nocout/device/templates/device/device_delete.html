@@ -3,6 +3,7 @@
 {% block content_description %}Device deletion.....{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
+        <p>Permanently delete device from inventory. Can't roll this action back.</p>
         <p>Are you sure you want to delete "{{ object }}" ?</p>
         <input type="submit" value="Confirm"/>
     </form>
