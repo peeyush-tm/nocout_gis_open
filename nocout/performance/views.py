@@ -2239,6 +2239,8 @@ class ServiceDataSourceListing(BaseDatatableView):
             'sds': [data_source]
         }
 
+        return True
+
     def prepare_results(self, qs):
         data = []
         
