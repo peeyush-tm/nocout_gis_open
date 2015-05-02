@@ -60,11 +60,12 @@ def live_query_radwin_dl_util_kpi(hostname,site,war,crit,qos):
     state_string = "unknown"
     try:
 	dl_util= extract_radwin_dl_util_from_live(hostname,site)
-	dl_util = eval(dl_util)
-	if dl_util:
+	if dl_util != None and dl_util != '':
+		dl_util = eval(dl_util)
+	if dl_util != None and dl_util != '':
 		dl_kpi = (dl_util/qos) *100
 		dl_kpi = round(dl_kpi,2)
-	if dl_kpi:
+	if dl_kpi != None and dl_kpi != '':
 		if dl_kpi < war:
 			state = 0
 			state_string = "ok"
@@ -86,6 +87,7 @@ def  main():
 
     state_string = "unknown"
     dl_util=''
+    plugin_message=''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]

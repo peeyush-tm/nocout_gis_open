@@ -103,15 +103,15 @@ def live_query_pmp1_dl_util_kpi(hostname,site,war,crit,dr_slave):
     try:
 	pmp1_bw = extract_pmp1_bw_from_live(hostname,site)
 	pmp1_dl,dr_dl= extract_pmp1_dl_util_from_live(hostname,site,dr_slave)
-	if pmp1_dl and dr_dl:
+	if pmp1_dl != None and dr_dl != None:
 		total_dl = eval(pmp1_dl) + eval(dr_dl)
-	elif pmp1_dl:
+	elif pmp1_dl != None:
 		total_dl = eval(pmp1_dl)
-	elif dr_dl:
+	elif dr_dl != None:
 		total_dl = eval(dr_dl)
 	if pmp1_bw:
 		pmp1_bw = eval(pmp1_bw)
-	if pmp1_bw and total_dl:
+	if pmp1_bw and total_dl != None:
 		if pmp1_bw <= 3:
 			pmp1_dl_kpi = (total_dl/4) *100
 		elif pmp1_bw  > 3:
@@ -120,7 +120,7 @@ def live_query_pmp1_dl_util_kpi(hostname,site,war,crit,dr_slave):
 			pmp1_dl_kpi = ''
 	
 
-	if pmp1_dl_kpi:
+	if pmp1_dl_kpi != None:
                 if pmp1_dl_kpi < war:
                         state = 0
                         state_string = "ok"

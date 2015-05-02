@@ -112,14 +112,25 @@ def check_wimax_qos_invent(item, _no_params, info):
                 index =index[0]
                 ss_mac = mac_list[index]
 	if ss_mac:
-		host_name = extract_host_name_from_wimax_topology(ss_mac)
-		if host_name[0][0]:
-			ul_qos,dl_qos =live_query_qos(host_name[0][0],ss_mac,host_name[0][1])
-			ul_qos = float(ul_qos)/(1000.0*1000)
+		if memc:
+			key = ss_mac + "_params"
+			value_list = memc.get(key)
+			if value_list:
+                		try:
+					ul_qos = value_list[2]
+					dl_qos = value_list[3]
+				except:
+					ul_qos = None
+					dl_qos = None
+		if not ul_qos and not dl_qos:	
+			host_name = extract_host_name_from_wimax_topology(ss_mac)
+			if host_name[0][0]:
+				ul_qos,dl_qos =live_query_qos(host_name[0][0],ss_mac,host_name[0][1])
+		if dl_qos and ul_qos:
 			dl_qos = float(dl_qos)/(1000.0*1000)
-			if dl_qos and ul_qos:
-				infotext = "dl_qos=%s ul_qos=%s" % (dl_qos,ul_qos)
-				state = 0
+			ul_qos = float(ul_qos)/(1000.0*1000)
+			infotext = "dl_qos=%s ul_qos=%s" % (dl_qos,ul_qos)
+			state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:
