@@ -391,7 +391,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
     for(var i=0;i<get_param_string.length;i++) {
         var splitted_string = get_param_string[i].split("=");
-        if(splitted_string[1]) {
+        if(splitted_string[1] != undefined) {
             if(i == get_param_string.length-1) {
                 get_param_data += "'"+splitted_string[0]+"':'"+splitted_string[1]+"'";
             } else {
