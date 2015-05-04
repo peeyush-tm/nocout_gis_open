@@ -133,7 +133,21 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 try {
 
                     if(isDateFilterApplied) {
-                        ajax_url = ajax_url+'&start_date='+startDate+'&end_date='+endDate;
+
+                        var epoch_startDate = startDate / 1000,
+                            epoch_endDate = endDate / 1000;
+
+                        ajax_url = ajax_url+'&start_date='+epoch_startDate+'&end_date='+epoch_endDate;
+
+                        // If we have tab info params
+                        if(tables_info[anchor_id]) {
+                            var data_param = tables_info[anchor_id].data_extra_param,
+                                splitted_params = data_param.split("}");
+
+                            splitted_params[1] = "'start_date' : '"+epoch_startDate+"', 'end_date' : '"+epoch_endDate+"'}"
+
+                            tables_info[anchor_id].data_extra_param = splitted_params.join(",");
+                        }
                     }
                     
                     var service_status_url = "";
@@ -147,7 +161,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         getPlServiceStatus(service_status_url);
                     }
                 } catch(e) {
-                    // console.log(e);
+                    console.log(e);
                 }
             }
             
