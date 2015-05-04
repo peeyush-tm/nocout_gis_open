@@ -25,7 +25,7 @@ import math
 
 # inventory utilitites
 from inventory.utils.util import organization_sectors, organization_network_devices, organization_customer_devices 
-from inventory.models import get_default_org
+from inventory.models import get_default_org, Circuit
 
 from inventory.tasks import bulk_update_create
 
@@ -33,7 +33,8 @@ from dashboard.utils import \
     get_topology_status_results, \
     get_dashboard_status_range_counter, \
     get_dashboard_status_range_mapped, \
-    get_service_status_results
+    get_service_status_results, \
+    get_total_circuits_per_sector
 
 
 import logging
@@ -500,13 +501,10 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
                 "unknown": 0,
             }
             # get the list of dictionary on the basis of parameters.
-            service_status_results = get_topology_status_results(
-                user_devices=None,
-                model=Topology,
-                service_name=None,
-                data_source='topology',
+            service_status_results = get_total_circuits_per_sector(
+                model=Circuit,
                 user_sector=user_sector
-            )
+                )
 
             for result in service_status_results:
                 # get the dictionary containing the model's field name as key.

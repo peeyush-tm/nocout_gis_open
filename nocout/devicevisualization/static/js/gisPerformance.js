@@ -839,7 +839,7 @@ function GisPerformance() {
                                     ss_marker_object['oldIcon'] = ss_icon_obj;
                                     ss_marker_object['clusterIcon'] = ss_icon_obj;
                                     
-                                    if(show_ss_len > 0 && mapInstance.getZoom() > 13) {
+                                    if(show_ss_len > 0 && mapInstance.getZoom() > 12) {
                                         ss_marker_object['map'] = mapInstance;
                                     }
 
@@ -1113,7 +1113,7 @@ function GisPerformance() {
 
                                     allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
 
-                                    if(isLineChecked > 0 && mapInstance.getZoom() > 13) {
+                                    if(isLineChecked > 0 && mapInstance.getZoom() > 12) {
                                         ss_link_line.setMap(mapInstance);
                                     }
 
@@ -1153,7 +1153,7 @@ function GisPerformance() {
                                         cross_label.open(mapInstance);
                                         cross_label_array['line_'+ss_marker_data.name] = cross_label;
 
-                                        if(isLineChecked > 0 && mapInstance.getZoom() > 13) {
+                                        if(isLineChecked > 0 && mapInstance.getZoom() > 12) {
                                             cross_label.show();
                                         } else {
                                             cross_label.hide();
