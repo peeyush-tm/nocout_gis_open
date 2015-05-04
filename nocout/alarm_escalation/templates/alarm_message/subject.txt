@@ -1,1 +1,1 @@
-ALERT: Reg-{{ alarm_invent.state }}_City{{ alarm_invent.city }}_{{ alarm_invent.bs_name }}_{{ alarm.ip }} - {{ level.service_data_source.alias }} {{ alarm_invent.string_value}} {{ alarm_invent.threshold }} with {{ alarm_invent.current_value }}
+{{alarm_invent.start_string}}: {{ alarm.ip }}({{ level.device_type.alias }}) {{ alarm_invent.bs_name }}({{ alarm_invent.city }}, {{ alarm_invent.state }}) {{ level.service_data_source.alias }}(Current Value:{{ alarm_invent.current_value }}, Threshold:{{ alarm_invent.threshold }}, Severity:{{alarm.severity|upper}})

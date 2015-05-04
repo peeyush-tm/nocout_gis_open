@@ -79,7 +79,7 @@ def extract_wimax_ss_state(hostname,site):
 		ss_state = "need_alignment"
     		state = 0
 		state_string= "ok"
-    	elif dl_cinr and dl_cinr <= 15:
+    	elif dl_cinr and int(dl_cinr) <= 15:
 		ss_state = "rogue_ss"
 		state = 0
 		state_string = "ok"

@@ -289,10 +289,10 @@ iframe {
   height: 30px !important;
   line-height: 25px !important;
 }
-.global_search_container ul li:last-child {
-  margin-left: 25px;
+.global_search_container ul li #redirect_link_container {
+  /*margin-left: 25px;*/
 }
-.global_search_container ul li:last-child #redirect_link_container a {
+.global_search_container ul li #redirect_link_container a {
    margin-right: 5px;
 }
 .date_range_filter_container {
@@ -356,4 +356,11 @@ iframe {
 }
 #status_container {
   margin-bottom: 12px !important;
+}
+.control_btn_countainer {
+  margin-bottom: 0px;
+}
+/*Reduce padding for .btn class used in page control of maps*/
+.date-range .btn-group .btn {
+  padding: 5px;
 }

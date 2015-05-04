@@ -718,7 +718,10 @@ SERVICES = {
 }
 
 #Date Format to be used throughout the application
-DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
+# Before
+# DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
+# After - 29-April-15
+DATE_TIME_FORMAT = "%m/%d/%y %H:%M"
 
 # ##################REPORT_PATH
 

@@ -447,6 +447,34 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
                                'current_value': ss_qs.count()})
     return status_results
 
+def get_total_circuits_per_sector(model, user_sector):
+    '''
+    Method return the total Circuits connected to the sector.
+
+    :param:
+    model: model name.
+    user_sector: sector list.
+
+    return: list of dictionary.
+                    i.e: [
+                        {'id': sector_id1, 'name': sector_name1, 'device_name':  device_name1, 'organization': organization, 'current_value': 1},
+                        {'id': sector_id2, 'name': sector_name2, 'device_name':  device_name2, 'organization': organization,'current_value': 2},
+                        {'id': sector_id3, ...},
+                        ]
+    '''
+    status_results = []
+    topology_status_results = model.objects.filter(sector__in=user_sector.values_list('id', flat=True))
+
+    for sector in user_sector:
+        circuit_qs = topology_status_results.filter(sector=sector.id).count()
+        status_results.append({'id': sector.id,
+                               'name':sector.name,
+                               'device_name': sector.sector_configured_on.device_name,
+                               'organization': sector.organization,
+                               'current_value': circuit_qs
+                            })
+
+    return status_results
 
 #**************************** Highchart Response *********************#
 def get_highchart_response(dictionary={}):

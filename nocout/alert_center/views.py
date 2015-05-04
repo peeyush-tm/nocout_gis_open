@@ -187,13 +187,29 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         device_tab_technology = self.request.GET.get('data_tab')
 
-        devices = inventory_utils.filter_devices(organizations=kwargs['organizations'],
-                                                 data_tab=device_tab_technology,
-                                                 page_type=page_type,
-                                                 required_value_list=required_value_list
+        devices = inventory_utils.filter_devices(
+            organizations=kwargs['organizations'],
+            data_tab=device_tab_technology,
+            page_type=page_type,
+            required_value_list=required_value_list
         )
+
+        # machines dict
+        machines = self.prepare_machines(devices)
+        # machines dict
+
+        # prepare the polled results
+        perf_results = self.prepare_polled_results(devices, machine_dict=machines)
+        # this is query set with complete polled result
+
+        map_result = alert_utils.map_results(perf_results, devices)
+
+        # this function is for mapping to GIS inventory
+        prepared_devices = self.prepare_devices(map_result, perf_results)
+        # this function is for mapping to GIS inventory
+
         # query set for customer devices of the technology : P2P, WiMAX, PMP
-        return devices
+        return prepared_devices
 
     def prepare_devices(self, qs, perf_results):
         """
@@ -408,20 +424,6 @@ class GetCustomerAlertDetail(BaseDatatableView):
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
-
-        # machines dict
-        machines = self.prepare_machines(qs)
-        # machines dict
-
-        # prepare the polled results
-        perf_results = self.prepare_polled_results(qs, machine_dict=machines)
-        # this is query set with complete polled result
-
-        qs = alert_utils.map_results(perf_results, qs)
-
-        # this function is for mapping to GIS inventory
-        qs = self.prepare_devices(qs, perf_results)
-        # this function is for mapping to GIS inventory
 
         # number of records before filtering
         total_records = len(qs)
@@ -1370,15 +1372,17 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         "description"
     ]
 
+    public_params = {}
+
     # order_columns = required_columns
 
-    def filter_queryset(self, qs, info_dict):
+    def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            if info_dict['service_name'] == 'ping':
+            if self.public_params['service_name'] == 'ping':
 
                 self.required_columns = [
                     "ip_address",
@@ -1389,7 +1393,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                     "sys_timestamp",
                     "description"
                 ]
-            elif info_dict['service_name'] == 'service':
+            elif self.public_params['service_name'] == 'service':
                 self.required_columns = [
                     "ip_address",
                     "service_name",
@@ -1403,7 +1407,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 ]
 
                 # raw query is required here so as to get data
-                query = alert_utils.ping_service_query(info_dict['device_name'], info_dict['start_date'], info_dict['end_date'])
+                query = alert_utils.ping_service_query(self.public_params['device_name'], self.public_params['start_date'], self.public_params['end_date'])
                 condition_str = ''
                 final_query = ''
 
@@ -1422,29 +1426,29 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 else:
                     final_query += query
 
-                qs = nocout_utils.fetch_raw_result(final_query, info_dict['machine_name'])
+                qs = nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
 
             else:
 
                 query = []
-                if info_dict['service_name'] == 'service':
+                if self.public_params['service_name'] == 'service':
                     self.model = EventService
 
                 # Create the default model condition string
                 pre_condition_query = "("
-                pre_condition_query += "Q(device_name="+str(info_dict['device_name'])+")"
+                pre_condition_query += "Q(device_name="+str(self.public_params['device_name'])+")"
 
-                if info_dict['service_name'] == 'latency' :
+                if self.public_params['service_name'] == 'latency' :
                     pre_condition_query += " & Q(data_source='rta')"
-                elif info_dict['service_name'] == 'packet_drop' :
+                elif self.public_params['service_name'] == 'packet_drop' :
                     pre_condition_query += " & Q(data_source='pl')"
-                elif info_dict['service_name'] == 'down' :
+                elif self.public_params['service_name'] == 'down' :
                     pre_condition_query += " & Q(data_source='pl')"
                     pre_condition_query += " & Q(current_value=100)"
                     pre_condition_query += " & Q(severity='DOWN')"
 
-                pre_condition_query += " & Q({0}__gte={1})".format('sys_timestamp',info_dict['start_date'])
-                pre_condition_query += " & Q({0}__lte={1})".format('sys_timestamp',info_dict['end_date'])
+                pre_condition_query += " & Q({0}__gte={1})".format('sys_timestamp',self.public_params['start_date'])
+                pre_condition_query += " & Q({0}__lte={1})".format('sys_timestamp',self.public_params['end_date'])
 
                 pre_condition_query += ")"
 
@@ -1468,19 +1472,22 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
                 exec_query += " & ".join(query)
                 exec_query += ").values(*" + str(self.required_columns) + ")"
-                exec_query += ".using(alias='" +info_dict['machine_name']+"')"
+                exec_query += ".using(alias='" +self.public_params['machine_name']+"')"
 
                 exec exec_query
         return qs
 
-    def get_initial_queryset(self,info_dict):
+    def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if info_dict['service_name'] == 'ping':
+        if not len(self.public_params):
+            self.initialize_params()
+
+        if self.public_params['service_name'] == 'ping':
             self.required_columns = [
                 "ip_address",
                 "service_name",
@@ -1490,7 +1497,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "sys_timestamp",
                 "description"
             ]
-        elif info_dict['service_name'] == 'service':
+        elif self.public_params['service_name'] == 'service':
             self.required_columns = [
                 "ip_address",
                 "service_name",
@@ -1503,48 +1510,48 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "description"
             ]
 
-        if info_dict['service_name'] == 'service':
+        if self.public_params['service_name'] == 'service':
 
             report_resultset = EventService.objects.filter(
-                device_name=info_dict['device_name'],
-                sys_timestamp__gte=info_dict['start_date'],
-                sys_timestamp__lte=info_dict['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+                device_name=self.public_params['device_name'],
+                sys_timestamp__gte=self.public_params['start_date'],
+                sys_timestamp__lte=self.public_params['end_date']
+            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=self.public_params['machine_name'])
 
-        elif info_dict['service_name'] == 'ping':
+        elif self.public_params['service_name'] == 'ping':
 
             # raw query is required here so as to get data
-            query = alert_utils.ping_service_query(info_dict['device_name'], info_dict['start_date'], info_dict['end_date'])
-            report_resultset = nocout_utils.fetch_raw_result(query, info_dict['machine_name'])
+            query = alert_utils.ping_service_query(self.public_params['device_name'], self.public_params['start_date'], self.public_params['end_date'])
+            report_resultset = nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
 
-        elif info_dict['service_name'] == 'latency':
+        elif self.public_params['service_name'] == 'latency':
 
             report_resultset = EventNetwork.objects.filter(
-                device_name=info_dict['device_name'],
+                device_name=self.public_params['device_name'],
                 data_source='rta',
-                sys_timestamp__gte=info_dict['start_date'],
-                sys_timestamp__lte=info_dict['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+                sys_timestamp__gte=self.public_params['start_date'],
+                sys_timestamp__lte=self.public_params['end_date']
+            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=self.public_params['machine_name'])
 
-        elif info_dict['service_name'] == 'packet_drop':
+        elif self.public_params['service_name'] == 'packet_drop':
 
             report_resultset = EventNetwork.objects.filter(
-                device_name=info_dict['device_name'],
+                device_name=self.public_params['device_name'],
                 data_source='pl',
-                sys_timestamp__gte=info_dict['start_date'],
-                sys_timestamp__lte=info_dict['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+                sys_timestamp__gte=self.public_params['start_date'],
+                sys_timestamp__lte=self.public_params['end_date']
+            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=self.public_params['machine_name'])
 
-        elif info_dict['service_name'] == 'down':
+        elif self.public_params['service_name'] == 'down':
 
             report_resultset = EventNetwork.objects.filter(
-                device_name=info_dict['device_name'],
+                device_name=self.public_params['device_name'],
                 data_source='pl',
                 current_value=100,  #need to show up and down both
                 severity='DOWN',
-                sys_timestamp__gte=info_dict['start_date'],
-                sys_timestamp__lte=info_dict['end_date']
-            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=info_dict['machine_name'])
+                sys_timestamp__gte=self.public_params['start_date'],
+                sys_timestamp__lte=self.public_params['end_date']
+            ).order_by("-sys_timestamp").values(*self.required_columns).using(alias=self.public_params['machine_name'])
 
         else:
 
@@ -1552,7 +1559,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
         return report_resultset
 
-    def prepare_results(self, qs,service_name):
+    def prepare_results(self, qs):
         """
         Preparing Final dataset for rendering the data table.
         """
@@ -1571,7 +1578,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
         return final_list
 
-    def ordering(self, qs, service_name):
+    def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
         request = self.request
@@ -1585,7 +1592,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
         order_columns = self.required_columns
 
-        if service_name == 'ping':
+        if self.public_params['service_name'] == 'ping':
             order_columns = [
                 "ip_address",
                 "service_name",
@@ -1595,7 +1602,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "sys_timestamp",
                 "description"
             ]
-        elif service_name == 'service':
+        elif self.public_params['service_name'] == 'service':
             order_columns = [
                 "ip_address",
                 "service_name",
@@ -1630,20 +1637,13 @@ class SingleDeviceAlertsListing(BaseDatatableView):
             return sorted_device_data
         return qs
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        service_name = self.request.GET.get('service_name', 'ping')
+    def initialize_params(self):
 
         device_id = self.kwargs['device_id']
         device_obj = Device.objects.get(id=device_id)
         device_name = device_obj.device_name
         machine_name = device_obj.machine.name
+        service_name = self.request.GET.get('service_name', 'ping')
 
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
@@ -1669,7 +1669,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
             start_date = format(start_date_object, 'U')
             isSet = True
 
-        params_dict = {
+        self.public_params = {
             'service_name' : service_name,
             'device_name' : device_name,
             'page_type' : self.kwargs['page_type'],
@@ -1678,27 +1678,44 @@ class SingleDeviceAlertsListing(BaseDatatableView):
             'end_date' : end_date
         }
 
-        qs = self.get_initial_queryset(params_dict)
+        return True
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        if not len(self.public_params):
+            self.initialize_params()
+
+        qs = self.get_initial_queryset()
 
         # number of records before filtering
         total_records = len(qs)
 
-        qs = self.filter_queryset(qs,params_dict)
+        qs = self.filter_queryset(qs)
         # number of records after filtering
         total_display_records = len(qs)
 
-        qs = self.ordering(qs,service_name)
+        qs = self.ordering(qs)
         qs = self.paging(qs)
+        
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
 
-        aaData = self.prepare_results(qs,service_name)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+        aaData = self.prepare_results(qs)
+
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
+
         return ret
 
 # SIA LISTING CODE

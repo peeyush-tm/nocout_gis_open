@@ -103,6 +103,7 @@ def  main():
 
     state_string = "unknown"
     ul_util=''
+    plugin_message = ''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]
