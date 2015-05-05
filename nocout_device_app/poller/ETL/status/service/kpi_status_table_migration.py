@@ -64,7 +64,8 @@ def main(**configs):
     start_time = datetime.now() - timedelta(minutes=5)
 
     end_time = datetime.now()
-    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
+    docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
     configs1 = config_module.parse_config_obj()
     for config, options in configs1.items():
 	machine_name = options.get('machine')

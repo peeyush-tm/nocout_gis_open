@@ -593,24 +593,28 @@ def calculate_avg_value(unknwn_state_svc_data,frequency_based_service_list,db):
 	steps= 300
 	host_svc_ds_dict ={}
 	svc_host_key={}
-	host_list = []
+	host_list = set()
 	avg = 0
-	service_list = []
-	for doc in unknwn_state_svc_data:
-		host_list.append(doc[0])
-		service_list.append(doc[2])
-	query_results = db.service_perf.aggregate([
-        {"$unwind":"$data"},
-        {
-         "$match" :{"host": {"$in": host_list},"service":{"$in": service_list},"local_timestamp":{"$gte":start_time,"$lte":end_time} }
+	service_list = set()
+	try:
+		for doc in unknwn_state_svc_data:
+			host_list.add(doc[0])
+			service_list.add(doc[2])
+		host_list = list(host_list)
+		service_list = list(service_list)
+		query_results = db.service_perf.aggregate([
+        	{
+         	"$match" :{"host": {"$in": host_list},"service":{"$in": service_list},"local_timestamp":{"$gte":start_time,"$lte":end_time} }
 
-        }
-	])
+        	}
+		])
+	except:
+		return host_svc_ds_dict
 	for key,entry in groupby(sorted(query_results['result'],key=itemgetter('host','service','ds')),
 		key=itemgetter('host','service','ds')):
 		doc_list = list(entry)
         	try:
-                	value_list =[str(x['data'].get('value')) for x in doc_list if x['data'].get('value') != '']
+                	value_list =[str(x['data'][0].get('value')) for x in doc_list if x['data'][0].get('value') != '']
 			#print value_list
 			#print len(doc_list),doc_list[len(doc_list)-1]['host'],doc_list[len(doc_list)-1]['service'],value_list
                 	if x['service'] in frequency_based_service_list:

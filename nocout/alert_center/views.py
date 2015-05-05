@@ -187,13 +187,29 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         device_tab_technology = self.request.GET.get('data_tab')
 
-        devices = inventory_utils.filter_devices(organizations=kwargs['organizations'],
-                                                 data_tab=device_tab_technology,
-                                                 page_type=page_type,
-                                                 required_value_list=required_value_list
+        devices = inventory_utils.filter_devices(
+            organizations=kwargs['organizations'],
+            data_tab=device_tab_technology,
+            page_type=page_type,
+            required_value_list=required_value_list
         )
+
+        # machines dict
+        machines = self.prepare_machines(devices)
+        # machines dict
+
+        # prepare the polled results
+        perf_results = self.prepare_polled_results(devices, machine_dict=machines)
+        # this is query set with complete polled result
+
+        map_result = alert_utils.map_results(perf_results, devices)
+
+        # this function is for mapping to GIS inventory
+        prepared_devices = self.prepare_devices(map_result, perf_results)
+        # this function is for mapping to GIS inventory
+
         # query set for customer devices of the technology : P2P, WiMAX, PMP
-        return devices
+        return prepared_devices
 
     def prepare_devices(self, qs, perf_results):
         """
@@ -408,20 +424,6 @@ class GetCustomerAlertDetail(BaseDatatableView):
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
-
-        # machines dict
-        machines = self.prepare_machines(qs)
-        # machines dict
-
-        # prepare the polled results
-        perf_results = self.prepare_polled_results(qs, machine_dict=machines)
-        # this is query set with complete polled result
-
-        qs = alert_utils.map_results(perf_results, qs)
-
-        # this function is for mapping to GIS inventory
-        qs = self.prepare_devices(qs, perf_results)
-        # this function is for mapping to GIS inventory
 
         # number of records before filtering
         total_records = len(qs)

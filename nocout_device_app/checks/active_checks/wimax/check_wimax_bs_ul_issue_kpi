@@ -213,6 +213,7 @@ def live_query_cam_ul_issue_kpi(host_name,site,war,crit,dr_slave):
 def  main():
     state_string = "unknown"
     cam_ul=''
+    plugin_message =''
     try:
     	host_name = sys.argv[1]
     	site = sys.argv[2]
