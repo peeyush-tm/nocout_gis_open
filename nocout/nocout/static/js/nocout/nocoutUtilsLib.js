@@ -555,6 +555,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 fontSize : '12px'
             }
         },
+        // exporting:{
+        //     url:'http://localhost:8080/highcharts-export-web/'
+        // },
         tooltip: {
             // headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
             // pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
