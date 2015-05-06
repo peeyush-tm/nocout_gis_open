@@ -1116,7 +1116,7 @@ function nocoutPerfLib() {
 
                                     if(!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
                                         if (!$('#'+service_id+'_chart').highcharts()) {
-                                            $('#'+service_id+'_chart').html(result.message);
+                                            $('#'+service_id+'_chart').html("No Data.");
                                         }
                                     }
                                 } else {

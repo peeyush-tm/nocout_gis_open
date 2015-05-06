@@ -4,9 +4,16 @@
 import datetime
 #python utilities
 
+import ujson as json
+import os
+import datetime
+import time
+
 from django.utils.dateformat import format
 
 from multiprocessing import Process, Queue
+
+from django.core.urlresolvers import reverse
 
 #nocout utilities
 from nocout.utils.util import fetch_raw_result, \
@@ -17,8 +24,15 @@ from nocout.utils.util import fetch_raw_result, \
 #python logging
 import logging
 
+import requests
+
 log = logging.getLogger(__name__)
 #python logging
+
+from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
+    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS
+
+from django.http import HttpRequest
 
 # misc utility functions
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
@@ -702,3 +716,108 @@ def color_picker():
     color = "#"
     color += "%06x" % random.randint(0,0xFFFFFF)
     return color.upper()
+
+
+def create_perf_chart_img(device_name, service, data_source):
+
+    """
+    This function create performance chart image for given device, 
+    service & data_source and return image url
+    """
+
+    kwargs_dict = {
+        'service_name': service,
+        'service_data_source_type': data_source,
+        'device_id': device_name
+    }
+
+    # create http request for getting rows data (for accessing list view classes)
+    request_object = HttpRequest()
+
+    # import 'Get_Service_Type_Performance_Data' from performance views
+    from performance.views import Get_Service_Type_Performance_Data
+
+    # Create instance of "Get_Service_Type_Performance_Data"
+    perf_data_class = Get_Service_Type_Performance_Data()
+
+    # Attach request HTTP object with 'Get_Service_Type_Performance_Data' instance
+    perf_data_class.request = request_object
+    
+    # Attach 'kwargs' with 'Get_Service_Type_Performance_Data' instance
+    perf_data_class.kwargs = kwargs_dict
+
+    # Make 'GET' request to 'Get_Service_Type_Performance_Data' class
+    fetched_result = perf_data_class.get(request_object, service, data_source, device_name)
+
+    # convert the fetched content to json format
+    perf_data = json.loads(fetched_result.content)
+
+    chart_dataset = []
+    if perf_data['success'] and 'chart_data' in perf_data['data']['objects']:
+        # Get chart data from fetched content
+        chart_dataset = perf_data['data']['objects']['chart_data']
+
+    # JSON data required for phantomJS request inline variable
+    data_json = {
+        'type':'json',
+        'chart' : {
+            'width':CHART_WIDTH,
+            'height':CHART_HEIGHT
+        },
+        'xAxis' : {
+            'title': {
+                'text': 'Time'
+            },
+            'type': 'datetime',
+            'minRange': '3600000',
+            'dateTimeLabelFormats': {
+                'millisecond': '%H:%M:%S.%L',
+                'second': '%H:%M:%S',
+                'minute': '%H:%M',
+                'hour': '%H:%M',
+                'day': '%e. %b',
+                'week': '%e. %b',
+                'month': '%b %y',
+                'year': '%Y'
+            }
+        },
+        'series' : chart_dataset
+    }
+
+    infile_str = {
+        'infile' : json.dumps(data_json),
+        'options' : json.dumps(data_json),
+        'type' : CHART_IMG_TYPE,
+        'constr' : 'Chart',
+        'scale' : '1'
+    }
+
+    # Create PhantomJS url to hit POST request on it
+    phantom_url = PHANTOM_PROTOCOL+"://"+PHANTOM_HOST+":"+PHANTOM_PORT+"/"
+
+    # Start PhantomJS server in background
+    os.system("phantomjs "+HIGHCHARTS_CONVERT_JS+" -host "+PHANTOM_HOST+" -port "+PHANTOM_PORT+"&")
+
+    # Make POST request to phantom js host to create the chart image
+    chart_img_request = requests.post(phantom_url, data=json.dumps(infile_str))
+
+    # if directory for perf chart img didn't exist than create it
+    chart_img_path = MEDIA_ROOT + 'uploaded/perf_chart'
+    if not os.path.exists(chart_img_path):
+        os.makedirs(chart_img_path)
+
+    timestamp = time.time()
+    full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+
+    # created filename
+    filename = "{}_{}".format("chart", full_time)
+
+    fh = open(chart_img_path+"/"+filename+"."+infile_str['type'], "wb")
+    fh.write(chart_img_request.content.decode('base64'))
+    fh.close()
+
+    result = {
+        "chart_url" : chart_img_path+"/"+filename+"."+infile_str['type']
+    }
+
+    return result
