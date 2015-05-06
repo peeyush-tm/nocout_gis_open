@@ -604,7 +604,7 @@ function devicePlottingClass_gmap() {
             			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
             		});
 
-            		if(states_with_bounds.length > 0 || mapInstance.getZoom() < 14 || searchResultData.length > 0) {
+            		if(states_with_bounds.length > 0 || mapInstance.getZoom() < 13 || searchResultData.length > 0) {
 
 	            		var states_array = [];
 
@@ -647,7 +647,7 @@ function devicePlottingClass_gmap() {
 							 * If anything searched n user is on zoom level 11 then reset 
 							   currentlyPlottedDevices array for removing duplicacy.
 	            			 */
-	            			if(mapInstance.getZoom() == 13 && searchResultData.length > 0) {
+	            			if(mapInstance.getZoom() == 12 && searchResultData.length > 0) {
 	            				// Reset currentlyPlottedDevices array
 	            				currentlyPlottedDevices = [];
             				}
@@ -669,7 +669,7 @@ function devicePlottingClass_gmap() {
 							gmap_self.plotDevices_gmap(inBoundData,"base_station");
 
 							// if(searchResultData.length == 0 || mapInstance.getZoom() <= 10) {
-							if(mapInstance.getZoom() <= 13) {
+							if(mapInstance.getZoom() <= 12) {
 								var polylines = allMarkersObject_gmap['path'],
 									polygons = allMarkersObject_gmap['sector_polygon'],
 									ss_markers = allMarkersObject_gmap['sub_station'],
@@ -1773,9 +1773,13 @@ function devicePlottingClass_gmap() {
 	        tooltipInfoLabel[key].close();
 	    }
 
-	    // Remove the loader
-	    for (key in loader_icon_dict) {
-	        loader_icon_dict[key].close();
+	    try {
+	    	// Remove the loader
+		    for (key in loader_icon_dict) {
+		        loader_icon_dict[key].close();
+		    }
+	    } catch(e) {
+	    	// console.log(e);
 	    }
 	    
 
