@@ -490,22 +490,20 @@ class DFRProcessedListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDa
 
 
 def dfr_processed_report_download(request, pk):
-    dfr_processed = DFRProcessed.objects.get(id=pk)
-    # index_split = list()
+    dfr_processed = DFRProcessed.objects.get(processed_for=pk)
     file_obj = None
-    file_download_path = ""
-
     try:
         file_obj = file(dfr_processed.processed_report_path)
         file_path = dfr_processed.processed_report_path
-        file_download_path = file_path.split(REPORT_RELATIVE_PATH)[1] # to be checked    
+        splitted_path = file_path.split("/")
+        actual_filename = str(splitted_path[len(splitted_path)-1])
     except Exception as e:
         logger.exception(e)
         response = handler404(request)
 
-    if file_obj and file_download_path:
+    if file_obj:
         response = HttpResponse(file_obj.read(), content_type='application/vnd.ms-excel')
-        response['Content-Disposition'] = 'attachment; filename="'+str(file_download_path)+'"'
+        response['Content-Disposition'] = 'attachment; filename="'+actual_filename+'"'
 
     return response
 
