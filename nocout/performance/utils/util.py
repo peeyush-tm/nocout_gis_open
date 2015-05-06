@@ -424,7 +424,12 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "device_type": format_value(bs_row['SECTOR_TYPE']),
                     "device_technology": format_value(bs_row['SECTOR_TECH'])
                 })
-                if is_ss:
+
+                if is_dr:
+                    device.update({
+                        "sector_id": "DR:</br>" + " ".join(sector_details),
+                    })
+                elif is_ss:
                     mrc = bs_row['SECTOR_MRC']
                     port = bs_row['SECTOR_PORT']
                     if mrc and mrc.strip().lower() == 'yes':
