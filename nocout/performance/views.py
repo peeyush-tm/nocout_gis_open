@@ -1052,6 +1052,17 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
     if not device or not technology or not type:
         return sector_device_status_data
 
+    device_sector_column = 'sector_configured_on'
+    is_dr_device = False
+
+    # If DR configured device then update the column name
+    if device.dr_configured_on.exists():
+        is_dr_device = True
+        device_sector_column = 'dr_configured_on'
+
+    sector_where_condition = {device_sector_column : device.id}
+
+
     # Fetch Sector Info
     sector_objects = Sector.objects.select_related(
         'base_station__id',
@@ -1062,7 +1073,7 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
         'base_station__state__state_name',
         'frequency__value'
     ).filter(
-        sector_configured_on=device.id
+        **sector_where_condition
     )
 
     # Device Type URL
@@ -1200,14 +1211,26 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
             sector_device_status_data.append(table_values)
 
         elif technology.name.lower() in ['wimax']:
-            # table_values = []
+
+            sector_ip_address = device.ip_address
+            sector_device_url = device_url
+
+            # If this is DR device then update the ip address & device page url variables
+            if is_dr_device:
+                sector_ip_address = sector.sector_configured_on.ip_address
+                sector_device_url = reverse(
+                    'device_edit',
+                    kwargs={'pk': sector.sector_configured_on.id},
+                    current_app='device'
+                )
+
             table_values = [
                 {"val" : base_station_alias,"url" : bs_name_url},
                 {"val" : technology.alias,"url" : device_tech_url},
                 {"val" : type.alias,"url" : device_type_url},
                 {"val" : city_name,"url" : city_url},
                 {"val" : state_name,"url" : state_url},
-                {"val" : device.ip_address,"url" : device_url},
+                {"val" : sector_ip_address,"url" : sector_device_url},
                 {"val" : planned_frequency,"url" : ""},
                 {"val" : frequency,"url" : frequency_url},
                 {"val" : sector_id,"url" : sector_id_url},
@@ -1571,7 +1594,7 @@ class Inventory_Device_Status(View):
         # Get Device Type Object
         type = DeviceType.objects.get(id=device.device_type)
 
-        if device.sector_configured_on.exists():
+        if device.sector_configured_on.exists() or device.dr_configured_on.exists():
             # Fetch the headers for 'sector'
             result['data']['objects']['headers'] = get_device_status_headers(page_type, 'sector',technology.name)
 
