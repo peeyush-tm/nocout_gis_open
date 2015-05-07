@@ -160,7 +160,8 @@
         var all_report_title = 'Sector Spot Dashboard - All',
             pmp_report_title = 'Sector Spot Dashboard - PMP',
             wimax_report_title = 'Sector Spot Dashboard - WiMAX',
-            common_param = "'download_excel': 'yes'";
+            common_param = "'download_excel': 'yes'",
+            header_data_key = "report_headers";
 
         tables_info = {
             "all_sector_spot_tab" : {
@@ -168,7 +169,7 @@
                 "table_title" : all_report_title,
                 "header_class_name" : "SectorDashboard",
                 "data_class_name" : "SectorDashboardListing",
-                "header_extra_param" : "{"+common_param+" }",
+                "header_extra_param" : "{'headers_data_key' : '"+header_data_key+"', "+common_param+" }",
                 "data_extra_param" : "{"+common_param+",'report_title' : '"+all_report_title+"'}"
             },
             "pmp_sector_spot_tab" : {
@@ -176,7 +177,7 @@
                 "table_title" : pmp_report_title,
                 "header_class_name" : "SectorDashboard",
                 "data_class_name" : "SectorDashboardListing",
-                "header_extra_param" : "{"+common_param+" }",
+                "header_extra_param" : "{'headers_data_key' : '"+header_data_key+"', "+common_param+" }",
                 "data_extra_param" : "{'technology': 'PMP', "+common_param+",'report_title' : '"+pmp_report_title+"'}"
             },
             "wimax_sector_spot_tab" : {
@@ -184,7 +185,7 @@
                 "table_title" : wimax_report_title,
                 "header_class_name" : "SectorDashboard",
                 "data_class_name" : "SectorDashboardListing",
-                "header_extra_param" : "{"+common_param+" }",
+                "header_extra_param" : "{'headers_data_key' : '"+header_data_key+"', "+common_param+" }",
                 "data_extra_param" : "{'technology': 'WiMAX', "+common_param+",'report_title' : '"+wimax_report_title+"'}"
             }
         };
