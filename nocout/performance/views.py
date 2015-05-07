@@ -663,8 +663,14 @@ class SectorDashboard(ListView):
 
 
         ul_last_six_month_headers = list()
+        ul_last_six_month_headers_for_report = list()
+
         sia_last_six_month_headers = list()
+        sia_last_six_month_headers_for_report = list()
+
         augt_last_six_month_headers = list()
+        augt_last_six_month_headers_for_report = list()
+
         months_index_list = list()
 
         # Get Last Six Month List
@@ -691,13 +697,27 @@ class SectorDashboard(ListView):
             ul_last_six_month_headers.append(
                 {'mData': 'ul_issue_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
+            # UL Issue Header for downloaded report
+            ul_last_six_month_headers_for_report.append(
+                {'mData': 'ul_issue_'+str(i+1), 'sTitle': month_alias+"(UL Issue)", 'sWidth': 'auto', 'bSortable': False}
+            )
+
             # Last Six Month SIA Headers
             sia_last_six_month_headers.append(
                 {'mData': 'sia_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
             )
+            # SIA Header for downloaded report
+            sia_last_six_month_headers_for_report.append(
+                {'mData': 'sia_'+str(i+1), 'sTitle': month_alias+"(SIA)", 'sWidth': 'auto', 'bSortable': False}
+            )
+
             # Last Six Month Augmentation Headers
             augt_last_six_month_headers.append(
                 {'mData': 'augment_'+str(i+1), 'sTitle': month_alias, 'sWidth': 'auto', 'bSortable': False}
+            )
+            # Augmentation Header for downloaded report
+            augt_last_six_month_headers_for_report.append(
+                {'mData': 'augment_'+str(i+1), 'sTitle': month_alias+"(Augmentation)", 'sWidth': 'auto', 'bSortable': False}
             )
 
         table_headers = []
@@ -706,7 +726,14 @@ class SectorDashboard(ListView):
         table_headers += sia_last_six_month_headers
         table_headers += augt_last_six_month_headers
 
+        report_headers = []
+        report_headers += sector_headers
+        report_headers += ul_last_six_month_headers_for_report
+        report_headers += sia_last_six_month_headers_for_report
+        report_headers += augt_last_six_month_headers_for_report
+
         context['table_headers'] = json.dumps(table_headers)
+        context['report_headers'] = json.dumps(report_headers)
         context['months_index'] = json.dumps(months_index_list)
         return context
 
@@ -770,6 +797,9 @@ class SectorDashboardListing(BaseDatatableView):
 
         report_resultset = []
 
+        red_dot_html_string = '<i class="fa fa-circle text-danger"><span class="hide">1</span> </i>'
+        no_issue_string = '-'
+
         for data in qs:
             report_object = {}
             report_object['sector_id'] = data['sector_sector_id']
@@ -781,23 +811,23 @@ class SectorDashboardListing(BaseDatatableView):
                 columns_concat_counter = str(i+1)
                 # Condition for ul Issue
                 if data['ul_issue_'+columns_concat_counter]:
-                    report_object['ul_issue_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                    report_object['ul_issue_'+columns_concat_counter] = red_dot_html_string
                 else:
-                    report_object['ul_issue_'+columns_concat_counter] = '-'
+                    report_object['ul_issue_'+columns_concat_counter] = no_issue_string
 
 
                 # Condition for Augmentation
                 if data['augment_'+columns_concat_counter]:
-                    report_object['augment_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                    report_object['augment_'+columns_concat_counter] = red_dot_html_string
                 else:
-                    report_object['augment_'+columns_concat_counter] = '-'
+                    report_object['augment_'+columns_concat_counter] = no_issue_string
 
 
                 # Condition for SIA
                 if data['sia_'+columns_concat_counter]:
-                    report_object['sia_'+columns_concat_counter] = '<i class="fa fa-circle text-danger"> </i>'
+                    report_object['sia_'+columns_concat_counter] = red_dot_html_string
                 else:
-                    report_object['sia_'+columns_concat_counter] = '-'
+                    report_object['sia_'+columns_concat_counter] = no_issue_string
 
             #add data to report_resultset list
             report_resultset.append(report_object)
@@ -2439,7 +2469,6 @@ class ServiceDataSourceListing(BaseDatatableView):
 class Get_Service_Type_Performance_Data(View):
     """
     Generic Class based View to Fetch the Performance Data.
-
     """
 
     def get(self, request, service_name, service_data_source_type, device_id):
@@ -2483,6 +2512,15 @@ class Get_Service_Type_Performance_Data(View):
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        try:
+            technology = DeviceTechnology.objects.get(id=device.device_technology)
+        except:
+            return HttpResponse(json.dumps(self.result), content_type="application/json")
+
+        # If DR configured device & sector configured deivce flags
+        is_dr_device = device.dr_configured_on.exists()
+        is_sector_device = device.sector_configured_on.exists()
+
         # date time settings
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
@@ -2499,12 +2537,9 @@ class Get_Service_Type_Performance_Data(View):
             sds_name = service_data_source_type.strip()
 
         # to check if data source would be displayed as a chart or as a table
-        #
-        show_chart = False
+        show_chart = True
         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
             show_chart = False
-        else:
-            show_chart = True
 
         # check for the formula
         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['formula']:
@@ -2550,24 +2585,6 @@ class Get_Service_Type_Performance_Data(View):
                 'model' : PerformanceServiceYearly
             })
 
-        # test once for technology
-        try:
-            technology = DeviceTechnology.objects.get(id=device.device_technology)
-        except:
-            return HttpResponse(json.dumps(self.result), content_type="application/json")
-        try:
-            # test now for sector
-            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-                dr_devices = device.sector_configured_on.filter()
-                sector_device = device
-                for dr_d in dr_devices:
-                    dr_device = dr_d.dr_configured_on # there can only be a DR device
-                # append dr device here only
-                parameters['devices'].append(dr_device.device_name)
-                # parameters updated with all devices
-        except:
-            pass  # no dr site
-
         if service_data_source_type in ['pl', 'rta']:
             if data_for == 'bihourly':
                 parameters.update({
@@ -2602,41 +2619,7 @@ class Get_Service_Type_Performance_Data(View):
                 **parameters
             ).using(alias=inventory_device_machine_name)
 
-            if dr_device:
-                result = self.dr_performance_data_result(
-                    performance_data=performance_data,
-                    sector_device=device,
-                    dr_device=dr_device
-                )
-            else:
-
-                result = self.get_performance_data_result(performance_data,'',is_historical_data)
-                # result = self.get_performance_data_result(performance_data)
-
-            # Show severity pie chart only when it is enabled from settings.py
-            if DISPLAY_SEVERITY_PIE_CHART:
-                # If any data exists then add severity data with it.
-                if(
-                    int(result['success']) == 1
-                    and
-                    len(result['data']['objects']) > 0
-                    and
-                    'chart_data' in result['data']['objects']
-                ):
-                    # GET Severity Count
-                    severity_count_data = self.get_performance_severity_count(
-                        **parameters
-                    ).using(alias=inventory_device_machine_name)
-
-                    severity_result = list()
-
-
-                    if len(severity_count_data) > 0:
-                        severity_result = self.prepare_severity_count_result(severity_count_data)
-
-                        if severity_result:
-                            result['data']['objects']['chart_data'].append(severity_result)
-                
+            result = self.get_performance_data_result(performance_data,'',is_historical_data)
 
         elif service_data_source_type == 'rf':
             sector_device = None
@@ -2698,13 +2681,13 @@ class Get_Service_Type_Performance_Data(View):
                 performance_data_bs = self.get_performance_data(
                     **parameters
                 ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
+
                 result = self.rf_performance_data_result(
                     performance_data_bs=performance_data_bs,
                     performance_data_ss=performance_data
                 )
             else:
                 result = self.get_performance_data_result(performance_data,'',is_historical_data)
-                # result = self.get_performance_data_result(performance_data)
 
         elif "availability" in service_name or service_data_source_type in ['availability']:
             if not isSet:
@@ -2722,26 +2705,54 @@ class Get_Service_Type_Performance_Data(View):
                 **parameters
             ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')
 
-            if dr_device:
-                result = self.dr_performance_data_result(
-                    performance_data=performance_data,
-                    sector_device=device,
-                    dr_device=dr_device,
-                    availability=True
-                )
-            else:
-
-                result = self.get_performance_data_result(performance_data, data_source="availability")
+            result = self.get_performance_data_result(performance_data, data_source="availability")
 
         elif "topology" in service_name or service_data_source_type in ['topology']:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-            #for wimax devices there can be a case of DR
-            #we need to incorporate the DR devices as well
+            
+            dr_devices_ip = None
+            # for wimax devices there can be a case of DR
+            # we need to incorporate the DR devices as well
+            try:
+                if technology and technology.name.lower() in ['wimax'] and (is_sector_device or is_dr_device):
+                    device_col_name = ''
+                    configured_device_qs = ''
+                    # In Case of DR Device
+                    if is_dr_device:
+                        dr_devices = device.dr_configured_on.filter()
+                        device_col_name = 'sector_configured_on__device_name'
+                        configured_device_qs = device.dr_configured_on.values().distinct().values(
+                                        'sector_configured_on__device_name',
+                                        'sector_configured_on__ip_address'
+                                    )
+                        dr_devices_ip = device.ip_address
+                    else:
+                        dr_devices = device.sector_configured_on.filter()
+                        configured_device_qs = device.sector_configured_on.values().distinct().values(
+                                            'dr_configured_on__device_name',
+                                            'dr_configured_on__ip_address'
+                                        )
+                        device_col_name = 'dr_configured_on__device_name'
+                        dr_devices_ip = sector_data_qs[0]['dr_configured_on__ip_address'] if sector_data_qs.exists() else ''
+                        sector_device = device
+
+                    if configured_device_qs:
+                        dr_devices_name = configured_device_qs[0][device_col_name] if configured_device_qs.exists() else ''
+
+                    if dr_devices_name:
+                        # append dr/sector device
+                        parameters['devices'].append(dr_devices_name)
+                    # parameters updated with all devices
+            except:
+                pass  # no dr site
 
             try:
-                sector_object = device.sector_configured_on.filter()
+                if is_dr_device:
+                    sector_object = dr_devices if dr_devices else device.dr_configured_on.filter()
+                else:
+                    sector_object = device.sector_configured_on.filter()
             except:
                 return HttpResponse(json.dumps(self.result), content_type="application/json")
 
@@ -2756,10 +2767,11 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = self.get_performance_data(
                 **parameters
             )
-            if dr_device:
+
+            if dr_devices_ip:
                 result = self.get_topology_result(
                     performance_data,
-                    dr_ip=dr_device.ip_address,
+                    dr_ip=dr_devices_ip,
                     technology=technology,
                     sectors=sector_object
                 )
@@ -2847,11 +2859,25 @@ class Get_Service_Type_Performance_Data(View):
 
         elif '_kpi' in service_name:
 
+            current_device = [inventory_device_name]
+
+            if is_dr_device:
+                try:
+                    # Get the 'sectors' device name associated with this DR device
+                    devices_qs = device.dr_configured_on.values().distinct().values_list(
+                                    'sector_configured_on__device_name', flat=True
+                                )
+                    # Convert queryset to list
+                    current_device = [item for item in devices_qs]
+                except Exception, e:
+                    pass
+
             parameters.update({
                 'model': Utilization,
                 'start_time': start_date,
                 'end_time': end_date,
                 'services': [service_name],
+                'devices' : current_device,
                 'sds': [service_data_source_type]
             })
 
@@ -2891,38 +2917,7 @@ class Get_Service_Type_Performance_Data(View):
                     is_historical_data=is_historical_data
                 )
             else:  # show the chart
-                if dr_device:
-                    result = self.dr_performance_data_result(
-                        performance_data=performance_data,
-                        sector_device=device,
-                        dr_device=dr_device
-                    )
-                else:
-                    result = self.get_performance_data_result(performance_data,'',is_historical_data)
-
-            # Show severity pie chart only when it is enabled from settings.py
-            if show_chart and DISPLAY_SEVERITY_PIE_CHART:
-                # If any data exists then add severity data with it.
-                if(
-                    int(result['success']) == 1
-                    and
-                    len(result['data']['objects']) > 0
-                    and
-                    'chart_data' in result['data']['objects']
-                ):
-                    # GET Severity Count
-                    severity_count_data = self.get_performance_severity_count(
-                        **parameters
-                    ).using(alias=inventory_device_machine_name)
-
-                    severity_result = list()
-
-
-                    if len(severity_count_data) > 0:
-                        severity_result = self.prepare_severity_count_result(severity_count_data)
-
-                        if severity_result:
-                            result['data']['objects']['chart_data'].append(severity_result)
+                result = self.get_performance_data_result(performance_data,'',is_historical_data)
 
         else:
             performance_data = self.get_performance_data(
@@ -2936,38 +2931,7 @@ class Get_Service_Type_Performance_Data(View):
                     is_historical_data=is_historical_data
                 )
             else: # show the chart
-                if dr_device:
-                    result = self.dr_performance_data_result(
-                        performance_data=performance_data,
-                        sector_device=device,
-                        dr_device=dr_device
-                    )
-                else:
-                    result = self.get_performance_data_result(performance_data,'',is_historical_data)
-
-            # Show severity pie chart only when it is enabled from settings.py
-            if show_chart and DISPLAY_SEVERITY_PIE_CHART:
-                # If any data exists then add severity data with it.
-                if(
-                    int(result['success']) == 1
-                    and
-                    len(result['data']['objects']) > 0
-                    and
-                    'chart_data' in result['data']['objects']
-                ):
-                    # GET Severity Count
-                    severity_count_data = self.get_performance_severity_count(
-                        **parameters
-                    ).using(alias=inventory_device_machine_name)
-
-                    severity_result = list()
-
-
-                    if len(severity_count_data) > 0:
-                        severity_result = self.prepare_severity_count_result(severity_count_data)
-
-                        if severity_result:
-                            result['data']['objects']['chart_data'].append(severity_result)
+                result = self.get_performance_data_result(performance_data,'',is_historical_data)
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
@@ -3007,94 +2971,6 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = model.objects.filter(where_condition).order_by('sys_timestamp')
 
         return performance_data
-
-    # This function get severity count as per given params
-    def get_performance_severity_count(self, model=None, start_time=None, end_time=None, devices=None, services=None, sds=None):
-
-        severity_count_data = list()
-        if services:
-            where_condition = ''
-            if start_time and end_time:
-                where_condition = (
-                    Q(device_name__in=devices)
-                    &
-                    Q(service_name__in=services) & Q(data_source__in=sds)
-                    &
-                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
-                )
-            else:
-                where_condition = (
-                    Q(device_name__in=devices)
-                    &
-                    Q(service_name__in=services) & Q(data_source__in=sds)
-                )
-            severity_count_data = model.objects.filter(where_condition).values('severity').annotate(
-                severity_count=Count('device_name')
-            )
-        else:
-            if start_time and end_time:
-                where_condition = (
-                    Q(device_name__in=devices)
-                    &
-                    Q(data_source__in=sds)
-                    &
-                    Q(sys_timestamp__gte=start_time) & Q(sys_timestamp__lte=end_time)
-                )
-            else:
-                where_condition = (
-                    Q(device_name__in=devices)
-                    &
-                    Q(data_source__in=sds)
-                )
-            severity_count_data = model.objects.filter(where_condition).values('severity').annotate(
-                severity_count=Count('device_name')
-            )
-
-        return severity_count_data
-
-    # This function prepares severity count data as per hightcharts format
-    def prepare_severity_count_result(self, severity_data):
-
-        severity_result = {
-            "type": "pie",
-            "data": [],
-            "name": "Severity",
-            "center": [40, 40],
-            "size": 100,
-            "showInLegend": False,
-            "dataLabels": {
-                "enabled": True
-            },
-            'valuesuffix': ""
-        }        
-
-        if not severity_data:
-            return severity_result
-
-
-        for data in severity_data:
-            
-            color = '#808080'
-
-            if 'crit' in data['severity'] or 'down' in data['severity']:
-                color = '#FF0000'
-            elif 'up' in data['severity'] or 'normal' in data['severity'] or 'success' in data['severity'] or 'ok' in data['severity']:
-                color = '#00FF66'
-                # color = '#83FD02'
-            elif 'warn' in data['severity'] or 'warning' in data['severity']:
-                color = '#FF6600'
-                # color = '#FFA342'
-
-            data_dict = {
-                "y" : data['severity_count'],
-                "name" : data['severity'].title(),
-                "color" : color
-            }
-
-            severity_result['data'].append(data_dict)
-
-        return severity_result
-
 
     def return_table_header_and_table_data(self, service_name, result):
 
@@ -3230,7 +3106,6 @@ class Get_Service_Type_Performance_Data(View):
         #or the SS might be the one disconnected
         #if it is connected, then it will be present in topology
         #else it will be present in the SECTOR --> CIRCUIT --> SS
-
         for data in performance_data:
             temp_time = data.sys_timestamp
             connected_mac = data.connected_device_mac
@@ -3293,6 +3168,7 @@ class Get_Service_Type_Performance_Data(View):
                                 ).strftime(DATE_TIME_FORMAT)
 
                 show_ip_address = data.ip_address
+
                 if dr_ip and dr_ip == show_ip_address:
                     show_ip_address += " (DR)"
                 result_data.append({
@@ -4252,14 +4128,22 @@ class DeviceServiceDetail(View):
 
         if device.sector_configured_on.exists():
             is_sector = True
+            is_dr_device = False
+            is_bh = False
+            is_ss = False
+        elif device.dr_configured_on.exists():
+            is_sector = False
+            is_dr_device = True
             is_bh = False
             is_ss = False
         elif device.backhaul.exists():
             is_sector = False
+            is_dr_device = False
             is_bh = True
             is_ss = False
         elif device.substation_set.exists():
             is_sector = False
+            is_dr_device = False
             is_bh = False
             is_ss = True
         else:
@@ -4267,13 +4151,15 @@ class DeviceServiceDetail(View):
 
 
 
-        device_type_services = device_type.service.filter(name__icontains=service_name
+        device_type_services = device_type.service.filter(
+            name__icontains=service_name
         ).prefetch_related('servicespecificdatasource_set')
 
-        services = device_type_services.values('name',
-                                               'alias',
-                                               'servicespecificdatasource__service_data_sources__name',
-                                               'servicespecificdatasource__service_data_sources__alias'
+        services = device_type_services.values(
+            'name',
+            'alias',
+            'servicespecificdatasource__service_data_sources__name',
+            'servicespecificdatasource__service_data_sources__alias'
         )
 
         if is_bh:
@@ -4323,8 +4209,10 @@ class DeviceServiceDetail(View):
             service_name__in=service_names,
             data_source__in=sds_names,
             sys_timestamp__gte=start_date,
-            sys_timestamp__lte=end_date).using(
-                alias=device.machine.name).order_by('sys_timestamp')
+            sys_timestamp__lte=end_date
+        ).using(
+            alias=device.machine.name
+        ).order_by('sys_timestamp')
 
         chart_data = []
         color = {}
