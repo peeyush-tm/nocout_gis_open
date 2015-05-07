@@ -96,12 +96,12 @@ class MFRDFRReports(models.Model):
     def uploaded_file_name(instance, filename):
         timestamp = time.time()
         year_month_date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
-
-        fname = "{}_{}".format(filename, year_month_date)
+        # In fname variable date is attach to file name which should be removed
+        # fname = "{}_{}".format(filename, year_month_date)
         # modified path where file is uploaded
         path = "uploaded/FaultReports"
 
-        return '{}/{}/{}'.format(path, year_month_date, fname)
+        return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Report Name', max_length=128)
     type = models.CharField('Report Type', max_length=8, choices=REPORT_CHOICES)
