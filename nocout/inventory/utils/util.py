@@ -277,6 +277,17 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                             is_deleted=0,
                                             organization__in=organizations
                 )
+        elif int(technology) == int(WiMAX.ID):
+            devices = Device.objects.filter(
+                Q(sector_configured_on__isnull=False, sector_configured_on__sector_id__isnull=False)
+                |
+                Q(dr_configured_on__isnull=False),
+                device_technology=int(technology),
+                is_added_to_nms=1,
+                # sector id must be present for PMP and WiMAX
+                is_deleted=0,
+                organization__in=organizations
+            ).annotate(dcount=Count('id'))
         else:
             devices = Device.objects.filter(
                                             device_technology = int(technology),

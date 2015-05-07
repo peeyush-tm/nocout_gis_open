@@ -1,17 +1,19 @@
-var downloader_api_call = "";
+var downloader_api_call = "",
+    server_side_rendering = true;
 /**
-*/
-function ourDataTableWidget()
-{
-	/**
-	 * This function creates the jquery data table on given domElement
-	 * @class ourDataTableWidget
-	 * @method createDataTable
-	 * @param tableId "String" It contains the dom selector of table
-	 * @param tableheaders {JSON Object} It contains the grid headers object
-	 * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
-	 */
-	this.createDataTable = function(
+ * This file creates the jquery data table as per given params
+ * @for jqueryDataTable.js
+ */
+function ourDataTableWidget() {
+    /**
+     * This function creates the jquery data table on given domElement
+     * @class ourDataTableWidget
+     * @method createDataTable
+     * @param tableId "String" It contains the dom selector of table
+     * @param tableheaders {JSON Object} It contains the grid headers object
+     * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
+     */
+    this.createDataTable = function(
         tableId,
         tableheaders,
         ajax_url,
@@ -46,7 +48,7 @@ function ourDataTableWidget()
             bDestroy : true,
             bPaginate: true,
             bProcessing : true,
-            bServerSide: true,
+            bServerSide: server_side_rendering,
             aLengthMenu: page_length_val,
             iDisplayLength : default_selected_page_length,
             sAjaxSource: ajax_url,
@@ -87,7 +89,7 @@ function ourDataTableWidget()
             sPaginationType: "full_numbers",
             aaSorting:[],
             bStateSave:false
- 		});
+        });
 
         
 
