@@ -1078,10 +1078,25 @@ function nocoutPerfLib() {
                                             "perf_data_table",
                                             chart_config.chart_data
                                         );
-
+                                        // Update bottom table HTML
                                         $('#'+service_id+'_bottom_table').html(contentHtml);
 
+                                        // Margin of 20px between the chart & table
+                                        $('#'+service_id+'_bottom_table').css("margin-top","20px");
+
                                         $("#perf_data_table").DataTable({
+                                            sDom: 'T<"clear">lfrtip',
+                                            oTableTools: {
+                                                sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                                                aButtons: [
+                                                    {
+                                                        sExtends: "xls",
+                                                        sButtonText: "Download Excel",
+                                                        sFileName: "*.xls",
+                                                        mColumns: excel_columns
+                                                    }
+                                                ]
+                                            },
                                             bPaginate: true,
                                             bDestroy: true,
                                             aaSorting : [[0,'desc']],
