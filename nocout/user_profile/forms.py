@@ -20,7 +20,7 @@ class UserForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
-        initial = kwargs.setdefault('initial',{})
+        initial = kwargs.setdefault('initial', {})
 
         # removing help text for username 'select' field
         self.base_fields['username'].help_text = ''
@@ -37,7 +37,8 @@ class UserForm(forms.ModelForm):
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
         if not self.request.user.is_superuser:
-            logged_in_user_organization_list = self.request.user.userprofile.organization.get_descendants( include_self=True )
+            logged_in_user_organization_list = self.request.user.userprofile.organization.get_descendants(
+                include_self=True)
             self.fields['organization'].queryset = logged_in_user_organization_list
         else:
             self.fields['organization'].queryset = Organization.objects.all()
@@ -52,7 +53,7 @@ class UserForm(forms.ModelForm):
                 self.fields['role'].widget.is_required = False
                 self.fields['role'].required = False
                 self.fields['organization'].widget.attrs['readonly'] = True
-                self.fields['parent'].label='Manager'
+                self.fields['parent'].label = 'Manager'
                 self.fields.pop('comment')
 
         for name, field in self.fields.items():
@@ -154,8 +155,8 @@ class UserForm(forms.ModelForm):
             if password1:
                 user = UserProfile.objects.filter(username=username)
                 if user.exists():
-                    user_password_used = UserPasswordRecord.objects.filter(user_id=user[0].id).\
-                        order_by('-password_used_on').values_list('password_used', flat=True)[:5]
+                    user_password_used = UserPasswordRecord.objects.filter(user_id=user[0].id).order_by(
+                        '-password_used_on').values_list('password_used', flat=True)[:5]
                     for pwd in user_password_used:
                         if check_password(password1, pwd):
                             raise forms.ValidationError("This password is recently used")
@@ -165,7 +166,7 @@ class UserForm(forms.ModelForm):
 
 class UserPasswordForm(forms.Form):
     """
-    check new password are same or not during first time login.
+    Check new password are same or not during first time login.
     """
     new_pwd = forms.CharField(max_length=128, required=True)
     confirm_pwd = forms.CharField(max_length=128, required=True)
@@ -176,8 +177,8 @@ class UserPasswordForm(forms.Form):
         if confirm_pwd:
             user_id = self.cleaned_data.get("user_id")
             if user_id:
-                user_password_used = UserPasswordRecord.objects.filter(user_id=int(user_id)).\
-                    order_by('-password_used_on').values_list('password_used', flat=True)[:5]
+                user_password_used = UserPasswordRecord.objects.filter(user_id=int(user_id)).order_by(
+                    '-password_used_on').values_list('password_used', flat=True)[:5]
                 for pwd in user_password_used:
                     if check_password(confirm_pwd, pwd):
                         raise forms.ValidationError("This password is recently used")
