@@ -44,7 +44,7 @@ from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
     AVG_CHART_COLOR
 
-from performance.formulae import display_time
+from performance.formulae import display_time, rta_null
 
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
