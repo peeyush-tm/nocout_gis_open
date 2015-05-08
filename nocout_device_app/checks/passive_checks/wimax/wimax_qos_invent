@@ -26,17 +26,6 @@ Device on which Frequency operating is sent to device application
 
 
 
-def extract_host_name_from_wimax_topology(ss_host_mac):
-        query = """
-        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        #db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-	#db.close()
-        return data
-
 
 
 
@@ -123,7 +112,7 @@ def check_wimax_qos_invent(item, _no_params, info):
 					ul_qos = None
 					dl_qos = None
 		if not ul_qos and not dl_qos:	
-			host_name = extract_host_name_from_wimax_topology(ss_mac)
+			host_name = extract_host_from_wimax_topology(ss_mac)
 			if host_name[0][0]:
 				ul_qos,dl_qos =live_query_qos(host_name[0][0],ss_mac,host_name[0][1])
 		if dl_qos and ul_qos:

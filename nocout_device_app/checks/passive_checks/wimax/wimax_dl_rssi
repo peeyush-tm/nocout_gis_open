@@ -8,14 +8,15 @@ import os
 import binascii
 import mysql.connector
 
-from mysql_connection import memc
-from mysql_connection import db
+#from mysql_connection import db
+#from mysql_connection import con_pool
 try:
     import nocout_settings
     from nocout_settings import _DATABASES, _LIVESTATUS
 except Exception as exp:
     print exp
 
+from mysql_connection import memc
 
 
 """
@@ -52,15 +53,16 @@ def mysql_conn():
 
 
 def extract_host_from_wimax_topology(ss_host_mac):
-        query = """
-        select device_name ,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        #db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
+	from mysql_connection import db
+	query = """
+	select device_name ,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+	#db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	cur.close()
+	db.close()
+	return data
 
 def get_from_socket(socket_ip,socket_port, query,site,machine):
     """
