@@ -766,7 +766,8 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 	style.fillOpacity = 0.5;
 	style.strokeWidth = sWidth;
 
-	var poly = new OpenLayers.Feature.Vector(sector, null, style);
+	var poly = new OpenLayers.Feature.Vector(sector, null, style),
+		sector_device_name = sectorInfo.device_name ? sectorInfo.device_name : "";
 
 	var polyInfo = {
 		path 		     : polyPathArray,
@@ -789,6 +790,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		inventory_url    : sectorInfo.inventory_url,
 		deviceExtraInfo  : sectorInfo.info,
 		deviceInfo 		 : sectorInfo.device_info,
+		device_name 	 : sector_device_name,
 		startLat 	     : startLat,
 		startLon 	     : startLon,
 		filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name},

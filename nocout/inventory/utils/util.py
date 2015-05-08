@@ -277,6 +277,17 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                                             is_deleted=0,
                                             organization__in=organizations
                 )
+        elif int(technology) == int(WiMAX.ID):
+            devices = Device.objects.filter(
+                Q(sector_configured_on__isnull=False, sector_configured_on__sector_id__isnull=False)
+                |
+                Q(dr_configured_on__isnull=False),
+                device_technology=int(technology),
+                is_added_to_nms=1,
+                # sector id must be present for PMP and WiMAX
+                is_deleted=0,
+                organization__in=organizations
+            ).annotate(dcount=Count('id'))
         else:
             devices = Device.objects.filter(
                                             device_technology = int(technology),
@@ -465,3 +476,41 @@ def organization_sectors(organization, technology=0):
         sector_list = sector_objects
 
     return sector_list
+
+@cache_for(300)
+def list_to_indexed_dict(inventory_list, key):
+    """
+    Convert list of dictionaries into indexed dictionaries
+
+    Args:
+        inventory_list (list): List of dictionaries
+        key (str): Element needs to be the key of dictionary
+
+    Returns:
+        inventory_dict (dict): containing list of dictionaries
+                    i.e.{u'10518': {
+                                'bs_name': u'SAMALKHA',
+                                'circuit_id': u'1131176457',
+                                'city': u'Delhi',
+                                'customer_name': u'SPFLSecuritiesLtd.',
+                                'device_name': u'10518',
+                                'device_technology': u'WiMAX',
+                                'device_type': u'StarmaxIDU',
+                                'machine__name': u'ospf3',
+                                'near_end_ip': u'10.158.176.2',
+                                'sector_id': u'(PMP1)</BR>00: 0b: 10: 05: 39: 61',
+                                'state': u'Delhi'
+                            }
+                        }
+
+    """
+
+    inventory_dict = dict()
+
+    for device_info in inventory_list:
+        if device_info[key] not in inventory_dict:
+            inventory_dict[device_info[key]] = {}
+
+        inventory_dict[device_info[key]] = device_info
+
+    return inventory_dict

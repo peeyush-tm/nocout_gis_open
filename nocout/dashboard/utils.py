@@ -116,6 +116,46 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     else:
         return service_status_data
 
+class MultiQuerySet(object):
+    def __init__(self, *args, **kwargs):
+        self.querysets = args
+        self._count = None
+    
+    def _clone(self):
+        querysets = [qs._clone() for qs in self.querysets]
+        return MultiQuerySet(*querysets)
+    
+    def __repr__(self):
+        return repr(list(self.querysets))
+                
+    def count(self):
+        if not self._count:
+            self._count = sum([qs.count() for qs in self.querysets])
+        return self._count
+    
+    def __len__(self):
+        return self.count()
+    
+    def __iter__(self):
+        for qs in self.querysets:
+            for item in qs.all():
+                yield item
+        
+    def __getitem__(self, item):
+        indices = (offset, stop, step) = item.indices(self.count())
+        items = []
+        total_len = stop - offset
+        for qs in self.querysets:
+            if len(qs) < offset:
+                offset -= len(qs)
+            else:
+                items += list(qs[offset:stop])
+                if len(items) >= total_len:
+                    return items
+                else:
+                    offset = 0
+                    stop = total_len - len(items)
+                    continue
 
 def get_service_status_results(user_devices, model, service_name, data_source):
 
@@ -131,6 +171,7 @@ def get_service_status_results(user_devices, model, service_name, data_source):
     multi_proc = getattr(settings, 'MULTI_PROCESSING_ENABLED', False)
 
     service_status_results = []
+    multi_qyery_list = []
     if multi_proc:
         queue = Queue()
         jobs = [
@@ -156,23 +197,16 @@ def get_service_status_results(user_devices, model, service_name, data_source):
                 break
     else:
         for machine, machine_device_list in machine_dict.items():
-            if service_status_results:
-                service_status_results |= get_service_status_data(False,
-                                                                  machine_device_list,
-                                                                  machine=machine,
-                                                                  model=model,
-                                                                  service_name=service_name,
-                                                                  data_source=data_source
-                )
-            else:
-                service_status_results = get_service_status_data(False,
-                                                                  machine_device_list,
-                                                                  machine=machine,
-                                                                  model=model,
-                                                                  service_name=service_name,
-                                                                  data_source=data_source
-                )
-
+            service_status_results_temp = get_service_status_data(False,
+                                                              machine_device_list,
+                                                              machine=machine,
+                                                              model=model,
+                                                              service_name=service_name,
+                                                              data_source=data_source
+                                                            )
+            multi_qyery_list.append(service_status_results_temp)
+        
+        service_status_results = MultiQuerySet(*multi_qyery_list)
     return service_status_results
 
 
@@ -447,6 +481,34 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
                                'current_value': ss_qs.count()})
     return status_results
 
+def get_total_circuits_per_sector(model, user_sector):
+    '''
+    Method return the total Circuits connected to the sector.
+
+    :param:
+    model: model name.
+    user_sector: sector list.
+
+    return: list of dictionary.
+                    i.e: [
+                        {'id': sector_id1, 'name': sector_name1, 'device_name':  device_name1, 'organization': organization, 'current_value': 1},
+                        {'id': sector_id2, 'name': sector_name2, 'device_name':  device_name2, 'organization': organization,'current_value': 2},
+                        {'id': sector_id3, ...},
+                        ]
+    '''
+    status_results = []
+    topology_status_results = model.objects.filter(sector__in=user_sector.values_list('id', flat=True))
+
+    for sector in user_sector:
+        circuit_qs = topology_status_results.filter(sector=sector.id).count()
+        status_results.append({'id': sector.id,
+                               'name':sector.name,
+                               'device_name': sector.sector_configured_on.device_name,
+                               'organization': sector.organization,
+                               'current_value': circuit_qs
+                            })
+
+    return status_results
 
 #**************************** Highchart Response *********************#
 def get_highchart_response(dictionary={}):

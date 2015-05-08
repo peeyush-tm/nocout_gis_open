@@ -5006,8 +5006,8 @@ class GISPerfInfo(View):
             device_network_info = [d for d in network_perf_data if d['device_name'] == device_name]
 
             perf_info += self.collect_performance(performance=device_network_info,
-                                                    device_id=device_id,
-                                                    processed=processed)
+                                                  device_id=device_id,
+                                                  processed=processed)
 
             # if device is down than don't show services data
             if device_pl != "100":
@@ -5016,16 +5016,16 @@ class GISPerfInfo(View):
                 status_perf_data = [d for d in status_perf_data if d['device_name'] == device_name]
 
                 perf_info += self.collect_performance(performance=service_perf_data,
-                                                        device_id=device_id,
-                                                        processed=processed)
+                                                      device_id=device_id,
+                                                      processed=processed)
 
                 perf_info += self.collect_performance(performance=inventory_perf_data,
-                                                        device_id=device_id,
-                                                        processed=processed)
+                                                      device_id=device_id,
+                                                      processed=processed)
 
                 perf_info += self.collect_performance(performance=status_perf_data,
-                                                        device_id=device_id,
-                                                        processed=processed)
+                                                      device_id=device_id,
+                                                      processed=processed)
 
             # bs connected device
             bs_connected_device = None

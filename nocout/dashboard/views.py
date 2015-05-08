@@ -3,6 +3,7 @@ import datetime
 import calendar
 from dateutil import relativedelta
 import time
+from django.http import Http404
 
 from django.utils.dateformat import format
 from django.core.urlresolvers import reverse_lazy, reverse
@@ -16,7 +17,9 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG, PERIODIC_POLL_PROCESS_COUNT
+from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG, PERIODIC_POLL_PROCESS_COUNT, REPORT_RELATIVE_PATH
+# Import 404 page function from nocout views
+from nocout.views import handler404
 
 from nocout.utils import logged_in_user_organizations
 # from nocout.utils.util import convert_utc_to_local_timezone
@@ -42,6 +45,11 @@ from dashboard.utils import get_service_status_results, get_dashboard_status_ran
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+
+# BEGIN: logging module
+import logging
+logger = logging.getLogger(__name__)
+# END: logging module
 
 
 class DashbaordSettingsListView(TemplateView):
@@ -482,12 +490,21 @@ class DFRProcessedListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDa
 
 
 def dfr_processed_report_download(request, pk):
-    dfr_processed = DFRProcessed.objects.get(id=pk)
+    dfr_processed = DFRProcessed.objects.get(processed_for=pk)
+    file_obj = None
+    try:
+        file_obj = file(dfr_processed.processed_report_path)
+        file_path = dfr_processed.processed_report_path
+        splitted_path = file_path.split("/")
+        actual_filename = str(splitted_path[len(splitted_path)-1])
+    except Exception as e:
+        logger.exception(e)
+        response = handler404(request)
 
-    f = file(dfr_processed.processed_report_path, 'r')
-    response = HttpResponse(f.read(), content_type='application/vnd.ms-excel')
-    response['Content-Disposition'] = 'attachment; filename="dfr_report_' + str(
-        dfr_processed.processed_for.process_for) + '.xlsx"'
+    if file_obj:
+        response = HttpResponse(file_obj.read(), content_type='application/vnd.ms-excel')
+        response['Content-Disposition'] = 'attachment; filename="'+actual_filename+'"'
+
     return response
 
 
@@ -546,7 +563,11 @@ class DFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseData
             obj_id = obj.pop('id')
             delete_url = reverse_lazy('dfr-reports-delete', kwargs={'pk': obj_id})
             delete_action = '<a href="%s"><i class="fa fa-trash-o text-danger"></i></a>' % delete_url
-            obj.update({'actions': delete_action})
+            download_action = ''
+            if obj['is_processed'] == 'Yes':
+                download_action = '<a href="javascript:;" dfr_id="%s" class="download_dfr_btn"><i class=" fa fa-download"> </i></a>&nbsp;&nbsp;&nbsp;' % obj_id
+            
+            obj.update({'actions': download_action+" "+delete_action})
         return json_data
 
 

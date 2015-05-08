@@ -9,6 +9,7 @@ from django.views.generic.edit import DeleteView
 from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon
 from django.db.models import Q
 from django.conf import settings
+from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.utils.util import convert_utc_to_local_timezone
 
 import os
@@ -46,7 +47,7 @@ class DownloadCenter(ListView):
             {'mData': 'created_on', 'sTitle': 'Created On', 'sWidth': 'auto'},
             {'mData': 'report_date', 'sTitle': 'Report Date', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -195,7 +196,7 @@ class DownloadCenterListing(BaseDatatableView):
         return ret
 
 
-class DownloadCenterReportDelete(DeleteView):
+class DownloadCenterReportDelete(SuperUserRequiredMixin, DeleteView):
     """
     Class based View to delete the GISInventoryBulkImport
     """
@@ -224,6 +225,47 @@ class DownloadCenterReportDelete(DeleteView):
 
         # if successfull, return to
         return HttpResponseRedirect(reverse_lazy('InventoryDownloadCenter', kwargs={'page_type': page_type}))
+
+class CityCharterReportHeaders(ListView):
+    """
+        Generate datatable headers for city charter reports
+    """
+
+    model = CityCharterCommon
+    template_name = 'dashboard/main_dashboard/home.html'
+
+    def get_context_data(self, **kwargs):
+
+        datatable_headers = [
+            {'mData': 'city_name', 'sTitle': 'City', 'sWidth': 'auto'},
+            {'mData': 'p2p_los', 'sTitle': 'LOS PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_uas', 'sTitle': 'UAS', 'sWidth': 'auto'},
+            # {'mData': 'p2p_rogue_ss', 'sTitle': 'Rogue SS PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_pd', 'sTitle': 'PD PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_latancy', 'sTitle': 'Latency PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_normal', 'sTitle': 'Normal PTP', 'sWidth': 'auto'},
+            {'mData': 'pmp_los', 'sTitle': 'LOS PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_jitter', 'sTitle': 'Jitter PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_rereg', 'sTitle': 'ReReg PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_ul', 'sTitle': 'UL PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_pd', 'sTitle': 'PD PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_latancy', 'sTitle': 'Latency PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_normal', 'sTitle': 'Normal PMP', 'sWidth': 'auto'},
+            {'mData': 'wimax_los', 'sTitle': 'LOS WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_na', 'sTitle': 'NA WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_rogue_ss', 'sTitle': 'Rogue SS WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_ul', 'sTitle': 'UL WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_pd', 'sTitle': 'PD WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_latancy', 'sTitle': 'Latency WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'}
+        ]
+
+        context = {
+            'datatable_headers': json.dumps(datatable_headers)
+        }
+        
+        return context
+
 
 class CityCharterReportListing(BaseDatatableView):
     """

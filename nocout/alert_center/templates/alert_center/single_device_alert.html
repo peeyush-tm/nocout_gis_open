@@ -60,10 +60,12 @@
         <div id="latestStatusContainer">
             <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
         </div>
-        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
-            <thead></thead>
-            <tbody></tbody>
-        </table>
+        <div style="overflow:auto;">
+            <table id="status_table" class="table table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <!--Single Device Live Perf Start-->
@@ -90,12 +92,12 @@
                         <i class="fa fa-times"></i> Reset Filter
                     </button>
                 </li>
-                <li>
+                <li class="pull-right">
                     <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
                         <i class="fa fa-dropbox text-primary"></i>
                     </a>
                 </li>
-                <li>
+                <li class="pull-right">
                     <a href="#" class="btn btn-default btn-sm hide" id="perf_link_tag" title="Performance" target="_blank">
                         <i class="fa fa-bar-chart-o text-primary"></i>
                     </a>
@@ -237,10 +239,6 @@
                 window.location.href = location_array[0];
             }
 
-            // if($.cookie('filter_start_date') && $.cookie('filter_end_date')) {
-            //     isDateFilterApplied = true;
-            // }
-
             current_device_id = "{{ current_device_id }}";
 
             /*Make a instance of ourDataTableWidget class */
@@ -257,6 +255,66 @@
 
             // Ajax url to get grid data
             var ajax_url = '{% url "SingleDeviceAlertsListing_clone" page_type current_device_id %}';
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
+
+            var common_extra_param = "'download_excel': 'yes'",
+                common_header_key = 'table_headers',
+                polling_header_key = 'polling_alerts_headers',
+                ping_header_key = 'ping_table_headers',
+                page_type_param = "'page_type' : '"+page_type+"'",
+                device_id_param = "'device_id' : '"+current_device_id+"'",
+                current_device_alias = "{{ device_alias }}",
+                service_title = "Alert Center - Polling Alerts ["+current_device_alias+"]",
+                down_title = "Alert Center - Down ["+current_device_alias+"]",
+                pl_title = "Alert Center - Packet Drop ["+current_device_alias+"]",
+                rta_title = "Alert Center - Latency ["+current_device_alias+"]",
+                ping_title = "Alert Center - Ping Details ["+current_device_alias+"]";
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
+
+            tables_info = {
+                "network_alert_service_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : service_title,
+                    "header_class_name" : "SingleDeviceAlertsInit",
+                    "data_class_name" : "SingleDeviceAlertsListing",
+                    "header_extra_param" : "{'headers_data_key' : '"+polling_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'service', 'report_title' : '"+service_title+"', "+common_extra_param+"}"
+                },
+                "network_alert_down_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : down_title,
+                    "header_class_name" : "SingleDeviceAlertsInit",
+                    "data_class_name" : "SingleDeviceAlertsListing",
+                    "header_extra_param" : "{'headers_data_key' : '"+common_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'down', 'report_title' : '"+down_title+"', "+common_extra_param+"}"
+                },
+                "network_alert_packet_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : pl_title,
+                    "header_class_name" : "SingleDeviceAlertsInit",
+                    "data_class_name" : "SingleDeviceAlertsListing",
+                    "header_extra_param" : "{'headers_data_key' : '"+common_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'packet_drop', 'report_title' : '"+pl_title+"', "+common_extra_param+"}"
+                },
+                "network_alert_latency_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : rta_title,
+                    "header_class_name" : "SingleDeviceAlertsInit",
+                    "data_class_name" : "SingleDeviceAlertsListing",
+                    "header_extra_param" : "{'headers_data_key' : '"+common_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'latency', 'report_title' : '"+rta_title+"', "+common_extra_param+"}"
+                },
+                "network_alert_ping_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : ping_title,
+                    "header_class_name" : "SingleDeviceAlertsInit",
+                    "data_class_name" : "SingleDeviceAlertsListing",
+                    "header_extra_param" : "{'headers_data_key' : '"+ping_header_key+"', "+page_type_param+", "+device_id_param+" , 'service_name' : '', "+common_extra_param+"}",
+                    "data_extra_param" : "{"+page_type_param+", "+device_id_param+", 'service_name' : 'ping', 'report_title' : '"+ping_title+"', "+common_extra_param+"}"
+                }
+            };
 
             $("#network_alert_service_tab").attr("data_url", ajax_url);
             $("#network_alert_service_tab").attr("data_header", polling_alert_gridHeadersObj);
@@ -282,19 +340,18 @@
         // When any filter is applied
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-                // isDateFilterApplied = true;
                 //epoch function
                 var myStartDate = startDate.toDate(),
                     myEndDate = endDate.toDate();
+
                 startDate = myStartDate.getTime();
                 endDate = myEndDate.getTime();
 
-                // $.cookie('filter_start_date', startDate, {path: '/', secure: true});
-                // $.cookie('filter_end_date', endDate, {path: '/', secure: true});
-
                 var active_tab = $("#single_device_alert_container li.active").children("a"),
                     active_tab_id = active_tab.length > 0 ? active_tab[0].id : "";
+
                 if(active_tab_id) {
+                    isDateFilterApplied = true;
                     $("#"+active_tab_id).trigger("click",true);
                 }
             } else {
@@ -304,7 +361,7 @@
 
         // When filter reset
         $("#reset_filter").on('click', function () {
-            // isDateFilterApplied = false;
+            isDateFilterApplied = false;
             startDate = "";
             endDate = "";
 

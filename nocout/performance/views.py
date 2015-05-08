@@ -1052,6 +1052,17 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
     if not device or not technology or not type:
         return sector_device_status_data
 
+    device_sector_column = 'sector_configured_on'
+    is_dr_device = False
+
+    # If DR configured device then update the column name
+    if device.dr_configured_on.exists():
+        is_dr_device = True
+        device_sector_column = 'dr_configured_on'
+
+    sector_where_condition = {device_sector_column : device.id}
+
+
     # Fetch Sector Info
     sector_objects = Sector.objects.select_related(
         'base_station__id',
@@ -1062,7 +1073,7 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
         'base_station__state__state_name',
         'frequency__value'
     ).filter(
-        sector_configured_on=device.id
+        **sector_where_condition
     )
 
     # Device Type URL
@@ -1200,14 +1211,26 @@ def get_sector_device_status_data(page_type='network', device=None, technology=N
             sector_device_status_data.append(table_values)
 
         elif technology.name.lower() in ['wimax']:
-            # table_values = []
+
+            sector_ip_address = device.ip_address
+            sector_device_url = device_url
+
+            # If this is DR device then update the ip address & device page url variables
+            if is_dr_device:
+                sector_ip_address = sector.sector_configured_on.ip_address
+                sector_device_url = reverse(
+                    'device_edit',
+                    kwargs={'pk': sector.sector_configured_on.id},
+                    current_app='device'
+                )
+
             table_values = [
                 {"val" : base_station_alias,"url" : bs_name_url},
                 {"val" : technology.alias,"url" : device_tech_url},
                 {"val" : type.alias,"url" : device_type_url},
                 {"val" : city_name,"url" : city_url},
                 {"val" : state_name,"url" : state_url},
-                {"val" : device.ip_address,"url" : device_url},
+                {"val" : sector_ip_address,"url" : sector_device_url},
                 {"val" : planned_frequency,"url" : ""},
                 {"val" : frequency,"url" : frequency_url},
                 {"val" : sector_id,"url" : sector_id_url},
@@ -1571,7 +1594,7 @@ class Inventory_Device_Status(View):
         # Get Device Type Object
         type = DeviceType.objects.get(id=device.device_type)
 
-        if device.sector_configured_on.exists():
+        if device.sector_configured_on.exists() or device.dr_configured_on.exists():
             # Fetch the headers for 'sector'
             result['data']['objects']['headers'] = get_device_status_headers(page_type, 'sector',technology.name)
 
@@ -1827,7 +1850,8 @@ class Get_Service_Status(View):
                     'last_updated': None,
                     'status': None,
                     'age': None,
-                    'last_down_time': None
+                    'last_down_time': None,
+                    'severity': None
                 }
             }
         }
@@ -1904,6 +1928,16 @@ class Get_Service_Status(View):
                                                             data_source=service_data_source_type,
             ).using(alias=inventory_device_machine_name)
 
+        # Calculate the severity of current device from all the Models
+        severity_count = self.get_status_severity(
+            device_name=inventory_device_name,
+            machine_name=inventory_device_machine_name
+        )
+
+        if severity_count:
+            self.result['data']['objects']['severity'] = severity_count
+
+
         if performance_data_query_set:
             performance_data = performance_data_query_set #.using(alias=inventory_device_machine_name)
             #log.debug(performance_data)
@@ -1922,6 +1956,71 @@ class Get_Service_Status(View):
 
         return HttpResponse(json.dumps(self.result), content_type="application/json")
 
+
+    def get_status_severity(
+        self,
+        device_name=None,
+        machine_name=None
+    ):
+        """
+        This function gets the severity count for all services & datasource combination in status tables.
+        """
+        severity_count_dict = {
+            "ok" : 0,
+            "warn" : 0,
+            "crit" : 0,
+            "unknown" : 0,
+        }
+
+        # If any of the params not exists the return
+        if not device_name or not machine_name:
+            return severity_count_dict
+
+
+        # Network Status Severity
+        network_severity = NetworkStatus.objects.filter(
+            device_name=device_name
+        ).values_list('severity', flat=True).using(alias=machine_name)
+
+        # Status Status Severity
+        status_severity = Status.objects.filter(
+            device_name=device_name
+        ).values_list('severity', flat=True).using(alias=machine_name)
+
+        # Inventory Status Severity
+        invent_severity = InventoryStatus.objects.filter(
+            device_name=device_name
+        ).values_list('severity', flat=True).using(alias=machine_name)
+
+        # Utilization Status Severity
+        utilization_severity = UtilizationStatus.objects.filter(
+            device_name=device_name
+        ).values_list('severity', flat=True).using(alias=machine_name)
+
+        # Service Status Severity
+        service_severity = ServiceStatus.objects.filter(
+            device_name=device_name
+        ).values_list('severity', flat=True).using(alias=machine_name)
+
+        total_severity_list = list()
+
+        # Concat all severity list fetched from all Model
+        total_severity_list = list(network_severity) + list(status_severity) + list(invent_severity) + list(utilization_severity) + list(service_severity)
+
+        for severity in total_severity_list:
+            if severity:
+                if severity.lower() in ['ok', 'success', 'up']:
+                    severity_count_dict['ok'] += 1
+                elif severity.lower() in ['warn', 'warning']:
+                    severity_count_dict['warn'] += 1
+                elif severity.lower() in ['crit', 'critical', 'down']:
+                    severity_count_dict['crit'] += 1
+                else:
+                    severity_count_dict['unknown'] += 1
+
+        return severity_count_dict
+
+
     def formulate_data(self, current_value, service_data_source_type):
         """
 
@@ -1935,6 +2034,33 @@ class Get_Service_Status(View):
         else:
             return current_value
 
+class ServiceDataSourceHeaders(ListView):
+    """
+    A generic class based view for the single device page ServiceDataSourceHeaders.
+    """
+    model = PerformanceService
+    template_name = 'performance/single_device_perf.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super(ServiceDataSourceHeaders, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'},
+            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
+            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
+            {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
+            {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
+            {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto'},
+            {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto'},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto'},
+            {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'}
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        return context
+
 
 class ServiceDataSourceListing(BaseDatatableView):
     """
@@ -1945,6 +2071,8 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     columns = [
         'ip_address',
+        'service_name',
+        'data_source',
         'current_value',
         'min_value',
         'max_value',
@@ -1965,16 +2093,24 @@ class ServiceDataSourceListing(BaseDatatableView):
 
     perf_data_instance = ''
 
-    def get_initial_queryset(self, parameters, machine_name):
+    parameters = {}
+
+    inventory_device_machine_name = ""
+
+    def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
+        # If params not initialized the init them by calling initialize_params
+        if not self.perf_data_instance or not self.parameters:
+            self.initialize_params()
+
         resultset = self.perf_data_instance.get_performance_data(
-            **parameters
-        ).using(alias=machine_name)
+            **self.parameters
+        ).using(alias=self.inventory_device_machine_name)
 
         columns = str(self.columns)[1:-1]
 
@@ -1983,142 +2119,16 @@ class ServiceDataSourceListing(BaseDatatableView):
         return updated_resultset
 
 
-    def prepare_results(self, qs):
-        data = []
-        
-        for item in qs:
-            datetime_obj = ''
+    def initialize_params(self):
 
-            if item['sys_timestamp']:
-                datetime_obj = datetime.datetime.fromtimestamp(item['sys_timestamp'])
-
-            current_val = eval(str(self.formula) + "(" + str(item['current_value']) + ")") \
-                          if self.formula else item['current_value']
-            
-            min_val = eval(str(self.formula) + "(" + str(item['min_value']) + ")") \
-                      if self.formula else item['min_value']
-
-            max_val = eval(str(self.formula) + "(" + str(item['max_value']) + ")") \
-                      if self.formula else item['max_value']
-
-            item.update(
-                current_value=current_val,
-                sys_timestamp=datetime_obj.strftime(
-                    '%d-%m-%Y %H:%M'
-                ) if item['sys_timestamp'] != "" else ""
-            )
-
-            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
-                item.update(
-                    min_value=min_val
-                )
-
-            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
-                item.update(
-                    max_value=max_val
-                )
-
-            if self.isHistorical:
-
-                avg_val = eval(str(self.formula) + "(" + str(item['avg_value']) + ")") \
-                          if self.formula else item['avg_value']
-
-                item.update(
-                    min_value=min_val,
-                    max_value=max_val,
-                    avg_value=avg_val
-                )
-
-            # Add data to list
-            data.append(item)
-
-        return data
-
-    def filter_queryset(self, qs, parameters, machine_name):
-        """ Filter datatable as per requested value """
-
-        sSearch = self.request.GET.get('sSearch', None)
-
-        if sSearch:
-
-            try:
-                main_resultset = self.perf_data_instance.get_performance_data(
-                    **parameters
-                ).using(alias=machine_name)
-
-                qs = main_resultset.filter(
-                    Q(max_value__icontains=sSearch)
-                    |
-                    Q(min_value__icontains=sSearch)
-                    |
-                    Q(current_value__icontains=sSearch)
-                    |
-                    Q(ip_address__icontains=sSearch)
-                    |
-                    Q(severity__icontains=sSearch)
-                    |
-                    Q(warning_threshold__icontains=sSearch)
-                    |
-                    Q(critical_threshold__icontains=sSearch)
-                ).values(*self.columns).order_by('-sys_timestamp')
-
-            except Exception, e:
-                pass
-
-        return qs
-
-    def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
-        order_columns = self.order_columns
-
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
+        This function initializes public variables of this class
         """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-
-        request = self.request
-        self.initialize(*args, **kwargs)
 
         # REQUIRED GET PARAMS
         device_id = self.kwargs['device_id']
         service = self.kwargs['service_name']
         data_source = self.kwargs['service_data_source_type']
-        self.data_source = self.kwargs['service_data_source_type']
-        
         data_for = self.request.GET.get('data_for','live')
         
         start_date = self.request.GET.get('start_date','')
@@ -2127,24 +2137,12 @@ class ServiceDataSourceListing(BaseDatatableView):
         date_format = DATE_TIME_FORMAT
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
-        inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        self.data_source = self.kwargs['service_data_source_type']
+        self.inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+
+        # Create instance of "Get_Service_Type_Performance_Data" class
         self.perf_data_instance = Get_Service_Type_Performance_Data()
-
-        try:
-            # Create Ordering columns from GET request
-            total_columns_count = int(self.request.GET.get('iColumns',len(self.columns)))
-            new_ordering_columns = list()
-            
-            for i in range(total_columns_count):
-                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
-                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
-
-            # Update new ordering columns in global variable
-            self.order_columns = new_ordering_columns
-        except Exception, e:
-            pass
-
 
         if data_for != 'live':
             self.isHistorical = True
@@ -2153,7 +2151,7 @@ class ServiceDataSourceListing(BaseDatatableView):
             self.columns.append('min_value')
             self.columns.append('max_value')
             self.columns.append('avg_value')
-            inventory_device_machine_name = 'default'
+            self.inventory_device_machine_name = 'default'
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
 
@@ -2255,7 +2253,7 @@ class ServiceDataSourceListing(BaseDatatableView):
             else:
                 self.model = Utilization
 
-        parameters = {
+        self.parameters = {
             'model': self.model,
             'start_time': start_date,
             'end_time': end_date,
@@ -2264,12 +2262,162 @@ class ServiceDataSourceListing(BaseDatatableView):
             'sds': [data_source]
         }
 
-        qs = self.get_initial_queryset(parameters, inventory_device_machine_name)
+        return True
+
+    def prepare_results(self, qs):
+        data = []
+        
+        for item in qs:
+            datetime_obj = ''
+
+            if item['sys_timestamp']:
+                datetime_obj = datetime.datetime.fromtimestamp(item['sys_timestamp'])
+
+            current_val = eval(str(self.formula) + "(" + str(item['current_value']) + ")") \
+                          if self.formula else item['current_value']
+            
+            min_val = eval(str(self.formula) + "(" + str(item['min_value']) + ")") \
+                      if self.formula else item['min_value']
+
+            max_val = eval(str(self.formula) + "(" + str(item['max_value']) + ")") \
+                      if self.formula else item['max_value']
+
+            item.update(
+                current_value=current_val,
+                sys_timestamp=datetime_obj.strftime(
+                    '%d-%m-%Y %H:%M'
+                ) if item['sys_timestamp'] != "" else ""
+            )
+
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
+                item.update(
+                    min_value=min_val
+                )
+
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
+                item.update(
+                    max_value=max_val
+                )
+
+            if self.isHistorical:
+
+                avg_val = eval(str(self.formula) + "(" + str(item['avg_value']) + ")") \
+                          if self.formula else item['avg_value']
+
+                item.update(
+                    min_value=min_val,
+                    max_value=max_val,
+                    avg_value=avg_val
+                )
+
+            # Add data to list
+            data.append(item)
+
+        return data
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+
+            try:
+                main_resultset = self.perf_data_instance.get_performance_data(
+                    **self.parameters
+                ).using(alias=self.inventory_device_machine_name)
+
+                qs = main_resultset.filter(
+                    Q(max_value__icontains=sSearch)
+                    |
+                    Q(min_value__icontains=sSearch)
+                    |
+                    Q(current_value__icontains=sSearch)
+                    |
+                    Q(ip_address__icontains=sSearch)
+                    |
+                    Q(severity__icontains=sSearch)
+                    |
+                    Q(warning_threshold__icontains=sSearch)
+                    |
+                    Q(critical_threshold__icontains=sSearch)
+                ).values(*self.columns).order_by('-sys_timestamp')
+
+            except Exception, e:
+                pass
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.order_columns
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        # If params not initialized the init them by calling initialize_params
+        if not self.perf_data_instance or not self.parameters:
+            self.initialize_params()
+
+        try:
+            # Create Ordering columns from GET request
+            total_columns_count = int(self.request.GET.get('iColumns',len(self.columns)))
+            new_ordering_columns = list()
+            
+            for i in range(total_columns_count):
+                if self.request.GET.get('mDataProp_%s' % i) not in new_ordering_columns:
+                    new_ordering_columns.append(self.request.GET.get('mDataProp_%s' % i))
+
+            # Update new ordering columns in global variable
+            self.order_columns = new_ordering_columns
+        except Exception, e:
+            pass
+
+        qs = self.get_initial_queryset()
 
         # number of records before filtering
         total_records = qs.count()
 
-        qs = self.filter_queryset(qs, parameters, inventory_device_machine_name)
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = qs.count()

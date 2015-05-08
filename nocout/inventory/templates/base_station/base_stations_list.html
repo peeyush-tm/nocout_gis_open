@@ -25,7 +25,7 @@
             <h4><i class="fa fa-table"></i>BASE STATION LISTING</h4>
         </div>
         <div id="tableContainer" class="box-body" style="overflow:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="BaseStationListingTable">
+            <table class="datatable table table-striped table-bordered table-hover" id="BaseStationListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -39,13 +39,34 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "BaseStationListingTable" %}';
+
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "Base Station Listing",
+                app_name = "inventory",
+                header_class_name = "BaseStationList",
+                data_class_name = "BaseStationListingTable",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
+                destroy = false;
+                
             /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
-            dataTableInstance.createDataTable("BaseStationListingTable", gridHeadersObj, ajax_url, destroy);
+            dataTableInstance.createDataTable(
+                "BaseStationListingTable",
+                gridHeadersObj,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
         });
     </script>
 {% endblock %}

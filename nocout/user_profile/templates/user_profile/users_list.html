@@ -27,18 +27,26 @@
     <div class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
-                <li><a href="#UserArchivedListing" id="userArchived_tab" data-toggle="tab"><span class="hidden-inline-mobile">Archived User Listing</span></a></li>
-                <li class="active"><a href="#UserListing" id="user_tab" data-toggle="tab"><span class="hidden-inline-mobile">User Listing</span></a></li>
+                <li>
+                    <a href="#UserArchivedListing" id="userArchived_tab" data-toggle="tab">
+                        <span class="hidden-inline-mobile">Archived User Listing</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="#UserListing" id="user_tab" data-toggle="tab">
+                        <span class="hidden-inline-mobile">User Listing</span>
+                    </a>
+                </li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane in active" id="UserListing">
-                    <table id="UserListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                    <table id="UserListingTable" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
                 <div class="tab-pane" id="UserArchivedListing">
-                    <table id="UserArchivedListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                    <table id="UserArchivedListingTable" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
@@ -65,11 +73,31 @@
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
-            /*Grid headers object*/
-            // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            var common_extra_param = "'download_excel': 'yes'",
+                user_title = "User Listing",
+                archived_user_title = "Archived User Listing";
+            
+            tables_info = {
+                "user_tab" : {
+                    "app_name" : "user_profile",
+                    "table_title" : user_title,
+                    "header_class_name" : "UserList",
+                    "data_class_name" : "UserListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+user_title+"', "+common_extra_param+"}"
+                },
+                "userArchived_tab" : {
+                    "app_name" : "user_profile",
+                    "table_title" : archived_user_title,
+                    "header_class_name" : "UserList",
+                    "data_class_name" : "UserArchivedListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+archived_user_title+"', "+common_extra_param+"}"
+                }
+            };
 
             /*Ajax url to get grid data*/
-            var ajax_url_user_listing = '{% url "UserListingTable" %}' + '?datatable_headers=' + encodeURIComponent('{{ datatable_headers|safe }}');
+            var ajax_url_user_listing = '{% url "UserListingTable" %}';
 
             var ajax_url_user_archived_listing = '{% url "UserArchivedListingTable" %}';
 
@@ -88,10 +116,6 @@
                 /*Trigger click event on active tab to load its data*/
                 $("#user_tab").trigger('click',true);
             }
-
-            /*Call createDataTable function of ourDataTableWidget class*/
-            // dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy = false);
-            // dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy = false);
         });
     </script>
 {% endblock %}

@@ -8,6 +8,8 @@
 var green_color = "#468847",
     orange_color = "#f0ad4e",
     red_color = "#b94a48",
+    ok_severity_color = "#30B91A",
+    unknown_severity_color = "#555555",
     green_status_array = ['ok','success','up'],
     red_status_array = ['critical'],
     down_status_array = ['down'],
@@ -17,7 +19,12 @@ var green_color = "#468847",
     val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
     time_icon = '<i class="fa fa-clock-o"></i>',
     perf_page_live_polling_call = "",
-    isLatestStatusUpdated = false;
+    isLatestStatusUpdated = false,
+    table_title = 'Service Datasource Report',
+    app_name = 'performance',
+    header_class_name = 'ServiceDataSourceHeaders',
+    data_class_name = 'ServiceDataSourceListing',
+    header_extra_param = "{'download_excel': 'yes' }";
 
 
 /**
@@ -32,40 +39,39 @@ function populateDeviceStatus_nocout(domElement,info) {
         return true;
     }
 
-    var fa_icon_class = "fa-circle",
+    var fa_icon_class = "",
         txt_color = "",
         status_html = "",
         age = info.age ? info.age : "Unknown",
         lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
-        status = info.status ? info.status.toUpperCase() : "Unknown";
+        status = info.status ? info.status.toUpperCase() : "Unknown",
+        severity_up = info.severity && info.severity['ok'] ? Number(info.severity['ok']) : 0,
+        severity_warn = info.severity && info.severity['warn'] ? Number(info.severity['warn']) : 0,
+        severity_crit = info.severity && info.severity['crit'] ? Number(info.severity['crit']) : 0,
+        severity_unknown = info.severity && info.severity['unknown'] ? Number(info.severity['unknown']) : 0;
 
-    if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = green_color;
-        fa_icon_class = "fa-check-circle";
-    } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = red_color;
-        fa_icon_class = "fa-times-circle";
-    } else if(orange_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = orange_color;
-        fa_icon_class = "fa-warning";
-    } else if(down_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = red_color;
-        fa_icon_class = "fa-warning";
-    } else {
-        // pass
-    }
+    var severity_style_obj = nocout_getSeverityColorIcon(status);
+
+    txt_color = severity_style_obj['color'] ? severity_style_obj['color'] : "";
+    fa_icon_class = severity_style_obj['icon'] ? severity_style_obj['icon'] : "fa-circle";
 
     status_html = "";
 
-    status_html += '<table id="final_status_table" class="table table-responsive table-bordered" \
+    status_html += '<table id="final_status_table" class="device_status_tbl table table-responsive table-bordered" \
                     style="background:#FFFFFF;"><tr>\
-                    <td style="color:'+txt_color+';">\
-                    <i title = "'+status+'" class="fa '+fa_icon_class+'" style="vertical-align: middle;"> </i> \
-                    <b>Current Status</b> : '+status+'\
-                    </td><td style="color:'+txt_color+';">\
-                    <b>Current Status Since</b> : '+age+'</td>\
-                    <td style="color:'+txt_color+';">\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
+                    <i title = "'+status+'" class="fa '+fa_icon_class+'" \
+                    style="vertical-align: middle;"> </i> \
+                    <b>Current Status</b> : '+status+'</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
+                    <b>Since</b> : '+age+'</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:'+txt_color+';">\
                     <b>Last Down Time</b> : '+lastDownTime+'</td>\
+                    <td title="OK" class="severity_block vAlign_middle" style="background:'+ok_severity_color+';">'+severity_up+'</td>\
+                    <td title="Warning" class="severity_block vAlign_middle" style="background:'+orange_color+';">'+severity_warn+'</td>\
+                    <td title="Critical" class="severity_block vAlign_middle" style="background:'+red_color+';">'+severity_crit+'</td>\
+                    <td title="Unknown" class="severity_block vAlign_middle" \
+                    style="background:'+unknown_severity_color+';">'+severity_unknown+'</td>\
                     </tr></table>';
 
     // Update Status Block HTML as per the device status
@@ -75,6 +81,39 @@ function populateDeviceStatus_nocout(domElement,info) {
         isLatestStatusUpdated = true;
     }
 }
+
+/**
+ * This function is used to get icon & color as per the severity
+ * @method nocout_getSeverityColorIcon
+ * @param status {String}, It contains the severity status
+ */
+
+function nocout_getSeverityColorIcon(status) {
+
+    var info_obj = {
+        "color" : "",
+        "icon" : "fa-circle",
+    };
+
+    if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = green_color;
+        info_obj["icon"] = "fa-check-circle";
+    } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = red_color;
+        info_obj["icon"] = "fa-times-circle";
+    } else if(orange_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = orange_color;
+        info_obj["icon"] = "fa-warning";
+    } else if(down_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj["color"] = red_color;
+        info_obj["icon"] = "fa-warning";
+    } else {
+        // pass
+    }
+
+    return info_obj;
+}
+
 
 /**
  * This function is used to populate the latest status for any service as per given params
@@ -87,17 +126,26 @@ function populateServiceStatus_nocout(domElement,info) {
     if(!is_perf_polling_enabled) {
         /********** Service Status Without Live Polling  - START     ********************/
         if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
-            
             var last_updated = info.last_updated ? info.last_updated : "N/A",
                 perf = info.perf ? info.perf : "N/A",
+                status = info.status ? info.status.toUpperCase() : "",
+                txt_color = "",
+                fa_icon_class = "",
                 inner_status_html = '';
 
-            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-            inner_status_html += '<tr>';
-            inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-            inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
-            inner_status_html += '</tr>';
-            inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+            var severity_style_obj = nocout_getSeverityColorIcon(status);
+
+            txt_color = severity_style_obj['color'] ? severity_style_obj['color'] : "";
+            fa_icon_class = severity_style_obj['icon'] ? severity_style_obj['icon'] : "fa-circle";
+
+            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                  <tr><td>\
+                                  <i title = "'+status+'" class="fa '+fa_icon_class+'" \
+                                  style="vertical-align: middle;"> </i> \
+                                  <b>Performance Output</b> : '+perf+'</td>\
+                                  <td><b>Updated At</b> : '+last_updated+'</td>\
+                                  </tr>\
+                                  </table><div class="clearfix"></div><div class="divide-20"></div>';
 
             $("#"+domElement).html(inner_status_html);
         } else {
@@ -142,11 +190,11 @@ function populateServiceStatus_nocout(domElement,info) {
                                 '+val_icon+' '+perf+'<br/>\
                                 '+time_icon+' '+last_updated+'</td>';
             
-            inner_status_html += '<td style="width:5%;vertical-align: middle;">\
+            inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
                                  <button class="btn btn-primary btn-xs perf_poll_now"\
-                                 title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
-                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
-                                 class="fa fa-hand-o-right"></i></button>\
+                                 title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
+                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
+                                 <i class="fa fa-flash"></i></button>\
                                  </td>';
 
             inner_status_html += '<td style="width:47.5%;">\
@@ -334,12 +382,76 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         tableheaders = headers_config;
     }
 
+    var service_name = updated_url.split("/service/")[1].split("/")[0],
+        ds_name = updated_url.split("/service/")[1].split("/")[2],
+        get_param_string = updated_url.split("?")[1].split("&"),
+        data_for = 'live',
+        get_param_data = "",
+        data_extra_param = "";
+
+    for(var i=0;i<get_param_string.length;i++) {
+        var splitted_string = get_param_string[i].split("=");
+        if(splitted_string[1] != undefined) {
+            if(i == get_param_string.length-1) {
+                get_param_data += "'"+splitted_string[0]+"':'"+splitted_string[1]+"'";
+            } else {
+                get_param_data += "'"+splitted_string[0]+"':'"+splitted_string[1]+"',";
+            }
+        }
+    }
+    
+
+    var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
+        top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
+        left_tab_content_href = $("#"+top_tab_id+" .left_tabs_container li.active a").attr("href"),
+        left_tab_id = left_tab_content_href.split("#").length > 1 ? left_tab_content_href.split("#")[1] : left_tab_content_href.split("#")[0],
+        top_tab_text = $.trim($(".top_perf_tabs > li.active a").text()),
+        left_tab_txt = $.trim($("#"+top_tab_id+" .left_tabs_container > li.active a").text()),
+        report_title = "";
+    
+    if(show_historical_on_performance) {
+        try {
+            var content_tab_text = $.trim($("#"+left_tab_id+" .inner_inner_tab li.active a").text());
+            report_title += top_tab_text+" > "+left_tab_txt+" > "+content_tab_text+"("+current_device_ip+")";
+        } catch(e) {
+            report_title += top_tab_text+" > "+left_tab_txt+"("+current_device_ip+")";
+        }
+
+    } else {
+        report_title += top_tab_text+" > "+left_tab_txt+"("+current_device_ip+")";
+    }
+
+    if(top_tab_text && left_tab_txt && current_device_ip) {
+        table_title = report_title;
+    }
+    
+    data_extra_param = "{'service_name' : '"+service_name+"','service_data_source_type' : '"+ds_name+"', 'report_title' : '"+table_title+"',";
+
+    if(show_historical_on_performance) {
+        data_extra_param += "'device_id' : '"+current_device+"',";
+    } else {
+        data_extra_param += "'device_id' : '"+current_device+"', 'data_for' : '"+data_for+"',";
+    }
+
+    if(get_param_data) {
+        data_extra_param += get_param_data+",";
+    }
+
+    data_extra_param += "'download_excel': 'yes'";
+    data_extra_param += " }";
+
     /*Call createDataTable function to create the data table for specified dom element with given data*/
     dataTableInstance.createDataTable(
         table_id,
         tableheaders,
         updated_url,
-        false
+        false,
+        table_title,
+        app_name,
+        header_class_name,
+        data_class_name,
+        header_extra_param,
+        data_extra_param
     );
 }
 
@@ -443,6 +555,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 fontSize : '12px'
             }
         },
+        // exporting:{
+        //     url:'http://localhost:8080/highcharts-export-web/'
+        // },
         tooltip: {
             // headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
             // pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
@@ -666,12 +781,16 @@ function nocout_livePollCurrentDevice(
 
             if(result.success == 1) {
 
-                var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
-                var shown_val = "",
+                var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "",
+                    shown_val = "",
                     current_val_html = "",
                     dateObj = new Date(),
-                    current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+                    month = Number(dateObj.getMonth()) + 1,
+                    date_str = dateObj.getDate()+"-"+month+"-"+dateObj.getFullYear(),
+                    time_str = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+                    current_time = date_str+" "+time_str,
                     fetched_data = true;
+
                 if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
                     
                     if(typeof fetched_val == 'object') {
@@ -724,6 +843,10 @@ function nocout_livePollCurrentDevice(
 
 
                 } else {
+                    if(!fetched_val) {
+                        fetched_val = "N/A";
+                    }
+
                     fetched_data = {
                         "val" : fetched_val,
                         "time" : current_time

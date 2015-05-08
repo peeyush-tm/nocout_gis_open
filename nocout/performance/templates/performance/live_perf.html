@@ -79,25 +79,19 @@
                     </ul>
                     <div class="tab-content" style="overflow-y:auto;">
                         <div class="tab-pane" id="{{ page_type|slugify|lower }}_wifi_block">
-                            <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" cellpadding="0"
-                                   cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover">
+                            <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <div class="tab-pane" id="{{ page_type|slugify|lower }}_pmp_block">
-                            <table id="{{ page_type|slugify|lower }}_pmp_performancelistingtable" cellpadding="0"
-                                   cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover">
+                            <table id="{{ page_type|slugify|lower }}_pmp_performancelistingtable" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <div class="tab-pane active" id="{{ page_type|slugify|lower }}_p2p_block">
-                            <table id="{{ page_type|slugify|lower }}_p2p_performancelistingtable" cellpadding="0"
-                                   cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover">
+                            <table id="{{ page_type|slugify|lower }}_p2p_performancelistingtable" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -138,22 +132,27 @@
             ///for backhaul devices
             if (ajax_url_get_parameter == "other") {
 
+                var other_bh_title = "Other Live - Backhaul",
+                    other_other_title = "Other Live - Others";
+
                 tables_info = {
                     "other_backhaul_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Other Live - Backhaul",
+                        "table_title" : other_bh_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'backhaul', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'backhaul', 'report_title' : '"+other_bh_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "[]"
                     },
                     "other_other_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Other Live - Others",
+                        "table_title" : other_other_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'other', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'other_type': 'other', 'report_title' : '"+other_other_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "[]"
                     }
                 };
 
@@ -174,54 +173,65 @@
 
             } else {
 
+                var network_wifi_title = "Network Live - WiMAX",
+                    network_ptp_title = "Network Live - PTP BH",
+                    network_pmp_title = "Network Live - PMP",
+                    customer_wifi_title = "Customer Live - WiMAX",
+                    customer_ptp_title = "Customer Live - PTP",
+                    customer_pmp_title = "Customer Live - PMP";
+
                 tables_info = {
                     "network_wifi_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Network Live - WiMAX",
+                        "table_title" : network_wifi_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'report_title' : '"+network_wifi_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "['circuit_id','customer_name']"
                     },
                     "network_ptp_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Network Live - PTP BH",
+                        "table_title" : network_ptp_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'report_title' : '"+network_ptp_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "['sector_id']"
                     },
                     "network_pmp_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Network Live - PMP",
+                        "table_title" : network_pmp_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+network_pmp_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "['circuit_id','customer_name']"
                     },
                     "customer_wifi_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Customer Live - WiMAX",
+                        "table_title" : customer_wifi_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'report_title' : '"+customer_wifi_title+"', 'download_excel': 'yes' }"
                     },
                     "customer_ptp_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Customer Live - PTP",
+                        "table_title" : customer_ptp_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'report_title' : '"+customer_ptp_title+"', 'download_excel': 'yes' }",
+                        "excluded" : "['sector_id']"
                     },
                     "customer_pmp_tab" : {
                         "app_name" : "performance",
-                        "table_title" : "Customer Live - PMP",
+                        "table_title" : customer_pmp_title,
                         "header_class_name" : "Live_Performance",
                         "data_class_name" : "LivePerformanceListing",
                         "header_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"', 'download_excel': 'yes' }",
-                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'download_excel': 'yes' }"
+                        "data_extra_param" : "{'page_type': '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+customer_pmp_title+"', 'download_excel': 'yes' }"
                     }
                 };
 

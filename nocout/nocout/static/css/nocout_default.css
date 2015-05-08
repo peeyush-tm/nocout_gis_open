@@ -289,10 +289,10 @@ iframe {
   height: 30px !important;
   line-height: 25px !important;
 }
-.global_search_container ul li:last-child {
-  margin-left: 25px;
+.global_search_container ul li #redirect_link_container {
+  /*margin-left: 25px;*/
 }
-.global_search_container ul li:last-child #redirect_link_container a {
+.global_search_container ul li #redirect_link_container a {
    margin-right: 5px;
 }
 .date_range_filter_container {
@@ -326,4 +326,41 @@ iframe {
   font-size:15px;
   font-weight:bold;
   vertical-align:middle;
+}
+
+.vAlign_middle {
+  vertical-align: middle !important;
+}
+.one_fourth_column {
+  width: 25%;
+}
+.severity_block {
+  color:#FFFFFF;
+  width:6.25%;
+  max-width: 60px;
+  min-width: 40px;
+  text-align:center;
+  font-weight:bold;
+  /*text-shadow: 1px 1px 1px #F5F5F5, 1px 1px 1px #000000;*/
+  /*box-shadow: inset 0 2px 3px rgba(255,255,255,0.3),inset 0 -2px 3px rgba(0,0,0,0.3),0 1px 1px rgba(255,255,255,0.9);*/
+}
+.device_status_tbl {
+  margin-bottom: 0px !important;
+}
+#latestStatusContainer {
+  margin-bottom: 9px;
+}
+.sidebar-menu > ul {
+  margin-top: 0px;
+  border-top: 0px none !important;
+}
+#status_container {
+  margin-bottom: 12px !important;
+}
+.control_btn_countainer {
+  margin-bottom: 0px;
+}
+/*Reduce padding for .btn class used in page control of maps*/
+.date-range .btn-group .btn {
+  padding: 5px;
 }

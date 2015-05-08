@@ -15,23 +15,15 @@
 {% block content_title %}SNMP Trap Settings Management{% endblock %}
 {% block content_description %}List of SNMP trap settings{% endblock %}
 {% block content %}
-            {% if perms.inventory.add_snmp_trap_settings %}
-            <p><a href="/snmp_trap_settings/new"><i class="fa fa-plus">&nbsp;</i> Create SNMP Trap Settings</a></p>
-            {% endif %}
+    {% if perms.inventory.add_snmp_trap_settings %}
+    <p><a href="/snmp_trap_settings/new"><i class="fa fa-plus">&nbsp;</i> Create SNMP Trap Settings</a></p>
+    {% endif %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SNMP TRAP SETTINGS LISTING</h4>
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
         </div>
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="SNMPTrapSettingsListingTable">
+            <table class="datatable table table-striped table-bordered table-hover" id="SNMPTrapSettingsListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -45,13 +37,34 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "SNMPTrapSettingsListingTable" %}';
+
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "SNMP Trap Settings Listing",
+                app_name = "scheduling_management",
+                header_class_name = "SNMPTrapSettingsList",
+                data_class_name = "SNMPTrapSettingsListingTable",
+                extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
+                destroy = false;
+                
             /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
-            dataTableInstance.createDataTable("SNMPTrapSettingsListingTable", gridHeadersObj, ajax_url, destroy);
+            dataTableInstance.createDataTable(
+                "SNMPTrapSettingsListingTable",
+                gridHeadersObj,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                extra_param,
+                extra_param
+            );
         });
     </script>
 {% endblock %}

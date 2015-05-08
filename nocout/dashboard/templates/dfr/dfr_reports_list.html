@@ -46,5 +46,14 @@
             var destroy=false;
             dataTableInstance.createDataTable("DFRReportsListingTable", gridHeadersObj, ajax_url, destroy);
         });
+
+        $("#tableContainer").delegate(".download_dfr_btn", "click", function(e) {
+            var current_attr = e.currentTarget.attributes,
+                dfr_pk = current_attr.dfr_id ? current_attr.dfr_id.value : "";
+            if(dfr_pk) {
+                var download_url = base_url+"/dashboard/dfr-processed-reports/"+dfr_pk+"/download/";
+                window.open(download_url, '_blank');
+            }
+        });
     </script>
 {% endblock %}
