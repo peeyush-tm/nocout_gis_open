@@ -1351,7 +1351,18 @@ class SingleDeviceAlertsInit(ListView):
             kwargs={'page_type': page_type, 'device_id' : device_id},
             current_app='performance'
         )
-        context['get_status_url'] = 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id)
+        # Inventory device status url
+        inventory_status_url = reverse(
+            'DeviceStatusUrl',
+            kwargs={
+                'page_type': page_type,
+                'device_id': device_id
+            },
+            current_app='performance'
+        )
+        # context['get_status_url'] = 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id)
+        context['get_status_url'] = inventory_status_url
+
         context['device_technology_name'] = device_technology_name
         context['device_alias'] = device_alias
         context['current_device_name'] = device_name

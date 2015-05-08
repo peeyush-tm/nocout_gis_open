@@ -1094,7 +1094,7 @@ function nocoutPerfLib() {
                                                         sExtends: "xls",
                                                         sButtonText: "Download Excel",
                                                         sFileName: "*.xls",
-                                                        mColumns: excel_columns
+                                                        // mColumns: excel_columns
                                                     }
                                                 ]
                                             },
