@@ -3433,7 +3433,7 @@ function devicePlottingClass_gmap() {
 			} else if(sector_tech == 'pmp') {
 				static_info = rearrangeTooltipArray(pmp_sector_toolTip_static,nearEndInfo);
 			} else {
-				// pass
+				static_info = nearEndInfo;
 			}
 			
 			/*Static Tab Content Start*/
@@ -3475,7 +3475,7 @@ function devicePlottingClass_gmap() {
 				} else if(sector_tech == 'pmp') {
 					actual_polled_info = rearrangeTooltipArray(pmp_sector_toolTip_polled,backend_polled_info);
 				} else {
-					// pass
+					actual_polled_info = backend_polled_info;
 				}
 
 				/*Polled Tab Content Start*/
@@ -3669,7 +3669,7 @@ function devicePlottingClass_gmap() {
 				} else if(ss_tech == 'pmp') {
 					actual_polled_info = rearrangeTooltipArray(pmp_ss_toolTip_polled,backend_polled_info);
 				} else {
-					// pass
+					actual_polled_info = backend_polled_info;
 				}
 
 				/*Polled Tab Content Start*/
@@ -3857,6 +3857,8 @@ function devicePlottingClass_gmap() {
 					actual_polled_params = rearrangeTooltipArray(switch_bh_toolTip_polled,backend_BH_polled_info);
 				} else if(bh_device_type == 'rici') {
 					actual_polled_params = rearrangeTooltipArray(rici_bh_toolTip_polled,backend_BH_polled_info);
+				} else {
+					actual_polled_params = backend_BH_polled_info;
 				}
 			}
 
