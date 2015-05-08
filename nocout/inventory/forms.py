@@ -986,12 +986,12 @@ class CircuitL2ReportForm(forms.ModelForm):
         exclude = ['added_on', 'user_id', 'circuit_id']
 
     def clean_file_name(self):
-        IMPORT_FILE_TYPES = ['.xls', '.xlsx', '.doc', '.docx', '.pdf']
+        IMPORT_FILE_TYPES = ['.xls', '.xlsx', '.doc', '.docx', '.pdf','.eml']
         input_excel = self.cleaned_data.get('file_name')
         extension = os.path.splitext(input_excel.name)[1]
         if not (extension in IMPORT_FILE_TYPES):
             raise ValidationError(
-                u'%s is not the supported file format. Please make sure your input file is in .xls, .xlsx, .doc, .docx, pdf file format.' % extension )
+                u'%s is not the supported file format. Please make sure your input file is in .xls, .xlsx, .doc, .docx, .pdf, .eml file format.' % extension )
         else:
             return input_excel
 

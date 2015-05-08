@@ -24,7 +24,7 @@ def get_datatable_response(payload):
                                     'rows': u'LivePerformanceListing',
                                     'app': u'performance',
                                     'object_id': 3L,
-                                    'headers': u'Live_Performance',
+                                    'headers': u'LivePerformance',
                                     'rows_data': {
                                         'data_tab': 'P2P',
                                         'page_type': 'customer',
@@ -39,7 +39,7 @@ def get_datatable_response(payload):
                                 }
 
         URL:
-           - "/downloader/datatable/?app=performance&headers=Live_Performance&rows=LivePerformanceListing&
+           - "/downloader/datatable/?app=performance&headers=LivePerformance&rows=LivePerformanceListing&
                headers_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }&
                rows_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }"
 

@@ -38,7 +38,7 @@ class DataTableDownloader(View):
         Parameters:
             - app (unicode) - name of app for e.g. performance
             - rows (unicode) - name of datatable listing class for e.g. LivePerformanceListing
-            - headers (unicode) - name datatable headers class for e.g. Live_Performance
+            - headers (unicode) - name datatable headers class for e.g. LivePerformance
             - headers_data (dict) - dictionary of GET/POST parameters passed in datatable headers view as request
                                     for e.g.
                                     {
@@ -54,7 +54,7 @@ class DataTableDownloader(View):
                                     }
 
         URL:
-           - "/downloader/datatable/?app=performance&headers=Live_Performance&rows=LivePerformanceListing&
+           - "/downloader/datatable/?app=performance&headers=LivePerformance&rows=LivePerformanceListing&
                headers_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }&
                rows_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }"
 
