@@ -9,6 +9,8 @@ import os
 import datetime
 import time
 
+from operator import itemgetter
+
 from django.utils.dateformat import format
 
 from multiprocessing import Process, Queue
@@ -734,19 +736,19 @@ def create_perf_chart_img(device_name, service, data_source):
     # create http request for getting rows data (for accessing list view classes)
     request_object = HttpRequest()
 
-    # import 'Get_Service_Type_Performance_Data' from performance views
-    from performance.views import Get_Service_Type_Performance_Data
+    # import 'GetServiceTypePerformanceData' from performance views
+    from performance.views import GetServiceTypePerformanceData
 
-    # Create instance of "Get_Service_Type_Performance_Data"
-    perf_data_class = Get_Service_Type_Performance_Data()
+    # Create instance of "GetServiceTypePerformanceData"
+    perf_data_class = GetServiceTypePerformanceData()
 
-    # Attach request HTTP object with 'Get_Service_Type_Performance_Data' instance
+    # Attach request HTTP object with 'GetServiceTypePerformanceData' instance
     perf_data_class.request = request_object
     
-    # Attach 'kwargs' with 'Get_Service_Type_Performance_Data' instance
+    # Attach 'kwargs' with 'GetServiceTypePerformanceData' instance
     perf_data_class.kwargs = kwargs_dict
 
-    # Make 'GET' request to 'Get_Service_Type_Performance_Data' class
+    # Make 'GET' request to 'GetServiceTypePerformanceData' class
     fetched_result = perf_data_class.get(request_object, service, data_source, device_name)
 
     # convert the fetched content to json format
@@ -821,3 +823,41 @@ def create_perf_chart_img(device_name, service, data_source):
     }
 
     return result
+
+def dataTableOrdering(self, qs, order_columns):
+    """ 
+     Get parameters from the request and prepare order by clause
+    :param qs:
+    """
+    request = self.request
+    # Number of columns that are used in sorting
+    try:
+        i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+    except Exception:
+        i_sorting_cols = 0
+
+    order = []
+
+    for i in range(i_sorting_cols):
+        # sorting column
+        try:
+            i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+        except Exception:
+            i_sort_col = 0
+        # sorting order
+        s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+        sdir = '-' if s_sort_dir == 'desc' else ''
+
+        sortcol = order_columns[i_sort_col]
+        if isinstance(sortcol, list):
+            for sc in sortcol:
+                order.append('%s%s' % (sdir, sc))
+        else:
+            order.append('%s%s' % (sdir, sortcol))
+    if order:
+        key_name = order[0][1:] if '-' in order[0] else order[0]
+        sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse=True if '-' in order[0] else False)
+        return sorted_device_data
+
+    return qs

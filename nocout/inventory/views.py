@@ -1385,6 +1385,9 @@ class L2ReportListingTable(BaseDatatableView):
         # DOC icon for excel file
         doc_icon = static("img/ms-office-icons/doc_icon.png")
 
+        # EML icon for excel file
+        eml_icon = static("img/ms-office-icons/eml_icon.png")
+
         for dct in qs:
 
             file_type_icon = ''
@@ -1403,6 +1406,8 @@ class L2ReportListingTable(BaseDatatableView):
                 file_type_icon = doc_icon
             elif file_type in ['pdf']:
                 file_type_icon = pdf_icon
+            elif file_type in ['eml']:
+                file_type_icon = eml_icon
             else:
                 file_type_icon = excel_icon
 

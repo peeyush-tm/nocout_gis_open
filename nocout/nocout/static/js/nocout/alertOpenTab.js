@@ -85,6 +85,14 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         header_extra_param = tables_info[anchor_id].header_extra_param ? encodeURIComponent(tables_info[anchor_id].header_extra_param) : false,
                         data_extra_param = tables_info[anchor_id].data_extra_param ? encodeURIComponent(tables_info[anchor_id].data_extra_param) : false,
                         excluded_columns = tables_info[anchor_id].excluded ? encodeURIComponent(tables_info[anchor_id].excluded) : false;
+
+                    // SET/RESET server side paging flag
+                    if(tables_info[anchor_id].serverside_rendering != undefined) {
+                        server_side_rendering = tables_info[anchor_id].serverside_rendering;
+                    } else {
+                        server_side_rendering = true;
+                    }
+
                     /*Call createDataTable function to create the data table for specified dom element with given data*/
                     dataTableInstance.createDataTable(
                         table_id,
