@@ -1,38 +1,62 @@
-import json
-import pickle
+"""
+===============================================================================
+Module contains views and related functionality specific to 'user_profile' app.
+===============================================================================
 
+Location:
+* /nocout_gis/nocout/user_profile/views.py
+
+List of constructs:
+=======
+Classes
+=======
+* UserList
+* UserListingTable
+* UserArchivedListingTable
+* UserDetail
+* UserCreate
+* UserUpdate
+* UserDelete
+* CurrentUserProfileUpdate
+
+=======
+Methods
+=======
+* organisation_user_list
+* organisation_user_select
+* change_password
+"""
+
+import json
+from collections import OrderedDict
+from django.utils import timezone
 from django.contrib.auth.models import Group
-# from django.db.models.query import ValuesQuerySet
+from session_management.models import Visitor
+from user_profile.models import UserProfile, UserPasswordRecord
+from forms import UserForm, UserPasswordForm
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin       # , BaseUpdateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
+from django.views.decorators.csrf import csrf_exempt
+from django.http.response import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import reverse_lazy
 from mptt.forms import TreeNodeChoiceField
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib import auth
 from django.contrib.sessions.models import Session
-from django.utils import timezone
-from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from user_profile.models import UserProfile, UserPasswordRecord                                # , Roles
-# from organization.models import Organization
-from forms import UserForm, UserPasswordForm
-from django.http.response import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.hashers import make_password
-from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from nocout.utils.util import project_group_role_dict_mapper, convert_utc_to_local_timezone    # , DictDiffer
 from django.template.loader import render_to_string
-# from django.db.models import Q
+from nocout.utils.jquery_datatable_generation import Datatable_Generation
+from nocout.utils.util import project_group_role_dict_mapper, convert_utc_to_local_timezone
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 from nocout.mixins.generics import FormRequestMixin
-from session_management.models import Visitor
 
 
 class UserList(PermissionsRequiredMixin, ListView):
     """
-    View to show listing of users.
+    View to show headers of users datatable.
         URL - 'http://127.0.0.1:8000/user'
     """
     model = UserProfile
@@ -69,7 +93,8 @@ class UserListingTable(PermissionsRequiredMixin,
                        DatatableSearchMixin,
                        BaseDatatableView):
     """
-    Fetch data to be used in datatable.
+    View to show list of users in datatable.
+        URL - 'http://127.0.0.1:8000/user/#UserListing'
     """
     model = UserProfile
     required_permissions = ('user_profile.view_userprofile',)
@@ -93,7 +118,7 @@ class UserListingTable(PermissionsRequiredMixin,
 
     def prepare_results(self, qs):
         """
-        Preparing the final result after fetching from the data base to render on the data table.
+        Preparing the final result after fetching from the database to render on the datatable.
         """
         # get json_data from qs which is returned from get_initial_queryset.
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -130,7 +155,8 @@ class UserListingTable(PermissionsRequiredMixin,
 
 class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
     """
-    Fetch data to be used in datatable.
+    View to show list of deleted users in datatable.
+        URL - 'http://127.0.0.1:8000/user/#UserArchivedListing'
     """
 
     model = UserProfile
@@ -186,7 +212,7 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
 
 class UserDetail(PermissionsRequiredMixin, DetailView):
     """
-    Show details of single user.
+    Show detail of the single user instance.
     """
     model = UserProfile
     required_permissions = ('user_profile.view_userprofile',)
@@ -202,7 +228,7 @@ class UserDetail(PermissionsRequiredMixin, DetailView):
 
 class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
-    Creating a new user instance, with a response rendered by template.
+    Create a new user instance, with a response rendered by template.
     """
     template_name = 'user_profile/user_new.html'
     model = UserProfile
@@ -239,7 +265,7 @@ class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
 
 class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
-    Updating a new user instance, with a response rendered by template.
+    Update a new user instance, with a response rendered by template.
     """
     template_name = 'user_profile/user_update.html'
     model = UserProfile
@@ -294,7 +320,7 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
 class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
-    Delete user instance.
+    Delete a single user instance.
     """
     model = UserProfile
     template_name = 'user_profile/user_delete.html'
@@ -323,7 +349,7 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):
     """
-    Updating the current logged in user profile.
+    Update the current logged in user profile.
     """
     model = UserProfile
     template_name = 'user_profile/user_myprofile.html'
@@ -379,7 +405,7 @@ def organisation_user_list(request):
 
 def organisation_user_select(request):
     """
-    Return the user if parent is selected while creation and updation of the user-profile.
+    Return the user if parent is selected while creation and updation of the user profile.
     """
     parent_id = request.GET['parent_id']
     parent_select = UserProfile.objects.get(id=parent_id)
@@ -394,17 +420,6 @@ def change_password(request):
     """
     The Action of the Dialog box appears on the screen.
     If the action is continue then the user get prompt to set new password.
-
-    :param request:
-    :return json
-            {
-                "success": 1,  # 0 - fail, 1 - success, 2 - exception
-                "message": message,
-                "data": {
-                    "meta": {},
-                    "objects": {'url': '', 'reason': ''},
-                }
-            }
     """
     # Get the url from request.POST
     url = request.POST.get('url', '/home/')
@@ -441,25 +456,24 @@ def change_password(request):
             # Save the user.
             user.save()
 
-            # Adding the user log for the password change
+            # Adding the user log for the password change.
             UserPasswordRecord.objects.create(user_id=user.id, password_used=user.password)
 
-            success = 1  # 0 - fail, 1 - success, 2 - exception
+            success = 1                     # 0 - fail, 1 - success, 2 - exception
             message = "Success/Fail message.",
             object_values = dict(url=url)
 
         else:
-            success = 0  # 0 - fail, 1 - success, 2 - exception
+            success = 0                     # 0 - fail, 1 - success, 2 - exception
             message = "Invalid Password."
-            object_values = dict(url='/login/',
-                                 reason="Ignore dictionary common words and previously used password.", )
+            object_values = dict(url='/login/', reason="Ignore dictionary common words and previously used password.")
     else:
-        success = 1  # 0 - fail, 1 - success, 2 - exception
+        success = 1                         # 0 - fail, 1 - success, 2 - exception
         message = "Success/Fail message."
         object_values = dict(url='/login/')
 
     result = {
-        "success": success,  # 0 - fail, 1 - success, 2 - exception
+        "success": success,                 # 0 - fail, 1 - success, 2 - exception
         "message": message,
         "data": {
             "meta": {},

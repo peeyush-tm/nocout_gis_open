@@ -1,15 +1,31 @@
+"""
+=============================================================================
+Module contains database models and functions specific to 'user_profile' app.
+=============================================================================
+
+Location:
+* /nocout_gis/nocout/user_profile/models.py
+
+List of constructs:
+=======
+Classes
+=======
+* UserProfile
+* Roles
+* UserPasswordRecord
+"""
+
 from django.db import models
-from django.contrib.auth.models import User, UserManager
 from django.db.models.signals import post_save
+from django.contrib.auth.models import User
 from mptt.models import MPTTModel, TreeForeignKey
 from organization.models import Organization
 import signals as user_signals
 
 
-# user profile class
 class UserProfile(MPTTModel, User):
     """
-    user Profile columns declared
+    User Profile columns declared
     """
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
     role = models.ManyToManyField('Roles')
@@ -24,7 +40,7 @@ class UserProfile(MPTTModel, User):
     user_invalid_attempt = models.IntegerField('Invalid attempt', null=True, blank=True, default=0)
     user_invalid_attempt_at = models.DateTimeField('Invalid attemp at', null=True, blank=False)
 
-# user roles class
+
 class Roles(models.Model):
     """
     User Roles columns declared.
@@ -35,14 +51,16 @@ class Roles(models.Model):
     def __unicode__(self):
         return self.role_description
 
+
 class UserPasswordRecord(models.Model):
     """
-    To keep the record of the password used by user.
+    Keep the record of the passwords used by user.
     """
     user_id = models.IntegerField('User Id', null=True, blank=True)
     password_used = models.CharField('Password', max_length=100, null=True, blank=True)
     password_used_on = models.DateTimeField('Password Used On', auto_now_add=True)
 
+
 # ************************************ USER PROFILE SIGNALS ************************************
-# set site instance 'is_device_change' bit on device type service modified or created
+# Set site instance 'is_device_change' bit on device type service modified or created
 post_save.connect(user_signals.assign_default_thematics_to_user, sender=UserProfile)
