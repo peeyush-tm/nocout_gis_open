@@ -283,15 +283,26 @@
 
         $(document).ready(function (e) {
 
-            var statusUrl = "{{ get_status_url }}" ? base_url+"/"+"{{ get_status_url }}"+"/" : "",
-                serviceUrl = "{{ get_services_url }}" ? base_url+"/"+"{{ get_services_url }}" : "",
-                inventory_url = "{{ inventory_page_url }}" ? base_url+""+"{{ inventory_page_url }}" : "",
-                alert_url = "{{ alert_page_url }}" ? base_url+""+"{{ alert_page_url }}" : "",
+            var device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
+                get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "",
+                inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "",
+                alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "",
                 page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer",
-                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
+                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0,
+                current_device_technology = "",
+                statusUrl = "",
+                serviceUrl = "",
+                inventory_url = "",
+                alert_url = "";
+
+            statusUrl = getCompleteUrl(device_status_url);
+            serviceUrl = getCompleteUrl(get_services_url);
+            inventory_url = getCompleteUrl(inventory_page_url);
+            alert_url = getCompleteUrl(alert_page_url);
 
             current_device = "{{ device.id }}";
             device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
+            current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
             current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
@@ -307,8 +318,6 @@
             if(is_util_tab) {
                 $.cookie('parent_tab_id', '', {path: '/', secure: true});
             }
-
-            var current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
 
 
             // Show/hide live polling button & chart container
@@ -338,7 +347,7 @@
             // Create nocoutPerfLib instance to access its functions
             perfInstance = new nocoutPerfLib();
 
-            perfInstance.togglePerfPageElements(page_type_val, current_device_technology)
+            perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
 
             /*To initialize date range picker*/
             perfInstance.initDateRangePicker(dateRangePicker_domId);
@@ -357,15 +366,6 @@
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
 
-                // if(show_historical_on_performance) {
-                //     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container ul.inner_inner_tab li.active a'),
-                //         service_id = active_inner_tab.attr("id").slice(0, -4),
-                //         get_service_data_url = active_inner_tab.attr("url");
-                // } else {
-                //     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                //         service_id = active_inner_tab.attr("id").slice(0, -4),
-                //         get_service_data_url = active_inner_tab.attr("url");
-                // }
                 var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
                     top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
                 
@@ -402,7 +402,6 @@
 
                 if(get_service_data_url && service_id && current_device) {
                     perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
-                    // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
                 }
             } else {
                 alert("Select Start & End Date");

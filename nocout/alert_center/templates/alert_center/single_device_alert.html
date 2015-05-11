@@ -222,7 +222,8 @@
         $(document).ready(function (e) {
 
             var current_device = "{{ current_device_name }}",
-                statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
+                device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
+                statusUrl = "",
                 service_status_url = "",
                 page_type = "{{ page_type }}",
                 inventory_url = "{{ inventory_page_url }}",
@@ -238,6 +239,8 @@
             if(location_array.length > 1) {
                 window.location.href = location_array[0];
             }
+
+            statusUrl = getCompleteUrl(device_status_url);
 
             current_device_id = "{{ current_device_id }}";
 

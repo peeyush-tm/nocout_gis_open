@@ -116,6 +116,46 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     else:
         return service_status_data
 
+class MultiQuerySet(object):
+    def __init__(self, *args, **kwargs):
+        self.querysets = args
+        self._count = None
+    
+    def _clone(self):
+        querysets = [qs._clone() for qs in self.querysets]
+        return MultiQuerySet(*querysets)
+    
+    def __repr__(self):
+        return repr(list(self.querysets))
+                
+    def count(self):
+        if not self._count:
+            self._count = sum([qs.count() for qs in self.querysets])
+        return self._count
+    
+    def __len__(self):
+        return self.count()
+    
+    def __iter__(self):
+        for qs in self.querysets:
+            for item in qs.all():
+                yield item
+        
+    def __getitem__(self, item):
+        indices = (offset, stop, step) = item.indices(self.count())
+        items = []
+        total_len = stop - offset
+        for qs in self.querysets:
+            if len(qs) < offset:
+                offset -= len(qs)
+            else:
+                items += list(qs[offset:stop])
+                if len(items) >= total_len:
+                    return items
+                else:
+                    offset = 0
+                    stop = total_len - len(items)
+                    continue
 
 def get_service_status_results(user_devices, model, service_name, data_source):
 
@@ -131,6 +171,7 @@ def get_service_status_results(user_devices, model, service_name, data_source):
     multi_proc = getattr(settings, 'MULTI_PROCESSING_ENABLED', False)
 
     service_status_results = []
+    multi_qyery_list = []
     if multi_proc:
         queue = Queue()
         jobs = [
@@ -156,23 +197,16 @@ def get_service_status_results(user_devices, model, service_name, data_source):
                 break
     else:
         for machine, machine_device_list in machine_dict.items():
-            if service_status_results:
-                service_status_results |= get_service_status_data(False,
-                                                                  machine_device_list,
-                                                                  machine=machine,
-                                                                  model=model,
-                                                                  service_name=service_name,
-                                                                  data_source=data_source
-                )
-            else:
-                service_status_results = get_service_status_data(False,
-                                                                  machine_device_list,
-                                                                  machine=machine,
-                                                                  model=model,
-                                                                  service_name=service_name,
-                                                                  data_source=data_source
-                )
-
+            service_status_results_temp = get_service_status_data(False,
+                                                              machine_device_list,
+                                                              machine=machine,
+                                                              model=model,
+                                                              service_name=service_name,
+                                                              data_source=data_source
+                                                            )
+            multi_qyery_list.append(service_status_results_temp)
+        
+        service_status_results = MultiQuerySet(*multi_qyery_list)
     return service_status_results
 
 
