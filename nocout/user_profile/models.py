@@ -13,6 +13,11 @@ Classes
 * UserProfile
 * Roles
 * UserPasswordRecord
+
+=======
+Signals
+=======
+* Signal for setting site instance 'is_device_change' bit on modification and creation in device type 'service' field.
 """
 
 from django.db import models
@@ -25,7 +30,7 @@ import signals as user_signals
 
 class UserProfile(MPTTModel, User):
     """
-    User Profile columns declared
+    Model for creating user profile by extending django auth 'User' class.
     """
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
     role = models.ManyToManyField('Roles')
@@ -43,7 +48,7 @@ class UserProfile(MPTTModel, User):
 
 class Roles(models.Model):
     """
-    User Roles columns declared.
+    Model for defining user roles.
     """
     role_name = models.CharField('Role Name', max_length=100, null=True, blank=True)
     role_description = models.CharField('Role Description', max_length=250, null=True, blank=True)
@@ -54,7 +59,7 @@ class Roles(models.Model):
 
 class UserPasswordRecord(models.Model):
     """
-    Keep the record of the passwords used by user.
+    Model for keeping the record of the passwords used by user.
     """
     user_id = models.IntegerField('User Id', null=True, blank=True)
     password_used = models.CharField('Password', max_length=100, null=True, blank=True)
@@ -62,5 +67,6 @@ class UserPasswordRecord(models.Model):
 
 
 # ************************************ USER PROFILE SIGNALS ************************************
-# Set site instance 'is_device_change' bit on device type service modified or created
+
+# Set site instance 'is_device_change' bit on device type 'service' field modification or creation.
 post_save.connect(user_signals.assign_default_thematics_to_user, sender=UserProfile)

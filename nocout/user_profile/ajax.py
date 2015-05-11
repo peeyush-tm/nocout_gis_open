@@ -1,38 +1,60 @@
+"""
+==============================================================
+Module contains ajax functions specific to 'user_profile' app.
+==============================================================
+
+Location:
+* /nocout_gis/nocout/device/api.py
+
+List of constructs:
+=========
+Functions
+=========
+* user_soft_delete_form
+* user_soft_delete
+* user_add
+* user_hard_delete
+"""
+
 import json
 from dajaxice.decorators import dajaxice_register
 from django.db.models import Max
 from models import UserProfile
-from collections import namedtuple
-# generate content for soft delete popup form
-from nocout.settings import GISADMIN, ISOLATED_NODE
+from nocout.settings import ISOLATED_NODE
 
 
 @dajaxice_register(method='GET')
 def user_soft_delete_form(request, value, datatable_headers):
     """
-    Generate User soft delete form.
+    Generate form on user soft deletion request.
 
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        value (int): Selected user ID.
+        datatable_headers (unicode): Datatable headers.
+
+    Returns:
+        result (str): String containing list of dictionaries
+                       for e.g. {
+                                    "result": {
+                                        "message": "Successfully render form.",
+                                        "data": {
+                                            "meta": "",
+                                            "objects": {
+                                                "name": "user11",
+                                                "eligible": [],
+                                                "datatable_headers": "",
+                                                "form_title": "user",
+                                                "form_type": "user",
+                                                "id": 61
+                                            }
+                                        },
+                                        "success": 1
+                                    }
+                                }
     """
-    # result: data dictionary send in ajax response
-    #{
-    #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
-    #  "message": "Success/Fail message.",
-    #  "data": {
-    #     "meta": {},
-    #     "objects": {
-    #          "user_name": <name>,
-    #          "child_users": [
-    #                   {
-    #                       "id': <id>,
-    #                       "value": <value>,
-    #                   },
-    #                   {
-    #                       "id': <id>,
-    #                       "value": <value>,
-    #                   }
-    #           ]
-    #}
     user = UserProfile.objects.get(id=value)
+
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -45,40 +67,73 @@ def user_soft_delete_form(request, value, datatable_headers):
     result['data']['objects']['name'] = user.username
     result['data']['objects']['datatable_headers'] = datatable_headers
 
-    # child_users: these are the users which are associated with
-    # the user which needs to be deleted in parent-child relationship
-
+    # List of eligible parents.
     result['data']['objects']['eligible'] = []
-    if user.get_children():
-        user_parent=user.parent
+
+    # Get immediate children of the user.
+    user_children = user.get_children()
+
+    if user_children:
+        user_parent = user.parent
 
         if user_parent:
-            user_childrens = user_parent.get_children()
-            user_childrens = set(user_childrens) - set([user])
+            # Get immediate children of the user's parent.
+            user_parent_children = user_parent.get_children()
 
-            if len(user_childrens) > 0:
+            # Exclude 'user' from list of eligible parent.
+            user_parent_children = set(user_parent_children) - {user}
 
-                for e_user in user_childrens:
+            if len(user_parent_children) > 0:
+                for e_user in user_parent_children:
                     e_dict = dict()
                     e_dict['key'] = e_user.id
                     e_dict['value'] = e_user.username
                     result['data']['objects']['eligible'].append(e_dict)
             else:
-                #if user_childrens are empty then the user`s parent will be assigned the user`s children
-                result['data']['objects']['eligible'].append({ 'key':user_parent.id , 'value': user_parent.username })
+                # If 'user_parent_children' is empty then the user's parent will
+                # be assigned as a default parent to the user's children.
+                result['data']['objects']['eligible'].append({'key': user_parent.id, 'value': user_parent.username})
 
     result['success'] = 1
     result['message'] = "Successfully render form."
-    return json.dumps({'result': result })
+
+    return json.dumps({'result': result})
+
 
 @dajaxice_register(method='GET')
 def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlistingtable, userarchivelisting):
     """
-    soft delete user i.e. not deleting user from database, it just set
-    it's is_deleted field value to 1 & remove it's relationship with any other user
-    & make some other user parent of associated user
+    Soft delete user i.e. not deleting user from database, it just set
+    it's 'is_deleted' bit to 1, remove it's relationship with any other user
+    & make some other user parent of associated user's.
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        user_id (unicode): Selected user ID.
+        new_parent_id (unicode): New parent/manager for child user's of user which need to be deleted.
+        userlistingtable (int): User's listing datatable url.
+        userarchivelisting (unicode): Archived user's listing datatable url.
+
+    Returns:
+        result (str): String containing list of dictionaries
+                       for e.g. {
+                                    "result": {
+                                        "message": "Successfully deleted.",
+                                        "data": {
+                                            "meta": "",
+                                            "objects": {
+                                                "user_name": "vasu",
+                                                "user_id": "11",
+                                                "userlistingtable": "/user/userlistingtable/",
+                                                "datatable_headers": "",
+                                                "userarchivelisting": "/user/userarchivedlistingtable/"
+                                            }
+                                        },
+                                        "success": 1
+                                    }
+                                }
     """
-    user = UserProfile.objects.get(id= user_id)
+    user = UserProfile.objects.get(id=user_id)
 
     result = dict()
     result['data'] = {}
@@ -93,53 +148,90 @@ def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlis
     result['data']['objects']['userarchivelisting'] = userarchivelisting
 
     if new_parent_id:
-        new_parent = UserProfile.objects.get(id= new_parent_id)
-        user_childrens= user.get_children()
+        new_parent = UserProfile.objects.get(id=new_parent_id)
 
-        for user_children in user_childrens:
-            user_children.move_to(new_parent)
+        # Get immediate children of the user.
+        user_children = user.get_children()
+
+        for user_child in user_children:
+            user_child.move_to(new_parent)
 
     max_tree_id = UserProfile.objects.aggregate(Max('tree_id'))['tree_id__max']
-    user.tree_id= max_tree_id+ 1
+    user.tree_id = max_tree_id + 1
     user.is_deleted = 1
-    user.lft= ISOLATED_NODE.lft
-    user.rght= ISOLATED_NODE.rght
-    user.level= ISOLATED_NODE.level
-    user.parent= None
+    user.lft = ISOLATED_NODE.lft
+    user.rght = ISOLATED_NODE.rght
+    user.level = ISOLATED_NODE.level
+    user.parent = None
     user.save()
+
+    # Rebuilds whole tree in database using `parent` link.
     UserProfile._default_manager.rebuild()
 
     result['success'] = 1
-    result['message'] = "Successfully deleted."
-    return json.dumps({ 'result': result })
+    result['message'] = "User successfully deleted."
+
+    return json.dumps({'result': result})
+
 
 @dajaxice_register(method='GET')
-def user_add( request, user_id):
+def user_add(request, user_id):
     """
-    To re add the user from the archive listing
+    Re-add user to user's inventory from archived inventory.
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        user_id (int): Selected user ID.
+
+    Returns:
+        result (str): String containing list of dictionaries
+                       for e.g. {
+                                    "result": {
+                                        "message": "User Successfully Added.",
+                                        "data": {
+                                            "meta": "",
+                                            "objects": {}
+                                        },
+                                        "success": 1
+                                    }
+                                }
     """
-    UserProfile.objects.filter(id= user_id).update( **{'is_deleted':0 })
+    UserProfile.objects.filter(id=user_id).update(**{'is_deleted': 0})
+
     result = dict()
     result['data'] = {}
     result['success'] = 1
-    result['message'] = "User Successfully Added."
+    result['message'] = "User successfully re-added."
     result['data']['meta'] = ''
     result['data']['objects'] = {}
-    return json.dumps({ 'result': result })
+
+    return json.dumps({'result': result})
 
 
 @dajaxice_register(method='GET')
 def user_hard_delete(request, user_id):
     """
-    To Hard delete the user from the database.
+    Delete user from user inventory. This action permanently delete user from database.
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        user_id (int): Selected user ID.
+
+    Returns:
+        result (str): String containing list of dictionaries
+                       for e.g. {
+                                    "result": {
+                                        "message": "User Successfully Deleted.",
+                                        "data": {},
+                                        "success": 1
+                                    }
+                                }
     """
-    UserProfile.objects.filter(id= user_id).delete()
+    UserProfile.objects.filter(id=user_id).delete()
+
     result = dict()
     result['data'] = {}
     result['success'] = 1
-    result['message'] = "User Successfully Deleted."
-    return json.dumps({ 'result': result })
+    result['message'] = "User successfully deleted."
 
-
-
-
+    return json.dumps({'result': result})

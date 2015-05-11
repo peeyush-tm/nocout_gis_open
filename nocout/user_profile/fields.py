@@ -22,8 +22,8 @@ class PasswordField(CharField):
     Provide password field for custom validations.
 
     Validation Types:
-      - Minimum Length
-      - Complexity
+      1. Minimum Length
+      2. Complexity
     """
     default_validators = [validate_length, complexity]
 

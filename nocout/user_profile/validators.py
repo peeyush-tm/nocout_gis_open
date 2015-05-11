@@ -1,12 +1,39 @@
 """
-Provide custom validations for password input.
+======================================================
+Module contains custom validations for password input.
+======================================================
+
+Location:
+* /nocout_gis/nocout/user_profile/validators.py
+
+List of constructs:
+=======
+Classes
+=======
+* UserList
+* UserListingTable
+* UserArchivedListingTable
+* UserDetail
+* UserCreate
+* UserUpdate
+* UserDelete
+* CurrentUserProfileUpdate
+
+=======
+Methods
+=======
+* organisation_user_list
+* organisation_user_select
+* change_password
 """
+
 
 from __future__ import division
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 import string
+
 
 # Minimum length specified for passwords.
 PASSWORD_MIN_LENGTH = getattr(settings, "PASSWORD_MIN_LENGTH", 6)
@@ -22,13 +49,13 @@ class LengthValidator(object):
     Take two parameters during initialization.
     For e.g., len_obj = LengthValidator(2, 8)
     Following are the parameters passed during initialization:
-    1. min_length: Minimum length for string.
-    2. max_length: Maximum length for string.
+    1. min_length - Minimum length for string.
+    2. max_length - Maximum length for string.
 
     Take one parameter on calling object as a function.
     For e.g., len_obj('pass1234')
     Following are the parameters passed during function call operator:
-    1. value: String which needs to be validated.
+    1. value - String which needs to be validated.
     """
     message = _("Invalid Length (%s)")
     code = "length"
@@ -59,12 +86,12 @@ class ComplexityValidator(object):
     Take one parameter during initialization.
     For e.g., com_obj = ComplexityValidator({'UPPER': 1, 'LOWER': 1, 'DIGIT': 1})
     Following are the parameters passed during initialization:
-    1. complexities: Dictionary object containing complexity level info.
+    1. complexities - Dictionary object containing complexity level info.
 
     Take one parameter on calling object as a function.
     For e.g., com_obj('pass1234')
     Following are the parameters passed during function call operator:
-    1. value: String which needs to be validated.
+    1. value - String which needs to be validated.
     """
     message = _("Password must  contain (%s)")
     code = "complexity"
