@@ -1,4 +1,17 @@
-import datetime
+"""
+================================================================================
+Module contains database models and functions specific to 'activity_stream' app.
+================================================================================
+
+Location:
+* /nocout_gis/nocout/activity_stream/models.py
+
+List of constructs:
+=======
+Classes
+=======
+* UserAction
+"""
 
 from django.db import models
 

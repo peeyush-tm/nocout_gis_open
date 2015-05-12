@@ -24,7 +24,7 @@ from user_profile.models import UserProfile, UserPasswordRecord
 
 class UserForm(forms.ModelForm):
     """
-    User Form required to create, update and update my profile of the user.
+    Form required to create, update and update my profile of the user.
     """
     first_name = forms.CharField(required=True)
     email = forms.CharField(label='Email', required=True)

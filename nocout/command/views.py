@@ -1,14 +1,30 @@
+"""
+==========================================================================
+Module contains views and related functionality specific to 'command' app.
+==========================================================================
+
+Location:
+* /nocout_gis/nocout/command/views.py
+
+List of constructs:
+=======
+Classes
+=======
+* CommandList
+* CommandListingTable
+* CommandDetail
+* CommandCreate
+* CommandUpdate
+* CommandDelete
+"""
+
 import json
-from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import Command
-from .forms import CommandForm
-from nocout.utils.util import DictDiffer
-from django.db.models import Q
+from forms import CommandForm
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
@@ -16,9 +32,9 @@ from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 class CommandList(PermissionsRequiredMixin, ListView):
     """
-    Generic Class based View to List the Commands.
+    View to show headers of users datatable.
+        URL - 'http://127.0.0.1:8000/command'
     """
-
     model = Command
     template_name = 'command/commands_list.html'
     required_permissions = ('command.view_command',)
@@ -35,15 +51,15 @@ class CommandList(PermissionsRequiredMixin, ListView):
             {'mData': 'command_line', 'sTitle': 'Command Line', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class CommandListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
-    A generic class based view for the command data table rendering.
-
+    View to show list of commands in datatable.
+        URL - 'http://127.0.0.1:8000/command'
     """
     model = Command
     required_permissions = ('command.view_command',)
@@ -53,12 +69,9 @@ class CommandListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, Datatab
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
-
-        :param qs:
-        :return qs
         """
 
-        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
             dct.update(actions='<a href="/command/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/command/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -67,8 +80,7 @@ class CommandListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, Datatab
 
 class CommandDetail(PermissionsRequiredMixin, DetailView):
     """
-    Class Based Detail View
-
+    Show details of the single command instance.
     """
     model = Command
     required_permissions = ('command.view_command',)
@@ -77,8 +89,7 @@ class CommandDetail(PermissionsRequiredMixin, DetailView):
 
 class CommandCreate(PermissionsRequiredMixin, CreateView):
     """
-    Class based View to create Command
-
+    Create a new user command, with a response rendered by template.
     """
     template_name = 'command/command_new.html'
     model = Command
@@ -89,8 +100,7 @@ class CommandCreate(PermissionsRequiredMixin, CreateView):
 
 class CommandUpdate(PermissionsRequiredMixin, UpdateView):
     """
-    Class based View to update Command
-
+    Update a new command instance, with a response rendered by template.
     """
     template_name = 'command/command_update.html'
     model = Command
@@ -101,8 +111,7 @@ class CommandUpdate(PermissionsRequiredMixin, UpdateView):
 
 class CommandDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
-    Class based View to delete Command
-
+    Delete a single instance from database.
     """
     model = Command
     template_name = 'command/command_delete.html'
