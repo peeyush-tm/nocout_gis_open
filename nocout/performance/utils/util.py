@@ -4,9 +4,18 @@
 import datetime
 #python utilities
 
+import ujson as json
+import os
+import datetime
+import time
+
+from operator import itemgetter
+
 from django.utils.dateformat import format
 
 from multiprocessing import Process, Queue
+
+from django.core.urlresolvers import reverse
 
 #nocout utilities
 from nocout.utils.util import fetch_raw_result, \
@@ -17,8 +26,15 @@ from nocout.utils.util import fetch_raw_result, \
 #python logging
 import logging
 
+import requests
+
 log = logging.getLogger(__name__)
 #python logging
+
+from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
+    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS
+
+from django.http import HttpRequest
 
 # misc utility functions
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
@@ -424,7 +440,12 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "device_type": format_value(bs_row['SECTOR_TYPE']),
                     "device_technology": format_value(bs_row['SECTOR_TECH'])
                 })
-                if is_ss:
+
+                if is_dr:
+                    device.update({
+                        "sector_id": "DR:</br>" + " ".join(sector_details),
+                    })
+                elif is_ss:
                     mrc = bs_row['SECTOR_MRC']
                     port = bs_row['SECTOR_PORT']
                     if mrc and mrc.strip().lower() == 'yes':
@@ -697,3 +718,146 @@ def color_picker():
     color = "#"
     color += "%06x" % random.randint(0,0xFFFFFF)
     return color.upper()
+
+
+def create_perf_chart_img(device_name, service, data_source):
+
+    """
+    This function create performance chart image for given device, 
+    service & data_source and return image url
+    """
+
+    kwargs_dict = {
+        'service_name': service,
+        'service_data_source_type': data_source,
+        'device_id': device_name
+    }
+
+    # create http request for getting rows data (for accessing list view classes)
+    request_object = HttpRequest()
+
+    # import 'GetServiceTypePerformanceData' from performance views
+    from performance.views import GetServiceTypePerformanceData
+
+    # Create instance of "GetServiceTypePerformanceData"
+    perf_data_class = GetServiceTypePerformanceData()
+
+    # Attach request HTTP object with 'GetServiceTypePerformanceData' instance
+    perf_data_class.request = request_object
+    
+    # Attach 'kwargs' with 'GetServiceTypePerformanceData' instance
+    perf_data_class.kwargs = kwargs_dict
+
+    # Make 'GET' request to 'GetServiceTypePerformanceData' class
+    fetched_result = perf_data_class.get(request_object, service, data_source, device_name)
+
+    # convert the fetched content to json format
+    perf_data = json.loads(fetched_result.content)
+
+    chart_dataset = []
+    if perf_data['success'] and 'chart_data' in perf_data['data']['objects']:
+        # Get chart data from fetched content
+        chart_dataset = perf_data['data']['objects']['chart_data']
+
+    # JSON data required for phantomJS request inline variable
+    data_json = {
+        'type':'json',
+        'chart' : {
+            'width':CHART_WIDTH,
+            'height':CHART_HEIGHT
+        },
+        'xAxis' : {
+            'title': {
+                'text': 'Time'
+            },
+            'type': 'datetime',
+            'minRange': '3600000',
+            'dateTimeLabelFormats': {
+                'millisecond': '%H:%M:%S.%L',
+                'second': '%H:%M:%S',
+                'minute': '%H:%M',
+                'hour': '%H:%M',
+                'day': '%e. %b',
+                'week': '%e. %b',
+                'month': '%b %y',
+                'year': '%Y'
+            }
+        },
+        'series' : chart_dataset
+    }
+
+    infile_str = {
+        'infile' : json.dumps(data_json),
+        'options' : json.dumps(data_json),
+        'type' : CHART_IMG_TYPE,
+        'constr' : 'Chart',
+        'scale' : '1'
+    }
+
+    # Create PhantomJS url to hit POST request on it
+    phantom_url = PHANTOM_PROTOCOL+"://"+PHANTOM_HOST+":"+PHANTOM_PORT+"/"
+
+    # Start PhantomJS server in background
+    os.system("phantomjs "+HIGHCHARTS_CONVERT_JS+" -host "+PHANTOM_HOST+" -port "+PHANTOM_PORT+"&")
+
+    # Make POST request to phantom js host to create the chart image
+    chart_img_request = requests.post(phantom_url, data=json.dumps(infile_str))
+
+    # if directory for perf chart img didn't exist than create it
+    chart_img_path = MEDIA_ROOT + 'uploaded/perf_chart'
+    if not os.path.exists(chart_img_path):
+        os.makedirs(chart_img_path)
+
+    timestamp = time.time()
+    full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+
+    # created filename
+    filename = "{}_{}".format("chart", full_time)
+
+    fh = open(chart_img_path+"/"+filename+"."+infile_str['type'], "wb")
+    fh.write(chart_img_request.content.decode('base64'))
+    fh.close()
+
+    result = {
+        "chart_url" : chart_img_path+"/"+filename+"."+infile_str['type']
+    }
+
+    return result
+
+def dataTableOrdering(self, qs, order_columns):
+    """ 
+     Get parameters from the request and prepare order by clause
+    :param qs:
+    """
+    request = self.request
+    # Number of columns that are used in sorting
+    try:
+        i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+    except Exception:
+        i_sorting_cols = 0
+
+    order = []
+
+    for i in range(i_sorting_cols):
+        # sorting column
+        try:
+            i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+        except Exception:
+            i_sort_col = 0
+        # sorting order
+        s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+        sdir = '-' if s_sort_dir == 'desc' else ''
+
+        sortcol = order_columns[i_sort_col]
+        if isinstance(sortcol, list):
+            for sc in sortcol:
+                order.append('%s%s' % (sdir, sc))
+        else:
+            order.append('%s%s' % (sdir, sortcol))
+    if order:
+        key_name = order[0][1:] if '-' in order[0] else order[0]
+        sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse=True if '-' in order[0] else False)
+        return sorted_device_data
+
+    return qs

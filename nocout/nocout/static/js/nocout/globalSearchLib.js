@@ -48,8 +48,11 @@ function initGlobalSearch() {
 			placeholder: "Search...",
 			width: 'resolve',
 			query: function (query) {
+
 				var search_by_txt = $("#searchBy").select2("val");
+
 				if(search_by_txt) {
+
 					var data = {
 						"results" : []
 					};
@@ -63,6 +66,11 @@ function initGlobalSearch() {
 				} else {
 					bootbox.alert("Please select search criteria first");
 				}
+			}
+		}).on("select2-selecting", function(el) {
+			// If any item searched before then disabled the redirection links
+			if($(".global_search_container #redirect_link_container").html().length) {
+				$(".global_search_container #redirect_link_container").html("");
 			}
 		});
 	}

@@ -1,16 +1,28 @@
 """
-Define permissions for following roles:
+================================================================
+Module contains permissions for groups/roles defined in project.
+================================================================
+Roles:
+* Admin
+* Operator
+* Viewer
 
-    - Admin
-    - Operator
-    - Viewer
+Usage:
+* Used to modify permissions assigned to different roles in project.
 
-On updating this config file. Following command should be run for expected behavior:
+Location:
+* /nocout_gis/nocout/user_profile/permissions.py
 
-    ./manage.py fix_group_permission
+List of constructs:
+=========
+Variables
+=========
+* admin_perms
+* operator_perms
+* viewer_perms
 """
 
-
+# List of permissions assigned to 'admin' role.
 admin_perms = [
     'activity_stream.view_useraction',
     'auth.add_user',
@@ -57,6 +69,7 @@ admin_perms = [
 ]
 
 
+# List of permissions assigned to 'operator' role.
 operator_perms = [
     'activity_stream.view_useraction',
     'auth.view_user',
@@ -87,6 +100,7 @@ operator_perms = [
 ]
 
 
+# List of permissions assigned to 'viewer' role.
 viewer_perms = [
     'device.view_device',
     'device.view_devicefrequency',

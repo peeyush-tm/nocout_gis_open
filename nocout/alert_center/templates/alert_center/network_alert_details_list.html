@@ -30,7 +30,6 @@
         }
         .box #nwAlert_detail_container .header-tabs .nav-tabs {
           margin-right: 0px !important;
-          top: -44px !important;
         }
     </style>
     <!-- Custom Style End-->
@@ -222,12 +221,15 @@
 
 
 {% block jquery %}
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click -->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <!-- Custom script for data table-->
     <script type="text/javascript">
         var dataTableInstance = "",
-                base_url = "",
-                excel_columns = [];
+            base_url = "",
+            excel_columns = [];
 
         $(document).ready(function () {
 
@@ -238,75 +240,13 @@
                 base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
             }
 
-            /* Removing the pagination in the datatable*/
-            function ourDataTableWidget() {
-                /**
-                 * This function creates the jquery data table on given domElement
-                 * @class ourDataTableWidget
-                 * @method createDataTable
-                 * @param tableId "String" It contains the dom selector of table
-                 * @param tableheaders {JSON Object} It contains the grid headers object
-                 * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
-                 */
-                this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
-
-                    /*Show the spinner*/
-                    showSpinner();
-
-                    for (var i = 0; i < tableheaders.length; i++) {
-                        var current_column = tableheaders[i];
-                        if (current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
-                            excel_columns.push(i);
-                        }
-                    }
-
-                    destroy = typeof destroy !== 'undefined' ? destroy : true;
-                    
-                    if(destroy) {
-                        $("#" + tableId).dataTable().fnDestroy();
-                    }
-                    
-                    var dtable = $("#" + tableId).DataTable({
-                        sDom: 'T<"clear">lfrtip',
-                        oTableTools: {
-                            sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                            aButtons: [
-                                {
-                                    sExtends: "xls",
-                                    sButtonText: "Download Excel",
-                                    sFileName: "*.xls",
-                                    mColumns: excel_columns
-                                }
-                            ]
-                        },
-                        bAutoWidth: false,
-                        bDestroy: true,
-                        bPaginate: true,
-                        bProcessing: true,
-                        bServerSide: false,
-                        sAjaxSource: ajax_url,
-                        /*This is the callback funtion for data ajax call*/
-                        fnInitComplete: function (oSettings, json) {
-                            /*Hide the spinner*/
-                            hideSpinner();
-
-                            // Update search txt box & row per pages dropdown style
-                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
-                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("input-sm");
-                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').css("max-width","150px");
-                        },
-                        aoColumns: tableheaders,
-                        sPaginationType: "full_numbers",
-                        aaSorting: []
-                    });
-                };
-            }
-
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
+            // Grid Data Ajax URL -- START
 
             var ajax_url_wifi = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAX',
                 ajax_url_pmp = '{% url "NetworkAlertDetails" %}' + '?data_source=PMP',
@@ -314,18 +254,144 @@
                 ajax_url_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature',
                 ajax_url_bh_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature_bh',
                 ajax_url_con = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul',
-
-                /*
-                ajax_url_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=ULIssue',
-                */
-
                 ajax_url_pmp_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=PMPULIssue',
                 ajax_url_wimax_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAXULIssue',
-
                 ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}',
                 ajax_url_bhutil = '{% url "BackhaulAugmentationAlertsListing" %}';
 
-            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+            // Grid Data Ajax URL -- END
+
+
+            // Report Download Feature -- START
+
+            var common_extra_param = "'download_excel': 'yes'",
+                network_bhUtil_title = "Network Alert Details: BH Utilization",
+                network_sectorUtil_title = "Network Alert Details: Sector Utilization",
+                pmp_ulIssue_title = "Network Alert Details: PMP UL Issues",
+                wimax_ulIssue_title = "Network Alert Details: WiMAX UL Issues",
+                converter_title = "Network Alert Details: Converter",
+                bh_temp_title = "Network Alert Details: BH Temperature",
+                temp_title = "Network Alert Details: WiMAX Temperature",
+                wimax_title = "Network Alert Details: WiMAX BS",
+                pmp_title = "Network Alert Details: PMP BS",
+                ptp_title = "Network Alert Details: PTP BH",
+                pmp_ulIssue_extra_param = "{'data_source' : 'PMPULIssue', 'report_title' : '"+pmp_ulIssue_title+"', "+common_extra_param+"}",
+                wimax_ulIssue_extra_param = "{'data_source' : 'WiMAXULIssue', 'report_title' : '"+wimax_ulIssue_title+"', "+common_extra_param+"}",
+                converter_extra_param = "{'data_source' : 'Backhaul', 'report_title' : '"+converter_title+"', "+common_extra_param+"}",
+                bh_temp_extra_param = "{'data_source' : 'Temperature_bh', 'report_title' : '"+bh_temp_title+"', "+common_extra_param+"}",
+                temp_extra_param = "{'data_source' : 'Temperature', 'report_title' : '"+temp_title+"' , "+common_extra_param+"}",
+                wimax_extra_param = "{'data_source' : 'WiMAX', 'report_title' : '"+wimax_title+"',  "+common_extra_param+"}",
+                pmp_extra_param = "{'data_source' : 'PMP', 'report_title' : '"+pmp_title+"', "+common_extra_param+"}",
+                ptp_extra_param = "{'data_source' : 'P2P', 'report_title' : '"+ptp_title+"' , "+common_extra_param+"}",
+                common_hidden_columns = "'circuit_id', 'customer_name'";
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
+
+            tables_info = {
+                "network_bhUtil_tab" : {
+                    "app_name" : "capacity_management",
+                    "table_title" : network_bhUtil_title,
+                    "header_class_name" : "BackhaulAugmentationAlertsHeaders",
+                    "data_class_name" : "BackhaulAugmentationAlertsListing",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+network_bhUtil_title+"', "+common_extra_param+"}",
+                    "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per']"
+                },
+                "network_sectorUtil_tab" : {
+                    "app_name" : "capacity_management",
+                    "table_title" : network_sectorUtil_title,
+                    "header_class_name" : "SectorAugmentationAlertsHerders",
+                    "data_class_name" : "SectorAugmentationAlertsListing",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+network_sectorUtil_title+"', "+common_extra_param+"}",
+                    "excluded" : "['id','sector__sector_id','organization__alias']"
+                },
+                "pmp_ulIssue_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : pmp_ulIssue_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{'headers_data_key' : 'ul_issue_headers',"+common_extra_param+"}",
+                    "data_extra_param" : pmp_ulIssue_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]",
+                    "serverside_rendering" : false
+                },
+                "wimax_ulIssue_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : wimax_ulIssue_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{'headers_data_key' : 'ul_issue_headers',"+common_extra_param+"}",
+                    "data_extra_param" : wimax_ulIssue_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]",
+                    "serverside_rendering" : false
+                },
+                "network_converter_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : converter_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : converter_extra_param,
+                    "excluded" : "['sector_id',"+common_hidden_columns+"]",
+                    "serverside_rendering" : false
+                },
+                "network_bh_temp_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : bh_temp_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{'headers_data_key' : 'bh_headers',"+common_extra_param+"}",
+                    "data_extra_param" : bh_temp_extra_param,
+                    "serverside_rendering" : false
+                },
+                "network_temp_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : temp_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : temp_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]",
+                    "serverside_rendering" : false
+                },
+                "network_wimax_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : wimax_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : wimax_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]",
+                    "serverside_rendering" : false
+                },
+                "network_pmp_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : pmp_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : pmp_extra_param,
+                    "excluded" : "["+common_hidden_columns+"]",
+                    "serverside_rendering" : false
+                },
+                "network_ptp_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : ptp_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : ptp_extra_param,
+                    "excluded" : "['sector_id']",
+                    "serverside_rendering" : false
+                }
+            };
+
+            // Report Download Feature -- END
+
+
+            // Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag. -- START
+
             $("#network_bhUtil_tab").attr("data_url", ajax_url_bhutil);
             $("#network_bhUtil_tab").attr("data_header", '{{ bh_utils_headers|safe }}');
 
@@ -337,11 +403,6 @@
 
             $("#wimax_ulIssue_tab").attr("data_url", ajax_url_wimax_ul);
             $("#wimax_ulIssue_tab").attr("data_header", '{{ ul_issue_headers|safe }}');
-
-            /*
-            $("#network_ulIssue_tab").attr("data_url", ajax_url_ul);
-            $("#network_ulIssue_tab").attr("data_header", '{{ ul_issue_headers|safe }}');
-            */
 
             $("#network_converter_tab").attr("data_url", ajax_url_con);
             $("#network_converter_tab").attr("data_header", '{{ datatable_headers|safe }}');
@@ -361,21 +422,7 @@
             $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
             $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
-
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy = false;
-
-            /*Hide SECTOR ID Column*/
-            for (var i = 0; i < gridHeadersObj.length; i++) {
-                var column = gridHeadersObj[i];
-                if (column.mData.indexOf("sector_id") > -1) {
-                    if (column.sClass) {
-                        column.sClass = "hide";
-                    } else {
-                        column["sClass"] = "hide";
-                    }
-                }
-            }
+            // Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag. -- END
 
             var location_array = window.location.href.split("#");
 

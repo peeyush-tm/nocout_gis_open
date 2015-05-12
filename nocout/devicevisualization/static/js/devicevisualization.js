@@ -1494,9 +1494,12 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
                         bootbox.alert("No L2 Report Found.");
                     } else {
                         var url = base_url+"/"+result['data'][0]['url'];
-                        // console.log(url);
-                        var win = window.open(url, '_blank');
-                        win.focus();
+                        
+                        try {
+                            window.open(url, '_blank').focus()
+                        } catch(e) {
+                            // console.log(e);
+                        }
                     }
                 } else {
                     bootbox.alert("No L2 Report Found.");
@@ -2202,10 +2205,15 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
         selected_thematics = themetics_radio.length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
 
     if(device_name && marker_key && marker_type) {
-
-        var selected_marker = allMarkersObject_gmap[marker_type][marker_key];
-
-        if(selected_marker.device_name == device_name) {
+        var selected_marker = "";
+        
+        if(window.location.pathname.indexOf("white_background") > -1) {
+            selected_marker = allMarkersObject_wmap[marker_type][marker_key];
+        } else {
+            selected_marker = allMarkersObject_gmap[marker_type][marker_key];
+        }
+        
+        if(selected_marker && selected_marker.device_name == device_name) {
             // disable the button
             $(e.currentTarget).button('loading');
 

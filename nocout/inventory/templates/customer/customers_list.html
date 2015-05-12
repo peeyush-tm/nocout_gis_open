@@ -28,18 +28,26 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li><a href="#AllCustomers" id="allCustomerListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
-                    <li><a href="#UnusedCustomers" id="unusedCustomerListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
+                    <li>
+                        <a href="#AllCustomers" id="allCustomerListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#UnusedCustomers" id="unusedCustomerListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Unused</span>
+                        </a>
+                    </li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane" id="AllCustomers">
-                        <table id="AllCustomersListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="AllCustomersListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="UnusedCustomers">
-                        <table id="UnusedCustomersListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="UnusedCustomersListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -61,23 +69,48 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            //var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
-            var ajax_url_all_customers = '{% url "CustomerListingTable" %}' + '?tab=all';
-            var ajax_url_unused_customers = '{% url "CustomerListingTable" %}' + '?tab=unused';
-            /*Call createDataTable function of ourDataTableWidget class*/
+            var ajax_url_all_customers = '{% url "CustomerListingTable" %}' + '?tab=all',
+                ajax_url_unused_customers = '{% url "CustomerListingTable" %}' + '?tab=unused';
+
+
             var destroy=false;
-            //dataTableInstance.createDataTable("CustomerListingTable", gridHeadersObj, ajax_url, destroy);
+
+            var common_extra_param = "'download_excel': 'yes'",
+                all_title = "Customer Listing - All",
+                unused_title = "Customer Listing - Unused",
+                all_extra_param = "{'tab' : 'all','report_title' : '"+all_title+"', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused','report_title' : '"+unused_title+"', "+common_extra_param+"}";
+
+            tables_info = {
+                "allCustomerListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : all_title,
+                    "header_class_name" : "CustomerList",
+                    "data_class_name" : "CustomerListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : all_extra_param
+                },
+                "unusedCustomerListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : unused_title,
+                    "header_class_name" : "CustomerList",
+                    "data_class_name" : "CustomerListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : unused_extra_param
+                }
+            };
+
             $("#allCustomerListingTab").attr("data_url", ajax_url_all_customers);
             $("#allCustomerListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#unusedCustomerListingTab").attr("data_url", ajax_url_unused_customers);
             $("#unusedCustomerListingTab").attr("data_header", '{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#allCustomerListingTab").trigger('click',true);
             }

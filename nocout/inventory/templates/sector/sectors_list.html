@@ -28,25 +28,37 @@
         <div id="tableContainer" class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    <li><a href="#AllSectors" id="allSectorListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
-                    <li><a href="#UnusedSectors" id="unusedSectorListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
-                    <li><a href="#CorruptedSectors" id="corruptedSectorListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Corrupted</span></a></li>
+                    <li>
+                        <a href="#AllSectors" id="allSectorListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">All</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#UnusedSectors" id="unusedSectorListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Unused</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#CorruptedSectors" id="corruptedSectorListingTab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Corrupted</span>
+                        </a>
+                    </li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane" id="AllSectors">
-                        <table id="AllSectorListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="AllSectorListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="UnusedSectors">
-                        <table id="UnusedSectorListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="UnusedSectorListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="CorruptedSectors">
-                        <table id="CorruptedSectorListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <table id="CorruptedSectorListingTable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -58,7 +70,9 @@
 {% endblock %}
 
 {% block jquery %}
+    <!-- Custom script for data table-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click -->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
 
@@ -67,25 +81,62 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            //var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
-            var ajax_url_all_sectors = '{% url "SectorListingTable" %}' + '?tab=all';
-            var ajax_url_unused_sectors = '{% url "SectorListingTable" %}' + '?tab=unused';
-            var ajax_url_corrupted_sectors = '{% url "SectorListingTable" %}' + '?tab=corrupted';
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
+            var ajax_url_all_sectors = '{% url "SectorListingTable" %}' + '?tab=all',
+                ajax_url_unused_sectors = '{% url "SectorListingTable" %}' + '?tab=unused',
+                ajax_url_corrupted_sectors = '{% url "SectorListingTable" %}' + '?tab=corrupted';
+
+            var destroy = false;
+
+            var common_extra_param = "'download_excel': 'yes'",
+                all_title = "Sector Listing - All",
+                unused_title = "Sector Listing - Unused",
+                corrupted_title = "Sector Listing - Corrupted",
+                all_extra_param = "{'tab' : 'all','report_title' : '"+all_title+"', "+common_extra_param+"}",
+                unused_extra_param = "{'tab' : 'unused','report_title' : '"+unused_title+"', "+common_extra_param+"}",
+                corrupted_extra_param = "{'tab' : 'corrupted','report_title' : '"+corrupted_title+"', "+common_extra_param+"}";
+
+            tables_info = {
+                "allSectorListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : all_title,
+                    "header_class_name" : "SectorList",
+                    "data_class_name" : "SectorListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : all_extra_param
+                },
+                "unusedSectorListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : unused_title,
+                    "header_class_name" : "SectorList",
+                    "data_class_name" : "SectorListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : unused_extra_param
+                },
+                "corruptedSectorListingTab" : {
+                    "app_name" : "inventory",
+                    "table_title" : corrupted_title,
+                    "header_class_name" : "SectorList",
+                    "data_class_name" : "SectorListingTable",
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : corrupted_extra_param
+                }
+            };
+
+            
             $("#allSectorListingTab").attr("data_url", ajax_url_all_sectors);
             $("#allSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#unusedSectorListingTab").attr("data_url", ajax_url_unused_sectors);
             $("#unusedSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
             $("#corruptedSectorListingTab").attr("data_url", ajax_url_corrupted_sectors);
             $("#corruptedSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
-
                 /*Trigger click event on active tab to load its data*/
                 $("#allSectorListingTab").trigger('click',true);
             }

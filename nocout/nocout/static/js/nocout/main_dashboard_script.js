@@ -280,17 +280,30 @@ function initCityChartersDatatables() {
             ajax_url = city_charter_tbl_obj[table_id]['few_url'];
             grid_headers = city_charter_tbl_obj[table_id]['headers'];
 
-            dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, false);
+            var common_extra_param = "'download_excel': 'yes'",
+                table_title = "City Charter Listing",
+                app_name = "download_center",
+                header_class_name = "CityCharterReportHeaders",
+                data_class_name = "CityCharterReportListing",
+                header_extra_param = "{"+common_extra_param+"}",
+                data_extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
+                destroy = false;
+                
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable(
+                table_id,
+                grid_headers,
+                ajax_url,
+                destroy,
+                table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                header_extra_param,
+                data_extra_param
+            );
         }
     }
-
-    // Remove search & row per pages from city charter tables
-    // if($(".dataTables_wrapper .row .col-sm-12 .pull-right").length > 0) {
-    //     $(".dataTables_wrapper .row .col-sm-12 .pull-right").remove();
-    // }
-    // if($(".dataTables_wrapper .row .col-sm-12 .pull-left").length > 0) {
-    //     $(".dataTables_wrapper .row .col-sm-12 .pull-left").remove();
-    // }
 }
 
 /**

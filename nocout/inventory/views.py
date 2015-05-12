@@ -99,7 +99,7 @@ class InventoryListing(PermissionsRequiredMixin, ListView):
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },]
 
-        #if the user role is Admin then the action column will appear on the datatable
+        # if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', })
 
@@ -1284,17 +1284,22 @@ class CircuitL2Report_Init(ListView):
         """
         context = super(CircuitL2Report_Init, self).get_context_data(**kwargs)
         datatable_headers = [
+            {'mData': 'file', 'sTitle': 'File', 'sWidth': 'auto', 'bSortable' : False},
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'file_name', 'sTitle': 'Report', 'sWidth': 'auto', },
             {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
-            {'mData': 'user_id', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
+            {'mData': 'user_id__username', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
         ]
         if not ('circuit_id' in self.kwargs):
-            datatable_headers.append({'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', });
+            datatable_headers.append({'mData': 'circuit_id__alias', 'sTitle': 'Circuit ID', 'sWidth': 'auto', });
 
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        if (
+            ('admin' in user_role or 'operator' in user_role)
+            and
+            ('circuit_id' in self.kwargs and self.kwargs['circuit_id'] != 0)
+        ):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1312,9 +1317,37 @@ class L2ReportListingTable(BaseDatatableView):
     """
     Class based View to render Circuit Data table.
     """
+
     model = CircuitL2Report
-    columns = ['name', 'file_name', 'added_on', 'user_id']
-    order_columns = ['name', 'file_name', 'added_on']
+
+    columns = [
+        'name',
+        'name',
+        'file_name',
+        'added_on',
+        'user_id__username',
+        'circuit_id__alias'
+    ]
+    
+    order_columns = columns
+
+    ckt_id = 0
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        condition = ""
+
+        if int(self.ckt_id) > 0:
+            # condition to fetch l2 reports data from db
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=self.ckt_id))
+        else:
+            condition = (Q(user_id=self.request.user) | Q(is_public=1))
+
+        queryset = self.model.objects.filter(condition).values(*self.columns+['id'])
+
+        return queryset
 
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
@@ -1322,118 +1355,78 @@ class L2ReportListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                # avoid search on 'added_on'
-                if column == 'added_on':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+            search_condition = (
+                Q(name__icontains=sSearch)
+                |
+                Q(user_id__username__icontains=sSearch)
+                |
+                Q(circuit_id__alias__icontains=sSearch)
+            )
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
+            qs = qs.filter(search_condition).values(
+                *self.columns+['id']
+            )
+
         return qs
-
-    def get_initial_queryset(self,circuit_id):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        condition = ""
-
-        if int(circuit_id) > 0:
-            circuit_instance = Circuit.objects.filter(id=circuit_id)
-            # condition to fetch l2 reports data from db
-            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=circuit_instance))
-        else:
-            condition = (Q(user_id=self.request.user) | Q(is_public=1))
-            self.columns.append('circuit_id')
-
-        # Query to fetch L2 reports data from db
-        l2ReportsResult = CircuitL2Report.objects.filter(condition).values(*self.columns + ['id'])
-
-        report_resultset = []
-        for data in l2ReportsResult:
-            report_object = {}
-            report_object['name'] = data['name'].title()
-            filename_str_array = data['file_name'].split('/')
-            report_object['file_name'] = filename_str_array[len(filename_str_array)-1]
-            report_object['file_url'] = data['file_name']
-            report_object['added_on'] = data['added_on']
-            username = UserProfile.objects.filter(id=data['user_id']).values('username')
-            # Append Circuit Alias when all listing is shown
-            if int(circuit_id) == 0:
-                circuit_alias = Circuit.objects.filter(id=data['circuit_id']).values('alias')
-                report_object['circuit_id'] = circuit_alias[0]['alias'].title()
-
-            report_object['user_id'] = username[0]['username'].title()
-            report_object['id'] = data['id']
-            #add data to report_resultset list
-            report_resultset.append(report_object)
-        return report_resultset
 
     def prepare_results(self, qs):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
-        if len(qs) > 0:
-            if('circuit_id' in qs[0]):
-                for dct in qs:
-                    dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
-                        <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                        '.format(dct.pop('id')),
-                       added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
-            else:
-                for dct in qs:
-                    dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
-                        <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                        <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="{0}/delete/">\
-                        <i class="fa fa-trash-o text-danger"></i></a>\
-                        '.format(dct.pop('id')),
-                       added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
+        if not len(qs):
+            return []
 
-        return qs
+        resultant_data = list()
 
-    def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
-        """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
+        # EXCEL icon for excel file
+        excel_icon = static("img/ms-office-icons/excel_2013_green.png")
 
-        order = []
-        order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
+        # PDF icon for excel file
+        pdf_icon = static("img/ms-office-icons/pdf_icon.png")
+
+        # DOC icon for excel file
+        doc_icon = static("img/ms-office-icons/doc_icon.png")
+
+        # EML icon for excel file
+        eml_icon = static("img/ms-office-icons/eml_icon.png")
+
+        for dct in qs:
+
+            file_type_icon = ''
+            file_path = dct['file_name']
+            splitted_name = file_path.split("/")
+            downloaded_file_name = splitted_name[len(splitted_name)-1]
+            download_path = MEDIA_URL + file_path
+
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                name_split = downloaded_file_name.split(".")
+                file_type = name_split[len(name_split)-1]
+            except Exception, e:
+                file_type = 'xls'
 
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
+            if file_type in ['doc', 'docx']:
+                file_type_icon = doc_icon
+            elif file_type in ['pdf']:
+                file_type_icon = pdf_icon
+            elif file_type in ['eml']:
+                file_type_icon = eml_icon
             else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+                file_type_icon = excel_icon
+
+            dct.update(
+                file='<a href="{}" title="Download L2 Report" target="_blank">\
+                      <img src="{}" style="width:25px;"></a>'.format(download_path, file_type_icon),
+                file_name=downloaded_file_name,
+                added_on=dct['added_on'].strftime("%Y-%m-%d  %H:%M:%S") if dct['added_on'] != "" else "",
+                actions=''
+            )
+
+            if int(self.ckt_id) != 0:
+                dct.update(actions='<a class="delete_l2report" style="cursor:pointer;" title="Delete Report" \
+                                    url="{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>\
+                    '.format(dct.pop('id')))
+
+            resultant_data.append(dct)
+
+        return resultant_data
 
 
     def get_context_data(self, *args, **kwargs):
@@ -1445,31 +1438,31 @@ class L2ReportListingTable(BaseDatatableView):
         self.initialize(*args, **kwargs)
 
         if 'circuit_id' in self.kwargs:
-            ckt_id = self.kwargs['circuit_id']
-        else:
-            ckt_id = 0
+            self.ckt_id = self.kwargs['circuit_id']
 
-        qs = self.get_initial_queryset(ckt_id)
+        qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = len(qs)
+        total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
-        total_display_records = len(qs)
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
+
 
         aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
+
         return ret
 
 ## This class load all L2 reports datatable
@@ -2840,33 +2833,40 @@ class GISInventoryBulkImportList(ListView):
         """
 
         context = super(GISInventoryBulkImportList, self).get_context_data(**kwargs)
+
         datatable_headers = [
-            {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
-            {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'auto', },
-            {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'auto', },
+            {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto'},
+            {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'auto'},
+            {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'auto'},
             {'mData': 'error_filename', 'sTitle': 'Error Sheet', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'valid_delta_filename', 'sTitle': 'Valid Delta Sheet', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'invalid_delta_filename', 'sTitle': 'Invalid Delta Sheet', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'valid_deleted_filename', 'sTitle': 'Valid Deleted Sheet', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'invalid_deleted_filename', 'sTitle': 'Invalid Deleted Sheet', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
-            {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto', },
-            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', },
-            {'mData': 'upload_status', 'sTitle': 'Upload Status', 'sWidth': 'auto', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
-            {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'auto', },
-            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'auto', },
-            {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'auto', },
+            {'mData': 'invalid_deleted_filename', 'sTitle': 'Invalid Deleted Sheet', 'sWidth': 'auto',
+             'bSortable': False},
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto'},
+            {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto'},
+            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto'},
+            {'mData': 'upload_status', 'sTitle': 'Upload Status', 'sWidth': 'auto'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto'},
+            {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
+            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'auto'},
+            {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'auto'},
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         if self.request.user.is_superuser:
+            # list manipulation actions
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+
+            # inventory upload actions
             datatable_headers.append(
                 {'mData': 'bulk_upload_actions', 'sTitle': 'Inventory Upload', 'sWidth': '7%', 'bSortable': False})
-        if self.request.user.is_superuser:
+
+            # inventory removal actions
             datatable_headers.append(
                 {'mData': 'inventory_delete_actions', 'sTitle': 'Inventory Delete', 'sWidth': '7%', 'bSortable': False})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
+
         return context
 
 
@@ -2875,12 +2875,14 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
     A generic class based view for the gis inventory bulk import data table rendering.
 
     """
+
     model = GISInventoryBulkImport
     columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology',
                'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'error_filename', 'valid_delta_filename',
-               'invalid_delta_filename', 'valid_deleted_filename', 'invalid_deleted_filename', 'status', 'sheet_name',
-               'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'error_filename',
+                     'valid_delta_filename', 'invalid_delta_filename', 'valid_deleted_filename',
+                     'invalid_deleted_filename', 'status', 'sheet_name', 'technology', 'upload_status',
+                     'description', 'uploaded_by', 'added_on', 'modified_on']
     search_columns = ['sheet_name', 'technology', 'description', 'uploaded_by']
 
     def prepare_results(self, qs):
@@ -2914,7 +2916,6 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
                 excel_red = static("img/ms-office-icons/excel_2013_red.png")
                 excel_light_green = static("img/ms-office-icons/excel_2013_light_green.png")
-                # excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
 
                 # show 'Success', 'Pending' and 'Failed' in upload status
                 try:
@@ -3021,6 +3022,7 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
                 try:
                     invalid_deleted_file = dct['invalid_filename'].replace('invalid', 'deleted_inventory', 1)
+
                     # if directory for bulk upload excel sheets didn't exist than create one
                     if os.path.exists(MEDIA_ROOT + invalid_deleted_file):
                         invalid_deleted_filename = invalid_deleted_file
@@ -3029,93 +3031,99 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
                 # show icon instead of url in data tables view
                 try:
-                    dct.update(
-                        original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                            MEDIA_URL, dct.pop('original_filename'), excel_light_green))
+                    dct.update(original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; \
+                                                   height:25px; width:25px;">'.format(MEDIA_URL,
+                                                                                      dct.pop('original_filename'),
+                                                                                      excel_light_green))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if error_filename:
-                        dct.update(
-                            error_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                MEDIA_URL, error_filename, excel_red))
+                        dct.update(error_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; \
+                                                    height:25px; width:25px;">'.format(MEDIA_URL, error_filename,
+                                                                                       excel_red))
                     else:
-                        dct.update(
-                            error_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                excel_grey))
+                        dct.update(error_filename='<img src="{}" style="float:left; display:block; height:25px; \
+                                                    width:25px;">'.format(excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if valid_delta_filename:
-                        dct.update(
-                            valid_delta_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                MEDIA_URL, valid_delta_filename, excel_green))
+                        dct.update(valid_delta_filename='<a href="{}{}"><img src="{}" style="float:left; \
+                                                          display:block; height:25px; width:25px;">'.format(
+                            MEDIA_URL,
+                            valid_delta_filename,
+                            excel_green))
                     else:
                         dct.update(
-                            valid_delta_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                excel_grey))
+                            valid_delta_filename='<img src="{}" style="float:left; display:block; height:25px; \
+                                                   width:25px;">'.format(excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if invalid_delta_filename:
-                        dct.update(
-                            invalid_delta_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                MEDIA_URL, invalid_delta_filename, excel_red))
+                        dct.update(invalid_delta_filename='<a href="{}{}"><img src="{}" style="float:left; \
+                                                            display:block; height:25px; width:25px;">'.format(
+                            MEDIA_URL,
+                            invalid_delta_filename,
+                            excel_red))
                     else:
-                        dct.update(
-                            invalid_delta_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                excel_grey))
+                        dct.update(invalid_delta_filename='<img src="{}" style="float:left; display:block; \
+                                                            height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if valid_deleted_filename:
-                        dct.update(
-                            valid_deleted_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                MEDIA_URL, valid_deleted_filename, excel_green))
+                        dct.update(valid_deleted_filename='<a href="{}{}"><img src="{}" style="float:left; \
+                                                            display:block; height:25px; width:25px;">'.format(
+                            MEDIA_URL,
+                            valid_deleted_filename,
+                            excel_green))
                     else:
-                        dct.update(
-                            valid_deleted_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                excel_grey))
+                        dct.update(valid_deleted_filename='<img src="{}" style="float:left; display:block; \
+                                                            height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if invalid_deleted_filename:
-                        dct.update(
-                            invalid_deleted_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                MEDIA_URL, invalid_deleted_filename, excel_red))
+                        dct.update(invalid_deleted_filename='<a href="{}{}"><img src="{}" style="float:left; \
+                                                              display:block; height:25px; width:25px;">'.format(
+                            MEDIA_URL,
+                            invalid_deleted_filename,
+                            excel_red))
                     else:
-                        dct.update(
-                            invalid_deleted_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                excel_grey))
+                        dct.update(invalid_deleted_filename='<img src="{}" style="float:left; display:block; \
+                                                              height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(
-                            valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                MEDIA_URL, dct.pop('valid_filename'), excel_green))
+                        dct.update(valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; \
+                                                    height:25px; width:25px;">'.format(MEDIA_URL,
+                                                                                       dct.pop('valid_filename'),
+                                                                                       excel_green))
                     else:
-                        dct.update(
-                            valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                excel_grey))
+                        dct.update(valid_filename='<img src="{0}" style="float:left; display:block; height:25px; \
+                                                    width:25px;">'.format(excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(
-                            invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                MEDIA_URL, dct.pop('invalid_filename'), excel_red))
+                        dct.update(invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; \
+                                                      height:25px; width:25px;">'.format(MEDIA_URL,
+                                                                                         dct.pop('invalid_filename'),
+                                                                                         excel_red))
                     else:
                         dct.update(
-                            invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
-                                excel_grey))
+                            invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; \
+                                               width:25px;">'.format(excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3142,16 +3150,30 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
-            dct.update(actions='<a href="/bulk_import/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="/bulk_import/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+            if self.request.user.is_superuser:
+                dct.update(actions='<a href="/bulk_import/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                                    <a href="/bulk_import/{0}/delete/"><i class="fa fa-trash-o text-danger"></i>\
+                                    </a>'.format(dct.get('id')))
+            else:
+                dct.update(actions='')
+
             try:
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
-                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
-                                                        <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>\
-                                                        <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" class="bulk_import_link" title="Generate Valid Inventory Delta"><i class="fa fa-check-circle-o text-success"></i></a>\
-                                                        <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" class="bulk_import_link" title="Generate Invalid Inventory Delta"><i class="fa fa-check-circle-o text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" \
+                                                         class="bulk_import_link" title="Upload Valid Inventory">\
+                                                         <i class="fa fa-upload text-success"></i></a>\
+                                                         <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" \
+                                                         class="bulk_import_link" title="Upload Invalid Inventory">\
+                                                         <i class="fa fa-upload text-danger"></i></a>\
+                                                         <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" \
+                                                         class="bulk_import_link" title="Generate Valid Inventory \
+                                                         Delta"><i class="fa fa-check-circle-o text-success"></i></a> \
+                                                         <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" \
+                                                         class="bulk_import_link" title="Generate Invalid Inventory \
+                                                         Delta"><i class="fa fa-check-circle-o text-danger"></i> \
+                                                         </a>'.format(dct.get('id'), dct.get('sheet_name')))
                     else:
                         dct.update(bulk_upload_actions='')
             except Exception as e:
@@ -3160,8 +3182,13 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
-                        dct.update(inventory_delete_actions='<a href="/bulk_import/delete_inventory/valid/{0}/{1}" class="bulk_import_link" title="Delete Valid Inventory"><i class="fa fa-minus-square-o text-success"></i></a>\
-                                                             <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" class="bulk_import_link" title="Delete Invalid Inventory Delta"><i class="fa fa-minus-square-o text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                        dct.update(inventory_delete_actions='<a href="/bulk_import/delete_inventory/valid/{0}/{1}" \
+                                                              class="bulk_import_link" title="Delete Valid Inventory"> \
+                                                              <i class="fa fa-minus-square-o text-success"></i></a> \
+                                                             <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" \
+                                                             class="bulk_import_link" title="Delete Invalid Inventory \
+                                                             Delta"><i class="fa fa-minus-square-o text-danger"></i>\
+                                                             </a>'.format(dct.get('id'), dct.get('sheet_name')))
                     else:
                         dct.update(inventory_delete_actions='')
             except Exception as e:
@@ -3215,7 +3242,7 @@ class GISInventoryBulkImportUpdate(UpdateView):
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
 
 
-#**************************************** Ping Thematic Settings *********************************************
+# **************************************** Ping Thematic Settings *********************************************
 class PingThematicSettingsList(ListView):
     """
     Class Based View to render PingThematicSettings List Page.
@@ -3229,15 +3256,12 @@ class PingThematicSettingsList(ListView):
         """
         context = super(PingThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
-            {'mData': 'service',                 'sTitle': 'Service',                   'sWidth': 'auto'},
-            {'mData': 'data_source',             'sTitle': 'Data Source',               'sWidth': 'auto'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'}]
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'service', 'sTitle': 'Service', 'sWidth': 'auto'},
+            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
+            {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto'},
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto'}]
 
-        # user_id = self.request.user.id
-
-        #if user is superadmin or gisadmin
         if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
@@ -3245,6 +3269,7 @@ class PingThematicSettingsList(ListView):
 
         is_global = False
         is_admin = False
+
         if 'admin' in self.request.path:
             is_global = True
             is_admin = True

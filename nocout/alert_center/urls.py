@@ -31,7 +31,7 @@ urlpatterns = patterns('',
                        ),
 
                        url(r'^detail/network_detail/$',
-                           views.getNetworkAlertDetail,
+                           views.NetworkAlertDetailHeaders.as_view(),
                            name='NetworkAlertDetailsHeader'
                        ),
 
@@ -39,7 +39,7 @@ urlpatterns = patterns('',
                            name='NetworkAlertDetails'),
 
                        url(r'^detail/customer_detail/$',
-                           views.getCustomerAlertDetail,
+                           views.CustomerAlertDetailHeaders.as_view(),
                            name='CustomerAlertDetailsHeader'
                        ),
 

@@ -26,15 +26,16 @@ Device on which Frequency operating is sent to device application
 
 
 def extract_bsinfo_from_wimax_topology(ss_host_mac):
-        query = """
-        select device_name,ip_address,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        #db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-	#db.close()
-        return data
+	from mysql_connection import db
+	query = """
+	select device_name,ip_address,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+	#db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	cur.close()
+	db.close()
+	return data
 
 
 
@@ -110,6 +111,8 @@ def check_wimax_ss_frequency(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     ss_frequency =None
+    bs_ip = None
+    pmp_port = None
     try:
 
 	mac_info = sum(info,[])
@@ -122,7 +125,22 @@ def check_wimax_ss_frequency(item, _no_params, info):
                 index =index[0]
                 ss_mac = mac_list[index]
 	if ss_mac:
-		ss_frequency = live_query_ss_frequency( ss_mac )
+		try:
+			if memc:
+				value_list = memc.get(ss_mac)
+        			if value_list:
+                        		bs_ip = value_list[12]
+					pmp_port = value_list[11]
+					if bs_ip and pmp_port:
+						if int(pmp_port)  == 1:
+							key = bs_ip + "_pmp1"
+						elif int(pmp_port) == 2:
+							key = bs_ip + "_pmp2"
+			 			ss_freuency = memc.get(key)
+		except:
+			pass
+		if not ss_freuency:	 	
+			ss_frequency = live_query_ss_frequency( ss_mac )
 		if ss_frequency:
 			state = 0
         		infotext = "%s" % ss_frequency

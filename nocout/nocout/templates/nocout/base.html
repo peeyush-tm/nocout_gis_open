@@ -17,7 +17,7 @@
                     <div id="page_content_div">
 
                         <!-- Global Search Panel Start -->
-                        <div class="global_search_container hide" id="global_search_container">
+                        <div class="global_search_container hidden-xs hide" id="global_search_container">
                             <ul class="list-unstyled list-inline">
                                 <li>
                                     <select  id="searchBy" style="min-width:130px;max-width:150px;">
@@ -42,6 +42,7 @@
                             </ul>
                             <div class="clearfix"></div>
                         </div>
+
                         <div class="clearfix"></div>
                         <!-- Global Search Panel End -->
 
@@ -75,19 +76,30 @@
                                 </div>
                             </div>
                             <!-- /PAGE HEADER -->
-                            
-                            <!-- PAGE CONTENT -->
-                            <!-- Widget Full Screen Button-->
-                            <button type="button" class="btn btn-sm btn-info pull-right" id="goFullScreen">
-                                <i class="fa fa-arrows-alt"></i> View Full Screen
-                            </button>
-                            <!-- /Widget Full Screen Button-->
-                            <!-- Page Toggle Button-->
-                            <button class="btn btn-info btn-sm pull-right" type="button" id="headerToggleBtn">
-                                <i class="fa fa-eye"></i> Show Page Controls
-                            </button>
+
+                            <!-- Page Control & Full Screen Buttons - START -->
+                            <div class="pull-right controls_container">
+                                <ul class="list-unstyled list-inline control_btn_countainer">
+                                    <li>
+                                        <!-- Widget Full Screen Button-->
+                                        <button title="Go Fullscreen" type="button" class="btn btn-sm btn-info normal_screen" id="goFullScreen">
+                                            <i class="fa fa-arrows-alt"></i>
+                                        </button>
+                                        <!-- /Widget Full Screen Button-->
+                                    </li>
+                                    <li>
+                                        <!-- Page Toggle Button-->
+                                        <button title="Show Page Controls" class="btn btn-info btn-sm show_ctrl" type="button" id="headerToggleBtn">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                        <!-- /Page Toggle Button-->
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- Page Control & Full Screen Buttons - END -->
+
                             <div class="clearfix"></div>
-                            <!-- /Page Toggle Button-->
+                            <!-- PAGE CONTENT -->
                             {% block content %}
                                 <p>Default Content.</p>
                                 {% block content_js %}{% endblock %}

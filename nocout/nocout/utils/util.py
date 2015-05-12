@@ -918,6 +918,7 @@ class HTMLTextExtractor(HTMLParser):
     def get_text(self):
         return u''.join(self.result)
 
+
 def html_to_text(html):
     s = HTMLTextExtractor()
     s.feed(html)

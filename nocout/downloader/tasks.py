@@ -24,7 +24,7 @@ def get_datatable_response(payload):
                                     'rows': u'LivePerformanceListing',
                                     'app': u'performance',
                                     'object_id': 3L,
-                                    'headers': u'Live_Performance',
+                                    'headers': u'LivePerformance',
                                     'rows_data': {
                                         'data_tab': 'P2P',
                                         'page_type': 'customer',
@@ -39,9 +39,17 @@ def get_datatable_response(payload):
                                 }
 
         URL:
-           - "/downloader/datatable/?app=performance&headers=Live_Performance&rows=LivePerformanceListing&
+           - "/downloader/datatable/?app=performance&headers=LivePerformance&rows=LivePerformanceListing&
                headers_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }&
                rows_data={'page_type': 'customer', 'data_tab': 'P2P', 'download_excel': 'yes' }"
+
+        Note:
+           - Bits used for download status:
+                - 0 -> Pending
+                - 1 -> Success
+                - 2 -> Failed
+                - 3 -> Data table has no data
+                - 4 -> Wrong parameters
 
     """
 
@@ -102,6 +110,8 @@ def get_datatable_response(payload):
         headers_req_obj.request = headers_req
         headers_req_obj.object_list = []
         headers_req_obj.kwargs = payload['headers_data']
+        headers_data_key = payload['headers_data']['headers_data_key'] \
+            if 'headers_data_key' in payload['headers_data'] else 'datatable_headers'
 
         # get headers
         headers_data = headers_req_obj.get_context_data()
@@ -109,39 +119,61 @@ def get_datatable_response(payload):
         # fetch headers
         headers_list = ""
         file_headers_list = ""
+
+        action_headers = [
+            'action',
+            'actions',
+            'nms_actions',
+            'device_icon',
+            'device_gmap_icon'
+        ]
+
+        # in case of user logs listing action colum is for changes made by user therefore we have to show it
+        if payload['app'] and payload['app'] == 'activity_stream':
+            action_headers = list()
+
         try:
             headers_list = list()
             file_headers_list = list()
-            datatable_headers = simplejson.loads(headers_data['datatable_headers'])
+            datatable_headers = simplejson.loads(headers_data[headers_data_key])
+            excluded_columns = payload['excluded'] if 'excluded' in payload and payload['excluded'] else []
+            # Headers which will not displayed in excel sheet
+            non_display_headers = action_headers + excluded_columns
+
             for headers_dict in datatable_headers:
-                if 'sClass' in headers_dict:
-                    if headers_dict['sClass'] != 'hide':
+                # @priyesh-teramatrix :- Please verify. Here a condition added by which the 
+                #                        action column will be not added to downloaded report.
+                if headers_dict['mData'] not in non_display_headers:
+                    if 'sClass' in headers_dict:
+                        if headers_dict['sClass'] != 'hide':
+                            headers_list.append(headers_dict['mData'])
+                            file_headers_list.append(headers_dict['sTitle'])
+                    # @priyesh-teramatrix :- Please verify. Here 'else' condition added because it is not 
+                    #                        necessary that we have 'sClass' key in grid headers.
+                    else:
                         headers_list.append(headers_dict['mData'])
                         file_headers_list.append(headers_dict['sTitle'])
         except Exception as e:
-            logger.error(e.message)
-
-        # exclude parameters from excel sheet
-        if payload['excluded']:
-            try:
-                file_headers_list = [val for val in file_headers_list if val not in payload['excluded']]
-            except Exception as e:
-                pass
+            logger.info(e.message)
 
         # create view class object (for rows data)
         rows_req_obj = eval("{}()".format(payload['rows']))
         rows_req_obj.request = rows_req
-        rows_req_obj.kwargs = payload['rows']
+        
+        rows_req_obj.kwargs = payload['rows_data']
 
-        # get datatable data
-        query_set_length = len(rows_req_obj.get_initial_queryset())
+        try:
+            # get datatable data
+            query_set_length = len(rows_req_obj.get_initial_queryset())
 
-        rows_req.REQUEST['iDisplayLength'] = query_set_length
+            rows_req.REQUEST['iDisplayLength'] = query_set_length
 
-        if payload['max_rows']:
-            rows_req_obj.max_display_length = int(payload['max_rows'])
-        else:
-            rows_req_obj.max_display_length = query_set_length
+            if payload['max_rows']:
+                rows_req_obj.max_display_length = int(payload['max_rows'])
+            else:
+                rows_req_obj.max_display_length = query_set_length
+        except Exception, e:
+            logger.error(e.message)
 
         result = rows_req_obj.get_context_data()
 
@@ -199,8 +231,7 @@ def get_datatable_response(payload):
                 # saving bulk upload errors excel sheet
                 try:
                     # file path
-                    file_path = 'download_excels/{}_{}_{}.xls'.format(payload['app'],
-                                                                      payload['username'],
+                    file_path = 'download_excels/{}_{}.xls'.format(payload['username'],
                                                                       payload['fulltime'])
 
                     # saving workbook
@@ -221,10 +252,12 @@ def get_datatable_response(payload):
         else:
             # update downloader object (on success)
             d_obj.description += "\nData table has no data."
+            d_obj.status = 3
             d_obj.request_completion_on = datetime.now()
             d_obj.save()
     else:
         # update downloader object (on success)
         d_obj.description += "\nWrong parameters."
+        d_obj.status = 4
         d_obj.request_completion_on = datetime.now()
         d_obj.save()

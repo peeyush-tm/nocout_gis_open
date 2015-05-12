@@ -718,7 +718,10 @@ SERVICES = {
 }
 
 #Date Format to be used throughout the application
-DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
+# Before
+# DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
+# After - 29-April-15
+DATE_TIME_FORMAT = "%m/%d/%y %H:%M"
 
 # ##################REPORT_PATH
 
@@ -823,6 +826,22 @@ SETTINGS_EXPORT = [
 # 25th March : Dashbaord Settings
 SPEEDOMETER_DASHBAORDS = ['down-network', 'packetloss-network', 'latency-network', 'temperature-idu']
 # 25th March : Dashbaord Settings
+
+# /////////////////////// VARIABLES FOR CHARTS SERVER SIDE RENDERING ///////////////////////  #
+
+# 5 May 2015
+# Variables for phantom js host location
+PHANTOM_PROTOCOL = "http"
+PHANTOM_HOST = "127.0.0.1"
+PHANTOM_PORT = "3003"
+
+# Exported Chart Image Type, Width & Height
+CHART_WIDTH = 600
+CHART_HEIGHT = 400
+CHART_IMG_TYPE = "png"
+
+# highcharts-convert.js url variable
+HIGHCHARTS_CONVERT_JS = "~/Downloads/highcharts-convert.js"
 
 try:
     from local_settings import *

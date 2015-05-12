@@ -1,14 +1,30 @@
-from django.db.models.query import ValuesQuerySet
+"""
+================================================================================
+Module contains views and related functionality specific to 'site_instance' app.
+================================================================================
+
+Location:
+* /nocout_gis/nocout/site_instance/views.py
+
+List of constructs:
+=======
+Classes
+=======
+* SiteInstanceList
+* SiteInstanceListingTable
+* SiteInstanceDetail
+* SiteInstanceCreate
+* SiteInstanceUpdate
+* SiteInstanceDelete
+"""
+
+import json
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import SiteInstance
 from forms import SiteInstanceForm
-from django.db.models import Q
-from django.http.response import HttpResponseRedirect
-from nocout.utils.util import DictDiffer
-import json
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
@@ -16,7 +32,8 @@ from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 class SiteInstanceList(PermissionsRequiredMixin, ListView):
     """
-    Class Based View to render Site Instance List page.
+    View to show headers of site instances datatable.
+        URL - 'http://127.0.0.1:8000/site/'
     """
     model = SiteInstance
     template_name = 'site_instance/site_instance_list.html'
@@ -47,7 +64,8 @@ class SiteInstanceList(PermissionsRequiredMixin, ListView):
 
 class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
-    Class based View to render Site Instance Data table.
+    View to show list of site instances in datatable.
+        URL - 'http://127.0.0.1:8000/site/'
     """
     model = SiteInstance
     required_permissions = ('site_instance.view_siteinstance',)
@@ -57,9 +75,6 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
-
-        :param qs:
-        :return qs
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -92,7 +107,7 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
 
 class SiteInstanceDetail(PermissionsRequiredMixin, DetailView):
     """
-    Class Based View to render Site Instance Detail.
+    Show details of the single site instance.
     """
     model = SiteInstance
     required_permissions = ('site_instance.view_siteinstance',)
@@ -101,7 +116,7 @@ class SiteInstanceDetail(PermissionsRequiredMixin, DetailView):
 
 class SiteInstanceCreate(PermissionsRequiredMixin, CreateView):
     """
-    Class Based View to Create a Site Instance.
+    Create a new site, with a response rendered by template.
     """
     template_name = 'site_instance/site_instance_new.html'
     model = SiteInstance
@@ -109,9 +124,10 @@ class SiteInstanceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('site_instance_list')
     required_permissions = ('site_instance.add_siteinstance',)
 
+
 class SiteInstanceUpdate(PermissionsRequiredMixin, UpdateView):
     """
-    Class Based View to Update the Site Instance.
+    Update a new site instance, with a response rendered by template.
     """
     template_name = 'site_instance/site_instance_update.html'
     model = SiteInstance
@@ -122,7 +138,7 @@ class SiteInstanceUpdate(PermissionsRequiredMixin, UpdateView):
 
 class SiteInstanceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
-    Class Based View to Delete the Site Instance.
+    Delete a single instance from database.
     """
     model = SiteInstance
     template_name = 'site_instance/site_instance_delete.html'

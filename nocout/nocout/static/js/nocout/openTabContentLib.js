@@ -10,7 +10,8 @@ var tables_info = {},
     ptp_list = ['ptp','p2p'],
     pmp_list = ['pmp'],
     wimax_list = ['wimax','wifi','temp','ulissue','sectorutil'],
-    other_list = ['converter','bh','backhaul','bhutil'];
+    other_list = ['converter','bh','backhaul','bhutil'],
+    server_side_rendering = true;
 
 $(".nav-tabs li a").click(function (e, isFirst) {
 
@@ -133,7 +134,21 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 try {
 
                     if(isDateFilterApplied) {
-                        ajax_url = ajax_url+'&start_date='+startDate+'&end_date='+endDate;
+
+                        var epoch_startDate = startDate / 1000,
+                            epoch_endDate = endDate / 1000;
+
+                        ajax_url = ajax_url+'&start_date='+epoch_startDate+'&end_date='+epoch_endDate;
+
+                        // If we have tab info params
+                        if(tables_info[anchor_id]) {
+                            var data_param = tables_info[anchor_id].data_extra_param,
+                                splitted_params = data_param.split("}");
+
+                            splitted_params[1] = "'start_date' : '"+epoch_startDate+"', 'end_date' : '"+epoch_endDate+"'}"
+
+                            tables_info[anchor_id].data_extra_param = splitted_params.join(",");
+                        }
                     }
                     
                     var service_status_url = "";
@@ -147,7 +162,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         getPlServiceStatus(service_status_url);
                     }
                 } catch(e) {
-                    // console.log(e);
+                    console.log(e);
                 }
             }
             
@@ -166,7 +181,16 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         header_class_name = tables_info[anchor_id].header_class_name ? tables_info[anchor_id].header_class_name : false,
                         data_class_name = tables_info[anchor_id].data_class_name ? tables_info[anchor_id].data_class_name : false,
                         header_extra_param = tables_info[anchor_id].header_extra_param ? encodeURIComponent(tables_info[anchor_id].header_extra_param) : false,
-                        data_extra_param = tables_info[anchor_id].data_extra_param ? encodeURIComponent(tables_info[anchor_id].data_extra_param) : false;
+                        data_extra_param = tables_info[anchor_id].data_extra_param ? encodeURIComponent(tables_info[anchor_id].data_extra_param) : false,
+                        excluded_columns = tables_info[anchor_id].excluded ? encodeURIComponent(tables_info[anchor_id].excluded) : false;
+
+                    // SET/RESET server side paging flag
+                    if(tables_info[anchor_id].serverside_rendering != undefined) {
+                        server_side_rendering = tables_info[anchor_id].serverside_rendering;
+                    } else {
+                        server_side_rendering = true;
+                    }
+
                     /*Call createDataTable function to create the data table for specified dom element with given data*/
                     dataTableInstance.createDataTable(
                         table_id,
@@ -178,7 +202,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         header_class_name,
                         data_class_name,
                         header_extra_param,
-                        data_extra_param
+                        data_extra_param,
+                        excluded_columns
                     );
                 }
             }

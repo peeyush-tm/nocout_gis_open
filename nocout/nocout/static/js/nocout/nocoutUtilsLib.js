@@ -8,7 +8,9 @@
 var green_color = "#468847",
     orange_color = "#f0ad4e",
     red_color = "#b94a48",
-    green_status_array = ['ok','success','up'],
+    ok_severity_color = "#30B91A",
+    unknown_severity_color = "#555555",
+    green_status_array = ['ok', 'success', 'up'],
     red_status_array = ['critical'],
     down_status_array = ['down'],
     orange_status_array = ['warning'],
@@ -17,7 +19,12 @@ var green_color = "#468847",
     val_icon = '<i class="fa fa-arrow-circle-o-right"></i>',
     time_icon = '<i class="fa fa-clock-o"></i>',
     perf_page_live_polling_call = "",
-    isLatestStatusUpdated = false;
+    isLatestStatusUpdated = false,
+    table_title = 'Service Datasource Report',
+    app_name = 'performance',
+    header_class_name = 'ServiceDataSourceHeaders',
+    data_class_name = 'ServiceDataSourceListing',
+    header_extra_param = "{'download_excel': 'yes' }";
 
 
 /**
@@ -28,53 +35,84 @@ var green_color = "#468847",
  */
 function populateDeviceStatus_nocout(domElement,info) {
 
-    if(isLatestStatusUpdated) {
+    if (isLatestStatusUpdated) {
         return true;
     }
 
-    var fa_icon_class = "fa-circle",
+    var fa_icon_class = "",
         txt_color = "",
         status_html = "",
         age = info.age ? info.age : "Unknown",
         lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
-        status = info.status ? info.status.toUpperCase() : "Unknown";
+        status = info.status ? info.status.toUpperCase() : "Unknown",
+        severity_up = info.severity && info.severity.ok ? Number(info.severity.ok) : 0,
+        severity_warn = info.severity && info.severity.warn ? Number(info.severity.warn) : 0,
+        severity_crit = info.severity && info.severity.crit ? Number(info.severity.crit) : 0,
+        severity_unknown = info.severity && info.severity.unknown ? Number(info.severity.unknown) : 0;
 
-    if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = green_color;
-        fa_icon_class = "fa-check-circle";
-    } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = red_color;
-        fa_icon_class = "fa-times-circle";
-    } else if(orange_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = orange_color;
-        fa_icon_class = "fa-warning";
-    } else if(down_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-        txt_color = red_color;
-        fa_icon_class = "fa-warning";
+    var severity_style_obj = nocout_getSeverityColorIcon(status);
+
+    txt_color = severity_style_obj.color ? severity_style_obj.color : "";
+    fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
+
+    status_html = "";
+    status_html += '<table id="final_status_table" class="device_status_tbl table table-responsive table-bordered" \
+                    style="background:#FFFFFF;"><tr>\
+                    <td class="one_fourth_column vAlign_middle" style="color:' + txt_color + ';">\
+                    <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                    style="vertical-align: middle;"> </i> \
+                    <b>Current Status</b> : ' + status + '</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:' + txt_color + ';">\
+                    <b>Since</b> : ' + age + '</td>\
+                    <td class="one_fourth_column vAlign_middle" style="color:' + txt_color + ';">\
+                    <b>Last Down Time</b> : ' + lastDownTime + '</td>\
+                    <td title="OK" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
+                    <td title="Warning" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
+                    <td title="Critical" class="severity_block vAlign_middle" style="background:' + red_color + ';">' + severity_crit + '</td>\
+                    <td title="Unknown" class="severity_block vAlign_middle" \
+                    style="background:' + unknown_severity_color + ';">' + severity_unknown + '</td>\
+                    </tr></table>';
+
+    // Update Status Block HTML as per the device status
+    $("#" + domElement).html(status_html);
+
+    if (!isLatestStatusUpdated) {
+        isLatestStatusUpdated = true;
+    }
+}
+
+/**
+ * This function is used to get icon & color as per the severity
+ * @method nocout_getSeverityColorIcon
+ * @param status {String}, It contains the severity status
+ */
+
+function nocout_getSeverityColorIcon(status) {
+
+    var info_obj = {
+        "color" : "",
+        "icon" : "fa-circle"
+    };
+
+    if (green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj.color = green_color;
+        info_obj.icon = "fa-check-circle";
+    } else if (red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj.color = red_color;
+        info_obj.icon = "fa-times-circle";
+    } else if (orange_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj.color = orange_color;
+        info_obj.icon = "fa-warning";
+    } else if (down_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+        info_obj.color = red_color;
+        info_obj.icon = "fa-warning";
     } else {
         // pass
     }
 
-    status_html = "";
-
-    status_html += '<table id="final_status_table" class="table table-responsive table-bordered" \
-                    style="background:#FFFFFF;"><tr>\
-                    <td style="color:'+txt_color+';">\
-                    <i title = "'+status+'" class="fa '+fa_icon_class+'" style="vertical-align: middle;"> </i> \
-                    <b>Current Status</b> : '+status+'\
-                    </td><td style="color:'+txt_color+';">\
-                    <b>Current Status Since</b> : '+age+'</td>\
-                    <td style="color:'+txt_color+';">\
-                    <b>Last Down Time</b> : '+lastDownTime+'</td>\
-                    </tr></table>';
-
-    // Update Status Block HTML as per the device status
-    $("#"+domElement).html(status_html);
-
-    if(!isLatestStatusUpdated) {
-        isLatestStatusUpdated = true;
-    }
+    return info_obj;
 }
+
 
 /**
  * This function is used to populate the latest status for any service as per given params
@@ -84,24 +122,31 @@ function populateDeviceStatus_nocout(domElement,info) {
  */
 function populateServiceStatus_nocout(domElement,info) {
 
-    if(!is_perf_polling_enabled) {
+    if (!is_perf_polling_enabled) {
         /********** Service Status Without Live Polling  - START     ********************/
-        if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
-            
+        if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "") {
             var last_updated = info.last_updated ? info.last_updated : "N/A",
                 perf = info.perf ? info.perf : "N/A",
-                inner_status_html = '';
+                status = info.status ? info.status.toUpperCase() : "",
+                txt_color = "",
+                fa_icon_class = "",
+                inner_status_html = '',
+                severity_style_obj = nocout_getSeverityColorIcon(status);
 
-            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-            inner_status_html += '<tr>';
-            inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-            inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
-            inner_status_html += '</tr>';
-            inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
+            txt_color = severity_style_obj.color ? severity_style_obj.color : "";
+            fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
+            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                  <tr><td>\
+                                  <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                  style="vertical-align: middle;"> </i> \
+                                  <b>Performance Output</b> : ' + perf + '</td>\
+                                  <td><b>Updated At</b> : ' + last_updated + '</td>\
+                                  </tr>\
+                                  </table><div class="clearfix"></div><div class="divide-20"></div>';
 
-            $("#"+domElement).html(inner_status_html);
+            $("#" + domElement).html(inner_status_html);
         } else {
-            $("#"+domElement).html("");
+            $("#" + domElement).html("");
         }
 
         /********** Service Status Without Live Polling  - END     ********************/
@@ -110,23 +155,17 @@ function populateServiceStatus_nocout(domElement,info) {
         var left_tab_txt = '';
 
         try {
-            left_tab_txt = $.trim($("#"+domElement.split("_block")[0].split("last_updated_")[1]+"_tab").text());
+            left_tab_txt = $.trim($("#" + domElement.split("_block")[0].split("last_updated_")[1]+"_tab").text());
         } catch(e) {
             // console.log(e);
         }
-
+        var dom_condition_1 = domElement.indexOf('availability') > -1,
+            dom_condition_2 = domElement.indexOf('utilization_top') > -1,
+            dom_condition_3 = domElement.indexOf('topology') > -1;
         // Clear status block when we are on utilization or availablility tabs
-        if(
-            domElement.indexOf('availability') > -1
-            ||
-            domElement.indexOf('utilization_top') > -1
-            ||
-            domElement.indexOf('topology') > -1
-            ||
-            left_tab_txt == 'RF Latency'
-        ) {
+        if (dom_condition_1 || dom_condition_2 || dom_condition_3 || left_tab_txt == 'RF Latency') {
 
-            $("#"+domElement).html("");
+            $("#" + domElement).html("");
 
         } else {
 
@@ -139,16 +178,14 @@ function populateServiceStatus_nocout(domElement,info) {
             inner_status_html += '<tr>';
             
             inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
-                                '+val_icon+' '+perf+'<br/>\
-                                '+time_icon+' '+last_updated+'</td>';
-            
-            inner_status_html += '<td style="width:5%;vertical-align: middle;">\
+                                ' + val_icon + ' ' + perf + '<br/>\
+                                ' + time_icon + ' ' + last_updated + '</td>';
+            inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
                                  <button class="btn btn-primary btn-xs perf_poll_now"\
-                                 title="Poll Now" data-complete-text="<i class=\'fa fa-hand-o-right\'></i>" \
-                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>"><i \
-                                 class="fa fa-hand-o-right"></i></button>\
+                                 title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
+                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
+                                 <i class="fa fa-flash"></i></button>\
                                  </td>';
-
             inner_status_html += '<td style="width:47.5%;">\
                                  <b>Poll Output :</b> \
                                  <span id="perf_live_poll_chart"></span><br/>\
@@ -205,9 +242,9 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         grid_headers = headers,
         excel_columns = [];
 
-    if($('#'+table_id).length > 0) {
-        $("#"+table_id).dataTable().fnDestroy();
-        $("#"+table_id).remove();
+    if ($('#' + table_id).length > 0) {
+        $("#" + table_id).dataTable().fnDestroy();
+        $("#" + table_id).remove();
     }
 
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
@@ -220,8 +257,8 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     /*Table header creation end*/
 
 
-    if(service_id) {
-        $('#'+service_id+'_chart').html(table_string);
+    if (service_id) {
+        $('#' + service_id + '_chart').html(table_string);
     }
 
     $("#" + table_id).DataTable({
@@ -238,16 +275,16 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
             ]
         },
         fnInitComplete: function(oSettings) {
-            var row_per_pages_selectbox = '#'+table_id+'_wrapper div.dataTables_length label select',
-                search_box = '#'+table_id+'_wrapper div.dataTables_filter label input';
+            var row_per_pages_selectbox = '#' + table_id + '_wrapper div.dataTables_length label select',
+                search_box = '#' + table_id + '_wrapper div.dataTables_filter label input';
             // Update search txt box & row per pages dropdown style
-            $(row_per_pages_selectbox+' , '+search_box).addClass("form-control");
-            $(row_per_pages_selectbox+' , '+search_box).addClass("input-sm");
-            $(row_per_pages_selectbox+' , '+search_box).css("max-width","150px");
+            $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
+            $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");
+            $(row_per_pages_selectbox + ' , ' + search_box).css("max-width","150px");
         },
         bPaginate: true,
         bDestroy: true,
-        aaSorting : [[0,'desc']],
+        aaSorting : [[0, 'desc']],
         sPaginationType: "full_numbers"
     });
 }
@@ -261,55 +298,48 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
-    var data_in_table = "<table id='"+table_id+"' class='datatable table table-striped table-bordered table-hover'><thead>";
+    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
 
-    if($("#"+table_id).length > 0) {
-        $("#"+table_id).dataTable().fnDestroy();
-        $("#"+table_id).remove();
+    if ($("#" + table_id).length > 0) {
+        $("#" + table_id).dataTable().fnDestroy();
+        $("#" + table_id).remove();
     }
 
     /*Table header creation end*/
-    if(service_id) {
+    if (service_id) {
         $('#'+service_id+'_bottom_table').html(data_in_table);
     }
 
     var splitted_url = ajax_url.split("/performance/");
 
-    splitted_url[1] = "listing/"+splitted_url[1];
+    splitted_url[1] = "listing/" + splitted_url[1];
 
     var updated_url = splitted_url.join("/performance/"),
         tableheaders = [];
 
-    if(!has_headers) {
+    if (!has_headers) {
         for(var i=0;i<headers_config.length;i++) {
-            var header_key = headers_config[i].name.replace(/ /g,'_').toLowerCase();
-
+            var header_key = headers_config[i].name.replace(/ /g, '_').toLowerCase();
+            var head_condition_1 = header_key.indexOf('warning_threshold') === -1,
+                head_condition_2 = header_key.indexOf('critical_threshold') === -1,
+                head_condition_3 = header_key.indexOf('min_value') === -1,
+                head_condition_4 = header_key.indexOf('max_value') === -1,
+                head_condition_5 = header_key.indexOf('avg_value') === -1,
+                head_condition_6 = header_key.indexOf('severity') === -1;
             // Condition check for current value
-            if(
-                header_key.indexOf('warning_threshold') == -1
-                &&
-                header_key.indexOf('critical_threshold') == -1
-                &&
-                header_key.indexOf('min_value') == -1
-                &&
-                header_key.indexOf('max_value') == -1
-                &&
-                header_key.indexOf('avg_value') == -1
-                &&
-                header_key.indexOf('severity') == -1
-            ) {
+            if (head_condition_1 && head_condition_2 && head_condition_3 && head_condition_4 && head_condition_5 && head_condition_6) {
                 header_key = 'current_value';
             }
 
-            if(header_key.indexOf('min_value') > -1) {
+            if (header_key.indexOf('min_value') > -1) {
                 header_key = 'min_value';
             }
 
-            if(header_key.indexOf('max_value') > -1) {
+            if (header_key.indexOf('max_value') > -1) {
                 header_key = 'max_value';
             }
 
-            if(header_key.indexOf('avg_value') > -1) {
+            if (header_key.indexOf('avg_value') > -1) {
                 header_key = 'avg_value';
             }
 
@@ -334,12 +364,76 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         tableheaders = headers_config;
     }
 
+    var service_name = updated_url.split("/service/")[1].split("/")[0],
+        ds_name = updated_url.split("/service/")[1].split("/")[2],
+        get_param_string = updated_url.split("?")[1].split("&"),
+        data_for = 'live',
+        get_param_data = "",
+        data_extra_param = "";
+
+    for(var i=0;i<get_param_string.length;i++) {
+        var splitted_string = get_param_string[i].split("=");
+        if (splitted_string[1] != undefined) {
+            if (i == get_param_string.length-1) {
+                get_param_data += "'" + splitted_string[0] + "':'" + splitted_string[1] + "'";
+            } else {
+                get_param_data += "'" + splitted_string[0] + "':'" + splitted_string[1] + "',";
+            }
+        }
+    }
+    
+
+    var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
+        top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
+        left_tab_content_href = $("#" + top_tab_id + " .left_tabs_container li.active a").attr("href"),
+        left_tab_id = left_tab_content_href.split("#").length > 1 ? left_tab_content_href.split("#")[1] : left_tab_content_href.split("#")[0],
+        top_tab_text = $.trim($(".top_perf_tabs > li.active a").text()),
+        left_tab_txt = $.trim($("#" + top_tab_id + " .left_tabs_container > li.active a").text()),
+        report_title = "";
+    
+    if (show_historical_on_performance) {
+        try {
+            var content_tab_text = $.trim($("#" + left_tab_id + " .inner_inner_tab li.active a").text());
+            report_title += top_tab_text + " > " + left_tab_txt + " > " + content_tab_text + "(" + current_device_ip + ")";
+        } catch(e) {
+            report_title += top_tab_text + " > " + left_tab_txt + "(" + current_device_ip + ")";
+        }
+
+    } else {
+        report_title += top_tab_text + " > " + left_tab_txt + "(" + current_device_ip + ")";
+    }
+
+    if (top_tab_text && left_tab_txt && current_device_ip) {
+        table_title = report_title;
+    }
+    
+    data_extra_param = "{'service_name' : '" + service_name + "', 'service_data_source_type' : '" + ds_name + "', 'report_title' : '" + table_title + "',";
+
+    if (show_historical_on_performance) {
+        data_extra_param += "'device_id' : '" + current_device + "',";
+    } else {
+        data_extra_param += "'device_id' : '" + current_device + "', 'data_for' : '" + data_for + "',";
+    }
+
+    if (get_param_data) {
+        data_extra_param += get_param_data+",";
+    }
+
+    data_extra_param += "'download_excel': 'yes'";
+    data_extra_param += " }";
+
     /*Call createDataTable function to create the data table for specified dom element with given data*/
     dataTableInstance.createDataTable(
         table_id,
         tableheaders,
         updated_url,
-        false
+        false,
+        table_title,
+        app_name,
+        header_class_name,
+        data_class_name,
+        header_extra_param,
+        data_extra_param
     );
 }
 
@@ -357,17 +451,17 @@ function addDataToChartTable_nocout(table_obj, table_id) {
     for(var i = 0; i < data.length; i++) {
         var row_val = [];
         for (var j = 0; j < table_obj.length; j++) {
-            if(table_obj[j].type != 'pie') {
+            if (table_obj[j].type !== 'pie') {
                 var inner_data = table_obj[j].data[i];
-                if(inner_data) {
-                    if(inner_data.constructor == Array) {
-                        if(inner_data[0]) {
+                if (inner_data) {
+                    if (inner_data.constructor === Array) {
+                        if (inner_data[0]) {
                             row_val.push(new Date(inner_data[0]).toLocaleString());
                             var chart_val = inner_data[1];
                             row_val.push(chart_val);
                         }
-                    } else if(inner_data.constructor == Object) {
-                        if(inner_data.x) {
+                    } else if (inner_data.constructor === Object) {
+                        if (inner_data.x) {
                             row_val.push(new Date(inner_data.x).toLocaleString());
                             var chart_val = inner_data.y;
                             row_val.push(chart_val);
@@ -377,14 +471,14 @@ function addDataToChartTable_nocout(table_obj, table_id) {
             }
         }
         // If row are less than total columns then add blank fields
-        if(row_val.length < total_columns) {
+        if (row_val.length < total_columns) {
             var val_diff = total_columns - row_val.length;
             for(var x=0;x<val_diff;x++) {
                 row_val.push(" ");
             }
-            $('#'+table_id).dataTable().fnAddData(row_val);
+            $('#' + table_id).dataTable().fnAddData(row_val);
         } else {
-            $('#'+table_id).dataTable().fnAddData(row_val);
+            $('#' + table_id).dataTable().fnAddData(row_val);
         }
     }
 }
@@ -443,6 +537,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 fontSize : '12px'
             }
         },
+        // exporting:{
+        //     url:'http://localhost:8080/highcharts-export-web/'
+        // },
         tooltip: {
             // headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
             // pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
@@ -450,7 +547,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 var this_date = new Date(this.x),
                     tooltip_string = "";
 
-                if(this.x && this_date != 'Invalid Date') {
+                if (this.x && this_date !== 'Invalid Date') {
                     var date_str_options = {
                         timezone : "Asia/Kolkata",
                         year: 'numeric',
@@ -459,7 +556,8 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                         hour : 'numeric',
                         minute : 'numeric',
                         hour12 : true
-                    }
+                    };
+
                     try {
                         tooltip_string = '<b>' + this_date.toLocaleString(date_str_options).toUpperCase()+ '</b>';
                     } catch(e) {
@@ -467,16 +565,16 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                     }
                 } else {
                     var key_name = this.point.series.name ? this.point.series.name : this.key;
-                    tooltip_string = '<b>' + key_name+ '</b>'
+                    tooltip_string = '<b>' + key_name+ '</b>';
                 }
-                if(this.points && this.points.length > 0) {
+                if (this.points && this.points.length > 0) {
                     for(var i=0;i<this.points.length;i++) {
-                        tooltip_string += '<br/><span style="color:'+this.points[i].series.color+'">\
+                        tooltip_string += '<br/><span style="color:' + this.points[i].series.color + '"> \
                                           '+this.points[i].series.name+'</span>: <strong>' +this.points[i].y+'</strong>';
                     }
                 } else {
-                    tooltip_string += '<br/><span style="color:'+this.point.color+'">\
-                                      '+this.point.name+'</span>: <strong>' +this.point.y+'</strong>';
+                    tooltip_string += '<br/><span style="color:' + this.point.color + '">\
+                                      ' + this.point.name + '</span>: <strong>' + this.point.y + '</strong>';
                 }
 
                 return tooltip_string;
@@ -513,7 +611,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     };
 
     try {
-        if(need_extra_config) {
+        if (need_extra_config) {
             chart_options["yAxis"]["max"] = 100;
             chart_options["plotOptions"] = {series: {stacking: 'normal'}};
         }
@@ -539,9 +637,9 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
         grid_headers = table_headers,
         table_id = dom_id ? dom_id : "table1";
 
-    if($("#"+table_id).length > 0) {
-        $("#"+table_id).dataTable().fnDestroy();
-        $("#"+table_id).remove();
+    if ($("#" + table_id).length > 0) {
+        $("#" + table_id).dataTable().fnDestroy();
+        $("#" + table_id).remove();
     }
 
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
@@ -579,9 +677,9 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
 
     var table_id = dom_id ? dom_id : "table1";
 
-    if($("#"+table_id).length > 0) {
-        $("#"+table_id).dataTable().fnDestroy();
-        $("#"+table_id).remove();
+    if ($("#" + table_id).length > 0) {
+        $("#" + table_id).dataTable().fnDestroy();
+        $("#" + table_id).remove();
     }
 
     var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
@@ -608,7 +706,7 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
             var inner_data = chartObj[i].data[j],
                 time_val = "",
                 val = "";
-            if(inner_data) {
+            if (inner_data) {
                 if (inner_data instanceof Array) {
                     time_val = new Date(inner_data[0]).toLocaleString();
                     val = inner_data[1];
@@ -617,7 +715,7 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
                     val = inner_data.y;
                 }
             }
-            data_in_table += '<td>'+time_val+'</td><td>'+val+'</td>';
+            data_in_table += '<td>' + time_val + '</td><td>' + val + '</td>';
         }
         
         data_in_table += '</tr>';
@@ -652,63 +750,67 @@ function nocout_livePollCurrentDevice(
 ) {
     // Make Ajax Call
     perf_page_live_polling_call = $.ajax({
-        url : base_url+"/"+"device/lp_bulk_data/?service_name="+service_name+"&devices="+JSON.stringify(device_name)+"&ds_name="+ds_name,
+        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name,
         type : "GET",
         success : function(response) {
             
             var result = "";
             // Type check of response
-            if(typeof response == 'string') {
+            if (typeof response == 'string') {
                 result = JSON.parse(response);
             } else {
                 result = response;
             }
 
-            if(result.success == 1) {
+            if (result.success == 1) {
 
-                var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "";
-                var shown_val = "",
+                var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "",
+                    shown_val = "",
                     current_val_html = "",
                     dateObj = new Date(),
-                    current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+                    month = Number(dateObj.getMonth()) + 1,
+                    date_str = dateObj.getDate() + "-" + month + "-" + dateObj.getFullYear(),
+                    time_str = dateObj.getHours() + ":" + dateObj.getMinutes() + ":" + dateObj.getSeconds(),
+                    current_time = date_str + " " + time_str,
                     fetched_data = true;
-                if(fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
+
+                if (fetched_val != "" && fetched_val != "NA" && fetched_val != null) {
                     
-                    if(typeof fetched_val == 'object') {
+                    if (typeof fetched_val == 'object') {
                         fetched_val = fetched_val[0];
                     }
 
                     // If call is from single device page then proceed else return data
-                    if(container_dom_id) {
+                    if (container_dom_id) {
                         // Create Fetched val html with time stamp
-                        current_val_html += '<li style="display:none;">'+val_icon+' '+fetched_val;
-                        current_val_html += '<br/>'+time_icon+' '+current_time+'</li>';
+                        current_val_html += '<li style="display:none;">' + val_icon + ' ' + fetched_val;
+                        current_val_html += '<br/>' + time_icon + ' ' + current_time + '</li>';
                         
                         // Prepend new fetched val & time li
-                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals").html(current_val_html);
+                        $("#" + container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals").html(current_val_html);
                         // Animation effect to added li
-                        $("#"+container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals li").slideDown('slow');
+                        $("#" + container_dom_id+" #perf_output_table tr td:last-child ul#perf_live_poll_vals li").slideDown('slow');
 
 
                         /******************** Create Sparkline Chart for numeric values ********************/
-                        if(!isNaN(Number(fetched_val))) {
-                            var existing_val = $("#"+container_dom_id+" #"+hidden_input_dom_id).val(),
+                        if (!isNaN(Number(fetched_val))) {
+                            var existing_val = $("#" + container_dom_id + " #" + hidden_input_dom_id).val(),
                                 new_values_list = "";
 
-                            if(existing_val) {
-                                new_values_list = existing_val+","+fetched_val;
+                            if (existing_val) {
+                                new_values_list = existing_val + "," + fetched_val;
                             } else {
                                 new_values_list = fetched_val;
                             }
                             
                             // Update the value in input field
-                            $("#"+container_dom_id+" #"+hidden_input_dom_id).val(new_values_list);
+                            $("#" + container_dom_id + " #" + hidden_input_dom_id).val(new_values_list);
 
                             // Make array of values from "," comma seperated string
                             var new_chart_data = new_values_list.split(",");
 
                             /*Plot sparkline chart with the fetched polling value*/
-                            $("#"+container_dom_id+" #"+sparkline_dom_id).sparkline(new_chart_data, {
+                            $("#" + container_dom_id + " #" + sparkline_dom_id).sparkline(new_chart_data, {
                                 type: "line",
                                 lineColor: "blue",
                                 spotColor : "orange",
@@ -724,6 +826,10 @@ function nocout_livePollCurrentDevice(
 
 
                 } else {
+                    if (!fetched_val) {
+                        fetched_val = "N/A";
+                    }
+
                     fetched_data = {
                         "val" : fetched_val,
                         "time" : current_time
@@ -744,7 +850,7 @@ function nocout_livePollCurrentDevice(
             }
         },
         error : function(err) {
-            if($.trim(err.statusText) != 'abort') {    
+            if ($.trim(err.statusText) != 'abort') {    
                 $.gritter.add({
                     // (string | mandatory) the heading of the notification
                     title: 'Live Polling',
@@ -760,10 +866,67 @@ function nocout_livePollCurrentDevice(
         },
         complete : function() {
             // If call is from single device page then proceed else return data
-            if(container_dom_id) {
+            if (container_dom_id) {
                 // Enable the "Poll Now" button
-                $("#"+container_dom_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("complete");
+                $("#" + container_dom_id + " #perf_output_table tr td:nth-child(2) .perf_poll_now").button("complete");
             }
         }
     });
+}
+
+/**
+ * This function concat base url & given url as per the "/" cases
+ * @method getCompleteUrl
+ * @param api_url {String}, It contails any url string
+ * @return complete_url {String}, It contails the concated url with base_url
+ */
+function getCompleteUrl(api_url) {
+
+    var complete_url = "",
+        url_connector = "";
+
+    if (!api_url) {
+        complete_url = "";
+    }
+
+    if (!base_url) {
+        base_url = getBaseUrl();
+    }
+
+    if (api_url[0] != "/") {
+        url_connector = "/";
+    }
+
+    complete_url = base_url+url_connector+api_url;
+
+    return complete_url;
+}
+
+/**
+ * This function returns the base url of the webpage
+ * @method getBaseUrl
+ * @return complete_url {String}, It contails the base url of the webpage
+ */
+function getBaseUrl() {
+
+    var webpage_base_url = "",
+        page_origin = window.location.origin;
+    /*Set the base url of application for ajax calls*/
+    if (page_origin) {
+        webpage_base_url = page_origin;
+    } else {
+        var page_protocol = window.location.protocol,
+            page_hostname = window.location.hostname;
+            page_port = "";
+
+        try {
+            page_port = window.location.port;
+        } catch(e) {
+            console.log(e);
+        }
+
+        webpage_base_url = page_protocol + "//" + page_hostname + (page_port ? ':' + page_port: '');
+    }
+
+    return webpage_base_url;
 }

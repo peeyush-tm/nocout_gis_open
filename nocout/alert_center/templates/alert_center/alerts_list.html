@@ -96,12 +96,17 @@
     </div>
 {% endblock %}
 {% block jquery %}
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <!-- Library to load tab content on tab click for Alert Center Listing-->
     <script type="text/javascript" src={% static "js/nocout/alertOpenTab.js" %}></script>
+
     <script type="text/javascript">
+
         var dataTableInstance = "",
-                base_url = "",
-                excel_columns = [];
+            base_url = "",
+            excel_columns = [];
+
         /*This is a temporary code which is replace when data for data table is provided*/
         $(document).ready(function (e) {
             var sort_index = 9;
@@ -120,68 +125,27 @@
                 sort_index = 10;
             }
 
-            /* Removing the pagination in the datatable*/
-            function ourDataTableWidget() {
-                /**
-                 * This function creates the jquery data table on given domElement
-                 * @class ourDataTableWidget
-                 * @method createDataTable
-                 * @param tableId "String" It contains the dom selector of table
-                 * @param tableheaders {JSON Object} It contains the grid headers object
-                 * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
-                 */
-                this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
-                    /*Show the spinner*/
-                    showSpinner();
+            var page_type = "{{ page_type|title }}",
+                ds_name = "{{ data_source|title }}",
+                ptp_tech_txt = "PTP",
+                ptp_excluded_columns = "'sector_id'";
 
-                    for (var i = 0; i < tableheaders.length; i++) {
-                        var current_column = tableheaders[i];
-                        if (current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
-                            excel_columns.push(i);
-                        }
-                    }
+            // In case of netwok alert ptp will be treated as PTP BH
+            if(page_type.toLowerCase() == 'network') {
+                ptp_tech_txt = "PTP BH";
 
-                    destroy = typeof destroy !== 'undefined' ? destroy : true;
+                // NETWORK EXCLUDED COLUMNS
+                pmp_wimax_excluded_network = "'circuit_id'";
 
-                    if (destroy) {
-                        $("#" + tableId).dataTable().fnDestroy();
-                    }
-
-                    var dtable = $("#" + tableId).DataTable({
-                        sDom: 'T<"clear">lfrtip',
-                        oTableTools: {
-                            sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                            aButtons: [
-                                {
-                                    sExtends: "xls",
-                                    sButtonText: "Download Excel",
-                                    sFileName: "*.xls",
-                                    mColumns: excel_columns
-                                }
-                            ]
-                        },
-                        bAutoWidth: false,
-                        bDestroy: true,
-                        bPaginate: true,
-                        bProcessing: true,
-                        bServerSide: false,
-                        sAjaxSource: ajax_url,
-                        /*This is the callback funtion for data ajax call*/
-                        fnInitComplete: function (oSettings, json) {
-                            /*Hide the spinner*/
-                            hideSpinner();
-                            
-                            // Update search txt box & row per pages dropdown style
-                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
-                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("input-sm");
-                            $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').css("max-width","150px");
-                        },
-                        aoColumns: tableheaders,
-                        sPaginationType: "full_numbers",
-                        aaSorting: []
-                    });
-                };
+            } else {
+                // CUSTOMER EXCLUDED COLUMNS
+                pmp_wimax_excluded_network = "";
             }
+
+            var report_title_base = page_type+" Alert ["+ds_name+"]",
+                ptp_report_title = report_title_base+" - "+ptp_tech_txt,
+                pmp_report_title = report_title_base+" - PMP",
+                wimax_report_title = report_title_base+" - WiMAX";
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
@@ -192,6 +156,54 @@
             var ajax_url_wifi = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX' + '&page_type={{ page_type }}';
             var ajax_url_pmp = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'PMP' + '&page_type={{ page_type }}';
             var ajax_url_p2p = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P' + '&page_type={{ page_type }}';
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
+
+            var wimax_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'WiMAX', 'page_type' : '{{ page_type }}', 'report_title' : '"+wimax_report_title+"', 'download_excel': 'yes' }";
+
+            var pmp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'PMP', 'page_type' : '{{ page_type }}', 'report_title' : '"+pmp_report_title+"', 'download_excel': 'yes' }";
+
+            var ptp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'P2P', 'page_type' : '{{ page_type }}', 'report_title' : '"+ptp_report_title+"', 'download_excel': 'yes' }";
+
+            if(page_type && page_type.toLowerCase() == 'network') {
+
+            }
+
+            // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
+
+            tables_info = {
+                "network_wifi_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : wimax_report_title,
+                    "header_class_name" : "AlertCenterListing",
+                    "data_class_name" : "AlertListingTable",
+                    "header_extra_param" : wimax_extra_param,
+                    "data_extra_param" : wimax_extra_param,
+                    "excluded" : "["+pmp_wimax_excluded_network+"]",
+                    "serverside_rendering" : false
+                },
+                "network_ptp_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : ptp_report_title,
+                    "header_class_name" : "AlertCenterListing",
+                    "data_class_name" : "AlertListingTable",
+                    "header_extra_param" : ptp_extra_param,
+                    "data_extra_param" : ptp_extra_param,
+                    "excluded" : "["+ptp_excluded_columns+"]",
+                    "serverside_rendering" : false
+                },
+                "network_pmp_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : pmp_report_title,
+                    "header_class_name" : "AlertCenterListing",
+                    "data_class_name" : "AlertListingTable",
+                    "header_extra_param" : pmp_extra_param,
+                    "data_extra_param" : pmp_extra_param,
+                    "excluded" : "["+pmp_wimax_excluded_network+"]",
+                    "serverside_rendering" : false
+                }
+            };
+
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
