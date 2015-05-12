@@ -1,37 +1,45 @@
+"""
+==================================================================================
+Module contains views and related functionality specific to 'activity_stream' app.
+==================================================================================
+
+Location:
+* /nocout_gis/nocout/activity_stream/views.py
+
+List of constructs:
+=======
+Classes
+=======
+* ActionList
+* ActionListingTable
+
+=======
+Methods
+=======
+* log_user_action
+"""
+
 import json
+from datetime import datetime, timedelta
+from django.http import HttpResponse
 from django.db.models.query import ValuesQuerySet, Q
 from django.views.generic import ListView
+from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from django.conf import settings
 from user_profile.models import UserProfile
-
-from django.http import HttpResponse
 from activity_stream.models import UserAction
-
-from datetime import datetime, timedelta
-from pytz import timezone
 from nocout.utils import logged_in_user_organizations
 from nocout.utils.util import convert_utc_to_local_timezone
 from nocout.mixins.permissions import PermissionsRequiredMixin
-
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def time_converter(time_real):
-    # Current time in UTC
-    now_utc = time_real
-
-    # Convert to Indoia time zone
-    now_india = now_utc.astimezone(timezone(settings.TIME_ZONE))
-
-    return now_india.strftime("%Y-%m-%d %H:%M:%S")
-
-
 class ActionList(PermissionsRequiredMixin, ListView):
     """
-    Class Based View for the User Log Activity
+    View to show headers of user log activity datatable.
+        URL - 'http://127.0.0.1:8000/logs/actions/'
     """
     model = UserAction
     template_name = 'activity_stream/actions_logs.html'
@@ -40,7 +48,6 @@ class ActionList(PermissionsRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
-
         """
         context = super(ActionList, self).get_context_data(**kwargs)
         context['datatable_headers'] = json.dumps(
@@ -51,13 +58,14 @@ class ActionList(PermissionsRequiredMixin, ListView):
                 {'mData': 'logged_at', 'sTitle': 'Timestamp', 'sWidth': '17%', 'bSortable': True}
             ]
         )
+
         return context
 
 
 class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
-    A generic class based view for the user log activity data table rendering.
-
+    View to show list of user log activity in datatable.
+        URL - 'http://127.0.0.1:8000/logs/actions/'
     """
     model = UserAction
     required_permissions = ('activity_stream.view_useraction',)
@@ -68,15 +76,11 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         'logged_at'
     ]
 
-    # order_columns = ['-logged_at']
     order_columns = columns
 
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return result_list:
         """
         sSearch = self.request.GET.get('sSearch', None)
 
@@ -84,7 +88,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                # avoid search on 'added_on'
+                # Avoid search on 'added_on'.
                 if column == 'added_on':
                     continue
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
@@ -92,41 +96,37 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
+
         return qs
 
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
-
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        startdate = datetime.now()
-        enddate = startdate + timedelta(days=-30)
-
-        user_logs_resultset = []
-
-        # Get all the user ids of logged in user's organization
+        # Get all the user ids of logged in user's organization.
         user_id_list = UserProfile.objects.filter(
             organization__in=logged_in_user_organizations(self)
         ).values_list('id')
 
-        # Get user logs of last 30 days for all fetched user ids
-        user_logs_resultset = UserAction.objects.filter(
-            user_id__in=user_id_list
-        ).values(*self.columns).order_by('-logged_at')
+        # Show logs from start time to end time.
+        start_time = datetime.today() - timedelta(days=30)
+        end_time = datetime.today()
 
+        # Get user logs of last 30 days for all fetched user id's.
+        user_logs_resultset = UserAction.objects.filter(
+            user_id__in=user_id_list,
+            logged_at__gt=start_time,
+            logged_at__lte=end_time,
+        ).values(*self.columns).order_by('-logged_at')
 
         return user_logs_resultset
 
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
-
-        :param qs:
-        return list:
-
         """
 
         if qs:
@@ -139,34 +139,34 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
                     dct['user_id'] = 'User Unknown/Deleted'
                     pass
             return list(qs)
+
         return []
 
     def get_context_data(self, *args, **kwargs):
         """
-        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
-
+        The main function call to fetch, search, ordering, prepare and display the data on the datatable.
         """
         request = self.request
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
 
-        # number of records before filtering
+        # Number of records before filtering.
         total_records = len(qs)
         qs = self.filter_queryset(qs)
 
-        # number of records after filtering
+        # Number of records after filtering.
         total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        
-        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+
+        # If the 'qs' is empty then JSON is unable to serialize the empty ValuesQuerySet.
         # Therefore changing its type to list.
         if not (qs and isinstance(qs, ValuesQuerySet)) and len(qs):
             qs = list(qs)
 
-        # prepare output data
+        # Preparing output data.
         aaData = self.prepare_results(qs)
 
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
@@ -174,25 +174,21 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
         }
+
         return ret
-
-
-from django.views.decorators.csrf import csrf_exempt
 
 
 @csrf_exempt
 def log_user_action(request):
     """
-    Method based view to log the user actions.
+    Handle the request for logging action by logging user action in database.
     """
     if request.method == 'POST':
         try:
-            # form = UserActionForm(request.POST)
             obj = UserAction(user_id=request.user.id)
             obj.module = request.POST.get("module", "")  # form.cleaned_data['module']
-            obj.action = request.POST.get("action", "")  #form.cleaned_data['action']
+            obj.action = request.POST.get("action", "")  # form.cleaned_data['action']
             obj.save()
-
             return HttpResponse(json.dumps({'success': True}))
         except Exception as e:
             logger.exception(e)

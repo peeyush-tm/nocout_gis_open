@@ -4,7 +4,7 @@ Module contains ajax functions specific to 'user_profile' app.
 ==============================================================
 
 Location:
-* /nocout_gis/nocout/device/api.py
+* /nocout_gis/nocout/user_profile/ajax.py
 
 List of constructs:
 =========
@@ -34,7 +34,7 @@ def user_soft_delete_form(request, value, datatable_headers):
         datatable_headers (unicode): Datatable headers.
 
     Returns:
-        result (str): String containing list of dictionaries
+        result (str): Result which needs to be returned.
                        for e.g. {
                                     "result": {
                                         "message": "Successfully render form.",
@@ -115,7 +115,7 @@ def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlis
         userarchivelisting (unicode): Archived user's listing datatable url.
 
     Returns:
-        result (str): String containing list of dictionaries
+        result (str): Result which needs to be returned.
                        for e.g. {
                                     "result": {
                                         "message": "Successfully deleted.",
@@ -184,7 +184,7 @@ def user_add(request, user_id):
         user_id (int): Selected user ID.
 
     Returns:
-        result (str): String containing list of dictionaries
+        result (str): Result which needs to be returned.
                        for e.g. {
                                     "result": {
                                         "message": "User Successfully Added.",
@@ -218,7 +218,7 @@ def user_hard_delete(request, user_id):
         user_id (int): Selected user ID.
 
     Returns:
-        result (str): String containing list of dictionaries
+        result (str): Result which needs to be returned.
                        for e.g. {
                                     "result": {
                                         "message": "User Successfully Deleted.",
