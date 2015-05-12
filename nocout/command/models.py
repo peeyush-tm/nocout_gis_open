@@ -18,7 +18,7 @@ from django.db import models
 
 class Command(models.Model):
     """
-    Model for storing commands.
+    Model for storing command instances.
     """
     name = models.CharField(max_length=100, unique=True)
     alias = models.CharField(max_length=100)

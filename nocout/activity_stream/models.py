@@ -18,7 +18,7 @@ from django.db import models
 
 class UserAction(models.Model):
     """
-    User log models to store the user actions.
+    User log models for storing the user actions.
     """
     user_id = models.IntegerField()
     action = models.TextField()

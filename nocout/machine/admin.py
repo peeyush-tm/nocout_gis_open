@@ -1,3 +1,10 @@
-from django.contrib import admin
+"""
+====================================================
+Module used to register models with admin interface.
+====================================================
 
-# Register your models here.
+Location:
+* /nocout_gis/nocout/machine/admin.py
+"""
+
+from django.contrib import admin

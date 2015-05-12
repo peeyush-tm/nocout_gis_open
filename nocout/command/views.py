@@ -32,7 +32,7 @@ from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 class CommandList(PermissionsRequiredMixin, ListView):
     """
-    View to show headers of users datatable.
+    View to show headers of commands datatable.
         URL - 'http://127.0.0.1:8000/command'
     """
     model = Command
@@ -42,7 +42,6 @@ class CommandList(PermissionsRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
-
         """
         context = super(CommandList, self).get_context_data(**kwargs)
         datatable_headers = [
@@ -89,7 +88,7 @@ class CommandDetail(PermissionsRequiredMixin, DetailView):
 
 class CommandCreate(PermissionsRequiredMixin, CreateView):
     """
-    Create a new user command, with a response rendered by template.
+    Create a new command, with a response rendered by template.
     """
     template_name = 'command/command_new.html'
     model = Command
