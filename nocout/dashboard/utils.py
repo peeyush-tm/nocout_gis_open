@@ -116,6 +116,7 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     else:
         return service_status_data
 
+# Below class is referenced from Link - https://djangosnippets.org/snippets/1253/
 class MultiQuerySet(object):
     def __init__(self, *args, **kwargs):
         self.querysets = args
@@ -294,7 +295,7 @@ def get_empty_ranges():
 
     return range_counter
 
-
+# Below two functions are doing the same thing but one can take argument as count of device and other can take list of dictionaries, Both are required for some functionality in Dashboards task
 def get_dashboard_status_range_mapped(dashboard_setting, service_status_results):
     """
 
@@ -400,86 +401,7 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
     return response_dict
 
 
-#**************************** Sector Capacity *********************#
-def get_dashboard_status_sector_range_counter(service_status_results):
-    '''
-    Method return the dictionay for the severity status.
-
-    :param:
-    service_status_results: list of dictionary.
-
-    return: dictionary.
-                    i.e: {  'Normal':0,
-                            'Unknown':3,
-                            'Stop Provisioning': 1,
-                            'Needs Augmentation': 0,
-                        }
-    '''
-    range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0, 'Unknown':0}
-    date_format = '%Y-%m-%d %H:%M:%S'
-    # now = datetime.today() - timedelta(minutes=10)
-
-    for result in service_status_results:
-        # Convert the integer age and sys_timestamp into string as date_format.
-        age_str_since_the_epoch = datetime.fromtimestamp(float(result['age'])).strftime(date_format)
-        sys_timestamp_str_since_the_epoch = datetime.fromtimestamp(float(result['sys_timestamp'])).strftime(date_format)
-
-        # get the age and sys_timestamp as datetime object.
-        age_time_since_the_epoch = datetime.strptime(age_str_since_the_epoch, date_format)
-        sys_timestamp_str_since_the_epoch = datetime.strptime(sys_timestamp_str_since_the_epoch, date_format)
-
-        # update the range_counter values.
-        result_status =  age_time_since_the_epoch - sys_timestamp_str_since_the_epoch
-        if result['severity'] == 'warning' and result_status > timedelta(minutes=10):
-            range_counter['Needs Augmentation'] += 1
-        elif result['severity'] == 'critical' and result_status >= timedelta(minutes=10):
-            range_counter['Stop Provisioning'] += 1
-        elif result['severity'] == 'ok':
-            range_counter['Normal'] += 1
-        else:
-            range_counter['Unknown'] += 1
-
-    return range_counter
-
-
-#**************************** Sales Opportunity *********************#
-def get_topology_status_results(user_devices, model, service_name, data_source, user_sector):
-    '''
-    Method return the total ss connected to the sector.
-
-    :param:
-    user_devices: device list.
-    model: model name.
-    service_name: service name.
-    data_source: data source name.
-    user_sector: sector list.
-
-    return: list of dictionary.
-                    i.e: [
-                        {'id': sector_id1, 'name': sector_name1, 'device_name':  device_name1, 'current_value': 1},
-                        {'id': sector_id2, 'name': sector_name2, 'device_name':  device_name2, 'current_value': 2},
-                        {'id': sector_id3, ...},
-                        ]
-    '''
-
-    status_results = []
-
-    topology_status_results = model.objects.filter(
-                                    sector_id__in=user_sector.values_list('sector_id', flat=True),
-                                    data_source='topology',
-                                )
-
-    # Count the total ss connected to the sector.
-    for sector in user_sector:
-        ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
-                        annotate(Count('connected_device_ip'))
-        # current value define the total ss connected to the sector.
-        status_results.append({'id': sector.id,
-                               'name': sector.name,
-                               'device_name':  sector.sector_configured_on.device_name,
-                               'organization': sector.organization,
-                               'current_value': ss_qs.count()})
-    return status_results
+# **************************** Sales Opportunity **********************#
 
 def get_total_circuits_per_sector(model, user_sector):
     '''

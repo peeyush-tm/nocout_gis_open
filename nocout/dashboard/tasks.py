@@ -30,7 +30,6 @@ from inventory.models import get_default_org, Circuit
 from inventory.tasks import bulk_update_create
 
 from dashboard.utils import \
-    get_topology_status_results, \
     get_dashboard_status_range_counter, \
     get_dashboard_status_range_mapped, \
     get_service_status_results, \
@@ -829,23 +828,9 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'wimax_modulation_dl_fec',
             }
         }
-        
+        devices_method_to_call = organization_customer_devices
+        devices_method_kwargs = dict(specify_ptp_type='all')
 
-        for organization in user_organizations:
-            
-            for dashboard in dashboards:
-                g_jobs.append(
-                    prepare_Rf_dashboard_devices.s(
-                        organizations=organization,
-                        # user_devices=user_devices,
-                        dashboard_name=dashboard,
-                        processed_for=processed_for,
-                        dashboard_config=dashboards,
-                        devices_method_to_call = organization_customer_devices,
-                        devices_method_kwargs = dict(specify_ptp_type='all'),
-                        technology=tech
-                    )
-                )
     elif technology == 'PMP' and is_bh == False:
         dashboards = {
             'ul_jitter':{
@@ -874,22 +859,8 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'cambium_dl_rssi',
             }
         }
-
-        for organization in user_organizations:
-            
-            for dashboard in dashboards:
-                g_jobs.append(
-                    prepare_Rf_dashboard_devices.s(
-                        organizations=organization,
-                        # user_devices=user_devices,
-                        dashboard_name=dashboard,
-                        processed_for=processed_for,
-                        dashboard_config=dashboards,
-                        devices_method_to_call = organization_customer_devices,
-                        devices_method_kwargs = dict(specify_ptp_type='all'),
-                        technology=tech
-                    )
-                )
+        devices_method_to_call = organization_customer_devices
+        devices_method_kwargs = dict(specify_ptp_type='all')
 
     elif technology == 'P2P' and is_bh == False:
         dashboards = {
@@ -904,22 +875,8 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'radwin_uas',
             }
         }
-
-        for organization in user_organizations:
-    
-            for dashboard in dashboards:
-                g_jobs.append(
-                    prepare_Rf_dashboard_devices.s(
-                        organizations=organization,
-                        # user_devices=user_devices,
-                        dashboard_name=dashboard,
-                        processed_for=processed_for,
-                        dashboard_config=dashboards,
-                        devices_method_to_call = organization_customer_devices,
-                        devices_method_kwargs = dict(specify_ptp_type='all'),
-                        technology=tech
-                    )
-                )
+        devices_method_to_call = organization_customer_devices
+        devices_method_kwargs = dict(specify_ptp_type='all')
 
     elif technology == 'P2P' and is_bh == True:
         dashboards = {
@@ -939,28 +896,28 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'availability',
             }
         }
+        devices_method_to_call = organization_network_devices
+        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
 
-        for organization in user_organizations:
-                for dashboard in dashboards:
-                    
-                    if dashboard == 'rssi':
-                        devices_method_kwargs = dict(specify_ptp_bh_type='all')
-                    else:
-                        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
+    for organization in user_organizations:
+        for dashboard in dashboards:
+            
+            if dashboard == 'rssi' and technology == 'P2P' and is_bh == True:
+                devices_method_kwargs = dict(specify_ptp_bh_type='all')
 
-                    g_jobs.append(
-                        prepare_Rf_dashboard_devices.s(
-                            organizations=organization,
-                            # user_devices=user_devices,
-                            dashboard_name=dashboard,
-                            processed_for=processed_for,
-                            dashboard_config=dashboards,
-                            devices_method_to_call = organization_network_devices,
-                            devices_method_kwargs = devices_method_kwargs,
-                            technology=tech,
-                            is_bh=True
-                        )
-                    ) 
+            g_jobs.append(
+                prepare_Rf_dashboard_devices.s(
+                    organizations=organization,
+                    # user_devices=user_devices,
+                    dashboard_name=dashboard,
+                    processed_for=processed_for,
+                    dashboard_config=dashboards,
+                    devices_method_to_call = devices_method_to_call,
+                    devices_method_kwargs = devices_method_kwargs,
+                    technology=tech,
+                    is_bh=is_bh
+                )
+            ) 
     if not len(g_jobs):
         return ret
 
@@ -1339,33 +1296,6 @@ def calculate_hourly_range_status(now, then):
     ).exclude(dashboard_name__in=SPEEDOMETER_DASHBAORDS
     ).delete()
     return True
-
-
-def sum_severity_status(parent, child):
-    parent.warning += child.warning
-    parent.critical += child.critical
-    parent.ok += child.ok
-    parent.down += child.down
-    parent.unknown += child.unknown
-
-    return parent
-
-
-def sum_range_status(parent, child):
-    parent.range1 += child.range1
-    parent.range2 += child.range2
-    parent.range3 += child.range3
-    parent.range4 += child.range4
-    parent.range5 += child.range5
-    parent.range6 += child.range6
-    parent.range7 += child.range7
-    parent.range8 += child.range8
-    parent.range9 += child.range9
-    parent.range10 += child.range10
-    parent.unknown += child.unknown
-
-    return parent
-
 
 @task()
 def calculate_daily_main_dashboard():
