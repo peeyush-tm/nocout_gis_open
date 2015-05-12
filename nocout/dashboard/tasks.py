@@ -31,7 +31,6 @@ from inventory.tasks import bulk_update_create
 
 from dashboard.utils import \
     get_dashboard_status_range_counter, \
-    get_dashboard_status_range_mapped, \
     get_service_status_results, \
     get_total_circuits_per_sector
 
@@ -567,7 +566,9 @@ def prepare_network_alert(organization,
     machine_dict = machine_dict
 
     status_count = 0
-
+    service_status_results = list()
+    result = dict()
+    result['current_value'] = 0
     model = dashboard_config[dashboard_name]['model']
     service_name = dashboard_config[dashboard_name]['service_name']
     data_source = dashboard_config[dashboard_name]['data_source']
@@ -585,13 +586,16 @@ def prepare_network_alert(organization,
             severity__in=severity
         ).using(machine_name).count()
 
+    result['current_value'] = status_count
+    service_status_results.append(result)
+
     g_jobs.append(
         calculate_timely_network_alert.s(
             dashboard_name=dashboard_name,
             processed_for=processed_for,
             organization=organization,
             technology=technology,
-            status_count=status_count,
+            service_status_results=service_status_results,
             status_dashboard_name=None
         )
     )
@@ -642,7 +646,10 @@ def calculate_timely_temperature(organization, processed_for, machine_dict, char
     machine_dict = machine_dict
 
     # count of devices in severity
-    status_count = 0
+    status_count =0
+    service_status_results = list()
+    result = dict()
+    result['current_value'] = 0
     # creating a list dictionary using machine name and there corresponing device list.
     # And list is order by device_name.
     for machine_name, device_list in machine_dict.items():
@@ -653,19 +660,21 @@ def calculate_timely_temperature(organization, processed_for, machine_dict, char
             severity__in=['warning', 'critical']
             ).using(machine_name).count()
 
+    result['current_value'] = status_count
+    service_status_results.append(result)
     g_jobs.append(
         # dashboard_name,
         # processed_for,
         # organization,
         # technology=None,
-        # status_count=0,
+        # service_status_results=list(),
         # status_dashboard_name=None
         calculate_timely_network_alert.s(
             dashboard_name='temperature',
             processed_for=processed_for,
             organization=organization,
             technology='WiMAX',
-            status_count=status_count,
+            service_status_results=service_status_results,
             status_dashboard_name=status_dashboard_name
         )
     )
@@ -685,7 +694,7 @@ def calculate_timely_network_alert(dashboard_name,
                                    processed_for,
                                    organization,  # assume the organization to be default
                                    technology=None,
-                                   status_count=0,
+                                   service_status_results=list(),
                                    status_dashboard_name=None
                                    ):
     """
@@ -694,7 +703,7 @@ def calculate_timely_network_alert(dashboard_name,
     :param dashboard_name: dashboard_name: name of dashboard used in dashboard_setting.
     :param processed_for: processed_for: datetime
     :param technology: technology: Named Tuple
-    :param status_count: count of status of objects in warning, critical
+    :param service_status_results: list of dictionaries haveing count of status of objects in warning, critical
     :param status_dashboard_name: string
     return: True
     """
@@ -733,7 +742,7 @@ def calculate_timely_network_alert(dashboard_name,
         status_dashboard_name = dashboard_name
 
     # get the dictionay where keys are same as of the model fields.
-    dashboard_data_dict = get_dashboard_status_range_mapped(dashboard_setting, status_count)
+    dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
     # updating the dictionay with some other fields used in model.
 
     if dashboard_data_dict:
@@ -795,6 +804,8 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
     tech=technology
     user_organizations = Organization.objects.all()
     processed_for = timezone.now()
+    devices_method_to_call = organization_customer_devices
+    devices_method_kwargs = dict(specify_ptp_type='all')
     if technology == 'WiMAX' and is_bh == False:
         dashboards = {
             'ul_rssi':{
@@ -828,8 +839,6 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'wimax_modulation_dl_fec',
             }
         }
-        devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='all')
 
     elif technology == 'PMP' and is_bh == False:
         dashboards = {
@@ -859,8 +868,6 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'cambium_dl_rssi',
             }
         }
-        devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='all')
 
     elif technology == 'P2P' and is_bh == False:
         dashboards = {
@@ -875,8 +882,6 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'radwin_uas',
             }
         }
-        devices_method_to_call = organization_customer_devices
-        devices_method_kwargs = dict(specify_ptp_type='all')
 
     elif technology == 'P2P' and is_bh == True:
         dashboards = {
