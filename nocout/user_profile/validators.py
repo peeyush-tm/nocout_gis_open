@@ -1,30 +1,77 @@
 """
-Provide custom validations for password input.
+======================================================
+Module contains custom validations for password input.
+======================================================
+
+Location:
+* /nocout_gis/nocout/user_profile/validators.py
+
+List of constructs:
+=======
+Classes
+=======
+* UserList
+* UserListingTable
+* UserArchivedListingTable
+* UserDetail
+* UserCreate
+* UserUpdate
+* UserDelete
+* CurrentUserProfileUpdate
+
+=======
+Methods
+=======
+* organisation_user_list
+* organisation_user_select
+* change_password
 """
 
-from __future__ import division
-import string
 
+from __future__ import division
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import smart_unicode
 from django.conf import settings
+import string
 
 
-# Settings
+# Minimum length specified for passwords.
 PASSWORD_MIN_LENGTH = getattr(settings, "PASSWORD_MIN_LENGTH", 6)
+
+# Complexity level specified for passwords.
 PASSWORD_COMPLEXITY = getattr(settings, "PASSWORD_COMPLEXITY", {'UPPER': 1, 'LOWER': 1, 'DIGIT': 1})
 
 
 class LengthValidator(object):
+    """
+    Validate length of a string.
+
+    Take two parameters during initialization.
+    For e.g., len_obj = LengthValidator(2, 8)
+    Following are the parameters passed during initialization:
+    1. min_length - Minimum length for string.
+    2. max_length - Maximum length for string.
+
+    Take one parameter on calling object as a function.
+    For e.g., len_obj('pass1234')
+    Following are the parameters passed during function call operator:
+    1. value - String which needs to be validated.
+    """
     message = _("Invalid Length (%s)")
     code = "length"
 
     def __init__(self, min_length=None, max_length=None):
+        """
+        Initialize instance with min and max length settings.
+        """
         self.min_length = min_length
         self.max_length = max_length
 
     def __call__(self, value):
+        """
+        Make instance callable as a function without impacting the lifecycle of the object.
+        Modify internal state of the instance.
+        """
         if self.min_length and len(value) < self.min_length:
             raise ValidationError(
                 self.message % _("Must be %s characters or more") % self.min_length,
@@ -32,13 +79,34 @@ class LengthValidator(object):
 
 
 class ComplexityValidator(object):
+    """
+    Validate complexity level of a string by varifying it corresponding to the minimum
+    number of uppercase, digits and punctuation etc. defined in the complexity level specified.
+
+    Take one parameter during initialization.
+    For e.g., com_obj = ComplexityValidator({'UPPER': 1, 'LOWER': 1, 'DIGIT': 1})
+    Following are the parameters passed during initialization:
+    1. complexities - Dictionary object containing complexity level info.
+
+    Take one parameter on calling object as a function.
+    For e.g., com_obj('pass1234')
+    Following are the parameters passed during function call operator:
+    1. value - String which needs to be validated.
+    """
     message = _("Password must  contain (%s)")
     code = "complexity"
 
     def __init__(self, complexities):
+        """
+        Initialize instance with complexity level settings.
+        """
         self.complexities = complexities
 
     def __call__(self, value):
+        """
+        Make instance callable as a function without impacting the lifecycle of the object.
+        Modify internal state of the instance.
+        """
         if self.complexities is None:
             return
 

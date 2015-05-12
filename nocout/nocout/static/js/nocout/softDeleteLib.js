@@ -21,7 +21,7 @@ function get_soft_delete_form(content) {
     }
 
     else {
-        soft_delete_html = '<h5 class="text-warning">This '+$.trim(content.result.data.objects.form_title)+' (' + content.result.data.objects.name + ') is not associated with any other '+$.trim(content.result.data.objects.form_title)+'. So click on Yes! if you want to delete it.</h5>';
+        soft_delete_html = '<span class="text-danger">This '+$.trim(content.result.data.objects.form_title)+' (' + content.result.data.objects.name + ') is not associated with any other '+$.trim(content.result.data.objects.form_title)+'. <br />Click on Yes! if you want to delete it.</span>';
         soft_delete_html += '<input type="hidden" id="id_'+$.trim(content.result.data.objects.form_type)+'" name="'+$.trim(content.result.data.objects.form_type)+'" value="' + content.result.data.objects.id + '" />';
         soft_delete_html += '<input type="hidden" id="id_parent" name="parent" value="" />'
     }
@@ -75,8 +75,8 @@ function get_soft_delete_form(content) {
 
 function add_confirmation(id) {
     bootbox.dialog({
-        message: "Are you sure want to add this user ",
-        title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
+        message: "<span class='text-green'>Are you sure want to add this user ?</span>",
+        title: "<span class='text-green'><i class='fa fa-times'></i>Confirmation</span>",
         buttons: {
             success: {
                 label: "Yes!",
@@ -99,7 +99,7 @@ function add_confirmation(id) {
 
 function hard_delete_confirmation(id) {
     bootbox.dialog({
-        message: "Are you sure want to delete this user",
+        message: "<span class='text-danger'>Permanently delete device from inventory. Can't roll this action back. <br />Are you sure want to add this user ?</span>",
         title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
         buttons: {
             success: {
