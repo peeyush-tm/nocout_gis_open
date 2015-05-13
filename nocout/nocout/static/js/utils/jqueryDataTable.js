@@ -117,7 +117,7 @@ function ourDataTableWidget() {
             });
 
         $("#page_content_div").delegate("#"+tableId+"_search_btn",'click',function() {
-            var search_text = $(".dataTables_filter input").val();
+            var search_text = $("#"+tableId+"_filter label input").val();
             if(search_text.length >= 2) {
                 try {
                     dtable.fnFilter(search_text);
@@ -129,10 +129,7 @@ function ourDataTableWidget() {
 
         $("#page_content_div").delegate("#"+tableId+"_download_btn",'click',function(e) {
             
-            
-
             if(!downloader_api_call) {
-                
                 var main_url = base_url+"/downloader/datatable/?",
                     attributes_dict = e.currentTarget.attributes,
                     popup_title = attributes_dict.current_table_title ? attributes_dict.current_table_title.value : "Report",
@@ -174,7 +171,9 @@ function ourDataTableWidget() {
                             // (string | mandatory) the text inside the notification
                             text: response.message,
                             // (bool | optional) if you want it to fade out on its own or just sit there
-                            sticky: true
+                            sticky: false,
+                            // Time in ms after which the gritter will dissappear.
+                            time : 1000
                         });
                     },
                     error : function(err) {

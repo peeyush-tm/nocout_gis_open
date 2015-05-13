@@ -1426,7 +1426,24 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
         if(window.location.pathname.indexOf('googleEarth') > -1) {
             // pass
         } else if(window.location.pathname.indexOf("white_background") > -1) {
-            // pass
+            if(is_tooltip_polled_used) {
+                var closed_marker = allMarkersObject_wmap[marker_type][marker_key];
+                if(closed_marker) {
+                    try {
+                        // Update marker with the old icon
+                        closed_marker.style.externalGraphic = closed_marker.oldIcon;
+                        if (marker_type == 'sub_station') {
+                            ccpl_map.getLayersByName('Markers')[0].redraw();
+                        } else if(marker_type == 'sector_device') {
+                            ccpl_map.getLayersByName('Devices')[0].redraw();
+                        }
+                    } catch(e) {
+                        // console.log(e);
+                    }
+
+                    is_tooltip_polled_used = false;
+                }
+            }
         } else {
             if(is_tooltip_polled_used) {
                 var closed_marker = allMarkersObject_gmap[marker_type][marker_key];
@@ -2281,12 +2298,25 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
 
                         // If has icon then update marker with fetched icon.
                         if(fetched_icon) {
-                            var marker_img_object = gmap_self.getMarkerImageBySize(base_url+"/"+fetched_icon,"other");
+                            if(window.location.pathname.indexOf("white_background") > -1) {
+                                try {
+                                    // Update marker object with new icon
+                                    selected_marker.style.externalGraphic = base_url+"/"+fetched_icon;
+                                    // Get marker layer
+                                    var layer = selected_marker.layer ? selected_marker.layer : selected_marker.layerReference;
+                                    // Redraw layer to reflect the changes on map
+                                    layer.redraw();
+                                } catch(e) {
+                                    // console.log(e);
+                                }
+                            } else {
+                                var marker_img_object = gmap_self.getMarkerImageBySize(base_url+"/"+fetched_icon,"other");
 
-                            // Update Marker Icon
-                            selected_marker.setOptions({
-                                "icon" : marker_img_object
-                            });
+                                // Update Marker Icon
+                                selected_marker.setOptions({
+                                    "icon" : marker_img_object
+                                });
+                            }
 
                             is_tooltip_polled_used = true;
                         }
