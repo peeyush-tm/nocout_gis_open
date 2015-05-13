@@ -315,17 +315,21 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
     splitted_url[1] = "listing/" + splitted_url[1];
 
     var updated_url = splitted_url.join("/performance/"),
-        tableheaders = [];
+        tableheaders = headers_config;
 
     if (!has_headers) {
+        // Reset columns variable
+        tableheaders = [];
+        var has_severity_column = false;
         for(var i=0;i<headers_config.length;i++) {
-            var header_key = headers_config[i].name.replace(/ /g, '_').toLowerCase();
-            var head_condition_1 = header_key.indexOf('warning_threshold') === -1,
+            var header_key = headers_config[i].name.replace(/ /g, '_').toLowerCase(),
+                head_condition_1 = header_key.indexOf('warning_threshold') === -1,
                 head_condition_2 = header_key.indexOf('critical_threshold') === -1,
                 head_condition_3 = header_key.indexOf('min_value') === -1,
                 head_condition_4 = header_key.indexOf('max_value') === -1,
                 head_condition_5 = header_key.indexOf('avg_value') === -1,
                 head_condition_6 = header_key.indexOf('severity') === -1;
+
             // Condition check for current value
             if (head_condition_1 && head_condition_2 && head_condition_3 && head_condition_4 && head_condition_5 && head_condition_6) {
                 header_key = 'current_value';
@@ -343,6 +347,11 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
                 header_key = 'avg_value';
             }
 
+            if (header_key.indexOf('severity') > -1) {
+                header_key = 'severity';
+                has_severity_column = true;
+            }
+
             var header_dict = {
                 'mData': header_key,
                 'sTitle': headers_config[i].name,
@@ -353,6 +362,16 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             tableheaders.push(header_dict);
         }
 
+        if(!has_severity_column) {
+            // Add severity
+            tableheaders.push({
+                'mData': 'severity',
+                'sTitle': 'Severity',
+                'sWidth': 'auto',
+                'bSortable': true
+            });
+        }
+
         // Add sys_timestamp
         tableheaders.push({
             'mData': 'sys_timestamp',
@@ -360,8 +379,6 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             'sWidth': 'auto',
             'bSortable': true
         });
-    } else {
-        tableheaders = headers_config;
     }
 
     var service_name = updated_url.split("/service/")[1].split("/")[0],
