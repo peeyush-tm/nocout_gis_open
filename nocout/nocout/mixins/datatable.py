@@ -66,15 +66,13 @@ class DatatableSearchMixin(object):
     """
     Search datatable based on provided serach columns if provided otherwise based on datatable's columns.
     """
+
+    # Fields based on which searching is done.
     search_columns = []
 
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:

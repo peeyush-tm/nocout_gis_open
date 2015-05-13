@@ -1,10 +1,25 @@
+"""
+=============================================================================
+Module contains database models and functions specific to 'site_instance' app.
+=============================================================================
+
+Location:
+* /nocout_gis/nocout/site_instance/models.py
+
+List of constructs:
+=======
+Classes
+=======
+* SiteInstance
+"""
+
 from django.db import models
 from machine.models import Machine
 
 
 class SiteInstance(models.Model):
     """
-    Site Instance Model Columns Declaration.
+    Model for storing site instances.
     """
     name = models.CharField('Name', max_length=200, unique=True)
     alias = models.CharField('Alias', max_length=255)
@@ -17,7 +32,4 @@ class SiteInstance(models.Model):
     is_device_change = models.IntegerField('Is Device Change', default=0)
 
     def __unicode__(self):
-        """
-        Site Instance objects presentation.
-        """
         return self.name
