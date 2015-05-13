@@ -171,7 +171,9 @@ function ourDataTableWidget() {
                             // (string | mandatory) the text inside the notification
                             text: response.message,
                             // (bool | optional) if you want it to fade out on its own or just sit there
-                            sticky: true
+                            sticky: false,
+                            // Time in ms after which the gritter will dissappear.
+                            time : 1000
                         });
                     },
                     error : function(err) {
