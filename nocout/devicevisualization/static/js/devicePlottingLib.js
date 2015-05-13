@@ -3191,6 +3191,7 @@ function devicePlottingClass_gmap() {
 			device_id = "",
 			device_name = "",
 			marker_key = "",
+			marker_type = "",
 			maps_single_service_poll_flag = live_poll_config ? live_poll_config['maps_single_service'] : "",
 			maps_themetics_poll_flag = live_poll_config ? live_poll_config['maps_themetics'] : "",
 			single_service_polling = maps_single_service_poll_flag ? maps_single_service_poll_flag : false,
@@ -3203,16 +3204,20 @@ function devicePlottingClass_gmap() {
 			device_id = gisPerformanceClass.getKeyValue(contentObject.deviceInfo, 'device_id', true, 0);
 			if(clickedType == 'sector_Marker') {
 				marker_key = "sector_"+contentObject.filter_data.sector_name;
+				marker_type = "sector_device";
 			} else {
-				marker_key = "poly_"+contentObject.sectorName+"_"+contentObject.filter_data.sector_id;
+				marker_key = "poly_"+contentObject.filter_data.sector_name+"_"+contentObject.filter_data.sector_id;
+				marker_type = "sector_polygon";
 			}
 		} else if(clickedType == 'sub_station') {
 			device_id = contentObject.ss_device_id ? contentObject.ss_device_id : "";
 			marker_key = "ss_"+contentObject.name;
+			marker_type = "sub_station";
 		} else if(clickedType == 'base_station') {
 			device_id = contentObject.bh_device_id ? contentObject.bh_device_id : "";
 			device_tech = contentObject.bh_device_type ? $.trim(contentObject.bh_device_type).toLowerCase() : "";
 			marker_key = "bs_"+contentObject.name;
+			marker_type = "base_station";
 		}
 
 		// Tabs Structure HTML
@@ -3230,7 +3235,7 @@ function devicePlottingClass_gmap() {
 					  </li>';
 
 		if(single_service_polling && (clickedType.indexOf('sector') > -1 || clickedType == 'sub_station')) {
-			infoTable += '<li class=""><a href="#poll_now_block" data-toggle="tab" id="poll_now_tab" \
+			infoTable += '<li><a href="#poll_now_block" data-toggle="tab" id="poll_now_tab" \
 						  device_id="'+device_id+'" point_type="'+clickedType+'" >\
 						  <i class="fa fa-arrow-circle-o-right"></i> Poll Now \
 						  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
@@ -3495,6 +3500,15 @@ function devicePlottingClass_gmap() {
 					/*Poll Now Tab Content Start*/
 					infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
 
+					if (maps_themetics_poll_flag) {
+						infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
+									  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
+									  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
+									  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'>\
+									  <i class='fa fa-flash'></i> Poll Now</button>\
+									  <div class='clearfix'></div><div class='divide-10'></div>";
+					}
+
 					infoTable += "<table class='table table-bordered table-hover'><tbody>";
 					
 					if(maps_themetics_poll_flag) {
@@ -3554,16 +3568,7 @@ function devicePlottingClass_gmap() {
 							  <div class='box border'><div class='box-title'>\
 							  <h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4>";
 
-			// If enabled from settings.py only then show Poll Now Button.
-			if(maps_themetics_poll_flag) {
-				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
-								  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
-								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
-								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sector_device'>\
-								  <i class='fa fa-flash'></i> Poll Now</button>";
-			}
-
-			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' title='Close' marker_type='sector_device' marker_key='"+marker_key+"'>\
+			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' title='Close' marker_type='"+marker_type+"' marker_key='"+marker_key+"'>\
 							  <i class='fa fa-times text-danger' title='Close'></i></a>\
 							  </div></div>\
 							  <div class='box-body'>\
@@ -3690,6 +3695,15 @@ function devicePlottingClass_gmap() {
 					/*Poll Now Tab Content Start*/
 					infoTable += '<div class="tab-pane fade" id="poll_now_block"><div class="divide-10"></div>';
 
+					if (maps_themetics_poll_flag) {
+						infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
+									  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
+									  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
+									  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'>\
+									  <i class='fa fa-flash'></i> Poll Now</button>\
+									  <div class='clearfix'></div><div class='divide-10'></div>";
+					}
+
 					infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
 					if(maps_themetics_poll_flag) {
@@ -3749,16 +3763,8 @@ function devicePlottingClass_gmap() {
 			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'>\
 							  <div class='box border'><div class='box-title'>\
 							  <h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4>";
-			// If enabled from settings.py only then show Poll Now Button.
-			if(maps_themetics_poll_flag) {
-				windowContent += "<button style='margin-left:1%;' class='btn btn-primary btn-xs themetic_poll_now_btn' title='Poll Now' \
-								  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
-								  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait' \
-								  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='sub_station'>\
-								  <i class='fa fa-flash'></i> Poll Now</button>";
-			}
 
-			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' marker_type='sub_station' marker_key='"+marker_key+"' title='Close'>\
+			windowContent += "<div class='tools'>"+tools_html+"<a class='close_info_window' marker_type='"+marker_type+"' marker_key='"+marker_key+"' title='Close'>\
 							  <i class='fa fa-times text-danger'></i></a></div></div>\
 							  <div class='box-body'><div class='' align='center'>"+infoTable+"</div>\
 							  <div class='clearfix'></div><div class='pull-right'></div>\
