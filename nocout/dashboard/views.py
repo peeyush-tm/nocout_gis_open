@@ -40,7 +40,7 @@ from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRP
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
     get_pie_chart_json_response_dict, \
-    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, \
+    get_highchart_response, \
     get_unused_dashboards, get_range_status, get_guege_chart_max_n_stops
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -507,7 +507,6 @@ def dfr_processed_report_download(request, pk):
 
     return response
 
-
 # ***************************************** DFR-REPORTS *******************************************************
 
 class DFRReportsListView(TemplateView):
@@ -584,7 +583,6 @@ class DFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
 
 # ********************************************** MFR-Reports ************************************************
 
-
 class MFRReportsListView(TemplateView):
     """
     Class Based View for the MFR-Reports data table rendering.
@@ -654,7 +652,6 @@ class MFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
 
 
 # **************************************** Main Dashbaord ***************************************#
-
 
 class MainDashboard(View):
     """
@@ -846,24 +843,7 @@ class MFRProcesedView(View):
         day = year_before
         # area_chart_categories = []
         processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-        # processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
-
-
-        # # MFR PROCESS KEYS LIST
-        # mfr_process_keys = mfr_processed_results.values_list('processed_key', flat=True)
-        # # Numeric counter used to get the color from specific list index 
-        # processed_key_color = {}
-        # color_counter = 0
-        # for key in mfr_process_keys:
-        #     if key not in processed_key_color: 
-        #         processed_key_color[key] = ""
-
-        #     processed_key_color[key] = ''
-        #     # Increment the color index counter
-        #     color_counter += 1
-
-
-
+        
         while day <= datetime.date.today():
             #area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
 
@@ -918,7 +898,6 @@ class MFRProcesedView(View):
 
 # *********************** main dashboard sector capacity
 
-
 class SectorCapacityMixin(object):
     '''
     Provide common method get for Sector Capacity Dashboard.
@@ -938,14 +917,6 @@ class SectorCapacityMixin(object):
         tech_name = self.tech_name
         organization = logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-
-        # Get Sector of User's Organizations. [and are Sub Station]
-        # user_sector = organization_sectors(organization, technology=technology)
-        # Get Device of User's Sector.
-        # sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
-        #                                             is_added_to_nms=1)
-        # Get Device name list of User's Sector.
-        # sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Get the status of the dashboard.
@@ -991,8 +962,6 @@ class WiMAXSectorCapacity(SectorCapacityMixin, View):
 
 
 # *********************** main dashboard Backhaul Capacity
-
-
 class BackhaulCapacityMixin(object):
     '''
     Provide common method (Mixin) get for Backhaul Capacity Dashboard.
@@ -1024,10 +993,6 @@ class BackhaulCapacityMixin(object):
         })
 
         if technology:
-            # Get Backhauls Devices of User's Organizations.
-            # user_backhaul = organization_backhaul_devices(organization, technology=technology)
-            # Get Device name list of User's Backhaul.
-            # backhaul_devices_list = user_backhaul.values_list('device_name', flat=True)
             # Creating Dashboard Name
             dashboard_name = '%s_backhaul_capacity' % (tech_name.lower())
             # Get the status of the dashboard.
@@ -1079,9 +1044,7 @@ class TCLPOPBackhaulCapacity(BackhaulCapacityMixin, View):
     """
     tech_name = 'TCLPOP'
 
-
 # ************************* main dashboard Sales Opportunity
-
 
 class SalesOpportunityMixin(object):
     """
@@ -1127,14 +1090,6 @@ class SalesOpportunityMixin(object):
                 "success": 0
             }))
 
-        # Get Sector of User's Organizations. [and are Sub Station]
-        # user_sector = organization_sectors(organization, technology)
-        # Get Device of User's Sector.
-        # sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
-        #     is_added_to_nms = 1)
-        # Get Device Name List of User's Sector.
-        # sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
-
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
         # Get the status of the dashbaord.
         dashboard_status_dict, processed_for_key = view_range_status(dashboard_name, organization)
@@ -1178,7 +1133,6 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
 
 # *************************** Dashboard Timely Data ***********************
 
-
 def view_severity_status(dashboard_name, organizations):
     '''
     Method based view to get latest data from central database table.
@@ -1196,19 +1150,12 @@ def view_severity_status(dashboard_name, organizations):
     )
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
-        # from time
-        try:
-            pre_processed_for = dashboard_status_dict[1].processed_for
-        except Exception, e:
-            pre_processed_for = "N/A"
-
-        # get the latest processed_for(datetime) from the database.
-        # to time
         processed_for = dashboard_status_dict[0].processed_for
 
         if processed_for:
-            processed_for_key_localtime = get_dashboard_timestamp_string(pre_processed_for, processed_for)
-
+            processed_for_key_localtime = datetime.datetime.strftime(
+                processed_for,"%d-%m-%Y %H:%M"
+            )
         # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
             Normal=Sum('ok'),
@@ -1218,75 +1165,6 @@ def view_severity_status(dashboard_name, organizations):
         )
 
     return dashboard_status_dict, str(processed_for_key_localtime)
-
-
-def get_dashboard_timestamp_string(from_time, to_time):
-    """
-    :This function returns timestamp string as per given params for dashboard charts
-    :param from_time: Start Time
-    :param to_time: End Time
-    :return timestamp_string:
-    """
-
-    timestamp_string = ''
-
-    if not from_time or not to_time:
-        return timestamp_string
-
-    from_datetime = 'N/A'
-    current_date = ''
-    from_datetime = ''
-    to_datetime = ''
-    html_seperator = ' - '
-    start_braces = '('
-    end_braces = ')'
-
-    if from_time != 'N/A':
-        if to_time.date() == from_time.date():
-            current_date = datetime.datetime.strftime(
-                to_time,"%d-%m-%Y"
-            )
-            
-            from_datetime = datetime.datetime.strftime(
-                from_time,"%H:%M"
-            )
-
-            to_datetime = datetime.datetime.strftime(
-                to_time,"%H:%M"
-            )
-
-        else:
-            current_date = ''
-            
-            from_datetime = datetime.datetime.strftime(
-                from_time,"%d-%m-%Y %H:%M"
-            )
-
-            to_datetime = datetime.datetime.strftime(
-                to_time,"%d-%m-%Y %H:%M"
-            )
-
-            html_seperator = '<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
-            start_braces = ''
-            end_braces = ''
-    else:
-        current_date = ''
-            
-        from_datetime = 'N/A'
-
-        to_datetime = datetime.datetime.strftime(
-            to_time,"%d-%m-%Y %H:%M"
-        )
-
-    timestamp_string = str(current_date)+\
-                       start_braces+\
-                       str(from_datetime)+\
-                       html_seperator+\
-                       str(to_datetime)+\
-                       end_braces
-
-    return timestamp_string
-
 
 def view_range_status(dashboard_name, organizations):
     """
@@ -1301,20 +1179,12 @@ def view_range_status(dashboard_name, organizations):
     )
     processed_for_key_localtime = ''
     if dashboard_status_dict.exists():
-        
-        # from time
-        try:
-            pre_processed_for = dashboard_status_dict[1].processed_for
-        except Exception, e:
-            pre_processed_for = "N/A"
 
-        # get the latest processed_for(datetime) from the database.
-        # to time
         processed_for = dashboard_status_dict[0].processed_for
-
         if processed_for:
-            processed_for_key_localtime = get_dashboard_timestamp_string(pre_processed_for, processed_for)
-
+            processed_for_key_localtime = datetime.datetime.strftime(
+                processed_for,"%d-%m-%Y %H:%M"
+            )
         # get the dashboard data on the basis of the processed_for.
         dashboard_status_dict = dashboard_status_dict.filter(
             processed_for=processed_for
@@ -1334,72 +1204,7 @@ def view_range_status(dashboard_name, organizations):
 
     return dashboard_status_dict, str(processed_for_key_localtime)
 
-
-def get_severity_status_dict(dashboard_name, devices_list):
-    '''
-    Method based view to get latest data from central database table.
-    retun data for the severity based dashboard.
-
-    dashboard_name: name of the dashboard.
-    sector_devices_list: list of device.
-
-    return: dictionary
-    '''
-
-    dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
-        dashboard_name=dashboard_name,
-        device_name__in=devices_list
-    )
-    processed_for_key_localtime = ''
-    if dashboard_status_dict.exists():
-        processed_for_key_utc = dashboard_status_dict[0].processed_for
-        processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
-        # get the latest processed_for(datetime) from the database.
-        processed_for = dashboard_status_dict[0].processed_for
-        # get the dashboard data on the basis of the processed_for.
-        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
-            Normal=Sum('ok'),
-            Needs_Augmentation=Sum('warning'),
-            Stop_Provisioning=Sum('critical'),
-            Unknown=Sum('unknown')
-        )
-
-    return dashboard_status_dict, processed_for_key_localtime
-
-
-def get_range_status_dict(dashboard_name, sector_devices_list):
-    '''
-    Method based view to get latest data from central database table.
-    retun data for the range based dashboard.
-
-    dashboard_name: name of the dashboard.
-    sector_devices_list: list of device.
-
-    return: dictionary
-    '''
-    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
-        dashboard_name=dashboard_name,
-        device_name__in=sector_devices_list
-    )
-    processed_for_key_localtime = ''
-    if dashboard_status_dict.exists():
-        processed_for_key_utc = dashboard_status_dict[0].processed_for
-        processed_for_key_localtime = processed_for_key_utc  # convert_utc_to_local_timezone(processed_for_key_utc)
-        # get the latest processed_for(datetime) from the database.
-        processed_for = dashboard_status_dict[0].processed_for
-        # get the dashboard data on the basis of the processed_for.
-        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
-            range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
-            range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
-            range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
-            range10=Sum('range10'), unknown=Sum('unknown')
-        )
-
-    return (dashboard_status_dict, processed_for_key_localtime)
-
-
 # *************************** Dashboard Gauge Status
-
 
 class DashboardDeviceStatus(View):
     '''
@@ -1440,12 +1245,6 @@ class DashboardDeviceStatus(View):
             dashboard_status_name = dashboard_status_name.replace('-wimax', '')
 
         organizations = logged_in_user_organizations(self)
-
-        # Get Device of User's Organizations. [and are Sub Station]
-        # user_devices = organization_network_devices(organizations, technology)
-        # sector_devices = user_devices.filter(sector_configured_on__isnull=False)
-        # Get Device Name list.
-        # sector_devices = sector_devices.values_list('device_name',flat=True)
 
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology,
@@ -1492,9 +1291,7 @@ class DashboardDeviceStatus(View):
 
         return HttpResponse(response)
 
-
 # *************************Dashboard Monthly Data
-
 
 def view_severity_status_monthly(dashboard_name, organizations):
     """
@@ -1549,7 +1346,6 @@ def view_severity_status_monthly(dashboard_name, organizations):
     ]
 
     for item in trend_items:
-
         data_dict = {
             "type": "column",
             "valuesuffix": " ",
@@ -1560,7 +1356,6 @@ def view_severity_status_monthly(dashboard_name, organizations):
         }
 
         for var in dashboard_status_dict:
-
             processed_date = var['processed_month']  # this is date object of date time
             js_time = float(format(datetime.datetime(processed_date.year,
                                                      processed_date.month,
@@ -1575,217 +1370,10 @@ def view_severity_status_monthly(dashboard_name, organizations):
                 "x": js_time * 1000,
                 # Multiply by 1000 to return correct GMT+05:30 timestamp
             })
-            # Increment Date by One
-            # month_before += relativedelta.relativedelta(days=1)
+            
         chart_data.append(data_dict)
 
     return chart_data
-
-
-def get_severity_status_dict_monthly(dashboard_name, devices_list):
-    '''
-    '''
-    # Start Calculations for Monthly Trend Sector
-    has_data = False
-    # Last 30 Days
-    month_before = datetime.date.today() - datetime.timedelta(days=30)
-    # Exceptional handling case
-    final_dict = list()
-    try:
-        has_data = True
-        # Query Set with filter, annotate(for summation of data),
-        # extra parameter to make a new column of only date from datetime column for using group by of only date
-        dashboard_status_dict = DashboardSeverityStatusDaily.objects.extra(
-            select={'processed_month': "date(processed_for)"}).values('processed_month').filter(
-            processed_for__gte=month_before,
-            dashboard_name=dashboard_name,
-            device_name__in=devices_list
-        ).annotate(
-            Normal=Sum('ok'),
-            Needs_Augmentation=Sum('warning'),
-            Stop_Provisioning=Sum('critical'),
-            Unknown=Sum('unknown')
-        ).order_by('processed_month')
-
-        if has_data:
-            # if 'sector' in dashboard_name:
-            trends_items = [
-                {
-                    "id": "Normal",
-                    "title": "Normal"
-                },
-                {
-                    "id": "Needs_Augmentation",
-                    "title": "Needs Augmentation"
-                },
-                {
-                    "id": "Stop_Provisioning",
-                    "title": "Stop Provisioning"
-                },
-                {
-                    "id": "Unknown",
-                    "title": "Unknown"
-                }
-            ]
-
-            # Accessing all elements in sector trend items
-            for i in range(len(trends_items)):
-                item_color = ['rgb(0, 255, 0)', 'rgb(255, 153, 0)', 'rgb(255, 0, 0)', '#d3d3d3']
-
-                data_dict = {
-                    "type": "column",
-                    "valuesuffix": " ",
-                    "name": trends_items[i]['title'],
-                    "valuetext": trends_items[i]['title'],
-                    "color": item_color[i],
-                    "data": list()
-                }
-                # Reseting month_before for every element of sector_trends_items
-                month_before = datetime.date.today() - datetime.timedelta(days=30)
-                # random color picker for sending different colors
-
-                # Loop for sending complete 30 days Data
-                # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
-                while month_before < datetime.date.today():
-                    # Function for getting value for element of sector trend items on every date within month
-                    data_val = getValueByTime(
-                        dashboard_status_dict=dashboard_status_dict,
-                        key=trends_items[i]['id'],
-                        current_date=month_before,
-                        date_column='processed_month'
-                    )
-
-                    # Preparation of final dict for sending to main function
-                    data_dict['data'].append({
-                        "color": item_color[i],
-                        "y": data_val,
-                        "name": trends_items[i]['title'],
-                        "x": calendar.timegm(month_before.timetuple()) * 1000,
-                        # Multiply by 1000 to return correct GMT+05:30 timestamp
-                    })
-
-                    # Increment of date by one
-                    month_before += relativedelta.relativedelta(days=1)
-
-                final_dict.append(data_dict)
-    except Exception, e:
-        has_data = False
-
-    return final_dict
-
-
-#  This function returns the given key value for given time stamp
-def getValueByTime(dashboard_status_dict=[], key='', current_date='', date_column=''):
-    val = 0
-    # Accessing every element(dictionary) of list
-    for dict_val in dashboard_status_dict:
-        try:
-            if ((date_column in dict_val) & (dict_val[date_column] == current_date)):
-                val = dict_val[key]
-        except Exception, e:
-            # if condition is not matched then send value equal to zero
-            val = 0
-
-    return val
-
-
-def get_range_status_dict_monthly(dashboard_name, sector_devices_list, dashboard_setting):
-    '''
-    '''
-    # Start Calculations for Monthly Trend Sector
-    has_data = False
-    # Last 30 Days
-    month_before = datetime.date.today() - datetime.timedelta(days=30)
-    try:
-        has_data = True
-        # Query Set with filter, annotate(for summation of data), extra parameter to make a new column of only date from datetime column for using group by of only date
-        dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
-            select={'processed_month': "date(processed_for)"}).values('processed_month').filter(
-            processed_for__gte=month_before,
-            dashboard_name=dashboard_name,
-            device_name__in=sector_devices_list
-        ).annotate(
-            range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
-            range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
-            range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
-            range10=Sum('range10'), unknown=Sum('unknown')
-        ).order_by('processed_month')
-
-    except Exception, e:
-        has_data = False
-
-    final_dict = []
-    if has_data:
-        trend_items = ['range1', 'range2', 'range3', 'range4', 'range5', 'range6', 'range7', 'range8', 'range9',
-                       'range10', 'unknown']
-        for i in range(len(trend_items)):
-            if trend_items[i] != 'unknown':
-                color_dict = getattr(dashboard_setting, 'range%d_color_hex_value' % (i + 1))
-            else:
-                color_dict = '#CED5DB'
-            data_dict = {
-                "type": "column",
-                "valuesuffix": " ",
-                "name": trend_items[i].title(),
-                "valuetext": trend_items[i],
-                "color": color_dict,
-                "data": list()
-            }
-            month_before = datetime.date.today() - datetime.timedelta(days=30)
-            chart_color = ''
-            # Loop for sending complete 30 days Data
-            # No need to put equality sign in loop because daily_main_dashboard cron runs only at midnight and also benefit of not getting redundant entry of today +1 day on chart.
-            while month_before < datetime.date.today():
-                # Loop for every element in list
-                response_dict = {'chart_data': 0, 'color': '#000000'}
-                for var in dashboard_status_dict:
-                    if trend_items[i] != 'unknown':
-                        # Condition for further processing
-                        if var['processed_month'] == month_before:
-                            response_dict = get_dashboardsettings_attributes(dashboard_setting, var, i)
-                    else:
-                        if var['processed_month'] == month_before:
-                            response_dict = {'chart_data': var['unknown'], 'color': '#CED5DB'}
-                data_dict['data'].append({
-                    "color": response_dict['color'],
-                    "y": response_dict['chart_data'],
-                    "name": trend_items[i],
-                    "x": calendar.timegm(month_before.timetuple()) * 1000,
-                    # Multiply by 1000 to return correct GMT+05:30 timestamp
-                })
-
-                # Increment of date by one
-                month_before += relativedelta.relativedelta(days=1)
-
-            final_dict.append(data_dict)
-
-    return final_dict
-
-
-def get_dashboardsettings_attributes(dashboard_setting, range_counter, range_argument):
-    chart_data = 0
-    colors = '#000000'
-    count = range_argument + 1
-    # for count in range(1, 11):
-    # Getting value of dashboard setting corresponding to count variable
-    start_range = getattr(dashboard_setting, 'range%d_start' % count)
-    end_range = getattr(dashboard_setting, 'range%d_end' % count)
-    color = getattr(dashboard_setting, 'range%d_color_hex_value' % count)
-    # if start_range or end_range:
-    # if len(str(start_range).strip()) or len(str(end_range).strip()):
-    # chart_data.append(['(%s, %s)' % (start_range, end_range), range_counter['range%d' %count]])
-    chart_data = range_counter['range%d' % count]
-    if color:
-        colors = color
-    else:
-        colors = "#000000"
-    # else:
-    #     chart_data = 0
-    #     colors = "#000000"
-    # Preparation of Final List                    
-    # chart_data.append(['Unknown', range_counter['unknown']])
-    # colors.append("#d3d3d3")
-    return {'chart_data': chart_data, 'color': colors}
 
 def view_range_status_dashboard_monthly(dashboard_name, organizations, dashboard_settings=None):
     """
@@ -1847,9 +1435,7 @@ def view_range_status_dashboard_monthly(dashboard_name, organizations, dashboard
             "x": js_time * 1000,
             # Multiply by 1000 to return correct GMT+05:30 timestamp
         })
-        # Increment Date by One
-        # month_before += relativedelta.relativedelta(days=1)
-
+        
     chart_data.append(data_dict)
 
     return chart_data
@@ -1978,40 +1564,13 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
                     "x": js_time * 1000,
                     # Multiply by 1000 to return correct GMT+05:30 timestamp
                 })
-                # Increment Date by One
-                # month_before += relativedelta.relativedelta(days=1)
 
             chart_data.append(data_dict)
         return chart_data
 
     return dashboard_status_dict
 
-
-def get_range_status_dict_monthly_devicestatus(dashboard_name, sector_devices_list):
-    '''
-    '''
-    # Start Calculations for Monthly Trend Sector
-    # Last 30 Days
-    month_before = datetime.date.today() - datetime.timedelta(days=30)
-    # Query Set with filter, annotate(for summation of data),
-    # extra parameter to make a new column of only date from datetime column for using group by of only date
-    dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
-        select={'processed_month': "date(processed_for)"}).values('processed_month').filter(
-        device_name__in=sector_devices_list,
-        dashboard_name=dashboard_name,
-        processed_for__gte=month_before
-    ).annotate(
-        range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
-        range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
-        range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
-        range10=Sum('range10'), unknown=Sum('unknown')
-    ).order_by('processed_month')
-
-    return dashboard_status_dict
-
-
 #*************************** Monthly Trend Backhaul chart
-
 
 class MonthlyTrendBackhaulMixin(object):
     '''
@@ -2195,6 +1754,7 @@ class MonthlyTrendSalesWIMAX(MonthlyTrendSalesMixin, View):
 
 
 #************************************ Monthly Trend RF Performance Dashboard
+
 class GetMonthlyRFTrendData(View):
     '''
     Class Based View for the Monthly Trend of RF Performance Dashboard for all services.
@@ -2251,8 +1811,6 @@ class GetMonthlyRFTrendData(View):
 
         return HttpResponse(response)
 # *********************************** Dashboard Device Status Monthly Trend
-
-
 class MonthlyTrendDashboardDeviceStatus(View):
     '''
     Class Based View for the Monthly Trend of device status on Main Dashbaord.
@@ -2323,8 +1881,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
         )
 
         return HttpResponse(response)
-
-
+ 
 class GetRfNetworkAvailData(View):
     """ 
     :This class calculate rf network availability data from RfNetworkAvailability model
