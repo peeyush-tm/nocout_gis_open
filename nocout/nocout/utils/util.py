@@ -20,6 +20,7 @@ import socket
 
 #https://github.com/benjamin-croker/loggy/blob/master/loggy.py
 import inspect
+from functools import wraps
 # import functools
 # def log(fn):
 #     @functools.wraps(fn)
@@ -922,3 +923,19 @@ def html_to_text(html):
     s = HTMLTextExtractor()
     s.feed(html)
     return s.get_text()
+
+# Disable Signals for loaddata command Django
+# http://stackoverflow.com/questions/15624817/have-loaddata-ignore-or-disable-post-save-signals
+
+
+def disable_for_loaddata(signal_handler):
+    """
+    Decorator that turns off signal handlers when loading fixture data.
+    """
+
+    @wraps(signal_handler)
+    def wrapper(*args, **kwargs):
+        if kwargs['raw']:
+            return
+        signal_handler(*args, **kwargs)
+    return wrapper

@@ -1,8 +1,9 @@
 """
     Signals associated with service app.
 """
+from nocout.utils.util import disable_for_loaddata
 
-
+@disable_for_loaddata
 def update_site_on_protocol_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' for all site instances to 1 if protocol is modified
@@ -28,6 +29,7 @@ def update_site_on_protocol_change(sender, instance=None, created=False, **kwarg
     SiteInstance.objects.all().update(is_device_change=1)
 
 
+@disable_for_loaddata
 def update_site_on_ds_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' in site instance to 1 if data source created or modified
@@ -72,6 +74,7 @@ def update_site_on_ds_change(sender, instance=None, created=False, **kwargs):
             SiteInstance.objects.all().update(is_device_change=1)
 
 
+@disable_for_loaddata
 def update_site_on_service_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' in site instance to 1 if service name in service is created or modified
@@ -113,6 +116,7 @@ def update_site_on_service_change(sender, instance=None, created=False, **kwargs
             SiteInstance.objects.all().update(is_device_change=1)
 
 
+@disable_for_loaddata
 def update_site_on_svc_specific_ds_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' for all site instances to 1 if service specific data source is modified in device type
@@ -138,6 +142,7 @@ def update_site_on_svc_specific_ds_change(sender, instance=None, created=False, 
     SiteInstance.objects.all().update(is_device_change=1)
 
 
+@disable_for_loaddata
 def update_site_on_svcconf_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' for all site instances to 1 if service configuration is modified
@@ -172,6 +177,7 @@ def update_site_on_svcconf_change(sender, instance=None, created=False, **kwargs
         device.site_instance.save()
 
 
+@disable_for_loaddata
 def update_site_on_pingconf_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' in site instance to 1 if ping configuration is created or modified

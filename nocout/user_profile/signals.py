@@ -1,6 +1,8 @@
 from django.db.models import Q
+from nocout.utils.util import disable_for_loaddata
 
 
+@disable_for_loaddata
 def assign_default_thematics_to_user(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' in site instance to 1 if device name, site or ip address in device created or modified
