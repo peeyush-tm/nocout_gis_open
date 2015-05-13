@@ -3,7 +3,10 @@ Module which defines signals.
 """
 from django.db.models.loading import get_model
 
+from nocout.utils.util import disable_for_loaddata
 
+
+@disable_for_loaddata
 def update_site_on_device_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' in site instance to 1 if device name, site or ip address in device created or modified
@@ -55,6 +58,7 @@ def update_site_on_device_change(sender, instance=None, created=False, **kwargs)
         instance.site_instance.save()
 
 
+@disable_for_loaddata
 def update_site_on_devicetype_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' in site instance to 1 if device name, site or ip address in device created or modified
@@ -102,6 +106,7 @@ def update_site_on_devicetype_change(sender, instance=None, created=False, **kwa
             SiteInstance.objects.all().update(is_device_change=1)
 
 
+@disable_for_loaddata
 def update_site_on_service_change(sender, instance=None, created=False, **kwargs):
     """
         Set 'is_device_change' for all site instances to 1 if service is modified in device type
@@ -127,6 +132,7 @@ def update_site_on_service_change(sender, instance=None, created=False, **kwargs
     SiteInstance.objects.all().update(is_device_change=1)
 
 
+@disable_for_loaddata
 def update_device_type_service(sender, instance=None, created=False, **kwargs):
     """
     If a new device type service is created auto assign default data source of service to it.
