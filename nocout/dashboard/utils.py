@@ -244,7 +244,8 @@ def get_range_status(dashboard_setting, result):
             string_compare = lambda x: ''.join(e for e in x.lower() if e.isalnum())
             # if result['current_value'].lower() in start_range.lower():
             string_get = string_compare(result['current_value'])
-            if string_get.lower() == start_range.lower():
+            start_range_alnum = string_compare(start_range)
+            if string_get.lower() == start_range_alnum.lower():
                 range_count = 'range%d' %i
 
     return {'range_count': range_count}
@@ -271,7 +272,22 @@ def get_dashboard_status_range_counter(dashboard_setting, service_status_results
     for result in service_status_results:
         # Get the name of range in which result's current_value falls.
         range_status_dct = get_range_status(dashboard_setting, result)
-        range_counter[range_status_dct['range_count']] += 1
+        ds_name_list = [
+            'latency-network',
+            'packetloss-network',
+            'down-network',
+            'temperature',
+            'latency-WiMAX',
+            'packetloss-WiMAX',
+            'down-WiMAX',
+            'latency-PMP',
+            'packetloss-PMP',
+            'down-PMP'
+        ]
+        if dashboard_setting.name in ds_name_list:
+            range_counter[range_status_dct['range_count']] = result['current_value']
+        else:     
+            range_counter[range_status_dct['range_count']] += 1
 
     return range_counter
 
