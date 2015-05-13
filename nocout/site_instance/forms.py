@@ -1,18 +1,38 @@
+"""
+===================================================================
+Module contains forms functionlity specific to 'site_instance' app.
+===================================================================
+
+Location:
+* /nocout_gis/nocout/site_instance/forms.py
+
+List of constructs:
+=======
+Classes
+=======
+* SiteInstanceForm
+"""
+
+import re
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import SiteInstance
-import re
+from models import SiteInstance
 from django.forms.util import ErrorList
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 class SiteInstanceForm(forms.ModelForm):
     """
-    Class Based SiteInstance Model Form required to create and update the SiteInstance.
+    Form required to create and update site instance.
     """
     def __init__(self, *args, **kwargs):
+        """
+        Initialize function to change attributes before rending the model form.
+        """
         super(SiteInstanceForm, self).__init__(*args, **kwargs)
+
         self.fields['machine'].empty_label = 'Select'
         self.fields['machine'].required = True
         self.fields['username'].required = True
@@ -39,13 +59,15 @@ class SiteInstanceForm(forms.ModelForm):
 
     class Meta:
         """
-        Model Form Meta Information.
+        Meta Information required to generate model form, and to mention the fields, widgets and fieldsets
+        information required to render for the form.
         """
         model = SiteInstance
 
     def clean_name(self):
         """
-        Name unique validation
+        Validate name already exist in database or not.
+        Unique name validation check.
         """
         name = self.cleaned_data['name']
         names = SiteInstance.objects.filter(name=name)
@@ -62,11 +84,11 @@ class SiteInstanceForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for site instance form
+        Validations for all fields or field validations which are dependent on each other can be defined here.
         """
         name = self.cleaned_data.get('name')
 
-        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        # Check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
         try:
             if not re.match(r'^[A-Za-z0-9\._-]+$', name):
                 self._errors['name'] = ErrorList(
