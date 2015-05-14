@@ -509,6 +509,38 @@ def dfr_processed_report_download(request, pk):
 
 # ***************************************** DFR-REPORTS *******************************************************
 
+class DFRReportsListingTableMain(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    model = DFRProcessed
+    columns = ['processed_for__name', 'processed_on', 'processed_report_path']
+    search_columns = ['processed_for__name']
+    order_columns = ['processed_for__name']
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for obj in json_data:
+            fetched_path = obj['processed_report_path']
+            download_path = ''
+            if '/static/' in fetched_path:
+                download_path = fetched_path.split("/static/")
+                download_path = "/static/"+download_path[1]
+            elif '/media/' in fetched_path:
+                download_path = fetched_path.split("/media/")
+                download_path = "/media/"+download_path[1]
+            else:
+                download_path = fetched_path
+
+            download_action = '<a href="'+download_path+'" target="_blank"><i class=" fa fa-download"> </i></a>'
+            if self.request.user.is_superuser:
+                obj.update({'actions': download_action})
+        return json_data
+
+
 class DFRReportsListView(TemplateView):
     """
     Class Based View for the DFR-Reports data table rendering.
@@ -709,12 +741,19 @@ class MainDashboard(View):
             {'mData': 'wimax_latancy', 'sTitle': 'Latency WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'},
         ]
+        dfr_processed_header = [
+            {'mData': 'processed_for__name', 'sTitle': 'Name', 'sWidth': 'auto'},
+            {'mData': 'processed_on', 'sTitle': 'Processed On', 'sWidth': 'auto'}
+        ]
+        if self.request.user.is_superuser:
+            dfr_processed_header.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context = {
             "isOther": 0,
             "page_title": "Main Dashboard",
             "debug" : 0,
             "city_charter_headers" : json.dumps(city_charter_headers),
+            "dfr_processed_header" : json.dumps(dfr_processed_header),
             "process_count" : PERIODIC_POLL_PROCESS_COUNT
         }
 

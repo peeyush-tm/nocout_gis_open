@@ -33,7 +33,7 @@ function ourDataTableWidget() {
 
         var page_length_val = [[10, 25, 50, 100], [10, 25, 50, 100]];
 
-        if(ajax_url == '/download_center/citycharter/listing/yes/') {
+        if(ajax_url == '/download_center/citycharter/listing/yes/' || ajax_url == '/dashboard/dfr-reports-main/table/') {
             page_length_val = [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]];            
         }
 
