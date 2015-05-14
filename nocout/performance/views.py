@@ -2102,11 +2102,13 @@ class ServiceDataSourceHeaders(ListView):
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'},
             {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
-            {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
+            {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto'},
             {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
             {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto'},
-            {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto'},
+            {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
             {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto'},
+            {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto'},
+            {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto'},
             {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'}
         ]
 
