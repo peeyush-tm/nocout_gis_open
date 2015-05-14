@@ -116,6 +116,7 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     else:
         return service_status_data
 
+# Below class is referenced from Link - https://djangosnippets.org/snippets/1253/
 class MultiQuerySet(object):
     def __init__(self, *args, **kwargs):
         self.querysets = args
@@ -240,84 +241,14 @@ def get_range_status(dashboard_setting, result):
 
         # dashboard type is string and start_range exists to compare result.
         elif dashboard_setting.dashboard_type == 'STR' and start_range:
-            if result['current_value'].lower() in start_range.lower():
+            string_compare = lambda x: ''.join(e for e in x.lower() if e.isalnum())
+            # if result['current_value'].lower() in start_range.lower():
+            string_get = string_compare(result['current_value'])
+            start_range_alnum = string_compare(start_range)
+            if string_get.lower() == start_range_alnum.lower():
                 range_count = 'range%d' %i
 
     return {'range_count': range_count}
-
-
-def get_status_range(dashboard_setting, counter_result):
-    """
-    get the perfect range for the dashbord and counter result
-
-    :param dashboard_setting: dashboard settings dictionary
-    :param counter_result: count of the query set results
-    :return: unknown range always if the comparision is of string type
-    """
-    range_count = 'unknown'
-    for i in range(1, 11):
-        # Get the start_range and end_range attribute of dashboard_setting.
-        start_range = getattr(dashboard_setting, 'range%d_start' %i)
-        end_range = getattr(dashboard_setting, 'range%d_end' %i)
-
-        # dashboard type is numeric and start_range and end_range exists to compare result.
-        if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
-            try:
-                if float(start_range) <= float(counter_result) <= float(end_range):
-                    range_count = 'range%d' %i
-            except ValueError as value_error:
-                range_count = 'unknown'
-                break
-            except TypeError as type_error:
-                pass
-
-        # dashboard type is string and start_range exists to compare result.
-        elif dashboard_setting.dashboard_type == 'STR' and start_range:
-            # if result['current_value'].lower() in start_range.lower():
-            #     range_count = 'range%d' %i
-            range_count = 'unknown'
-
-    return {'range_count': range_count}
-
-
-def get_empty_ranges():
-    """
-
-    :param dashboard_setting:
-    :return: ranges for the dashboard
-    """
-    range_counter = dict()
-    # initialize the ranges of range_counter to 0(zero)
-    for i in range(1, 11):
-        range_counter.update({'range%d' %i: 0})
-    range_counter.update({'unknown': 0})
-
-    return range_counter
-
-
-def get_dashboard_status_range_mapped(dashboard_setting, service_status_results):
-    """
-
-    :param dashboard_setting: dashboard settings
-    :param service_status_results: counter for dashboard settings
-    :return: mapped ranges according to counter { 'unknown': 0, 'range1': 1, 'range2': 2,... }
-    """
-    range_counter = None
-    if dashboard_setting:
-        try:
-            range_counter = get_empty_ranges()
-            counter_key = get_status_range(
-                dashboard_setting=dashboard_setting,
-                counter_result=service_status_results
-            )
-            range_counter[counter_key['range_count']] = service_status_results
-
-        except Exception as e:
-            log.exception(e)
-            pass
-
-    return range_counter
-
 
 def get_dashboard_status_range_counter(dashboard_setting, service_status_results):
     '''
@@ -341,7 +272,22 @@ def get_dashboard_status_range_counter(dashboard_setting, service_status_results
     for result in service_status_results:
         # Get the name of range in which result's current_value falls.
         range_status_dct = get_range_status(dashboard_setting, result)
-        range_counter[range_status_dct['range_count']] += 1
+        ds_name_list = [
+            'latency-network',
+            'packetloss-network',
+            'down-network',
+            'temperature',
+            'latency-WiMAX',
+            'packetloss-WiMAX',
+            'down-WiMAX',
+            'latency-PMP',
+            'packetloss-PMP',
+            'down-PMP'
+        ]
+        if dashboard_setting.name in ds_name_list:
+            range_counter[range_status_dct['range_count']] = result['current_value']
+        else:     
+            range_counter[range_status_dct['range_count']] += 1
 
     return range_counter
 
@@ -400,86 +346,7 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
     return response_dict
 
 
-#**************************** Sector Capacity *********************#
-def get_dashboard_status_sector_range_counter(service_status_results):
-    '''
-    Method return the dictionay for the severity status.
-
-    :param:
-    service_status_results: list of dictionary.
-
-    return: dictionary.
-                    i.e: {  'Normal':0,
-                            'Unknown':3,
-                            'Stop Provisioning': 1,
-                            'Needs Augmentation': 0,
-                        }
-    '''
-    range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0, 'Unknown':0}
-    date_format = '%Y-%m-%d %H:%M:%S'
-    # now = datetime.today() - timedelta(minutes=10)
-
-    for result in service_status_results:
-        # Convert the integer age and sys_timestamp into string as date_format.
-        age_str_since_the_epoch = datetime.fromtimestamp(float(result['age'])).strftime(date_format)
-        sys_timestamp_str_since_the_epoch = datetime.fromtimestamp(float(result['sys_timestamp'])).strftime(date_format)
-
-        # get the age and sys_timestamp as datetime object.
-        age_time_since_the_epoch = datetime.strptime(age_str_since_the_epoch, date_format)
-        sys_timestamp_str_since_the_epoch = datetime.strptime(sys_timestamp_str_since_the_epoch, date_format)
-
-        # update the range_counter values.
-        result_status =  age_time_since_the_epoch - sys_timestamp_str_since_the_epoch
-        if result['severity'] == 'warning' and result_status > timedelta(minutes=10):
-            range_counter['Needs Augmentation'] += 1
-        elif result['severity'] == 'critical' and result_status >= timedelta(minutes=10):
-            range_counter['Stop Provisioning'] += 1
-        elif result['severity'] == 'ok':
-            range_counter['Normal'] += 1
-        else:
-            range_counter['Unknown'] += 1
-
-    return range_counter
-
-
-#**************************** Sales Opportunity *********************#
-def get_topology_status_results(user_devices, model, service_name, data_source, user_sector):
-    '''
-    Method return the total ss connected to the sector.
-
-    :param:
-    user_devices: device list.
-    model: model name.
-    service_name: service name.
-    data_source: data source name.
-    user_sector: sector list.
-
-    return: list of dictionary.
-                    i.e: [
-                        {'id': sector_id1, 'name': sector_name1, 'device_name':  device_name1, 'current_value': 1},
-                        {'id': sector_id2, 'name': sector_name2, 'device_name':  device_name2, 'current_value': 2},
-                        {'id': sector_id3, ...},
-                        ]
-    '''
-
-    status_results = []
-
-    topology_status_results = model.objects.filter(
-                                    sector_id__in=user_sector.values_list('sector_id', flat=True),
-                                    data_source='topology',
-                                )
-
-    # Count the total ss connected to the sector.
-    for sector in user_sector:
-        ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
-                        annotate(Count('connected_device_ip'))
-        # current value define the total ss connected to the sector.
-        status_results.append({'id': sector.id,
-                               'name': sector.name,
-                               'device_name':  sector.sector_configured_on.device_name,
-                               'organization': sector.organization,
-                               'current_value': ss_qs.count()})
-    return status_results
+# **************************** Sales Opportunity **********************#
 
 def get_total_circuits_per_sector(model, user_sector):
     '''
