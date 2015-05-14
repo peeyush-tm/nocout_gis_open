@@ -598,11 +598,16 @@ class DownloaderCompleteListing(BaseDatatableView):
                 order.append('%s%s' % (sdir, sortcol))
 
         if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
+            # key_name=order[0][1:] if '-' in order[0] else order[0]
             
             # In case of null 'request_completion_on' field, it gives error.
             try:
-                sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+                # sorted_device_data = sorted(
+                #     qs,
+                #     key=operator.attrgetter(key_name),
+                #     reverse= True if '-' in order[0] else False
+                # )
+                sorted_device_data = qs.order_by(*order)
             except Exception, e:
                 sorted_device_data = qs
 
@@ -806,6 +811,7 @@ class DownloaderCompleteListing(BaseDatatableView):
 
         # prepare output data
         aaData = self.prepare_results(qs)
+
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
