@@ -512,8 +512,8 @@ def dfr_processed_report_download(request, pk):
 class DFRReportsListingTableMain(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     model = DFRProcessed
     columns = ['processed_for__name', 'processed_on', 'processed_report_path']
+    order_columns = ['processed_for__name', 'processed_on']
     search_columns = ['processed_for__name']
-    order_columns = ['processed_for__name']
 
     def prepare_results(self, qs):
         """
