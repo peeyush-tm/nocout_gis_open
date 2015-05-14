@@ -83,6 +83,18 @@ var perf_that = "",
             'bSortable': true
         },
         {
+            'mData': 'warning_threshold',
+            'sTitle': 'Warning Threshold',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
+            'mData': 'critical_threshold',
+            'sTitle': 'Critical Threshold',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
             'mData': 'sys_timestamp',
             'sTitle': 'Time',
             'sWidth': 'auto',
@@ -91,8 +103,8 @@ var perf_that = "",
     ],
     default_hist_table_headers = [
         {
-            'mData': 'current_value',
-            'sTitle': 'Current Value',
+            'mData': 'avg_value',
+            'sTitle': 'Avg. Value',
             'sWidth': 'auto',
             'bSortable': true
         },
@@ -109,14 +121,26 @@ var perf_that = "",
             'bSortable': true
         },
         {
-            'mData': 'avg_value',
-            'sTitle': 'Avg. Value',
+            'mData': 'current_value',
+            'sTitle': 'Current Value',
             'sWidth': 'auto',
             'bSortable': true
         },
         {
             'mData': 'severity',
             'sTitle': 'Severity',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
+            'mData': 'warning_threshold',
+            'sTitle': 'Warning Threshold',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
+            'mData': 'critical_threshold',
+            'sTitle': 'Critical Threshold',
             'sWidth': 'auto',
             'bSortable': true
         },
@@ -846,7 +870,8 @@ function nocoutPerfLib() {
         }
 
         var draw_type = $("input[name='item_type']:checked").val(),
-            listing_ajax_url = "";
+            listing_ajax_url = "",
+            listing_headers = default_live_table_headers;
 
         if (!draw_type) {
             draw_type = "chart";
@@ -859,26 +884,24 @@ function nocoutPerfLib() {
 
         var start_date = "",
             end_date = "",
-            get_url = "";
+            get_url = "",
+            get_param_start_date = "", 
+            get_param_end_date = "";
 
+        // Show loading spinner
         showSpinner();
 
+        // URL to fetch chart data
         get_url = base_url + "" + get_service_data_url;
-        listing_ajax_url = get_service_data_url;
 
+        // Reset global variables
         start_date = "";
         end_date = "";
-
-        var get_param_start_date = "", 
-            get_param_end_date = "";
 
         if (startDate && endDate) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
-
-            // start_date = new Date(myStartDate.getTime()),
-            // end_date = new Date(myEndDate.getTime());
 
             start_date = myStartDate.getTime(),
             end_date = myEndDate.getTime();
@@ -896,7 +919,6 @@ function nocoutPerfLib() {
                     }
                     // Destroy highchart
                     $("#" + service_id + "_chart").highcharts().destroy();
-
                 }
 
                 if ($("#" + service_id + "_bottom_table").length) {
@@ -914,14 +936,46 @@ function nocoutPerfLib() {
             end_date = '';
         }
 
-        if (listing_ajax_url.indexOf("?") > -1) {
-            listing_ajax_url = listing_ajax_url + "&start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
+        if (get_service_data_url.indexOf("?") > -1) {
+            listing_ajax_url = get_service_data_url + "&start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
         } else {
-            listing_ajax_url = listing_ajax_url + "?start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
+            listing_ajax_url = get_service_data_url + "?start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
         }
-        
-        // Send ajax call
-        sendAjax(start_date, end_date);
+
+        try {
+            var not_live_tab = listing_ajax_url.split("data_for=")[1].indexOf('live') == -1
+
+            // If historical tab then update table_headers variable
+            if ((show_historical_on_performance && not_live_tab) || (listing_ajax_url.indexOf('/rta/') > -1)) {
+                listing_headers = default_hist_table_headers;
+            }
+        } catch(e) {
+            // console.log(e);
+        }
+
+
+        if(listing_ajax_url.indexOf("_invent") > -1 || listing_ajax_url.indexOf("_status") > -1) {
+
+            // Hide display type option from only table tabs
+            if (!$("#display_type_container").hasClass("hide")) {
+                $("#display_type_container").addClass("hide")
+            }
+
+            draw_type = 'table';
+            // Checked the chart type radio
+            $('#display_table')[0].checked = true
+
+            initChartDataTable_nocout(
+                "perf_data_table",
+                listing_headers,
+                service_id,
+                listing_ajax_url,
+                true
+            );
+        } else {
+            // Send ajax call
+            sendAjax(start_date, end_date);
+        }
 
         // This function returns date object as per given date string
         function getDate(date) {
@@ -1021,7 +1075,7 @@ function nocoutPerfLib() {
 
                                 initChartDataTable_nocout(
                                     "other_perf_table",
-                                    grid_headers,
+                                    listing_headers,
                                     service_id,
                                     listing_ajax_url,
                                     true
@@ -1116,10 +1170,10 @@ function nocoutPerfLib() {
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
                                         initChartDataTable_nocout(
                                             "perf_data_table",
-                                            chart_config.chart_data,
+                                            listing_headers,
                                             service_id,
                                             listing_ajax_url,
-                                            false
+                                            true
                                         );
                                     }
                                 }
@@ -1138,15 +1192,20 @@ function nocoutPerfLib() {
                                 } else {
 
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        // Clear the DIV HTML
                                         $('#' + service_id+ '_chart').html("");
-                                        var table_headers = default_live_table_headers;
+                                        
+                                        var table_headers = default_live_table_headers,
+                                            not_availability_page = listing_ajax_url.indexOf("availability")  == -1,
+                                            not_live_tab = listing_ajax_url.split("data_for=")[1].indexOf('live') == -1;
 
-                                        if (show_historical_on_performance && listing_ajax_url.indexOf("availability")  == -1 && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
+                                        // If historical tab then update table_headers variable
+                                        if (show_historical_on_performance && not_availability_page && not_live_tab) {
                                             table_headers = default_hist_table_headers;
                                         }
                                         initChartDataTable_nocout(
                                             "perf_data_table",
-                                            table_headers,
+                                            listing_headers,
                                             service_id,
                                             listing_ajax_url,
                                             true
@@ -1202,7 +1261,7 @@ function nocoutPerfLib() {
 
                             initChartDataTable_nocout(
                                 "perf_data_table",
-                                table_headers,
+                                listing_headers,
                                 service_id,
                                 listing_ajax_url,
                                 true
