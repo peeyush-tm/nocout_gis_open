@@ -254,7 +254,7 @@
             </h5>
             <!--TITLE BLOCK - END -->
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3" align="center">
             <!--TIMESTAMP BLOCK - START -->
             <div id="tcl_pop_backhaul_capacity_timestamp"></div>
             <!--TIMESTAMP BLOCK - END -->
@@ -271,6 +271,19 @@
                 </strong>
             </h5>
             <!--TITLE BLOCK - END -->
+        </div>
+        <div class="col-md-3 rf_chart_style" style="overflow:auto;">
+            <!--TITLE BLOCK - START -->
+            <h5>
+                <strong>
+                    DFR Processed Reports
+                </strong>
+            </h5>
+            <!--TITLE BLOCK - END -->
+            <table class="datatable table table-striped table-bordered table-hover" id="dfr_reports_table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
         </div>
         <div class="clearfix"></div>
         <!-- ********** THIRD ROW END **********-->
@@ -465,9 +478,13 @@
 
         // Update the main url & trends url of charts in dict
         // City Charters Datatables
-        city_charter_tbl_obj["city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'yes' %}";
-        city_charter_tbl_obj["city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'no' %}";
-        city_charter_tbl_obj["city_charter_table"]["headers"] = JSON.parse('{{ city_charter_headers|safe }}');
+        datatables_obj["city_charter_table"]["few_url"] = "{% url 'CityCharterReportListing' 'yes' %}";
+        datatables_obj["city_charter_table"]["all_url"] = "{% url 'CityCharterReportListing' 'no' %}";
+        datatables_obj["city_charter_table"]["headers"] = JSON.parse('{{ city_charter_headers|safe }}');
+        // dfr Reports datatables
+        datatables_obj["dfr_reports_table"]["few_url"] = "{% url 'dfr-reports-main-table' %}";
+        datatables_obj["dfr_reports_table"]["all_url"] = "{% url 'dfr-reports-main-table' %}";
+        datatables_obj["dfr_reports_table"]["headers"] = JSON.parse('{{ dfr_processed_header|safe }}');
 
 
         /***************** GAUGE CHART START ************************/

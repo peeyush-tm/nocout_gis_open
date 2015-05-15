@@ -141,14 +141,24 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
         "text" : "MFR Processed"
       }
     },
-    city_charter_tbl_ids = [
-        "city_charter_table"
+    datatables_ids = [
+        "city_charter_table",
+        "dfr_reports_table"
     ],
-    city_charter_tbl_obj = {
+    datatables_obj = {
         "city_charter_table" : {
             "few_url" : "",
             "all_url" : "",
-            "headers" : []
+            "headers" : [],
+            "app_name" : "download_center",
+            "show_download_link" : true
+        },
+        "dfr_reports_table" : {
+            "few_url" : "",
+            "all_url" : "",
+            "headers" : [],
+            "app_name" : "dashboard",
+            "show_download_link" : false
         }
     },
     all_charts_array = [],
@@ -267,41 +277,50 @@ function initAreaCharts_dashboard(callback) {
  */
 function initCityChartersDatatables() {
 
-    for(var i=0;i<city_charter_tbl_ids.length;i++) {
+    for(var i=0;i<datatables_ids.length;i++) {
         
-        var table_id = city_charter_tbl_ids[i] ? $.trim(city_charter_tbl_ids[i]) : "",
+        var table_id = datatables_ids[i] ? $.trim(datatables_ids[i]) : "",
             current_table_obj = "",
             ajax_url = "",
             grid_headers = "";
 
         if(table_id && $("#"+table_id).length > 0) {
             
-            current_table_obj = city_charter_tbl_obj[table_id];
-            ajax_url = city_charter_tbl_obj[table_id]['few_url'];
-            grid_headers = city_charter_tbl_obj[table_id]['headers'];
+            current_table_obj = datatables_obj[table_id];
+            ajax_url = datatables_obj[table_id]['few_url'];
+            grid_headers = datatables_obj[table_id]['headers'];
 
             var common_extra_param = "'download_excel': 'yes'",
                 table_title = "City Charter Listing",
-                app_name = "download_center",
+                app_name = datatables_obj[table_id]['app_name'],
                 header_class_name = "CityCharterReportHeaders",
                 data_class_name = "CityCharterReportListing",
                 header_extra_param = "{"+common_extra_param+"}",
                 data_extra_param = "{'report_title' : '"+table_title+"', "+common_extra_param+"}",
                 destroy = false;
-                
-            /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable(
-                table_id,
-                grid_headers,
-                ajax_url,
-                destroy,
-                table_title,
-                app_name,
-                header_class_name,
-                data_class_name,
-                header_extra_param,
-                data_extra_param
-            );
+            if(datatables_obj[table_id]['show_download_link']) {
+                /*Call createDataTable function of ourDataTableWidget class*/
+                dataTableInstance.createDataTable(
+                    table_id,
+                    grid_headers,
+                    ajax_url,
+                    destroy,
+                    table_title,
+                    app_name,
+                    header_class_name,
+                    data_class_name,
+                    header_extra_param,
+                    data_extra_param
+                );
+            } else {
+                /*Call createDataTable function of ourDataTableWidget class*/
+                dataTableInstance.createDataTable(
+                    table_id,
+                    grid_headers,
+                    ajax_url,
+                    destroy
+                );
+            }
         }
     }
 }
@@ -845,7 +864,7 @@ $("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .b
         trends_url = pie_chart_url_obj[main_element_dom_id]["trends_url"] ? $.trim(pie_chart_url_obj[main_element_dom_id]["trends_url"]) : "";
         window_title = pie_chart_url_obj[main_element_dom_id]["text"] ? pie_chart_url_obj[main_element_dom_id]["text"]+" - " : "";
     } else {
-        var table_info_obj = city_charter_tbl_obj[main_element_dom_id];
+        var table_info_obj = datatables_obj[main_element_dom_id];
         if(table_info_obj) {
             table_headers = table_info_obj['headers'];
             table_ajax_url = table_info_obj['all_url'];
