@@ -364,3 +364,10 @@ iframe {
 .date-range .btn-group .btn {
   padding: 5px;
 }
+/*CSS To reduce size of search box*/
+#dfr_reports_table_length select {
+  max-width: 65px !important;
+}
+#dfr_reports_table_filter input {
+  max-width: 75px !important;
+}

@@ -57,14 +57,14 @@ function populateDeviceStatus_nocout(domElement,info) {
 
     status_html = "";
     status_html += '<table id="final_status_table" class="device_status_tbl table table-responsive table-bordered" \
-                    style="background:#FFFFFF;"><tr>\
-                    <td class="one_fourth_column vAlign_middle" style="color:' + txt_color + ';">\
+                    style="background:#FFFFFF;"><tr style="color:' + txt_color + ';">\
+                    <td class="one_fourth_column vAlign_middle">\
                     <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
                     style="vertical-align: middle;"> </i> \
                     <b>Current Status</b> : ' + status + '</td>\
-                    <td class="one_fourth_column vAlign_middle" style="color:' + txt_color + ';">\
+                    <td class="one_fourth_column vAlign_middle">\
                     <b>Since</b> : ' + age + '</td>\
-                    <td class="one_fourth_column vAlign_middle" style="color:' + txt_color + ';">\
+                    <td class="one_fourth_column vAlign_middle">\
                     <b>Last Down Time</b> : ' + lastDownTime + '</td>\
                     <td title="OK" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
                     <td title="Warning" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
@@ -136,7 +136,7 @@ function populateServiceStatus_nocout(domElement,info) {
             txt_color = severity_style_obj.color ? severity_style_obj.color : "";
             fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
             inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
-                                  <tr><td>\
+                                  <tr style="color:' + txt_color + ';"><td>\
                                   <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
                                   style="vertical-align: middle;"> </i> \
                                   <b>Performance Output</b> : ' + perf + '</td>\
@@ -438,6 +438,9 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
     data_extra_param += "'download_excel': 'yes'";
     data_extra_param += " }";
+
+    // Clear chart block html
+    $('#' + service_id+ '_chart').html("");
 
     /*Call createDataTable function to create the data table for specified dom element with given data*/
     dataTableInstance.createDataTable(
