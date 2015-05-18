@@ -1,4 +1,63 @@
-""" This file contains AJAX functions applied in 'device' app. """
+"""
+===============================================================================
+Module contains ajax functionality specific to 'device' app.
+===============================================================================
+
+Location:
+* /nocout_gis/nocout/device/ajax.py
+
+List of constructs:
+=======
+Methods
+=======
+* update_vendor
+* update_model
+* update_type
+* update_ports
+* update_sites
+* after_update_site
+* after_update_vendor
+* after_update_model
+* after_update_type
+* after_update_ports
+* device_type_extra_fields
+* device_parent_choices_initial
+* device_parent_choices_selected
+* device_extra_fields_update
+* device_soft_delete_form
+* device_soft_delete
+* device_restore_form
+* device_restore
+* update_states
+* update_cities
+* update_states_after_invalid_form
+* update_cities_after_invalid_form
+* add_device_to_nms_core_form
+* add_device_to_nms_core
+* edit_device_in_nms_core
+* delete_device_from_nms_core
+* modify_device_state
+* sync_device_with_nms_core
+* remove_sync_deadlock
+* edit_single_service_form
+* get_service_para_table
+* edit_single_service
+* delete_single_service_form
+* delete_single_service
+* edit_service_form
+* get_old_configuration_for_svc_edit
+* get_new_configuration_for_svc_edit
+* get_ping_configuration_for_svc_edit
+* edit_services
+* delete_service_form
+* delete_services
+* add_service_form
+* get_old_configuration_for_svc_add
+* get_new_configuration_for_svc_add
+* add_services
+* device_services_status
+* reset_service_configuration
+"""
 
 import ast
 import json
@@ -13,8 +72,6 @@ from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     DeviceTypeFieldsValue, Country, State, DeviceSyncHistory
 from service.models import Service, ServiceParameters, DeviceServiceConfiguration, DevicePingConfiguration
-from inventory.models import SubStation
-from performance.models import Topology
 from site_instance.models import SiteInstance
 from django.conf import settings
 
@@ -23,143 +80,191 @@ logger = logging.getLogger(__name__)
 
 @dajaxice_register(method='GET')
 def update_vendor(request, option):
-    """Updating vendors corresponding to selected technology
+    """
+    Updating vendors corresponding to selected technology.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected technology
+
+    # Selected technology.
     tech = DeviceTechnology.objects.get(pk=int(option))
-    # vendors associated to the selected technology
+
+    # Vendors associated with the selected technology.
     vendors = tech.device_vendors.all()
+
     out = list()
     out.append("<option value='' selected>Select</option>")
+
     for vendor in vendors:
         out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.alias))
+
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def update_model(request, option):
-    """Updating models corresponding to the selected vendor
+    """
+    Updating models corresponding to the selected vendor.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected vendor
+
+    # Selected vendor.
     vendor = DeviceVendor.objects.get(pk=int(option))
-    # models associated to the selected vendor
+
+    # Models associated with the selected vendor.
     models = vendor.device_models.all()
+
     out = list()
     out.append("<option value=''>Select</option>")
+
     for model in models:
         out.append("<option value='%d'>%s</option>" % (model.id, model.name))
+
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def update_type(request, option):
-    """Updating types corresponding to the selected model
+    """
+    Updating types corresponding to the selected model.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
 
-    # selected model
+    # Selected model.
     model = DeviceModel.objects.get(pk=int(option))
-    # types associated to the selected model
+
+    # Types associated with the selected model.
     types = model.device_types.all()
+
     out = list()
     out.append("<option value=''>Select</option>")
+
     for dtype in types:
         out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
+
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def update_ports(request, option):
-    """Updating ports corresponding to the selected type
+    """
+    Updating ports corresponding to the selected type.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
 
-    # selected type
+    # Selected device type.
     device_type = DeviceType.objects.get(pk=int(option))
-    # ports associated to the selected type
+
+    # Ports associated with the selected type.
     ports = device_type.device_port.all()
+
     out = list()
     out.append("<option value=''>Select</option>")
+
     for port in ports:
         out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+
     dajax.assign('#id_ports', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def update_sites(request, option):
-    """ Updating sites corresponding to selected machine
+    """
+    Updating sites corresponding to selected machine.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected machine
+
+    # Selected machine.
     machine = Machine.objects.get(pk=int(option))
 
-    # vendors associated to the selected technology
+    # Vendors associated with the selected technology.
     sites = machine.siteinstance_set.all()
 
     out = list()
@@ -174,33 +279,39 @@ def update_sites(request, option):
 
 @dajaxice_register(method='GET')
 def after_update_site(request, option, selected=''):
-    """ Get site selection menu with last time selected site as selected option after unsuccessful form submission
+    """
+    Get site selection menu with last selected site after unsuccessful form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Kwargs:
-        selected (unicode): option value selected before unsuccessful form submission
+        selected (unicode): Option value selected before unsuccessful form submission.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
 
-    # selected machine
+    # Selected machine.
     machine = Machine.objects.get(pk=int(option))
 
-    # sites associated to selected technology
+    # Sites associated with selected technology.
     sites = machine.siteinstance_set.all()
 
     out = list()
     out.append("<option value=''>Select</option>")
+
     for site in sites:
         if site.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (site.id, site.alias))
@@ -214,137 +325,177 @@ def after_update_site(request, option, selected=''):
 
 @dajaxice_register(method='GET')
 def after_update_vendor(request, option, selected=''):
-    """Get vendor selection menu with last time selected vendor as selected option after unsuccessful form submission
+    """
+    Get vendor selection menu with last selected vendor after unsuccessful form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Kwargs:
-        selected (unicode): option value selected before unsuccessful form submission
+        selected (unicode): Option value selected before unsuccessful form submission.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected technology
+
+    # Selected technology.
     tech = DeviceTechnology.objects.get(pk=int(option))
-    # vendors associated to selected technology
+
+    # Vendors associated with selected technology.
     vendors = tech.device_vendors.all()
+
     out = list()
     out.append("<option value=''>Select</option>")
+
     for vendor in vendors:
         if vendor.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (vendor.id, vendor.alias))
         else:
             out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.alias))
+
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def after_update_model(request, option, selected=''):
-    """Get model selection menu with last time selected model as selected option after unsuccessful form submission
+    """
+    Get model selection menu with last selected model after unsuccessful form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Kwargs:
-        selected (unicode): option value selected before unsuccessful form submission
+        selected (unicode): Option value selected before unsuccessful form submission.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected vendor
+
+    # Selected vendor.
     vendor = DeviceVendor.objects.get(pk=int(option))
-    # models associated to selected vendor
+
+    # Models associated with selected vendor.
     models = vendor.device_models.all()
+
     out = list()
     out.append("<option value=''>Select</option>")
+
     for model in models:
         if model.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (model.id, model.name))
         else:
             out.append("<option value='%d'>%s</option>" % (model.id, model.name))
+
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def after_update_type(request, option, selected=''):
-    """Get type selection menu with last time selected type as selected option after unsuccessful form submission
+    """
+    Get type selection menu with last selected type after unsuccessful form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Kwargs:
-        selected (unicode): option value selected before unsuccessful form submission
+        selected (unicode): Option value selected before unsuccessful form submission.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected model
+
+    # Selected model.
     model = DeviceModel.objects.get(pk=int(option))
-    # types associated to selected model
+
+    # Types associated with selected model.
     types = model.device_types.all()
+
     out = list()
     out.append("<option value=''>Select</option>")
+
     for dtype in types:
         if dtype.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (dtype.id, dtype.name))
         else:
             out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
+
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
-def after_update_ports(request, option, selected=[]):
-    """Get ports selection menu with last time selected port as selected option after unsuccessful form submission
+def after_update_ports(request, option, selected=list()):
+    """
+    Get ports selection menu with last selected port after unsuccessful form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Kwargs:
-        selected (unicode): option value selected before unsuccessful form submission
+        selected (unicode): Option value selected before unsuccessful form submission.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
 
-    # selected type
+    # Selected type.
     device_type = DeviceType.objects.get(pk=int(option))
 
-    # ports associated to selected type
+    # Ports associated with selected type.
     ports = device_type.device_port.all()
+
     out = list()
     out.append("<option value=''>Select</option>")
+
     for port in ports:
         if selected:
             if port.id in [int(x) for x in selected]:
@@ -353,85 +504,113 @@ def after_update_ports(request, option, selected=[]):
                 out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
         else:
             out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+
     dajax.assign('#id_ports', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def device_type_extra_fields(request, option):
-    """Show extra fields associated with device type on selecting device type
+    """
+    Show extra fields associated with device type on selecting device type.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected device type
+
+    # Selected device type.
     device_type = DeviceType.objects.get(pk=int(option))
-    # selected device extra
+
+    # Selected device extra.
     device_extra_fields = device_type.devicetypefields_set.all()
+
     out = []
+
     for extra_field in device_extra_fields:
         out.append("<div class='form-group'><label for='%s' class='col-sm-5 control-label'>\
                     %s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' />\
                     </div></div>"
                    % (extra_field.field_name, extra_field.field_display_name,
                       extra_field.field_name, extra_field.field_name))
+
     dajax.assign('#extra_fields', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def device_parent_choices_initial(request):
-    """Get parent selection menu having option titles including ip address
+    """
+    Get parent selection menu having option titles including ip address.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
+
     out = ["<option value=''>Select</option>"]
+
     for device in Device.objects.all():
         out.append("<option value='%d'>%s - (%s)</option>"
                    % (int(device.id), device.device_alias, device.ip_address))
+
     dajax.assign("#id_parent", 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def device_parent_choices_selected(request, option):
-    """Get parent selection menu having option titles including ip address after unsuccessful form submission
+    """
+    Get parent selection menu having option titles including ip address after unsuccessful form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
-
     dajax = Dajax()
+
     out = ["<option value=''>Select</option>"]
+
     for device in Device.objects.all():
         if device.id == int(option):
             out.append("<option value='%d' selected='selected'>%s - (%s)</option>"
@@ -439,41 +618,53 @@ def device_parent_choices_selected(request, option):
         else:
             out.append("<option value='%d'>%s - (%s)</option>"
                        % (int(device.id), device.device_alias, device.ip_address))
+
     dajax.assign("#id_parent", 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def device_extra_fields_update(request, device_type, device_name):
-    """Show device extra fields in device update form
+    """
+    Show device extra fields in device update form.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        device_type (unicode): device type value
-        device_name (unicode): device name
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        device_type (unicode): Device type value.
+        device_name (unicode): Device name.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # current device
+
+    # Current device.
     device = Device.objects.get(device_name=device_name)
-    # device type of current device
+
+    # Device type of current device.
     device_type = DeviceType.objects.filter(id=device_type)[0]
-    # extra fields associated with current device
+
+    # Extra fields associated with current device.
     device_extra_fields = device_type.devicetypefields_set.all()
+
     out = list()
+
     for extra_field in device_extra_fields:
         field_value = ""
         try:
             dtfv = DeviceTypeFieldsValue.objects.get(device_type_field=extra_field.id, device_id=device.id)
             field_value = dtfv.field_value
-        except:
+        except Exception as e:
             logger.info("Device type field doesn't exist.")
         out.append(
             "<div class='form-group'><label for='%s' class='col-sm-5 control-label'>\
@@ -483,21 +674,23 @@ def device_extra_fields_update(request, device_type, device_name):
                extra_field.field_name, extra_field.field_name, field_value))
 
     dajax.assign('#extra_fields', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
-# generate content for soft delete popup form
 @dajaxice_register(method='GET')
 def device_soft_delete_form(request, value):
-    """Get data to show on device soft delete form
+    """
+    Get data to show on device soft delete form.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        value (int): device id
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        value (int): Device ID.
 
     Returns:
-        result (dictionary): dictionary contains device and it's children's values
-                            i.e. {
+        result (dictionary): Dictionary contains device and it's children's values.
+                             For e.g.,
+                                {
                                     "success": 1,
                                     "message": "Success/Fail message.",       # 0 - fail, 1 - success, 2 - exception
                                     "data": {
@@ -520,8 +713,15 @@ def device_soft_delete_form(request, value):
                                     }
                                 }
 
+    Note:
+        * Child Devices: These are the devices which are associated with the device,
+                         which needs to be deleted in parent-child relationship.
+        * Child Device Descendant: Set of all child devices descendants (needs for
+                                   filtering new parent devices choice).
+        * Eligible Devices: These are the devices which are not associated with the device,
+                            (which needs to be deleted) & are eligible to be the
+                            parent of devices in child devices.
     """
-    # device which needs to be deleted
     device = Device.objects.get(id=value)
 
     result = dict()
@@ -535,12 +735,11 @@ def device_soft_delete_form(request, value):
     result['data']['objects']['id'] = device.id
     result['data']['objects']['name'] = device.device_name
 
-    # child_devices: these are the devices which are associated with
-    # the device which needs to be deleted in parent-child relationship
+    # These are the devices which are associated with the device,
+    # which needs to be deleted in parent-child relationship.
     child_devices = Device.objects.filter(parent_id=value, is_deleted=0)
 
-    # child_device_descendants: set of all child devices descendants (needs for
-    # filtering new parent devices choice)
+    # Set of all child devices descendants (needs for filtering new parent devices choice).
     child_device_descendants = []
     for child_device in child_devices:
         device_descendant = child_device.get_descendants()
@@ -549,12 +748,13 @@ def device_soft_delete_form(request, value):
 
     result['data']['objects']['childs'] = []
     result['data']['objects']['eligible'] = []
-    # future device parent is needs to find out only if our device is
-    # associated with any other device i.e if child_devices.count() > 0
+
+    # Future device parent is needed to find out only if our device is
+    # associated with any other device i.e if child_devices.count() > 0.
     if child_devices.count() > 0:
-        # eligible_devices: these are the devices which are not associated with
-        # the device which needs to be deleted in any way, & are eligible to be the
-        # parent of devices in child_devices
+        # These are the devices which are not associated with the
+        # device (which needs to be deleted) & are eligible to be the
+        # parent of devices in child_devices.
         remaining_devices = Device.objects.exclude(parent_id=value)
         selected_devices = set(remaining_devices) - set(child_device_descendants)
         result['data']['objects']['eligible'] = []
@@ -562,14 +762,14 @@ def device_soft_delete_form(request, value):
             e_dict = dict()
             e_dict['key'] = e_dv.id
             e_dict['value'] = e_dv.device_name
-            # for excluding 'device' which we are deleting from eligible
-            # device choices
+            # For excluding 'device' which we are deleting from eligible
+            # device choices.
             if e_dv.id == device.id:
                 continue
             if e_dv.is_deleted == 1:
                 continue
-            # for excluding devices from eligible device choices those are not from
-            # same device_group as the device which we are deleting
+            # For excluding devices from eligible device choices those are not from
+            # same device_group as the device which we are deleting.
             # if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
             result['data']['objects']['eligible'].append(e_dict)
         for c_dv in child_devices:
@@ -577,50 +777,52 @@ def device_soft_delete_form(request, value):
             c_dict['key'] = c_dv.id
             c_dict['value'] = c_dv.device_name
             result['data']['objects']['childs'].append(c_dict)
+
     result['success'] = 1
     result['message'] = "Successfully render form."
+
     return json.dumps({'result': result})
 
 
 @dajaxice_register(method='GET')
 def device_soft_delete(request, device_id, new_parent_id):
-    """ Soft delete device i.e. not deleting device from database, it just set
-        it's is_deleted field value to 1 & remove it's relationship with any other device
-        & make some other device parent of associated device
+    """ 
+    Soft delete device i.e. not deleting device from database, it just set
+    it's is_deleted field value to 1 & remove it's relationship with any other device
+    & make some other device parent of associated device.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        value (int): device id
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        value (int): Device ID.
 
     Returns:
-        result (dictionary): dictionary contains device and it's children's values
-                            i.e. {
-                                    "success": 1,
-                                    "message": "Success/Fail message.",       # 0 - fail, 1 - success, 2 - exception
-                                    "data": {
-                                        "meta": {},
-                                        "objects": {
-                                            "form_type": <name>,
-                                            "form_title": <name>,
-                                            "device_name": <name>,
-                                            "child_devices": [
-                                                {
-                                                    "id": <id>,
-                                                    "value": <value>
-                                                },
-                                                {
-                                                    "id": <id>,
-                                                    "value": <value>
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-
+        result (dictionary): Dictionary contains device and it's children's values.
+                             For e.g.,
+                                 {
+                                     "success": 1,
+                                     "message": "Success/Fail message.",       # 0 - fail, 1 - success, 2 - exception
+                                     "data": {
+                                         "meta": {},
+                                         "objects": {
+                                             "form_type": <name>,
+                                             "form_title": <name>,
+                                             "device_name": <name>,
+                                             "child_devices": [
+                                                 {
+                                                     "id": <id>,
+                                                     "value": <value>
+                                                 },
+                                                 {
+                                                     "id": <id>,
+                                                     "value": <value>
+                                                 }
+                                             ]
+                                         }
+                                     }
+                                 }
     """
-    # device: device which needs to be deleted
     device = Device.objects.get(id=device_id)
-    # result: data dictionary send in ajax response
+
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -629,70 +831,69 @@ def device_soft_delete(request, device_id, new_parent_id):
     result['data']['objects'] = {}
     result['data']['objects']['device_id'] = device_id
     result['data']['objects']['device_name'] = device.device_name
-    # setting new parent device
+
+    # New parent device for associated devices.
     new_parent = ""
+    
     try:
-        # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
     except Exception as e:
         logger.info("No new device parent exist. Exception: ", e.message)
 
-    # fetching all child devices of device which needs to be deleted
+    # Fetching all child devices of device which needs to be deleted.
     child_devices = ""
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
     except Exception as e:
         logger.info("No child device exists. Exception: ", e.message)
 
-    # assign new parent device to all child devices
+    # Assign new parent device to all child devices.
     if new_parent:
         if child_devices.count() > 0:
             child_devices.update(parent=new_parent)
 
-    # delete device from nms core if it is already added there(nms core)
+    # Delete device from nms core if it is already added there(nms core).
     if device.host_state != "Disable" and device.is_added_to_nms != 0:
-        # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
         device.is_added_to_nms = 0
-        # set 'is_monitored_on_nms' to 1 if service is added successfully
         device.is_monitored_on_nms = 0
         device.save()
-        # remove device services from 'service_deviceserviceconfiguration' table
+        # Remove device services from 'service_deviceserviceconfiguration' table.
         DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
-        # remove device ping service from 'service_devicepingconfiguration' table
+        # Remove device ping service from 'service_devicepingconfiguration' table.
         DevicePingConfiguration.objects.filter(device_name=device.device_name).delete()
 
-    # setting 'is_deleted' bit of device to 1 which means device is soft deleted
+    # Setting 'is_deleted' bit of device to 1 which means device is soft deleted.
     if device.is_deleted == 0:
         device.is_deleted = 1
         device.save()
-
-        # modify site instance 'is_device_change' bit to relect corresponding site for sync
+        # Modify site instance 'is_device_change' bit to relect corresponding site for sync.
         try:
             device.site_instance.is_device_change = 1
             device.site_instance.save()
         except Exception as e:
             pass
-
         result['success'] = 1
         result['message'] = "Successfully deleted."
     else:
         result['success'] = 0
         result['message'] = "Already soft deleted."
+    
     return json.dumps({'result': result})
 
 
-# generate content for soft delete popup form
 @dajaxice_register(method='GET')
 def device_restore_form(request, value):
-    """ Get data to show on device restore form
+    """ 
+    Get data to show on device restore form.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        value (int): device id
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        value (int): Device ID.
 
     Returns:
-        result (dictionary): dictionary contains device and it's children's values
-                            i.e. {
+        result (dictionary): Dictionary contains device and it's children's values.
+                             For e.g.,
+                                {
                                     'message': 'Successfully render form.',
                                     'data': {
                                         'meta': '',
@@ -704,9 +905,7 @@ def device_restore_form(request, value):
                                     },
                                     'success': 1
                                 }
-
     """
-    # device which needs to be deleted
     device = Device.objects.get(id=value)
 
     result = dict()
@@ -715,26 +914,30 @@ def device_restore_form(request, value):
     result['message'] = "Failed to render form correctly."
     result['data']['meta'] = ''
     result['data']['objects'] = {}
+    
     if device:
         result['data']['objects']['id'] = device.id
         result['data']['objects']['name'] = device.device_name
         result['data']['objects']['alias'] = device.device_alias
         result['success'] = 1
         result['message'] = "Successfully render form."
+    
     return json.dumps({'result': result})
 
 
 @dajaxice_register(method='GET')
 def device_restore(request, device_id):
-    """ Restoring device to device inventory
+    """ 
+    Restoring device to device inventory.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        device_id (int): device id
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        device_id (int): Device ID.
 
     Returns:
-        result (dictionary): dictionary contains device and it's children's values
-                            i.e. {
+        result (dictionary): Dictionary contains device and it's children's values.
+                             For e.g., 
+                                {
                                     'message': 'Successfully restored device (091HYDE030007077237_NE).',
                                     'data': {
                                         'meta': '',
@@ -747,9 +950,8 @@ def device_restore(request, device_id):
                                 }
 
     """
-    # device: device which needs to be deleted
     device = Device.objects.get(id=device_id)
-    # result: data dictionary send in ajax response
+
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -759,172 +961,217 @@ def device_restore(request, device_id):
     result['data']['objects']['device_id'] = device_id
     result['data']['objects']['device_name'] = device.device_name
 
-    # setting 'is_deleted' bit of device to 0 which means device is restored
+    # Setting 'is_deleted' bit of device to 0 which means device is restored.
     if device.is_deleted == 1:
         device.is_deleted = 0
         device.save()
-
-        # modify site instance 'is_device_change' bit to relect corresponding site for sync
+        # Modify site instance 'is_device_change' bit to relect corresponding site for sync.
         try:
             device.site_instance.is_device_change = 1
             device.site_instance.save()
         except Exception as e:
             pass
-
         result['success'] = 1
         result['message'] = "Successfully restored device ({}).".format(device.device_alias)
     else:
         result['success'] = 0
         result['message'] = "Already restored."
+    
     return json.dumps({'result': result})
 
 
 @dajaxice_register(method='GET')
 def update_states(request, option):
-    """Updating states corresponding to the selected country
+    """
+    Updating states corresponding to the selected country.
 
     Args:
         request (django.core.handlers.wsgi.WSGIRequest): GET request
         option (unicode): selected option value
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected country
+    
+    # Selected country.
     country = Country.objects.get(pk=int(option))
-    # states associated with selected country
+    
+    # States associated with selected country.
     states = country.state_set.all().order_by('state_name')
-    out = ["<option value=''>Select State....</option>"]
+    
+    out = ["<option value=''>Select State...</option>"]
+    
     for state in states:
         out.append("<option value='%d'>%s</option>" % (state.id, state.state_name))
+    
     dajax.assign('#id_state', 'innerHTML', ''.join(out))
+    
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def update_cities(request, option):
-    """Updating cities corresponding to the selected state
+    """
+    Updating cities corresponding to the selected state.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected state
+    
+    # Selected state.
     state = State.objects.get(pk=int(option))
-    # cities associated to selected state
+    
+    # Cities associated with selected state.
     cities = state.city_set.all().order_by('city_name')
-    out = ["<option value=''>Select City....</option>"]
+    
+    out = ["<option value=''>Select City...</option>"]
+    
     for city in cities:
         out.append("<option value='%d'>%s</option>" % (city.id, city.city_name))
+    
     dajax.assign('#id_city', 'innerHTML', ''.join(out))
+    
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def update_states_after_invalid_form(request, option, state_id):
-    """Updating states corresponding to the selected country after invalid form submission
+    """
+    Updating states corresponding to the selected country after invalid form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
-        state_id (int): state id
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
+        state_id (int): State ID.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected country
+
+    # Selected country.
     country = Country.objects.get(pk=int(option))
-    # states associated to selected country
+
+    # States associated with selected country.
     states = country.state_set.all().order_by('state_name')
-    out = ["<option value=''>Select State....</option>"]
+
+    out = ["<option value=''>Select State...</option>"]
+
     for state in states:
         if state.id == int(state_id):
             out.append("<option value='%d' selected='selected'>%s</option>" % (state.id, state.state_name))
         else:
             out.append("<option value='%d'>%s</option>" % (state.id, state.state_name))
+
     dajax.assign('#id_state', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def update_cities_after_invalid_form(request, option, city_id):
-    """Updating cities corresponding to the selected state after invalid form submission
+    """
+    Updating cities corresponding to the selected state after invalid form submission.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        option (unicode): selected option value
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        option (unicode): Selected option value.
 
     Returns:
-        dajax (str): string containing list of dictionaries
-                    i.e. [{"cmd": "as",
-                           "id": "#name_id",
-                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
-                           "prop": "innerHTML"}]
-
+        dajax (str): String containing list of dictionaries.
+                     For e.g.,
+                     [
+                         {
+                             "cmd": "as",
+                             "id": "#name_id",
+                             "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                             "prop": "innerHTML"
+                         }
+                     ]
     """
     dajax = Dajax()
-    # selected state
+
+    # Selected state.
     state = State.objects.get(pk=int(option))
-    # cities associated to the selected state
+
+    # Cities associated with the selected state.
     cities = state.city_set.all().order_by('city_name')
-    out = ["<option value=''>Select City....</option>"]
+
+    out = ["<option value=''>Select City...</option>"]
+
     for city in cities:
         if city.id == int(city_id):
             out.append("<option value='%d' selected='selected'>%s</option>" % (city.id, city.city_name))
         else:
             out.append("<option value='%d'>%s</option>" % (city.id, city.city_name))
+
     dajax.assign('#id_city', 'innerHTML', ''.join(out))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def add_device_to_nms_core_form(request, device_id):
-    """ Generate form content for device addition to nms core
+    """
+    Generate form content for device addition to nms core.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        device_id (int): device id
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        device_id (int): Device ID.
 
     Returns:
-        result (dict): dict of ping parameters associated with device type
-                    i.e. {
-                            "result": {
-                                "message": "Successfully fetched ping parameters from database.",
-                                "data": {
-                                    "rta_critical": 3000,
-                                    "packets": 60,
-                                    "meta": "",
-                                    "timeout": 20,
-                                    "pl_critical": 100,
-                                    "normal_check_interval": 5,
-                                    "pl_warning": 80,
-                                    "rta_warning": 1500,
-                                    "device_id": 23
-                                },
-                                "success": 1
+        result (dict): Dictionary of ping parameters associated with device type.
+                       For e.g.,
+                            {
+                                "result": {
+                                    "message": "Successfully fetched ping parameters from database.",
+                                    "data": {
+                                        "rta_critical": 3000,
+                                        "packets": 60,
+                                        "meta": "",
+                                        "timeout": 20,
+                                        "pl_critical": 100,
+                                        "normal_check_interval": 5,
+                                        "pl_warning": 80,
+                                        "rta_warning": 1500,
+                                        "device_id": 23
+                                    },
+                                    "success": 1
+                                }
                             }
-                        }
 
     """
     result = dict()
@@ -932,13 +1179,12 @@ def add_device_to_nms_core_form(request, device_id):
     result['success'] = 0
     result['message'] = "Failed to get device ping data."
     result['data']['meta'] = ''
+
     device = Device.objects.get(pk=device_id)
 
     try:
-        # get device type
         device_type = DeviceType.objects.get(pk=device.device_type)
-
-        # get device ping information which is a ssociated which device type (if exist)
+        # Get device ping information which is a ssociated which device type (if exist).
         ping_packets = device_type.packets if device_type.packets else settings.PING_PACKETS
         ping_timeout = device_type.timeout if device_type.timeout else settings.PING_TIMEOUT
         ping_normal_check_interval = device_type.normal_check_interval if device_type.normal_check_interval else settings.PING_NORMAL_CHECK_INTERVAL
@@ -946,13 +1192,11 @@ def add_device_to_nms_core_form(request, device_id):
         ping_rta_critical = device_type.rta_critical if device_type.rta_critical else settings.PING_RTA_CRITICAL
         ping_pl_warning = device_type.pl_warning if device_type.pl_warning else settings.PING_PL_WARNING
         ping_pl_critical = device_type.pl_critical if device_type.pl_critical else settings.PING_PL_CRITICAL
-
-        # adding success/failure message to result dict
+        # Adding success/failure message to result dictionary.
         result['message'] = "Successfully fetched ping parameters from database."
         result['success'] = 1
-
     except Exception as e:
-        # if device type doesn't have ping parameters associated than use default ones
+        # If device type doesn't have ping parameters associated than use default ones.
         ping_packets = 60
         ping_timeout = 20
         ping_normal_check_interval = 5
@@ -960,16 +1204,12 @@ def add_device_to_nms_core_form(request, device_id):
         ping_rta_critical = 3000
         ping_pl_warning = 80
         ping_pl_critical = 100
-
-        # adding success/failure message to result dict
+        # Adding success/failure message to result dictionary.
         result['message'] = "Successfully get default ping parameters."
         result['success'] = 1
         logger.info(e.message)
 
-    #adding device id to result dictionary
     result['data']['device_id'] = device_id
-
-    # adding ping parmeters to result dictionary
     result['data']['packets'] = ping_packets
     result['data']['timeout'] = ping_timeout
     result['data']['normal_check_interval'] = ping_normal_check_interval
@@ -979,7 +1219,6 @@ def add_device_to_nms_core_form(request, device_id):
     result['data']['pl_critical'] = ping_pl_critical
 
     return json.dumps({'result': result})
-
 
 
 @dajaxice_register(method='GET')

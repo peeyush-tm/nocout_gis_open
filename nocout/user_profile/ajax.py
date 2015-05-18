@@ -29,7 +29,7 @@ def user_soft_delete_form(request, value, datatable_headers):
     Generate form on user soft deletion request.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
         value (int): Selected user ID.
         datatable_headers (unicode): Datatable headers.
 
@@ -108,7 +108,7 @@ def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlis
     & make some other user parent of associated user's.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
         user_id (unicode): Selected user ID.
         new_parent_id (unicode): New parent/manager for child user's of user which need to be deleted.
         userlistingtable (int): User's listing datatable url.
@@ -180,7 +180,7 @@ def user_add(request, user_id):
     Re-add user to user's inventory from archived inventory.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
         user_id (int): Selected user ID.
 
     Returns:
@@ -214,7 +214,7 @@ def user_hard_delete(request, user_id):
     Delete user from user inventory. This action permanently delete user from database.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
         user_id (int): Selected user ID.
 
     Returns:
