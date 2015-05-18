@@ -359,7 +359,37 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             "city": "",
             "state": "",
             "device_type": "",
-            "device_technology": ""
+            "device_technology": "",
+            # Newly added keys for inventory status headers: 15-May-15
+            "device_type_id": "",
+            "device_technology_id": "",
+            "ss_technology": "",
+            "ss_technology_id": "",
+            "ss_type": "",
+            "ss_type_id": "",
+            "bh_technology": "",
+            "bh_technology_id": "",
+            "bh_type": "",
+            "bh_type_id": "",
+            "planned_freq" : "",
+            "polled_freq" : "",
+            "qos_bw" : "",
+            "ss_name": "",
+            "sector_id_str" : "",
+            "pmp_port_str" : "",
+            "bh_capacity": "",
+            "bh_port": "",
+            "bh_id" : "",
+            "bs_id" : "",
+            "ss_id" : "",
+            "sector_pk" : "",
+            "sector_pk_str": "",
+            "ckt_id" : "",
+            "cust_id" : "",
+            "city_id" : "",
+            "state_id" : "",
+            "near_end_id": "",
+            "freq_id": ""
         })
 
         is_sector = False
@@ -407,14 +437,16 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
         else:
             continue
 
-        sector_details = []
         apnd = ""
+        sector_details = []
+        sector_id_str = []
+        pmp_port_str = []
+        sector_pk_str = []
 
         if is_sector or is_dr:
             for bs_row in raw_result:
                 if bs_row['SECTOR_SECTOR_ID'] and bs_row['SECTOR_SECTOR_ID'] not in sector_id:
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
-
                     mrc = bs_row['SECTOR_MRC']
 
                     if mrc and mrc.strip().lower() == 'yes':
@@ -423,8 +455,15 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                         port = bs_row['SECTOR_PORT']
                         if port:
                             apnd = "(" + port + ")</br> "
-
+                            pmp_port_str.append(port)
+                    # append formatted sector id with port in list
                     sector_details.append(apnd.upper() + bs_row['SECTOR_SECTOR_ID'])
+                    
+                    # append sector id in list
+                    sector_id_str.append(bs_row['SECTOR_SECTOR_ID'])
+
+                    # append sector primary key in list
+                    sector_pk_str.append(str(bs_row['SECTOR_ID']))
 
         for bs_row in raw_result:
             if device_name is not None:
@@ -438,7 +477,37 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "city": format_value(bs_row['BSCITY']),
                     "state": format_value(bs_row['BSSTATE']),
                     "device_type": format_value(bs_row['SECTOR_TYPE']),
-                    "device_technology": format_value(bs_row['SECTOR_TECH'])
+                    "device_technology": format_value(bs_row['SECTOR_TECH']),
+                    # Newly added keys for inventory status headers: 15-May-15
+                    "device_type_id": format_value(bs_row['SECTOR_TYPE_ID']),
+                    "device_technology_id": format_value(bs_row['SECTOR_TECH_ID']),
+                    "ss_technology": format_value(bs_row['SS_TECH']),
+                    "ss_technology_id": format_value(bs_row['SS_TECH_ID']),
+                    "ss_type": format_value(bs_row['SS_TYPE']),
+                    "ss_type_id": format_value(bs_row['SS_TYPE_ID']),
+                    "bh_technology": format_value(bs_row['BHTECH']),
+                    "bh_technology_id": format_value(bs_row['BHTECHID']),
+                    "bh_type": format_value(bs_row['BHTYPE']),
+                    "bh_type_id": format_value(bs_row['BHTYPEID']),
+                    "planned_freq" : format_value(bs_row['SECTOR_PLANNED_FREQUENCY']),
+                    "polled_freq" : format_value(bs_row['SECTOR_FREQUENCY']),
+                    "qos_bw" : bs_row['QOS']/1000 if bs_row['QOS'] else '',
+                    "ss_name": format_value(bs_row['SS_ALIAS']).upper(),
+                    "sector_id_str" : ",".join(sector_id_str),
+                    "pmp_port_str" : ",".join(pmp_port_str),
+                    "bh_capacity": format_value(bs_row['BH_CAPACITY']),
+                    "bh_port": format_value(bs_row['BH_PORT']),
+                    "bh_id" : format_value(bs_row['BHID']),
+                    "bs_id" : format_value(bs_row['BSID']),
+                    "ss_id" : format_value(bs_row['SSID']),
+                    "sector_pk" : format_value(bs_row['SECTOR_ID']),
+                    "sector_pk_str": ",".join(sector_pk_str),
+                    "ckt_id" : format_value(bs_row['CID']),
+                    "cust_id" : format_value(bs_row['CUSTID']),
+                    "city_id" : format_value(bs_row['BSCITYID']),
+                    "state_id" : format_value(bs_row['BSSTATEID']),
+                    "near_end_id": format_value(bs_row['SECTOR_CONF_ON_ID']),
+                    "freq_id": format_value(bs_row['SECTOR_FREQUENCY_ID'])
                 })
 
                 if is_dr:

@@ -315,8 +315,13 @@ function nocoutPerfLib() {
                 if (result.success == 1) {
 
                     device_status = result.data.objects;
+
+                    var device_inventory_status = result.data.objects,
+                        complete_headers_html = "",
+                        complete_rows_html = "";
+
                     // If it is single device page for other devices then hide utilization tab
-                    if (device_status.is_others_page) {
+                    if (device_inventory_status.is_others_page) {
                         if (!$("#utilization_top").hasClass("hide")) {
                             $("#utilization_top").addClass("hide");
                         }
@@ -326,46 +331,73 @@ function nocoutPerfLib() {
                         }
                     }
 
-                    if (device_status.headers && device_status.headers.length > 0) {
-                        /*Loop for table headers*/
-                        var headers = "<tr>";
-                        for(var i=0;i<device_status.headers.length;i++) {
-                            var header_name = device_status.headers[i];
-                            headers += '<th class="vAlign_middle">' + header_name + '</th>';
-                        }
+                    for (var i=0;i<device_inventory_status.length;i++) {
+                        var header_row_string = "",
+                            data_row_string = "",
+                            inner_rows = device_inventory_status[i];
 
-                        headers += "</tr>";
-                        /*Populate table headers*/
-                        $("#status_table thead").html(headers);
-
-                        /*Loop for status table data*/
-                        var status_val = "";
-                        if (device_status.values.length > 0) {
-                            for (var i = 0; i < device_status.values.length; i++) {
-                                status_val += "<tr>";
-
-                                var device_status_data_row = device_status.values[i];
-
-                                if (device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
-                                    device_status_data_row = device_status_data_row[0];
-                                }
-
-                                for (var j = 0; j < device_status_data_row.length; j++) {
-                                    var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
-                                        url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
-                                        display_txt = url ? '<a href="' + url+ '" target="_blank">' + val + '</a>' : val;
-
-                                    status_val += '<td class="vAlign_middle">' + display_txt+ '</td>';
-                                }   
-                                status_val += "</tr>";
+                        for (var j=0;j<inner_rows.length;j++) {
+                            if (i === 0) {
+                                header_row_string += "<th class='vAlign_middle'>"+inner_rows[j].title+"</th>";
                             }
-                        } else {
-                            status_val += "<tr><td colspan='" + device_status.headers.length + "' align='center'>No Info</td></tr>";
+                            link_html = inner_rows[j].value;
+                            if(inner_rows[j].url) {
+                                link_html = "<a href = '"+inner_rows[j].url+"' target='_blank'>"+inner_rows[j].value+"</a>";
+                            }
+                            data_row_string += "<td class='vAlign_middle'>"+link_html+"</td>";
                         }
-                        
-                        /*Populate table data*/
-                        $("#status_table tbody").html(status_val);
+
+                        if(header_row_string && i == 0) {
+                            complete_headers_html = "<tr>"+header_row_string+"</tr>";
+                        }
+
+                        complete_rows_html += "<tr>"+data_row_string+"</tr>";
                     }
+
+                    /*Populate table headers*/
+                    $("#status_table thead").html(complete_headers_html);
+                    $("#status_table tbody").html(complete_rows_html);
+
+                    // if (device_status.headers && device_status.headers.length > 0) {
+                    //     /*Loop for table headers*/
+                    //     var headers = "<tr>";
+                    //     for(var i=0;i<device_status.headers.length;i++) {
+                    //         var header_name = device_status.headers[i];
+                    //         headers += '<th class="vAlign_middle">' + header_name + '</th>';
+                    //     }
+
+                    //     headers += "</tr>";
+                    //     /*Populate table headers*/
+                    //     $("#status_table thead").html(headers);
+
+                    //     /*Loop for status table data*/
+                    //     var status_val = "";
+                    //     if (device_status.values.length > 0) {
+                    //         for (var i = 0; i < device_status.values.length; i++) {
+                    //             status_val += "<tr>";
+
+                    //             var device_status_data_row = device_status.values[i];
+
+                    //             if (device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
+                    //                 device_status_data_row = device_status_data_row[0];
+                    //             }
+
+                    //             for (var j = 0; j < device_status_data_row.length; j++) {
+                    //                 var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
+                    //                     url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
+                    //                     display_txt = url ? '<a href="' + url+ '" target="_blank">' + val + '</a>' : val;
+
+                    //                 status_val += '<td class="vAlign_middle">' + display_txt+ '</td>';
+                    //             }   
+                    //             status_val += "</tr>";
+                    //         }
+                    //     } else {
+                    //         status_val += "<tr><td colspan='" + device_status.headers.length + "' align='center'>No Info</td></tr>";
+                    //     }
+                        
+                    //     /*Populate table data*/
+                    //     $("#status_table tbody").html(status_val);
+                    // }
 
                 } else {
                     $.gritter.add({

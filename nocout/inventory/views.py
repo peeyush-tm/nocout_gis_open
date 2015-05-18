@@ -4840,6 +4840,26 @@ def getModelForSearch(request,search_by='default'):
 
     return (search_model , current_user_organizations)
 
+
+def getPageType(deviceObj):
+    """
+    This function return page type as per the device object
+
+    """
+    page_type = 'customer'
+
+    if deviceObj:
+        if deviceObj.sector_configured_on.exists() or deviceObj.dr_configured_on.exists():
+            page_type = 'network'
+        elif deviceObj.substation_set.exists():
+            page_type = 'customer'
+        else:
+            page_type = 'other'
+
+    return page_type
+
+
+
 # This function returns the auto suggestions data as per the given params
 def getAutoSuggestion(request, search_by="default", search_txt=""):
 
@@ -4927,6 +4947,9 @@ def getSearchData(request, search_by="default", pk=0):
 
                 # Get the single device inventory page, alert page & perf page url
                 if search_by in ['ip_address','mac_address']:
+                    # Get the page type as per the device
+                    page_type = getPageType(query_result[0])
+
                     # Device Inventory page url
                     inventory_page_url = reverse(
                         'device_edit',
@@ -4936,13 +4959,13 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device perf page url
                     perf_page_url = reverse(
                         'SingleDevicePerf',
-                        kwargs={'page_type': 'customer', 'device_id' : query_result[0].id},
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id},
                         current_app='performance'
                     )
                     # Single Device alert page url
                     alert_page_url = reverse(
                         'SingleDeviceAlertsInit',
-                        kwargs={'page_type': 'customer', 'device_id' : query_result[0].id, 'service_name' : 'ping'},
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
                         current_app='alert_center'
                     )
                 elif search_by in ['circuit_id']:
@@ -5034,11 +5057,8 @@ def getSearchData(request, search_by="default", pk=0):
                 result["data"]["circuit_inventory_url"] = circuit_inventory_url
                 result["data"]["sector_inventory_url"] = sector_inventory_url
 
-
             except Exception, e:
                 result["message"] = "Exception occurs."
-
-
 
     # return result dict
     return HttpResponse(json.dumps(result))
