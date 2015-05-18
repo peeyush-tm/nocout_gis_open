@@ -77,7 +77,11 @@ urlpatterns = patterns('',
                        url(r'^dfr-reports/(?P<pk>\d+)/delete/$',
                            views.DFRReportsDeleteView.as_view(),
                            name='dfr-reports-delete'),
-
+                       
+                       url(r'^dfr-reports-main/table/$',
+                           views.DFRReportsListingTableMain.as_view(),
+                           name='dfr-reports-main-table'),
+                       
                        url(r'^mfr-reports/$',
                            views.MFRReportsListView.as_view(),
                            name='mfr-reports-list'),

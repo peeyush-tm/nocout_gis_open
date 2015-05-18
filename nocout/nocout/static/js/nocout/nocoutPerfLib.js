@@ -83,6 +83,18 @@ var perf_that = "",
             'bSortable': true
         },
         {
+            'mData': 'warning_threshold',
+            'sTitle': 'Warning Threshold',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
+            'mData': 'critical_threshold',
+            'sTitle': 'Critical Threshold',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
             'mData': 'sys_timestamp',
             'sTitle': 'Time',
             'sWidth': 'auto',
@@ -91,8 +103,8 @@ var perf_that = "",
     ],
     default_hist_table_headers = [
         {
-            'mData': 'current_value',
-            'sTitle': 'Current Value',
+            'mData': 'avg_value',
+            'sTitle': 'Avg. Value',
             'sWidth': 'auto',
             'bSortable': true
         },
@@ -109,14 +121,26 @@ var perf_that = "",
             'bSortable': true
         },
         {
-            'mData': 'avg_value',
-            'sTitle': 'Avg. Value',
+            'mData': 'current_value',
+            'sTitle': 'Current Value',
             'sWidth': 'auto',
             'bSortable': true
         },
         {
             'mData': 'severity',
             'sTitle': 'Severity',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
+            'mData': 'warning_threshold',
+            'sTitle': 'Warning Threshold',
+            'sWidth': 'auto',
+            'bSortable': true
+        },
+        {
+            'mData': 'critical_threshold',
+            'sTitle': 'Critical Threshold',
             'sWidth': 'auto',
             'bSortable': true
         },
@@ -291,8 +315,13 @@ function nocoutPerfLib() {
                 if (result.success == 1) {
 
                     device_status = result.data.objects;
+
+                    var device_inventory_status = result.data.objects,
+                        complete_headers_html = "",
+                        complete_rows_html = "";
+
                     // If it is single device page for other devices then hide utilization tab
-                    if (device_status.is_others_page) {
+                    if (device_inventory_status.is_others_page) {
                         if (!$("#utilization_top").hasClass("hide")) {
                             $("#utilization_top").addClass("hide");
                         }
@@ -302,46 +331,73 @@ function nocoutPerfLib() {
                         }
                     }
 
-                    if (device_status.headers && device_status.headers.length > 0) {
-                        /*Loop for table headers*/
-                        var headers = "<tr>";
-                        for(var i=0;i<device_status.headers.length;i++) {
-                            var header_name = device_status.headers[i];
-                            headers += '<th class="vAlign_middle">' + header_name + '</th>';
-                        }
+                    for (var i=0;i<device_inventory_status.length;i++) {
+                        var header_row_string = "",
+                            data_row_string = "",
+                            inner_rows = device_inventory_status[i];
 
-                        headers += "</tr>";
-                        /*Populate table headers*/
-                        $("#status_table thead").html(headers);
-
-                        /*Loop for status table data*/
-                        var status_val = "";
-                        if (device_status.values.length > 0) {
-                            for (var i = 0; i < device_status.values.length; i++) {
-                                status_val += "<tr>";
-
-                                var device_status_data_row = device_status.values[i];
-
-                                if (device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
-                                    device_status_data_row = device_status_data_row[0];
-                                }
-
-                                for (var j = 0; j < device_status_data_row.length; j++) {
-                                    var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
-                                        url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
-                                        display_txt = url ? '<a href="' + url+ '" target="_blank">' + val + '</a>' : val;
-
-                                    status_val += '<td class="vAlign_middle">' + display_txt+ '</td>';
-                                }   
-                                status_val += "</tr>";
+                        for (var j=0;j<inner_rows.length;j++) {
+                            if (i === 0) {
+                                header_row_string += "<th class='vAlign_middle'>"+inner_rows[j].title+"</th>";
                             }
-                        } else {
-                            status_val += "<tr><td colspan='" + device_status.headers.length + "' align='center'>No Info</td></tr>";
+                            link_html = inner_rows[j].value;
+                            if(inner_rows[j].url) {
+                                link_html = "<a href = '"+inner_rows[j].url+"' target='_blank'>"+inner_rows[j].value+"</a>";
+                            }
+                            data_row_string += "<td class='vAlign_middle'>"+link_html+"</td>";
                         }
-                        
-                        /*Populate table data*/
-                        $("#status_table tbody").html(status_val);
+
+                        if(header_row_string && i == 0) {
+                            complete_headers_html = "<tr>"+header_row_string+"</tr>";
+                        }
+
+                        complete_rows_html += "<tr>"+data_row_string+"</tr>";
                     }
+
+                    /*Populate table headers*/
+                    $("#status_table thead").html(complete_headers_html);
+                    $("#status_table tbody").html(complete_rows_html);
+
+                    // if (device_status.headers && device_status.headers.length > 0) {
+                    //     /*Loop for table headers*/
+                    //     var headers = "<tr>";
+                    //     for(var i=0;i<device_status.headers.length;i++) {
+                    //         var header_name = device_status.headers[i];
+                    //         headers += '<th class="vAlign_middle">' + header_name + '</th>';
+                    //     }
+
+                    //     headers += "</tr>";
+                    //     /*Populate table headers*/
+                    //     $("#status_table thead").html(headers);
+
+                    //     /*Loop for status table data*/
+                    //     var status_val = "";
+                    //     if (device_status.values.length > 0) {
+                    //         for (var i = 0; i < device_status.values.length; i++) {
+                    //             status_val += "<tr>";
+
+                    //             var device_status_data_row = device_status.values[i];
+
+                    //             if (device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
+                    //                 device_status_data_row = device_status_data_row[0];
+                    //             }
+
+                    //             for (var j = 0; j < device_status_data_row.length; j++) {
+                    //                 var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
+                    //                     url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
+                    //                     display_txt = url ? '<a href="' + url+ '" target="_blank">' + val + '</a>' : val;
+
+                    //                 status_val += '<td class="vAlign_middle">' + display_txt+ '</td>';
+                    //             }   
+                    //             status_val += "</tr>";
+                    //         }
+                    //     } else {
+                    //         status_val += "<tr><td colspan='" + device_status.headers.length + "' align='center'>No Info</td></tr>";
+                    //     }
+                        
+                    //     /*Populate table data*/
+                    //     $("#status_table tbody").html(status_val);
+                    // }
 
                 } else {
                     $.gritter.add({
@@ -846,7 +902,8 @@ function nocoutPerfLib() {
         }
 
         var draw_type = $("input[name='item_type']:checked").val(),
-            listing_ajax_url = "";
+            listing_ajax_url = "",
+            listing_headers = default_live_table_headers;
 
         if (!draw_type) {
             draw_type = "chart";
@@ -859,26 +916,24 @@ function nocoutPerfLib() {
 
         var start_date = "",
             end_date = "",
-            get_url = "";
+            get_url = "",
+            get_param_start_date = "", 
+            get_param_end_date = "";
 
+        // Show loading spinner
         showSpinner();
 
+        // URL to fetch chart data
         get_url = base_url + "" + get_service_data_url;
-        listing_ajax_url = get_service_data_url;
 
+        // Reset global variables
         start_date = "";
         end_date = "";
-
-        var get_param_start_date = "", 
-            get_param_end_date = "";
 
         if (startDate && endDate) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
-
-            // start_date = new Date(myStartDate.getTime()),
-            // end_date = new Date(myEndDate.getTime());
 
             start_date = myStartDate.getTime(),
             end_date = myEndDate.getTime();
@@ -896,7 +951,6 @@ function nocoutPerfLib() {
                     }
                     // Destroy highchart
                     $("#" + service_id + "_chart").highcharts().destroy();
-
                 }
 
                 if ($("#" + service_id + "_bottom_table").length) {
@@ -914,14 +968,46 @@ function nocoutPerfLib() {
             end_date = '';
         }
 
-        if (listing_ajax_url.indexOf("?") > -1) {
-            listing_ajax_url = listing_ajax_url + "&start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
+        if (get_service_data_url.indexOf("?") > -1) {
+            listing_ajax_url = get_service_data_url + "&start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
         } else {
-            listing_ajax_url = listing_ajax_url + "?start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
+            listing_ajax_url = get_service_data_url + "?start_date=" + get_param_start_date + "&end_date=" + get_param_end_date;
         }
-        
-        // Send ajax call
-        sendAjax(start_date, end_date);
+
+        try {
+            var not_live_tab = listing_ajax_url.split("data_for=")[1].indexOf('live') == -1
+
+            // If historical tab then update table_headers variable
+            if ((show_historical_on_performance && not_live_tab) || (listing_ajax_url.indexOf('/rta/') > -1)) {
+                listing_headers = default_hist_table_headers;
+            }
+        } catch(e) {
+            // console.log(e);
+        }
+
+
+        if(listing_ajax_url.indexOf("_invent") > -1 || listing_ajax_url.indexOf("_status") > -1) {
+
+            // Hide display type option from only table tabs
+            if (!$("#display_type_container").hasClass("hide")) {
+                $("#display_type_container").addClass("hide")
+            }
+
+            draw_type = 'table';
+            // Checked the chart type radio
+            $('#display_table')[0].checked = true
+
+            initChartDataTable_nocout(
+                "perf_data_table",
+                listing_headers,
+                service_id,
+                listing_ajax_url,
+                true
+            );
+        } else {
+            // Send ajax call
+            sendAjax(start_date, end_date);
+        }
 
         // This function returns date object as per given date string
         function getDate(date) {
@@ -1021,7 +1107,7 @@ function nocoutPerfLib() {
 
                                 initChartDataTable_nocout(
                                     "other_perf_table",
-                                    grid_headers,
+                                    listing_headers,
                                     service_id,
                                     listing_ajax_url,
                                     true
@@ -1116,10 +1202,10 @@ function nocoutPerfLib() {
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
                                         initChartDataTable_nocout(
                                             "perf_data_table",
-                                            chart_config.chart_data,
+                                            listing_headers,
                                             service_id,
                                             listing_ajax_url,
-                                            false
+                                            true
                                         );
                                     }
                                 }
@@ -1138,15 +1224,20 @@ function nocoutPerfLib() {
                                 } else {
 
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        // Clear the DIV HTML
                                         $('#' + service_id+ '_chart').html("");
-                                        var table_headers = default_live_table_headers;
+                                        
+                                        var table_headers = default_live_table_headers,
+                                            not_availability_page = listing_ajax_url.indexOf("availability")  == -1,
+                                            not_live_tab = listing_ajax_url.split("data_for=")[1].indexOf('live') == -1;
 
-                                        if (show_historical_on_performance && listing_ajax_url.indexOf("availability")  == -1 && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
+                                        // If historical tab then update table_headers variable
+                                        if (show_historical_on_performance && not_availability_page && not_live_tab) {
                                             table_headers = default_hist_table_headers;
                                         }
                                         initChartDataTable_nocout(
                                             "perf_data_table",
-                                            table_headers,
+                                            listing_headers,
                                             service_id,
                                             listing_ajax_url,
                                             true
@@ -1202,7 +1293,7 @@ function nocoutPerfLib() {
 
                             initChartDataTable_nocout(
                                 "perf_data_table",
-                                table_headers,
+                                listing_headers,
                                 service_id,
                                 listing_ajax_url,
                                 true
