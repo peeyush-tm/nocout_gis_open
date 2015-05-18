@@ -148,9 +148,9 @@ class UserListingTable(PermissionsRequiredMixin,
                     else:
                         actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                                    <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                   <a href="#UserListing" onclick="Dajaxice.user_profile.user_soft_delete_form\
+                                   <span style="cursor:pointer;" onclick="Dajaxice.user_profile.user_soft_delete_form\
                                    (get_soft_delete_form, {{\'value\': {0} , \'datatable_headers\': \'{1}\' }})">\
-                                   <i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'], datatable_headers)
+                                   <i class="fa fa-trash-o text-danger"></i></span>'.format(dct['id'], datatable_headers)
                     dct.update(actions=actions)
 
         return json_data
