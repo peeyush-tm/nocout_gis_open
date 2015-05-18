@@ -1537,14 +1537,16 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
  * This event triggers when any polled param name is clicked
  * @event delegaate
  */
-$('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
-    // Show the loader
-    showSpinner();
+$('#infoWindowContainer').delegate('td','click',function(e) {
 
-    var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
+    var currentAttr = e.currentTarget.attributes,
+        api_url = currentAttr['url'] ? currentAttr['url'].value : "";
     
     // If api_url exist then fetch l2 report url
     if(api_url) {
+        // Show the loader
+        showSpinner();
+
         $.ajax({
             url: base_url+"/"+api_url,
             type: "GET",
@@ -1651,9 +1653,6 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                 hideSpinner();
             }
         });
-    } else {
-        // hide the loader
-        hideSpinner();
     }
 });
 
@@ -2104,11 +2103,17 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                             var url = "",
                                 text_class = "";
                             if(tooltip_info_dict[i]["show"]) {
+                                // GET text color as per the severity of device
+                                var severity = tooltip_info_dict[i]["severity"],
+                                    severity_obj = nocout_getSeverityColorIcon(severity),
+                                    text_color = severity_obj.color ? severity_obj.color : "",
+                                    cursor_css = text_color ? "cursor:pointer;" : "";
+
                                 // Url
                                 url = tooltip_info_dict[i]["url"] ? tooltip_info_dict[i]["url"] : "";
-                                text_class = "text-primary";
 
-                                polled_data_html += "<tr><td class='"+text_class+"' url='"+url+"'>"+tooltip_info_dict[i]['title']+"</td>\
+                                polled_data_html += "<tr style='color:"+text_color+";"+cursor_css+"'>\
+                                                     <td url='"+url+"'>"+tooltip_info_dict[i]['title']+"</td>\
                                                      <td>"+tooltip_info_dict[i]['value']+"</td></tr>";
                             }
                         }

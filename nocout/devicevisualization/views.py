@@ -5107,11 +5107,16 @@ class GISPerfInfo(View):
                 cur_val = None
                 if perf['current_value']:
                     cur_val = perf['current_value']
+
+                # severity of device
+                severity = perf['severity']
+                
                 try:
                     perf_info = {
                         "name": name,
                         "title": title,
                         "show": show_gis,
+                        "severity": severity,
                         "url": "performance/service/" + service_name + "/service_data_source/" + perf[
                             'data_source'].strip() + "/device/" + str(
                             device_id) + "?start_date=&end_date=",
@@ -5123,6 +5128,7 @@ class GISPerfInfo(View):
                         "name": name,
                         "title": title,
                         "show": show_gis,
+                        "severity": severity,
                         "url": "performance/service/" + service_name + "/service_data_source/" + perf[
                             'data_source'].strip() + "/device/" + str(
                             device_id) + "?start_date=&end_date=",
@@ -5258,12 +5264,3 @@ def get_complete_performance(machine_dict):
     }
 
     return result
-
-
-
-
-
-
-
-
-
