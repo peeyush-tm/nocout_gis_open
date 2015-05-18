@@ -3922,6 +3922,10 @@ function devicePlottingClass_gmap() {
 					highlight_class = "";
 
 				if(data_obj[i]["show"]) {
+					// GET text color as per the severity of device
+					var severity = data_obj[i]["severity"],
+						severity_obj = nocout_getSeverityColorIcon(severity),
+						text_color = severity_obj.color ? severity_obj.color : "";
 
 					if(data_obj[i]["name"] == 'pos_link1') {
 						data_obj[i]["value"] = pos1 ? pos1 : "";
@@ -3938,14 +3942,18 @@ function devicePlottingClass_gmap() {
 					var val = data_obj[i]["value"];
 
 					if(direct_val_keys.indexOf(data_obj[i].name) > -1 || !is_static) {
+
+						// current value
 						actual_val = val;
+
 						// This is useful only for polled data
 						url = data_obj[i]["url"] ? $.trim(data_obj[i]["url"]) : "";
-						text_class = url ? "text-primary" : "";
 					} else {
 						actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
 					}
-					table_html += "<tr><td class='"+text_class+" "+highlight_class+"' url='"+url+"'>"+data_obj[i]['title']+"</td><td>"+actual_val+"</td></tr>";
+
+					table_html += "<tr style='color:"+text_color+";'><td "+highlight_class+"' url='"+url+"'>\
+								  "+data_obj[i]['title']+"</td><td>"+actual_val+"</td></tr>";
 				}
 			}
 		}
