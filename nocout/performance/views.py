@@ -1485,14 +1485,18 @@ class InventoryDeviceStatus(View):
                 header_key = header["name"]
                 if header_key in data:
                     header["value"] = data[header_key]
-                    try:
-                        header["url"] = reverse(
-                            header["url_name"],
-                            kwargs={ header["kwargs_name"] : data[header["pk_key"]] },
-                            current_app=header["app_name"]
-                        )
-                    except Exception, e:
-                        header["url"] = ''
+                    if header["value"]:
+                        try:
+                            header["url"] = reverse(
+                                header["url_name"],
+                                kwargs={ header["kwargs_name"] : data[header["pk_key"]] },
+                                current_app=header["app_name"]
+                            )
+                        except Exception, e:
+                            header["url"] = ''
+                    else:  # If no value then show NA
+                        header["value"] = 'NA' 
+                       
 
             resultant_data.append(new_headers)
 
