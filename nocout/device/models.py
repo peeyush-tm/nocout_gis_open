@@ -1,3 +1,45 @@
+"""
+=======================================================================
+Module contains database models and functions specific to 'device' app.
+=======================================================================
+
+Location:
+* /nocout_gis/nocout/user_profile/models.py
+
+List of constructs:
+=======
+Classes
+=======
+* Country
+* State
+* City
+* StateGeoInfo
+* DeviceFrequency
+* DevicePort
+* DeviceType
+* DeviceTypeService
+* DeviceTypeServiceDataSource
+* DeviceModel
+* DeviceVendor
+* DeviceTechnology
+* Device
+* ModelType
+* VendorModel
+* TechnologyVendor
+* DeviceTypeFields
+* DeviceTypeFieldsValue
+* DeviceSyncHistory
+
+=======
+Signals
+=======
+* Set site instance 'is_device_change' bit on device modification or creation.
+* Set site instance 'is_device_change' bit on device type modification.
+* Set site instance 'is_device_change' bit on device type service modification or creation.
+* Set site instance 'is_device_change' bit on device type service deletion.
+* If a new device type service is created auto assign default data source of service to it.
+"""
+
 from django.db import models
 from django.db.models.signals import pre_save, post_save, post_delete
 from machine.models import Machine
@@ -9,17 +51,20 @@ from datetime import datetime
 from device import signals as device_signals
 
 
-# ************************************ Device Inventory**************************************
-# table for countries
 class Country(models.Model):
+    """
+    Model for storing country instances.
+    """
     country_name = models.CharField('Name', max_length=200)
 
     def __unicode__(self):
         return self.country_name
 
 
-# table for states
 class State(models.Model):
+    """
+    Model for storing state instances.
+    """
     state_name = models.CharField('Name', max_length=200)
     country = models.ForeignKey(Country, null=True, blank=True)
 
@@ -27,8 +72,10 @@ class State(models.Model):
         return self.state_name
 
 
-# table for cities
 class City(models.Model):
+    """
+    Model for storing city instances.
+    """
     city_name = models.CharField('Name', max_length=250)
     state = models.ForeignKey(State, null=True, blank=True)
 
@@ -36,14 +83,19 @@ class City(models.Model):
         return self.city_name
 
 
-# table for state latitude & longitude
 class StateGeoInfo(models.Model):
+    """
+    Model for storing states boundary latitudes and longitudes.
+    """
     state = models.ForeignKey(State)
     latitude = models.FloatField('Latitude')
     longitude = models.FloatField('Longitude')
 
 
 class DeviceFrequency(models.Model):
+    """
+    Model for storing device frequency instances.
+    """
     value = models.CharField(max_length=50, help_text="MHz")
     color_hex_value = models.CharField(max_length=100)
     frequency_radius = models.FloatField(verbose_name="Frequency Radius", default=0, help_text="Km")
@@ -52,8 +104,10 @@ class DeviceFrequency(models.Model):
         return self.value
 
 
-# device ports
 class DevicePort(models.Model):
+    """
+    Model for storing device port instances.
+    """
     name = models.CharField('Name', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
     value = models.IntegerField('Port Value', default=0)
@@ -62,8 +116,10 @@ class DevicePort(models.Model):
         return self.name
 
 
-# device types info table
 class DeviceType(models.Model):
+    """
+    Model for storing device type instances.
+    """
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Alias', max_length=200)
     device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
@@ -91,24 +147,31 @@ class DeviceType(models.Model):
         super(DeviceType, self).delete(*args, **kwargs)
 
 
-# device type with specific service info table
 class DeviceTypeService(models.Model):
+    """
+    Model for storing services and data sources corresponding to the device type.
+    """
     device_type = models.ForeignKey(DeviceType)
     service = models.ForeignKey(Service)
     parameter = models.ForeignKey(ServiceParameters)
     service_data_sources = models.ManyToManyField(ServiceDataSource, through="DeviceTypeServiceDataSource")
 
 
-# device type with specific service data source info table
 class DeviceTypeServiceDataSource(models.Model):
+    """
+    M2M mapper model for mapping data sources with specific service in device type model.
+    Mapping: DeviceTypeService (1:M) ServiceDataSource
+    """
     device_type_service = models.ForeignKey(DeviceTypeService)
     service_data_sources = models.ForeignKey(ServiceDataSource)
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
 
-# device model info table
 class DeviceModel(models.Model):
+    """
+    Model for storing device model instances.
+    """
     name = models.CharField('Device Model', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
     device_types = models.ManyToManyField(DeviceType, through="ModelType", blank=True, null=True)
@@ -117,8 +180,10 @@ class DeviceModel(models.Model):
         return self.name
 
 
-# device vendor info table
 class DeviceVendor(models.Model):
+    """
+    Model for storing device vendor instances.
+    """
     name = models.CharField('Device Vendor', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
     device_models = models.ManyToManyField(DeviceModel, through="VendorModel", blank=True, null=True)
@@ -127,8 +192,10 @@ class DeviceVendor(models.Model):
         return self.name
 
 
-# device technology info table
 class DeviceTechnology(models.Model):
+    """
+    Model for storing device technology instances.
+    """
     name = models.CharField('Device Technology', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
     device_vendors = models.ManyToManyField(DeviceVendor, through="TechnologyVendor", blank=True, null=True)
@@ -137,8 +204,10 @@ class DeviceTechnology(models.Model):
         return self.name
 
 
-# device info table
 class Device(MPTTModel, models.Model):
+    """
+    Model for storing device instances.
+    """
     enable = 'Enable'
     disable = 'Disable'
     high = 'High'
@@ -200,33 +269,44 @@ class Device(MPTTModel, models.Model):
     is_added_to_nms = models.IntegerField('Is Added', max_length=1, default=0)
     is_monitored_on_nms = models.IntegerField('Is Monitored', max_length=1, default=0)
 
-    def __unicode__(self):
-        return self.device_alias
-
     class Meta:
         ordering = ['machine']
 
+    def __unicode__(self):
+        return self.device_alias
 
-# model-type mapper
+
 class ModelType(models.Model):
+    """
+    M2M mapper model for mapping device model with device types.
+    Mapping: DeviceModel (1:M) DeviceType
+    """
     model = models.ForeignKey(DeviceModel)
     type = models.ForeignKey(DeviceType)
 
 
-# vendor-model mapper
 class VendorModel(models.Model):
+    """
+    M2M mapper model for mapping device vendor with device models.
+    Mapping: DeviceVendor (1:M) DeviceModel
+    """
     vendor = models.ForeignKey(DeviceVendor)
     model = models.ForeignKey(DeviceModel)
 
 
-# technology-vendor mapper
 class TechnologyVendor(models.Model):
+    """
+    M2M mapper model for mapping device technology with device vendors.
+    Mapping: DeviceTechnology (1:M) DeviceVendor
+    """
     technology = models.ForeignKey(DeviceTechnology)
     vendor = models.ForeignKey(DeviceVendor)
 
 
-# table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
+    """
+    Model for associating extra fields with the specific device type.
+    """
     field_name = models.CharField(max_length=100)
     field_display_name = models.CharField(max_length=200)
     device_type = models.ForeignKey(DeviceType)
@@ -235,14 +315,19 @@ class DeviceTypeFields(models.Model):
         return self.field_display_name
 
 
-# table for device extra fields values
 class DeviceTypeFieldsValue(models.Model):
+    """
+    Model for storing extra fields values corresponding to the device.
+    """
     device_type_field = models.ForeignKey(DeviceTypeFields)
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
 
 
 class DeviceSyncHistory(models.Model):
+    """
+    Model for storing device sync information/status.
+    """
     status = models.IntegerField('Status', null=True, blank=True)
     message = models.TextField('NMS Message', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
@@ -262,17 +347,18 @@ class DeviceSyncHistory(models.Model):
 
 # ********************************** DEVICE SIGNALS ***********************************
 
-# set site instance 'is_device_change' bit on device modified or created
+# Set site instance 'is_device_change' bit on device modification or creation.
 pre_save.connect(device_signals.update_site_on_device_change, sender=Device)
 
-# set site instance 'is_device_change' bit on device type modified
+# Set site instance 'is_device_change' bit on device type modification.
 pre_save.connect(device_signals.update_site_on_devicetype_change, sender=DeviceType)
 
-# set site instance 'is_device_change' bit on device type service modified or created
+# Set site instance 'is_device_change' bit on device type service modification or creation.
 post_save.connect(device_signals.update_site_on_service_change, sender=DeviceTypeService)
 
-# set site instance 'is_device_change' bit on device type service deletion
+# Set site instance 'is_device_change' bit on device type service deletion.
 post_delete.connect(device_signals.update_site_on_service_change, sender=DeviceTypeService)
 
+# If a new device type service is created auto assign default data source of service to it.
 post_save.connect(device_signals.update_device_type_service, sender=DeviceTypeService)
 
