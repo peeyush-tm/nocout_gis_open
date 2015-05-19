@@ -910,7 +910,7 @@ function getCompleteUrl(api_url) {
         url_connector = "";
 
     if (!api_url) {
-        complete_url = "";
+         return complete_url;
     }
 
     if (!base_url) {

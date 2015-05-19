@@ -561,16 +561,19 @@ class GetPerfomance(View):
             current_app='performance'
         )
 
-        # alert page url
-        alert_page_url = reverse(
-            'SingleDeviceAlertsInit',
-            kwargs={
-                'page_type': page_type,
-                'device_id': device_id,
-                'service_name': 'ping'
-            },
-            current_app='alert_center'
-        )
+        alert_page_url = ''
+        # don't pass alert page link for other device
+        if page_type not in ['other']:
+            # alert page url
+            alert_page_url = reverse(
+                'SingleDeviceAlertsInit',
+                kwargs={
+                    'page_type': page_type,
+                    'device_id': device_id,
+                    'service_name': 'ping'
+                },
+                current_app='alert_center'
+            )
 
         # inventory page url
         inventory_page_url = reverse(
@@ -1485,14 +1488,18 @@ class InventoryDeviceStatus(View):
                 header_key = header["name"]
                 if header_key in data:
                     header["value"] = data[header_key]
-                    try:
-                        header["url"] = reverse(
-                            header["url_name"],
-                            kwargs={ header["kwargs_name"] : data[header["pk_key"]] },
-                            current_app=header["app_name"]
-                        )
-                    except Exception, e:
-                        header["url"] = ''
+                    if header["value"]:
+                        try:
+                            header["url"] = reverse(
+                                header["url_name"],
+                                kwargs={ header["kwargs_name"] : data[header["pk_key"]] },
+                                current_app=header["app_name"]
+                            )
+                        except Exception, e:
+                            header["url"] = ''
+                    else:  # If no value then show NA
+                        header["value"] = 'NA' 
+                       
 
             resultant_data.append(new_headers)
 

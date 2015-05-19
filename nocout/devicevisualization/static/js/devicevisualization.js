@@ -2111,9 +2111,9 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 
                                 // Url
                                 url = tooltip_info_dict[i]["url"] ? tooltip_info_dict[i]["url"] : "";
+                                text_class = "text-primary";
 
-                                polled_data_html += "<tr style='color:"+text_color+";"+cursor_css+"'>\
-                                                     <td url='"+url+"'>"+tooltip_info_dict[i]['title']+"</td>\
+                                polled_data_html += "<tr style='color:"+text_color+";'><td url='"+url+"' style='"+cursor_css+"'>"+tooltip_info_dict[i]['title']+"</td>\
                                                      <td>"+tooltip_info_dict[i]['value']+"</td></tr>";
                             }
                         }
@@ -2167,8 +2167,9 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 // It triggers when Live polling button in Sector & SS tooltip rows clicked
 $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
 
-    var current_target_attr = e.currentTarget.attributes,
-        current_table_childrens = $(e.currentTarget).parent().parent().children(),
+    var currentTarget = e.currentTarget,
+        current_target_attr = currentTarget.attributes,
+        current_table_childrens = $(currentTarget).parent().parent().children(),
         last_td_container = current_table_childrens[current_table_childrens.length - 1],
         service_name = current_target_attr['service_name'] ? current_target_attr['service_name'].value : "",
         ds_name = current_target_attr['ds_name'] ? current_target_attr['ds_name'].value : "",
@@ -2177,7 +2178,7 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
 
         if(service_name && ds_name && device_name) {
             // Disable all poll now buttons
-            $(e.currentTarget).button('loading');
+            $(currentTarget).button('loading');
 
             // Call function to fetch live polling data
             nocout_livePollCurrentDevice(
@@ -2189,6 +2190,9 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                 false_param,
                 false_param,
                 function(live_polled_dict) {
+                    // Disable all poll now buttons
+                    $(currentTarget).button('complete');
+
                     if(live_polled_dict) {
                         var live_polled_html = "";
 
@@ -2200,8 +2204,6 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                     } else {
                         $(last_td_container).html("");
                     }
-                    // Disable all poll now buttons
-                    $(e.currentTarget).button('complete');
                 });
         } else {
             $.gritter.add({
