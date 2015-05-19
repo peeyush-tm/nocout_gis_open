@@ -4994,16 +4994,24 @@ def getSearchData(request, search_by="default", pk=0):
                         kwargs={'page_type': page_type, 'device_id' : query_result[0].id},
                         current_app='performance'
                     )
-                    # Single Device alert page url
-                    alert_page_url = reverse(
-                        'SingleDeviceAlertsInit',
-                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
-                        current_app='alert_center'
-                    )
+
+                    alert_page_url = ''
+                    # don't pass alert page link for other device
+                    if page_type not in ['other']:
+                        # Single Device alert page url
+                        alert_page_url = reverse(
+                            'SingleDeviceAlertsInit',
+                            kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
+                            current_app='alert_center'
+                        )
                 elif search_by in ['circuit_id']:
 
                     ss_device_obj = SubStation.objects.filter(pk=query_result[0].sub_station_id).values('device_id')
                     ss_device_id = ss_device_obj[0]["device_id"]
+                    # Device model object for current device
+                    deviceObj = Device.objects.get(pk=ss_device_id)
+                    # Get the page type as per the device
+                    page_type = getPageType(deviceObj)
 
                     # SS Device Inventory page url
                     inventory_page_url = reverse(
@@ -5022,16 +5030,19 @@ def getSearchData(request, search_by="default", pk=0):
                     # Single Device perf page url
                     perf_page_url = reverse(
                         'SingleDevicePerf',
-                        kwargs={'page_type': 'customer', 'device_id' : ss_device_id},
+                        kwargs={'page_type': page_type, 'device_id' : ss_device_id},
                         current_app='performance'
                     )
 
-                    # Single Device alert page url
-                    alert_page_url = reverse(
-                        'SingleDeviceAlertsInit',
-                        kwargs={'page_type': 'customer', 'device_id' : ss_device_id, 'service_name' : 'ping'},
-                        current_app='alert_center'
-                    )
+                    alert_page_url = ''
+                    # don't pass alert page link for other device
+                    if page_type not in ['other']:
+                        # Single Device alert page url
+                        alert_page_url = reverse(
+                            'SingleDeviceAlertsInit',
+                            kwargs={'page_type': page_type, 'device_id' : ss_device_id, 'service_name' : 'ping'},
+                            current_app='alert_center'
+                        )
 
                 elif search_by in ['sector_id']:
 

@@ -561,16 +561,19 @@ class GetPerfomance(View):
             current_app='performance'
         )
 
-        # alert page url
-        alert_page_url = reverse(
-            'SingleDeviceAlertsInit',
-            kwargs={
-                'page_type': page_type,
-                'device_id': device_id,
-                'service_name': 'ping'
-            },
-            current_app='alert_center'
-        )
+        alert_page_url = ''
+        # don't pass alert page link for other device
+        if page_type not in ['other']:
+            # alert page url
+            alert_page_url = reverse(
+                'SingleDeviceAlertsInit',
+                kwargs={
+                    'page_type': page_type,
+                    'device_id': device_id,
+                    'service_name': 'ping'
+                },
+                current_app='alert_center'
+            )
 
         # inventory page url
         inventory_page_url = reverse(
