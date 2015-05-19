@@ -1,13 +1,11 @@
 from django.db import models
 from django.db.models.signals import pre_save, post_save, post_delete
-
 from machine.models import Machine
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service, ServiceParameters, ServiceDataSource
 from mptt.models import MPTTModel
 from datetime import datetime
-
 from device import signals as device_signals
 
 
