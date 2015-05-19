@@ -71,6 +71,8 @@ from django.core.cache import cache
 
 from django.views.decorators.csrf import csrf_exempt
 
+from inventory.utils.util import ptp_device_circuit_backhaul
+
 
 # **************************************** Inventory *********************************************
 def inventory(request):
@@ -4843,16 +4845,46 @@ def getModelForSearch(request,search_by='default'):
 
 def getPageType(deviceObj):
     """
-    This function return page type as per the device object
-
+    This function return page type as per the device object(queryset)
+    :deviceObj - Device model queryset
     """
     page_type = 'customer'
 
     if deviceObj:
         if deviceObj.sector_configured_on.exists() or deviceObj.dr_configured_on.exists():
-            page_type = 'network'
+            
+            # GET technology name for current device
+            try:
+                tech_id = deviceObj.device_technology
+                tech_name = DeviceTechnology.objects.get(pk=tech_id).name
+            except Exception, e:
+                tech_name = ''
+            
+            # Fetch BH devices list
+            try:
+                bh_devices_qs = ptp_device_circuit_backhaul()
+                bh_devices_list = bh_devices_qs.values_list('id', flat=True)
+            except Exception, e:
+                bh_devices_list = list()
+
+            # If device tech is P2P & it is not BH device then show it in customer live listing
+            if tech_name in ['P2P', 'PTP'] and deviceObj.id not in bh_devices_list:
+                page_type = 'customer'
+            else:
+                page_type = 'network'
+
         elif deviceObj.substation_set.exists():
-            page_type = 'customer'
+            # Fetch BH devices list
+            try:
+                bh_devices_qs = ptp_device_circuit_backhaul()
+                bh_devices_list = bh_devices_qs.values_list('id', flat=True)
+            except Exception, e:
+                bh_devices_list = list()
+            # If current device is BH device then the SS will be shown in network live listing
+            if deviceObj.id in bh_devices_list:
+                page_type = 'network'
+            else:
+                page_type = 'customer'
         else:
             page_type = 'other'
 
@@ -4924,7 +4956,7 @@ def getSearchData(request, search_by="default", pk=0):
 
     # Get model & organization as per the search criteria
     search_model, \
-    current_user_organizations = getModelForSearch(request,search_by)
+    current_user_organizations = getModelForSearch(request, search_by)
 
     if search_model and search_by:
         # fetch queryset as per the condition
