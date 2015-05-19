@@ -226,8 +226,8 @@
                 statusUrl = "",
                 service_status_url = "",
                 page_type = "{{ page_type }}",
-                inventory_url = "{{ inventory_page_url }}",
-                perf_page_url = "{{ perf_page_url }}",
+                inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "",
+                perf_page_url = "{{ perf_page_url }}" ? $.trim("{{ perf_page_url }}") : "",
                 device_technology = "{{ device_technology_name }}",
                 gridHeadersObj = '{{ table_headers|safe }}',
                 ping_gridHeadersObj = '{{ ping_table_headers|safe }}',
@@ -240,7 +240,10 @@
                 window.location.href = location_array[0];
             }
 
+
             statusUrl = getCompleteUrl(device_status_url);
+            inventory_url = getCompleteUrl(inventory_page_url);
+            perf_url = getCompleteUrl(perf_page_url);
 
             current_device_id = "{{ current_device_id }}";
 
@@ -255,6 +258,16 @@
 
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
+
+            if(inventory_url) {
+                $("#inventory_link_tag").attr("href",inventory_url);
+                $("#inventory_link_tag").removeClass("hide");
+            }
+
+            if(perf_url) {
+                $("#perf_link_tag").attr("href",perf_url);
+                $("#perf_link_tag").removeClass("hide");
+            }
 
             // Ajax url to get grid data
             var ajax_url = '{% url "SingleDeviceAlertsListing_clone" page_type current_device_id %}';
