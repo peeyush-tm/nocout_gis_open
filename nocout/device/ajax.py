@@ -3312,8 +3312,10 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
                                                                          template.max_check_attempts))
     params.append("</tbody>")
     params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
-    # data sources associated with service
+
+    # Data sources associated with the service.
     data_sources = service.service_data_sources.all()
+
     for sds in data_sources:
         try:
             params.append("<tr class='data_source_field'><td class='ds_name'>{}</td>\
@@ -3329,69 +3331,75 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
                           .format(sds.name if sds.name else "",
                                   sds.warning if sds.warning else "",
                                   sds.critical if sds.critical else ""))
+
     params.append("</tbody></table></div></div></div>")
+
     dajax.assign(field_id, 'innerHTML', ''.join(params))
+
     return dajax.json()
 
 
 @dajaxice_register(method='GET')
 def add_services(request, device_id, svc_data):
-    """Add device services
+    """
+    Adding services corresponding to the device.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        svc_data (list): list of dictionaries
-                        i.e. [
-                            {
-                                'service_id': u'1',
-                                'data_source': [
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        svc_data (list): List of dictionaries containing service data.
+                         For e.g.,
+                                [
                                     {
-                                        'warning': u'-50',
-                                        'critical': u'-85',
-                                        'name': u'rssi'
-                                    }
-                                ],
-                                'template_id': u'2',
-                                'device_id': u'545'
-                            },
-                            {
-                                'service_id': u'13',
-                                'data_source': [
+                                        'service_id': u'1',
+                                        'data_source': [
+                                            {
+                                                'warning': u'-50',
+                                                'critical': u'-85',
+                                                'name': u'rssi'
+                                            }
+                                        ],
+                                        'template_id': u'2',
+                                        'device_id': u'545'
+                                    },
                                     {
-                                        'warning': u'',
-                                        'critical': u'',
-                                        'name': u'idu_sn'
+                                        'service_id': u'13',
+                                        'data_source': [
+                                            {
+                                                'warning': u'',
+                                                'critical': u'',
+                                                'name': u'idu_sn'
+                                            }
+                                        ],
+                                        'template_id': u'3',
+                                        'device_id': u'545'
                                     }
-                                ],
-                                'template_id': u'3',
-                                'device_id': u'545'
-                            }
-                        ]
+                                ]
 
     Returns:
-        result (dict): dictionary of services information
-                    i.e. {
-                            'message': u"Successfully edited service 'radwin_rssi'. <br />
-                                         Successfully edited service 'radwin_idu_sn_invent'. <br />",
-                            'data': {
-                                'snmp_community': {
-                                    'read_community': 'public',
-                                    'version': 'v1'
-                                },
-                                'service_name': 'radwin_idu_sn_invent',
-                                'serv_params': {
-                                    'normal_check_interval': 5,
-                                    'max_check_attempts': 5,
-                                    'retry_check_interval': 1
-                                },
-                                'device_name': 'device_116',
-                                'mode': 'editservice',
-                                'cmd_params': {
+        result (dict): Dictionary containing services information.
+                       For e.g.,
+                            {
+                                'message': u"Successfully edited service 'radwin_rssi'. <br />
+                                             Successfully edited service 'radwin_idu_sn_invent'. <br />",
+                                'data': {
+                                    'snmp_community': {
+                                        'read_community': 'public',
+                                        'version': 'v1'
+                                    },
+                                    'service_name': 'radwin_idu_sn_invent',
+                                    'serv_params': {
+                                        'normal_check_interval': 5,
+                                        'max_check_attempts': 5,
+                                        'retry_check_interval': 1
+                                    },
+                                    'device_name': 'device_116',
+                                    'mode': 'editservice',
+                                    'cmd_params': {
 
-                                }
-                            },
-                            'success': 1
-                        }
+                                    }
+                                },
+                                'success': 1
+                            }
 
     """
     result = dict()
@@ -3401,36 +3409,36 @@ def add_services(request, device_id, svc_data):
     result['data']['meta'] = {}
     result['data']['objects'] = {}
 
-    # get device
+    # Get device.
     device = None
     try:
         device = Device.objects.get(id=device_id)
     except Exception as e:
         pass
 
-    # get device name
+    # Get device name.
     device_name = ""
     if device:
         device_name = device.device_name
 
-    # messages variable collects message coming from service addition api response
+    # Collects messages returned from service addition api.
     messages = ""
 
     for sd in svc_data:
-        # reset message
+        # Reset message value.
         result['message'] = ""
 
         try:
             service = Service.objects.get(pk=int(sd['service_id']))
 
-            # if service template is not selected than default is taken
+            # If service template is not selected than default will be considered.
             try:
                 service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
             except Exception as e:
                 service_para = service.parameters
                 logger.info(e.message)
 
-            # data_sources --> contains list of data sources
+            # List of data sources.
             data_sources = []
             try:
                 if 'data_source' in sd:
@@ -3453,12 +3461,14 @@ def add_services(request, device_id, svc_data):
             result['success'] = 1
 
             try:
-                # delete current deleted entry corresponding to this service
+                # Delete entry corresponding to this service with operation 'd'.
+                # Because we can only add services those were already deleted
+                # and which has operation bit set to 'd' (for deleted).
                 DeviceServiceConfiguration.objects.filter(device_name=device_name,
                                                           service_name=service.name,
                                                           operation="d").delete()
 
-                # add service in 'service_deviceserviceconfiguration' table
+                # Add service in 'service_deviceserviceconfiguration' table.
                 for data_source in data_sources:
                     dsc = DeviceServiceConfiguration()
                     dsc.device_name = device.device_name
@@ -3477,19 +3487,21 @@ def add_services(request, device_id, svc_data):
                     dsc.operation = "c"
                     dsc.is_added = 0
                     dsc.save()
+
                     result['message'] += "<i class=\"fa fa-check green-dot\"></i> \
                                            Successfully added service '%s'. <br />" % service.name
+
                     messages += result['message']
             except Exception as e:
                 result['message'] += "<i class=\"fa fa-check green-dot\"></i> \
                                        Failed to add service '%s'. <br />" % service.name
                 messages += result['message']
 
-            # set 'is_monitored_on_nms' to 1 if service is added successfully
+            # Set 'is_monitored_on_nms' to 1 if service is added successfully.
             device.is_monitored_on_nms = 1
             device.save()
 
-            # set site instance bit corresponding to the device
+            # Set site instance bit corresponding to the device.
             device.site_instance.is_device_change = 1
             device.site_instance.save()
         except Exception as e:
@@ -3497,94 +3509,97 @@ def add_services(request, device_id, svc_data):
             result['message'] += "<i class=\"fa fa-times red-dot\"></i> Something wrong with the form data. <br />"
             messages += result['message']
 
-    # assign messages to result dict message key
+    # Assign messages to result dict message key.
     result['message'] = messages
+
     return json.dumps({'result': result})
 
 
 @dajaxice_register(method='GET')
 def device_services_status(request, device_id):
-    """Show current device services status
+    """
+    Show current configuration/status of services corresponding to the device.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
-        device_id (int): device id
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
+        device_id (int): Device ID.
 
     Returns:
-        result (dict): dictionary of device and associated services information
-                    i.e. {
-                            'message': '',
-                            'data': {
-                                'meta': {
+        result (dict): Dictionary of device and associated services information.
+                       For e.g.,
+                            {
+                                'message': '',
+                                'data': {
+                                    'meta': {
 
+                                    },
+                                    'objects': {
+                                        'site_instance': 'nocout_gis_slave',
+                                        'inactive_services': [
+                                            {
+                                                'service': u'Receivedsignalstrength',
+                                                'data_sources': 'Receivedsignalstrength,
+                                                '
+                                            },
+                                            {
+                                                'service': u'totaluplinkutilization',
+                                                'data_sources': 'Management_Port_on_Odu,
+                                                Radio_Interface,
+                                                '
+                                            },
+                                            {
+                                                'service': u'channelbandwidth',
+                                                'data_sources': 'channelbandwidth,
+                                                '
+                                            },
+                                            {
+                                                'service': u'portspeedstatus',
+                                                'data_sources': 'ethernet_port_1,
+                                                ethernet_port_2,
+                                                ethernet_port_3,
+                                                ethernet_port_4,
+                                                '
+                                            },
+                                            {
+                                                'service': u'IDUserialnumber',
+                                                'data_sources': 'IDUserialnumber,
+                                                '
+                                            },
+                                            {
+                                                'service': u'totaluptime',
+                                                'data_sources': 'totaluptime,
+                                                '
+                                            },
+                                            {
+                                                'service': u'frequency',
+                                                'data_sources': 'frequency,
+                                                '
+                                            },
+                                            {
+                                                'service': u'RadwinUAS',
+                                                'data_sources': 'unavailableseconds,
+                                                '
+                                            },
+                                            {
+                                                'service': u'portautonegotiationstatus',
+                                                'data_sources': 'ethernet_port_1,
+                                                ethernet_port_2,
+                                                ethernet_port_3,
+                                                ethernet_port_4,
+                                                '
+                                            }
+                                        ],
+                                        'active_services': [
+
+                                        ],
+                                        'device_name': '115.112.95.187',
+                                        'machine': 'default',
+                                        'device_type': 'Radwin2KBS',
+                                        'ip_address': '115.112.95.187'
+                                    }
                                 },
-                                'objects': {
-                                    'site_instance': 'nocout_gis_slave',
-                                    'inactive_services': [
-                                        {
-                                            'service': u'Receivedsignalstrength',
-                                            'data_sources': 'Receivedsignalstrength,
-                                            '
-                                        },
-                                        {
-                                            'service': u'totaluplinkutilization',
-                                            'data_sources': 'Management_Port_on_Odu,
-                                            Radio_Interface,
-                                            '
-                                        },
-                                        {
-                                            'service': u'channelbandwidth',
-                                            'data_sources': 'channelbandwidth,
-                                            '
-                                        },
-                                        {
-                                            'service': u'portspeedstatus',
-                                            'data_sources': 'ethernet_port_1,
-                                            ethernet_port_2,
-                                            ethernet_port_3,
-                                            ethernet_port_4,
-                                            '
-                                        },
-                                        {
-                                            'service': u'IDUserialnumber',
-                                            'data_sources': 'IDUserialnumber,
-                                            '
-                                        },
-                                        {
-                                            'service': u'totaluptime',
-                                            'data_sources': 'totaluptime,
-                                            '
-                                        },
-                                        {
-                                            'service': u'frequency',
-                                            'data_sources': 'frequency,
-                                            '
-                                        },
-                                        {
-                                            'service': u'RadwinUAS',
-                                            'data_sources': 'unavailableseconds,
-                                            '
-                                        },
-                                        {
-                                            'service': u'portautonegotiationstatus',
-                                            'data_sources': 'ethernet_port_1,
-                                            ethernet_port_2,
-                                            ethernet_port_3,
-                                            ethernet_port_4,
-                                            '
-                                        }
-                                    ],
-                                    'active_services': [
-
-                                    ],
-                                    'device_name': '115.112.95.187',
-                                    'machine': 'default',
-                                    'device_type': 'Radwin2KBS',
-                                    'ip_address': '115.112.95.187'
-                                }
-                            },
-                            'success': 1
-                        }
+                                'success': 1
+                            }
 
     """
     result = dict()
@@ -3594,18 +3609,20 @@ def device_services_status(request, device_id):
     result['data']['meta'] = {}
     result['data']['objects'] = {}
 
-    # current device
+    # Get device.
     device = Device.objects.get(pk=device_id)
 
-    # fetching all services from 'service device configuration' table
+    # Fetching all services from 'service device configuration' table.
     dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+
+    # Get device type.
     device_type = DeviceType.objects.get(id=device.device_type)
 
-    # get deleted services
+    # Get deleted services.
     deleted_services_list = dsc.filter(operation="d").values_list("service_name", flat=True)
     deleted_services = Service.objects.filter(name__in=list(set(deleted_services_list)))
 
-    # get active services
+    # Get active services.
     active_services = device_type.service.all().exclude(name__in=deleted_services_list)
 
     result['data']['objects']['device_name'] = str(device.device_alias)
@@ -3640,10 +3657,10 @@ def reset_service_configuration(request):
     """ Reset device service configuration
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        request (django.core.handlers.wsgi.WSGIRequest): GET request.
 
     Returns:
-        result (dict): dict of device info
+        result (dict): Dictionary containing device information.
                    i.e. {
                             "result": {
                                 "message": "Successfully reset device service configuration.",
@@ -3653,41 +3670,39 @@ def reset_service_configuration(request):
                                 "success": 1
                             }
                         }
-
     """
-
     result = dict()
     result['data'] = {}
     result['success'] = 0
     result['message'] = "Failed to reset device service configuration."
     result['data']['meta'] = ''
 
-    # get last id of 'DeviceSyncHistory'
+    # Get last id of 'DeviceSyncHistory'.
     try:
-        # get all devices list from 'service_devicepingconfiguration'
+        # Get all devices list from 'service_devicepingconfiguration'.
         ping_devices = DevicePingConfiguration.objects.all().values_list('device_name', flat=True)
 
-        # get list of sites associated with 'ping_devices'
+        # Get list of sites associated with 'ping_devices'.
         ping_sites = Device.objects.filter(device_name__in=list(set(ping_devices))).values_list('site_instance__id',
                                                                                                 flat=True)
 
-        # get all devices list from 'service_deviceserviceconfiguration'
+        # Get all devices list from 'service_deviceserviceconfiguration'.
         svc_devices = DeviceServiceConfiguration.objects.all().values_list('device_name', flat=True)
 
-        # get list of sites associated with 'svc_devices'
+        # Get list of sites associated with 'svc_devices'.
         svc_sites = Device.objects.filter(device_name__in=list(set(svc_devices))).values_list('site_instance__id',
                                                                                               flat=True)
 
-        # effected sites
+        # Effected sites.
         effected_sites = set(list(ping_sites) + list(svc_sites))
 
-        # set 'is_device_change' bit og corresponding sites
+        # Set 'is_device_change' bit of corresponding sites.
         SiteInstance.objects.filter(id__in=effected_sites).update(is_device_change=1)
 
-        # truncate 'service_deviceserviceconfiguration'
+        # Truncate 'service_deviceserviceconfiguration'.
         DeviceServiceConfiguration.objects.all().delete()
 
-        # truncate 'service_devicepingconfiguration'
+        # Truncate 'service_devicepingconfiguration'.
         DevicePingConfiguration.objects.all().delete()
 
         result['success'] = 1
