@@ -140,7 +140,7 @@ class DeviceType(models.Model):
 
     def delete(self, *args, **kwargs):
         """
-        Delete method: deletes the device_icon and device_gmap_icon.
+        Deletes the 'device_icon' and 'device_gmap_icon'.
         """
         self.device_icon.delete()
         self.device_gmap_icon.delete()

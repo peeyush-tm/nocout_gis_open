@@ -21,19 +21,19 @@ from nocout.utils.util import disable_for_loaddata
 def assign_default_thematics_to_user(sender, instance=None, created=False, **kwargs):
     """
         Assigning default thematics to user on it's creation.
-        Parameters:
-            - sender (<class 'mptt.models.MPTTModelBase'>) - sender model class i.e. <class 'device.models.Device'>
-            - instance (<class 'device.models.Device'>) - instance being saved for e.g. Default
-            - created (bool) - object created or updated
-            - kwargs (dict) - a dictionary of keyword arguments passed to constructor for e.g.
-                                {
-                                    'update_fields': None,
-                                    'raw': False,
-                                    'signal': <django.dispatch.dispatcher.Signalobjectat0x7f44749958d0>,
-                                    'using': 'default'
-                                }
+        Args:
+            sender (<class 'mptt.models.MPTTModelBase'>): Sender model class, i.e. <class 'device.models.Device'>.
+            instance (<class 'device.models.Device'>): Instance being saved. For e.g. Default.
+            created (bool): Object created or updated.
+            **kwargs: Arbitrary keyword arguments. Dictionary of keyword arguments passed to constructor.
+                      For e.g.
+                            {
+                                'update_fields': None,
+                                'raw': False,
+                                'signal': <django.dispatch.dispatcher.Signalobjectat0x7f44749958d0>,
+                                'using': 'default'
+                            }
     """
-
     if created:
         # Import model inside function to avoid circular dependency.
         from inventory.models import (ThematicSettings,
@@ -44,7 +44,7 @@ def assign_default_thematics_to_user(sender, instance=None, created=False, **kwa
 
         user_profile = instance
 
-        # Get thematics for ptp.
+        # Get thematics for PTP.
         tech_ptp = None
         tech_pmp = None
         tech_wimax = None
@@ -55,9 +55,9 @@ def assign_default_thematics_to_user(sender, instance=None, created=False, **kwa
         except Exception as e:
             pass
 
-        # ********************* ASSIGN THEMATIC SETTINGS ***********************
+        # *********************** ASSIGN THEMATIC SETTINGS *************************
 
-        # # Get global thematic settings for p2p, pmp, wimax.
+        # # Get global thematic settings for PTP, PMP, WiMAX.
         # thematics_ptp = ThematicSettings.objects.filter(name__icontains="RSSI", is_global=True).filter(
         #     name__icontains="ptp")
         #
@@ -67,7 +67,7 @@ def assign_default_thematics_to_user(sender, instance=None, created=False, **kwa
         # thematics_wimax = ThematicSettings.objects.filter(name__icontains="RSSI", is_global=True).filter(
         #     name__icontains="DL").filter(name__icontains="wimax")
         #
-        # # Assign user thematics for ptp, pmp, wimax.
+        # # Assign user thematics for PTP, PMP, WiMAX.
         # for tech in ['ptp', 'pmp', 'wimax']:
         #     if eval("thematics_{}".format(tech)):
         #         UserThematicSettings.objects.create(
@@ -78,7 +78,7 @@ def assign_default_thematics_to_user(sender, instance=None, created=False, **kwa
 
         # ********************* ASSIGN PING THEMATIC SETTINGS ***********************
 
-        # Get ping thematic settings for p2p, pmp, wimax.
+        # Get ping thematic settings for PTP, PMP, WiMAX.
         ping_thematics_ptp = PingThematicSettings.objects.filter(Q(is_global=True), Q(name__icontains="ptp"), Q(
             name__icontains="PL") | Q(name__icontains="Packet"))
 
@@ -88,7 +88,7 @@ def assign_default_thematics_to_user(sender, instance=None, created=False, **kwa
         ping_thematics_wimax = PingThematicSettings.objects.filter(Q(is_global=True), Q(name__icontains="wimax"), Q(
             name__icontains="PL") | Q(name__icontains="Packet"))
 
-        # Assign user ping thematics for ptp, pmp, wimax.
+        # Assign user ping thematics for PTP, PMP, WiMAX.
         for tech in ['ptp', 'pmp', 'wimax']:
             if eval("ping_thematics_{}".format(tech)):
                 UserPingThematicSettings.objects.create(
