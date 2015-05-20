@@ -507,6 +507,10 @@ class NetworkAlertDetailHeaders(ListView):
              'bSortable': True}
         ]
 
+        bh_specific_headers = [
+            {'mData': 'bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'sClass': '','bSortable': True}
+        ]
+
         polled_headers = [
             {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -527,6 +531,14 @@ class NetworkAlertDetailHeaders(ListView):
         datatable_headers += common_headers
         datatable_headers += polled_headers
         datatable_headers += other_headers
+
+        backhaul_headers = []
+        backhaul_headers += starting_headers
+        backhaul_headers += specific_headers
+        backhaul_headers += common_headers
+        backhaul_headers += bh_specific_headers
+        backhaul_headers += polled_headers
+        backhaul_headers += other_headers
 
 
         ul_issue_datatable_headers = []
@@ -592,6 +604,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         context = {
             'datatable_headers': json.dumps(datatable_headers),
+            'backhaul_headers': json.dumps(backhaul_headers),
             'bh_utils_headers' : json.dumps(bh_utils_headers),
             'ul_issue_headers' : json.dumps(ul_issue_datatable_headers),
             'bh_headers': json.dumps(bh_dt_headers),
@@ -686,6 +699,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 is_bh = True
                 page_type = "other"
                 self.table_name = 'performance_networkstatus'
+                # Onnet/Offnet column added for Backhaul tab
+                self.columns.append("bh_connectivity")
             else:
                 return []
 
@@ -755,14 +770,12 @@ class GetNetworkAlertDetail(BaseDatatableView):
         """
         device_list = []
         for device in qs:
-            device_list.append(
-                {
-                    'device_name': device['device_name'],
-                    'device_machine': device['machine_name'],
-                    'id': device['id'],
-                    'ip_address': device['ip_address']
-                }
-            )
+            device_list.append({
+                'device_name': device['device_name'],
+                'device_machine': device['machine_name'],
+                'id': device['id'],
+                'ip_address': device['ip_address']
+            })
 
         return inventory_utils.prepare_machines(device_list)
 

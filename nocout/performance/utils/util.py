@@ -389,7 +389,9 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             "city_id" : "",
             "state_id" : "",
             "near_end_id": "",
-            "freq_id": ""
+            "freq_id": "",
+            # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
+            "bh_connectivity" : ""
         })
 
         is_sector = False
@@ -507,7 +509,9 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "city_id" : format_value(bs_row['BSCITYID']),
                     "state_id" : format_value(bs_row['BSSTATEID']),
                     "near_end_id": format_value(bs_row['SECTOR_CONF_ON_ID']),
-                    "freq_id": format_value(bs_row['SECTOR_FREQUENCY_ID'])
+                    "freq_id": format_value(bs_row['SECTOR_FREQUENCY_ID']),
+                    # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
+                    "bh_connectivity" : format_value(bs_row['BH_CONNECTIVITY'])
                 })
 
                 if is_dr:

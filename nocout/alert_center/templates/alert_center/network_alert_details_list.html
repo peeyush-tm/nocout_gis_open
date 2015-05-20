@@ -68,7 +68,7 @@
                         </li>
                         <li>
                           <a href="#network_converter_block" id="network_converter_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">Converter</span>
+                            <span class="hidden-inline-mobile">Backhaul</span>
                           </a>
                         </li>
                         <li>
@@ -405,7 +405,7 @@
             $("#wimax_ulIssue_tab").attr("data_header", '{{ ul_issue_headers|safe }}');
 
             $("#network_converter_tab").attr("data_url", ajax_url_con);
-            $("#network_converter_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#network_converter_tab").attr("data_header", '{{ backhaul_headers|safe }}');
 
             $("#network_bh_temp_tab").attr("data_url", ajax_url_bh_temp);
             $("#network_bh_temp_tab").attr("data_header", '{{ bh_headers|safe }}');
