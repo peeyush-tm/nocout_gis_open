@@ -3814,6 +3814,7 @@ class GetServiceTypePerformanceData(View):
                         chart_data = [
                             {
                                 'name': 'Availability',
+                                'color': y_color,
                                 'data': data_list,
                                 'type': self.result['data']['objects']['type'],
                                 'valuesuffix': self.result['data']['objects']['valuesuffix'],
@@ -3821,7 +3822,7 @@ class GetServiceTypePerformanceData(View):
                             },
                             {
                                 'name': 'UnAvailability',
-                                'color': '#FF193B',
+                                'color': y_down_color,
                                 'data': warn_data_list,
                                 'type': 'column',
                                 'marker': {
