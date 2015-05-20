@@ -39,11 +39,18 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
+                    {% if page_type|lower == 'network' and data_source|lower == 'down' %}
                     <li>
-                        <a href="#network_WiMAX_block" id="network_wifi_tab" class="network_wimax_tab" data-toggle="tab">
+                        <a href="#network_bh_block" id="network_bh_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Backhaul</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <a href="#network_WiMAX_block" id="network_wifi_tab" data-toggle="tab">
                             <span class="hidden-inline-mobile">WiMAX</span>
                         </a>
-                        </li>
+                    </li>
                     <li>
                         <a href="#network_PMP_block" id="network_pmp_tab" data-toggle="tab">
                             <span class="hidden-inline-mobile">PMP</span>
@@ -65,9 +72,7 @@
                     
                     <!-- network_PTP_block Start -->
                     <div class="tab-pane active" id="network_PTP_block">
-                        <table cellpadding="0" cellspacing="0" border="0"
-                               class="datatable table table-striped table-bordered table-hover"
-                               id="network_PTP_block_table">
+                        <table class="datatable table table-striped table-bordered table-hover" id="network_PTP_block_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -75,19 +80,25 @@
                     <!-- network_PTP_block End -->
 
                     <div class="tab-pane" id="network_PMP_block">
-                        <table id="network_pmp_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
-                               class="datatable table table-striped table-bordered table-hover">
+                        <table id="network_pmp_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="tab-pane" id="network_WiMAX_block">
-                        <table id="network_wifi_alertlistingtable" cellpadding="0" cellspacing="0" border="0"
-                               class="datatable table table-striped table-bordered table-hover">
+                        <table id="network_wifi_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
+                    {% if page_type|lower == 'network' and data_source|lower == 'down' %}
+                    <div class="tab-pane" id="network_bh_block">
+                        <table id="network_bh_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="clearfix"></div>
@@ -145,29 +156,35 @@
             var report_title_base = page_type+" Alert ["+ds_name+"]",
                 ptp_report_title = report_title_base+" - "+ptp_tech_txt,
                 pmp_report_title = report_title_base+" - PMP",
-                wimax_report_title = report_title_base+" - WiMAX";
+                wimax_report_title = report_title_base+" - WiMAX",
+                converter_report_title = report_title_base+" - Backhaul",
+                common_hidden_columns = "'circuit_id', 'customer_name'";
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
-
             var ajax_url_wifi = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX' + '&page_type={{ page_type }}';
+
             var ajax_url_pmp = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'PMP' + '&page_type={{ page_type }}';
+
             var ajax_url_p2p = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P' + '&page_type={{ page_type }}';
+
+            var ajax_url_bh = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul_PD';
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
 
-            var wimax_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'WiMAX', 'page_type' : '{{ page_type }}', 'report_title' : '"+wimax_report_title+"', 'download_excel': 'yes' }";
-
-            var pmp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'PMP', 'page_type' : '{{ page_type }}', 'report_title' : '"+pmp_report_title+"', 'download_excel': 'yes' }";
-
-            var ptp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'P2P', 'page_type' : '{{ page_type }}', 'report_title' : '"+ptp_report_title+"', 'download_excel': 'yes' }";
-
-            if(page_type && page_type.toLowerCase() == 'network') {
-
-            }
+            var common_extra_param = "'download_excel': 'yes'";
+            // Wimax tab extra params
+            var wimax_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'WiMAX', 'page_type' : '{{ page_type }}', 'report_title' : '"+wimax_report_title+"', "+common_extra_param+" }";
+            // PMP tab extra params
+            var pmp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'PMP', 'page_type' : '{{ page_type }}', 'report_title' : '"+pmp_report_title+"', "+common_extra_param+" }";
+            // PTP tab extra params
+            var ptp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'P2P', 'page_type' : '{{ page_type }}', 'report_title' : '"+ptp_report_title+"', "+common_extra_param+" }";
+            // Backhaul extra params
+            var converter_extra_param = "{'data_source' : 'Backhaul_PD', 'report_title' : '"+converter_report_title+"', "+common_extra_param+"}";
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 
@@ -201,6 +218,16 @@
                     "data_extra_param" : pmp_extra_param,
                     "excluded" : "["+pmp_wimax_excluded_network+"]",
                     "serverside_rendering" : false
+                },
+                "network_bh_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : converter_report_title,
+                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "data_class_name" : "GetNetworkAlertDetail",
+                    "header_extra_param" : "{'headers_data_key' : 'bh_datatable_headers', "+common_extra_param+"}",
+                    "data_extra_param" : converter_extra_param,
+                    "excluded" : "['sector_id',"+common_hidden_columns+"]",
+                    "serverside_rendering" : false
                 }
             };
 
@@ -216,14 +243,18 @@
             $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
             $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
-            var lowered_case_url = window.location.href.toLowerCase();
+            $("#network_bh_tab").attr("data_url", ajax_url_bh);
+            $("#network_bh_tab").attr("data_header", '{{ bh_datatable_headers|safe }}');
 
+            var lowered_case_url = window.location.href.toLowerCase();
+            
             if (lowered_case_url.indexOf("pmp") > -1) {
                 $("#network_pmp_tab").trigger('click');
             } else if (lowered_case_url.indexOf("wimax") > -1) {
                 $("#network_wifi_tab").trigger('click');
+            } else if (lowered_case_url.indexOf("backhaul") > -1) {
+                $("#network_bh_tab").trigger('click');
             } else {
-
                 $("#network_ptp_tab").trigger('click');
             }
         });
