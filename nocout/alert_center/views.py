@@ -715,7 +715,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 device_list += inventory_utils.filter_devices(organizations=organizations,
                                                               data_tab=None,
                                                               page_type=page_type,
-                                                              required_value_list=required_value_list
+                                                              required_value_list=required_value_list,
+                                                              other_type='backhaul'
                 )
 
             return device_list
@@ -732,6 +733,10 @@ class GetNetworkAlertDetail(BaseDatatableView):
         search_table = self.table_name
 
         extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
+
+        # Add extra condition for UL Issues listing
+        if self.data_sources and 'ul_issue' in ', '.join(self.data_sources):
+            extra_query_condition += "AND `{0}`.`current_value` > 0"
 
         sorted_device_list = list()
 
