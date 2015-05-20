@@ -1,23 +1,18 @@
-# -*- coding: utf-8 -*-
-import ast, sys
-from copy import deepcopy
-import logging
+import ast
 import json
 import ujson
-from pprint import pprint, pformat
-import urllib, datetime
+import urllib
+import requests
+import logging
+from copy import deepcopy
+from pprint import pformat
 from multiprocessing import Process, Queue
-from django.db.models import Q, Count
+from django.db.models import Count
 from django.views.generic.base import View
 from django.http import HttpResponse
-from inventory.models import BaseStation, Sector, Circuit, SubStation, Customer, LivePollingSettings, \
-    ThresholdConfiguration, ThematicSettings, PingThematicSettings, UserThematicSettings, UserPingThematicSettings
-from device.models import Device, DeviceType, DeviceVendor, \
-    DeviceTechnology, DeviceModel, State, Country, City
-import requests
+from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City
 from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import time_it, \
-    cached_all_gis_inventory, cache_for
+from nocout.utils.util import time_it, cached_all_gis_inventory, cache_for
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
@@ -25,22 +20,355 @@ from performance.models import Topology
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from user_profile.models import UserProfile
+from inventory.models import (BaseStation, LivePollingSettings,
+                              ThresholdConfiguration, ThematicSettings,
+                              PingThematicSettings, UserThematicSettings,
+                              UserPingThematicSettings)
 
 logger = logging.getLogger(__name__)
 
 
-
 @cache_for(300)
-def prepare_raw_result(bs_dict = []):
+def prepare_raw_result(bs_dict=None):
     """
+    To fetch dictionary of base station objects.
 
-    :param bs_dict: dictionary of base-station objects
-    :return: API formatted result
+    Args:
+        bs_dict (list): List of dictionaries containing inventory wrt the base stations.
+                        For e.g.,
+                        [
+                            {
+                                'SS_LONGITUDE': None,
+                                'THROUHPUT': None,
+                                'BSCITYID': 842L,
+                                'SECTOR_FRAME_LENGTH': None,
+                                'BSTYPE': u'',
+                                'SECTOR_FREQUENCY_ID': None,
+                                'BH_PORT': u'Fa0/24',
+                                'SECTOR_BS_ID': None,
+                                'POP': None,
+                                'SID': None,
+                                'BSLAT': 18.5288,
+                                'BSSITETYPE': u'RTT',
+                                'SS_NAME': None,
+                                'BH_AGGR_PORT': None,
+                                'POP_TYPE': None,
+                                'BHID': 1L,
+                                'SSANTENNAMOUNTTYPE': None,
+                                'CCID': None,
+                                'SECTOR_TX': None,
+                                'SS_ETH_EXT': None,
+                                'BH_CONNECTIVITY': u'Onnet',
+                                'SS_VERSION': None,
+                                'SECTOR_PLANNED_FREQUENCY': None,
+                                'SS_DEVICE_ID': None,
+                                'SSDEVICENAME': None,
+                                'SECTOR_SECTOR_ID': None,
+                                'SS_MAC': None,
+                                'SECTOR_FREQUENCY': None,
+                                'BH_TYPE': u'',
+                                'SS_TYPE': None,
+                                'BSADDRESS': u'TTMLOfficeSiteID: 1301Address: ,
+                                TTMLOffice,
+                                NearSanchetiHosp,
+                                Shivajinagar,
+                                Mahaarashtr/Pune//Pincode-411005',
+                                'BSMAINTENANCESTATUS': u'Yes',
+                                'CINR': None,
+                                'POP_IP': None,
+                                'SS_ANTENNA_MAKE': None,
+                                'SECTOR_TECH': None,
+                                'SECTOR_ID': None,
+                                'CIRCUIT_TYPE': None,
+                                'SECTOR_ALIAS': None,
+                                'SECTOR_MRC': None,
+                                'DR_CONF_ON_ID': None,
+                                'SECTOR_TYPE_ID': None,
+                                'SECTOR_VENDOR': None,
+                                'SS_GMAP_ICON': None,
+                                'DR_CONF_ON_IP': None,
+                                'BSSITEID': u'1301.0',
+                                'BSTAG2': u'',
+                                'BSTAG1': u'',
+                                'SECTOR_ANTENNA_GAIN': None,
+                                'QOS': None,
+                                'SECTOR_CONF_ON_MAC': None,
+                                'BH_CAPACITY': 100L,
+                                'SECTOR_GMAP_ICON': None,
+                                'AGGR': u'10002',
+                                'RSSI': None,
+                                'AGGR_TYPE': u'Switch',
+                                'SS_ANTENNA_GAIN': None,
+                                'SECTOR_ANTENNA_HEIGHT': None,
+                                'SS_ANTENNA_REFLECTOR': None,
+                                'BSINFRAPROVIDER': u'TTML',
+                                'SECTOR_RX': None,
+                                'SS_CUST_ADDR': None,
+                                'SS_ANTENNA_TILT': None,
+                                'BSALIAS': u'TTMLOffice',
+                                'BSGPSTYPE': u'UGPS',
+                                'BSCOUNTRY': u'India',
+                                'BSBUILDINGHGT': 18.0,
+                                'SSID': None,
+                                'BSSTATEID': 16L,
+                                'SECTOR_CONF_ON_ALIAS': None,
+                                'BH_PE_IP': u'192.168.224.80',
+                                'SSIP': None,
+                                'SECTOR_TECH_ID': None,
+                                'SECTOR_FREQUENCY_COLOR': None,
+                                'BH_DEVICE_PORT': None,
+                                'SECTOR_FREQUENCY_RADIUS': None,
+                                'SECTOR_ANTENNA_SYNC_SPLITTER': None,
+                                'SSDEVICEALIAS': None,
+                                'BSHSSUUSED': u'',
+                                'SECTOR_CONF_ON_NAME': None,
+                                'AGGR_TECH': u'Switch',
+                                'BSCONV_TYPE': None,
+                                'BSSTATE': u'Maharashtra',
+                                'BHTYPEID': 12L,
+                                'AGGR_IP': u'172.21.254.235',
+                                'BH_CIRCUIT_ID': u'IOR_163134',
+                                'DATE_OF_ACCEPT': None,
+                                'CID': None,
+                                'SS_ANTENNA_AZMINUTH_ANGLE': None,
+                                'SS_BUILDING_HGT': None,
+                                'SS_TOWER_HGT': None,
+                                'SECTOR_ANTENNA_MAKE': None,
+                                'BHCONF': u'10001',
+                                'JITTER': None,
+                                'BSHSSUPORT': u'',
+                                'BH_PE_HOSTNAME': u'pu-shi-shi-mi12-rt01',
+                                'SECTOR_BEAM_WIDTH': None,
+                                'SS_ANTENNA_POLARIZATION': None,
+                                'BH_TTSL_CIRCUIT_ID': u'NA',
+                                'SECTOR_CONF_ON': None,
+                                'SS_ICON': None,
+                                'BSID': 1L,
+                                'SECTOR_ANTENNA_AZMINUTH_ANGLE': None,
+                                'SS_TECH': None,
+                                'BSNAME': u'ttml_office_pun_mah',
+                                'SECTOR_ANTENNA_TILT': None,
+                                'BHTECH': u'Switch',
+                                'BHCONF_IP': u'10.171.137.4',
+                                'SS_CABLE_LENGTH': None,
+                                'DR_CONF_ON': None,
+                                'BH_DEVICE_ID': 10001L,
+                                'SS_ANTENNA_HEIGHT': None,
+                                'SECTOR_RFBW': None,
+                                'BSTOWERHEIGHT': 21.0,
+                                'BSCONV': None,
+                                'SECTORANTENNAMOUNTTYPE': None,
+                                'SS_VENDOR': None,
+                                'SECTOR_CELL_RADIUS': None,
+                                'SECTOR_PORT': None,
+                                'CUSTID': None,
+                                'SECTOR_NAME': None,
+                                'SECTOR_ANTENNA_REFLECTOR': None,
+                                'SS_ANTENNA_SYNC_SPLITTER': None,
+                                'SECTOR_DR': None,
+                                'BSCITY': u'Pune',
+                                'SS_ALIAS': None,
+                                'SECTOR_MODULATION': None,
+                                'BSBHBSO': u'',
+                                'SSDEVICETYPE': None,
+                                'CUST': None,
+                                'SECTOR_ANTENNA_SPLITTER': None,
+                                'SECTOR_CONF_ON_ID': None,
+                                'SS_BEAM_WIDTH': None,
+                                'CALIAS': None,
+                                'POP_TECH': None,
+                                'BHTECHID': 7L,
+                                'SS_ANTENNA_SPLITTER': None,
+                                'SS_ANTENNA_TYPE': None,
+                                'SS_TECH_ID': None,
+                                'SS_LATITUDE': None,
+                                'SECTOR_CONF_ON_IP': None,
+                                'BSCONV_IP': None,
+                                'SS_TYPE_ID': None,
+                                'SECTOR_ANTENNA_POLARIZATION': None,
+                                'BSLONG': 73.8533,
+                                'SECTOR_ANTENNA_TYPE': None,
+                                'BHTYPE': u'Switch',
+                                'BSCONV_TECH': None,
+                                'BSSWITCH': u'10.171.137.4',
+                                'SS_SERIAL_NO': None,
+                                'SSHGT': None,
+                                'SECTOR_ICON': None,
+                                'SECTOR_TYPE': None
+                            }
+                        ]
+
+    Returns:
+        bs_result(dict): Dictionary with base station id's as key and corresponding base station inventory as value.
+                         For e.g.,
+                            {
+                            1L: [
+                                    {
+                                        'SS_LONGITUDE': None,
+                                        'THROUHPUT': None,
+                                        'BSCITYID': 842L,
+                                        'SECTOR_FRAME_LENGTH': None,
+                                        'BSTYPE': u'',
+                                        'SECTOR_FREQUENCY_ID': None,
+                                        'BH_PORT': u'Fa0/24',
+                                        'SECTOR_BS_ID': None,
+                                        'POP': None,
+                                        'SID': None,
+                                        'BSLAT': 18.5288,
+                                        'BSSITETYPE': u'RTT',
+                                        'SS_NAME': None,
+                                        'BH_AGGR_PORT': None,
+                                        'POP_TYPE': None,
+                                        'BHID': 1L,
+                                        'SSANTENNAMOUNTTYPE': None,
+                                        'CCID': None,
+                                        'SECTOR_TX': None,
+                                        'SS_ETH_EXT': None,
+                                        'BH_CONNECTIVITY': u'Onnet',
+                                        'SS_VERSION': None,
+                                        'SECTOR_PLANNED_FREQUENCY': None,
+                                        'SS_DEVICE_ID': None,
+                                        'SSDEVICENAME': None,
+                                        'SECTOR_SECTOR_ID': None,
+                                        'SS_MAC': None,
+                                        'SECTOR_FREQUENCY': None,
+                                        'BH_TYPE': u'',
+                                        'SS_TYPE': None,
+                                        'BSADDRESS': u'TTMLOfficeSiteID: 1301Address: ,
+                                        TTMLOffice,
+                                        NearSanchetiHosp,
+                                        Shivajinagar,
+                                        Mahaarashtr/Pune//Pincode-411005',
+                                        'BSMAINTENANCESTATUS': u'Yes',
+                                        'CINR': None,
+                                        'POP_IP': None,
+                                        'SS_ANTENNA_MAKE': None,
+                                        'SECTOR_TECH': None,
+                                        'SECTOR_ID': None,
+                                        'CIRCUIT_TYPE': None,
+                                        'SECTOR_ALIAS': None,
+                                        'SECTOR_MRC': None,
+                                        'DR_CONF_ON_ID': None,
+                                        'SECTOR_TYPE_ID': None,
+                                        'SECTOR_VENDOR': None,
+                                        'SS_GMAP_ICON': None,
+                                        'DR_CONF_ON_IP': None,
+                                        'BSSITEID': u'1301.0',
+                                        'BSTAG2': u'',
+                                        'BSTAG1': u'',
+                                        'SECTOR_ANTENNA_GAIN': None,
+                                        'QOS': None,
+                                        'SECTOR_CONF_ON_MAC': None,
+                                        'BH_CAPACITY': 100L,
+                                        'SECTOR_GMAP_ICON': None,
+                                        'AGGR': u'10002',
+                                        'RSSI': None,
+                                        'AGGR_TYPE': u'Switch',
+                                        'SS_ANTENNA_GAIN': None,
+                                        'SECTOR_ANTENNA_HEIGHT': None,
+                                        'SS_ANTENNA_REFLECTOR': None,
+                                        'BSINFRAPROVIDER': u'TTML',
+                                        'SECTOR_RX': None,
+                                        'SS_CUST_ADDR': None,
+                                        'SS_ANTENNA_TILT': None,
+                                        'BSALIAS': u'TTMLOffice',
+                                        'BSGPSTYPE': u'UGPS',
+                                        'BSCOUNTRY': u'India',
+                                        'BSBUILDINGHGT': 18.0,
+                                        'SSID': None,
+                                        'BSSTATEID': 16L,
+                                        'SECTOR_CONF_ON_ALIAS': None,
+                                        'BH_PE_IP': u'192.168.224.80',
+                                        'SSIP': None,
+                                        'SECTOR_TECH_ID': None,
+                                        'SECTOR_FREQUENCY_COLOR': None,
+                                        'BH_DEVICE_PORT': None,
+                                        'SECTOR_FREQUENCY_RADIUS': None,
+                                        'SECTOR_ANTENNA_SYNC_SPLITTER': None,
+                                        'SSDEVICEALIAS': None,
+                                        'BSHSSUUSED': u'',
+                                        'SECTOR_CONF_ON_NAME': None,
+                                        'AGGR_TECH': u'Switch',
+                                        'BSCONV_TYPE': None,
+                                        'BSSTATE': u'Maharashtra',
+                                        'BHTYPEID': 12L,
+                                        'AGGR_IP': u'172.21.254.235',
+                                        'BH_CIRCUIT_ID': u'IOR_163134',
+                                        'DATE_OF_ACCEPT': None,
+                                        'CID': None,
+                                        'SS_ANTENNA_AZMINUTH_ANGLE': None,
+                                        'SS_BUILDING_HGT': None,
+                                        'SS_TOWER_HGT': None,
+                                        'SECTOR_ANTENNA_MAKE': None,
+                                        'BHCONF': u'10001',
+                                        'JITTER': None,
+                                        'BSHSSUPORT': u'',
+                                        'BH_PE_HOSTNAME': u'pu-shi-shi-mi12-rt01',
+                                        'SECTOR_BEAM_WIDTH': None,
+                                        'SS_ANTENNA_POLARIZATION': None,
+                                        'BH_TTSL_CIRCUIT_ID': u'NA',
+                                        'SECTOR_CONF_ON': None,
+                                        'SS_ICON': None,
+                                        'BSID': 1L,
+                                        'SECTOR_ANTENNA_AZMINUTH_ANGLE': None,
+                                        'SS_TECH': None,
+                                        'BSNAME': u'ttml_office_pun_mah',
+                                        'SECTOR_ANTENNA_TILT': None,
+                                        'BHTECH': u'Switch',
+                                        'BHCONF_IP': u'10.171.137.4',
+                                        'SS_CABLE_LENGTH': None,
+                                        'DR_CONF_ON': None,
+                                        'BH_DEVICE_ID': 10001L,
+                                        'SS_ANTENNA_HEIGHT': None,
+                                        'SECTOR_RFBW': None,
+                                        'BSTOWERHEIGHT': 21.0,
+                                        'BSCONV': None,
+                                        'SECTORANTENNAMOUNTTYPE': None,
+                                        'SS_VENDOR': None,
+                                        'SECTOR_CELL_RADIUS': None,
+                                        'SECTOR_PORT': None,
+                                        'CUSTID': None,
+                                        'SECTOR_NAME': None,
+                                        'SECTOR_ANTENNA_REFLECTOR': None,
+                                        'SS_ANTENNA_SYNC_SPLITTER': None,
+                                        'SECTOR_DR': None,
+                                        'BSCITY': u'Pune',
+                                        'SS_ALIAS': None,
+                                        'SECTOR_MODULATION': None,
+                                        'BSBHBSO': u'',
+                                        'SSDEVICETYPE': None,
+                                        'CUST': None,
+                                        'SECTOR_ANTENNA_SPLITTER': None,
+                                        'SECTOR_CONF_ON_ID': None,
+                                        'SS_BEAM_WIDTH': None,
+                                        'CALIAS': None,
+                                        'POP_TECH': None,
+                                        'BHTECHID': 7L,
+                                        'SS_ANTENNA_SPLITTER': None,
+                                        'SS_ANTENNA_TYPE': None,
+                                        'SS_TECH_ID': None,
+                                        'SS_LATITUDE': None,
+                                        'SECTOR_CONF_ON_IP': None,
+                                        'BSCONV_IP': None,
+                                        'SS_TYPE_ID': None,
+                                        'SECTOR_ANTENNA_POLARIZATION': None,
+                                        'BSLONG': 73.8533,
+                                        'SECTOR_ANTENNA_TYPE': None,
+                                        'BHTYPE': u'Switch',
+                                        'BSCONV_TECH': None,
+                                        'BSSWITCH': u'10.171.137.4',
+                                        'SS_SERIAL_NO': None,
+                                        'SSHGT': None,
+                                        'SECTOR_ICON': None,
+                                        'SECTOR_TYPE': None
+                                    }
+                                ]
+                            }
     """
-
     bs_list = []
     bs_result = {}
-    #preparing result by pivoting via basestation id
+
+    # Preparing result by pivoting via basestation id.
     if len(bs_dict):
         for bs in bs_dict:
             BSID = bs['BSID']
@@ -48,11 +376,38 @@ def prepare_raw_result(bs_dict = []):
                 bs_list.append(BSID)
                 bs_result[BSID] = []
             bs_result[BSID].append(bs)
+
     return bs_result
 
 
 class DeviceStatsApi(View):
+    """
+    Get base stations inventory with specified limit. If there is no limit parameter
+    in request then it will fetch complete inventory.
 
+    Usage: Shows inventory data on GIS maps.
+
+    URL: /device/stats/?total_count=0&page_number=1
+
+    Args:
+        page_number (unicode): Page number or offset for inventory data.
+        total_count (unicode): Number of the devices needs to be shown.
+
+    Returns:
+        result (dict): Response send in json format.
+                       For e.g.,
+                             {
+                                "success": 0,
+                                "message": "Device Loading Completed",
+                                "data": {
+                                    "meta": {
+
+                                    },
+                                    "objects": None
+                                }
+                            }
+    """
+    # Formatted inventory wrt the base stations.
     raw_result = prepare_raw_result(cached_all_gis_inventory(monitored_only=True))
 
     # @time_it()
@@ -73,55 +428,261 @@ class DeviceStatsApi(View):
         organizations = logged_in_user_organizations(self)
 
         if organizations:
-            # for organization in organizations:
-            page_number= self.request.GET.get('page_number', None)
-            start, offset= None, None
+            page_number = self.request.GET.get('page_number', None)
+            start, offset = None, None
             if page_number:
-                #Setting the Start and Offset limit for the Query.
-                offset= int(page_number)*GIS_MAP_MAX_DEVICE_LIMIT
-                start= offset - GIS_MAP_MAX_DEVICE_LIMIT
+                # Setting the Start and Offset limit for the Query.
+                offset = int(page_number) * GIS_MAP_MAX_DEVICE_LIMIT
+                start = offset - GIS_MAP_MAX_DEVICE_LIMIT
 
-            bs_id = BaseStation.objects.prefetch_related(
-                'sector', 'backhaul').filter(organization__in=organizations
-                )[start:offset].annotate(dcount=Count('name')).values_list('id',flat=True)
+            bs_id = BaseStation.objects.prefetch_related('sector', 'backhaul').filter(
+                organization__in=organizations)[start:offset].annotate(
+                dcount=Count('name')).values_list('id', flat=True)
 
-            #if the total count key is not in the meta objects then run the query
-            total_count=self.request.GET.get('total_count')
+            # If the total count key is not in the meta objects then run the query.
+            total_count = self.request.GET.get('total_count')
 
             if not int(total_count):
-                total_count= BaseStation.objects.filter(
-                    organization__in=organizations).annotate(dcount=Count('name')
-                ).count()
+                total_count = BaseStation.objects.filter(organization__in=organizations).annotate(
+                    dcount=Count('name')).count()
 
-                self.result['data']['meta']['total_count']= total_count
-
+                self.result['data']['meta']['total_count'] = total_count
             else:
-                #Otherthan first request the total_count will be echoed back and then can be placed in the result.
-                total_count= self.request.GET.get('total_count')
-                self.result['data']['meta']['total_count']= total_count
+                # Other than first request the total_count will be echoed back
+                # and then can be placed in the result.
+                total_count = self.request.GET.get('total_count')
+                self.result['data']['meta']['total_count'] = total_count
 
-            self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
-            self.result['data']['meta']['offset']= offset
-            self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
-                                                    { "unspiderfy_icon" : "static/img/icons/bs.png" }
-                                            }
-            self.result['data']['objects']['children']= list()
+            self.result['data']['meta']['limit'] = GIS_MAP_MAX_DEVICE_LIMIT
+            self.result['data']['meta']['offset'] = offset
+            self.result['data']['objects'] = {
+                "id": "mainNode",
+                "name": "mainNodeName",
+                "data": {"unspiderfy_icon": "static/img/icons/bs.png"}
+            }
+            self.result['data']['objects']['children'] = list()
 
             for bs in bs_id:
                 if bs in self.raw_result:
-                    base_station_info= prepare_raw_bs_result(self.raw_result[bs])
+                    base_station_info = prepare_raw_bs_result(self.raw_result[bs])
                     self.result['data']['objects']['children'].append(base_station_info)
 
-
-            self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
+            self.result['data']['meta']['device_count'] = len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
             self.result['success'] = 1
+
         return HttpResponse(ujson.dumps(self.result), content_type="application/json")
 
 
 class DeviceFilterApi(View):
+    """
+    Get detailed data for technologies, vendors, models, state, city etc. in a dictionary.
+
+    Usage: Used in device tree structure and filtering technologies in live poll view.
+
+    URL: /device/filter/0/
+
+    Args:
+        for_map (unicode): Specify that data is for map or other functionaliy.
+
+    Returns:
+        result (dict): Response send in json format.
+                       For e.g.,
+                             {
+                                'message': 'DataFetchedSuccessfully.',
+                                'data': {
+                                    'meta': {
+
+                                    },
+                                    'objects': {
+                                        'vendor': {
+                                            'data': [
+                                                {
+                                                    'tech_name': u'Default',
+                                                    'id': 1L,
+                                                    'value': u'Default',
+                                                    'tech_id': 1L
+                                                },
+                                                {
+                                                    'tech_name': u'P2P',
+                                                    'id': 2L,
+                                                    'value': u'Radwin',
+                                                    'tech_id': 2L
+                                                },
+                                                {
+                                                    'tech_name': u'WiMAX',
+                                                    'id': 3L,
+                                                    'value': u'Telisma',
+                                                    'tech_id': 3L
+                                                },
+                                                {
+                                                    'tech_name': u'WiMAX',
+                                                    'id': 7L,
+                                                    'value': u'RAD',
+                                                    'tech_id': 3L
+                                                },
+                                                {
+                                                    'tech_name': u'WiMAX',
+                                                    'id': 8L,
+                                                    'value': u'MROtek',
+                                                    'tech_id': 3L
+                                                },
+                                                {
+                                                    'tech_name': u'PMP',
+                                                    'id': 4L,
+                                                    'value': u'Cambium',
+                                                    'tech_id': 4L
+                                                },
+                                                {
+                                                    'tech_name': u'PMP',
+                                                    'id': 7L,
+                                                    'value': u'RAD',
+                                                    'tech_id': 4L
+                                                },
+                                                {
+                                                    'tech_name': u'PMP',
+                                                    'id': 8L,
+                                                    'value': u'MROtek',
+                                                    'tech_id': 4L
+                                                },
+                                                {
+                                                    'tech_name': u'Switch',
+                                                    'id': 9L,
+                                                    'value': u'Switch',
+                                                    'tech_id': 7L
+                                                },
+                                                {
+                                                    'tech_name': u'TCLPOP',
+                                                    'id': 7L,
+                                                    'value': u'RAD',
+                                                    'tech_id': 8L
+                                                },
+                                                {
+                                                    'tech_name': u'TCLPOP',
+                                                    'id': 8L,
+                                                    'value': u'MROtek',
+                                                    'tech_id': 8L
+                                                },
+                                                {
+                                                    'tech_name': u'TCLPTPPOP',
+                                                    'id': 2L,
+                                                    'value': u'Radwin',
+                                                    'tech_id': 9L
+                                                },
+                                                {
+                                                    'tech_name': u'PTP-BH',
+                                                    'id': 2L,
+                                                    'value': u'Radwin',
+                                                    'tech_id': 10L
+                                                },
+                                                {
+                                                    'id': 1L,
+                                                    'value': u'Default'
+                                                },
+                                                {
+                                                    'id': 2L,
+                                                    'value': u'Radwin'
+                                                },
+                                                {
+                                                    'id': 3L,
+                                                    'value': u'Telisma'
+                                                },
+                                                {
+                                                    'id': 4L,
+                                                    'value': u'Cambium'
+                                                },
+                                                {
+                                                    'id': 7L,
+                                                    'value': u'RAD'
+                                                },
+                                                {
+                                                    'id': 8L,
+                                                    'value': u'MROtek'
+                                                },
+                                                {
+                                                    'id': 9L,
+                                                    'value': u'Switch'
+                                                }
+                                            ]
+                                        },
+                                        'state': {
+                                            'data': [
+                                                {
+                                                    'id': 1L,
+                                                    'value': u'AndhraPradesh'
+                                                },
+                                                {
+                                                    'id': 2L,
+                                                    'value': u'ArunachalPradesh'
+                                                }
+                                            ]
+                                        },
+                                        'technology': {
+                                            'data': [
+                                                {
+                                                    'id': 1L,
+                                                    'value': u'Default'
+                                                },
+                                                {
+                                                    'id': 2L,
+                                                    'value': u'P2P'
+                                                },
+                                                {
+                                                    'id': 3L,
+                                                    'value': u'WiMAX'
+                                                },
+                                                {
+                                                    'id': 4L,
+                                                    'value': u'PMP'
+                                                },
+                                                {
+                                                    'id': 7L,
+                                                    'value': u'Switch'
+                                                },
+                                                {
+                                                    'id': 8L,
+                                                    'value': u'TCLPOP'
+                                                },
+                                                {
+                                                    'id': 9L,
+                                                    'value': u'TCLPTPPOP'
+                                                },
+                                                {
+                                                    'id': 10L,
+                                                    'value': u'PTP-BH'
+                                                }
+                                            ]
+                                        },
+                                        'city': {
+                                            'data': [
+                                                {
+                                                    'state_id': 1L,
+                                                    'id': 1L,
+                                                    'value': u'Adilabad',
+                                                    'state_name': u'AndhraPradesh'
+                                                },
+                                                {
+                                                    'state_id': 1L,
+                                                    'id': 2L,
+                                                    'value': u'Adoni',
+                                                    'state_name': u'AndhraPradesh'
+                                                },
+                                                {
+                                                    'state_id': 1L,
+                                                    'id': 3L,
+                                                    'value': u'Amadalavalasa',
+                                                    'state_name': u'AndhraPradesh'
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                'success': 1
+                            }
+    """
 
     def get(self, request, *args, **kwargs):
+        # Response to be returned.
         self.result = {
             "success": 0,
             "message": "Device Loading Completed",
@@ -130,58 +691,61 @@ class DeviceFilterApi(View):
                 "objects": {}
             }
         }
+
         technology_data = []
-        vendor_list,vendor_data,state_data,city_data = [],[],[],[]
+        vendor_list, vendor_data, state_data, city_data = [], [], [], []
+
         for device_technology in DeviceTechnology.objects.all():
-            technology_data.append({ 'id':device_technology.id,
-                                     'value':device_technology.name })
+            # Creating technologies data.
+            technology_data.append({'id': device_technology.id,
+                                    'value': device_technology.name})
             if int(self.kwargs['for_map']) == 0:
                 vendors = device_technology.device_vendors.all()
                 for vendor in vendors:
                     if vendor not in vendor_list:
                         vendor_list.append(vendor.id)
-                        vendor_data.append({ 'id':vendor.id,
-                                             'value':vendor.name,
-                                             'tech_id': device_technology.id,
-                                             'tech_name': device_technology.name
-                        })
+                        # Creating vendor data.
+                        vendor_data.append(
+                            {
+                                'id': vendor.id,
+                                'value': vendor.name,
+                                'tech_id': device_technology.id,
+                                'tech_name': device_technology.name
+                            }
+                        )
 
         if int(self.kwargs['for_map']) == 0:
             for vendor in DeviceVendor.objects.all():
-                vendor_data.append({ 'id':vendor.id,
-                                         'value':vendor.name })
+                vendor_data.append({'id': vendor.id,
+                                    'value': vendor.name})
 
             for state in State.objects.all():
-                state_data.append({ 'id':state.id,
-                                         'value':state.state_name })
+                # Creating state data.
+                state_data.append({'id': state.id,
+                                   'value': state.state_name})
+                
             state_list = []
+            
             for city in City.objects.all():
-                city_data.append({'id':city.id,
-                                 'value':city.city_name,
-                                 'state_id': city.state.id,
-                                 'state_name': city.state.state_name }
-                )
+                # Creating city data.
+                city_data.append({'id': city.id,
+                                  'value': city.city_name,
+                                  'state_id': city.state.id,
+                                  'state_name': city.state.state_name})
                 if city.state.id not in state_list:
                     state_list.append(city.state.id)
-                    state_data.append({ 'id':city.state.id,'value':city.state.state_name })
+                    state_data.append({'id': city.state.id, 'value': city.state.state_name})
 
-        # Create technology Object
-        self.result['data']['objects']['technology']={'data':technology_data}
+        self.result['data']['objects']['technology'] = {'data': technology_data}
 
+        # Specify whether data is for 'map' or other functionality.
         if int(self.kwargs['for_map']) == 0:
-            self.result['data']['objects']['vendor']={'data':vendor_data}
-            self.result['data']['objects']['state']={'data':state_data}
-            self.result['data']['objects']['city']={'data':city_data}
+            self.result['data']['objects']['vendor'] = {'data': vendor_data}
+            self.result['data']['objects']['state'] = {'data': state_data}
+            self.result['data']['objects']['city'] = {'data': city_data}
 
-        # technology_data = []
-        # for device_technology in DeviceTechnology.objects.all():
-        #     technology_data.append({ 'id':device_technology.id,
-        #                              'value':device_technology.name })
-
-        # self.result['data']['objects']['technology']={'data':technology_data}
-
-        self.result['message']='Data Fetched Successfully.'
-        self.result['success']=1
+        self.result['message'] = 'Data Fetched Successfully.'
+        self.result['success'] = 1
 
         return HttpResponse(ujson.dumps(self.result), content_type="application/json")
 
@@ -189,84 +753,85 @@ class DeviceFilterApi(View):
 class LPServicesApi(View):
     """
         API for fetching the services and data sources for list of devices.
-        Parameters:
-            - devices (list) - list of devices
+        Args:
+            devices (list): List of devices.
 
         Returns:
-           - result (dict) - dictionary of devices with associates services and data sources
-           {
-                "success" : 1,
-                "message" : "Services Fetched Successfully",
-                "data" : {
-                    "device1" : {
-                        "services" : [
-                            {
-                                "name" : "any_service_name2",
-                                "value" : "65",
-                                "datasource" : [
-                                    {
-                                        "name" : "any_service_datasource_name1",
-                                        "value" : "651"
-                                    },
-                                    {
-                                        "name" : "any_service_datasource_name2",
-                                        "value" : "652"
-                                    },
-                                    {
-                                        "name" : "any_service_datasource_name3",
-                                        "value" : "653"
+            result (dict): Dictionary of devices with associates services and data sources.
+                           For e.g.,
+                               {
+                                    "success" : 1,
+                                    "message" : "Services Fetched Successfully",
+                                    "data" : {
+                                        "device1" : {
+                                            "services" : [
+                                                {
+                                                    "name" : "any_service_name2",
+                                                    "value" : "65",
+                                                    "datasource" : [
+                                                        {
+                                                            "name" : "any_service_datasource_name1",
+                                                            "value" : "651"
+                                                        },
+                                                        {
+                                                            "name" : "any_service_datasource_name2",
+                                                            "value" : "652"
+                                                        },
+                                                        {
+                                                            "name" : "any_service_datasource_name3",
+                                                            "value" : "653"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "name" : "any_service_name3",
+                                                    "value" : "66",
+                                                    "datasource" : [
+                                                        {
+                                                            "name" : "any_service_datasource_name4",
+                                                            "value" : "654"
+                                                        },
+                                                        {
+                                                            "name" : "any_service_datasource_name5",
+                                                            "value" : "655"
+                                                        },
+                                                        {
+                                                            "name" : "any_service_datasource_name6",
+                                                            "value" : "656"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "device2" : {
+                                            "services" : [
+                                                {
+                                                    "name" : "any_service_name4",
+                                                    "value" : "6545",
+                                                    "datasource" : [
+                                                        {
+                                                            "name" : "any_service_datasource_name7",
+                                                            "value" : "657"
+                                                        },
+                                                        {
+                                                            "name" : "any_service_datasource_name8",
+                                                            "value" : "658"
+                                                        },
+                                                        {
+                                                            "name" : "any_service_datasource_name9",
+                                                            "value" : "659"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
                                     }
-                                ]
-                            },
-                            {
-                                "name" : "any_service_name3",
-                                "value" : "66",
-                                "datasource" : [
-                                    {
-                                        "name" : "any_service_datasource_name4",
-                                        "value" : "654"
-                                    },
-                                    {
-                                        "name" : "any_service_datasource_name5",
-                                        "value" : "655"
-                                    },
-                                    {
-                                        "name" : "any_service_datasource_name6",
-                                        "value" : "656"
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "device2" : {
-                        "services" : [
-                            {
-                                "name" : "any_service_name4",
-                                "value" : "6545",
-                                "datasource" : [
-                                    {
-                                        "name" : "any_service_datasource_name7",
-                                        "value" : "657"
-                                    },
-                                    {
-                                        "name" : "any_service_datasource_name8",
-                                        "value" : "658"
-                                    },
-                                    {
-                                        "name" : "any_service_datasource_name9",
-                                        "value" : "659"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                }
-            }
+                                }
     """
-
     def get(self, request):
-        """Returns json containing devices, services and data sources"""
-
+        """
+        Returns json containing devices, services and data sources.
+        """
         result = {
             "success": 0,
             "message": "No Service Data",
@@ -274,46 +839,48 @@ class LPServicesApi(View):
             }
         }
 
-        # list of devices for which service and data sources needs to be fetched
-        # i.e. ['device1', 'device2']
+        # List of devices for which service and data sources needs to be fetched,
+        # i.e. ['device1', 'device2'].
         try:
             devices = eval(str(self.request.GET.get('devices',None)))
             if devices:
                 for dv in devices:
                     device = Device.objects.get(device_name=dv)
 
-                    # fetching all rows form 'service_deviceserviceconfiguration' where device_name is
-                    # is name of device currently in loop; to get all associated services
+                    # Fetching all rows form 'service_deviceserviceconfiguration' where device_name is
+                    # is name of device currently in loop; to get all associated services.
                     device_sdc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
 
-                    # initializing dict for current device
+                    # Initializing dict for current device.
                     result['data'][str(dv)] = {}
 
-                    # initializing list for services associated to current device(dv)
+                    # Initializing list for services associated to current device(dv).
                     result['data'][str(dv)]['services'] = []
 
-                    # loop through all services of current device(dv)
+                    # Loop through all services of current device(dv).
                     for dsc in device_sdc:
                         svc_dict = dict()
                         svc_dict['name'] = str(dsc.service_name)
                         svc_dict['value'] = Service.objects.get(name=dsc.service_name).id
 
-                        # initializing list of data sources
+                        # Initializing list of data sources.
                         svc_dict['datasource'] = []
 
-                        # fetching all rows form 'service_deviceserviceconfiguration' where device_name and service_name
-                        # are names of current device and service in loop; to get all associated data sources
-                        service_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dv, service_name=dsc.service_name)
+                        # Fetching all rows form 'service_deviceserviceconfiguration'
+                        # where device_name and service_name are names of current device
+                        # and service in loop; to get all associated data sources.
+                        service_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dv,
+                                                                                         service_name=dsc.service_name)
 
-                        # loop through all the data sources associated with current service(dsc)
+                        # Loop through all the data sources associated with current service(dsc).
                         for sds in service_data_sources:
                             sds_dict = dict()
                             sds_dict['name'] = sds.data_source
                             sds_dict['value'] = ServiceDataSource.objects.get(name=sds.data_source).id
-                            # appending data source dict to data sources list for current service(dsc) data source list
+                            # Appending data source dict to data sources list for current service(dsc) data source list.
                             svc_dict['datasource'].append(sds_dict)
 
-                        # appending service dict to services list of current device(dv)
+                        # Appending service dict to services list of current device(dv).
                         result['data'][str(dv)]['services'].append(svc_dict)
                         result['success'] = 1
                         result['message'] = "Successfully fetched services and data sources."
@@ -327,7 +894,7 @@ class LPServicesApi(View):
 class FetchLPDataApi(View):
     """
         API for fetching the service live polled value
-        Parameters:
+        Args:
             - device (list) - list of devices
             - service (list) - list of services
             - datasource (list) - list of data sources
@@ -444,7 +1011,7 @@ class FetchLPDataApi(View):
 class FetchLPSettingsApi(View):
     """
         API for fetching the service live polled value
-        Parameters:
+        Args:
             - technology (unicode) - id of technology
 
         Returns:
@@ -515,7 +1082,7 @@ class FetchLPSettingsApi(View):
 class FetchThresholdConfigurationApi(View):
     """
         API for fetching the service live polled value
-        Parameters:
+        Args:
             - technology (unicode) - id of technology
 
         Returns:
@@ -594,7 +1161,7 @@ class FetchThresholdConfigurationApi(View):
 class FetchThematicSettingsApi(View):
     """
         API for fetching the service live polled value
-        Parameters:
+        Args:
             - technology (unicode) - id of technology
 
         Returns:
@@ -687,7 +1254,7 @@ class FetchThematicSettingsApi(View):
 class BulkFetchLPDataApi(View):
     """
         API for fetching the service live polled values
-        Parameters:
+        Args:
             - ts_template (unicode) - threshold configuration template id for e.g. 23
             - devices (list) - list of devices for e.g. ["3335","1714","2624","2622"]
             - service_type (unicode) - type of service i.e 'ping' or 'normal'
@@ -1142,7 +1709,7 @@ class BulkFetchLPDataApi(View):
     def get_thematic_settings(self, ts_type, device_technology):
         """ Get device pl
 
-            Parameters:
+            Args:
                 - device_technology (<class 'device.models.DeviceTechnology'>) - device technology object
                 - ts_type (unicode) - thematic settings type i.e 'ping' or 'normal'
 
@@ -1181,7 +1748,7 @@ class BulkFetchLPDataApi(View):
     def get_icon_for_numeric_service(self, th_ranges=None, th_icon_settings="", value="", icon=""):
         """
             Get device icon corresponding to fetched performance value
-            Parameters:
+            Args:
                 - th_ranges (<class 'inventory.models.ThresholdConfiguration'>) - threshold configuration object
                                                                                   for e.g. Wimax DL RSSI
                 - th_icon_settings (unicode) - icon settings in json format for e.g.
@@ -1247,7 +1814,7 @@ class BulkFetchLPDataApi(View):
     def get_icon_for_string_service(self, th_ranges=None, th_icon_settings="", value="", icon=""):
         """
             Get device icon corresponding to fetched performance value
-            Parameters:
+            Args:
                 - th_ranges (<class 'inventory.models.ThresholdConfiguration'>) - threshold configuration object
                                                                                   for e.g. Wimax DL RSSI
                 - th_icon_settings (unicode) - icon settings in json format for e.g.
