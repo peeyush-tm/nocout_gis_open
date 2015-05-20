@@ -94,6 +94,10 @@ function nocout_getSeverityColorIcon(status) {
         "icon" : "fa-circle"
     };
 
+    if(!status) {
+        return info_obj;
+    }
+
     if (green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
         info_obj.color = green_color;
         info_obj.icon = "fa-check-circle";
@@ -906,7 +910,7 @@ function getCompleteUrl(api_url) {
         url_connector = "";
 
     if (!api_url) {
-        complete_url = "";
+         return complete_url;
     }
 
     if (!base_url) {

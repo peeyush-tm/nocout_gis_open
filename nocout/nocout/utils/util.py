@@ -466,7 +466,9 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
                         basestation.maintenance_status as BSMAINTENANCESTATUS,
 
                         city.city_name as BSCITY,
+                        city.id as BSCITYID,
                         state.state_name as BSSTATE,
+                        state.id as BSSTATEID,
                         country.country_name as BSCOUNTRY,
 
                         basestation.address as BSADDRESS,
@@ -508,8 +510,10 @@ left join (
         sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
 
         technology.name as SECTOR_TECH,
+        technology.id as SECTOR_TECH_ID,
         vendor.name as SECTOR_VENDOR,
         devicetype.name as SECTOR_TYPE,
+        devicetype.id as SECTOR_TYPE_ID,
         devicetype.device_icon as SECTOR_ICON,
         devicetype.device_gmap_icon as SECTOR_GMAP_ICON,
 
@@ -536,6 +540,7 @@ left join (
         frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
         frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
         frequency.value as SECTOR_FREQUENCY,
+        frequency.id as SECTOR_FREQUENCY_ID,
 
         dport.name as SECTOR_PORT,
 
@@ -592,6 +597,7 @@ left join (
             circuit.throughput_during_acceptance as THROUHPUT,
             circuit.date_of_acceptance as DATE_OF_ACCEPT,
 
+            customer.id as CUSTID,
             customer.alias as CUST,
             customer.address as SS_CUST_ADDR,
 
@@ -628,8 +634,10 @@ left join (
             device.device_name as SSDEVICENAME,
 
             technology.name as SS_TECH,
+            technology.id as SS_TECH_ID,
             vendor.name as SS_VENDOR,
             devicetype.name as SS_TYPE,
+            devicetype.id as SS_TYPE_ID,
             devicetype.name as SSDEVICETYPE,
             devicetype.device_icon as SS_ICON,
             devicetype.device_gmap_icon as SS_GMAP_ICON
@@ -682,7 +690,9 @@ left join
                 bh_info.BHCONF as BHCONF,
                 bh_info.BHCONF_IP as BHCONF_IP,
                 bh_info.BHTECH as BHTECH,
+                bh_info.BHTECHID as BHTECHID,
                 bh_info.BHTYPE as BHTYPE,
+                bh_info.BHTYPEID as BHTYPEID,
                 bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
                 bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
 
@@ -716,7 +726,9 @@ left join
                 device.device_name as BHCONF,
                 device.ip_address as BHCONF_IP,
                 tech.name as BHTECH,
-                devicetype.name as BHTYPE
+                tech.id as BHTECHID,
+                devicetype.name as BHTYPE,
+                devicetype.id as BHTYPEID
 
         from inventory_backhaul as backhaul
         join (
