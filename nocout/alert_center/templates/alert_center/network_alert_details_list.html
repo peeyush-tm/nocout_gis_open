@@ -269,7 +269,7 @@
                 network_sectorUtil_title = "Network Alert Details: Sector Utilization",
                 pmp_ulIssue_title = "Network Alert Details: PMP UL Issues",
                 wimax_ulIssue_title = "Network Alert Details: WiMAX UL Issues",
-                converter_title = "Network Alert Details: Converter",
+                converter_title = "Network Alert Details: Backhaul",
                 bh_temp_title = "Network Alert Details: BH Temperature",
                 temp_title = "Network Alert Details: WiMAX Temperature",
                 wimax_title = "Network Alert Details: WiMAX BS",
@@ -331,7 +331,7 @@
                     "table_title" : converter_title,
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
-                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "header_extra_param" : "{'headers_data_key' : 'backhaul_headers', "+common_extra_param+"}",
                     "data_extra_param" : converter_extra_param,
                     "excluded" : "['sector_id',"+common_hidden_columns+"]",
                     "serverside_rendering" : false
