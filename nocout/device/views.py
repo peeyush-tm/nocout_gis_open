@@ -77,8 +77,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin or superadmin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list(
-                'role_name', flat=True) or self.request.user.is_superuser:
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
             datatable_headers.append(
@@ -100,8 +99,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         # if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list(
-                'role_name', flat=True) or self.request.user.is_superuser:
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
@@ -121,8 +119,8 @@ class DeviceList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['datatable_headers_no_nms_actions'] = json.dumps(datatable_headers_no_nms_actions)
 
-        # show sync only if user is superuser
-        if self.request.user.is_superuser:
+        # show sync only if user is admin
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             context['deadlock_status'] = deadlock_status
             context['last_sync_time'] = last_sync_time
 
@@ -3721,10 +3719,9 @@ class DeviceSyncHistoryList(ListView):
         ]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            if self.request.user.is_superuser:
-                datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
-                context['deadlock_status'] = deadlock_status
-                context['last_sync_time'] = last_sync_time
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+            context['deadlock_status'] = deadlock_status
+            context['last_sync_time'] = last_sync_time
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 

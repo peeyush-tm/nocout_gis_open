@@ -16,7 +16,7 @@
 {% block content_title %}Device Sync History{% endblock %}
 {% block content_description %}List of device sync history{% endblock %}
 {% block page_setting_block %}
-    {% if request.user.is_superuser %}
+    {% if perms.device.can_sync %}
         <span class="pull-right">
             <div class="btn-group">
                 {% if last_sync_time %}
