@@ -1,35 +1,31 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 # python utilities
-import datetime
-#python utilities
+# python utilities
 
 import ujson as json
 import os
 import datetime
 import time
-
 from operator import itemgetter
+from multiprocessing import Process, Queue
 
 from django.utils.dateformat import format
 
-from multiprocessing import Process, Queue
 
-from django.core.urlresolvers import reverse
-
-#nocout utilities
+# nocout utilities
 from nocout.utils.util import fetch_raw_result, \
     format_value, cache_for, \
     cached_all_gis_inventory
-#nocout utilities
+# nocout utilities
 
-#python logging
+# python logging
 import logging
 
 import requests
 
 log = logging.getLogger(__name__)
-#python logging
+# python logging
 
 from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
     MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS
@@ -69,7 +65,7 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
                     (",".join(map(in_string, devices))),
                     (',').join(map(in_string, data_sources)),
                     extra_where_clause.format(table_name)
-        )
+                    )
 
     return query
 
@@ -136,7 +132,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     """
     ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
     """
-    #Fetching the data for the device w.r.t to their machine.
+    # Fetching the data for the device w.r.t to their machine.
     ## multi processing module here
     ## to fetch the deice results from corrosponding machines
     model = model_is
@@ -151,7 +147,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
                 target=get_multiprocessing_performance_data,
                 args=(q, machine_device_list, machine, model)
             ) for machine, machine_device_list in machine_dict.items()
-        ]
+            ]
 
         for j in jobs:
             j.start()
@@ -201,7 +197,7 @@ def map_results(perf_result, qs):
     indexed_qs = pre_map_indexing(index_dict=qs)
 
     for device in indexed_qs:
-        for perf in performance:  #may run 7 times : per machine once
+        for perf in performance:  # may run 7 times : per machine once
             try:
                 device_info = indexed_qs[device][0].items()
                 data_source = perf[device]
@@ -234,7 +230,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
     # dr case
     indexed_dr = {}
 
-    #pop, aggrigation, bs conveter
+    # pop, aggrigation, bs conveter
     indexed_bh_pop = {}
     indexed_bh_aggr = {}
     indexed_bh_conv = {}
@@ -320,14 +316,16 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     :return:
     """
 
-    # ##binary search instead
-    # from bisect import bisect_left
-    #
-    # def binary_search(a, x, lo=0, hi=None):   # can't use a to specify default for hi
-    #     hi = hi if hi is not None else len(a) # hi defaults to len(a)
-    #     pos = bisect_left(a,x,lo,hi)          # find insertion position
-    #     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
-    # ##binary search instead
+    def put_na(bsdict, key):
+        """
+        put NA for keys of a dictionary
+        :param dict: dictionary
+        :param key : key in the dictionary
+        """
+        if key in bsdict:
+            return bsdict.get(key, 'NA')
+        else:
+            return 'NA'
 
     indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv, indexed_dr = \
         combined_indexed_gis_devices(
@@ -343,9 +341,7 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             monitored_only=monitored_only, technology=technology, type_rf=type_rf
         )
 
-
     # gis_result = indexed_gis_devices(page_type=page_type)
-
     processed_device = {}
 
     for device in devices:
@@ -371,27 +367,27 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             "bh_technology_id": "",
             "bh_type": "",
             "bh_type_id": "",
-            "planned_freq" : "",
-            "polled_freq" : "",
-            "qos_bw" : "",
+            "planned_freq": "",
+            "polled_freq": "",
+            "qos_bw": "",
             "ss_name": "",
-            "sector_id_str" : "",
-            "pmp_port_str" : "",
+            "sector_id_str": "",
+            "pmp_port_str": "",
             "bh_capacity": "",
             "bh_port": "",
-            "bh_id" : "",
-            "bs_id" : "",
-            "ss_id" : "",
-            "sector_pk" : "",
+            "bh_id": "",
+            "bs_id": "",
+            "ss_id": "",
+            "sector_pk": "",
             "sector_pk_str": "",
-            "ckt_id" : "",
-            "cust_id" : "",
-            "city_id" : "",
-            "state_id" : "",
+            "ckt_id": "",
+            "cust_id": "",
+            "city_id": "",
+            "state_id": "",
             "near_end_id": "",
             "freq_id": "",
             # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
-            "bh_connectivity" : ""
+            "bh_connectivity": ""
         })
 
         is_sector = False
@@ -409,26 +405,26 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
         device_name = device['device_name']
 
         if device_name in indexed_sector:
-            #is sector
+            # is sector
             is_sector = True
             raw_result = indexed_sector[device_name]
         elif device_name in indexed_ss:
-            #is ss
+            # is ss
             is_ss = True
             raw_result = indexed_ss[device_name]
         elif device_name in indexed_bh:
-            #is bh
+            # is bh
             is_bh = True
             raw_result = indexed_bh[device_name]
-        #pop, aggr, conv
+        # pop, aggr, conv
         elif device_name in indexed_bh_pop:
             is_pop = True
             raw_result = indexed_bh_pop[device_name]
-        #aggr
+        # aggr
         elif device_name in indexed_bh_aggr:
             is_aggr = True
             raw_result = indexed_bh_aggr[device_name]
-        #conv
+        # conv
         elif device_name in indexed_bh_conv:
             is_conv = True
             raw_result = indexed_bh_conv[device_name]
@@ -460,7 +456,7 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                             pmp_port_str.append(port)
                     # append formatted sector id with port in list
                     sector_details.append(apnd.upper() + bs_row['SECTOR_SECTOR_ID'])
-                    
+
                     # append sector id in list
                     sector_id_str.append(bs_row['SECTOR_SECTOR_ID'])
 
@@ -471,47 +467,47 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
-                    "near_end_ip": format_value(bs_row['SECTOR_CONF_ON_IP']),
+                    "near_end_ip": put_na(bs_row, 'SECTOR_CONF_ON_IP'),
                     "sector_id": " ".join(sector_details),
-                    "circuit_id": format_value(bs_row['CCID']),
-                    "customer_name": format_value(bs_row['CUST']),
-                    "bs_name": format_value(bs_row['BSALIAS']).upper(),
-                    "city": format_value(bs_row['BSCITY']),
-                    "state": format_value(bs_row['BSSTATE']),
-                    "device_type": format_value(bs_row['SECTOR_TYPE']),
-                    "device_technology": format_value(bs_row['SECTOR_TECH']),
+                    "circuit_id": put_na(bs_row, 'CCID'),
+                    "customer_name": put_na(bs_row, 'CUST'),
+                    "bs_name": put_na(bs_row, 'BSALIAS').upper(),
+                    "city": put_na(bs_row, 'BSCITY'),
+                    "state": put_na(bs_row, 'BSSTATE'),
+                    "device_type": put_na(bs_row, 'SECTOR_TYPE'),
+                    "device_technology": put_na(bs_row, 'SECTOR_TECH'),
                     # Newly added keys for inventory status headers: 15-May-15
-                    "device_type_id": format_value(bs_row['SECTOR_TYPE_ID']) if bs_row['SECTOR_TYPE_ID'] else '',
-                    "device_technology_id": format_value(bs_row['SECTOR_TECH_ID']) if bs_row['SECTOR_TECH_ID'] else '',
-                    "ss_technology": format_value(bs_row['SS_TECH']) if bs_row['SS_TECH'] else '',
-                    "ss_technology_id": format_value(bs_row['SS_TECH_ID']) if bs_row['SS_TECH_ID'] else '',
-                    "ss_type": format_value(bs_row['SS_TYPE']) if bs_row['SS_TYPE'] else '',
-                    "ss_type_id": format_value(bs_row['SS_TYPE_ID']) if bs_row['SS_TYPE_ID'] else '',
-                    "bh_technology": format_value(bs_row['BHTECH']) if bs_row['BHTECH'] else '',
-                    "bh_technology_id": format_value(bs_row['BHTECHID']) if bs_row['BHTECHID'] else '',
-                    "bh_type": format_value(bs_row['BHTYPE']) if bs_row['BHTYPE'] else '',
-                    "bh_type_id": format_value(bs_row['BHTYPEID']) if bs_row['BHTYPEID'] else '',
-                    "planned_freq" : format_value(bs_row['SECTOR_PLANNED_FREQUENCY']) if bs_row['SECTOR_PLANNED_FREQUENCY'] else '',
-                    "polled_freq" : format_value(bs_row['SECTOR_FREQUENCY']) if bs_row['SECTOR_FREQUENCY'] else '',
-                    "qos_bw" : bs_row['QOS']/1000 if bs_row['QOS'] else '',
-                    "ss_name": format_value(bs_row['SS_ALIAS']).upper() if bs_row['SS_ALIAS'] else '',
-                    "sector_id_str" : ",".join(sector_id_str),
-                    "pmp_port_str" : ",".join(pmp_port_str),
-                    "bh_capacity": format_value(bs_row['BH_CAPACITY']) if bs_row['BH_CAPACITY'] else '',
-                    "bh_port": format_value(bs_row['BH_PORT']) if bs_row['BH_PORT'] else '',
-                    "bh_id" : format_value(bs_row['BHID']) if bs_row['BHID'] else '',
-                    "bs_id" : format_value(bs_row['BSID']) if bs_row['BSID'] else '',
-                    "ss_id" : format_value(bs_row['SSID']) if bs_row['SSID'] else '',
-                    "sector_pk" : format_value(bs_row['SECTOR_ID']) if bs_row['SECTOR_ID'] else '',
+                    "device_type_id": put_na(bs_row, 'SECTOR_TYPE_ID'),
+                    "device_technology_id": put_na(bs_row, 'SECTOR_TECH_ID'),
+                    "ss_technology": put_na(bs_row, 'SS_TECH'),
+                    "ss_technology_id": put_na(bs_row, 'SS_TECH_ID'),
+                    "ss_type": put_na(bs_row, 'SS_TYPE'),
+                    "ss_type_id": put_na(bs_row, 'SS_TYPE_ID'),
+                    "bh_technology": put_na(bs_row, 'BHTECH'),
+                    "bh_technology_id": put_na(bs_row, 'BHTECHID'),
+                    "bh_type": put_na(bs_row, 'BHTYPE'),
+                    "bh_type_id": put_na(bs_row, 'BHTYPEID'),
+                    "planned_freq": put_na(bs_row, 'SECTOR_PLANNED_FREQUENCY'),
+                    "polled_freq": put_na(bs_row, 'SECTOR_FREQUENCY'),
+                    "qos_bw": bs_row.get('QOS', 0) / 1000,
+                    "ss_name": put_na(bs_row, 'SS_ALIAS').upper(),
+                    "sector_id_str": ",".join(sector_id_str),
+                    "pmp_port_str": ",".join(pmp_port_str),
+                    "bh_capacity": put_na(bs_row, 'BH_CAPACITY'),
+                    "bh_port": put_na(bs_row, 'BH_PORT'),
+                    "bh_id": put_na(bs_row, 'BHID'),
+                    "bs_id": put_na(bs_row, 'BSID'),
+                    "ss_id": put_na(bs_row, 'SSID'),
+                    "sector_pk": put_na(bs_row, 'SECTOR_ID'),
                     "sector_pk_str": ",".join(sector_pk_str),
-                    "ckt_id" : format_value(bs_row['CID']) if bs_row['CID'] else '',
-                    "cust_id" : format_value(bs_row['CUSTID']) if bs_row['CUSTID'] else '',
-                    "city_id" : format_value(bs_row['BSCITYID']) if bs_row['BSCITYID'] else '',
-                    "state_id" : format_value(bs_row['BSSTATEID']) if bs_row['BSSTATEID'] else '',
-                    "near_end_id": format_value(bs_row['SECTOR_CONF_ON_ID']) if bs_row['SECTOR_CONF_ON_ID'] else '',
-                    "freq_id": format_value(bs_row['SECTOR_FREQUENCY_ID']) if bs_row['SECTOR_FREQUENCY_ID'] else '',
+                    "ckt_id": put_na(bs_row, 'CID'),
+                    "cust_id": put_na(bs_row, 'CUSTID'),
+                    "city_id": put_na(bs_row, 'BSCITYID'),
+                    "state_id": put_na(bs_row, 'BSSTATEID'),
+                    "near_end_id": put_na(bs_row, 'SECTOR_CONF_ON_ID'),
+                    "freq_id": put_na(bs_row, 'SECTOR_FREQUENCY_ID'),
                     # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
-                    "bh_connectivity" : format_value(bs_row['BH_CONNECTIVITY']) if bs_row['BH_CONNECTIVITY'] else ''
+                    "bh_connectivity": put_na(bs_row, 'BH_CONNECTIVITY')
                 })
 
                 if is_dr:
@@ -602,13 +598,13 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
                    "last_updated_date": "N/A",
                    "last_updated_time": "N/A",
                    "age": "N/A"
-    }
+                   }
 
     query = prepare_row_query(table_name="performance_networkstatus",
                               devices=device_list,
-    )
+                              )
     # (query)
-    performance_data = fetch_raw_result(query=query, machine=machine)  #model.objects.raw(query).using(alias=machine)
+    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
 
     indexed_perf_data = indexed_polled_results(performance_data)
 
@@ -628,7 +624,7 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
                            "last_updated_time": "N/A",
                            "device_name": "N/A",
                            "age": "N/A",
-            }
+                           }
             data = indexed_perf_data[device]
             # for data in performance_data:
             #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
@@ -681,13 +677,13 @@ def get_performance_data(device_list, machine, model):
                    "last_updated_date": "N/A",
                    "last_updated_time": "N/A",
                    "age": "N/A"
-    }
+                   }
 
     query = prepare_row_query(table_name="performance_networkstatus",
                               devices=device_list
-    )
+                              )
 
-    performance_data = fetch_raw_result(query=query, machine=machine)  #model.objects.raw(query).using(alias=machine)
+    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
 
     indexed_perf_data = indexed_polled_results(performance_data)
 
@@ -707,7 +703,7 @@ def get_performance_data(device_list, machine, model):
                            "last_updated_time": "N/A",
                            "device_name": "N/A",
                            "age": "N/A",
-            }
+                           }
             data = indexed_perf_data[device]
             # for data in performance_data:
             #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
@@ -741,7 +737,6 @@ def get_performance_data(device_list, machine, model):
 
 
 def get_time(start_date, end_date, date_format, data_for):
-
     isSet = False
 
     if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
@@ -788,13 +783,13 @@ def get_time(start_date, end_date, date_format, data_for):
 
 def color_picker():
     import random
+
     color = "#"
-    color += "%06x" % random.randint(0,0xFFFFFF)
+    color += "%06x" % random.randint(0, 0xFFFFFF)
     return color.upper()
 
 
 def create_perf_chart_img(device_name, service, data_source):
-
     """
     This function create performance chart image for given device, 
     service & data_source and return image url
@@ -817,7 +812,7 @@ def create_perf_chart_img(device_name, service, data_source):
 
     # Attach request HTTP object with 'GetServiceTypePerformanceData' instance
     perf_data_class.request = request_object
-    
+
     # Attach 'kwargs' with 'GetServiceTypePerformanceData' instance
     perf_data_class.kwargs = kwargs_dict
 
@@ -834,12 +829,12 @@ def create_perf_chart_img(device_name, service, data_source):
 
     # JSON data required for phantomJS request inline variable
     data_json = {
-        'type':'json',
-        'chart' : {
-            'width':CHART_WIDTH,
-            'height':CHART_HEIGHT
+        'type': 'json',
+        'chart': {
+            'width': CHART_WIDTH,
+            'height': CHART_HEIGHT
         },
-        'xAxis' : {
+        'xAxis': {
             'title': {
                 'text': 'Time'
             },
@@ -856,22 +851,22 @@ def create_perf_chart_img(device_name, service, data_source):
                 'year': '%Y'
             }
         },
-        'series' : chart_dataset
+        'series': chart_dataset
     }
 
     infile_str = {
-        'infile' : json.dumps(data_json),
-        'options' : json.dumps(data_json),
-        'type' : CHART_IMG_TYPE,
-        'constr' : 'Chart',
-        'scale' : '1'
+        'infile': json.dumps(data_json),
+        'options': json.dumps(data_json),
+        'type': CHART_IMG_TYPE,
+        'constr': 'Chart',
+        'scale': '1'
     }
 
     # Create PhantomJS url to hit POST request on it
-    phantom_url = PHANTOM_PROTOCOL+"://"+PHANTOM_HOST+":"+PHANTOM_PORT+"/"
+    phantom_url = PHANTOM_PROTOCOL + "://" + PHANTOM_HOST + ":" + PHANTOM_PORT + "/"
 
     # Start PhantomJS server in background
-    os.system("phantomjs "+HIGHCHARTS_CONVERT_JS+" -host "+PHANTOM_HOST+" -port "+PHANTOM_PORT+"&")
+    os.system("phantomjs " + HIGHCHARTS_CONVERT_JS + " -host " + PHANTOM_HOST + " -port " + PHANTOM_PORT + "&")
 
     # Make POST request to phantom js host to create the chart image
     chart_img_request = requests.post(phantom_url, data=json.dumps(infile_str))
@@ -887,15 +882,16 @@ def create_perf_chart_img(device_name, service, data_source):
     # created filename
     filename = "{}_{}".format("chart", full_time)
 
-    fh = open(chart_img_path+"/"+filename+"."+infile_str['type'], "wb")
+    fh = open(chart_img_path + "/" + filename + "." + infile_str['type'], "wb")
     fh.write(chart_img_request.content.decode('base64'))
     fh.close()
 
     result = {
-        "chart_url" : chart_img_path+"/"+filename+"."+infile_str['type']
+        "chart_url": chart_img_path + "/" + filename + "." + infile_str['type']
     }
 
     return result
+
 
 def dataTableOrdering(self, qs, order_columns):
     """ 
