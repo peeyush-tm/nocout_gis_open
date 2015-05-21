@@ -223,8 +223,8 @@
 
             var current_device = "{{ current_device_name }}",
                 device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
+                service_status_url = "{{ service_status_url }}" ? $.trim("{{ service_status_url }}") : "",
                 statusUrl = "",
-                service_status_url = "",
                 page_type = "{{ page_type }}",
                 inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "",
                 perf_page_url = "{{ perf_page_url }}" ? $.trim("{{ perf_page_url }}") : "",
@@ -258,6 +258,11 @@
 
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
+
+            // fetch service status
+            perfInstance.getServiceStatus(service_status_url, true, function(response) {
+                // console.log(response)
+            });
 
             if(inventory_url) {
                 $("#inventory_link_tag").attr("href",inventory_url);

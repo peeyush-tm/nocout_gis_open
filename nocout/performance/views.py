@@ -427,9 +427,15 @@ class LivePerformanceListing(BaseDatatableView):
         :return qs
         """
         page_type = self.request.GET['page_type']
+        alert_page_type = page_type
+
+        # In case of other page update page type to 'network' for alert center link
+        if page_type not in ["customer", "network"]:
+            alert_page_type = 'network'
+
         if qs:
             for dct in qs:
-                # device = Device.objects.get(id=dct['id'])
+
                 try:
                     if int(dct['packet_loss']) == 100:
                         dct['latency'] = "DOWN"
@@ -437,22 +443,14 @@ class LivePerformanceListing(BaseDatatableView):
                     if str((dct['packet_loss'])) in ["100", "100.0", "100.00"]:
                         dct['latency'] = "DOWN"
 
-                if page_type in ["customer", "network"]:
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance">\
-                                <i class="fa fa-bar-chart-o text-info"></i></a>\
-                                <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert">\
-                                <i class="fa fa-warning text-warning"></i></a> \
-                                <a href="/device/{1}" title="Device Inventory">\
-                                <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'], 'ping')
-                    )
-                else:
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance">\
-                                 <i class="fa fa-bar-chart-o text-info"></i></a>\
-                                 <a href="/device/{1}" title="Device Inventory">\
-                                 <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'])
-                    )
+                dct.update(
+                    actions='<a href="/performance/{0}_live/{1}/" title="Device Performance">\
+                            <i class="fa fa-bar-chart-o text-info"></i></a>\
+                            <a href="/alert_center/{3}/device/{1}/service_tab/{2}/" title="Device Alert">\
+                            <i class="fa fa-warning text-warning"></i></a> \
+                            <a href="/device/{1}" title="Device Inventory">\
+                            <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'], 'ping', alert_page_type)
+                )
 
         return qs
 
@@ -560,20 +558,25 @@ class GetPerfomance(View):
             },
             current_app='performance'
         )
+        
+        link_page_type = page_type
+        
+        # pass page type as 'network' for other tab devices for single alert page link
+        if page_type in ['other'] or device.backhaul_switch.exists() or \
+            device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
 
-        alert_page_url = ''
-        # don't pass alert page link for other device
-        if page_type not in ['other']:
-            # alert page url
-            alert_page_url = reverse(
-                'SingleDeviceAlertsInit',
-                kwargs={
-                    'page_type': page_type,
-                    'device_id': device_id,
-                    'service_name': 'ping'
-                },
-                current_app='alert_center'
-            )
+            link_page_type = 'network'
+
+        # alert page url
+        alert_page_url = reverse(
+            'SingleDeviceAlertsInit',
+            kwargs={
+                'page_type': link_page_type,
+                'device_id': device_id,
+                'service_name': 'ping'
+            },
+            current_app='alert_center'
+        )
 
         # inventory page url
         inventory_page_url = reverse(
@@ -1687,13 +1690,6 @@ class InventoryDeviceServiceDataSource(View):
             'url': 'performance/servicedetail/util/device/'+str(device_id),
             'active': 0,
         })
-
-        # result['data']['objects']['rssi_top_tab']["info"].append({
-        #     'name': 'rssi_top',
-        #     'title': 'RSSI',
-        #     'url': 'performance/servicedetail/rssi/device/'+str(device_id),
-        #     'active': 0,
-        # })
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
@@ -3818,6 +3814,7 @@ class GetServiceTypePerformanceData(View):
                         chart_data = [
                             {
                                 'name': 'Availability',
+                                'color': y_color,
                                 'data': data_list,
                                 'type': self.result['data']['objects']['type'],
                                 'valuesuffix': self.result['data']['objects']['valuesuffix'],
@@ -3825,7 +3822,7 @@ class GetServiceTypePerformanceData(View):
                             },
                             {
                                 'name': 'UnAvailability',
-                                'color': '#FF193B',
+                                'color': y_down_color,
                                 'data': warn_data_list,
                                 'type': 'column',
                                 'marker': {

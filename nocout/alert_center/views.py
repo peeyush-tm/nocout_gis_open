@@ -507,6 +507,10 @@ class NetworkAlertDetailHeaders(ListView):
              'bSortable': True}
         ]
 
+        bh_specific_headers = [
+            {'mData': 'bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'sClass': '','bSortable': True}
+        ]
+
         polled_headers = [
             {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -527,6 +531,14 @@ class NetworkAlertDetailHeaders(ListView):
         datatable_headers += common_headers
         datatable_headers += polled_headers
         datatable_headers += other_headers
+
+        backhaul_headers = []
+        backhaul_headers += starting_headers
+        backhaul_headers += specific_headers
+        backhaul_headers += common_headers
+        backhaul_headers += bh_specific_headers
+        backhaul_headers += polled_headers
+        backhaul_headers += other_headers
 
 
         ul_issue_datatable_headers = []
@@ -592,6 +604,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         context = {
             'datatable_headers': json.dumps(datatable_headers),
+            'backhaul_headers': json.dumps(backhaul_headers),
             'bh_utils_headers' : json.dumps(bh_utils_headers),
             'ul_issue_headers' : json.dumps(ul_issue_datatable_headers),
             'bh_headers': json.dumps(bh_dt_headers),
@@ -681,11 +694,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 self.table_name = 'performance_utilizationstatus'
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
-            elif tab_id in ["Backhaul"]:
+            elif tab_id in ["Backhaul", "Backhaul_PD"]:
                 technology = None
                 is_bh = True
                 page_type = "other"
                 self.table_name = 'performance_networkstatus'
+                # Onnet/Offnet column added for Backhaul tab
+                self.columns.append("bh_connectivity")
+                self.data_sources = ''
             else:
                 return []
 
@@ -700,7 +716,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 device_list += inventory_utils.filter_devices(organizations=organizations,
                                                               data_tab=None,
                                                               page_type=page_type,
-                                                              required_value_list=required_value_list
+                                                              required_value_list=required_value_list,
+                                                              other_type='backhaul'
                 )
 
             return device_list
@@ -717,6 +734,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
         search_table = self.table_name
 
         extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
+
+        # Add extra condition for UL Issues listing
+        if self.data_sources and 'ul_issue' in ', '.join(self.data_sources):
+            extra_query_condition += " AND `{0}`.`current_value` > 0 "
+
+        get_param = self.request.GET.get("data_source")
+
+        if get_param and get_param == 'Backhaul_PD':
+            extra_query_condition += " AND `{0}`.`current_value` = 100 AND `{0}`.`data_source` = 'pl'"
 
         sorted_device_list = list()
 
@@ -755,14 +781,12 @@ class GetNetworkAlertDetail(BaseDatatableView):
         """
         device_list = []
         for device in qs:
-            device_list.append(
-                {
-                    'device_name': device['device_name'],
-                    'device_machine': device['machine_name'],
-                    'id': device['id'],
-                    'ip_address': device['ip_address']
-                }
-            )
+            device_list.append({
+                'device_name': device['device_name'],
+                'device_machine': device['machine_name'],
+                'id': device['id'],
+                'ip_address': device['ip_address']
+            })
 
         return inventory_utils.prepare_machines(device_list)
 
@@ -774,15 +798,22 @@ class GetNetworkAlertDetail(BaseDatatableView):
         :return queryset.
         """
         page_type = self.request.GET.get('page_type', "network")
+        ds_param = self.request.GET.get("data_source",'')
+        perf_page_type = page_type
         if qs:
             service_tab_name = 'service'
+            # In case of backhaul tab update page type to 'other'
+            if 'backhaul' in ds_param.lower():
+                perf_page_type = 'other'
+
             for dct in qs:
                 dct.update(action='<a href="/alert_center/{2}/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
-                                   <a href="/performance/{2}_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                   <a href="/performance/{3}_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                                    <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
                            format(dct["id"],
                                   service_tab_name,
-                                  page_type)
+                                  page_type,
+                                  perf_page_type)
                 )
                 dct = alert_utils.common_prepare_results(dct)
 
@@ -876,44 +907,29 @@ class AlertCenterListing(ListView):
 
         # List of common headers for all pages of alerts listing
         common_headers = [
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-            #  'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-            #  'bSortable': True},
-            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            ]
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
+        ]
+
+        bh_specific_headers = [
+            {'mData': 'bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'bSortable': True}
+        ]
 
         # Page specific & polled headers list initialization
         specific_headers = []
         polled_headers = []
 
-        # if data_tab == 'P2P' or data_tab is None:
-        #     specific_headers += [
-        #         {'mData': 'circuit_id',
-        #          'sTitle': 'Circuit ID',
-        #          'sWidth': 'auto',
-        #          'sClass': 'hidden-xs',
-        #          'bSortable': True
-        #         },
-        #     ]
-
         if data_tab != 'P2P' or data_tab is not None:
-            specific_headers += [
-                {'mData': 'sector_id',
-                 'sTitle': 'Sector ID',
-                 'sWidth': 'auto',
-                 'sClass': 'hidden-xs',
-                 'bSortable': True
-                }
-            ]
+            specific_headers += [{
+                'mData': 'sector_id',
+                'sTitle': 'Sector ID',
+                'sWidth': 'auto',
+                'sClass': 'hidden-xs',
+                'bSortable': True
+            }]
 
         if page_type == 'customer' or data_tab == 'P2P' or data_tab is None:
             specific_headers += [
@@ -933,36 +949,29 @@ class AlertCenterListing(ListView):
             ]
 
         if page_type == 'customer':
-            specific_headers += [
-                {
-                    'mData': 'near_end_ip',
-                    'sTitle': 'Near End IP',
-                    'sWidth': 'auto',
-                    'sClass': 'hidden-xs',
-                    'bSortable': True
-                },
-                ]
+            specific_headers += [{
+                'mData': 'near_end_ip',
+                'sTitle': 'Near End IP',
+                'sWidth': 'auto',
+                'bSortable': True
+            }]
 
         if data_source == 'service':
-            polled_headers += [
-                {
-                    'mData': 'data_source_name',
-                    'sTitle': 'Data Source',
-                    'sWidth': 'auto',
-                    'sClass': 'hidden-xs',
-                    'bSortable': True
-                }
-            ]
-
-        polled_headers += [
-            {
-                'mData': 'current_value',
-                'sTitle': '{0}'.format(data_source_title),
+            polled_headers += [{
+                'mData': 'data_source_name',
+                'sTitle': 'Data Source',
                 'sWidth': 'auto',
-                'sClass': 'hidden-xs',
-                'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"
-            }
-        ]
+                'bSortable': True
+            }]
+
+        polled_headers += [{
+            'mData': 'current_value',
+            'sTitle': '{0}'.format(data_source_title),
+            'sWidth': 'auto',
+            'bSortable': True,
+            "sSortDataType": "dom-text",
+            "sType": "numeric"
+        }]
 
         if data_source == "latency":
             polled_headers += [
@@ -970,7 +979,6 @@ class AlertCenterListing(ListView):
                     'mData': 'max_value',
                     'sTitle': 'Latency Max (ms)',
                     'sWidth': 'auto',
-                    'sClass': 'hidden-xs',
                     'bSortable': True,
                     "sSortDataType": "dom-text",
                     "sType": "numeric"
@@ -979,7 +987,6 @@ class AlertCenterListing(ListView):
                     'mData': 'min_value',
                     'sTitle': 'Latency Min (ms)',
                     'sWidth': 'auto',
-                    'sClass': 'hidden-xs',
                     'bSortable': True,
                     "sSortDataType": "dom-text",
                     "sType": "numeric"
@@ -988,8 +995,8 @@ class AlertCenterListing(ListView):
         other_headers = [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
-            ]
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
         datatable_headers = hidden_headers
         datatable_headers += starting_headers
@@ -998,7 +1005,19 @@ class AlertCenterListing(ListView):
         datatable_headers += polled_headers
         datatable_headers += other_headers
 
+        # Headers list for Backhaul tab
+        bh_datatable_headers = []
+
+        # Pass bh_datatable_headers only in case of 'network' page with 'down' datasource
+        if page_type == 'network' and data_source and data_source == 'down':
+            bh_datatable_headers = starting_headers
+            bh_datatable_headers += common_headers
+            bh_datatable_headers += bh_specific_headers
+            bh_datatable_headers += polled_headers
+            bh_datatable_headers += other_headers
+
         context['datatable_headers'] = json.dumps(datatable_headers)
+        context['bh_datatable_headers'] = json.dumps(bh_datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
         context['url_data_source'] = self.kwargs['data_source']
         context['page_type'] = page_type
@@ -1360,8 +1379,16 @@ class SingleDeviceAlertsInit(ListView):
             },
             current_app='performance'
         )
-        # context['get_status_url'] = 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id)
+
+        # service status url
+        service_status_url = reverse(
+            'GetServiceStatus',
+            kwargs={'service_name': 'ping','service_data_source_type' : 'pl', 'device_id' : device_id},
+            current_app='performance'
+        )
+
         context['get_status_url'] = inventory_status_url
+        context['service_status_url'] = service_status_url
 
         context['device_technology_name'] = device_technology_name
         context['device_alias'] = device_alias
