@@ -284,7 +284,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.is_superuser:
+            if self.request.user.has_perm('device.delete_device'):
                 delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
                                  (get_soft_delete_form, {{\'value\': {0}}})">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
@@ -330,8 +330,8 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             except Exception as e:
                 logger.exception("Device is not a substation. %s" % e.message)
 
-            # show sync button only if user is superuser
-            if self.request.user.is_superuser:
+            # show sync button only if user is superuser or admin
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
                 try:
                     dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();">\
                                             <i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
@@ -473,7 +473,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.is_superuser:
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
                 delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
                                  (get_soft_delete_form, {{\'value\': {0}}})">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
@@ -644,7 +644,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.is_superuser:
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
                 delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
                                  (get_soft_delete_form, {{\'value\': {0}}})">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
@@ -793,7 +793,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # update status icon
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
-            if self.request.user.is_superuser:
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
                 add_action = '<a href="javascript:;" onclick="Dajaxice.device.device_restore_form\
                 (get_restore_device_form, {{\'value\': {0}}})">\
                 <i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
@@ -812,7 +812,8 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 edit_action = ''
 
             # view device delete action only if user has permissions
-            if self.request.user.is_superuser and device.device_name != 'default':
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True)\
+                    and device.device_name != 'default':
                 delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i>\
                                  </a>&nbsp'.format(dct['id'])
             else:

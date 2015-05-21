@@ -39,6 +39,7 @@ admin_perms = [
     'auth.delete_user',
     'auth.view_user',
     'device.add_device',
+    'device.delete_device',
     'device.can_sync',
     'device.change_device',
     'device.view_device',
