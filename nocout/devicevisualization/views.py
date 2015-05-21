@@ -5084,6 +5084,8 @@ class GISPerfInfo(View):
 
         device_info = list()
 
+        logger.info("************************ {} ".format(performance))
+
         for perf in performance:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
 
@@ -5104,9 +5106,8 @@ class GISPerfInfo(View):
                 if sds_name in SERVICE_DATA_SOURCE \
                 else None
             try:
-                cur_val = None
-                if perf['current_value']:
-                    cur_val = perf['current_value']
+                # Current value.
+                cur_val = perf['current_value']
 
                 # severity of device
                 severity = perf['severity']
@@ -5221,35 +5222,35 @@ def get_complete_performance(machine_dict):
 
         # device performance info
         performance_network_info = PerformanceStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
         ).order_by().using(alias=machine_name)
 
         performance_perf_data.extend(list(performance_network_info))
 
         # device service info
         device_service_info = ServiceStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
         ).order_by().using(alias=machine_name)
 
         service_perf_data.extend(list(device_service_info))
 
         # device inventory info
         device_inventory_info = InventoryStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
         ).order_by().using(alias=machine_name)
 
         inventory_perf_data.extend(list(device_inventory_info))
 
         # device status info
         device_status_info = Status.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
         ).order_by().using(alias=machine_name)
 
         status_perf_data.extend(list(device_status_info))
 
         # device utilization info
         device_utilization_info = UtilizationStatus.objects.filter(device_name__in=devices_list).values(
-            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp'
+            'device_name', 'service_name', 'data_source', 'current_value', 'sys_timestamp', 'severity',
         ).order_by().using(alias=machine_name)
 
         utilization_perf_data.extend(list(device_utilization_info))

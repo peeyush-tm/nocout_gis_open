@@ -82,6 +82,15 @@ class ServiceDataSource(models.Model):
         """
         return self.name
 
+    def ds_type_name(self):
+        """
+        Get 'data_source_type' choice field string/label value instead of integer.
+        """
+        # Get data source type choices in dict format.
+        ds_choices = dict(ServiceDataSource.SOURCE_TYPE)
+
+        return ds_choices[self.data_source_type]
+
 
 class ServiceParameters(models.Model):
     """

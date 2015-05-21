@@ -47,7 +47,7 @@ class ActionList(PermissionsRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         """
-        Preparing the Context Variable required in the template rendering.
+        Preparing the context variables required in the template rendering.
         """
         context = super(ActionList, self).get_context_data(**kwargs)
         context['datatable_headers'] = json.dumps(
@@ -101,7 +101,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
     def get_initial_queryset(self):
         """
-        Preparing  Initial Queryset for the for rendering the data table.
+        Preparing  initial queryset for rendering the data table.
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
