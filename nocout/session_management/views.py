@@ -132,12 +132,17 @@ class UserStatusTable(BaseDatatableView):
             qs, qs_headers = Datatable_Generation(qs, sanity_dicts_list).main()
             logged_in_users_ids = [visitor.user_id for visitor in Visitor.objects.all()]
             for dct in qs:
+<<<<<<< HEAD
                 dct.update(
                     actions='<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> \
                     &nbsp;</h3>' if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
+=======
+                dct.update(actions='<h3 class="fa fa-lock text-danger" title="Lock User" onclick="change_user_status(this);"> &nbsp;</h3>'
+                           if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" title="Unlock User" \
+>>>>>>> fb7f9251941b898ee0fd25111d7d5b93602e7021
                            onclick="change_user_status(this);"> &nbsp;</h3>', logged_in_status='NO')
                 if dct.pop('id') in logged_in_users_ids:
-                    dct['actions'] += '<h3 class="fa fa-sign-out text-danger" onclick="logout_user(this);"> &nbsp;</h3>'
+                    dct['actions'] += '<h3 class="fa fa-sign-out text-danger" title="Log-Off User" onclick="logout_user(this);"> &nbsp;</h3>'
                     dct['logged_in_status'] = 'YES'
 
         return qs
@@ -358,9 +363,13 @@ def logout_user(request):
             "objects": {}
         }
     }
+<<<<<<< HEAD
 
     return HttpResponse(json.dumps(result), content_type='application/json')
 
 
 
 
+=======
+    return HttpResponse(json.dumps(result), content_type='application/json')
+>>>>>>> fb7f9251941b898ee0fd25111d7d5b93602e7021

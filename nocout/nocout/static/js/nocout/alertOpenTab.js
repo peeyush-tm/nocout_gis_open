@@ -1,21 +1,22 @@
 /**
  * This library handles the tab click event & load the data as per the selected tab.
- * @class openTabContentLib
+ * @class alertOpenTab
  * @event click
  */
 
 var last_clicked_tab = "",
     timeOutId = "",
-    tech_list = ['PMP',"P2P","WiMAX"];
+    tech_list = ['PMP',"P2P","WiMAX", "Backhaul"];
 
 $(".nav-tabs li a").click(function (e, isFirst) {
+
     var clicked_tab = e.currentTarget.innerText ? $.trim(e.currentTarget.innerText) : $.trim($(this).text()),
         splitted_link = window.location.href.split('/');
 
     if(clicked_tab == 'PTP' || clicked_tab == 'PTP BH') {
         clicked_tab = "P2P";
     }
-
+    
     if(window.location.href.indexOf(clicked_tab) == -1) {
         if(tech_list.indexOf(splitted_link[splitted_link.length-2]) == -1) {
             window.location.href = clicked_tab;
@@ -38,7 +39,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     clearTimeout(timeOutId);
 
     var anchor_id = e.currentTarget.id,
-        browser_url_array = window.location.href.split("#"),
         second_condition = "";
 
     if (isFirst) {
@@ -108,10 +108,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         excluded_columns
                     );
                 }
-            } 
-
-            /*Call createDataTable function to create the data table for specified dom element with given data*/
-            // dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, destroy);
+            }
         }
     } else {
         // Hide Spinner(Loading)
@@ -127,6 +124,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
             tab_name = 'PMP';
         } else if(anchor_id.indexOf('wifi') > -1 || anchor_id.indexOf('#network_WiMAX_block') > -1) {
             tab_name = 'WiMAX';
+        } else if(anchor_id.indexOf('_bh_') > -1 || anchor_id.indexOf('backhaul') > -1) {
+            tab_name = 'Backhaul';
         } else {
             tab_name = 'P2P';
         }
@@ -134,8 +133,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
 
     /*Refresh the tab after every given timer. Right now it is 5 minutes*/
     timeOutId = setTimeout(function () {
-
         $("#" + anchor_id).trigger('click', true);
-
     }, (+(timer) + "000"));
 });
