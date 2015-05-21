@@ -3952,7 +3952,7 @@ function devicePlottingClass_gmap() {
 						actual_val = String(val).split("|")[item_index] ? String(val).split("|")[item_index] : "";
 					}
 
-					table_html += "<tr style='color:"+text_color+";'><td "+highlight_class+"' url='"+url+"'>\
+					table_html += "<tr style='color:"+text_color+";'><td class='"+highlight_class+"' url='"+url+"'>\
 								  "+data_obj[i]['title']+"</td><td>"+actual_val+"</td></tr>";
 				}
 			}
