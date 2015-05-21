@@ -425,37 +425,6 @@
         function selectTab(tabId) {
             $(tabId).parent().addClass('active').siblings().removeClass('active');
         }
-
-        /**
-         * This  function get the device service(PL) status i.e. Status & AGE
-         * @method getPlServiceStatus
-         * @param url {String}, It contains the API url to fetch the service status.
-         */
-        function getPlServiceStatus(url) {
-            if(url) {
-                $.ajax({
-                    url: base_url + "" + url,
-                    type: "GET",
-                    success: function (response) {
-
-                        var result = "";
-                        if (typeof response == 'string') {
-                            result = JSON.parse(response);
-                        } else {
-                            result = response;
-                        }
-
-                        if (result.data && result.data.objects) {                            
-                            // Call function to populate latest status info
-                            populateDeviceStatus_nocout("latestStatusContainer",result.data.objects);
-                        }
-                    },
-                    error: function (err) {
-                        // console.log(err.statusText);
-                    }
-                });
-            }
-        }
     </script>
 
 {% endblock %}

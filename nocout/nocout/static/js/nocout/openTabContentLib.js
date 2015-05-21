@@ -134,7 +134,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 try {
 
                     if(isDateFilterApplied) {
-
+                        
                         var epoch_startDate = startDate / 1000,
                             epoch_endDate = endDate / 1000;
 
@@ -150,19 +150,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                             tables_info[anchor_id].data_extra_param = splitted_params.join(",");
                         }
                     }
-                    
-                    var service_status_url = "";
-                    if(service_name) {
-                        if(current_device_id) {
-                            service_status_url = "/performance/servicestatus/"+service_name+"/service_data_source/pl/device/"+current_device_id+"/";
-                        }
-                    }
-                    // Call function to get service status
-                    if (service_status_url) {
-                        getPlServiceStatus(service_status_url);
-                    }
                 } catch(e) {
-                    console.log(e);
+                    // console.log(e);
                 }
             }
             
