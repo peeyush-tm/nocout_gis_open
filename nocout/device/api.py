@@ -1,3 +1,31 @@
+"""
+===============================================
+Module contains api's specific to 'device' app.
+===============================================
+
+Location:
+* /nocout_gis/nocout/device/api.py
+
+List of constructs:
+=======
+Classes
+=======
+* DeviceStatsApi
+* DeviceFilterApi
+* LPServicesApi
+* FetchLPDataApi
+* FetchLPSettingsApi
+* FetchThresholdConfigurationApi
+* FetchThematicSettingsApi
+* BulkFetchLPDataApi
+
+=======
+Methods
+=======
+* prepare_raw_result
+* nocout_live_polling
+"""
+
 import ast
 import json
 import ujson
@@ -17,6 +45,7 @@ from service.models import DeviceServiceConfiguration, Service, ServiceDataSourc
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
+import performance.utils as perf_util
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from user_profile.models import UserProfile
@@ -1283,7 +1312,7 @@ class BulkFetchLPDataApi(View):
                                                 "value": [
                                                     "-57"
                                                 ],
-                                                "icon": "media/uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png"
+                                                "icon": "media/uploaded/icons/2014-09-25/demo1.png"
                                             },
                                             "2624": {
                                                 "message": "Successfully fetch data for '2624'.",
@@ -1300,7 +1329,7 @@ class BulkFetchLPDataApi(View):
                                                 "value": [
                                                     "-66"
                                                 ],
-                                                "icon": "media/uploaded/icons/2014-10-26/2014-10-26-14-59-40_SM-Red.png"
+                                                "icon": "media/uploaded/icons/2014-10-26/demo2.png"
                                             }
                                         }
                                     },
@@ -1359,7 +1388,7 @@ class BulkFetchLPDataApi(View):
 
         # Live polling template ID.
         lp_template_id = ""
-    
+
         # Result dictionary which needs to be returned as an output of api.
         result = {
             "success": 0,
@@ -1402,7 +1431,8 @@ class BulkFetchLPDataApi(View):
                     ts = ThematicSettings.objects.get(pk=ts_template_id)
 
                 # Live polling template ID.
-                lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
+                lp_template_id = ThresholdConfiguration.objects.get(
+                    pk=ts.threshold_template.id).live_polling_template.id
 
                 # Getting service and data source from live polling settings.
                 try:
@@ -1420,6 +1450,23 @@ class BulkFetchLPDataApi(View):
         else:
             service = service_name
             data_source = ds_name
+
+        # Fetch values specific to data source.
+        # Formula corresponding to 'data_source'
+        ds_formula = ""
+
+        # Data source object.
+        ds_obj = None
+        try:
+            ds_obj = ServiceDataSource.objects.get(name=data_source)
+            ds_formula = ds_obj.formula
+        except Exception as e:
+            pass
+
+        if ds_obj:
+            result['data']['data_source'] = dict()
+            result['data']['data_source']['chart_type'] = ds_obj.chart_type
+            result['data']['data_source']['data_source_type'] = ds_obj.ds_type_name()
 
         # BS device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services').
         bs_device, site_name = None, None
@@ -1633,7 +1680,15 @@ class BulkFetchLPDataApi(View):
 
                         result['data']['devices'][device_name] = dict()
 
-                        result['data']['devices'][device_name]['value'] = device_value
+                        # Evaluate value if formula is available for data source.
+                        if ds_formula:
+                            try:
+                                result['data']['devices'][device_name]['value'] = eval(
+                                    "perf_util.ds_formula(device_value)")
+                            except Exception as e:
+                                pass
+                        else:
+                            result['data']['devices'][device_name]['value'] = device_value
 
                         if not all([service_name, ds_name]):
                             # Default icon.
@@ -1790,7 +1845,6 @@ class BulkFetchLPDataApi(View):
         # Fetch value from list.
         if type(value) is list:
             value = value[0]
-        # value = value[0]
         elif type(value) is str:
             value = value
         else:
@@ -1803,8 +1857,8 @@ class BulkFetchLPDataApi(View):
             compare_this = float(value)
             for i in range(1, 11):
                 try:
-                    compare_to_start = float(eval("th_ranges.range%d_start" %i))
-                    compare_to_end = float(eval("th_ranges.range%d_end" %i))
+                    compare_to_start = float(eval("th_ranges.range%d_start" % i))
+                    compare_to_end = float(eval("th_ranges.range%d_end" % i))
                     icon_settings = eval(th_icon_settings)
                     if compare_to_start <= compare_this <= compare_to_end:
                         icon_key = "icon_settings{0}".format(i)
@@ -1856,7 +1910,6 @@ class BulkFetchLPDataApi(View):
         # Fetch value from list.
         if type(value) is list:
             value = value[0]
-        # value = value[0]
         elif type(value) is str:
             value = value
         else:
@@ -1866,7 +1919,7 @@ class BulkFetchLPDataApi(View):
             compare_this = ''.join(e for e in value if e.isalnum())
             for i in range(1, 11):
                 try:
-                    eval_this = eval("th_ranges.range%d_start" %i)
+                    eval_this = eval("th_ranges.range%d_start" % i)
                     compare_to = ''.join(e for e in eval_this if e.isalnum())
                     icon_settings = eval(th_icon_settings)
                     if compare_this.strip().lower() == compare_to.strip().lower():
