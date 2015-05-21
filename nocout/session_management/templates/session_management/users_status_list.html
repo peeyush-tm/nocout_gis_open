@@ -15,12 +15,17 @@
 {% block content_title %}User Session{% endblock %}
 {% block content_description %}User session of loggedin users{% endblock %}
 {% block content %}
+<style type="text/css">
+    #UserStatusList tr td h3 {
+        cursor: pointer;
+    }
+</style>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> MANAGE SESSION</h4>
         </div>
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="UserStatusList">
+            <table class="datatable table table-striped table-bordered table-hover" id="UserStatusList">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -49,9 +54,19 @@
          * @method change_user_status
          */
         function change_user_status(ele) {
+            
+            var elemTitle = "";
+
+            try {
+                elemTitle = $(ele).attr("title");
+            } catch(e) {
+                // console.log(e);
+                elemTitle = "Lock User";
+            }
+
             bootbox.dialog({
-                message: "Are you sure you want to lock the user",
-                title: "Locking User",
+                message: "Are you sure you want to "+elemTitle.toLowerCase()+"?",
+                title: elemTitle,
                 buttons: {
                     success: {
                         label: "YES",
@@ -65,9 +80,9 @@
                                 dataType:"json",
                                 success: function(data){
                                     if(data.data.objects.status) {
-                                        $(ele).closest('td').html('<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>')
+                                        $(ele).closest('td').html('<h3 class="fa fa-lock text-danger" title="Lock User" onclick="change_user_status(this);"> &nbsp;</h3>')
                                     } else {
-                                        $(ele).closest('td').html('<h3 class="fa fa-unlock text-success" onclick="change_user_status(this);"> &nbsp;</h3>')
+                                        $(ele).closest('td').html('<h3 class="fa fa-unlock text-success" title="Unlock User" onclick="change_user_status(this);"> &nbsp;</h3>')
                                     }
                                 }//success ends
                             });//ajax ends

@@ -18,141 +18,41 @@ var perf_that = "",
     old_table = "",
     base_url = "",
     tabs_with_historical = [
-        {
-            "id" : "live",
-            "title" : "Live"
-        },
-        {
-            "id" : "bihourly",
-            "title" : "Bi-Hourly"
-        },
-        {
-            "id" : "hourly",
-            "title" : "Hourly"
-        },
-        {
-            "id" : "daily",
-            "title" : "Daily"
-        },
-        {
-            "id" : "weekly",
-            "title" : "Weekly"
-        },
-        {
-            "id" : "monthly",
-            "title" : "Monthly"
-        },
-        {
-            "id" : "yearly",
-            "title" : "Yearly"
-        }
+        {"id": "live", "title": "Live"},
+        {"id": "bihourly", "title": "Bi-Hourly"},
+        {"id": "hourly", "title": "Hourly"},
+        {"id": "daily", "title": "Daily"},
+        {"id": "weekly", "title": "Weekly"},
+        {"id": "monthly", "title": "Monthly"},
+        {"id": "yearly", "title": "Yearly" }
     ],
     inventory_status_inner_inner_tabs = [
-        {
-            "id" : "live",
-            "title" : "Live"
-        },
-        {
-            "id" : "daily",
-            "title" : "Daily"
-        },
-        {
-            "id" : "weekly",
-            "title" : "Weekly"
-        },
-        {
-            "id" : "monthly",
-            "title" : "Monthly"
-        },
-        {
-            "id" : "yearly",
-            "title" : "Yearly"
-        }
+        {"id": "live", "title": "Live"},
+        {"id": "daily", "title": "Daily"},
+        {"id": "weekly", "title": "Weekly"},
+        {"id": "monthly", "title": "Monthly"},
+        {"id": "yearly", "title": "Yearly"}
     ],
     default_live_table_headers = [
-        {
-            'mData': 'current_value',
-            'sTitle': 'Current Value',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'severity',
-            'sTitle': 'Severity',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'warning_threshold',
-            'sTitle': 'Warning Threshold',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'critical_threshold',
-            'sTitle': 'Critical Threshold',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'sys_timestamp',
-            'sTitle': 'Time',
-            'sWidth': 'auto',
-            'bSortable': true
-        }
+        {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
     ],
     default_hist_table_headers = [
-        {
-            'mData': 'avg_value',
-            'sTitle': 'Avg. Value',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'min_value',
-            'sTitle': 'Min. Value',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'max_value',
-            'sTitle': 'Max. Value',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'current_value',
-            'sTitle': 'Current Value',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'severity',
-            'sTitle': 'Severity',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'warning_threshold',
-            'sTitle': 'Warning Threshold',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'critical_threshold',
-            'sTitle': 'Critical Threshold',
-            'sWidth': 'auto',
-            'bSortable': true
-        },
-        {
-            'mData': 'sys_timestamp',
-            'sTitle': 'Time',
-            'sWidth': 'auto',
-            'bSortable': true
-        }
+        {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
     ],
     date_range_picker_html = "",
-    spinner_html = '<h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>';
+    spinner_html = '<h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>',
+    is_exact_url = false;
 
 /*Set the base url of application for ajax calls*/
 if (window.location.origin) {
@@ -315,8 +215,13 @@ function nocoutPerfLib() {
                 if (result.success == 1) {
 
                     device_status = result.data.objects;
+
+                    var device_inventory_status = result.data.objects,
+                        complete_headers_html = "",
+                        complete_rows_html = "";
+
                     // If it is single device page for other devices then hide utilization tab
-                    if (device_status.is_others_page) {
+                    if (device_inventory_status.is_others_page) {
                         if (!$("#utilization_top").hasClass("hide")) {
                             $("#utilization_top").addClass("hide");
                         }
@@ -325,47 +230,33 @@ function nocoutPerfLib() {
                             $("#utilization_top_tab").addClass("hide");
                         }
                     }
+                    // Loop to populated table headers & data
+                    for (var i=0;i<device_inventory_status.length;i++) {
+                        var header_row_string = "",
+                            data_row_string = "",
+                            inner_rows = device_inventory_status[i];
 
-                    if (device_status.headers && device_status.headers.length > 0) {
-                        /*Loop for table headers*/
-                        var headers = "<tr>";
-                        for(var i=0;i<device_status.headers.length;i++) {
-                            var header_name = device_status.headers[i];
-                            headers += '<th class="vAlign_middle">' + header_name + '</th>';
-                        }
-
-                        headers += "</tr>";
-                        /*Populate table headers*/
-                        $("#status_table thead").html(headers);
-
-                        /*Loop for status table data*/
-                        var status_val = "";
-                        if (device_status.values.length > 0) {
-                            for (var i = 0; i < device_status.values.length; i++) {
-                                status_val += "<tr>";
-
-                                var device_status_data_row = device_status.values[i];
-
-                                if (device_status_data_row[0] && device_status_data_row[0].constructor === Array) {
-                                    device_status_data_row = device_status_data_row[0];
-                                }
-
-                                for (var j = 0; j < device_status_data_row.length; j++) {
-                                    var val = device_status_data_row[j]["val"] ? device_status_data_row[j]["val"] : "",
-                                        url = device_status_data_row[j]["url"] ? device_status_data_row[j]["url"] : "",
-                                        display_txt = url ? '<a href="' + url+ '" target="_blank">' + val + '</a>' : val;
-
-                                    status_val += '<td class="vAlign_middle">' + display_txt+ '</td>';
-                                }   
-                                status_val += "</tr>";
+                        for (var j=0;j<inner_rows.length;j++) {
+                            if (i === 0) {
+                                header_row_string += "<th class='vAlign_middle'>"+inner_rows[j].title+"</th>";
                             }
-                        } else {
-                            status_val += "<tr><td colspan='" + device_status.headers.length + "' align='center'>No Info</td></tr>";
+                            link_html = inner_rows[j].value;
+                            if(inner_rows[j].url) {
+                                link_html = "<a href = '"+inner_rows[j].url+"' target='_blank'>"+inner_rows[j].value+"</a>";
+                            }
+                            data_row_string += "<td class='vAlign_middle'>"+link_html+"</td>";
                         }
-                        
-                        /*Populate table data*/
-                        $("#status_table tbody").html(status_val);
+
+                        if(header_row_string && i == 0) {
+                            complete_headers_html = "<tr>"+header_row_string+"</tr>";
+                        }
+
+                        complete_rows_html += "<tr>"+data_row_string+"</tr>";
                     }
+
+                    /*Populate table headers*/
+                    $("#status_table thead").html(complete_headers_html);
+                    $("#status_table tbody").html(complete_rows_html);
 
                 } else {
                     $.gritter.add({
@@ -682,7 +573,7 @@ function nocoutPerfLib() {
                             if ($("#last_updated_" + tab_content_dom_id).length > 0) {
                                 perf_that.resetLivePolling("last_updated_" + tab_content_dom_id);
                                 // get the service status for that service
-                                perfInstance.getServiceStatus(serviceDataUrl,function(response_type,data_obj) {
+                                perfInstance.getServiceStatus(serviceDataUrl, is_exact_url, function(response_type,data_obj) {
                                     if (response_type == 'success') {
                                         // Call function to populate latest status for this service
                                         populateServiceStatus_nocout("last_updated_" + tab_content_dom_id,data_obj);
@@ -754,7 +645,7 @@ function nocoutPerfLib() {
                         // show loading spinner
                         // showSpinner();
                         if ($("#last_updated_" + active_tab_content_dom_id).length > 0) {
-                            perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
+                            perfInstance.getServiceStatus(active_tab_url, is_exact_url, function(response_type,data_obj) {
                                 if (response_type == 'success') {
                                     // Call function to populate latest status for this service
                                     populateServiceStatus_nocout("last_updated_" + active_tab_content_dom_id,data_obj);
@@ -780,26 +671,30 @@ function nocoutPerfLib() {
      * This function get the service status for given url
      * @method getServiceStatus
      * @param service_status_url "String", It contains the url to fetch the status of current device.
+     * @param is_exact_url "Boolean", It contains the flag that either the url is exact or we have to update it.
      * @callback Back to the called function.
      */
-    this.getServiceStatus = function(service_status_url,callback) {
+    this.getServiceStatus = function(service_status_url, is_exact_url, callback) {
 
-        var splitted_status_url = service_status_url.split("/"),
-            updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
-            device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+        if(!is_exact_url) {
+            var splitted_status_url = service_status_url.split("/"),
+                updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
+                device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
 
-        if (updated_url.indexOf("/servicedetail/") > -1) {
-            if (updated_url.indexOf("rssi") > -1) {
-                updated_url = "/performance/servicestatus/rssi/service_data_source/rssi/device/" + device_id + "/";
-            } else if (updated_url.indexOf("util") > -1) {
-                updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/" + device_id + "/";
+            if (updated_url.indexOf("/servicedetail/") > -1) {
+                if (updated_url.indexOf("rssi") > -1) {
+                    updated_url = "/performance/servicestatus/rssi/service_data_source/rssi/device/" + device_id + "/";
+                } else if (updated_url.indexOf("util") > -1) {
+                    updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/" + device_id + "/";
+                }
+            } else {
+                // Replace 'service' with 'servicestatus'
+                updated_url = updated_url.replace("/service/","/servicestatus/");
             }
         } else {
-            // Replace 'service' with 'servicestatus'
-            updated_url = updated_url.replace("/service/","/servicestatus/");
+            updated_url = service_status_url;
         }
 
-        // 
         $.ajax({
             url : base_url + "" + updated_url,
             type : "GET",

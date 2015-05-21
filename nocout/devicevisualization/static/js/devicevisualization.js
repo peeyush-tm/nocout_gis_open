@@ -1537,14 +1537,16 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
  * This event triggers when any polled param name is clicked
  * @event delegaate
  */
-$('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
-    // Show the loader
-    showSpinner();
+$('#infoWindowContainer').delegate('td','click',function(e) {
 
-    var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
+    var currentAttr = e.currentTarget.attributes,
+        api_url = currentAttr['url'] ? currentAttr['url'].value : "";
     
     // If api_url exist then fetch l2 report url
     if(api_url) {
+        // Show the loader
+        showSpinner();
+
         $.ajax({
             url: base_url+"/"+api_url,
             type: "GET",
@@ -1651,9 +1653,6 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                 hideSpinner();
             }
         });
-    } else {
-        // hide the loader
-        hideSpinner();
     }
 });
 
@@ -2104,11 +2103,17 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                             var url = "",
                                 text_class = "";
                             if(tooltip_info_dict[i]["show"]) {
+                                // GET text color as per the severity of device
+                                var severity = tooltip_info_dict[i]["severity"],
+                                    severity_obj = nocout_getSeverityColorIcon(severity),
+                                    text_color = severity_obj.color ? severity_obj.color : "",
+                                    cursor_css = text_color ? "cursor:pointer;" : "";
+
                                 // Url
                                 url = tooltip_info_dict[i]["url"] ? tooltip_info_dict[i]["url"] : "";
                                 text_class = "text-primary";
 
-                                polled_data_html += "<tr><td class='"+text_class+"' url='"+url+"'>"+tooltip_info_dict[i]['title']+"</td>\
+                                polled_data_html += "<tr style='color:"+text_color+";'><td url='"+url+"' style='"+cursor_css+"'>"+tooltip_info_dict[i]['title']+"</td>\
                                                      <td>"+tooltip_info_dict[i]['value']+"</td></tr>";
                             }
                         }
@@ -2162,8 +2167,9 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 // It triggers when Live polling button in Sector & SS tooltip rows clicked
 $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
 
-    var current_target_attr = e.currentTarget.attributes,
-        current_table_childrens = $(e.currentTarget).parent().parent().children(),
+    var currentTarget = e.currentTarget,
+        current_target_attr = currentTarget.attributes,
+        current_table_childrens = $(currentTarget).parent().parent().children(),
         last_td_container = current_table_childrens[current_table_childrens.length - 1],
         service_name = current_target_attr['service_name'] ? current_target_attr['service_name'].value : "",
         ds_name = current_target_attr['ds_name'] ? current_target_attr['ds_name'].value : "",
@@ -2172,7 +2178,7 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
 
         if(service_name && ds_name && device_name) {
             // Disable all poll now buttons
-            $(e.currentTarget).button('loading');
+            $(currentTarget).button('loading');
 
             // Call function to fetch live polling data
             nocout_livePollCurrentDevice(
@@ -2184,6 +2190,9 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                 false_param,
                 false_param,
                 function(live_polled_dict) {
+                    // Disable all poll now buttons
+                    $(currentTarget).button('complete');
+
                     if(live_polled_dict) {
                         var live_polled_html = "";
 
@@ -2195,8 +2204,6 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                     } else {
                         $(last_td_container).html("");
                     }
-                    // Disable all poll now buttons
-                    $(e.currentTarget).button('complete');
                 });
         } else {
             $.gritter.add({
