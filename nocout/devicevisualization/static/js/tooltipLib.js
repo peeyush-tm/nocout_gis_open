@@ -1114,12 +1114,12 @@ var pmp_ss_toolTip_static = [];
 // PMP SS Tooltip polled info object
 var pmp_ss_toolTip_polled = [
     {
-        'name'         : 'cambium_ul_utilization_ul_utilization',
+        'name'         : 'cambium_ss_ul_utilization_ul_utilization',
         'title'        : 'Uplink Utilization (Mbps)',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'cambium_ul_utilization',
+        'service_name' : 'cambium_ss_ul_utilization',
         'ds'           : 'ul_utilization'
     },
     {
@@ -1128,7 +1128,7 @@ var pmp_ss_toolTip_polled = [
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'cambium_dl_utilization',
+        'service_name' : 'cambium_ss_dl_utilization',
         'ds'           : 'dl_utilization'
     },
     {

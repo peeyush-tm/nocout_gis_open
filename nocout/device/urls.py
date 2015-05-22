@@ -1,9 +1,16 @@
+"""
+========================================================
+Module contains base url configuration for 'device' app.
+========================================================
+
+Location:
+* /nocout_gis/nocout/device/urls.py
+"""
+
+# Caching GIS maps.
+from django.views.decorators.cache import cache_page
 from django.conf.urls import patterns, url
 from device import views, api
-
-# caching GIS maps
-from django.views.decorators.cache import cache_page
-#caching GIS maps
 
 urlpatterns = patterns('',
                        url(r'^$', views.DeviceList.as_view(), name='device_list'),
@@ -15,9 +22,8 @@ urlpatterns = patterns('',
                        # url(r'^stats/$', cache_page(60 * 60)(api.DeviceStatsApi.as_view())),
                        url(r'^stats/$', api.DeviceStatsApi.as_view()),
 
-                       #cache the Filters. they dont change
+                       # Cache the filters. They don't change.
                        url(r'^filter/(?P<for_map>\d+)/$', cache_page(60 * 60)(api.DeviceFilterApi.as_view())),
-                       #cache the Filters. they dont change
 
                        url(r'^lp_services/', api.LPServicesApi.as_view()),
                        url(r'^lp_service_data/', api.FetchLPDataApi.as_view()),
@@ -41,4 +47,4 @@ urlpatterns = patterns('',
                        url(r'^list/schedule/device/$', views.list_schedule_device, name='list-schedule-device'),
                        url(r'^select/schedule/device/$', views.select_schedule_device, name='select-schedule-device'),
                        url(r'^filter/selected/device/$', views.filter_selected_device, name='filter-selected-device/'),
-)
+                       )
