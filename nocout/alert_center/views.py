@@ -1350,7 +1350,9 @@ class SingleDeviceAlertsInit(ListView):
         device_alias = device_obj.device_alias + "(" + device_obj.ip_address + ")"
         #  GET Technology of current device
         device_technology_name = DeviceTechnology.objects.get(id=device_obj.device_technology).name
-        # context = {}
+        
+
+        is_dr_device = device_obj.dr_configured_on.exists()
 
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
@@ -1393,6 +1395,8 @@ class SingleDeviceAlertsInit(ListView):
         context['device_technology_name'] = device_technology_name
         context['device_alias'] = device_alias
         context['current_device_name'] = device_name
+
+        context['is_dr_device'] = is_dr_device
 
         return context
 
