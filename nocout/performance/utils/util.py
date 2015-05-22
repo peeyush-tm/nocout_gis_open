@@ -387,7 +387,12 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             "near_end_id": "",
             "freq_id": "",
             # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
-            "bh_connectivity": ""
+            "bh_connectivity": "",
+            # BS names & ids in case of BH & other devices
+            "bs_names_list" : "",
+            "bs_ids_list" : "",
+            "bs_bh_ports_list" : "",
+            "bs_bh_capacity_list" : ""
         })
 
         is_sector = False
@@ -435,11 +440,16 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
         else:
             continue
 
+        # Init variables
         apnd = ""
-        sector_details = []
-        sector_id_str = []
-        pmp_port_str = []
-        sector_pk_str = []
+        sector_details = list()
+        sector_id_str = list()
+        pmp_port_str = list()
+        sector_pk_str = list()
+        bs_names_list = list()
+        bs_ids_list = list()
+        bs_bh_ports_list = list()
+        bs_bh_capacity_list = list()
 
         if is_sector or is_dr:
             for bs_row in raw_result:
@@ -462,6 +472,15 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
 
                     # append sector primary key in list
                     sector_pk_str.append(str(bs_row['SECTOR_ID']))
+
+        elif is_bh or is_pop or is_aggr or is_conv:  # In case of BH & Other devices
+
+            for bs_row in raw_result:
+                if bs_row.get('BSID') and str(bs_row.get('BSID')) not in bs_ids_list:
+                    bs_ids_list.append(str(bs_row.get('BSID')))
+                    bs_names_list.append(bs_row.get('BSALIAS').upper())
+                    bs_bh_ports_list.append(str(bs_row.get('BS_BH_PORT')))
+                    bs_bh_capacity_list.append(str(bs_row.get('BS_BH_CAPACITY')))
 
         for bs_row in raw_result:
             if device_name is not None:
@@ -507,7 +526,12 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "near_end_id": put_na(bs_row, 'SECTOR_CONF_ON_ID'),
                     "freq_id": put_na(bs_row, 'SECTOR_FREQUENCY_ID'),
                     # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
-                    "bh_connectivity": put_na(bs_row, 'BH_CONNECTIVITY')
+                    "bh_connectivity": put_na(bs_row, 'BH_CONNECTIVITY'),
+                    # BS names & ids in case of BH & other devices
+                    "bs_names_list" : ",".join(bs_names_list),
+                    "bs_ids_list" : ",".join(bs_ids_list),
+                    "bs_bh_ports_list" : ",".join(bs_bh_ports_list),
+                    "bs_bh_capacity_list" : ",".join(bs_bh_capacity_list)
                 })
 
                 if is_dr:
