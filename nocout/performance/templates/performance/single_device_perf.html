@@ -278,7 +278,9 @@
             startDate = "",
             endDate = "",
             dataTableInstance = "",
-            current_device_ip = "";
+            current_device_ip = "",
+            bold_class = "",
+            is_dr_device = false;
 
 
         $(document).ready(function (e) {
@@ -306,6 +308,12 @@
             current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
+
+            // Update global variable as per context data
+            {% if is_dr_device %}
+                is_dr_device = true;
+                bold_class = 'text-bold';
+            {% endif %}
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
