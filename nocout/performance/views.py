@@ -1444,7 +1444,7 @@ class InventoryDeviceStatus(View):
             device_technology
         )
 
-        if type_of_device == 'sector' and device_technology in ['WiMAX']:
+        if type_of_device in ['sector'] and device_technology in ['WiMAX']:
             updated_dataset = []
             for data in dataset:
                 sector_id_list = data['sector_id_str'].split(',') if 'sector_id_str' in data else ''
@@ -1473,6 +1473,53 @@ class InventoryDeviceStatus(View):
                         sector_id_str=sector_id,
                         pmp_port_str=pmp_port,
                         sector_pk=sector_pk
+                    )
+
+                    # Append deepCopiedData to list
+                    updated_dataset.append(deepCopiedData)
+
+                    # Reset deep copied object
+                    deepCopiedData = ""
+
+                    # Increment the counter by 1
+                    counter += 1
+
+        elif type_of_device in ["backhaul", "other"]:
+            updated_dataset = list()
+            for data in dataset:
+                bs_ids_list = data['bs_ids_list'].split(',') if 'bs_ids_list' in data else ''
+                bs_names_list = data['bs_names_list'].split(',') if 'bs_names_list' in data else ''
+                bs_bh_ports_list = data['bs_bh_ports_list'].split(',') if 'bs_bh_ports_list' in data else ''
+                bs_bh_capacity_list = data['bs_bh_capacity_list'].split(',') if 'bs_bh_capacity_list' in data else ''
+
+                # initialize counter
+                counter = 0
+
+                for bs_name in bs_names_list:
+                    # Deep copy object due to same reference
+                    deepCopiedData = json.loads(json.dumps(data))
+
+                    try:
+                        bs_id = bs_ids_list[counter]
+                    except Exception, e:
+                        bs_id = ''
+
+                    try:
+                        bh_port = bs_bh_ports_list[counter]
+                    except Exception, e:
+                        bh_port = 'NA'
+
+                    try:
+                        bh_capacity = bs_bh_capacity_list[counter]
+                    except Exception, e:
+                        bh_capacity = 'NA'
+
+                    # Update bs_name & pmp port in dict
+                    deepCopiedData.update(
+                        bs_name=bs_name,
+                        bs_id=bs_id,
+                        bh_port=bh_port,
+                        bh_capacity=bh_capacity
                     )
 
                     # Append deepCopiedData to list
