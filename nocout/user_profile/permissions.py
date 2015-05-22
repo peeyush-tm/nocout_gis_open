@@ -44,10 +44,16 @@ admin_perms = [
     'device.change_device',
     'device.view_device',
     'device.view_devicefrequency',
+    'inventory.add_antenna',
+    'inventory.delete_antenna',
     'inventory.change_antenna',
     'inventory.view_antenna',
+    'inventory.add_backhaul',
+    'inventory.delete_backhaul',
     'inventory.change_backhaul',
     'inventory.view_backhaul',
+    'inventory.add_basestation',
+    'inventory.delete_basestation',
     'inventory.change_basestation',
     'inventory.view_basestation',
     'inventory.change_circuit',
@@ -80,7 +86,6 @@ admin_perms = [
     'scheduling_management.view_event',
 ]
 
-
 # List of permissions assigned to 'operator' role.
 operator_perms = [
     'activity_stream.view_useraction',
@@ -111,7 +116,6 @@ operator_perms = [
     'scheduling_management.view_event',
 ]
 
-
 # List of permissions assigned to 'viewer' role.
 viewer_perms = [
     'device.view_device',
@@ -129,4 +133,27 @@ viewer_perms = [
     'inventory.view_thresholdconfiguration',
     'alarm_escalation.view_escalationlevel',
     'scheduling_management.view_event',
+]
+
+# List of custom permissions which we want to be created in database.
+# If 'content_type' is defined for new perm then dictionary format is like,
+# {
+#     'codename': 'can_sync',
+#     'name': 'Can sync devices',
+#     'content_type': {
+#         'app_label': 'device',
+#         'model': 'device'
+#     }
+# }
+
+custom_perms = [
+    # Create device sync permission.
+    {
+        'codename': 'can_sync',
+        'name': 'Can sync devices',
+        'content_type': {
+            'app_label': 'device',
+            'model': 'device'
+        }
+    }
 ]
