@@ -4,6 +4,7 @@ import datetime
 # faster json processing module
 import ujson as json
 
+from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.shortcuts import render_to_response, render
@@ -1424,6 +1425,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
+
             if self.public_params['service_name'] == 'ping':
 
                 self.required_columns = [
@@ -1435,21 +1437,14 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                     "sys_timestamp",
                     "description"
                 ]
-            elif self.public_params['service_name'] == 'service':
-                self.required_columns = [
-                    "ip_address",
-                    "service_name",
-                    "machine_name",
-                    "site_name",
-                    "service_name",
-                    "severity",
-                    "current_value",
-                    "sys_timestamp",
-                    "description"
-                ]
 
                 # raw query is required here so as to get data
-                query = alert_utils.ping_service_query(self.public_params['device_name'], self.public_params['start_date'], self.public_params['end_date'])
+                query = alert_utils.ping_service_query(
+                    self.public_params['device_name'],
+                    self.public_params['start_date'],
+                    self.public_params['end_date']
+                )
+
                 condition_str = ''
                 final_query = ''
 
@@ -1471,12 +1466,25 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 qs = nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
 
             else:
-
-                query = []
                 if self.public_params['service_name'] == 'service':
+                    # Update columns array for 'service'
+                    self.required_columns = [
+                        "ip_address",
+                        "service_name",
+                        "machine_name",
+                        "site_name",
+                        "service_name",
+                        "severity",
+                        "current_value",
+                        "sys_timestamp",
+                        "description"
+                    ]
+                    # Update model for 'service'
                     self.model = EventService
 
-                # Create the default model condition string
+                query = []
+
+                # Create query condition string
                 pre_condition_query = "("
                 pre_condition_query += "Q(device_name="+str(self.public_params['device_name'])+")"
 
@@ -1529,17 +1537,8 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         if not len(self.public_params):
             self.initialize_params()
 
-        if self.public_params['service_name'] == 'ping':
-            self.required_columns = [
-                "ip_address",
-                "service_name",
-                "severity",
-                "latency",
-                "packet_loss",
-                "sys_timestamp",
-                "description"
-            ]
-        elif self.public_params['service_name'] == 'service':
+        if self.public_params['service_name'] == 'service':
+
             self.required_columns = [
                 "ip_address",
                 "service_name",
@@ -1552,8 +1551,6 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 "description"
             ]
 
-        if self.public_params['service_name'] == 'service':
-
             report_resultset = EventService.objects.filter(
                 device_name=self.public_params['device_name'],
                 sys_timestamp__gte=self.public_params['start_date'],
@@ -1562,8 +1559,22 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
         elif self.public_params['service_name'] == 'ping':
 
+            self.required_columns = [
+                "ip_address",
+                "service_name",
+                "severity",
+                "latency",
+                "packet_loss",
+                "sys_timestamp",
+                "description"
+            ]
+
             # raw query is required here so as to get data
-            query = alert_utils.ping_service_query(self.public_params['device_name'], self.public_params['start_date'], self.public_params['end_date'])
+            query = alert_utils.ping_service_query(
+                self.public_params['device_name'],
+                self.public_params['start_date'],
+                self.public_params['end_date']
+            )
             report_resultset = nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
 
         elif self.public_params['service_name'] == 'latency':
