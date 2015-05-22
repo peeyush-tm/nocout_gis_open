@@ -371,3 +371,6 @@ iframe {
 #dfr_reports_table_filter input {
   max-width: 75px !important;
 }
+.text-bold {
+  font-weight: bold;
+}

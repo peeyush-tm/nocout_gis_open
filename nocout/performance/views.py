@@ -549,6 +549,8 @@ class GetPerfomance(View):
 
         is_util_tab = request.GET.get('is_util', 0)
 
+        is_dr_device = device.dr_configured_on.exists()
+
         # Device inventory status url
         inventory_status_url = reverse(
             'DeviceStatusUrl',
@@ -610,7 +612,8 @@ class GetPerfomance(View):
             'alert_page_url': alert_page_url,
             'page_type': page_type,
             'live_poll_config': json.dumps(LIVE_POLLING_CONFIGURATION),
-            'is_util_tab': int(is_util_tab)
+            'is_util_tab': int(is_util_tab),
+            'is_dr_device' : is_dr_device
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
