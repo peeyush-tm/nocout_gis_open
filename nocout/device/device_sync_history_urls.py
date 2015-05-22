@@ -1,3 +1,12 @@
+"""
+===========================================================================================
+Module contains url configuration specific to 'device sync history' module in 'device' app.
+===========================================================================================
+
+Location:
+* /nocout_gis/nocout/device/device_sync_history_urls.py
+"""
+
 from django.conf.urls import patterns, url
 import views
 
@@ -9,4 +18,4 @@ urlpatterns = patterns('',
                            name='device_sync_history_delete'),
                        url(r'^(?P<pk>\d+)/edit/$', views.DeviceSyncHistoryUpdate.as_view(),
                            name='device_sync_history_edit'),
-)
+                       )

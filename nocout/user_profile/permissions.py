@@ -20,6 +20,15 @@ Variables
 * admin_perms
 * operator_perms
 * viewer_perms
+
+======================
+Additional Permissions
+======================
+* Create permission to allow sync
+> from django.contrib.auth.models import Permission
+> from django.contrib.contenttypes.models import ContentType
+> ct = ContentType.objects.get(model='device')
+> Permission.objects.create(codename='can_sync', name='Can sync devices', content_type=ct)
 """
 
 # List of permissions assigned to 'admin' role.
@@ -29,6 +38,9 @@ admin_perms = [
     'auth.change_user',
     'auth.delete_user',
     'auth.view_user',
+    'device.add_device',
+    'device.delete_device',
+    'device.can_sync',
     'device.change_device',
     'device.view_device',
     'device.view_devicefrequency',
