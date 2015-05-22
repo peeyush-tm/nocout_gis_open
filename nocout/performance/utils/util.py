@@ -391,7 +391,12 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             "near_end_id": "",
             "freq_id": "",
             # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
-            "bh_connectivity" : ""
+            "bh_connectivity" : "",
+            # BS names & ids in case of BH & other devices
+            "bs_names_list" : "",
+            "bs_ids_list" : "",
+            "bs_bh_ports_list" : "",
+            "bs_bh_capacity_list" : ""
         })
 
         is_sector = False
@@ -439,79 +444,98 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
         else:
             continue
 
+        # Init variables
         apnd = ""
-        sector_details = []
-        sector_id_str = []
-        pmp_port_str = []
-        sector_pk_str = []
+        sector_details = list()
+        sector_id_str = list()
+        pmp_port_str = list()
+        sector_pk_str = list()
+        bs_names_list = list()
+        bs_ids_list = list()
+        bs_bh_ports_list = list()
+        bs_bh_capacity_list = list()
 
         if is_sector or is_dr:
             for bs_row in raw_result:
-                if bs_row['SECTOR_SECTOR_ID'] and bs_row['SECTOR_SECTOR_ID'] not in sector_id:
-                    sector_id.append(bs_row['SECTOR_SECTOR_ID'])
-                    mrc = bs_row['SECTOR_MRC']
+                if bs_row.get('SECTOR_SECTOR_ID') and bs_row.get('SECTOR_SECTOR_ID') not in sector_id:
+                    sector_id.append(bs_row.get('SECTOR_SECTOR_ID'))
+                    mrc = bs_row.get('SECTOR_MRC')
 
                     if mrc and mrc.strip().lower() == 'yes':
                         apnd = "MRC:</br>(PMP 1, PMP 2) "
                     else:
-                        port = bs_row['SECTOR_PORT']
+                        port = bs_row.get('SECTOR_PORT')
                         if port:
                             apnd = "(" + port + ")</br> "
                             pmp_port_str.append(port)
                     # append formatted sector id with port in list
-                    sector_details.append(apnd.upper() + bs_row['SECTOR_SECTOR_ID'])
-                    
-                    # append sector id in list
-                    sector_id_str.append(bs_row['SECTOR_SECTOR_ID'])
+                    sector_details.append(apnd.upper() + bs_row.get('SECTOR_SECTOR_ID'))
+                    if bs_row.get('SECTOR_SECTOR_ID', False):
+                        # append sector id in list
+                        sector_id_str.append(bs_row.get('SECTOR_SECTOR_ID'))
 
                     # append sector primary key in list
-                    sector_pk_str.append(str(bs_row['SECTOR_ID']))
+                    if bs_row.get('SECTOR_ID', False):
+                        sector_pk_str.append(str(bs_row.get('SECTOR_ID')))
+
+        elif is_bh or is_pop or is_aggr or is_conv:  # In case of BH & Other devices
+
+            for bs_row in raw_result:
+                if bs_row.get('BSID') and str(bs_row.get('BSID')) not in bs_ids_list:
+                    bs_names_list.append(bs_row.get('BSALIAS').upper())
+                    bs_ids_list.append(str(bs_row.get('BSID')))
+                    bs_bh_ports_list.append(str(bs_row.get('BS_BH_PORT')))
+                    bs_bh_capacity_list.append(str(bs_row.get('BS_BH_CAPACITY')))
 
         for bs_row in raw_result:
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
-                    "near_end_ip": format_value(bs_row['SECTOR_CONF_ON_IP']),
+                    "near_end_ip": format_value(bs_row.get('SECTOR_CONF_ON_IP')),
                     "sector_id": " ".join(sector_details),
-                    "circuit_id": format_value(bs_row['CCID']),
-                    "customer_name": format_value(bs_row['CUST']),
-                    "bs_name": format_value(bs_row['BSALIAS']).upper(),
-                    "city": format_value(bs_row['BSCITY']),
-                    "state": format_value(bs_row['BSSTATE']),
-                    "device_type": format_value(bs_row['SECTOR_TYPE']),
-                    "device_technology": format_value(bs_row['SECTOR_TECH']),
+                    "circuit_id": format_value(bs_row.get('CCID')),
+                    "customer_name": format_value(bs_row.get('CUST')),
+                    "bs_name": format_value(bs_row.get('BSALIAS')).upper(),
+                    "city": format_value(bs_row.get('BSCITY')),
+                    "state": format_value(bs_row.get('BSSTATE')),
+                    "device_type": format_value(bs_row.get('SECTOR_TYPE')),
+                    "device_technology": format_value(bs_row.get('SECTOR_TECH')),
                     # Newly added keys for inventory status headers: 15-May-15
-                    "device_type_id": format_value(bs_row['SECTOR_TYPE_ID'], 'integer'),
-                    "device_technology_id": format_value(bs_row['SECTOR_TECH_ID'], 'integer'),
-                    "ss_technology": format_value(bs_row['SS_TECH']),
-                    "ss_technology_id": format_value(bs_row['SS_TECH_ID'], 'integer'),
-                    "ss_type": format_value(bs_row['SS_TYPE']),
-                    "ss_type_id": format_value(bs_row['SS_TYPE_ID'], 'integer'),
-                    "bh_technology": format_value(bs_row['BHTECH']),
-                    "bh_technology_id": format_value(bs_row['BHTECHID'], 'integer'),
-                    "bh_type": format_value(bs_row['BHTYPE']),
-                    "bh_type_id": format_value(bs_row['BHTYPEID'], 'integer'),
-                    "planned_freq" : format_value(bs_row['SECTOR_PLANNED_FREQUENCY']),
-                    "polled_freq" : format_value(bs_row['SECTOR_FREQUENCY']),
-                    "qos_bw" : bs_row['QOS']/1000 if bs_row['QOS'] else '',
-                    "ss_name": format_value(bs_row['SS_ALIAS']).upper(),
+                    "device_type_id": format_value(bs_row.get('SECTOR_TYPE_ID')),
+                    "device_technology_id": format_value(bs_row.get('SECTOR_TECH_ID')),
+                    "ss_technology": format_value(bs_row.get('SS_TECH')),
+                    "ss_technology_id": format_value(bs_row.get('SS_TECH_ID')),
+                    "ss_type": format_value(bs_row.get('SS_TYPE')),
+                    "ss_type_id": format_value(bs_row.get('SS_TYPE_ID')),
+                    "bh_technology": format_value(bs_row.get('BHTECH')),
+                    "bh_technology_id": format_value(bs_row.get('BHTECHID')),
+                    "bh_type": format_value(bs_row.get('BHTYPE')),
+                    "bh_type_id": format_value(bs_row.get('BHTYPEID')),
+                    "planned_freq" : format_value(bs_row.get('SECTOR_PLANNED_FREQUENCY')),
+                    "polled_freq" : format_value(bs_row.get('SECTOR_FREQUENCY')),
+                    "qos_bw" : bs_row['QOS']/1000 if 'QOS' in bs_row and bs_row['QOS'] else '',
+                    "ss_name": format_value(bs_row.get('SS_ALIAS')).upper(),
                     "sector_id_str" : ",".join(sector_id_str),
                     "pmp_port_str" : ",".join(pmp_port_str),
-                    "bh_capacity": format_value(bs_row['BH_CAPACITY']),
-                    "bh_port": format_value(bs_row['BH_PORT']),
-                    "bh_id" : format_value(bs_row['BHID'], 'integer'),
-                    "bs_id" : format_value(bs_row['BSID'], 'integer'),
-                    "ss_id" : format_value(bs_row['SSID'], 'integer'),
-                    "sector_pk" : format_value(bs_row['SECTOR_ID'], 'integer'),
+                    "bh_port": format_value(bs_row.get('BS_BH_PORT')),
+                    "bh_id" : format_value(bs_row.get('BHID')),
+                    "bs_id" : format_value(bs_row.get('BSID')),
+                    "ss_id" : format_value(bs_row.get('SSID')),
+                    "sector_pk" : format_value(bs_row.get('SECTOR_ID')),
                     "sector_pk_str": ",".join(sector_pk_str),
-                    "ckt_id" : format_value(bs_row['CID'], 'integer'),
-                    "cust_id" : format_value(bs_row['CUSTID'], 'integer'),
-                    "city_id" : format_value(bs_row['BSCITYID'], 'integer'),
-                    "state_id" : format_value(bs_row['BSSTATEID'], 'integer'),
-                    "near_end_id": format_value(bs_row['SECTOR_CONF_ON_ID'], 'integer'),
-                    "freq_id": format_value(bs_row['SECTOR_FREQUENCY_ID'], 'integer'),
+                    "ckt_id" : format_value(bs_row.get('CID')),
+                    "cust_id" : format_value(bs_row.get('CUSTID')),
+                    "city_id" : format_value(bs_row.get('BSCITYID')),
+                    "state_id" : format_value(bs_row.get('BSSTATEID')),
+                    "near_end_id": format_value(bs_row.get('SECTOR_CONF_ON_ID')),
+                    "freq_id": format_value(bs_row.get('SECTOR_FREQUENCY_ID')),
                     # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
-                    "bh_connectivity" : format_value(bs_row['BH_CONNECTIVITY'])
+                    "bh_connectivity" : format_value(bs_row.get('BH_CONNECTIVITY')),
+                    # BS names & ids in case of BH & other devices
+                    "bs_names_list" : ",".join(bs_names_list),
+                    "bs_ids_list" : ",".join(bs_ids_list),
+                    "bs_bh_ports_list" : ",".join(bs_bh_ports_list),
+                    "bs_bh_capacity_list" : ",".join(bs_bh_capacity_list)
                 })
 
                 if is_dr:

@@ -474,7 +474,10 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
                         basestation.address as BSADDRESS,
 
                         backhaul.id as BHID,
-                        sector.id as SID
+                        sector.id as SID,
+
+                        basestation.bh_port_name as BS_BH_PORT,
+                        basestation.bh_capacity as BS_BH_CAPACITY
                         
                 from inventory_basestation as basestation
                 left join inventory_sector as sector
