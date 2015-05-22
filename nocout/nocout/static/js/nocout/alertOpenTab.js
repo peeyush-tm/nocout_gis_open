@@ -32,7 +32,9 @@ $(".nav-tabs li a").click(function (e, isFirst) {
 
     /*Initialize the timer in seconds.Right now its 1 year*/
     /*86400 is 24 hrs miliseconds*/
-    var timer = 86400 * 30 * 12;
+    // var timer = 86400 * 30 * 12;
+    // 2 min timer
+    var timer = 120;
     /* 1 Year in seconds */
 
     /*Clear or Reset Time out*/
