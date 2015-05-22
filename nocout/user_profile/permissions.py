@@ -40,7 +40,7 @@ admin_perms = [
     'auth.view_user',
     'device.add_device',
     'device.delete_device',
-    'device.can_sync',
+    'device.sync_devices',
     'device.change_device',
     'device.view_device',
     'device.view_devicefrequency',
@@ -157,7 +157,7 @@ viewer_perms = [
 custom_perms = [
     # Create device sync permission.
     {
-        'codename': 'can_sync',
+        'codename': 'sync_devices',
         'name': 'Can sync devices',
         'content_type': {
             'app_label': 'device',
