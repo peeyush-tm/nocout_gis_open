@@ -20,6 +20,15 @@ Variables
 * admin_perms
 * operator_perms
 * viewer_perms
+
+======================
+Additional Permissions
+======================
+* Create permission to allow sync
+> from django.contrib.auth.models import Permission
+> from django.contrib.contenttypes.models import ContentType
+> ct = ContentType.objects.get(model='device')
+> Permission.objects.create(codename='can_sync', name='Can sync devices', content_type=ct)
 """
 
 # List of permissions assigned to 'admin' role.
@@ -29,23 +38,40 @@ admin_perms = [
     'auth.change_user',
     'auth.delete_user',
     'auth.view_user',
+    'device.add_device',
+    'device.delete_device',
+    'device.sync_devices',
     'device.change_device',
     'device.view_device',
     'device.view_devicefrequency',
+    'inventory.add_antenna',
+    'inventory.delete_antenna',
     'inventory.change_antenna',
     'inventory.view_antenna',
+    'inventory.add_backhaul',
+    'inventory.delete_backhaul',
     'inventory.change_backhaul',
     'inventory.view_backhaul',
+    'inventory.add_basestation',
+    'inventory.delete_basestation',
     'inventory.change_basestation',
     'inventory.view_basestation',
+    'inventory.add_circuit',
+    'inventory.delete_circuit',
     'inventory.change_circuit',
     'inventory.view_circuit',
+    'inventory.add_customer',
+    'inventory.delete_customer',
     'inventory.change_customer',
     'inventory.view_customer',
     'inventory.view_iconsettings',
     'inventory.view_livepollingsettings',
+    'inventory.add_sector',
+    'inventory.delete_sector',
     'inventory.change_sector',
     'inventory.view_sector',
+    'inventory.add_substation',
+    'inventory.delete_substation',
     'inventory.change_substation',
     'inventory.view_substation',
     'inventory.view_thematicsettings',
@@ -67,7 +93,6 @@ admin_perms = [
     'scheduling_management.delete_event',
     'scheduling_management.view_event',
 ]
-
 
 # List of permissions assigned to 'operator' role.
 operator_perms = [
@@ -99,7 +124,6 @@ operator_perms = [
     'scheduling_management.view_event',
 ]
 
-
 # List of permissions assigned to 'viewer' role.
 viewer_perms = [
     'device.view_device',
@@ -117,4 +141,27 @@ viewer_perms = [
     'inventory.view_thresholdconfiguration',
     'alarm_escalation.view_escalationlevel',
     'scheduling_management.view_event',
+]
+
+# List of custom permissions which we want to be created in database.
+# If 'content_type' is defined for new perm then dictionary format is like,
+# {
+#     'codename': 'can_sync',
+#     'name': 'Can sync devices',
+#     'content_type': {
+#         'app_label': 'device',
+#         'model': 'device'
+#     }
+# }
+
+custom_perms = [
+    # Create device sync permission.
+    {
+        'codename': 'sync_devices',
+        'name': 'Can sync devices',
+        'content_type': {
+            'app_label': 'device',
+            'model': 'device'
+        }
+    }
 ]

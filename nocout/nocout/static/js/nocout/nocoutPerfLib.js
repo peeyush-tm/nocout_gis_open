@@ -237,13 +237,25 @@ function nocoutPerfLib() {
                             inner_rows = device_inventory_status[i];
 
                         for (var j=0;j<inner_rows.length;j++) {
+                            var link_html = '';
+
                             if (i === 0) {
                                 header_row_string += "<th class='vAlign_middle'>"+inner_rows[j].title+"</th>";
                             }
-                            link_html = inner_rows[j].value;
-                            if(inner_rows[j].url) {
-                                link_html = "<a href = '"+inner_rows[j].url+"' target='_blank'>"+inner_rows[j].value+"</a>";
+
+                            if (inner_rows[j].url) {
+                                var row_val = inner_rows[j].value,
+                                    class_attr = '';
+                                // Highlight the text in case of DR device
+                                if (row_val.indexOf('(DR)') > -1) {
+                                    class_attr = "class='"+bold_class+"'";
+                                }
+
+                                link_html = "<a href = '"+inner_rows[j].url+"' "+class_attr+" target='_blank'>"+row_val+"</a>";
+                            } else {
+                                link_html = inner_rows[j].value;
                             }
+
                             data_row_string += "<td class='vAlign_middle'>"+link_html+"</td>";
                         }
 

@@ -79,7 +79,7 @@ class UserList(PermissionsRequiredMixin, ListView):
             {'mData': 'phone_number', 'sTitle': 'Phone Number', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'last_login', 'sTitle': 'Last Login', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
-        # If the user role is 'admin' then the action column will appear on the datatable
+        # If the user role is 'admin' then the action column will appear on the datatable.
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
@@ -120,7 +120,7 @@ class UserListingTable(PermissionsRequiredMixin,
         """
         Preparing the final result after fetching from the database to render on the datatable.
         """
-        # get json_data from qs which is returned from get_initial_queryset.
+        # Get 'json_data' from qs which is returned from 'get_initial_queryset'.
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
         sanity_dicts_list = [
@@ -135,7 +135,7 @@ class UserListingTable(PermissionsRequiredMixin,
                 datatable_headers = self.request.GET.get('datatable_headers', '').replace('false', "\"False\"")
 
                 for dct in json_data:
-                    # Last login field timezone conversion from 'utc' to 'local'
+                    # Last login field timezone conversion from 'utc' to 'local'.
                     try:
                         dct['last_login'] = convert_utc_to_local_timezone(dct['last_login'])
                     except Exception as e:
@@ -148,9 +148,9 @@ class UserListingTable(PermissionsRequiredMixin,
                     else:
                         actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                                    <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                   <a href="#UserListing" onclick="Dajaxice.user_profile.user_soft_delete_form\
+                                   <span style="cursor:pointer;" onclick="Dajaxice.user_profile.user_soft_delete_form\
                                    (get_soft_delete_form, {{\'value\': {0} , \'datatable_headers\': \'{1}\' }})">\
-                                   <i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'], datatable_headers)
+                                   <i class="fa fa-trash-o text-danger"></i></span>'.format(dct['id'], datatable_headers)
                     dct.update(actions=actions)
 
         return json_data
@@ -197,7 +197,7 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
             # Show 'actions' column only if user role is 'admin'.
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
                 for dct in json_data:
-                    # Last login field timezone conversion from 'utc' to 'local'
+                    # Last login field timezone conversion from 'utc' to 'local'.
                     try:
                         dct['last_login'] = convert_utc_to_local_timezone(dct['last_login'])
                     except Exception as e:
@@ -247,21 +247,21 @@ class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
         # Creating but not saving the new user instance.
         self.object = form.save(commit=False)
 
-        # Set password for new user instance
+        # Set password for new user instance.
         self.object.set_password(form.cleaned_data["password2"])
 
-        # Get role from list i.e. [<Roles: Admin>]
+        # Get role from list i.e. [<Roles: Admin>].
         role = form.cleaned_data['role'][0]
 
-        # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'
+        # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'.
         project_group_name = project_group_role_dict_mapper[role.role_name]
         project_group = Group.objects.get(name=project_group_name)
 
-        # Saving instance and it's m2m relationship
+        # Saving instance and it's m2m relationship.
         self.object.save()
         form.save_m2m()
 
-        # Assigning user a group corresponding to it's role
+        # Assigning user a group corresponding to it's role.
         self.object.groups.add(project_group)
 
         return super(ModelFormMixin, self).form_valid(form)
@@ -292,19 +292,19 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     def form_valid(self, form):
         """
         To update the form before submitting and log the user activity.
-        To update the record of the password used by user
+        To update the record of the password used by user.
         """
         self.object = form.save(commit=False)
 
         if form.cleaned_data["password2"]:
             self.object.set_password(form.cleaned_data["password2"])
-            # Adding the user log for the password change
+            # Adding the user log for the password change.
             UserPasswordRecord.objects.create(user_id=self.object.id, password_used=self.object.password)
 
-        # Get role from list i.e. [<Roles: Admin>]
+        # Get role from list i.e. [<Roles: Admin>].
         role = form.cleaned_data['role'][0]
 
-        # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'
+        # Get 'group' corresponding to user role for e.g if role is 'admin' then group is 'group_admin'.
         project_group_name = project_group_role_dict_mapper[role.role_name]
         project_group = Group.objects.get(name=project_group_name)
 
@@ -315,7 +315,7 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         # Assign new group to user.
         self.object.groups.add(project_group)
 
-        # Saving instance and it's m2m relationship
+        # Saving instance and it's m2m relationship.
         self.object.save()
         form.save_m2m()
 
@@ -381,7 +381,7 @@ class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):
         if form.cleaned_data['password2']:
             password = make_password(form.cleaned_data['password2'])
             kwargs.update({'password': password, 'password_changed_at': timezone.now()})
-            # Adding the user log for the password change
+            # Adding the user log for the password change.
             UserPasswordRecord.objects.create(user_id=self.object.id, password_used=password)
 
         UserProfile.objects.filter(id=self.object.id).update(**kwargs)
@@ -428,7 +428,7 @@ def change_password(request):
     # Get the url from request.POST
     url = request.POST.get('url', '/home/')
 
-    # Authenticate the user using auth_token present in request.POST
+    # Authenticate the user using auth_token present in request.POST.
     user = auth.authenticate(token=request.POST.get('auth_token', None))
 
     # If user clicks on continue button of password change form and the form is valid, then login the user.
@@ -442,7 +442,7 @@ def change_password(request):
                 # Above doesn't remove existing Visitor object. So removing it below.
                 Visitor.objects.filter(user=user).delete()
 
-            # Login the request user
+            # Login the request user.
             auth.login(request, user)
 
             # Create new visitor with new session_key for the user.

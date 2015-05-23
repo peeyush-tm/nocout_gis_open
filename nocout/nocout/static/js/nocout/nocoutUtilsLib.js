@@ -140,7 +140,7 @@ function populateServiceStatus_nocout(domElement,info) {
             txt_color = severity_style_obj.color ? severity_style_obj.color : "";
             fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
             inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
-                                  <tr style="color:' + txt_color + ';"><td>\
+                                  <tr style="color:'+txt_color+';"><td>\
                                   <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
                                   style="vertical-align: middle;"> </i> \
                                   <b>Performance Output</b> : ' + perf + '</td>\
@@ -403,62 +403,70 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         }
     }
     
+    if($(".top_perf_tabs").length > 0) {
+        var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
+            top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
+            left_tab_content_href = $("#" + top_tab_id + " .left_tabs_container li.active a").attr("href"),
+            left_tab_id = left_tab_content_href.split("#").length > 1 ? left_tab_content_href.split("#")[1] : left_tab_content_href.split("#")[0],
+            top_tab_text = $.trim($(".top_perf_tabs > li.active a").text()),
+            left_tab_txt = $.trim($("#" + top_tab_id + " .left_tabs_container > li.active a").text()),
+            report_title = "";
+        
+        if (show_historical_on_performance) {
+            try {
+                var content_tab_text = $.trim($("#" + left_tab_id + " .inner_inner_tab li.active a").text());
+                report_title += top_tab_text + " > " + left_tab_txt + " > " + content_tab_text + "(" + current_device_ip + ")";
+            } catch(e) {
+                report_title += top_tab_text + " > " + left_tab_txt + "(" + current_device_ip + ")";
+            }
 
-    var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
-        top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
-        left_tab_content_href = $("#" + top_tab_id + " .left_tabs_container li.active a").attr("href"),
-        left_tab_id = left_tab_content_href.split("#").length > 1 ? left_tab_content_href.split("#")[1] : left_tab_content_href.split("#")[0],
-        top_tab_text = $.trim($(".top_perf_tabs > li.active a").text()),
-        left_tab_txt = $.trim($("#" + top_tab_id + " .left_tabs_container > li.active a").text()),
-        report_title = "";
-    
-    if (show_historical_on_performance) {
-        try {
-            var content_tab_text = $.trim($("#" + left_tab_id + " .inner_inner_tab li.active a").text());
-            report_title += top_tab_text + " > " + left_tab_txt + " > " + content_tab_text + "(" + current_device_ip + ")";
-        } catch(e) {
+        } else {
             report_title += top_tab_text + " > " + left_tab_txt + "(" + current_device_ip + ")";
         }
 
+        if (top_tab_text && left_tab_txt && current_device_ip) {
+            table_title = report_title;
+        }
+        
+        data_extra_param = "{'service_name' : '" + service_name + "', 'service_data_source_type' : '" + ds_name + "', 'report_title' : '" + table_title + "',";
+
+        if (show_historical_on_performance) {
+            data_extra_param += "'device_id' : '" + current_device + "',";
+        } else {
+            data_extra_param += "'device_id' : '" + current_device + "', 'data_for' : '" + data_for + "',";
+        }
+
+        if (get_param_data) {
+            data_extra_param += get_param_data+",";
+        }
+
+        data_extra_param += "'download_excel': 'yes'";
+        data_extra_param += " }";
+
+        /*Call createDataTable function to create the data table for specified dom element with given data*/
+        dataTableInstance.createDataTable(
+            table_id,
+            tableheaders,
+            updated_url,
+            false,
+            table_title,
+            app_name,
+            header_class_name,
+            data_class_name,
+            header_extra_param,
+            data_extra_param
+        );
+
     } else {
-        report_title += top_tab_text + " > " + left_tab_txt + "(" + current_device_ip + ")";
+        /*Call createDataTable function to create the data table for specified dom element with given data*/
+        dataTableInstance.createDataTable(
+            table_id,
+            tableheaders,
+            updated_url,
+            false
+        );
     }
 
-    if (top_tab_text && left_tab_txt && current_device_ip) {
-        table_title = report_title;
-    }
-    
-    data_extra_param = "{'service_name' : '" + service_name + "', 'service_data_source_type' : '" + ds_name + "', 'report_title' : '" + table_title + "',";
-
-    if (show_historical_on_performance) {
-        data_extra_param += "'device_id' : '" + current_device + "',";
-    } else {
-        data_extra_param += "'device_id' : '" + current_device + "', 'data_for' : '" + data_for + "',";
-    }
-
-    if (get_param_data) {
-        data_extra_param += get_param_data+",";
-    }
-
-    data_extra_param += "'download_excel': 'yes'";
-    data_extra_param += " }";
-
-    // Clear chart block html
-    $('#' + service_id+ '_chart').html("");
-
-    /*Call createDataTable function to create the data table for specified dom element with given data*/
-    dataTableInstance.createDataTable(
-        table_id,
-        tableheaders,
-        updated_url,
-        false,
-        table_title,
-        app_name,
-        header_class_name,
-        data_class_name,
-        header_extra_param,
-        data_extra_param
-    );
 }
 
 /**
