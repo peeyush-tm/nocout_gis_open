@@ -217,7 +217,9 @@
             service_name = "",
             excel_columns = [],
             dateRangePicker_domId = "reservationtime",
-            isDateFilterApplied = false;
+            isDateFilterApplied = false,
+            bold_class = "",
+            is_dr_device = false;
 
         $(document).ready(function (e) {
 
@@ -239,6 +241,12 @@
             if(location_array.length > 1) {
                 window.location.href = location_array[0];
             }
+
+            // Update global variable as per context data
+            {% if is_dr_device %}
+                is_dr_device = true;
+                bold_class = 'text-bold';
+            {% endif %}
 
 
             statusUrl = getCompleteUrl(device_status_url);
