@@ -32,7 +32,7 @@ from inventory.tasks import bulk_update_create
 from dashboard.utils import \
     get_dashboard_status_range_counter, \
     get_service_status_results, \
-    get_total_circuits_per_sector
+    get_total_connected_device_per_sector
 
 
 import logging
@@ -479,7 +479,7 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
 
         if sector_objects.exists():
             data_list = list()
-            user_sector = sector_objects
+            user_sector = sector_objects.values_list('sector_id', flat=True)
             status_counter = {
                 "dashboard_name": dashboard_name,
                 "device_name": dashboard_name,
@@ -499,8 +499,7 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
                 "unknown": 0,
             }
             # get the list of dictionary on the basis of parameters.
-            service_status_results = get_total_circuits_per_sector(
-                model=Circuit,
+            service_status_results = get_total_connected_device_per_sector(
                 user_sector=user_sector
                 )
 

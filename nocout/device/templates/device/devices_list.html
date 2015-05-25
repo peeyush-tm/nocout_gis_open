@@ -14,7 +14,7 @@
 {% block content_title %}Device Management{% endblock %}
 {% block content_description %}List of devices{% endblock %}
 {% block page_setting_block %}
-    {% if perms.device.can_sync %}
+    {% if perms.device.sync_devices %}
         <span class="pull-right">
             <div class="btn-group">
                 {% if last_sync_time %}
