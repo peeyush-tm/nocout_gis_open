@@ -240,10 +240,11 @@ class CityCharterReportHeaders(ListView):
             {'mData': 'city_name', 'sTitle': 'City', 'sWidth': 'auto'},
             {'mData': 'p2p_los', 'sTitle': 'LOS PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_uas', 'sTitle': 'UAS', 'sWidth': 'auto'},
-            # {'mData': 'p2p_rogue_ss', 'sTitle': 'Rogue SS PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_pd', 'sTitle': 'PD PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_latancy', 'sTitle': 'Latency PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_normal', 'sTitle': 'Normal PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_ss_count', 'sTitle': 'Count PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_ss_percentage', 'sTitle': '% PTP', 'sWidth': 'auto'},
             {'mData': 'pmp_los', 'sTitle': 'LOS PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_jitter', 'sTitle': 'Jitter PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_rereg', 'sTitle': 'ReReg PMP', 'sWidth': 'auto'},
@@ -251,13 +252,17 @@ class CityCharterReportHeaders(ListView):
             {'mData': 'pmp_pd', 'sTitle': 'PD PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_latancy', 'sTitle': 'Latency PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_normal', 'sTitle': 'Normal PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_ss_count', 'sTitle': 'Count PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_ss_percentage', 'sTitle': '% PMP', 'sWidth': 'auto'},
             {'mData': 'wimax_los', 'sTitle': 'LOS WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_na', 'sTitle': 'NA WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_rogue_ss', 'sTitle': 'Rogue SS WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_ul', 'sTitle': 'UL WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_pd', 'sTitle': 'PD WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_latancy', 'sTitle': 'Latency WiMAX', 'sWidth': 'auto'},
-            {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'}
+            {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_ss_count', 'sTitle': 'Count WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_ss_percentage', 'sTitle': '% WiMAX', 'sWidth': 'auto'}
         ]
 
         context = {
@@ -277,20 +282,20 @@ class CityCharterReportListing(BaseDatatableView):
         'city_name',
         'p2p_los',
         'p2p_uas',
-        # 'p2p_na',
-        # 'p2p_rogue_ss',
         'p2p_pd',
         'p2p_latancy',
         'p2p_normal',
+        'p2p_ss_count',
+        'p2p_ss_percentage',
         'pmp_los',
         'pmp_jitter',
-        # 'pmp_na',
         'pmp_rereg',
-        # 'pmp_rogue_ss',
         'pmp_ul',
         'pmp_pd',
         'pmp_latancy',
         'pmp_normal',
+        'pmp_ss_count',
+        'pmp_ss_percentage',
         'wimax_los',
         'wimax_na',
         'wimax_rogue_ss',
@@ -298,6 +303,8 @@ class CityCharterReportListing(BaseDatatableView):
         'wimax_pd',
         'wimax_latancy',
         'wimax_normal',
+        'wimax_ss_count',
+        'wimax_ss_percentage'
     ]
 
     order_columns = columns
@@ -311,7 +318,7 @@ class CityCharterReportListing(BaseDatatableView):
         return self.model.objects.values(*self.columns)
 
     def prepare_results(self, qs):
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val or val == 0 else "" for key, val in dct.items()} for dct in qs]
         return json_data
 
     def get_context_data(self, *args, **kwargs):
