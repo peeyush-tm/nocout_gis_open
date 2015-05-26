@@ -87,6 +87,7 @@ urlpatterns = patterns('',
                        url(r'^country/', include('device.country_urls')),
                        url(r'^state/', include('device.state_urls')),
                        url(r'^city/', include('device.city_urls')),
+                       url(r'^city_charter_settings/', include('download_center.city_charter_settings_url')),
                        url(r'^wizard/', include('device.wizard_device_type_urls')),
                        url(r'^escalation/', include('alarm_escalation.urls')),
                        url(r'^global_search/', include('inventory.global_search_urls'))

@@ -1,0 +1,339 @@
+{% extends "nocout/base.html" %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "City Charter Settings" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
+{% block content_title %}Sector Spot Dashboard{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+	
+	<div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-table"></i> City Charter Settings</h4>
+        </div>
+        <div class="box-body">
+
+        	<div class="tabbable header-tabs">
+                
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#wimax_city_charter_block" id="wimax_city_charter_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">WiMAX</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#pmp_city_charter_block" id="pmp_city_charter_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PMP</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#ptp_city_charter_block" id="ptp_city_charter_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">PTP</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" style="overflow-y:auto;">
+                    <div class="tab-pane col-md-8 col-md-offset-2" id="wimax_city_charter_block">
+                        <form action="/city_charter_settings/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                            <div class="form-group">
+                                <input type="hidden" name="technology" value="wimax">
+                                <div class="form-group">
+                                    <label for="{{ form.los.id_for_label }}" class="col-sm-3 control-label">Line of Sight</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.los }} {{ form.los.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.los.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.n_align.id_for_label }}" class="col-sm-3 control-label">Needs Alignment</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.n_align }} {{ form.n_align.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.n_align.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.rogue_ss.id_for_label }}" class="col-sm-3 control-label">Rogue SS</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.rogue_ss }} {{ form.rogue_ss.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.rogue_ss.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.pd.id_for_label }}" class="col-sm-3 control-label">Packet Loss</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.pd }} {{ form.pd.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.pd.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.latency.id_for_label }}" class="col-sm-3 control-label">Latency</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.latency }} {{ form.latency.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.latency.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-offset-3 col-sm-9">
+                                    <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                    &nbsp;
+                                    <button type="reset" class="btn btn-danger" onclick="window.location.replace('/city_charter_settings/')"><i class="fa fa-times"></i> Cancel</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="tab-pane col-md-8 col-md-offset-2" id="pmp_city_charter_block">
+                        <form action="/city_charter_settings/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                            <input type="hidden" name="technology" value="pmp">
+                            <div class="form-group">
+                                <div class="form-group">
+                                    <label for="{{ form.los.id_for_label }}" class="col-sm-3 control-label">Line of Sight</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.los }} {{ form.los.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.los.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.jitter.id_for_label }}" class="col-sm-3 control-label">Jitter</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.jitter }} {{ form.jitter.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.jitter.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.rereg.id_for_label }}" class="col-sm-3 control-label">ReReg Count</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.rereg }} {{ form.rereg.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.rereg.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.pd.id_for_label }}" class="col-sm-3 control-label">Packet Loss</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.pd }} {{ form.pd.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.pd.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.latency.id_for_label }}" class="col-sm-3 control-label">Latency</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.latency }} {{ form.latency.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.latency.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-offset-3 col-sm-9">
+                                    <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                    &nbsp;
+                                    <button type="reset" class="btn btn-danger" onclick="window.location.replace('/city_charter_settings/')"><i class="fa fa-times"></i> Cancel</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="tab-pane col-md-8 col-md-offset-2 active" id="ptp_city_charter_block">
+                        <form action="/city_charter_settings/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                            <input type="hidden" name="technology" value="p2p">
+                            <div class="form-group">
+                                <div class="form-group">
+                                    <label for="{{ form.los.id_for_label }}" class="col-sm-3 control-label">Line of Sight</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.los }} {{ form.los.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.los.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.uas.id_for_label }}" class="col-sm-3 control-label">UAS</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.uas }} {{ form.uas.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.uas.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.pd.id_for_label }}" class="col-sm-3 control-label">Packet Loss</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.pd }} {{ form.pd.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.pd.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.latency.id_for_label }}" class="col-sm-3 control-label">Latency</label>
+                                    <div class="col-sm-9">
+                                        <div class="col-md-8">
+                                            {{ form.latency }} {{ form.latency.errors }}
+                                        </div>
+                                        <div class="col-md-4 help_text">
+                                            {{ form.latency.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-offset-3 col-sm-9">
+                                    <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                    &nbsp;
+                                    <button type="reset" class="btn btn-danger" onclick="window.location.replace('/city_charter_settings/')"><i class="fa fa-times"></i> Cancel</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+    	</div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+<script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+<script type="text/javascript">
+    var tab_tech_list = ['ptp', 'pmp', 'wimax'],
+        ptp_list = ["ptp", "p2p"];
+    $(document).ready(function(e) {
+
+        $("#ptp_city_charter_tab").trigger('click');
+    });
+
+    $("#ptp_city_charter_tab, #pmp_city_charter_tab, #wimax_city_charter_tab").click(function(e) {
+        var domId = e.currentTarget.id,
+            splitted_id = domId.split("_"),
+            parent_id = $(this).attr("href");
+        tabClicked(splitted_id[0], parent_id);
+    });
+
+
+    function tabClicked(tech_name, parent_id) {
+        if(tab_tech_list.indexOf(tech_name) == -1) {
+            $("#ptp_city_charter_tab").trigger('click');
+        } else {
+
+            if(ptp_list.indexOf(tech_name) > -1) {
+                tech_name = 'p2p';
+            }
+
+            $.ajax({
+                url : base_url+"/city_charter_settings/get_current_cc_settings/?technology="+tech_name,
+                type : "GET",
+                success : function(result) {
+                    var response = "";
+
+                    if(typeof result == 'string') {
+                        response = JSON.parse(result);
+                    } else {
+                        response = result;
+                    }
+
+                    if(response.success == 1) {
+                        var fetched_data = response.data;
+
+                        if(fetched_data && Object.keys(fetched_data).length) {
+
+                            for(key in fetched_data) {
+                                $(parent_id+" #id_"+key).val(fetched_data[key]);
+                            }
+                        }
+                    } else {
+                        $.gritter.add({
+                            // (string | mandatory) the heading of the notification
+                            title: "City Charter Settings",
+                            // (string | mandatory) the text inside the notification
+                            text: response.message,
+                            // (bool | optional) if you want it to fade out on its own or just sit there
+                            sticky: false,
+                            // Time in ms after which the gritter will dissappear.
+                            time : 1500
+                        });
+                    }
+                },
+                error : function(err) {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: "City Charter Settings",
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false,
+                        // Time in ms after which the gritter will dissappear.
+                        time : 1500
+                    });
+                }
+            });
+        }
+    }
+
+</script>
+
+{% endblock %}
+
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}
