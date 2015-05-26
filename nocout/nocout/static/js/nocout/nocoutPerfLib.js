@@ -872,6 +872,8 @@ function nocoutPerfLib() {
             // Checked the chart type radio
             $('#display_table')[0].checked = true
 
+            $('#' + service_id+ '_chart').html("");
+
             initChartDataTable_nocout(
                 "perf_data_table",
                 listing_headers,
