@@ -284,7 +284,6 @@ iframe {
   position: absolute;
   top: -40px;
   left: 30%;
-  z-index: 9999;
 }
 .global_search_container .select2-container .select2-choice {
   height: 30px !important;
