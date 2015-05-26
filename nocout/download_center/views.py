@@ -1,12 +1,15 @@
 import json
+from device.models import DeviceTechnology
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, FormView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon
+from download_center.forms import CityCharterSettingsForm
+from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon, \
+    CityCharterSettings
 from django.db.models import Q
 from django.conf import settings
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -357,3 +360,76 @@ class CityCharterReportListing(BaseDatatableView):
         }
 
         return ret
+
+
+class CityCharterSettingsView(FormView):
+    template_name = 'download_center/city_charter_settings.html'
+    success_url = '/city_charter_settings/'
+    form_class = CityCharterSettingsForm
+
+    def get_form(self, form_class):
+        return form_class(
+            initial=self.get_initial(),
+        )
+
+    def post(self, request, *args, **kwargs):
+        # Fetch post parameters.
+        tech_name = self.request.POST['technology'] if 'technology' in self.request.POST else ""
+        los = self.request.POST['los'] if 'los' in self.request.POST else ""
+        n_align = self.request.POST['n_align'] if 'n_align' in self.request.POST else ""
+        rogue_ss = self.request.POST['rogue_ss'] if 'rogue_ss' in self.request.POST else ""
+        jitter = self.request.POST['jitter'] if 'jitter' in self.request.POST else ""
+        rereg = self.request.POST['rereg'] if 'rereg' in self.request.POST else ""
+        uas = self.request.POST['uas'] if 'uas' in self.request.POST else ""
+        pd = self.request.POST['pd'] if 'pd' in self.request.POST else ""
+        latency = self.request.POST['latency'] if 'latency' in self.request.POST else ""
+
+        # Create form.
+        form = CityCharterSettingsForm(self.request.POST)
+
+        # Process data if form is valid else redirect to form.
+        if form.is_valid():
+            # Get technology.
+            technology = None
+            try:
+                technology = DeviceTechnology.objects.get(name__iexact=tech_name)
+            except Exception as e:
+                logger.exception(e.message)
+
+            if technology:
+                # Fetch row corresponding to the 'technology' from 'download_center_citychartersettings'.
+                # If exist then update else create it.
+                row = None
+                try:
+                    row = CityCharterSettings.objects.get(technology=technology)
+                except Exception as e:
+                    logger.exception(e.message)
+
+                if row:
+                    # Update record.
+                    row.los = los
+                    row.n_align = n_align
+                    row.rogue_ss = rogue_ss
+                    row.jitter = jitter
+                    row.rereg = rereg
+                    row.uas = uas
+                    row.pd = pd
+                    row.latency = latency
+                    row.save()
+                else:
+                    # Create record.
+                    row = CityCharterSettings()
+                    row.technology = technology
+                    row.los = los
+                    row.n_align = n_align
+                    row.rogue_ss = rogue_ss
+                    row.jitter = jitter
+                    row.rereg = rereg
+                    row.uas = uas
+                    row.pd = pd
+                    row.latency = latency
+                    row.save()
+            else:
+                pass
+
+        return HttpResponseRedirect('/city_charter_settings/')
