@@ -374,3 +374,10 @@ iframe {
 .text-bold {
   font-weight: bold;
 }
+#ajax_backdrop {
+  background: #FFFFFF !important;
+  position:absolute !important;
+}
+#page_content_div {
+  position: relative;
+}

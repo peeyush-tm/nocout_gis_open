@@ -695,7 +695,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 self.table_name = 'performance_utilizationstatus'
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
-            elif tab_id in ["Backhaul", "Backhaul_PD"]:
+            elif tab_id in ["Backhaul", "Backhaul_Down", "Backhaul_PD", "Backhaul_RTA"]:
                 technology = None
                 is_bh = True
                 page_type = "other"
@@ -742,8 +742,13 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         get_param = self.request.GET.get("data_source")
 
-        if get_param and get_param == 'Backhaul_PD':
-            extra_query_condition += " AND `{0}`.`current_value` = 100 AND `{0}`.`data_source` = 'pl'"
+        if get_param:
+            if get_param in ["Backhaul_Down"]:
+                extra_query_condition += " AND `{0}`.`current_value` = 100 AND `{0}`.`data_source` = 'pl'"
+            elif get_param in ["Backhaul_PD"]:
+                extra_query_condition += " AND `{0}`.`current_value` != 100 AND `{0}`.`data_source` = 'pl'"
+            elif get_param in ["Backhaul_RTA"]:
+                extra_query_condition += " AND `{0}`.`data_source` = 'rta'"
 
         sorted_device_list = list()
 
@@ -1010,7 +1015,7 @@ class AlertCenterListing(ListView):
         bh_datatable_headers = []
 
         # Pass bh_datatable_headers only in case of 'network' page with 'down' datasource
-        if page_type == 'network' and data_source and data_source == 'down':
+        if page_type == 'network':
             bh_datatable_headers = starting_headers
             bh_datatable_headers += common_headers
             bh_datatable_headers += bh_specific_headers
