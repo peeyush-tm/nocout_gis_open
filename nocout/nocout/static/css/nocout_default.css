@@ -282,8 +282,8 @@ iframe {
 
 .global_search_container {
   position: absolute;
-  top: 10px;
-  left: 37%;
+  top: -40px;
+  left: 30%;
 }
 .global_search_container .select2-container .select2-choice {
   height: 30px !important;
@@ -370,4 +370,14 @@ iframe {
 }
 #dfr_reports_table_filter input {
   max-width: 75px !important;
+}
+.text-bold {
+  font-weight: bold;
+}
+#ajax_backdrop {
+  background: #FFFFFF !important;
+  position:absolute !important;
+}
+#page_content_div {
+  position: relative;
 }

@@ -43,6 +43,20 @@ import logging
 log = logging.getLogger(__name__)
 #logging the performance of function
 
+# # commented because of goes package is not supported for python 2.7 on centos 6.5
+compare_geo = False
+try:
+    import pyproj
+    from shapely.geometry import Polygon, Point
+    from shapely.ops import transform
+    # # commented because of goes package is not supported for python 2.7 on centos 6.5
+    from functools import partial
+    compare_geo = True
+except Exception as e:
+    log.exception(e)
+    compare_geo = False
+
+
 class DictDiffer(object):
     """
     Calculate the difference between two dictionaries as:
@@ -475,7 +489,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
 
                         backhaul.id as BHID,
                         sector.id as SID,
-
+                        
                         basestation.bh_port_name as BS_BH_PORT,
                         basestation.bh_capacity as BS_BH_CAPACITY
                         
@@ -940,10 +954,46 @@ def html_to_text(html):
     s.feed(html)
     return s.get_text()
 
+
+def is_lat_long_in_state(latitude, longitude, state):
+    if compare_geo:
+        # commented because of goes package is not supported for python 2.7 on centos 6.5
+        # check whether lat log lies in state co-ordinates or not
+        if latitude and longitude and state:
+            from device.models import StateGeoInfo
+            try:
+                project = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init='epsg:4326'),
+                    pyproj.Proj('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 \
+                                +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+
+                state_geo_info = StateGeoInfo.objects.filter(state_id=state)
+                state_lat_longs = list()
+                for geo_info in state_geo_info:
+                    temp_lat_longs = list()
+                    temp_lat_longs.append(geo_info.longitude)
+                    temp_lat_longs.append(geo_info.latitude)
+                    state_lat_longs.append(temp_lat_longs)
+
+                poly = Polygon(tuple(state_lat_longs))
+                point = Point(longitude, latitude)
+
+                # Translate to spherical Mercator or Google projection
+                poly_g = transform(project, poly)
+                p1_g = transform(project, point)
+                if not poly_g.contains(p1_g):
+                    return False
+                else:
+                    return True
+            except Exception as e:
+                return False
+    else:
+        return False
+
+
 # Disable Signals for loaddata command Django
 # http://stackoverflow.com/questions/15624817/have-loaddata-ignore-or-disable-post-save-signals
-
-
 def disable_for_loaddata(signal_handler):
     """
     Decorator that turns off signal handlers when loading fixture data.

@@ -1,12 +1,15 @@
 import json
+from device.models import DeviceTechnology
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, FormView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon
+from download_center.forms import CityCharterSettingsForm
+from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityCharterPMP, CityCharterWiMAX, CityCharterCommon, \
+    CityCharterSettings
 from django.db.models import Q
 from django.conf import settings
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -240,10 +243,11 @@ class CityCharterReportHeaders(ListView):
             {'mData': 'city_name', 'sTitle': 'City', 'sWidth': 'auto'},
             {'mData': 'p2p_los', 'sTitle': 'LOS PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_uas', 'sTitle': 'UAS', 'sWidth': 'auto'},
-            # {'mData': 'p2p_rogue_ss', 'sTitle': 'Rogue SS PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_pd', 'sTitle': 'PD PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_latancy', 'sTitle': 'Latency PTP', 'sWidth': 'auto'},
             {'mData': 'p2p_normal', 'sTitle': 'Normal PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_ss_count', 'sTitle': 'Count PTP', 'sWidth': 'auto'},
+            {'mData': 'p2p_ss_percentage', 'sTitle': '% PTP', 'sWidth': 'auto'},
             {'mData': 'pmp_los', 'sTitle': 'LOS PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_jitter', 'sTitle': 'Jitter PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_rereg', 'sTitle': 'ReReg PMP', 'sWidth': 'auto'},
@@ -251,13 +255,17 @@ class CityCharterReportHeaders(ListView):
             {'mData': 'pmp_pd', 'sTitle': 'PD PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_latancy', 'sTitle': 'Latency PMP', 'sWidth': 'auto'},
             {'mData': 'pmp_normal', 'sTitle': 'Normal PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_ss_count', 'sTitle': 'Count PMP', 'sWidth': 'auto'},
+            {'mData': 'pmp_ss_percentage', 'sTitle': '% PMP', 'sWidth': 'auto'},
             {'mData': 'wimax_los', 'sTitle': 'LOS WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_na', 'sTitle': 'NA WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_rogue_ss', 'sTitle': 'Rogue SS WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_ul', 'sTitle': 'UL WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_pd', 'sTitle': 'PD WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_latancy', 'sTitle': 'Latency WiMAX', 'sWidth': 'auto'},
-            {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'}
+            {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_ss_count', 'sTitle': 'Count WiMAX', 'sWidth': 'auto'},
+            {'mData': 'wimax_ss_percentage', 'sTitle': '% WiMAX', 'sWidth': 'auto'}
         ]
 
         context = {
@@ -277,20 +285,20 @@ class CityCharterReportListing(BaseDatatableView):
         'city_name',
         'p2p_los',
         'p2p_uas',
-        # 'p2p_na',
-        # 'p2p_rogue_ss',
         'p2p_pd',
         'p2p_latancy',
         'p2p_normal',
+        'p2p_ss_count',
+        'p2p_ss_percentage',
         'pmp_los',
         'pmp_jitter',
-        # 'pmp_na',
         'pmp_rereg',
-        # 'pmp_rogue_ss',
         'pmp_ul',
         'pmp_pd',
         'pmp_latancy',
         'pmp_normal',
+        'pmp_ss_count',
+        'pmp_ss_percentage',
         'wimax_los',
         'wimax_na',
         'wimax_rogue_ss',
@@ -298,6 +306,8 @@ class CityCharterReportListing(BaseDatatableView):
         'wimax_pd',
         'wimax_latancy',
         'wimax_normal',
+        'wimax_ss_count',
+        'wimax_ss_percentage'
     ]
 
     order_columns = columns
@@ -311,7 +321,7 @@ class CityCharterReportListing(BaseDatatableView):
         return self.model.objects.values(*self.columns)
 
     def prepare_results(self, qs):
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val or val == 0 else "" for key, val in dct.items()} for dct in qs]
         return json_data
 
     def get_context_data(self, *args, **kwargs):
@@ -350,3 +360,76 @@ class CityCharterReportListing(BaseDatatableView):
         }
 
         return ret
+
+
+class CityCharterSettingsView(FormView):
+    template_name = 'download_center/city_charter_settings.html'
+    success_url = '/city_charter_settings/'
+    form_class = CityCharterSettingsForm
+
+    def get_form(self, form_class):
+        return form_class(
+            initial=self.get_initial(),
+        )
+
+    def post(self, request, *args, **kwargs):
+        # Fetch post parameters.
+        tech_name = self.request.POST['technology'] if 'technology' in self.request.POST else ""
+        los = self.request.POST['los'] if 'los' in self.request.POST else ""
+        n_align = self.request.POST['n_align'] if 'n_align' in self.request.POST else ""
+        rogue_ss = self.request.POST['rogue_ss'] if 'rogue_ss' in self.request.POST else ""
+        jitter = self.request.POST['jitter'] if 'jitter' in self.request.POST else ""
+        rereg = self.request.POST['rereg'] if 'rereg' in self.request.POST else ""
+        uas = self.request.POST['uas'] if 'uas' in self.request.POST else ""
+        pd = self.request.POST['pd'] if 'pd' in self.request.POST else ""
+        latency = self.request.POST['latency'] if 'latency' in self.request.POST else ""
+
+        # Create form.
+        form = CityCharterSettingsForm(self.request.POST)
+
+        # Process data if form is valid else redirect to form.
+        if form.is_valid():
+            # Get technology.
+            technology = None
+            try:
+                technology = DeviceTechnology.objects.get(name__iexact=tech_name)
+            except Exception as e:
+                logger.exception(e.message)
+
+            if technology:
+                # Fetch row corresponding to the 'technology' from 'download_center_citychartersettings'.
+                # If exist then update else create it.
+                row = None
+                try:
+                    row = CityCharterSettings.objects.get(technology=technology)
+                except Exception as e:
+                    logger.exception(e.message)
+
+                if row:
+                    # Update record.
+                    row.los = los
+                    row.n_align = n_align
+                    row.rogue_ss = rogue_ss
+                    row.jitter = jitter
+                    row.rereg = rereg
+                    row.uas = uas
+                    row.pd = pd
+                    row.latency = latency
+                    row.save()
+                else:
+                    # Create record.
+                    row = CityCharterSettings()
+                    row.technology = technology
+                    row.los = los
+                    row.n_align = n_align
+                    row.rogue_ss = rogue_ss
+                    row.jitter = jitter
+                    row.rereg = rereg
+                    row.uas = uas
+                    row.pd = pd
+                    row.latency = latency
+                    row.save()
+            else:
+                pass
+
+        return HttpResponseRedirect('/city_charter_settings/')

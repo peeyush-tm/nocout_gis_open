@@ -13,6 +13,8 @@ from django.utils.dateformat import format
 from dashboard.models import DashboardSetting
 from dashboard.config import dashboards
 
+from nocout.utils.util import fetch_raw_result
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -348,32 +350,70 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
 
 # **************************** Sales Opportunity **********************#
 
-def get_total_circuits_per_sector(model, user_sector):
+def get_total_connected_device_per_sector(user_sector):
     '''
-    Method return the total Circuits connected to the sector.
+    Method return the total Count of connected devices to the sector.
 
     :param:
-    model: model name.
     user_sector: sector list.
 
     return: list of dictionary.
                     i.e: [
-                        {'id': sector_id1, 'name': sector_name1, 'device_name':  device_name1, 'organization': organization, 'current_value': 1},
-                        {'id': sector_id2, 'name': sector_name2, 'device_name':  device_name2, 'organization': organization,'current_value': 2},
-                        {'id': sector_id3, ...},
+                        {'sector_id: sector_id1, 'current_value': 1},
+                        {'sector_id: sector_id2, 'current_value': 2},
+                        {'sector_id: sector_id3, ...},
                         ]
     '''
-    status_results = []
-    topology_status_results = model.objects.filter(sector__in=user_sector.values_list('id', flat=True))
 
-    for sector in user_sector:
-        circuit_qs = topology_status_results.filter(sector=sector.id).count()
-        status_results.append({'id': sector.id,
-                               'name':sector.name,
-                               'device_name': sector.sector_configured_on.device_name,
-                               'organization': sector.organization,
-                               'current_value': circuit_qs
-                            })
+    status_results = list()
+    in_string = lambda x: "'" + str(x) + "'"
+    query =  '''SELECT 
+                        result.sector_id AS sector_id,
+                        count(distinct result.ss_ip) AS current_value
+                FROM (
+                        (
+                            SELECT 
+                                   sect.sector_id AS sector_id,
+                                   topo.connected_device_ip AS ss_ip
+                            FROM 
+                                   inventory_sector AS sect
+                            JOIN 
+                                   performance_topology AS topo
+                            on 
+                                   sect.sector_id = topo.sector_id
+                            WHERE 
+                                   sect.sector_id IN ({0})
+                            AND
+                                   NOT ISNULL(sect.sector_id)
+                        ) 
+                        UNION 
+                        (
+                            SELECT
+                                   sect.sector_id AS sector_id,
+                                   device.ip_address AS ss_ip 
+                            FROM 
+                                   inventory_sector AS sect 
+                            JOIN
+                                   inventory_circuit AS ckt 
+                            on
+                                   sect.id = ckt.sector_id 
+                            JOIN
+                                   inventory_substation AS subst
+                            on
+                                   ckt.sub_station_id = subst.id 
+                            JOIN 
+                                   device_device AS device
+                            on 
+                                   device.id = subst.device_id 
+                            WHERE 
+                                   sect.sector_id IN ({0})
+                            AND       
+                                   NOT ISNULL(sect.sector_id)
+                        )
+                    ) AS result
+                GROUP BY sector_id'''.format((",".join(map(in_string, user_sector))))
+
+    status_results = fetch_raw_result(query)
 
     return status_results
 

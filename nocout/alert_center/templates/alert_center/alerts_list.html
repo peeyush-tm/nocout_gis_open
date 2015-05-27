@@ -39,7 +39,7 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                    {% if page_type|lower == 'network' and data_source|lower == 'down' %}
+                    {% if page_type|lower == 'network' %}
                     <li>
                         <a href="#network_bh_block" id="network_bh_tab" data-toggle="tab">
                             <span class="hidden-inline-mobile">Backhaul</span>
@@ -91,7 +91,7 @@
                             <tbody></tbody>
                         </table>
                     </div>
-                    {% if page_type|lower == 'network' and data_source|lower == 'down' %}
+                    {% if page_type|lower == 'network' %}
                     <div class="tab-pane" id="network_bh_block">
                         <table id="network_bh_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
@@ -172,8 +172,6 @@
 
             var ajax_url_p2p = '{% url "AlertListingTable" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P' + '&page_type={{ page_type }}';
 
-            var ajax_url_bh = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul_PD';
-
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
 
             var common_extra_param = "'download_excel': 'yes'";
@@ -183,8 +181,25 @@
             var pmp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'PMP', 'page_type' : '{{ page_type }}', 'report_title' : '"+pmp_report_title+"', "+common_extra_param+" }";
             // PTP tab extra params
             var ptp_extra_param = "{'data_source': '"+ajax_url_get_parameter+"', 'data_tab' : 'P2P', 'page_type' : '{{ page_type }}', 'report_title' : '"+ptp_report_title+"', "+common_extra_param+" }";
+
+            var get_param_value = "";
+
+            {% if page_type|lower == 'network' %}
+                {% if data_source|lower == 'down' %}
+                    get_param_value = 'Backhaul_Down';
+                {% elif data_source|lower == 'packet drop' %}
+                    get_param_value = 'Backhaul_PD';
+                {% elif data_source|lower == 'latency' %}
+                    get_param_value = 'Backhaul_RTA';
+                {% endif %}
+            {% endif %}
+
+            // Backhaul data url
+            var ajax_url_bh = '{% url "NetworkAlertDetails" %}' + '?data_source='+get_param_value;
+
             // Backhaul extra params
-            var converter_extra_param = "{'data_source' : 'Backhaul_PD', 'report_title' : '"+converter_report_title+"', "+common_extra_param+"}";
+            var converter_extra_param = "{'data_source' : '"+get_param_value+"', 'report_title' : '"+converter_report_title+"', "+common_extra_param+"}";
+
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 

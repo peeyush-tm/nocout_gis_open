@@ -4966,7 +4966,7 @@ class GISPerfInfo(View):
         device_id = self.request.GET.get('device_id', None)
 
         # get device pl
-        device_pl = self.request.GET.get('pl', None)
+        device_pl = self.request.GET.get('device_pl', None)
 
         # perf info list
         perf_info = list()
@@ -4977,7 +4977,7 @@ class GISPerfInfo(View):
         except Exception as e:
             device = None
 
-        if device and device_pl != "100":
+        if device:
 
             processed = {}
 
