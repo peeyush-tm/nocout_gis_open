@@ -785,8 +785,12 @@ function WhiteMapClass() {
 			table_html += "<div class='polling_table_container'><table style='z-index:9999;' id='polling_data_table' class='datatable table table-striped table-bordered table-hover'><thead><tr><th>Device Name</th><th>Time</th><th>Value</th></tr><thead><tbody>";
 
 			for(var i=0;i<complete_polled_devices_data.length;i++) {
+				var ip_str = complete_polled_devices_data[i].ip ? complete_polled_devices_data[i].ip : "",
+					name = complete_polled_devices_data[i].device_name ? complete_polled_devices_data[i].device_name : "N/A",
+					display_name = ip_str ? ip_str : name;
+
 				table_html += '<tr>';
-				table_html += '<td>'+complete_polled_devices_data[i].device_name+'</td>';
+				table_html += '<td>'+display_name+'</td>';
 				table_html += '<td>'+complete_polled_devices_data[i].polling_time+'</td>';
 				table_html += '<td>'+complete_polled_devices_data[i].polling_value+'</td>';
 				table_html += '</tr>';
