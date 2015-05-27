@@ -1,3 +1,4 @@
+from device.models import DeviceTechnology
 from django.db import models
 from django.conf import settings
 
@@ -171,6 +172,22 @@ class CityCharterCommon(models.Model):
 
     total_ss_count = models.IntegerField('Count of ALL SS', default=0)
     total_ss_percentage = models.FloatField('% of P2P SS Affected', default=0)
+
+
+class CityCharterSettings(models.Model):
+    """
+    Model used to store city charter settings.
+    One row for each technology exist in the table.
+    """
+    technology = models.ForeignKey(DeviceTechnology)
+    los = models.CharField('Line of Sight', max_length=128, null=True, blank=True)
+    n_align = models.CharField('Needs Alignment', max_length=128, null=True, blank=True)
+    rogue_ss = models.CharField('Rogue', max_length=128, null=True, blank=True)
+    jitter = models.CharField('Jitter', max_length=128, null=True, blank=True)
+    rereg = models.CharField('ReReg Count', max_length=128, null=True, blank=True)
+    uas = models.CharField('UAS', max_length=128, null=True, blank=True)
+    pd = models.CharField('Packet Drop', max_length=128, null=True, blank=True)
+    latency = models.CharField('Latency', max_length=128, null=True, blank=True)
 
 
 # ### Report Common Parameters
