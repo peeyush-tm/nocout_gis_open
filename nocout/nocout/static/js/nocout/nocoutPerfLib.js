@@ -870,7 +870,7 @@ function nocoutPerfLib() {
 
             draw_type = 'table';
             // Checked the chart type radio
-            $('#display_table')[0].checked = true
+            $('#display_table')[0].checked = true;
 
             $('#' + service_id+ '_chart').html("");
 
@@ -982,6 +982,10 @@ function nocoutPerfLib() {
                             } else {
                                 $('#' + service_id+ '_chart').html("");
 
+                                draw_type = 'table';
+                                // Checked the chart type radio
+                                $('#display_table')[0].checked = true;
+
                                 initChartDataTable_nocout(
                                     "other_perf_table",
                                     listing_headers,
@@ -1077,6 +1081,11 @@ function nocoutPerfLib() {
                                     $('#' + service_id+ '_chart').html("");
 
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
+
+                                        draw_type = 'table';
+                                        // Checked the chart type radio
+                                        $('#display_table')[0].checked = true;
+
                                         initChartDataTable_nocout(
                                             "perf_data_table",
                                             listing_headers,
@@ -1112,6 +1121,11 @@ function nocoutPerfLib() {
                                         if (show_historical_on_performance && not_availability_page && not_live_tab) {
                                             table_headers = default_hist_table_headers;
                                         }
+
+                                        draw_type = 'table';
+                                        // Checked the chart type radio
+                                        $('#display_table')[0].checked = true;
+
                                         initChartDataTable_nocout(
                                             "perf_data_table",
                                             listing_headers,
@@ -1167,6 +1181,10 @@ function nocoutPerfLib() {
                             if (show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
                                 table_headers = default_hist_table_headers;
                             }
+
+                            draw_type = 'table';
+                            // Checked the chart type radio
+                            $('#display_table')[0].checked = true;
 
                             initChartDataTable_nocout(
                                 "perf_data_table",
