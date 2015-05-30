@@ -215,8 +215,15 @@ def get_all_sector_devices(technology):
     last_six_months_list.reverse()
     month_num = int(last_six_months_list[0][1])
 
+    processed_sectors = list()
+
     for sector in sector_objects:
+        if sector.sector_id in processed_sectors:
+            continue
+
         spot_object = None
+        # de duplicate sector
+        processed_sectors.append(sector.sector_id)
         try:
             spot_object = spot_objects.get(
                 sector_sector_id=sector.sector_id,
