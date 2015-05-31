@@ -226,7 +226,7 @@ def get_all_sector_devices(technology):
         else:
             processed_sectors[sector.sector_id] = sector.sector_id
         # de duplicate sector
-            
+
         try:
             spot_object = spot_objects.get(
                 sector_sector_id=sector.sector_id,
