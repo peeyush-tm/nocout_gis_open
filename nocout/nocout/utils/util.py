@@ -479,7 +479,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
                         basestation.building_height AS BSBUILDINGHGT,
                         basestation.tower_height AS BSTOWERHEIGHT,
                         basestation.tag1 AS BSTAG1,
-			            basestation.tag2 AS BSTAG2,
+                        basestation.tag2 AS BSTAG2,
                         basestation.maintenance_status AS BSMAINTENANCESTATUS,
 
                         city.city_name AS BSCITY,
@@ -492,10 +492,10 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
 
                         backhaul.id AS BHID,
                         sector.id AS SID,
-                        
+
                         basestation.bh_port_name AS BS_BH_PORT,
                         basestation.bh_capacity AS BS_BH_CAPACITY
-                        
+
                 FROM inventory_basestation AS basestation
                 LEFT JOIN inventory_sector AS sector
                 ON sector.base_station_id = basestation.id
@@ -593,11 +593,11 @@ LEFT JOIN (
         ON (
             dport.id = sector.sector_configured_on_port_id
         ) LEFT JOIN (
-			inventory_sector AS dr,
+            inventory_sector AS dr,
             device_device AS drd
         )
         ON (
-			dr.id = sector.id
+            dr.id = sector.id
             AND
             drd.id = dr.dr_configured_on_id
         )
@@ -716,17 +716,17 @@ LEFT JOIN
                 bh_info.BH_AGGR_PORT AS BH_AGGR_PORT,
                 bh_info.BH_DEVICE_PORT AS BH_DEVICE_PORT,
 
-				POP,
+                POP,
                 POP_IP,
-				POP_TECH,
-				POP_TYPE,
-				AGGR,
+                POP_TECH,
+                POP_TYPE,
+                AGGR,
                 AGGR_IP,
-				AGGR_TECH,
+                AGGR_TECH,
                 AGGR_TYPE,
-				BSCONV,
+                BSCONV,
                 BSCONV_IP,
-				BSCONV_TECH,
+                BSCONV_TECH,
                 BSCONV_TYPE
 
         FROM (
@@ -766,65 +766,65 @@ LEFT JOIN
 
         ) AS bh_info LEFT JOIN (
                 SELECT backhaul.id AS BHID,
-						device.device_name AS POP,
-						device.ip_address AS POP_IP,
-						devicetype.name AS POP_TYPE,
-						tech.name AS POP_TECH
-				FROM inventory_backhaul
-				AS backhaul
+                        device.device_name AS POP,
+                        device.ip_address AS POP_IP,
+                        devicetype.name AS POP_TYPE,
+                        tech.name AS POP_TECH
+                FROM inventory_backhaul
+                AS backhaul
                 LEFT JOIN (
                     device_device AS device,
-					device_devicetype AS devicetype,
-					device_devicetechnology AS tech
+                    device_devicetype AS devicetype,
+                    device_devicetechnology AS tech
                 )
                 ON (
                     device.id = backhaul.pop_id
-					AND
-					tech.id = device.device_technology
-					AND
-					devicetype.id = device.device_type
+                    AND
+                    tech.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
                 )
         ) AS pop_info
         ON (bh_info.BHID = pop_info.BHID)
         LEFT JOIN ((
                 SELECT backhaul.id AS BHID,
-						device.device_name AS BSCONV,
-						device.ip_address AS BSCONV_IP,
-						devicetype.name AS BSCONV_TYPE,
-						tech.name AS BSCONV_TECH
-				FROM inventory_backhaul AS backhaul
+                        device.device_name AS BSCONV,
+                        device.ip_address AS BSCONV_IP,
+                        devicetype.name AS BSCONV_TYPE,
+                        tech.name AS BSCONV_TECH
+                FROM inventory_backhaul AS backhaul
                 LEFT JOIN (
                     device_device AS device,
-					device_devicetype AS devicetype,
-					device_devicetechnology AS tech
+                    device_devicetype AS devicetype,
+                    device_devicetechnology AS tech
                 )
                 ON (
                     device.id = backhaul.bh_switch_id
-					AND
-					tech.id = device.device_technology
-					AND
-					devicetype.id = device.device_type
+                    AND
+                    tech.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
                 )
         ) AS bscon_info
         ) ON (bh_info.BHID = bscon_info.BHID)
         LEFT JOIN ((
                 SELECT backhaul.id AS BHID,
-					device.device_name AS AGGR,
-					device.ip_address AS AGGR_IP,
-					devicetype.name AS AGGR_TYPE,
-					tech.name AS AGGR_TECH
-				FROM inventory_backhaul AS backhaul
+                    device.device_name AS AGGR,
+                    device.ip_address AS AGGR_IP,
+                    devicetype.name AS AGGR_TYPE,
+                    tech.name AS AGGR_TECH
+                FROM inventory_backhaul AS backhaul
                 LEFT JOIN (
                     device_device AS device,
-					device_devicetype AS devicetype,
-					device_devicetechnology AS tech
+                    device_devicetype AS devicetype,
+                    device_devicetechnology AS tech
                 )
                 ON (
                     device.id = backhaul.aggregator_id
-					AND
-					tech.id = device.device_technology
-					AND
-					devicetype.id = device.device_type
+                    AND
+                    tech.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
                 )
         ) AS aggr_info
         ) ON (bh_info.BHID = aggr_info.BHID)
