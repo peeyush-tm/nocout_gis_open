@@ -405,8 +405,7 @@ def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None
     query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id, device_list=device_list)
     return fetch_raw_result(query)
 
-
-## Function with imporved GIS API query
+# # Function with imporved GIS API query
 def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
 
@@ -840,6 +839,9 @@ ON
         '''.format(added_device, rf_tech, where_bs)
     return gis
 
+# Function for GIS API query, based on type of device
+# that is separate queries for Sector, SS, BH (POP, BH Conv, AGGR, Switch)
+# would reduce the data size captured, would be helpful in faster loading of the data
 
 def convert_utc_to_local_timezone(datetime_obj=None):
     """ Convert datetime object timezone from 'utc' to 'local'
