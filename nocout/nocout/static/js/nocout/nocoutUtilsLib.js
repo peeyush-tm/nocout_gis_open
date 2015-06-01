@@ -639,13 +639,21 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             },
             reversed : is_y_inverted
         },
+        plotOptions : {
+            column : {
+                borderWidth : 0
+            },
+            bar : {
+                borderWidth : 0
+            }
+        },
         series: chartConfig.chart_data
     };
 
     try {
         if (need_extra_config) {
             chart_options["yAxis"]["max"] = 100;
-            chart_options["plotOptions"] = {series: {stacking: 'normal'}};
+            chart_options["plotOptions"]["series"] = {stacking: 'normal'};
         }
     } catch(e) {
         // pass

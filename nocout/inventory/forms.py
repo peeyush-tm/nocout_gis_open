@@ -261,7 +261,10 @@ class BackhaulForm(forms.ModelForm):
     BH_CONNECTIVITY = (
         ('', 'Select'),
         ('Onnet', 'Onnet'),
-        ('Offnet', 'Offnet')
+        ('Offnet', 'Offnet'),
+        ('ONNET/Colo', 'ONNET/Colo'),
+        ('ONNET+UBR', 'ONNET+UBR'),
+        ('OFFNET + ONNET', 'OFFNET + ONNET')
     )
 
     DR_SITE = (
