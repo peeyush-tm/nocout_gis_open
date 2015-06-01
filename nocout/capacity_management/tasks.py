@@ -1331,8 +1331,11 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 logger.exception(e)
                 continue
 
-            sector_capacity_in = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['dl']
-            sector_capacity_out = CAPACITY_SETTINGS['wimax'][int(sector_capacity)]['ul']
+            try:
+                sector_capacity_in = CAPACITY_SETTINGS['wimax'][int(float(sector_capacity))]['dl']
+                sector_capacity_out = CAPACITY_SETTINGS['wimax'][int(float(sector_capacity))]['ul']
+            except:
+                continue
 
             try:
 
