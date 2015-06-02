@@ -716,14 +716,17 @@ LEFT JOIN
                 bh_info.BH_DEVICE_PORT AS BH_DEVICE_PORT,
 
                 POP,
+                POP_DEVICE_ID,
                 POP_IP,
                 POP_TECH,
                 POP_TYPE,
                 AGGR,
+                AGGR_DEVICE_ID,
                 AGGR_IP,
                 AGGR_TECH,
                 AGGR_TYPE,
                 BSCONV,
+                BSCONV_DEVICE_ID,
                 BSCONV_IP,
                 BSCONV_TECH,
                 BSCONV_TYPE
@@ -765,6 +768,7 @@ LEFT JOIN
 
         ) AS bh_info LEFT JOIN (
                 SELECT backhaul.id AS BHID,
+                        device.id AS POP_DEVICE_ID,
                         device.device_name AS POP,
                         device.ip_address AS POP_IP,
                         devicetype.name AS POP_TYPE,
@@ -787,6 +791,7 @@ LEFT JOIN
         ON (bh_info.BHID = pop_info.BHID)
         LEFT JOIN ((
                 SELECT backhaul.id AS BHID,
+                        device.id AS BSCONV_DEVICE_ID,
                         device.device_name AS BSCONV,
                         device.ip_address AS BSCONV_IP,
                         devicetype.name AS BSCONV_TYPE,
@@ -808,6 +813,7 @@ LEFT JOIN
         ) ON (bh_info.BHID = bscon_info.BHID)
         LEFT JOIN ((
                 SELECT backhaul.id AS BHID,
+                    device.id AS AGGR_DEVICE_ID,
                     device.device_name AS AGGR,
                     device.ip_address AS AGGR_IP,
                     devicetype.name AS AGGR_TYPE,

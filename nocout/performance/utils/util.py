@@ -534,8 +534,13 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "bs_bh_capacity_list" : ",".join(bs_bh_capacity_list)
                 })
 
+                if is_sector:
+                    device.update({
+                        "id": bs_row.get('SECTOR_CONF_ON_ID', 0)
+                    })
                 if is_dr:
                     device.update({
+                        "id": bs_row.get('DR_CONF_ON_ID', 0),
                         "sector_id": "DR:</br>" + " ".join(sector_details),
                     })
                 elif is_ss:
@@ -554,27 +559,32 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                             })
 
                     device.update({
+                        "id": bs_row.get('SS_DEVICE_ID', 0),
                         "sector_id": apnd.upper() + format_value(bs_row['SECTOR_SECTOR_ID']),
                         "device_type": format_value(bs_row['SS_TYPE']),
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
                 elif is_bh:
                     device.update({
+                        "id": bs_row.get('BH_DEVICE_ID', 0),
                         "device_type": format_value(bs_row['BHTYPE']),
                         "device_technology": format_value(bs_row['BHTECH'])
                     })
                 elif is_pop:
                     device.update({
+                        "id": bs_row.get('POP_DEVICE_ID', 0),
                         "device_type": format_value(bs_row['POP_TYPE']),
                         "device_technology": format_value(bs_row['POP_TECH'])
                     })
                 elif is_aggr:
                     device.update({
+                        "id": bs_row.get('AGGR_DEVICE_ID', 0),
                         "device_type": format_value(bs_row['AGGR_TYPE']),
                         "device_technology": format_value(bs_row['AGGR_TECH'])
                     })
                 elif is_conv:
                     device.update({
+                        "id": bs_row.get('BSCONV_DEVICE_ID', 0),
                         "device_type": format_value(bs_row['BSCONV_TYPE']),
                         "device_technology": format_value(bs_row['BSCONV_TECH'])
                     })
