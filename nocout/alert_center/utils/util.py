@@ -235,16 +235,10 @@ def map_results(perf_result, qs):
 
     indexed_qs = perf_utils.pre_map_indexing(index_dict=qs)
     indexed_perf = perf_utils.pre_map_indexing(index_dict=perf_result)
-
-    for device in indexed_qs:
-        try:
-            device_info = indexed_qs[device][0].items()
-            map_perf = indexed_perf[device]
-            for data_source in map_perf:
-                result_qs.append(dict(device_info + data_source.items()))
-        except Exception as e:
-            continue
-
+    
+    for device in indexed_perf:
+        for perf_res in indexed_perf[device]:
+            result_qs.append(perf_res)
     return result_qs
 
 
