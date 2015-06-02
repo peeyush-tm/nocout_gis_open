@@ -843,6 +843,22 @@ CHART_IMG_TYPE = "png"
 # highcharts-convert.js url variable
 HIGHCHARTS_CONVERT_JS = "~/Downloads/highcharts-convert.js"
 
+# 2nd June 2016
+# for cache time properties
+# for static data caching period
+# and polling data caching period
+CACHE_TIME = {
+    'DASHBOARD': 300,
+    'INVENTORY': 3600,
+    'SERVICE_ALERT': 300,
+    'NETWORK_ALERT': 300,
+    'DEFAULT_ALERT': 300,
+    'SERVICE_PERFORMANCE': 300,
+    'NETWORK_PERFORMANCE': 300,
+    'DEFAULT_PERFORMANCE': 300,
+    'DEFAULT': 60
+}
+
 try:
     from local_settings import *
 except ImportError:

@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 # python logging
 
 from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
-    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS
+    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, CACHE_TIME
 
 from django.http import HttpRequest
 
@@ -127,7 +127,7 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     return query
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     """
     ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
@@ -168,7 +168,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     return result_qs
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def pre_map_indexing(index_dict, index_on='device_name'):
     """
 
@@ -186,7 +186,7 @@ def pre_map_indexing(index_dict, index_on='device_name'):
     return indexed_results
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def map_results(perf_result, qs):
     """
     """
@@ -208,7 +208,7 @@ def map_results(perf_result, qs):
     return result_qs
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('INVENTORY', 300))
 def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, type_rf=None):
     """
     indexes={
@@ -309,7 +309,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
     return indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv, indexed_dr
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None, type_rf=None):
     """
     map the devices with gis data
@@ -592,7 +592,7 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     return devices
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def indexed_polled_results(performance_data):
     """
 
@@ -613,7 +613,7 @@ def indexed_polled_results(performance_data):
 ## function to accept machine wise device list
 ## and fetch result from the desired machine
 ## max processes = 7 (number of total machines)
-@cache_for(300)
+@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def get_multiprocessing_performance_data(q, device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
@@ -694,7 +694,7 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
         log.exception(e.message)
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def get_performance_data(device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.

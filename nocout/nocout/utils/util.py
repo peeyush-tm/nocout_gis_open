@@ -6,7 +6,7 @@ import htmlentitydefs
 from dateutil import tz
 from django.db import connections
 
-from nocout.settings import DATE_TIME_FORMAT, USE_TZ
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
@@ -390,7 +390,7 @@ def non_cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=
     return fetch_raw_result(query)
 
 
-@cache_for(300)  # caching GIS inventory
+@cache_for(CACHE_TIME.get('INVENTORY', 300))  # caching GIS inventory
 def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
 

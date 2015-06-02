@@ -9,7 +9,7 @@ from performance.utils import util as perf_utils
 
 from service.utils.util import service_data_sources
 
-from nocout.settings import DATE_TIME_FORMAT
+from nocout.settings import DATE_TIME_FORMAT, CACHE_TIME
 
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
@@ -84,7 +84,7 @@ def severity_level_check(list_to_check):
                 return True
 
 
-@nocout_utils.cache_for(300)
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_ALERT', 300))
 def raw_prepare_result(performance_data,
                        machine,
                        table_name=None,
@@ -132,7 +132,7 @@ def raw_prepare_result(performance_data,
     return performance_data
 
 
-@nocout_utils.cache_for(300)
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_ALERT', 300))
 def indexed_alert_results(performance_data):
     """
 
@@ -153,7 +153,7 @@ def indexed_alert_results(performance_data):
     return indexed_raw_results
 
 
-@nocout_utils.cache_for(300)
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_ALERT', 300))
 def prepare_raw_alert_results(performance_data=None):
     """
     prepare GIS result using raw query
@@ -223,7 +223,7 @@ def prepare_raw_alert_results(performance_data=None):
     return device_list
 
 
-@nocout_utils.cache_for(300)
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_ALERT', 300))
 def map_results(perf_result, qs):
     """
 
