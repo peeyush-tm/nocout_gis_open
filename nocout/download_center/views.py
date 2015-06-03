@@ -383,6 +383,7 @@ class CityCharterSettingsView(FormView):
         uas = self.request.POST['uas'] if 'uas' in self.request.POST else ""
         pd = self.request.POST['pd'] if 'pd' in self.request.POST else ""
         latency = self.request.POST['latency'] if 'latency' in self.request.POST else ""
+        normal = self.request.POST['normal'] if 'normal' in self.request.POST else ""
 
         # Create form.
         form = CityCharterSettingsForm(self.request.POST)
@@ -415,6 +416,7 @@ class CityCharterSettingsView(FormView):
                     row.uas = uas
                     row.pd = pd
                     row.latency = latency
+                    row.normal = normal
                     row.save()
                 else:
                     # Create record.
@@ -428,6 +430,7 @@ class CityCharterSettingsView(FormView):
                     row.uas = uas
                     row.pd = pd
                     row.latency = latency
+                    row.normal = normal
                     row.save()
             else:
                 pass
