@@ -446,10 +446,10 @@ class LivePerformanceListing(BaseDatatableView):
                 dct.update(
                     actions='<a href="/performance/{0}_live/{1}/" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="/alert_center/{3}/device/{1}/service_tab/{2}/" title="Device Alert">\
+                            <a href="/alert_center/{3}_alert/{2}/{1}/" title="Device Alert">\
                             <i class="fa fa-warning text-warning"></i></a> \
                             <a href="/device/{1}" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'], 'ping', alert_page_type)
+                            <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'], 'down', alert_page_type)
                 )
 
         return qs
@@ -575,7 +575,7 @@ class GetPerfomance(View):
             kwargs={
                 'page_type': link_page_type,
                 'device_id': device_id,
-                'service_name': 'ping'
+                'data_source': 'down'
             },
             current_app='alert_center'
         )
