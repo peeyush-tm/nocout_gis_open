@@ -48,7 +48,7 @@ from performance.models import Topology
 import performance.utils as perf_util
 from service.utils.util import service_data_sources
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME
 from user_profile.models import UserProfile
 from inventory.models import (BaseStation, LivePollingSettings,
                               ThresholdConfiguration, ThematicSettings,
@@ -58,7 +58,7 @@ from inventory.models import (BaseStation, LivePollingSettings,
 logger = logging.getLogger(__name__)
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_raw_result(bs_dict=None):
     """
     To fetch dictionary of base station objects.
