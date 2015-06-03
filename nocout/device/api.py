@@ -46,6 +46,7 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
 import performance.utils as perf_util
+from service.utils.util import service_data_sources
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from user_profile.models import UserProfile
@@ -1466,7 +1467,21 @@ class BulkFetchLPDataApi(View):
         if ds_obj:
             result['data']['data_source'] = dict()
             result['data']['data_source']['chart_type'] = ds_obj.chart_type
+            result['data']['data_source']['chart_color'] = ds_obj.chart_color
             result['data']['data_source']['data_source_type'] = ds_obj.ds_type_name()
+
+        # In case of 'rta' and 'pl', fetch data from 'service_data_sources' function.
+        if ds_name in ['pl', 'rta']:
+            ds_dict = service_data_sources()
+            result['data']['data_source'] = dict()
+            result['data']['data_source']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
+            result['data']['data_source']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[
+                ds_name] else ""
+            result['data']['data_source']['data_source_type'] = ds_dict[ds_name][
+                'data_source_type'] if 'data_source_type' in ds_dict[ds_name] else ""
+
+            if ds_name in ['pl', 'rta']:
+                ds_formula = ds_dict[ds_name]['formula'] if 'formula' in ds_dict[ds_name] else ""
 
         # BS device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services').
         bs_device, site_name = None, None
