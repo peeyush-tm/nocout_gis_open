@@ -1,24 +1,21 @@
 import datetime
-from dateutil import tz
-
 from random import randint
-
 from HTMLParser import HTMLParser
 import htmlentitydefs
 
+from dateutil import tz
 from django.db import connections
-from nocout.settings import DATE_TIME_FORMAT
 
-from nocout.settings import DATE_TIME_FORMAT, USE_TZ
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
-#for managing the slave-master connections
+# for managing the slave-master connections
 from django.conf import settings
 import socket
-#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+# http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 
-#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
+# https://github.com/benjamin-croker/loggy/blob/master/loggy.py
 import inspect
 from functools import wraps
 # import functools
@@ -36,12 +33,13 @@ from functools import wraps
 #         logging.debug("result: {}\n".format(result))
 #
 #     return decorated
-#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
+# https://github.com/benjamin-croker/loggy/blob/master/loggy.py
 
-#logging the performance of function
+# logging the performance of function
 import logging
+
 log = logging.getLogger(__name__)
-#logging the performance of function
+# logging the performance of function
 
 # # commented because of goes package is not supported for python 2.7 on centos 6.5
 compare_geo = False
@@ -51,6 +49,7 @@ try:
     from shapely.ops import transform
     # # commented because of goes package is not supported for python 2.7 on centos 6.5
     from functools import partial
+
     compare_geo = True
 except Exception as e:
     log.exception(e)
@@ -65,26 +64,30 @@ class DictDiffer(object):
     (3) keys same in both but changed values
     (4) keys same in both and unchanged values
     """
+
     def __init__(self, current_dict, past_dict):
         self.current_dict, self.past_dict = current_dict, past_dict
         self.set_current, self.set_past = set(current_dict.keys()), set(past_dict.keys())
         self.intersect = self.set_current.intersection(self.set_past)
+
     def added(self):
         return self.set_current - self.intersect
+
     def removed(self):
         return self.set_past - self.intersect
+
     def changed(self):
         return set(o for o in self.intersect if self.past_dict[o] != self.current_dict[o])
+
     def unchanged(self):
         return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
 
 
-project_group_role_dict_mapper={
-    'admin':'group_admin',
-    'operator':'group_operator',
-    'viewer':'group_viewer',
+project_group_role_dict_mapper = {
+    'admin': 'group_admin',
+    'operator': 'group_operator',
+    'viewer': 'group_viewer',
 }
-
 
 if getattr(settings, 'PROFILE'):
     from line_profiler import LineProfiler as LLP
@@ -94,57 +97,58 @@ if getattr(settings, 'PROFILE'):
 
 # #profiler
 def time_it(debug=getattr(settings, 'PROFILE')):
-        def decorator(fn):
-            def wrapper(*args, **kwargs):
-                st = datetime.datetime.now()
-                if debug:
-                    log.debug("+++"*40)
-                    log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
-                    try:
-                        #check the module calling the function
-                        log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
-                                      fn.__name__,
-                                      inspect.stack()[1][3],
-                                      inspect.stack()[1][1],
-                                      )
-                        )
-                    except:
-                        pass
-                    #check the module calling the function
-                    profile_type = getattr(settings, 'PROFILE_TYPE')
-                    if profile_type == 'line':
-                        profiler = LLP()
-                        profiled_func = profiler(fn)
-                    else:
-                        profiler = MLP()
-                        profiled_func = profiler(fn)
-                    try:
-                        result = profiled_func(*args, **kwargs)
-                    finally:
-                        if profile_type == 'line':
-                            profiler.print_stats()
-                        else:
-                            show_results(profiler)
+    def decorator(fn):
+        def wrapper(*args, **kwargs):
+            st = datetime.datetime.now()
+            if debug:
+                log.debug("+++" * 40)
+                log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
+                try:
+                    # check the module calling the function
+                    log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
+                        fn.__name__,
+                        inspect.stack()[1][3],
+                        inspect.stack()[1][1],
+                    )
+                    )
+                except:
+                    pass
+                # check the module calling the function
+                profile_type = getattr(settings, 'PROFILE_TYPE')
+                if profile_type == 'line':
+                    profiler = LLP()
+                    profiled_func = profiler(fn)
                 else:
-                    result = fn(*args, **kwargs)
-                end = datetime.datetime.now()
-                if debug:
-                    elapsed = end - st
-                    log.debug("TIME TAKEN\t\t\t: [{}".format(divmod(elapsed.total_seconds(), 60)))
-                    log.debug("END       \t\t\t: { " + fn.__name__ + " } : ")
-                    log.debug("+++"*40)
+                    profiler = MLP()
+                    profiled_func = profiler(fn)
+                try:
+                    result = profiled_func(*args, **kwargs)
+                finally:
+                    if profile_type == 'line':
+                        profiler.print_stats()
+                    else:
+                        show_results(profiler)
+            else:
+                result = fn(*args, **kwargs)
+            end = datetime.datetime.now()
+            if debug:
+                elapsed = end - st
+                log.debug("TIME TAKEN\t\t\t: [{}".format(divmod(elapsed.total_seconds(), 60)))
+                log.debug("END       \t\t\t: { " + fn.__name__ + " } : ")
+                log.debug("+++" * 40)
 
-                return result
-            return wrapper
-        return decorator
+            return result
 
+        return wrapper
 
-#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
-#defining utility to exatly choose a database to query from
-#django routers are of no use
-#we will pass in the machine name
-#we will test the connection
-#and we will return the results of the database to be used
+    return decorator
+
+# http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+# defining utility to exatly choose a database to query from
+# django routers are of no use
+# we will pass in the machine name
+# we will test the connection
+# and we will return the results of the database to be used
 
 import random
 
@@ -158,7 +162,7 @@ def nocout_db_router(db='default', levels=0):
     :return:the database to be queried on
     """
     db_slave_up = list()
-    #can choose from master db as well
+    # can choose from master db as well
     db_slave_up.append(db)
     db_slave = db + "_slave"
     if levels and levels != -1:
@@ -170,7 +174,7 @@ def nocout_db_router(db='default', levels=0):
         return db
     else:
         if test_connection_to_db(db_slave):
-                db_slave_up.append(db_slave)
+            db_slave_up.append(db_slave)
 
     return random.choice(db_slave_up)
 
@@ -185,7 +189,7 @@ def nocout_query_results(query_set=None, using='default', levels=0):
     :return:
     """
     if query_set:
-        #choose a random database : slave // master
+        # choose a random database : slave // master
         if levels == -1:
             return query_set.using(alias=using)
         else:
@@ -194,7 +198,7 @@ def nocout_query_results(query_set=None, using='default', levels=0):
     return None
 
 
-#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+# http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 def test_connection_to_db(database_name):
     """
 
@@ -203,14 +207,14 @@ def test_connection_to_db(database_name):
     """
     try:
         db_definition = getattr(settings, 'DATABASES')[database_name]
-        #if it gets a socket connection in 2 seconds
+        # if it gets a socket connection in 2 seconds
         s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 5)
-        #if it gets a socket connection in 2 seconds
+        # if it gets a socket connection in 2 seconds
         s.close()
         return True
     except Exception as e:
-        #general exception handelling
-        #because connection might not exists in settings file
+        # general exception handelling
+        # because connection might not exists in settings file
         return False
 
 
@@ -248,7 +252,7 @@ def dict_fetchall(cursor):
     return [
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
-    ]
+        ]
 
 
 def format_value(format_this, type_of=None):
@@ -270,10 +274,10 @@ def format_value(format_this, type_of=None):
             elif type_of == 'antenna':
                 return format_this if format_this else 'vertical'
             elif type_of == 'random':
-                return format_this if format_this else randint(40,70)
+                return format_this if format_this else randint(40, 70)
             elif type_of == 'icon':
                 if len(str(format_this)) > 5:
-                    img_url = str("media/"+ str(format_this)) \
+                    img_url = str("media/" + str(format_this)) \
                         if "uploaded" in str(format_this) \
                         else "static/img/" + str(format_this)
                     return img_url
@@ -291,7 +295,6 @@ def format_value(format_this, type_of=None):
         return 'NA'
 
     return 'NA'
-
 
 ###caching
 from django.core.cache import cache
@@ -311,32 +314,32 @@ def cache_get_key(*args, **kwargs):
     return key
 
 
-#decorator for caching functions
+# decorator for caching functions
 def cache_for(time):
     def decorator(fn):
         def wrapper(*args, **kwargs):
-            debug=getattr(settings, 'PROFILE')
+            debug = getattr(settings, 'PROFILE')
             st = datetime.datetime.now()
             if debug:
-                log.debug("---"*40)
+                log.debug("---" * 40)
                 log.debug("FROM CACHE       \t: START : { " + fn.__name__ + " } : ")
             key = cache_get_key(fn.__name__, *args, **kwargs)
             result = cache.get(key)
             if not result:
                 if debug:
                     log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
-                    #check the module calling the function
+                    # check the module calling the function
                     try:
-                        #check the module calling the function
+                        # check the module calling the function
                         log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
-                                      fn.__name__,
-                                      inspect.stack()[1][3],
-                                      inspect.stack()[1][1],
-                                      )
+                            fn.__name__,
+                            inspect.stack()[1][3],
+                            inspect.stack()[1][1],
+                        )
                         )
                     except:
                         pass
-                    #check the module calling the function
+                    # check the module calling the function
                     profile_type = getattr(settings, 'PROFILE_TYPE')
                     if profile_type == 'line':
                         profiler = LLP()
@@ -366,7 +369,7 @@ def cache_for(time):
                 elapsed = end - st
                 log.debug("TIME TAKEN       \t:       : [{}".format(divmod(elapsed.total_seconds(), 60)))
                 log.debug("FROM CACHE       \t: END   : { " + fn.__name__ + " } : ")
-                log.debug("---"*40)
+                log.debug("---" * 40)
             return result
 
         return wrapper
@@ -387,7 +390,7 @@ def non_cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=
     return fetch_raw_result(query)
 
 
-@cache_for(300)  #caching GIS inventory
+@cache_for(CACHE_TIME.get('INVENTORY', 300))  # caching GIS inventory
 def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
 
@@ -402,8 +405,7 @@ def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None
     query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id, device_list=device_list)
     return fetch_raw_result(query)
 
-
-## Function with imporved GIS API query
+# # Function with imporved GIS API query
 def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
 
@@ -455,388 +457,397 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
         where_bs = ' where basestation.id  = {0} '.format(bs_id)
 
     gis = '''
-        select * from (
-                select  basestation.id as BSID,
-                        basestation.name as BSNAME,
-                        basestation.alias as BSALIAS,
-                        basestation.bs_site_id as BSSITEID,
-                        basestation.bs_site_type as BSSITETYPE,
+        SELECT * FROM (
+                SELECT  basestation.id AS BSID,
+                        basestation.name AS BSNAME,
+                        basestation.alias AS BSALIAS,
+                        basestation.bs_site_id AS BSSITEID,
+                        basestation.bs_site_type AS BSSITETYPE,
 
-                        device.ip_address as BSSWITCH,
+                        device.ip_address AS BSSWITCH,
 
-                        basestation.bs_type as BSTYPE,
-                        basestation.bh_bso as BSBHBSO,
-                        basestation.hssu_used as BSHSSUUSED,
-                        basestation.hssu_port as BSHSSUPORT,
-                        basestation.latitude as BSLAT,
-                        basestation.longitude as BSLONG,
+                        basestation.bs_type AS BSTYPE,
+                        basestation.bh_bso AS BSBHBSO,
+                        basestation.hssu_used AS BSHSSUUSED,
+                        basestation.hssu_port AS BSHSSUPORT,
+                        basestation.latitude AS BSLAT,
+                        basestation.longitude AS BSLONG,
 
-                        basestation.infra_provider as BSINFRAPROVIDER,
-                        basestation.gps_type as BSGPSTYPE,
-                        basestation.building_height as BSBUILDINGHGT,
-                        basestation.tower_height as BSTOWERHEIGHT,
-                        basestation.tag1 as BSTAG1,
-			            basestation.tag2 as BSTAG2,
-                        basestation.maintenance_status as BSMAINTENANCESTATUS,
+                        basestation.infra_provider AS BSINFRAPROVIDER,
+                        basestation.gps_type AS BSGPSTYPE,
+                        basestation.building_height AS BSBUILDINGHGT,
+                        basestation.tower_height AS BSTOWERHEIGHT,
+                        basestation.tag1 AS BSTAG1,
+                        basestation.tag2 AS BSTAG2,
+                        basestation.maintenance_status AS BSMAINTENANCESTATUS,
 
-                        city.city_name as BSCITY,
-                        city.id as BSCITYID,
-                        state.state_name as BSSTATE,
-                        state.id as BSSTATEID,
-                        country.country_name as BSCOUNTRY,
+                        city.city_name AS BSCITY,
+                        city.id AS BSCITYID,
+                        state.state_name AS BSSTATE,
+                        state.id AS BSSTATEID,
+                        country.country_name AS BSCOUNTRY,
 
-                        basestation.address as BSADDRESS,
+                        basestation.address AS BSADDRESS,
 
-                        backhaul.id as BHID,
-                        sector.id as SID,
-                        
-                        basestation.bh_port_name as BS_BH_PORT,
-                        basestation.bh_capacity as BS_BH_CAPACITY
-                        
-                from inventory_basestation as basestation
-                left join inventory_sector as sector
-                on sector.base_station_id = basestation.id
-                left join inventory_backhaul as backhaul
-                on backhaul.id = basestation.backhaul_id 
-                left join device_country as country
-                on country.id = basestation.country_id
-                left join device_city as city
-                on city.id = basestation.city_id
-                left join device_state as state
-                on state.id = basestation.state_id
-                left join device_device as device
-                on device.id = basestation.bs_switch_id
+                        backhaul.id AS BHID,
+                        sector.id AS SID,
+
+                        basestation.bh_port_name AS BS_BH_PORT,
+                        basestation.bh_capacity AS BS_BH_CAPACITY
+
+                FROM inventory_basestation AS basestation
+                LEFT JOIN inventory_sector AS sector
+                ON sector.base_station_id = basestation.id
+                LEFT JOIN inventory_backhaul AS backhaul
+                ON backhaul.id = basestation.backhaul_id
+                LEFT JOIN device_country AS country
+                ON country.id = basestation.country_id
+                LEFT JOIN device_city AS city
+                ON city.id = basestation.city_id
+                LEFT JOIN device_state AS state
+                ON state.id = basestation.state_id
+                LEFT JOIN device_device AS device
+                ON device.id = basestation.bs_switch_id
 {2}
-            )as bs_info
-left join (
-    select * from (select
+            )AS bs_info
+LEFT JOIN (
+    SELECT * FROM (SELECT
 
-        sector.id as SECTOR_ID,
-        sector.name as SECTOR_NAME,
-        sector.alias as SECTOR_ALIAS,
-        sector.sector_id as SECTOR_SECTOR_ID,
-        sector.base_station_id as SECTOR_BS_ID,
-        sector.mrc as SECTOR_MRC,
-        sector.dr_site as SECTOR_DR,
-        sector.tx_power as SECTOR_TX,
-        sector.rx_power as SECTOR_RX,
-        sector.rf_bandwidth as SECTOR_RFBW,
-        sector.frame_length as SECTOR_FRAME_LENGTH,
-        sector.cell_radius as SECTOR_CELL_RADIUS,
-        sector.modulation as SECTOR_MODULATION,
-        sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
+        sector.id AS SECTOR_ID,
+        sector.name AS SECTOR_NAME,
+        sector.alias AS SECTOR_ALIAS,
+        sector.sector_id AS SECTOR_SECTOR_ID,
+        sector.base_station_id AS SECTOR_BS_ID,
+        sector.mrc AS SECTOR_MRC,
+        sector.dr_site AS SECTOR_DR,
+        sector.tx_power AS SECTOR_TX,
+        sector.rx_power AS SECTOR_RX,
+        sector.rf_bandwidth AS SECTOR_RFBW,
+        sector.frame_length AS SECTOR_FRAME_LENGTH,
+        sector.cell_radius AS SECTOR_CELL_RADIUS,
+        sector.modulation AS SECTOR_MODULATION,
+        sector.planned_frequency AS SECTOR_PLANNED_FREQUENCY,
 
-        technology.name as SECTOR_TECH,
-        technology.id as SECTOR_TECH_ID,
-        vendor.name as SECTOR_VENDOR,
-        devicetype.name as SECTOR_TYPE,
-        devicetype.id as SECTOR_TYPE_ID,
-        devicetype.device_icon as SECTOR_ICON,
-        devicetype.device_gmap_icon as SECTOR_GMAP_ICON,
+        technology.name AS SECTOR_TECH,
+        technology.id AS SECTOR_TECH_ID,
+        vendor.name AS SECTOR_VENDOR,
+        devicetype.name AS SECTOR_TYPE,
+        devicetype.id AS SECTOR_TYPE_ID,
+        devicetype.device_icon AS SECTOR_ICON,
+        devicetype.device_gmap_icon AS SECTOR_GMAP_ICON,
 
-        device.id as SECTOR_CONF_ON_ID,
-        device.device_name as SECTOR_CONF_ON,
-        device.device_name as SECTOR_CONF_ON_NAME,
-        device.device_alias as SECTOR_CONF_ON_ALIAS,
-        device.ip_address as SECTOR_CONF_ON_IP,
-        device.mac_address as SECTOR_CONF_ON_MAC,
+        device.id AS SECTOR_CONF_ON_ID,
+        device.device_name AS SECTOR_CONF_ON,
+        device.device_name AS SECTOR_CONF_ON_NAME,
+        device.device_alias AS SECTOR_CONF_ON_ALIAS,
+        device.ip_address AS SECTOR_CONF_ON_IP,
+        device.mac_address AS SECTOR_CONF_ON_MAC,
 
-        antenna.antenna_type as SECTOR_ANTENNA_TYPE,
-        antenna.height as SECTOR_ANTENNA_HEIGHT,
-        antenna.polarization as SECTOR_ANTENNA_POLARIZATION,
-        antenna.tilt as SECTOR_ANTENNA_TILT,
-        antenna.gain as SECTOR_ANTENNA_GAIN,
-        antenna.mount_type as SECTORANTENNAMOUNTTYPE,
-        antenna.beam_width as SECTOR_BEAM_WIDTH,
-        antenna.azimuth_angle as SECTOR_ANTENNA_AZMINUTH_ANGLE,
-        antenna.reflector as SECTOR_ANTENNA_REFLECTOR,
-        antenna.splitter_installed as SECTOR_ANTENNA_SPLITTER,
-        antenna.sync_splitter_used as SECTOR_ANTENNA_SYNC_SPLITTER,
-        antenna.make_of_antenna as SECTOR_ANTENNA_MAKE,
+        antenna.antenna_type AS SECTOR_ANTENNA_TYPE,
+        antenna.height AS SECTOR_ANTENNA_HEIGHT,
+        antenna.polarization AS SECTOR_ANTENNA_POLARIZATION,
+        antenna.tilt AS SECTOR_ANTENNA_TILT,
+        antenna.gain AS SECTOR_ANTENNA_GAIN,
+        antenna.mount_type AS SECTORANTENNAMOUNTTYPE,
+        antenna.beam_width AS SECTOR_BEAM_WIDTH,
+        antenna.azimuth_angle AS SECTOR_ANTENNA_AZMINUTH_ANGLE,
+        antenna.reflector AS SECTOR_ANTENNA_REFLECTOR,
+        antenna.splitter_installed AS SECTOR_ANTENNA_SPLITTER,
+        antenna.sync_splitter_used AS SECTOR_ANTENNA_SYNC_SPLITTER,
+        antenna.make_of_antenna AS SECTOR_ANTENNA_MAKE,
 
-        frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
-        frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-        frequency.value as SECTOR_FREQUENCY,
-        frequency.id as SECTOR_FREQUENCY_ID,
+        frequency.color_hex_value AS SECTOR_FREQUENCY_COLOR,
+        frequency.frequency_radius AS SECTOR_FREQUENCY_RADIUS,
+        frequency.value AS SECTOR_FREQUENCY,
+        frequency.id AS SECTOR_FREQUENCY_ID,
 
-        dport.name as SECTOR_PORT,
+        dport.name AS SECTOR_PORT,
 
-        drd.id as DR_CONF_ON_ID,
-        drd.device_name as DR_CONF_ON,
-        drd.ip_address as DR_CONF_ON_IP
+        drd.id AS DR_CONF_ON_ID,
+        drd.device_name AS DR_CONF_ON,
+        drd.ip_address AS DR_CONF_ON_IP
 
-        from inventory_sector as sector
-        join (
-            device_device as device,
-            inventory_antenna as antenna,
-            device_devicetechnology as technology,
-            device_devicevendor as vendor,
-            device_devicetype as devicetype
+        FROM inventory_sector AS sector
+        JOIN (
+            device_device AS device,
+            inventory_antenna AS antenna,
+            device_devicetechnology AS technology,
+            device_devicevendor AS vendor,
+            device_devicetype AS devicetype
         )
-        on (
+        ON (
             device.id = sector.sector_configured_on_id
-        and
+        AND
             antenna.id = sector.antenna_id
-        and
+        AND
             technology.id = device.device_technology
-        and
+        AND
             devicetype.id = device.device_type
-        and
+        AND
             vendor.id = device.device_vendor
-        ) left join (device_devicefrequency as frequency)
-        on (
+        ) LEFT JOIN (device_devicefrequency AS frequency)
+        ON (
             frequency.id = sector.frequency_id
-        ) left join ( device_deviceport as dport )
-        on (
+        ) LEFT JOIN ( device_deviceport AS dport )
+        ON (
             dport.id = sector.sector_configured_on_port_id
-        ) left join (
-			inventory_sector as dr,
-            device_device as drd
+        ) LEFT JOIN (
+            inventory_sector AS dr,
+            device_device AS drd
         )
-        on (
-			dr.id = sector.id
-            and
+        ON (
+            dr.id = sector.id
+            AND
             drd.id = dr.dr_configured_on_id
         )
 {0}
-    ) as sector_info
-    left join (
-        select circuit.id as CID,
-            circuit.alias as CALIAS,
-            circuit.circuit_id as CCID,
-            circuit.sector_id as SID,
+    ) AS sector_info
+    LEFT JOIN (
+        SELECT circuit.id AS CID,
+            circuit.alias AS CALIAS,
+            circuit.circuit_id AS CCID,
+            circuit.sector_id AS SID,
 
-            circuit.circuit_type as CIRCUIT_TYPE,
-            circuit.qos_bandwidth as QOS,
-            circuit.dl_rssi_during_acceptance as RSSI,
-            circuit.dl_cinr_during_acceptance as CINR,
-            circuit.jitter_value_during_acceptance as JITTER,
-            circuit.throughput_during_acceptance as THROUHPUT,
-            circuit.date_of_acceptance as DATE_OF_ACCEPT,
+            circuit.circuit_type AS CIRCUIT_TYPE,
+            circuit.qos_bandwidth AS QOS,
+            circuit.dl_rssi_during_acceptance AS RSSI,
+            circuit.dl_cinr_during_acceptance AS CINR,
+            circuit.jitter_value_during_acceptance AS JITTER,
+            circuit.throughput_during_acceptance AS THROUHPUT,
+            circuit.date_of_acceptance AS DATE_OF_ACCEPT,
 
-            customer.id as CUSTID,
-            customer.alias as CUST,
-            customer.address as SS_CUST_ADDR,
+            customer.id AS CUSTID,
+            customer.alias AS CUST,
+            customer.address AS SS_CUST_ADDR,
 
-            substation.id as SSID,
-            substation.name as SS_NAME,
-            substation.alias as SS_ALIAS,
-            substation.version as SS_VERSION,
-            substation.serial_no as SS_SERIAL_NO,
-            substation.building_height as SS_BUILDING_HGT,
-            substation.tower_height as SS_TOWER_HGT,
-            substation.ethernet_extender as SS_ETH_EXT,
-            substation.cable_length as SS_CABLE_LENGTH,
-            substation.latitude as SS_LATITUDE,
-            substation.longitude as SS_LONGITUDE,
-            substation.mac_address as SS_MAC,
+            substation.id AS SSID,
+            substation.name AS SS_NAME,
+            substation.alias AS SS_ALIAS,
+            substation.version AS SS_VERSION,
+            substation.serial_no AS SS_SERIAL_NO,
+            substation.building_height AS SS_BUILDING_HGT,
+            substation.tower_height AS SS_TOWER_HGT,
+            substation.ethernet_extender AS SS_ETH_EXT,
+            substation.cable_length AS SS_CABLE_LENGTH,
+            substation.latitude AS SS_LATITUDE,
+            substation.longitude AS SS_LONGITUDE,
+            substation.mac_address AS SS_MAC,
 
-            antenna.height as SSHGT,
-            antenna.antenna_type as SS_ANTENNA_TYPE,
-            antenna.height as SS_ANTENNA_HEIGHT,
-            antenna.polarization as SS_ANTENNA_POLARIZATION,
-            antenna.tilt as SS_ANTENNA_TILT,
-            antenna.gain as SS_ANTENNA_GAIN,
-            antenna.mount_type as SSANTENNAMOUNTTYPE,
-            antenna.beam_width as SS_BEAM_WIDTH,
-            antenna.azimuth_angle as SS_ANTENNA_AZMINUTH_ANGLE,
-            antenna.reflector as SS_ANTENNA_REFLECTOR,
-            antenna.splitter_installed as SS_ANTENNA_SPLITTER,
-            antenna.sync_splitter_used as SS_ANTENNA_SYNC_SPLITTER,
-            antenna.make_of_antenna as SS_ANTENNA_MAKE,
+            antenna.height AS SSHGT,
+            antenna.antenna_type AS SS_ANTENNA_TYPE,
+            antenna.height AS SS_ANTENNA_HEIGHT,
+            antenna.polarization AS SS_ANTENNA_POLARIZATION,
+            antenna.tilt AS SS_ANTENNA_TILT,
+            antenna.gain AS SS_ANTENNA_GAIN,
+            antenna.mount_type AS SSANTENNAMOUNTTYPE,
+            antenna.beam_width AS SS_BEAM_WIDTH,
+            antenna.azimuth_angle AS SS_ANTENNA_AZMINUTH_ANGLE,
+            antenna.reflector AS SS_ANTENNA_REFLECTOR,
+            antenna.splitter_installed AS SS_ANTENNA_SPLITTER,
+            antenna.sync_splitter_used AS SS_ANTENNA_SYNC_SPLITTER,
+            antenna.make_of_antenna AS SS_ANTENNA_MAKE,
 
-            device.ip_address as SSIP,
-            device.id as SS_DEVICE_ID,
-            device.device_alias as SSDEVICEALIAS,
-            device.device_name as SSDEVICENAME,
+            device.ip_address AS SSIP,
+            device.id AS SS_DEVICE_ID,
+            device.device_alias AS SSDEVICEALIAS,
+            device.device_name AS SSDEVICENAME,
 
-            technology.name as SS_TECH,
-            technology.id as SS_TECH_ID,
-            vendor.name as SS_VENDOR,
-            devicetype.name as SS_TYPE,
-            devicetype.id as SS_TYPE_ID,
-            devicetype.name as SSDEVICETYPE,
-            devicetype.device_icon as SS_ICON,
-            devicetype.device_gmap_icon as SS_GMAP_ICON
+            technology.name AS SS_TECH,
+            technology.id AS SS_TECH_ID,
+            vendor.name AS SS_VENDOR,
+            devicetype.name AS SS_TYPE,
+            devicetype.id AS SS_TYPE_ID,
+            devicetype.name AS SSDEVICETYPE,
+            devicetype.device_icon AS SS_ICON,
+            devicetype.device_gmap_icon AS SS_GMAP_ICON
 
-        from inventory_circuit as circuit
-        join (
-            inventory_substation as substation,
-            inventory_customer as customer,
-            inventory_antenna as antenna,
-            device_device as device,
-            device_devicetechnology as technology,
-            device_devicevendor as vendor,
-            device_devicetype as devicetype
+        FROM inventory_circuit AS circuit
+        JOIN (
+            inventory_substation AS substation,
+            inventory_customer AS customer,
+            inventory_antenna AS antenna,
+            device_device AS device,
+            device_devicetechnology AS technology,
+            device_devicevendor AS vendor,
+            device_devicetype AS devicetype
         )
-        on (
+        ON (
             customer.id = circuit.customer_id
-        and
+        AND
             substation.id = circuit.sub_station_id
-        and
+        AND
             antenna.id = substation.antenna_id
-        and
+        AND
             device.id = substation.device_id
-        and
+        AND
             technology.id = device.device_technology
-        and
+        AND
             vendor.id = device.device_vendor
-        and
+        AND
             devicetype.id = device.device_type
         )
 {0}
-    ) as ckt_info
-    on (
+    ) AS ckt_info
+    ON (
         ckt_info.SID = sector_info.SECTOR_ID
     )
-) as sect_ckt
-on (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
-left join
+) AS sect_ckt
+ON (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
+LEFT JOIN
     (
-        select bh_info.BHID as BHID,
-                bh_info.BH_PORT as BH_PORT,
-                bh_info.BH_TYPE as BH_TYPE,
-                bh_info.BH_PE_HOSTNAME as BH_PE_HOSTNAME,
-                bh_info.BH_PE_IP as BH_PE_IP,
-                bh_info.BH_CONNECTIVITY as BH_CONNECTIVITY,
-                bh_info.BH_CIRCUIT_ID as BH_CIRCUIT_ID,
-                bh_info.BH_CAPACITY as BH_CAPACITY,
-                bh_info.BH_TTSL_CIRCUIT_ID as BH_TTSL_CIRCUIT_ID,
+        SELECT bh_info.BHID AS BHID,
+                bh_info.BH_PORT AS BH_PORT,
+                bh_info.BH_TYPE AS BH_TYPE,
+                bh_info.BH_PE_HOSTNAME AS BH_PE_HOSTNAME,
+                bh_info.BH_PE_IP AS BH_PE_IP,
+                bh_info.BH_CONNECTIVITY AS BH_CONNECTIVITY,
+                bh_info.BH_CIRCUIT_ID AS BH_CIRCUIT_ID,
+                bh_info.BH_CAPACITY AS BH_CAPACITY,
+                bh_info.BH_TTSL_CIRCUIT_ID AS BH_TTSL_CIRCUIT_ID,
 
-                bh_info.BH_DEVICE_ID as BH_DEVICE_ID,
-                bh_info.BHCONF as BHCONF,
-                bh_info.BHCONF_IP as BHCONF_IP,
-                bh_info.BHTECH as BHTECH,
-                bh_info.BHTECHID as BHTECHID,
-                bh_info.BHTYPE as BHTYPE,
-                bh_info.BHTYPEID as BHTYPEID,
-                bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
-                bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
+                bh_info.BH_DEVICE_ID AS BH_DEVICE_ID,
+                bh_info.BHCONF AS BHCONF,
+                bh_info.BHCONF_IP AS BHCONF_IP,
+                bh_info.BHTECH AS BHTECH,
+                bh_info.BHTECHID AS BHTECHID,
+                bh_info.BHTYPE AS BHTYPE,
+                bh_info.BHTYPEID AS BHTYPEID,
+                bh_info.BH_AGGR_PORT AS BH_AGGR_PORT,
+                bh_info.BH_DEVICE_PORT AS BH_DEVICE_PORT,
 
-				POP,
+                POP,
+                POP_DEVICE_ID,
                 POP_IP,
-				POP_TECH,
-				POP_TYPE,
-				AGGR,
+                POP_TECH,
+                POP_TYPE,
+                AGGR,
+                AGGR_DEVICE_ID,
                 AGGR_IP,
-				AGGR_TECH,
+                AGGR_TECH,
                 AGGR_TYPE,
-				BSCONV,
+                BSCONV,
+                BSCONV_DEVICE_ID,
                 BSCONV_IP,
-				BSCONV_TECH,
+                BSCONV_TECH,
                 BSCONV_TYPE
 
-        from (
-        select backhaul.id as BHID,
-                backhaul.bh_port_name as BH_PORT,
-                backhaul.bh_type as BH_TYPE,
-                backhaul.pe_hostname as BH_PE_HOSTNAME,
-                backhaul.pe_ip as BH_PE_IP,
-                backhaul.bh_connectivity as BH_CONNECTIVITY,
-                backhaul.bh_circuit_id as BH_CIRCUIT_ID,
-                backhaul.bh_capacity as BH_CAPACITY,
-                backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
-                backhaul.aggregator_port as BH_AGGR_PORT,
-                backhaul.switch_port as BH_DEVICE_PORT,
+        FROM (
+        SELECT backhaul.id AS BHID,
+                backhaul.bh_port_name AS BH_PORT,
+                backhaul.bh_type AS BH_TYPE,
+                backhaul.pe_hostname AS BH_PE_HOSTNAME,
+                backhaul.pe_ip AS BH_PE_IP,
+                backhaul.bh_connectivity AS BH_CONNECTIVITY,
+                backhaul.bh_circuit_id AS BH_CIRCUIT_ID,
+                backhaul.bh_capacity AS BH_CAPACITY,
+                backhaul.ttsl_circuit_id AS BH_TTSL_CIRCUIT_ID,
+                backhaul.aggregator_port AS BH_AGGR_PORT,
+                backhaul.switch_port AS BH_DEVICE_PORT,
 
-                device.id as BH_DEVICE_ID,
-                device.device_name as BHCONF,
-                device.ip_address as BHCONF_IP,
-                tech.name as BHTECH,
-                tech.id as BHTECHID,
-                devicetype.name as BHTYPE,
-                devicetype.id as BHTYPEID
+                device.id AS BH_DEVICE_ID,
+                device.device_name AS BHCONF,
+                device.ip_address AS BHCONF_IP,
+                tech.name AS BHTECH,
+                tech.id AS BHTECHID,
+                devicetype.name AS BHTYPE,
+                devicetype.id AS BHTYPEID
 
-        from inventory_backhaul as backhaul
-        join (
-            device_device as device,
-            device_devicetype as devicetype,
-            device_devicetechnology as tech
+        FROM inventory_backhaul AS backhaul
+        JOIN (
+            device_device AS device,
+            device_devicetype AS devicetype,
+            device_devicetechnology AS tech
         )
-        on (
+        ON (
             device.id = backhaul.bh_configured_on_id
-            and
+            AND
             tech.id = device.device_technology
-            and
+            AND
             devicetype.id = device.device_type
         )
 
-        ) as bh_info left join (
-                select backhaul.id as BHID,
-						device.device_name as POP,
-						device.ip_address as POP_IP,
-						devicetype.name as POP_TYPE,
-						tech.name as POP_TECH
-				from inventory_backhaul
-				as backhaul
-                left join (
-                    device_device as device,
-					device_devicetype as devicetype,
-					device_devicetechnology as tech
+        ) AS bh_info LEFT JOIN (
+                SELECT backhaul.id AS BHID,
+                        device.id AS POP_DEVICE_ID,
+                        device.device_name AS POP,
+                        device.ip_address AS POP_IP,
+                        devicetype.name AS POP_TYPE,
+                        tech.name AS POP_TECH
+                FROM inventory_backhaul
+                AS backhaul
+                LEFT JOIN (
+                    device_device AS device,
+                    device_devicetype AS devicetype,
+                    device_devicetechnology AS tech
                 )
-                on (
+                ON (
                     device.id = backhaul.pop_id
-					and
-					tech.id = device.device_technology
-					and
-					devicetype.id = device.device_type
+                    AND
+                    tech.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
                 )
-        ) as pop_info
-        on (bh_info.BHID = pop_info.BHID)
-        left join ((
-                select backhaul.id as BHID,
-						device.device_name as BSCONV,
-						device.ip_address as BSCONV_IP,
-						devicetype.name as BSCONV_TYPE,
-						tech.name as BSCONV_TECH
-				from inventory_backhaul as backhaul
-                left join (
-                    device_device as device,
-					device_devicetype as devicetype,
-					device_devicetechnology as tech
+        ) AS pop_info
+        ON (bh_info.BHID = pop_info.BHID)
+        LEFT JOIN ((
+                SELECT backhaul.id AS BHID,
+                        device.id AS BSCONV_DEVICE_ID,
+                        device.device_name AS BSCONV,
+                        device.ip_address AS BSCONV_IP,
+                        devicetype.name AS BSCONV_TYPE,
+                        tech.name AS BSCONV_TECH
+                FROM inventory_backhaul AS backhaul
+                LEFT JOIN (
+                    device_device AS device,
+                    device_devicetype AS devicetype,
+                    device_devicetechnology AS tech
                 )
-                on (
+                ON (
                     device.id = backhaul.bh_switch_id
-					and
-					tech.id = device.device_technology
-					and
-					devicetype.id = device.device_type
+                    AND
+                    tech.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
                 )
-        ) as bscon_info
-        ) on (bh_info.BHID = bscon_info.BHID)
-        left join ((
-                select backhaul.id as BHID,
-					device.device_name as AGGR,
-					device.ip_address as AGGR_IP,
-					devicetype.name as AGGR_TYPE,
-					tech.name as AGGR_TECH
-				from inventory_backhaul as backhaul
-                left join (
-                    device_device as device,
-					device_devicetype as devicetype,
-					device_devicetechnology as tech
+        ) AS bscon_info
+        ) ON (bh_info.BHID = bscon_info.BHID)
+        LEFT JOIN ((
+                SELECT backhaul.id AS BHID,
+                    device.id AS AGGR_DEVICE_ID,
+                    device.device_name AS AGGR,
+                    device.ip_address AS AGGR_IP,
+                    devicetype.name AS AGGR_TYPE,
+                    tech.name AS AGGR_TECH
+                FROM inventory_backhaul AS backhaul
+                LEFT JOIN (
+                    device_device AS device,
+                    device_devicetype AS devicetype,
+                    device_devicetechnology AS tech
                 )
-                on (
+                ON (
                     device.id = backhaul.aggregator_id
-					and
-					tech.id = device.device_technology
-					and
-					devicetype.id = device.device_type
+                    AND
+                    tech.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
                 )
-        ) as aggr_info
-        ) on (bh_info.BHID = aggr_info.BHID)
+        ) AS aggr_info
+        ) ON (bh_info.BHID = aggr_info.BHID)
 
-    ) as bh
-on
+    ) AS bh
+ON
     (bh.BHID = bs_info.BHID)
 
 {1}
- group by BSID,SECTOR_ID,CID 
+ GROUP BY BSID,SECTOR_ID,CID
 
         ;
         '''.format(added_device, rf_tech, where_bs)
     return gis
 
+# Function for GIS API query, based on type of device
+# that is separate queries for Sector, SS, BH (POP, BH Conv, AGGR, Switch)
+# would reduce the data size captured, would be helpful in faster loading of the data
 
 def convert_utc_to_local_timezone(datetime_obj=None):
     """ Convert datetime object timezone from 'utc' to 'local'
@@ -932,7 +943,7 @@ def check_item_is_list(items):
 class HTMLTextExtractor(HTMLParser):
     def __init__(self):
         HTMLParser.__init__(self)
-        self.result = [ ]
+        self.result = []
 
     def handle_data(self, d):
         self.result.append(d)
@@ -961,6 +972,7 @@ def is_lat_long_in_state(latitude, longitude, state):
         # check whether lat log lies in state co-ordinates or not
         if latitude and longitude and state:
             from device.models import StateGeoInfo
+
             try:
                 project = partial(
                     pyproj.transform,
@@ -1004,4 +1016,5 @@ def disable_for_loaddata(signal_handler):
         if kwargs['raw']:
             return
         signal_handler(*args, **kwargs)
+
     return wrapper

@@ -64,6 +64,10 @@
                 elemTitle = "Lock User";
             }
 
+            if(!elemTitle) {
+                elemTitle = "Lock User";
+            }
+
             bootbox.dialog({
                 message: "Are you sure you want to "+elemTitle.toLowerCase()+"?",
                 title: elemTitle,
