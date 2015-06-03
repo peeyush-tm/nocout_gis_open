@@ -94,7 +94,7 @@ function nocout_getSeverityColorIcon(status) {
         "icon" : "fa-circle"
     };
 
-    if(!status) {
+    if (!status) {
         return info_obj;
     }
 
@@ -126,7 +126,7 @@ function nocout_getSeverityColorIcon(status) {
  */
 function populateServiceStatus_nocout(domElement,info) {
 
-    if (!is_perf_polling_enabled) {
+    // if (!is_perf_polling_enabled) {
         /********** Service Status Without Live Polling  - START     ********************/
         if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "") {
             var last_updated = info.last_updated ? info.last_updated : "N/A",
@@ -154,63 +154,63 @@ function populateServiceStatus_nocout(domElement,info) {
         }
 
         /********** Service Status Without Live Polling  - END     ********************/
-    } else {
-        /********** LIVE POLLING CODE  - START     ********************/
-        var left_tab_txt = '';
+    // } else {
+    //     /********** LIVE POLLING CODE  - START     ********************/
+    //     var left_tab_txt = '';
 
-        try {
-            left_tab_txt = $.trim($("#" + domElement.split("_block")[0].split("last_updated_")[1]+"_tab").text());
-        } catch(e) {
-            // console.log(e);
-        }
-        var dom_condition_1 = domElement.indexOf('availability') > -1,
-            dom_condition_2 = domElement.indexOf('utilization_top') > -1,
-            dom_condition_3 = domElement.indexOf('topology') > -1;
-        // Clear status block when we are on utilization or availablility tabs
-        if (dom_condition_1 || dom_condition_2 || dom_condition_3 || left_tab_txt == 'RF Latency') {
+    //     try {
+    //         left_tab_txt = $.trim($("#" + domElement.split("_block")[0].split("last_updated_")[1]+"_tab").text());
+    //     } catch(e) {
+    //         // console.log(e);
+    //     }
+    //     var dom_condition_1 = domElement.indexOf('availability') > -1,
+    //         dom_condition_2 = domElement.indexOf('utilization_top') > -1,
+    //         dom_condition_3 = domElement.indexOf('topology') > -1;
+    //     // Clear status block when we are on utilization or availablility tabs
+    //     if (dom_condition_1 || dom_condition_2 || dom_condition_3 || left_tab_txt == 'RF Latency') {
 
-            $("#" + domElement).html("");
+    //         $("#" + domElement).html("");
 
-        } else {
+    //     } else {
 
-            var last_updated = info.last_updated ? info.last_updated : "N/A",
-                perf = info.perf ? info.perf : "N/A",
-                inner_status_html = '';
+    //         var last_updated = info.last_updated ? info.last_updated : "N/A",
+    //             perf = info.perf ? info.perf : "N/A",
+    //             inner_status_html = '';
 
-            // Create Table for service polled value & live polling --- START
-            inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-            inner_status_html += '<tr>';
+    //         // Create Table for service polled value & live polling --- START
+    //         inner_status_html += '<table id="perf_output_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
+    //         inner_status_html += '<tr>';
             
-            inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
-                                ' + val_icon + ' ' + perf + '<br/>\
-                                ' + time_icon + ' ' + last_updated + '</td>';
-            inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
-                                 <button class="btn btn-primary btn-xs perf_poll_now"\
-                                 title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
-                                 data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
-                                 <i class="fa fa-flash"></i></button>\
-                                 </td>';
-            inner_status_html += '<td style="width:47.5%;">\
-                                 <b>Poll Output :</b> \
-                                 <span id="perf_live_poll_chart"></span><br/>\
-                                 <ul id="perf_live_poll_vals" class="list-unstyled"></ul>\
-                                 </td>';
+    //         inner_status_html += '<td style="width:47.5%;"><b>Service Output :</b> <br/>\
+    //                             ' + val_icon + ' ' + perf + '<br/>\
+    //                             ' + time_icon + ' ' + last_updated + '</td>';
+    //         inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
+    //                              <button class="btn btn-primary btn-xs perf_poll_now"\
+    //                              title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
+    //                              data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
+    //                              <i class="fa fa-flash"></i></button>\
+    //                              </td>';
+    //         inner_status_html += '<td style="width:47.5%;">\
+    //                              <b>Poll Output :</b> \
+    //                              <span id="perf_live_poll_chart"></span><br/>\
+    //                              <ul id="perf_live_poll_vals" class="list-unstyled"></ul>\
+    //                              </td>';
             
 
-            inner_status_html += '</tr>';
-            inner_status_html += '</table>';
-            // Create Table for service polled value & live polling --- END
+    //         inner_status_html += '</tr>';
+    //         inner_status_html += '</table>';
+    //         // Create Table for service polled value & live polling --- END
 
-            // Create hidden input field to store polling values --- START
-            inner_status_html += '<input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">';
-            // Create hidden input field to store polling values --- END
+    //         // Create hidden input field to store polling values --- START
+    //         inner_status_html += '<input type="hidden" name="perf_live_poll_input" id="perf_live_poll_input" value="">';
+    //         // Create hidden input field to store polling values --- END
 
-            inner_status_html += '<div class="clearfix"></div><div class="divide-20"></div>';
+    //         inner_status_html += '<div class="clearfix"></div><div class="divide-20"></div>';
 
-            $("#"+domElement).html(inner_status_html);
-        }
-        /********** LIVE POLLING CODE  - END     ********************/
-    }
+    //         $("#"+domElement).html(inner_status_html);
+    //     }
+    //     /********** LIVE POLLING CODE  - END     ********************/
+    // }
 }
 
 
@@ -366,7 +366,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             tableheaders.push(header_dict);
         }
 
-        if(!has_severity_column) {
+        if (!has_severity_column) {
             // Add severity
             tableheaders.push({
                 'mData': 'severity',
@@ -403,7 +403,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         }
     }
     
-    if($(".top_perf_tabs").length > 0) {
+    if ($(".top_perf_tabs").length > 0) {
         var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
             top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
             left_tab_content_href = $("#" + top_tab_id + " .left_tabs_container li.active a").attr("href"),
@@ -544,7 +544,8 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
 
     // Is the y axis should be reversed or not
     var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false,
-        legends_color = text_color ? text_color : "#FFF";
+        legends_color = text_color ? text_color : "#FFF",
+        xMinRange = chartConfig["x_min_range"] ? chartConfig["x_min_range"] : 3600000;
 
     var chart_options = {
         chart: {
@@ -621,7 +622,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 text: "Time"
             },
             type: 'datetime',
-            minRange: 3600000,
+            minRange: xMinRange,
             dateTimeLabelFormats: {
                 millisecond: '%H:%M:%S.%L',
                 second: '%H:%M:%S',
@@ -786,6 +787,7 @@ function nocout_livePollCurrentDevice(
     sparkline_dom_id,
     hidden_input_dom_id,
     polled_val_shown_dom_id,
+    show_sparkline_chart,
     callback
 ) {
     // Make Ajax Call
@@ -807,7 +809,11 @@ function nocout_livePollCurrentDevice(
                 var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "",
                     shown_val = "",
                     current_val_html = "",
+                    ds_key = result.data.data_source ? result.data.data_source : "",
+                    data_type = ds_key && ds_key["data_source_type"] ? ds_key["data_source_type"] : "numeric",
+                    chart_type = ds_key && ds_key["chart_type"] ? ds_key["chart_type"] : "column",
                     dateObj = new Date(),
+                    epoch_time = dateObj.getTime(),
                     month = Number(dateObj.getMonth()) + 1,
                     date_str = dateObj.getDate() + "-" + month + "-" + dateObj.getFullYear(),
                     time_str = dateObj.getHours() + ":" + dateObj.getMinutes() + ":" + dateObj.getSeconds(),
@@ -821,7 +827,7 @@ function nocout_livePollCurrentDevice(
                     }
 
                     // If call is from single device page then proceed else return data
-                    if (container_dom_id) {
+                    if (container_dom_id && show_sparkline_chart) {
                         // Create Fetched val html with time stamp
                         current_val_html += '<li style="display:none;">' + val_icon + ' ' + fetched_val;
                         current_val_html += '<br/>' + time_icon + ' ' + current_time + '</li>';
@@ -860,7 +866,10 @@ function nocout_livePollCurrentDevice(
                     } else {
                         fetched_data = {
                             "val" : fetched_val,
-                            "time" : current_time
+                            "time" : current_time,
+                            "epoch_time" : epoch_time ? epoch_time : "",
+                            "type" : data_type ? data_type : "numeric",
+                            "chart_type" : chart_type ? chart_type : "column"
                         };
                     }
 
@@ -872,7 +881,10 @@ function nocout_livePollCurrentDevice(
 
                     fetched_data = {
                         "val" : fetched_val,
-                        "time" : current_time
+                        "time" : current_time,
+                        "epoch_time" : epoch_time ? epoch_time : "",
+                        "type" : data_type ? data_type : "numeric",
+                        "chart_type" : chart_type ? chart_type : "column"
                     };
                 }
                 callback(fetched_data);
@@ -962,11 +974,371 @@ function getBaseUrl() {
         try {
             page_port = window.location.port;
         } catch(e) {
-            console.log(e);
+            // console.log(e);
         }
 
         webpage_base_url = page_protocol + "//" + page_hostname + (page_port ? ':' + page_port: '');
     }
 
     return webpage_base_url;
+}
+
+/**
+ * This function recursively performs poll now functionality as per the selected criteria
+ * @method recursivePolling
+ */
+function recursivePolling() {
+
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    if (remainingPollCalls > 0) {
+        if (isPollingPaused == 0) {
+            var timeout_time = pollingInterval*1000;
+            // Call function to fetch polled data for selected devices
+            initSingleDevicePolling(function(result) {
+                remainingPollCalls--;
+                if(remainingPollCalls == 0) {
+                    timeout_time = 10;
+                }
+
+                pollCallingTimeout = setTimeout(function() {
+                    recursivePolling();
+                },timeout_time);
+            });
+        } else {
+            if ($("#" + tab_id + "_block .poll_play_btn").hasClass("disabled")) {
+                $("#" + tab_id + "_block .poll_play_btn").removeClass("disabled");
+            }
+            $(".poll_play_btn").button("complete");
+            clearTimeout(pollCallingTimeout);
+        }
+    } else {
+        nocout_stopPollNow();
+    }
+}
+
+/**
+ * This function triggers when live poll functionality trigger from single device page
+ * @method initSingleDevicePolling
+ */
+function initSingleDevicePolling(callback) {
+
+    var sparkline_dom_id = 'perf_live_poll_chart',
+        hidden_input_dom_id = 'perf_live_poll_input',
+        polled_val_shown_dom_id = "last_polled_val",
+        current_active_tab_url = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("url"),
+        service_name = "",
+        ds_name = "",
+        container_id = "",
+        block_dom_id_str = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("href");
+
+    if (current_active_tab_url && current_active_tab_url.indexOf("service/") > -1 && current_active_tab_url.indexOf("service_data_source/") > -1 ) {
+        service_name = current_active_tab_url ? current_active_tab_url.split("service/")[1].split("/")[0] : "";
+        ds_name = current_active_tab_url ? current_active_tab_url.split("service_data_source/")[1].split("/")[0] : "";
+    }
+
+    if (block_dom_id_str && block_dom_id_str.indexOf("#") > -1) {
+        container_id = "last_updated_"+block_dom_id_str.split("#")[1];
+    }
+
+    if (device_name.length > 0 && service_name.length > 0 && ds_name.length > 0) {
+        // Disable the "Poll Now" button
+        $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
+
+        // Call function to fetch live polling data
+        nocout_livePollCurrentDevice(
+            service_name,
+            ds_name,
+            [device_name],
+            container_id,
+            sparkline_dom_id,
+            hidden_input_dom_id,
+            polled_val_shown_dom_id,
+            false,
+            function(response) {
+
+                if (!(response instanceof Array)) {
+                    response = [response];
+                }
+
+                if (response) {
+                    checkpollvalues(response, true, function(response) {
+                        callback(response);
+                    });
+                } else {
+                    callback(false);
+                }
+            }
+        );
+    } else {
+        callback(false);
+    }
+}
+
+/**
+ * This function draws chart/table as per the poll now response
+ * @param  {[type]}   result      [description]
+ * @param  {Boolean}  is_new_data [description]
+ * @param  {Function} callback    [description]
+ * @return {[type]}               [description]
+ */
+function checkpollvalues(result, is_new_data, callback) {
+    
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        dom_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+        block_title = $.trim($(".top_perf_tab_content div.active ul.left_tabs_container li.active a").text()),
+        draw_table = false;
+
+    if(!poll_now_data_dict[dom_id]) {
+        poll_now_data_dict[dom_id] = [];
+    }
+
+    if (is_new_data) {
+        poll_now_data_dict[dom_id] = poll_now_data_dict[dom_id].concat(result);
+    }
+
+    var draw_type = $("input[name='item_type']:checked").val();
+
+    if (!draw_type) {
+        draw_type = "chart";
+    }
+
+    var chart_config = {
+        "type" : "column",
+        "value_text": block_title,
+        "x_min_range" : 10000,
+        "valuesuffix": " %",
+        "chart_data": [{
+            "name" : block_title,
+            "data" : []
+        }]
+    };
+
+    for(var i=0;i<result.length;i++) {
+
+        var fetched_val = result[i]['val'];
+
+        if(fetched_val instanceof Array) {
+            fetched_val = fetched_val[0];
+        }
+
+        if (result[i].type.toLowerCase() == 'numeric' && draw_type == 'chart') {
+
+            // Hide display type option from only table tabs
+            if ($("#display_type_container").hasClass("hide")) {
+                $("#display_type_container").removeClass("hide")
+            }
+
+            // Update the chart type & data key as per the given params
+            chart_config["type"] = result[i]["chart_type"];
+            chart_config["chart_data"][0]["data"] = [{
+                "color": "#70AFC4",
+                "y": Number(fetched_val),
+                "name": block_title,
+                "x": result[i]['epoch_time']
+            }];
+
+            if (!$('#' + dom_id+ '_chart').highcharts()) {
+                createHighChart_nocout(chart_config,dom_id, false, false, function(status) {
+                    // pass
+                });
+            } else {
+                addPointsToChart_nocout(chart_config.chart_data,dom_id);
+            }
+        } else {
+            if(result[i].type.toLowerCase() == 'numeric' && (dom_id.indexOf('_status_') == -1 || dom_id.indexOf('_inventory_') == -1)) {
+                // Hide display type option from only table tabs
+                if ($("#display_type_container").hasClass("hide")) {
+                    $("#display_type_container").removeClass("hide")
+                }
+            }
+            draw_table = true;
+        }
+
+        if (draw_table) {
+            var date_time_str = result[i]['time'],
+                grid_headers = [
+                    "service_name",
+                    "value",
+                    "time"
+                ],
+                table_data = [{
+                    "service_name": block_title,
+                    "value": fetched_val,
+                    "time": date_time_str,
+                }];
+
+            if ($("#other_perf_table").length == 0) {
+                initNormalDataTable_nocout(
+                    'other_perf_table',
+                    grid_headers,
+                    dom_id
+                );
+            }
+
+            // Call addDataToNormalTable_nocout (utilities) function to add data to initialize datatable
+            addDataToNormalTable_nocout(
+                table_data,
+                grid_headers,
+                'other_perf_table'
+            );
+        }
+    }
+    
+    if ($('#' + dom_id+ '_chart').highcharts()) {
+        $('#' + dom_id + '_chart').highcharts().redraw();
+    }
+    callback(true);
+}
+
+/**
+ * This function toggles the current state of poll now content(chart/table) as per the item type selection
+ * @method nocout_togglePollNowContent
+ */
+function nocout_togglePollNowContent() {
+
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "";
+
+    if(poll_now_data_dict[tab_id] && poll_now_data_dict[tab_id].length) {
+        try {
+            if ($("#" + tab_id + "_chart").highcharts()) {
+                var chart = $("#" + tab_id + "_chart").highcharts(),
+                    chart_series = chart.series;
+
+                if (chart_series && chart_series.length > 0) {
+                    // Remove series from highchart
+                    while(chart_series.length > 0) {
+                        chart_series[0].remove(true);
+                    }
+                }
+                // Destroy highchart
+                $("#" + tab_id + "_chart").highcharts().destroy();
+            }
+
+            if ($("#" + tab_id + "_bottom_table").length) {
+                $("#" + tab_id + "_bottom_table").html("");
+            }
+
+            if ($("#other_perf_table").length > 0) {
+                $("#other_perf_table").dataTable().fnDestroy();
+                $("#other_perf_table").remove();
+            }
+        } catch(e) {
+            // console.log(e);
+        }
+        checkpollvalues(poll_now_data_dict[tab_id], false, function(response) {
+            
+        });
+    }
+}
+
+/**
+ * This function returns the active tab dom id & API url
+ * @method nocout_getPerfTabDomId
+ * @return {Object} It contains the active tab dom ID & active tab API url
+ */
+function nocout_getPerfTabDomId() {
+
+    var response_dict = {
+            "active_dom_id" : "",
+            "active_tab_api_url" : ""
+        },
+        top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
+        top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
+
+    if(show_historical_on_performance || is_perf_polling_enabled) {
+        var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
+            left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
+
+        var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a");
+        
+        response_dict["active_dom_id"] = active_inner_tab.attr("id").slice(0, -4);
+        response_dict["active_tab_api_url"] = active_inner_tab.attr("url");
+    } else {
+        var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
+            active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a');
+
+        response_dict["active_dom_id"] = left_active_tab_anchor.attr("id").slice(0, -4);
+        response_dict["active_tab_api_url"] = left_active_tab_anchor.attr("url");
+    }
+
+    return response_dict;
+}
+
+/**
+ * This function stops active recursive polling
+ * @method nocout_stopPollNow
+ */
+function nocout_stopPollNow() {
+
+    // Update the flag
+    is_polling_active = false;
+
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");
+    }
+    
+    /*Disable poll interval & max interval dropdown*/
+    $("#" + tab_id + "_block .poll_interval").removeAttr("disabled");
+    $("#" + tab_id + "_block .poll_maxInterval").removeAttr("disabled");
+
+    if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");
+    }
+
+    if($("#fetch_polling").hasClass("disabled")) {
+        $("#fetch_polling").removeClass("disabled");
+    }
+
+    if(pollCallingTimeout) {
+        clearTimeout(pollCallingTimeout);
+        pollCallingTimeout = "";
+    }
+
+    pollingInterval = 10;
+    pollingMaxInterval = 1;
+    remainingPollCalls = 0;
+    isPollingPaused = 0;
+    $("#" + tab_id + "_block .poll_play_btn").button('complete');
+
+    if($("#" + tab_id + "_block .perf_poll_now").hasClass("disabled")) {
+        $("#" + tab_id + "_block .perf_poll_now").removeClass("disabled");
+    }
+}
+
+/**
+ * This function pause active recursive polling
+ * @method nocout_pausePollNow
+ */
+function nocout_pausePollNow() {
+
+    // Update the flag
+    is_polling_active = false;
+
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");
+    }
+    if(remainingPollCalls > 0) {
+        if(!$("#" + tab_id + "_block .poll_pause_btn").hasClass("disabled")) {
+            $("#" + tab_id + "_block .poll_pause_btn").addClass("disabled");
+        }
+
+        //stop perf calling
+        if(pollCallingTimeout) {
+            clearTimeout(pollCallingTimeout);
+            pollCallingTimeout = "";
+        }
+        isPollingPaused = 1;
+        $("#" + tab_id + "_block .poll_play_btn").button('complete');        
+    } else {
+        bootbox.alert("Please run polling first.");
+    }
 }

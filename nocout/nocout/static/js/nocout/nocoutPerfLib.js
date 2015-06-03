@@ -17,8 +17,13 @@ var perf_that = "",
     chart_instance = "",
     old_table = "",
     base_url = "",
+    live_data_tab = [
+        {"id": "live", "title": "Live"}
+    ],
+    poll_now_tab = [
+        { "id" : "live_poll_now", "title" : "Poll Now", disabled_url : true }
+    ],
     tabs_with_historical = [
-        {"id": "live", "title": "Live"},
         {"id": "bihourly", "title": "Bi-Hourly"},
         {"id": "hourly", "title": "Hourly"},
         {"id": "daily", "title": "Daily"},
@@ -27,7 +32,6 @@ var perf_that = "",
         {"id": "yearly", "title": "Yearly" }
     ],
     inventory_status_inner_inner_tabs = [
-        {"id": "live", "title": "Live"},
         {"id": "daily", "title": "Daily"},
         {"id": "weekly", "title": "Weekly"},
         {"id": "monthly", "title": "Monthly"},
@@ -52,7 +56,19 @@ var perf_that = "",
     ],
     date_range_picker_html = "",
     spinner_html = '<h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>',
-    is_exact_url = false;
+    is_exact_url = false,
+    pollCallingTimeout = "",
+    remainingPollCalls = 0,
+    pollingInterval = 10,
+    pollingMaxInterval = 1,
+    isPollingPaused = 0,
+    isPerfCallStopped = 1,
+    isPerfCallStarted = 0,
+    poll_now_data_dict = {},
+    last_active_tab = "",
+    is_polling_active = false,
+    non_polled_ids = ['rf'];
+
 
 /*Set the base url of application for ajax calls*/
 if (window.location.origin) {
@@ -355,11 +371,51 @@ function nocoutPerfLib() {
                             <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
                             </div>';
         }
+        if (tab_content_config.tab_id == 'live_poll_now') {
+            content_html += '<div class="col-md-3">\
+                                <button class="btn btn-primary perf_poll_now " title="Poll Now" \
+                                data-complete-text="<i class=\'fa fa-flash\'></i>" data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
+                                <i class="fa fa-flash"></i></button>\
+                            </div>\
+                            <div class="col-md-3">\
+                                <select name="poll_interval" class="form-control poll_interval">\
+                                <option value="">Select Poll Interval</option>\
+                                <option value="10">10 Seconds</option>\
+                                <option value="20">20 Seconds</option>\
+                                <option value="30">30 Seconds</option>\
+                                <option value="60">60 Seconds</option>\
+                                </select>\
+                            </div>\
+                            <div class="col-md-3">\
+                                <select name="poll_maxInterval" class="form-control poll_maxInterval">\
+                                <option value="">Select Maximum Interval</option>\
+                                <option value="1">1 Minute</option>\
+                                <option value="2">2 Minute</option>\
+                                <option value="3">3 Minute</option>\
+                                <option value="4">4 Minute</option>\
+                                </select>\
+                            </div>\
+                            <div class="col-md-3">\
+                                <button class="btn btn-success play_pause_btns poll_play_btn" data-complete-text="<i class=\'fa fa-play\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
+                                    <i class="fa fa-play"> </i>\
+                                </button>\
+                                <button class="btn btn-warning play_pause_btns poll_pause_btn" data-complete-text="<i class=\'fa fa-pause\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
+                                    <i class="fa fa-pause"> </i>\
+                                </button>\
+                                <button class="btn btn-danger play_pause_btns poll_stop_btn" data-complete-text="<i class\'fa fa-stop\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
+                                    <i class="fa fa-stop"> </i>\
+                                </button>\
+                            </div><div class="clearfix"></div><div class="divide-20"></div>';
 
-        content_html += '<div class="chart_container">\
-                        <div id="' + chart_id+ '" style="width:100%;">\
-                        <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
-                        <div id="' + bottom_table_id+ '"></div></div></div>';
+            content_html += '<div class="chart_container">\
+                            <div id="' + chart_id+ '" style="width:100%;"></div>\
+                            <div id="' + bottom_table_id+ '"></div></div></div>';
+        } else {
+            content_html += '<div class="chart_container">\
+                            <div id="' + chart_id+ '" style="width:100%;">\
+                            <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                            <div id="' + bottom_table_id+ '"></div></div></div>';
+        }
 
         return content_html;
     };
@@ -472,72 +528,104 @@ function nocoutPerfLib() {
 
                                         var all_tabs_condition_1 = unique_item_key.indexOf('availability') == -1,
                                             all_tabs_condition_2 = unique_item_key.indexOf('topology') == -1,
-                                            all_tabs_condition_3 = unique_item_key.indexOf('utilization') == -1;
+                                            all_tabs_condition_3 = unique_item_key.indexOf('utilization') == -1,
+                                            inner_inner_tabs = [],
+                                            inner_tab_ids = [];
 
                                         // Create tab content HTML
-                                        if (show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
+                                        if ((show_historical_on_performance && all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) || is_perf_polling_enabled) {
 
-                                            service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">\
-                                                                  <div align="center" class="last_updated_container" id="last_updated_' + unique_item_key+ '_block">\
-                                                                  <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
-                                                                  </div><div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">'
-                                            var inner_tab_ids = [],
-                                                inner_inner_tabs = tabs_with_historical;
+                                            if(all_tabs_condition_1 && all_tabs_condition_2 && all_tabs_condition_3) {
+                                                service_tabs_data += '<div class="tab-pane ' + active_class+ '" id="' + unique_item_key+ '_block">\
+                                                                      <div align="center" class="last_updated_container" id="last_updated_' + unique_item_key+ '_block">\
+                                                                      <h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>\
+                                                                      </div><div class="tabbable"><ul class="nav nav-tabs inner_inner_tab">';
 
-                                            if (unique_item_key.indexOf('_status') > -1) {
-                                                inner_inner_tabs = inventory_status_inner_inner_tabs;                                                
-                                            }
-                                            
-                                            // CREATE SUB INNER TAB HTML
-                                            if (inner_inner_tabs && inner_inner_tabs.length > 0) {
-                                                for(var x=0;x<inner_inner_tabs.length;x++) {
-                                                    var inner_active_class = '';
-                                                    if (x == 0) {
-                                                        inner_active_class = 'active';
-                                                    }
-                                                    var current_item = inner_inner_tabs[x],
-                                                        id = current_item.id,
-                                                        title = current_item.title,
-                                                        inner_tab_info_obj = {
-                                                            'active_class' : inner_active_class,
-                                                            'unique_key' : id + "_" + unique_item_key,
-                                                            'icon_class' : 'fa fa-caret-right',
-                                                            'api_url' : value.url + "?data_for=" + id,
-                                                            'title' : title
-                                                        };
-                                                    
-                                                    service_tabs_data += perf_that.make_tab_li_html(inner_tab_info_obj);
-                                                    if (inner_tab_ids.indexOf(id) == -1) {
-                                                        inner_tab_ids.push(id);
+                                                if(show_historical_on_performance) {
+                                                    // inner_inner_tabs = tabs_with_historical;
+                                                    inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
+                                                    if(unique_item_key.indexOf('_status') == -1) {
+                                                        inner_inner_tabs = inner_inner_tabs.concat(tabs_with_historical);
                                                     }
                                                 }
 
-                                            } else {
-                                                var inner_tab_info_obj = {
-                                                    'active_class' : 'active',
-                                                    'unique_key' : "live_" + unique_item_key,
-                                                    'icon_class' : 'fa fa-caret-right',
-                                                    'api_url' : value.url + "?data_for=live",
-                                                    'title' : "Live"
-                                                };
-                                                service_tabs_data += perf_that.make_tab_li_html(inner_tab_info_obj);
-                                                inner_tab_ids.push('live');
-                                            }
-                                            service_tabs_data += '</ul><div class="divide-20"></div><div class="tab-content">';
-                                            // CREATE SUB INNER TAB CONTENT HTML
-                                            for(var y=0;y<inner_tab_ids.length;y++) {
-                                                var current_key = inner_tab_ids[y],
-                                                    inner_content_info_obj = {
-                                                        'active_class' : '',
-                                                        'unique_key' : current_key + "_" + unique_item_key,
-                                                        'show_last_updated' : false
+                                                if (unique_item_key.indexOf('_status') > -1) {
+                                                    // inner_inner_tabs = inventory_status_inner_inner_tabs;
+                                                    inner_inner_tabs = inner_inner_tabs.concat(inventory_status_inner_inner_tabs);
+                                                }
+
+                                                // If poll now flag enabled
+                                                if(is_perf_polling_enabled) {
+                                                    // Append poll now  & live tab
+                                                    if(!inner_inner_tabs.length) {
+                                                        inner_inner_tabs = inner_inner_tabs.concat(live_data_tab);
+                                                    }
+                                                    if(non_polled_ids.indexOf(value["name"]) == -1) {
+                                                        inner_inner_tabs = inner_inner_tabs.concat(poll_now_tab);
+                                                    }
+                                                }
+                                                
+
+                                                // CREATE SUB INNER TAB HTML
+                                                if (inner_inner_tabs && inner_inner_tabs.length > 0) {
+
+                                                    for(var x=0;x<inner_inner_tabs.length;x++) {
+                                                        var inner_active_class = '';
+                                                        if (x == 0) {
+                                                            inner_active_class = 'active';
+                                                        }
+                                                        var current_item = inner_inner_tabs[x],
+                                                            id = current_item.id,
+                                                            title = current_item.title,
+                                                            data_url = !current_item["disabled_url"] ? value.url + "?data_for=" + id : "",
+                                                            inner_tab_info_obj = {
+                                                                'active_class' : inner_active_class,
+                                                                'unique_key' : id + "_" + unique_item_key,
+                                                                'icon_class' : 'fa fa-caret-right',
+                                                                'api_url' : data_url,
+                                                                'title' : title
+                                                            };
+
+                                                        if(!poll_now_data_dict[inner_tab_info_obj["unique_key"]]) {
+                                                            poll_now_data_dict[inner_tab_info_obj["unique_key"]] = [];
+                                                        }
+                                                        
+                                                        service_tabs_data += perf_that.make_tab_li_html(inner_tab_info_obj);
+                                                        if (inner_tab_ids.indexOf(id) == -1) {
+                                                            inner_tab_ids.push(id);
+                                                        }
+                                                    }
+
+                                                } else {
+                                                    var inner_tab_info_obj = {
+                                                        'active_class' : 'active',
+                                                        'unique_key' : "live_" + unique_item_key,
+                                                        'icon_class' : 'fa fa-caret-right',
+                                                        'api_url' : value.url + "?data_for=live",
+                                                        'title' : "Live"
                                                     };
-                                                if (y==0) {
-                                                    inner_content_info_obj['active_class'] = 'active';
+                                                    service_tabs_data += perf_that.make_tab_li_html(inner_tab_info_obj);
+                                                    inner_tab_ids.push('live');
                                                 }
-                                                service_tabs_data += perf_that.make_tab_content_html(inner_content_info_obj);
+                                                service_tabs_data += '</ul><div class="divide-20"></div><div class="tab-content">';
+                                                // CREATE SUB INNER TAB CONTENT HTML
+                                                for(var y=0;y<inner_tab_ids.length;y++) {
+                                                    var current_key = inner_tab_ids[y],
+                                                        inner_content_info_obj = {
+                                                            'tab_id' : current_key,
+                                                            'active_class' : '',
+                                                            'unique_key' : current_key + "_" + unique_item_key,
+                                                            'show_last_updated' : false
+                                                        };
+                                                    if (y==0) {
+                                                        inner_content_info_obj['active_class'] = 'active';
+                                                    }
+                                                    service_tabs_data += perf_that.make_tab_content_html(inner_content_info_obj);
+                                                }
+                                                service_tabs_data += '</div></div><div class="clearfix"></div></div>';
+                                            } else {
+                                                service_tabs_data += perf_that.make_tab_content_html(content_info_obj);
                                             }
-                                            service_tabs_data += '</div></div><div class="clearfix"></div></div>'
                                         } else {
                                             service_tabs_data += perf_that.make_tab_content_html(content_info_obj);
                                         }
@@ -563,7 +651,6 @@ function nocoutPerfLib() {
                         $('.inner_tab_container > .panel-body > .tabs-left > ul.nav-tabs > li > a').click(function (e) {
                             // show loading spinner
                             // showSpinner();
-
                             var current_target = e.currentTarget,
                                 current_attr = current_target.attributes,
                                 serviceId = current_target.id.slice(0, -4),
@@ -574,6 +661,13 @@ function nocoutPerfLib() {
                             var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
                                 serviceDataUrl = "";
 
+                            if(serviceId.indexOf('_status_') == -1 || serviceId.indexOf('_inventory_') == -1) {
+                                // Hide display type option from only table tabs
+                                if ($("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").removeClass("hide")
+                                }
+                            }
+
                             if (service_data_url_val) {
                                 if (service_data_url_val[0] != "/") {
                                     serviceDataUrl = "/" + service_data_url_val;
@@ -583,7 +677,7 @@ function nocoutPerfLib() {
                             }
 
                             if ($("#last_updated_" + tab_content_dom_id).length > 0) {
-                                perf_that.resetLivePolling("last_updated_" + tab_content_dom_id);
+                                perf_that.resetLivePolling(tab_content_dom_id);
                                 // get the service status for that service
                                 perfInstance.getServiceStatus(serviceDataUrl, is_exact_url, function(response_type,data_obj) {
                                     if (response_type == 'success') {
@@ -645,7 +739,7 @@ function nocoutPerfLib() {
                         $("#perf_data_table").remove();
                     }
 
-                    perf_that.resetLivePolling("last_updated_" + active_tab_content_dom_id);
+                    perf_that.resetLivePolling(active_tab_content_dom_id);
 
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
@@ -667,7 +761,7 @@ function nocoutPerfLib() {
                             });
                         }
 
-                        if (show_historical_on_performance) {
+                        if (show_historical_on_performance || is_perf_polling_enabled) {
                             $("#live_" + active_tab_id + "_tab").trigger('click');
                         } else {
                             /*Call getServiceData function to fetch the data for currently active service*/
@@ -768,7 +862,10 @@ function nocoutPerfLib() {
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
 
-        if (!get_service_data_url) {
+        if (!get_service_data_url || (service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1)) {
+            if(service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1) {
+                perf_that.resetLivePolling(service_id);
+            }
             return true;
         }
         
@@ -1234,28 +1331,26 @@ function nocoutPerfLib() {
      * @method resetLivePolling
      */
     this.resetLivePolling = function(container_dom_id) {
-        // Enable the "Poll Now" button
-        if ($("#" + container_dom_id + " .perf_poll_now").length > 0) {
-            $("#" + container_dom_id + " .perf_poll_now").button("complete");
-        }
-
-        // Reset the input values
-        if ($("#" + container_dom_id + " #perf_live_poll_input").length > 0) {
-            $("#" + container_dom_id + " #perf_live_poll_input").val("");
-        }
-
-        // Reset the Chart container
-        if ($("#" + container_dom_id + " #perf_live_poll_chart").length > 0) {
-            $("#" + container_dom_id + " #perf_live_poll_chart").html("");
-        }
 
         try {
-            if (perf_page_live_polling_call) {
-                perf_page_live_polling_call.abort();
-                perf_page_live_polling_call = "";
+            $("#"+container_dom_id+"_block .poll_play_btn").button("complete");
+
+            if($("#"+container_dom_id+"_block .poll_play_btn").hasClass("disabled")) {
+                $("#"+container_dom_id+"_block .poll_play_btn").removeClass("disabled");
             }
+            $("#"+container_dom_id+"_block .poll_interval").removeAttr("disabled");
+            $("#"+container_dom_id+"_block .poll_interval").val("");
+            $("#"+container_dom_id+"_block .poll_maxInterval").removeAttr("disabled");
+            $("#"+container_dom_id+"_block .poll_maxInterval").val("");
+
+            if(pollCallingTimeout) {
+                clearTimeout(pollCallingTimeout);
+            }
+
+            remainingPollCalls = 0;
+
         } catch(e) {
-            // console.error(e);
+            // console.log(e);
         }
     };
 
@@ -1283,9 +1378,14 @@ function nocoutPerfLib() {
         }
         
         Highcharts.charts = [];
-
-        /*Call getServiceData function to fetch the data for clicked service tab*/
-        perfInstance.getServiceData(get_service_data_url, service_id, device_id);
+        if(get_service_data_url && service_id && device_id) {
+            /*Call getServiceData function to fetch the data for clicked service tab*/
+            perfInstance.getServiceData(get_service_data_url, service_id, device_id);
+        } else if (is_perf_polling_enabled) {
+            setTimeout(function(e) {
+                nocout_togglePollNowContent();
+            }, 150);
+        }
     };
 }
 
@@ -1295,45 +1395,37 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
         current_attr = current_target.attributes,
         tab_service_id = current_target.id.slice(0, -4);
 
-    var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
-        serviceDataUrl = "";
+    if (last_active_tab && last_active_tab.indexOf('live_poll_now') > -1 && is_polling_active) {
+        // Stop live polling
+        nocout_stopPollNow();
+        // notify user
+        bootbox.alert("Live polling is stopped");
+    } else {
+        var service_data_url_val = current_attr.url ? $.trim(current_attr.url.value) : "";
+            serviceDataUrl = "";
 
-    if (service_data_url_val) {
-        if (service_data_url_val[0] != "/") {
-            serviceDataUrl = "/" + service_data_url_val;
-        } else {
-            serviceDataUrl = service_data_url_val;
+        if (service_data_url_val) {
+            if (service_data_url_val[0] != "/") {
+                serviceDataUrl = "/" + service_data_url_val;
+            } else {
+                serviceDataUrl = service_data_url_val;
+            }
+        }
+
+        if (show_historical_on_performance) {
+            perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
         }
     }
 
-    if (show_historical_on_performance) {
-        perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
-    }
-
+    last_active_tab = tab_service_id;
 });
 
 // Change event on display type radio buttons
 $('input[name="item_type"]').change(function(e) {
 
-    var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
-        top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
-    
-
-    if (show_historical_on_performance) {
-        var left_active_tab_href = $("#" + top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
-            left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
-
-        var active_inner_tab = $("#" + left_tab_content_id + " .inner_inner_tab li.active a"),
-            service_id = active_inner_tab.attr("id").slice(0, -4),
-            get_service_data_url = active_inner_tab.attr("url");
-
-    } else {
-
-        var left_active_tab_anchor = $("#" + top_tab_content_id + " .left_tabs_container li.active a"),
-            active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-            service_id = left_active_tab_anchor.attr("id").slice(0, -4),
-            get_service_data_url = left_active_tab_anchor.attr("url");
-    }
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
 
     if (
         service_id.indexOf('availability') > -1
@@ -1346,8 +1438,7 @@ $('input[name="item_type"]').change(function(e) {
         var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
             service_id = active_inner_tab.attr("id").slice(0, -4),
             get_service_data_url = active_inner_tab.attr("url");
-
-    } 
+    }
 
     if (get_service_data_url && service_id && current_device) {
 
@@ -1362,5 +1453,75 @@ $('input[name="item_type"]').change(function(e) {
         }
 
         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+    } else if (is_perf_polling_enabled) {
+        nocout_togglePollNowContent();
     }
+});
+
+$(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
+
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    var currentTarget = e.currentTarget;
+    // Show button in loading view
+    $(currentTarget).button('loading');
+    if(!$("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + " .play_pause_btns").addClass("disabled");
+    }
+    initSingleDevicePolling(function(response) {
+        
+        $(currentTarget).button('complete');
+        
+        if($("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
+            $("#" + tab_id + " .play_pause_btns").removeClass("disabled");
+        }
+    });
+});
+
+$(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
+    // Update the flag
+    is_polling_active = true;
+    var active_tab_obj = nocout_getPerfTabDomId(),
+        tab_id = active_tab_obj["active_dom_id"];
+
+    var poll_interval = $("#" + tab_id + "_block .poll_interval").val(),
+        max_interval = $("#" + tab_id + "_block .poll_maxInterval").val();
+    
+    if (poll_interval && max_interval) {
+        // Show button in loading view
+        $(e.currentTarget).button('loading');
+
+        if($("#"+tab_id+ "_block .poll_pause_btn").hasClass("disabled")) {
+            $("#"+tab_id+ "_block .poll_pause_btn").removeClass("disabled");
+        }
+
+        if(!$("#" + tab_id + "_block .perf_poll_now").hasClass("disabled")) {
+            $("#" + tab_id + "_block .perf_poll_now").addClass("disabled");
+        }
+        /*Disable poll interval & max interval dropdown*/
+        $("#" + tab_id + "_block .poll_interval").attr("disabled","disabled");
+        $("#" + tab_id + "_block .poll_maxInterval").attr("disabled","disabled");
+
+        pollCallingTimeout = "";
+        pollingInterval = $("#" + tab_id + "_block .poll_interval").val() ? +($("#" + tab_id + "_block .poll_interval").val()) : 10;
+        pollingMaxInterval = $("#" + tab_id + "_block .poll_maxInterval").val() ? +($("#" + tab_id + "_block .poll_maxInterval").val()) : 1;
+        isPollingPaused = 0;
+        if(remainingPollCalls == 0) {
+            remainingPollCalls = Math.floor((60*pollingMaxInterval)/pollingInterval);
+        }
+
+        recursivePolling();
+
+    } else {
+        bootbox.alert("Please select polling interval & maximum interval.");
+    }
+});
+
+$(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
+    nocout_pausePollNow();
+});
+
+$(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
+    nocout_stopPollNow();
 });
