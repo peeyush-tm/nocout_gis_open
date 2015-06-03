@@ -42,7 +42,7 @@ from service.utils.util import service_data_sources
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
-    AVG_CHART_COLOR
+    AVG_CHART_COLOR, CACHE_TIME
 
 from performance.formulae import display_time, rta_null
 
@@ -4099,7 +4099,7 @@ def get_higher_severity(severity_dict):
     return s, a
 
 
-@nocout_utils.cache_for(120)  # just for 2 minutes cache this. short running query
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))  # just for 2 minutes cache this. short running query
 def device_current_status(device_object):
     """
     Device UP Status
@@ -4149,7 +4149,7 @@ def device_current_status(device_object):
             return get_higher_severity(severity_dict=severity)
 
 
-@nocout_utils.cache_for(300)  #for 5 minutes cache this. long running query
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))  #for 5 minutes cache this. long running query
 def device_last_down_time(device_object):
     """
 

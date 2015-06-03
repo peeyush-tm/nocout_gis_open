@@ -4,7 +4,7 @@
 import datetime
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import P2P, WiMAX, PMP, DEBUG
+from nocout.settings import P2P, WiMAX, PMP, DEBUG, CACHE_TIME
 
 #django core model functions
 from django.db.models import Count, Q
@@ -123,9 +123,6 @@ def organization_monitored_devices(organizations, **kwargs):
             return organization_devices
 
 
-
-
-# @cache_for(300)
 def ptp_device_circuit_backhaul(specify_type='all'):
     """
     Special case fot PTP technology devices. Wherein Circuit type backhaul is required
@@ -159,7 +156,6 @@ def ptp_device_circuit_backhaul(specify_type='all'):
     return device_list_with_circuit_type_backhaul
 
 
-# @cache_for(300)
 def organization_customer_devices(organizations, technology = None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
@@ -213,7 +209,6 @@ def organization_customer_devices(organizations, technology = None, specify_ptp_
     return organization_customer_devices
 
 
-# @cache_for(300)
 def organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
@@ -301,7 +296,6 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
     return devices
 
 
-# @cache_for(300)
 def organization_backhaul_devices(organizations, technology=None, others=False, other_type="backhaul"):
     """
     To result back the all the network devices from the respective organization..
@@ -337,11 +331,10 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
             organization__in=organizations
         )
 
-
     return backhaul_devices.annotate(dcount=Count('id'))
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('INVENTORY', 300))
 def filter_devices(organizations, data_tab=None, page_type="customer", other_type=None,
                    required_value_list=None, other_bh=False):
 
@@ -404,7 +397,7 @@ def filter_devices(organizations, data_tab=None, page_type="customer", other_typ
     return organization_devices
 
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_machines(device_list, machine_key='device_machine'):
     """
 
@@ -477,7 +470,7 @@ def organization_sectors(organization, technology=0):
 
     return sector_list
 
-@cache_for(300)
+@cache_for(CACHE_TIME.get('INVENTORY', 300))
 def list_to_indexed_dict(inventory_list, key):
     """
     Convert list of dictionaries into indexed dictionaries
