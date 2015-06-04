@@ -45,7 +45,7 @@ from service.models import DeviceServiceConfiguration, Service, ServiceDataSourc
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
-import performance.utils as perf_util
+from performance.formulae import display_time, rta_null
 from service.utils.util import service_data_sources
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME
@@ -1477,8 +1477,7 @@ class BulkFetchLPDataApi(View):
             result['data']['data_source']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
             result['data']['data_source']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[
                 ds_name] else ""
-            result['data']['data_source']['data_source_type'] = ds_dict[ds_name][
-                'data_source_type'] if 'data_source_type' in ds_dict[ds_name] else ""
+            result['data']['data_source']['data_source_type'] = ds_dict[ds_name]['data_source_type'] if 'data_source_type' in ds_dict[ds_name] else "Numeric"
 
             if ds_name in ['pl', 'rta']:
                 ds_formula = ds_dict[ds_name]['formula'] if 'formula' in ds_dict[ds_name] else ""
@@ -1697,13 +1696,18 @@ class BulkFetchLPDataApi(View):
 
                         # Evaluate value if formula is available for data source.
                         if ds_formula:
+                            device_val = device_value
                             try:
-                                result['data']['devices'][device_name]['value'] = eval(
-                                    "perf_util.ds_formula(device_value)")
+                                if type(device_value) == list:
+                                    device_val = device_value[0]
+
+                                result['data']['devices'][device_name]['value'] = eval(str(ds_formula) + "(" + str(device_val) + ")" )
                             except Exception as e:
+                                result['data']['devices'][device_name]['value'] = device_val
                                 pass
                         else:
                             result['data']['devices'][device_name]['value'] = device_value
+
 
                         if not all([service_name, ds_name]):
                             # Default icon.
