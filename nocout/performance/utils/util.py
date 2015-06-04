@@ -11,7 +11,7 @@ from operator import itemgetter
 from multiprocessing import Process, Queue
 
 from django.utils.dateformat import format
-
+from django.views.generic.base import View
 
 # nocout utilities
 from nocout.utils.util import fetch_raw_result, \
@@ -31,6 +31,161 @@ from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
     MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, CACHE_TIME
 
 from django.http import HttpRequest
+
+
+class PerformanceUtilsGateway(View):
+    """
+    This class works as gateway between performance utils & other apps
+    """
+    def prepare_query(
+        self,
+        table_name=None, 
+        devices=None, 
+        data_sources=["pl", "rta"], 
+        columns=None, 
+        condition=None
+    ):
+        """
+
+        """
+        param1 = prepare_query(
+            table_name=table_name, 
+            devices=devices, 
+            data_sources=data_sources, 
+            columns=columns, 
+            condition=condition
+        )
+
+        return param1
+
+
+    def prepare_row_query(
+        self, 
+        table_name=None, 
+        devices=None, 
+        data_sources=["pl", "rta"], 
+        columns=None, 
+        condition=None
+    ):
+        """
+
+        """
+        param1 = prepare_row_query(
+            table_name=table_name, 
+            devices=devices, 
+            data_sources=data_sources, 
+            columns=columns, 
+            condition=condition
+        )
+
+        return param1
+
+
+    def polled_results(self, qs, multi_proc=False, machine_dict={}, model_is=None):
+        """
+
+        """
+        param1 = polled_results(
+            qs, 
+            multi_proc=multi_proc, 
+            machine_dict=machine_dict, 
+            model_is=model_is
+        )
+
+        return param1
+
+
+    def pre_map_indexing(self, index_dict, index_on='device_name'):
+        """
+
+        """
+        param1 = pre_map_indexing(index_dict, index_on=index_on)
+
+        return param1
+
+
+    def map_results(self, perf_result, qs):
+        """
+
+        """
+        param1 = map_results(perf_result, qs)
+
+        return param1
+
+
+    def combined_indexed_gis_devices(self, indexes, monitored_only=True, technology=None, type_rf=None):
+        """
+
+        """
+        param1, param2, param3, param4, param5, param6, param7 = combined_indexed_gis_devices(
+            indexes, 
+            monitored_only=monitored_only, 
+            technology=technology, 
+            type_rf=type_rf
+        )
+
+        return param1, param2, param3, param4, param5, param6, param7
+
+
+    def prepare_gis_devices(self, devices, page_type, monitored_only=True, technology=None, type_rf=None):
+        """
+
+        """
+        param1 = prepare_gis_devices(
+            devices, 
+            page_type, 
+            monitored_only=monitored_only, 
+            technology=technology, 
+            type_rf=type_rf
+        )
+
+        return param1
+
+
+    def indexed_polled_results(self, performance_data):
+        """
+
+        """
+        param1 = indexed_polled_results(performance_data)
+
+        return param1
+
+
+    def get_time(self, start_date, end_date, date_format, data_for):
+        """
+
+        """
+        param1, param2, param3 = get_time(start_date, end_date, date_format, data_for)
+
+        return param1, param2, param3
+
+
+    def color_picker(self):
+        """
+
+        """
+        param1 = color_picker()
+
+        return param1
+
+
+    def create_perf_chart_img(self, device_name, service, data_source):
+        """
+
+        """
+        param1 = create_perf_chart_img(device_name, service, data_source)
+
+        return param1
+
+
+    def dataTableOrdering(self, self_instance, qs, order_columns):
+        """
+
+        """
+        param1 = dataTableOrdering(self_instance, qs, order_columns)
+
+        return param1
+
 
 # misc utility functions
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
@@ -619,91 +774,6 @@ def indexed_polled_results(performance_data):
     return indexed_raw_results
 
 
-## for distributed performance collection
-## function to accept machine wise device list
-## and fetch result from the desired machine
-## max processes = 7 (number of total machines)
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
-def get_multiprocessing_performance_data(q, device_list, machine, model):
-    """
-    Consolidated Performance Data from the Data base.
-
-    :param q:
-    :param machine:
-    :param model:
-    :param device_list:
-    :return:
-    """
-
-    device_result = {}
-    perf_result = {"packet_loss": "N/A",
-                   "latency": "N/A",
-                   "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A",
-                   "age": "N/A"
-                   }
-
-    query = prepare_row_query(table_name="performance_networkstatus",
-                              devices=device_list,
-                              )
-    # (query)
-    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
-
-    indexed_perf_data = indexed_polled_results(performance_data)
-
-    # (len(performance_data))
-    for device in device_list:
-        if device not in device_result:
-            device_result[device] = perf_result
-
-    processed = []
-    for device in indexed_perf_data:
-        if device not in processed:
-            processed.append(device)
-            perf_result = {"packet_loss": "N/A",
-                           "latency": "N/A",
-                           "last_updated": "N/A",
-                           "last_updated_date": "N/A",
-                           "last_updated_time": "N/A",
-                           "device_name": "N/A",
-                           "age": "N/A",
-                           }
-            data = indexed_perf_data[device]
-            # for data in performance_data:
-            #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
-            perf_result['device_name'] = data['device_name']
-
-            # d_src = str(data['data_source']).strip().lower()
-            # current_val = str(data['current_value'])
-
-            try:
-                # if d_src == "pl":
-                perf_result["packet_loss"] = float(data['pl'])
-                # if d_src == "rta":
-                perf_result["latency"] = float(data['rta'])
-            except:
-                # if d_src == "pl":
-                perf_result["packet_loss"] = data['pl']
-                # if d_src == "rta":
-                perf_result["latency"] = data['rta']
-
-            perf_result["last_updated"] = datetime.datetime.fromtimestamp(
-                float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
-
-            perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
-
-            device_result[device] = perf_result
-    # (device_result)
-    try:
-        q.put(device_result)
-
-    except Exception as e:
-        log.exception(e.message)
-
-
 @cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def get_performance_data(device_list, machine, model):
     """
@@ -848,19 +918,22 @@ def create_perf_chart_img(device_name, service, data_source):
     # create http request for getting rows data (for accessing list view classes)
     request_object = HttpRequest()
 
-    # import 'GetServiceTypePerformanceData' from performance views
-    from performance.views import GetServiceTypePerformanceData
+    # import performance views gateway class
+    from performance.views import PerformanceViewsGateway
 
-    # Create instance of "GetServiceTypePerformanceData"
-    perf_data_class = GetServiceTypePerformanceData()
+    # Create instance of 'PerformanceViewsGateway' class
+    perf_views = PerformanceViewsGateway()
 
-    # Attach request HTTP object with 'GetServiceTypePerformanceData' instance
+    # call "initGetServiceTypePerformanceData"
+    perf_data_class = perf_views.initGetServiceTypePerformanceData()
+
+    # Attach request HTTP object with 'initGetServiceTypePerformanceData' instance
     perf_data_class.request = request_object
 
-    # Attach 'kwargs' with 'GetServiceTypePerformanceData' instance
+    # Attach 'kwargs' with 'initGetServiceTypePerformanceData' instance
     perf_data_class.kwargs = kwargs_dict
 
-    # Make 'GET' request to 'GetServiceTypePerformanceData' class
+    # Make 'GET' request to 'initGetServiceTypePerformanceData' class
     fetched_result = perf_data_class.get(request_object, service, data_source, device_name)
 
     # convert the fetched content to json format
@@ -937,12 +1010,12 @@ def create_perf_chart_img(device_name, service, data_source):
     return result
 
 
-def dataTableOrdering(self, qs, order_columns):
+def dataTableOrdering(self_instance, qs, order_columns):
     """ 
      Get parameters from the request and prepare order by clause
     :param qs:
     """
-    request = self.request
+    request = self_instance.request
     # Number of columns that are used in sorting
     try:
         i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
@@ -974,3 +1047,88 @@ def dataTableOrdering(self, qs, order_columns):
         return sorted_device_data
 
     return qs
+
+
+@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+def get_multiprocessing_performance_data(q, device_list, machine, model):
+    """
+    Consolidated Performance Data from the Data base.
+    - for distributed performance collection
+    - function to accept machine wise device list and 
+      fetch result from the desired machine
+    - max processes = 7 (number of total machines)
+    :param q:
+    :param machine:
+    :param model:
+    :param device_list:
+    :return:
+    """
+
+    device_result = {}
+    perf_result = {"packet_loss": "N/A",
+                   "latency": "N/A",
+                   "last_updated": "N/A",
+                   "last_updated_date": "N/A",
+                   "last_updated_time": "N/A",
+                   "age": "N/A"
+                   }
+
+    query = prepare_row_query(table_name="performance_networkstatus",
+                              devices=device_list,
+                              )
+    # (query)
+    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
+
+    indexed_perf_data = indexed_polled_results(performance_data)
+
+    # (len(performance_data))
+    for device in device_list:
+        if device not in device_result:
+            device_result[device] = perf_result
+
+    processed = []
+    for device in indexed_perf_data:
+        if device not in processed:
+            processed.append(device)
+            perf_result = {"packet_loss": "N/A",
+                           "latency": "N/A",
+                           "last_updated": "N/A",
+                           "last_updated_date": "N/A",
+                           "last_updated_time": "N/A",
+                           "device_name": "N/A",
+                           "age": "N/A",
+                           }
+            data = indexed_perf_data[device]
+            # for data in performance_data:
+            #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
+            perf_result['device_name'] = data['device_name']
+
+            # d_src = str(data['data_source']).strip().lower()
+            # current_val = str(data['current_value'])
+
+            try:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = float(data['pl'])
+                # if d_src == "rta":
+                perf_result["latency"] = float(data['rta'])
+            except:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = data['pl']
+                # if d_src == "rta":
+                perf_result["latency"] = data['rta']
+
+            perf_result["last_updated"] = datetime.datetime.fromtimestamp(
+                float(data['sys_timestamp'])
+            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+
+            perf_result["age"] = datetime.datetime.fromtimestamp(
+                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+
+            device_result[device] = perf_result
+    # (device_result)
+    try:
+        q.put(device_result)
+
+    except Exception as e:
+        log.exception(e.message)
+

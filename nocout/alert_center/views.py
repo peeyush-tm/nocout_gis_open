@@ -15,8 +15,8 @@ from alert_center.models import CurrentAlarms, ClearAlarms, HistoryAlarms
 from performance.models import EventNetwork, EventService
 
 from operator import itemgetter
-# utilities performance
-from performance.utils import util as perf_utils
+# Import performance utils gateway class
+from performance.utils.util import PerformanceUtilsGateway
 
 # utilities inventory
 from inventory.utils import util as inventory_utils
@@ -37,6 +37,9 @@ from alert_center.utils import util as alert_utils
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+
 
 
 class CustomerAlertDetailHeaders(ListView):
@@ -213,6 +216,10 @@ class GetCustomerAlertDetail(BaseDatatableView):
                 type_rf = 'ss'
             else:
                 type_rf = None
+
+        # Create instance of 'PerformanceUtilsGateway' class
+        perf_utils = PerformanceUtilsGateway()
+
 
         return perf_utils.prepare_gis_devices(
             qs,
@@ -763,6 +770,10 @@ class GetNetworkAlertDetail(BaseDatatableView):
         :return:
         """
         page_type = self.request.GET.get('page_type', "network")
+
+        # Create instance of 'PerformanceUtilsGateway' class
+        perf_utils = PerformanceUtilsGateway()
+
         return perf_utils.prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
@@ -1123,6 +1134,9 @@ class AlertListingTable(BaseDatatableView):
                 type_rf = 'ss'
             else:
                 type_rf = None
+
+        # Create instance of 'PerformanceUtilsGateway' class
+        perf_utils = PerformanceUtilsGateway()
 
         return perf_utils.prepare_gis_devices(
             qs,

@@ -5,8 +5,8 @@ from django.db.models import Avg, F, Q
 
 # nocout utils import
 from nocout.utils.util import fetch_raw_result
-# performance views import
-import performance.views as perf_views
+# performance gateway class import
+from performance.views import PerformanceViewsGateway
 # getLastXMonths
 from performance.models import SpotDashboard, RfNetworkAvailability, NetworkAvailabilityDaily
 from device.models import DeviceType, DeviceTechnology, SiteInstance, Device
@@ -88,6 +88,8 @@ def device_last_down_time_site_wise(devices):
     :return: True
     """
     if devices and devices.count():
+        # Create instance of 'PerformanceViewsGateway' class
+        perf_views = PerformanceViewsGateway()
         for device_object in devices:
             x = perf_views.device_last_down_time(device_object=device_object)
         return True
@@ -209,6 +211,9 @@ def get_all_sector_devices(technology):
     # Format UL issue data
     if len(complete_ul_issue_data) > 0:
         complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='sector_id')
+
+    # Create instance of 'PerformanceViewsGateway' class
+    perf_views = PerformanceViewsGateway()
 
     # Reverse the list to get the current month at first index
     last_six_months_list, months_list = perf_views.getLastXMonths(6)

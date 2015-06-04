@@ -33,8 +33,6 @@ from inventory.utils.util import organization_customer_devices, organization_net
     organization_sectors, prepare_machines, organization_backhaul_devices
 #inventory utils
 
-from performance.utils.util import color_picker
-
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, \
     DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily, DashboardRangeStatusDaily
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm

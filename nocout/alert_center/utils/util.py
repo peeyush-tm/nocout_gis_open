@@ -5,7 +5,8 @@ import datetime
 # utilities core
 from nocout.utils import util as nocout_utils
 
-from performance.utils import util as perf_utils
+# Import performance utils gateway class
+from performance.utils.util import PerformanceUtilsGateway
 
 from service.utils.util import service_data_sources
 
@@ -233,6 +234,10 @@ def map_results(perf_result, qs):
     """
     result_qs = []
 
+    # Create instance of 'PerformanceUtilsGateway' class
+    perf_utils = PerformanceUtilsGateway()
+
+    # Call 'pre_map_indexing' method of 'PerformanceUtilsGateway' class
     indexed_qs = perf_utils.pre_map_indexing(index_dict=qs)
     indexed_perf = perf_utils.pre_map_indexing(index_dict=perf_result)
     

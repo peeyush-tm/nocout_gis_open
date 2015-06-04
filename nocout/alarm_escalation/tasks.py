@@ -22,8 +22,8 @@ from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServi
 from service.models import Service, ServiceDataSource, ServiceSpecificDataSource
 from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus, EscalationLevel
-
-from performance.utils.util import prepare_gis_devices
+# Import performance utils gateway class
+from performance.utils.util import PerformanceUtilsGateway
 from inventory.utils import util as inventory_utils
 from scheduling_management.views import get_today_event_list
 from inventory.tasks import bulk_update_create
@@ -447,6 +447,9 @@ def check_device_status():
     service_list = []
     service_data_source_list = []
 
+    # Create instance of 'PerformanceUtilsGateway' class
+    perf_utils = PerformanceUtilsGateway()
+
     #get the device list which is in downtime scheduling today.
     device_id_list = get_today_event_list()['device_ids']
     for org in Organization.objects.all():
@@ -467,7 +470,8 @@ def check_device_status():
 
             machine_dict = prepare_machines(device_list_qs)
 
-            list_devices_invent_info = prepare_gis_devices(device_list_qs, page_type=None)
+            # Call 'prepare_gis_devices' method of 'PerformanceUtilsGateway' class
+            list_devices_invent_info = perf_utils.prepare_gis_devices(device_list_qs, page_type=None)
             dict_devices_invent_info = inventory_utils.list_to_indexed_dict(list_devices_invent_info, 'device_name')
 
             for machine_name, device_list in machine_dict.items():
