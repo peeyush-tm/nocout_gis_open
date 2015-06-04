@@ -75,6 +75,7 @@ class FetchCityCharterSettings(View):
                 result['data']['uas'] = row.uas
                 result['data']['pd'] = row.pd
                 result['data']['latency'] = row.latency
+                result['data']['normal'] = row.normal
                 result['message'] = "Successfully fetched city charter settings."
                 result['success'] = 1
 
