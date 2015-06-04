@@ -1,9 +1,9 @@
 """
-rrd_migration.py
+network_etl.py
 ================
 
-This script collects and stores data for all services 
-running on all configured devices for this poller.
+This script collects and stores data for host checks 
+running on all configured devices for this site
 
 """
 
