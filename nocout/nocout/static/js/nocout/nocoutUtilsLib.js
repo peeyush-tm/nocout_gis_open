@@ -246,10 +246,9 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         grid_headers = headers,
         excel_columns = [];
 
-    if ($('#' + table_id).length > 0) {
-        $("#" + table_id).dataTable().fnDestroy();
-        $("#" + table_id).remove();
-    }
+    // Destroy Datatable
+    nocout_destroyDataTable('other_perf_table');
+    nocout_destroyDataTable('perf_data_table');
 
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
@@ -304,10 +303,9 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
     var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
 
-    if ($("#" + table_id).length > 0) {
-        $("#" + table_id).dataTable().fnDestroy();
-        $("#" + table_id).remove();
-    }
+    // Destroy Datatable
+    nocout_destroyDataTable('other_perf_table');
+    nocout_destroyDataTable('perf_data_table');
 
     /*Table header creation end*/
     if (service_id) {
@@ -812,6 +810,7 @@ function nocout_livePollCurrentDevice(
                     ds_key = result.data.data_source ? result.data.data_source : "",
                     data_type = ds_key && ds_key["data_source_type"] ? ds_key["data_source_type"] : "numeric",
                     chart_type = ds_key && ds_key["chart_type"] ? ds_key["chart_type"] : "column",
+                    chart_color = ds_key && ds_key["chart_color"] ? ds_key["chart_color"] : "#70AFC4",
                     dateObj = new Date(),
                     epoch_time = dateObj.getTime(),
                     month = Number(dateObj.getMonth()) + 1,
@@ -869,7 +868,8 @@ function nocout_livePollCurrentDevice(
                             "time" : current_time,
                             "epoch_time" : epoch_time ? epoch_time : "",
                             "type" : data_type ? data_type : "numeric",
-                            "chart_type" : chart_type ? chart_type : "column"
+                            "chart_type" : chart_type ? chart_type : "column",
+                            "chart_color" : chart_color ? chart_color : "#70AFC4"
                         };
                     }
 
@@ -884,7 +884,8 @@ function nocout_livePollCurrentDevice(
                         "time" : current_time,
                         "epoch_time" : epoch_time ? epoch_time : "",
                         "type" : data_type ? data_type : "numeric",
-                        "chart_type" : chart_type ? chart_type : "column"
+                        "chart_type" : chart_type ? chart_type : "column",
+                        "chart_color" : chart_color ? chart_color : "#70AFC4"
                     };
                 }
                 callback(fetched_data);
@@ -1133,7 +1134,7 @@ function checkpollvalues(result, is_new_data, callback) {
             // Update the chart type & data key as per the given params
             chart_config["type"] = result[i]["chart_type"];
             chart_config["chart_data"][0]["data"] = [{
-                "color": "#70AFC4",
+                "color": result[i]['chart_color'],
                 "y": Number(fetched_val),
                 "name": block_title,
                 "x": result[i]['epoch_time']
@@ -1147,7 +1148,7 @@ function checkpollvalues(result, is_new_data, callback) {
                 addPointsToChart_nocout(chart_config.chart_data,dom_id);
             }
         } else {
-            if(result[i].type.toLowerCase() == 'numeric' && (dom_id.indexOf('_status_') == -1 || dom_id.indexOf('_inventory_') == -1)) {
+            if(result[i].type.toLowerCase() == 'numeric' && dom_id.indexOf('_status_') == -1 && dom_id.indexOf('_inventory_') == -1) {
                 // Hide display type option from only table tabs
                 if ($("#display_type_container").hasClass("hide")) {
                     $("#display_type_container").removeClass("hide")
@@ -1340,5 +1341,49 @@ function nocout_pausePollNow() {
         $("#" + tab_id + "_block .poll_play_btn").button('complete');        
     } else {
         bootbox.alert("Please run polling first.");
+    }
+}
+
+/**
+ * This function destroy datatable with given dom id
+ * @method nocout_destroyDataTable
+ */
+function nocout_destroyDataTable(domId) {
+
+    if (domId && $('#' + domId).length > 0) {
+        $("#" + domId).dataTable().fnDestroy();
+        $("#" + domId).remove();
+    }
+}
+
+/**
+ * This function destroy highcharts with given dom id
+ * @method nocout_destroyHighcharts
+ */
+function nocout_destroyHighcharts(domId) {
+    try {
+        if (domId && $("#" + domId + "_chart").highcharts()) {
+            var chart = $("#" + domId + "_chart").highcharts(),
+                chart_series = chart.series;
+
+            if (chart_series && chart_series.length > 0) {
+                // Remove series from highchart
+                while(chart_series.length > 0) {
+                    chart_series[0].remove(true);
+                }
+            }
+            // Destroy highchart
+            $("#" + domId + "_chart").highcharts().destroy();
+        }
+
+        // Clear HTML
+        $("#" + domId + "_chart").html("");
+
+        if (domId && $("#" + domId + "_bottom_table").length) {
+            $("#" + domId + "_bottom_table").html("");
+        }
+
+    } catch(e) {
+        // console.log(e);
     }
 }

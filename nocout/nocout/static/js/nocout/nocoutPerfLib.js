@@ -67,7 +67,11 @@ var perf_that = "",
     poll_now_data_dict = {},
     last_active_tab = "",
     is_polling_active = false,
-    non_polled_ids = ['rf'];
+    non_polled_ids = ['rf'],
+    perf_datatable_ids = {
+        "chart" : "other_perf_table",
+        "table" : "perf_data_table"
+    };
 
 
 /*Set the base url of application for ajax calls*/
@@ -689,7 +693,11 @@ function nocoutPerfLib() {
                                 });
                             }
                             if (
-                                !show_historical_on_performance
+                                (
+                                    !show_historical_on_performance
+                                    &&
+                                    !is_perf_polling_enabled
+                                )
                                 ||
                                 serviceId.indexOf('availability') > -1
                                 ||
@@ -728,16 +736,8 @@ function nocoutPerfLib() {
                 if (active_tab_url && active_tab_id) {
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
-
-                    if ($("#other_perf_table").length > 0) {
-                        $("#other_perf_table").dataTable().fnDestroy();
-                        $("#other_perf_table").remove();
-                    }
-
-                    if ($("#perf_data_table").length > 0) {
-                        $("#perf_data_table").dataTable().fnDestroy();
-                        $("#perf_data_table").remove();
-                    }
+                    nocout_destroyDataTable('other_perf_table');
+                    nocout_destroyDataTable('perf_data_table');
 
                     perf_that.resetLivePolling(active_tab_content_dom_id);
 
@@ -972,7 +972,7 @@ function nocoutPerfLib() {
             $('#' + service_id+ '_chart').html("");
 
             initChartDataTable_nocout(
-                "perf_data_table",
+                "other_perf_table",
                 listing_headers,
                 service_id,
                 listing_ajax_url,
@@ -1059,6 +1059,9 @@ function nocoutPerfLib() {
                             if (!$("#display_type_container").hasClass("hide")) {
                                 $("#display_type_container").addClass("hide")
                             }
+                            
+                            // Destroy Highchart
+                            nocout_destroyHighcharts(service_id);
 
                             if (typeof(grid_headers[0]) == 'string') {
                                 var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
@@ -1077,7 +1080,6 @@ function nocoutPerfLib() {
                                     'other_perf_table'
                                 );
                             } else {
-                                $('#' + service_id+ '_chart').html("");
 
                                 draw_type = 'table';
                                 // Checked the chart type radio
@@ -1117,11 +1119,9 @@ function nocoutPerfLib() {
                             // If any data available then plot chart & table
                             if (chart_config.chart_data.length > 0) {
                                 if (draw_type == 'chart') {
-
-                                    if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                        $("#perf_data_table").dataTable().fnDestroy();
-                                        $("#perf_data_table").remove();
-                                    }
+                                    // Destroy 'perf_data_table'
+                                    nocout_destroyDataTable('other_perf_table');
+                                    nocout_destroyDataTable('perf_data_table');
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
                                         createHighChart_nocout(chart_config,service_id, false, false, function(status) {
@@ -1170,12 +1170,8 @@ function nocoutPerfLib() {
                                     }
 
                                 } else {
-                                    // Destroy highchart if exists
-                                    if ($('#' + service_id+ '_chart').highcharts()) {
-                                        $('#' + service_id+ '_chart').highcharts().destroy();
-                                    }
-                                    // Clear CHART DIV HTML
-                                    $('#' + service_id+ '_chart').html("");
+                                    // Destroy Highcharts
+                                    nocout_destroyHighcharts(service_id);
 
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
 
@@ -1184,7 +1180,7 @@ function nocoutPerfLib() {
                                         $('#display_table')[0].checked = true;
 
                                         initChartDataTable_nocout(
-                                            "perf_data_table",
+                                            "other_perf_table",
                                             listing_headers,
                                             service_id,
                                             listing_ajax_url,
@@ -1224,7 +1220,7 @@ function nocoutPerfLib() {
                                         $('#display_table')[0].checked = true;
 
                                         initChartDataTable_nocout(
-                                            "perf_data_table",
+                                            "other_perf_table",
                                             listing_headers,
                                             service_id,
                                             listing_ajax_url,
@@ -1284,7 +1280,7 @@ function nocoutPerfLib() {
                             $('#display_table')[0].checked = true;
 
                             initChartDataTable_nocout(
-                                "perf_data_table",
+                                "other_perf_table",
                                 listing_headers,
                                 service_id,
                                 listing_ajax_url,
@@ -1385,17 +1381,21 @@ function nocoutPerfLib() {
             clearTimeout(timeInterval);
         }
 
-        if ($('#' + service_id+ '_chart').highcharts()) {
-            $('#' + service_id+ '_chart').highcharts().destroy();
-        }
+        // if ($('#' + service_id+ '_chart').highcharts()) {
+        //     $('#' + service_id+ '_chart').highcharts().destroy();
+        // }
 
-        for(var i=0;i<Highcharts.charts.length;i++) {
-            if (Highcharts.charts[i]) {
-                Highcharts.charts[i].destroy();
-            }
-        }
+        // for(var i=0;i<Highcharts.charts.length;i++) {
+        //     if (Highcharts.charts[i]) {
+        //         Highcharts.charts[i].destroy();
+        //     }
+        // }
         
-        Highcharts.charts = [];
+        // Highcharts.charts = [];
+
+        nocout_destroyHighcharts(service_id);
+        nocout_destroyDataTable('other_perf_table');
+        nocout_destroyDataTable('perf_data_table');
         if(get_service_data_url && service_id && device_id) {
             /*Call getServiceData function to fetch the data for clicked service tab*/
             perfInstance.getServiceData(get_service_data_url, service_id, device_id);
@@ -1460,15 +1460,15 @@ $('input[name="item_type"]').change(function(e) {
 
     if (get_service_data_url && service_id && current_device) {
 
-        if ($("#other_perf_table").length > 0) {
-            $("#other_perf_table").dataTable().fnDestroy();
-            $("#other_perf_table").remove();
-        }
+        // if ($("#other_perf_table").length > 0) {
+        //     $("#other_perf_table").dataTable().fnDestroy();
+        //     $("#other_perf_table").remove();
+        // }
 
-        if ($("#perf_data_table").length > 0) {
-            $("#perf_data_table").dataTable().fnDestroy();
-            $("#perf_data_table").remove();
-        }
+        // if ($("#perf_data_table").length > 0) {
+        //     $("#perf_data_table").dataTable().fnDestroy();
+        //     $("#perf_data_table").remove();
+        // }
 
         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
     } else if (is_perf_polling_enabled) {
