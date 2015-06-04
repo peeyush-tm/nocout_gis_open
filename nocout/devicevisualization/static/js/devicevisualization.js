@@ -2174,7 +2174,9 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
         service_name = current_target_attr['service_name'] ? current_target_attr['service_name'].value : "",
         ds_name = current_target_attr['ds_name'] ? current_target_attr['ds_name'].value : "",
         device_name = current_target_attr['device_name'] ? [current_target_attr['device_name'].value] : "",
-        false_param = false;
+        false_param = false,
+        true_param = true;
+
 
         if(service_name && ds_name && device_name) {
             // Disable all poll now buttons
@@ -2189,6 +2191,7 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                 false_param,
                 false_param,
                 false_param,
+                true_param,
                 function(live_polled_dict) {
                     // Disable all poll now buttons
                     $(currentTarget).button('complete');
