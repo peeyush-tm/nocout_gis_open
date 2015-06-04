@@ -549,7 +549,7 @@ function nocoutPerfLib() {
                                                     }
                                                 }
 
-                                                if (unique_item_key.indexOf('_status') > -1) {
+                                                if (show_historical_on_performance && unique_item_key.indexOf('_status') > -1) {
                                                     // inner_inner_tabs = inventory_status_inner_inner_tabs;
                                                     inner_inner_tabs = inner_inner_tabs.concat(inventory_status_inner_inner_tabs);
                                                 }
@@ -1430,7 +1430,7 @@ $('.inner_tab_container').delegate('ul.inner_inner_tab li a','click',function (e
             }
         }
 
-        if (show_historical_on_performance) {
+        if (show_historical_on_performance || is_perf_polling_enabled) {
             perfInstance.initGetServiceData(serviceDataUrl, tab_service_id, current_device);
         }
     }
