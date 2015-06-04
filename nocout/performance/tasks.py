@@ -12,8 +12,8 @@ from performance.models import SpotDashboard, RfNetworkAvailability, NetworkAvai
 from device.models import DeviceType, DeviceTechnology, SiteInstance, Device
 from inventory.models import Sector
 import inventory.tasks as inventory_tasks
-
-import inventory.utils.util as inventory_utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 from celery.utils.log import get_task_logger
 # Django Dateformat utility
@@ -132,7 +132,13 @@ def get_all_sector_devices(technology):
         'sector_configured_on__ip_address'
     ]
 
-    sector_objects = inventory_utils.organization_sectors(organization=organizations, technology=tech)
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
+    sector_objects = inventory_utils.organization_sectors(
+        organization=organizations,
+        technology=tech
+    )
 
     if not sector_objects.exists():
         return False
@@ -532,6 +538,9 @@ def calculate_rf_network_availability(technology=None):
     except Exception as e:
         return False
 
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     organization_devices = inventory_utils.filter_devices(
         organizations=organizations,
         data_tab=technology,
@@ -541,7 +550,10 @@ def calculate_rf_network_availability(technology=None):
     )
 
     # Get machine wise data
-    machine_wise_devices = inventory_utils.prepare_machines(organization_devices, machine_key='machine_name')
+    machine_wise_devices = inventory_utils.prepare_machines(
+        organization_devices,
+        machine_key='machine_name'
+    )
 
     # Model used to collect data from distributed databases
     availability_model = NetworkAvailabilityDaily

@@ -32,8 +32,8 @@ from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin
 from nocout.mixins.select2 import Select2Mixin
 from django.db.models import Q
-from inventory.utils.util import organization_customer_devices, \
-    organization_network_devices, organization_backhaul_devices
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 from scheduling_management.models import Event
 import logging
 
@@ -3537,10 +3537,6 @@ def list_schedule_device(request):
            technology_id
     :return json:
     """
-    # ptp_device_circuit_backhaul(specify_type='all')
-    # organization_customer_devices(organizations, technology = None, specify_ptp_type='all')
-    # organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all')
-    # organization_backhaul_devices(organizations, technology = None)
 
     # In case of Event Create set object_id = None.
     obj_id = None
@@ -3569,6 +3565,10 @@ def list_schedule_device(request):
                                         is_added_to_nms=1,
                                         is_deleted=0, )
     technology_id = None
+
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     # Get the technology_id. And Get the devices of that technology.
     if request.GET['technology_id']:
         technology_id = request.GET['technology_id']
@@ -3602,18 +3602,24 @@ def list_schedule_device(request):
 
     # if scheduling type is customer, then filter the devices from organization_customer_devices.
     elif scheduling_type == 'cust':
-        device_list = organization_customer_devices(organizations=[org], technology=technology_id,
-                                                    specify_ptp_type='all'). \
-            filter(device_alias__icontains=sSearch)
+        device_list = inventory_utils.organization_customer_devices(
+            organizations=[org],
+            technology=technology_id,
+            specify_ptp_type='all'
+        ).filter(device_alias__icontains=sSearch)
     # if scheduling type is network, then filter devices from organization_network_devices.
     elif scheduling_type == 'netw':
-        device_list = organization_network_devices(organizations=[org], technology=technology_id,
-                                                   specify_ptp_bh_type='all'). \
-            filter(device_alias__icontains=sSearch)
+        device_list = inventory_utils.organization_network_devices(
+            organizations=[org],
+            technology=technology_id,
+            specify_ptp_bh_type='all'
+        ).filter(device_alias__icontains=sSearch)
     # if scheduling type is backhaul, then filter devices from organization_backhaul_devices.
     elif scheduling_type == 'back':
-        device_list = organization_backhaul_devices(organizations=[org], technology=technology_id). \
-            filter(device_alias__icontains=sSearch)
+        device_list = inventory_utils.organization_backhaul_devices(
+            organizations=[org],
+            technology=technology_id
+        ).filter(device_alias__icontains=sSearch)
     else:  # if no schedling type is available
         device_list = device_list.filter(device_alias__icontains=sSearch)
 

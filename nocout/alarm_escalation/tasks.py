@@ -24,7 +24,8 @@ from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus, EscalationLevel
 # Import performance utils gateway class
 from performance.utils.util import PerformanceUtilsGateway
-from inventory.utils import util as inventory_utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 from scheduling_management.views import get_today_event_list
 from inventory.tasks import bulk_update_create
 import logging
@@ -449,6 +450,9 @@ def check_device_status():
 
     # Create instance of 'PerformanceUtilsGateway' class
     perf_utils = PerformanceUtilsGateway()
+
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
 
     #get the device list which is in downtime scheduling today.
     device_id_list = get_today_event_list()['device_ids']

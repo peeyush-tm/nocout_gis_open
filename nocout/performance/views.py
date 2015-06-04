@@ -32,9 +32,8 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly
 from nocout.utils import util as nocout_utils
 
-
-#utilities inventory
-from inventory.utils import util as inventory_utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 # Import performance utils gateway class
 from performance.utils.util import PerformanceUtilsGateway
@@ -196,6 +195,9 @@ class LivePerformanceListing(BaseDatatableView):
     is_polled = False
     is_searched = False
     is_initialised = True
+    
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
 
     columns = [
         'id',
@@ -251,7 +253,7 @@ class LivePerformanceListing(BaseDatatableView):
 
         device_tab_technology = self.request.GET.get('data_tab')
 
-        devices = inventory_utils.filter_devices(
+        devices = self.inventory_utils.filter_devices(
             organizations=kwargs['organizations'],
             data_tab=device_tab_technology,
             page_type=page_type,
@@ -450,7 +452,7 @@ class LivePerformanceListing(BaseDatatableView):
                 }
             )
 
-        return inventory_utils.prepare_machines(device_list)
+        return self.inventory_utils.prepare_machines(device_list)
 
     def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
         """

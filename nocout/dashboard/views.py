@@ -28,10 +28,8 @@ from device.models import DeviceTechnology, Device
 from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, \
     Topology, NetworkStatus, RfNetworkAvailability
 
-# inventory utils
-from inventory.utils.util import organization_customer_devices, organization_network_devices, \
-    organization_sectors, prepare_machines, organization_backhaul_devices
-#inventory utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, \
     DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily, DashboardRangeStatusDaily
@@ -1761,8 +1759,11 @@ class MonthlyTrendSalesMixin(object):
                 "success": 0
             }))
 
+        # Create instance of 'InventoryUtilsGateway' class
+        inventory_utils = InventoryUtilsGateway()
+
         # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector = organization_sectors(organization, technology)
+        user_sector = inventory_utils.organization_sectors(organization, technology)
         sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
                                                     is_added_to_nms=1)
         sector_devices_list = sector_devices_list.values_list('device_name', flat=True)

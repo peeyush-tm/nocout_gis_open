@@ -71,7 +71,8 @@ from django.core.cache import cache
 
 from django.views.decorators.csrf import csrf_exempt
 
-from inventory.utils.util import ptp_device_circuit_backhaul
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 
 # **************************************** Inventory *********************************************
@@ -2803,18 +2804,7 @@ class BulkUploadValidData(View):
         ## we need to reset caching, as soon as
         ##user bulk uploads
         try:
-            # cached_functions = ['prepare_raw_gis_info',
-            #                     'organization_backhaul_devices',
-            #                     'organization_network_devices',
-            #                     'organization_customer_devices',
-            #                     'ptp_device_circuit_backhaul',
-            #                     'perf_gis_raw_inventory'
-            #                     ]
-            # keys = []
-            # for cf in cached_functions:
-            #     keys.append(cache_get_key(cf))
-            # cache.delete_many(keys)
-            cache.clear() #delete GIS cache on bulk upload
+            cache.clear()  # delete GIS cache on bulk upload
         except Exception as caching_exp:
             logger.exception(caching_exp.message)
         return HttpResponseRedirect('/bulk_import/')
@@ -4851,6 +4841,9 @@ def getPageType(deviceObj):
     page_type = 'customer'
 
     if deviceObj:
+        # Create instance of 'InventoryUtilsGateway' class
+        inventory_utils = InventoryUtilsGateway()
+
         if deviceObj.sector_configured_on.exists() or deviceObj.dr_configured_on.exists():
             
             # GET technology name for current device
@@ -4862,7 +4855,7 @@ def getPageType(deviceObj):
             
             # Fetch BH devices list
             try:
-                bh_devices_qs = ptp_device_circuit_backhaul()
+                bh_devices_qs = inventory_utils.ptp_device_circuit_backhaul()
                 bh_devices_list = bh_devices_qs.values_list('id', flat=True)
             except Exception, e:
                 bh_devices_list = list()
@@ -4876,7 +4869,7 @@ def getPageType(deviceObj):
         elif deviceObj.substation_set.exists():
             # Fetch BH devices list
             try:
-                bh_devices_qs = ptp_device_circuit_backhaul()
+                bh_devices_qs = inventory_utils.ptp_device_circuit_backhaul()
                 bh_devices_list = bh_devices_qs.values_list('id', flat=True)
             except Exception, e:
                 bh_devices_list = list()

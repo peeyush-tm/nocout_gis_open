@@ -18,8 +18,8 @@ from operator import itemgetter
 # Import performance utils gateway class
 from performance.utils.util import PerformanceUtilsGateway
 
-# utilities inventory
-from inventory.utils import util as inventory_utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 from django.utils.dateformat import format
 
@@ -38,9 +38,8 @@ from alert_center.utils import util as alert_utils
 import logging
 logger = logging.getLogger(__name__)
 
-
-
-
+# Create instance of 'InventoryUtilsGateway' class
+inventory_utils = InventoryUtilsGateway()
 
 class CustomerAlertDetailHeaders(ListView):
     """

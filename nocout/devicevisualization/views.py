@@ -20,7 +20,7 @@ from inventory.models import ThematicSettings, UserThematicSettings, BaseStation
     PingThematicSettings, Circuit, CircuitL2Report, Sector
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService, Status, Topology, Utilization, UtilizationStatus
-from performance.views import device_last_down_time
+# from performance.views import device_last_down_time
 from user_profile.models import UserProfile
 from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
@@ -39,8 +39,8 @@ from performance.formulae import rta_null, display_time
 # update the service data sources
 from service.utils.util import service_data_sources
 from nocout.utils.util import format_value
-
-from inventory.utils import util as inventory_utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 logger = logging.getLogger(__name__)
 
@@ -1489,6 +1489,9 @@ class GISPerfData(View):
 
         # base station counter
         bs_counter = 0
+
+        # Create instance of 'InventoryUtilsGateway' class
+        inventory_utils = InventoryUtilsGateway()
 
         # loop through all base stations having id's in bs_ids list
         try:
@@ -3991,6 +3994,9 @@ class GISStaticInfo(View):
 
         inventory = ""
 
+        # Create instance of 'InventoryUtilsGateway' class
+        inventory_utils = InventoryUtilsGateway()
+
         # loop through all base stations having id's in bs_ids list
         try:
             for bs_id in bs_ids:
@@ -4991,6 +4997,9 @@ class GISPerfInfo(View):
             bs_devices = Device.objects.filter(id__in=device_list).values('device_name', 'machine__name',
                                                                           'device_technology', 'device_type',
                                                                           'ip_address')
+
+            # Create instance of 'InventoryUtilsGateway' class
+            inventory_utils = InventoryUtilsGateway()
 
             machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
 

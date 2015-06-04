@@ -9,7 +9,9 @@ from capacity_management.models import SectorCapacityStatus, BackhaulCapacitySta
 from inventory.models import get_default_org, Sector, Backhaul, BaseStation
 from device.models import DeviceTechnology, Device, DevicePort, DeviceType
 from service.models import ServiceDataSource
-from inventory.utils.util import prepare_machines
+
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 from inventory.tasks import get_devices, bulk_update_create
 
@@ -346,6 +348,10 @@ def gather_sector_status(technology):
 
     network_devices = get_devices(technology)
     device_list = []
+
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     for device in network_devices:
         device_list.append(
             {
@@ -356,8 +362,8 @@ def gather_sector_status(technology):
         )
 
     machine_dict = {}
-    #prepare_machines(device_list)
-    machine_dict = prepare_machines(device_list)
+
+    machine_dict = inventory_utils.prepare_machines(device_list)
     #need to gather from various sources
     #will do a raw query
 

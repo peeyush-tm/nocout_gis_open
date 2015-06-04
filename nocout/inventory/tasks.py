@@ -13158,7 +13158,8 @@ def remove_duplicate_dict_from_list(input_list=None):
 ## TOPOLOGY UPDATE ##
 #################################################################################################
 from performance.models import Topology, InventoryStatus, ServiceStatus
-from inventory.utils.util import organization_network_devices, organization_customer_devices, organization_sectors
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 from organization.models import Organization
 from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
@@ -13184,7 +13185,7 @@ def get_devices(technology='WiMAX', rf_type=None, site_name=None):
     :return:
     """
     organizations = get_organizations()
-    #organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all')
+
     technology = DeviceTechnology.objects.get(name__icontains=technology).id
 
     required_columns = ['id',
@@ -13192,14 +13193,19 @@ def get_devices(technology='WiMAX', rf_type=None, site_name=None):
                     'machine__name'
     ]
 
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     if rf_type and rf_type == 'customer':
-        network_devices = organization_customer_devices(organizations=organizations,
-                                                       technology=technology
+        network_devices = inventory_utils.organization_customer_devices(
+            organizations=organizations,
+            technology=technology
         )
 
     else:
-        network_devices = organization_network_devices(organizations=organizations,
-                                                       technology=technology
+        network_devices = inventory_utils.organization_network_devices(
+            organizations=organizations,
+            technology=technology
         )
 
     if site_name and SiteInstance.objects.filter(name=site_name).exists():
@@ -13225,14 +13231,20 @@ def get_topology(technology, rf_type=None, site_name=None):
     ]
     # network_devices = get_devices(technology, rf_type=rf_type, site_name=site_name)
     technology = DeviceTechnology.objects.get(name__icontains=technology).id
+    
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     if site_name and SiteInstance.objects.filter(name=site_name).exists():
-        sector_objects = organization_sectors(organization=None,
-                                           technology=technology
+        sector_objects = inventory_utils.organization_sectors(
+            organization=None,
+            technology=technology
         ).filter(sector_configured_on__site_instance__name=site_name)
 
     else:
-        sector_objects = organization_sectors(organization=None,
-                                           technology=technology
+        sector_objects = inventory_utils.organization_sectors(
+            organization=None,
+            technology=technology
         )
 
     all_sectors = sector_objects.values(*required_columns)
