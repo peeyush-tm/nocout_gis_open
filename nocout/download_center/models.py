@@ -188,6 +188,7 @@ class CityCharterSettings(models.Model):
     uas = models.CharField('UAS', max_length=128, null=True, blank=True)
     pd = models.CharField('Packet Drop', max_length=128, null=True, blank=True)
     latency = models.CharField('Latency', max_length=128, null=True, blank=True)
+    normal = models.CharField('Normal', max_length=128, null=True, blank=True)
 
 
 # ### Report Common Parameters

@@ -1187,7 +1187,8 @@ def add_device_to_nms_core_form(request, device_id):
         # Get device ping information which is a ssociated which device type (if exist).
         ping_packets = device_type.packets if device_type.packets else settings.PING_PACKETS
         ping_timeout = device_type.timeout if device_type.timeout else settings.PING_TIMEOUT
-        ping_normal_check_interval = device_type.normal_check_interval if device_type.normal_check_interval else settings.PING_NORMAL_CHECK_INTERVAL
+        ping_normal_check_interval = device_type.normal_check_interval if device_type.normal_check_interval \
+            else settings.PING_NORMAL_CHECK_INTERVAL
         ping_rta_warning = device_type.rta_warning if device_type.rta_warning else settings.PING_RTA_WARNING
         ping_rta_critical = device_type.rta_critical if device_type.rta_critical else settings.PING_RTA_CRITICAL
         ping_pl_warning = device_type.pl_warning if device_type.pl_warning else settings.PING_PL_WARNING
