@@ -3,6 +3,8 @@
 #python core functions
 import datetime
 
+from django.views.generic.base import View
+
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import P2P, WiMAX, PMP, DEBUG, CACHE_TIME
 
@@ -26,12 +28,130 @@ log = logging.getLogger(__name__)
 VALID_PAGE_LIST = ["customer", "network", "backhaul", "others"]
 VALID_SPECIFICATION = ['all', 'ss', 'bs']
 
-# common function to get the devices
+
+class InventoryUtilsGateway(View):
+    """
+    This class works as gateway between inventory utils & other apps
+    """
+    def ptp_device_circuit_backhaul(self, specify_type='all'):
+        """
+
+        """
+        param1 = ptp_device_circuit_backhaul(specify_type=specify_type)
+
+        return param1
+
+
+    def organization_customer_devices(
+        self, 
+        organizations, 
+        technology=None, 
+        specify_ptp_type='all'
+    ):
+        """
+
+        """
+        param1 = organization_customer_devices(
+            organizations,
+            technology = technology,
+            specify_ptp_type=specify_ptp_type
+        )
+
+        return param1
+
+
+    def organization_network_devices(
+        self, 
+        organizations, 
+        technology = None, 
+        specify_ptp_bh_type='all'
+    ):
+        """
+
+        """
+        param1 = organization_network_devices(
+            organizations, 
+            technology=technology, 
+            specify_ptp_bh_type=specify_ptp_bh_type
+        )
+
+        return param1
+
+
+    def organization_backhaul_devices(
+        self, 
+        organizations, 
+        technology=None, 
+        others=False, 
+        other_type="backhaul"
+    ):
+        """
+
+        """
+        param1 = organization_backhaul_devices(
+            organizations, 
+            technology=technology, 
+            others=others, 
+            other_type=other_type
+        )
+
+        return param1
+
+
+    def filter_devices(
+        self, 
+        organizations, 
+        data_tab=None, 
+        page_type="customer", 
+        other_type=None, 
+        required_value_list=None, 
+        other_bh=False
+    ):
+        """
+
+        """
+        param1 = filter_devices(
+            organizations, 
+            data_tab=data_tab, 
+            page_type=page_type, 
+            other_type=other_type, 
+            required_value_list=required_value_list, 
+            other_bh=other_bh
+        )
+
+        return param1
+
+    
+    def prepare_machines(self, device_list, machine_key='device_machine'):
+        """
+
+        """
+        param1 = prepare_machines(device_list, machine_key=machine_key)
+
+        return param1
+
+
+    def organization_sectors(self, organization, technology=0):
+        """
+
+        """
+        param1 = organization_sectors(organization, technology=technology)
+
+        return param1
+
+
+    def list_to_indexed_dict(self, inventory_list, key):
+        """
+
+        """
+        param1 = list_to_indexed_dict(inventory_list, key)
+
+        return param1
 
 
 def organization_monitored_devices(organizations, **kwargs):
     """
-
+    Common function to get the devices
     :param organizations: list of organizations
     :param kwargs: keyword arguments defining the elements that are required to be gathered
     :return: Devices for the organization, based on the argumentas passed
@@ -335,8 +455,7 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
 
 
 @cache_for(CACHE_TIME.get('INVENTORY', 300))
-def filter_devices(organizations, data_tab=None, page_type="customer", other_type=None,
-                   required_value_list=None, other_bh=False):
+def filter_devices(organizations, data_tab=None, page_type="customer", other_type=None, required_value_list=None, other_bh=False):
 
     """
 
