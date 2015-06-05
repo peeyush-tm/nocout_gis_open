@@ -47,6 +47,11 @@ class PerformanceUtilsGateway(View):
     ):
         """
 
+        :param condition:
+        :param columns:
+        :param data_sources:
+        :param devices:
+        :param table_name:
         """
         param1 = prepare_query(
             table_name=table_name, 
@@ -58,7 +63,6 @@ class PerformanceUtilsGateway(View):
 
         return param1
 
-
     def prepare_row_query(
         self, 
         table_name=None, 
@@ -69,6 +73,11 @@ class PerformanceUtilsGateway(View):
     ):
         """
 
+        :param condition:
+        :param columns:
+        :param data_sources:
+        :param devices:
+        :param table_name:
         """
         param1 = prepare_row_query(
             table_name=table_name, 
@@ -80,10 +89,13 @@ class PerformanceUtilsGateway(View):
 
         return param1
 
-
     def polled_results(self, qs, multi_proc=False, machine_dict={}, model_is=None):
         """
 
+        :param model_is:
+        :param machine_dict:
+        :param multi_proc:
+        :param qs:
         """
         param1 = polled_results(
             qs, 
@@ -94,28 +106,33 @@ class PerformanceUtilsGateway(View):
 
         return param1
 
-
     def pre_map_indexing(self, index_dict, index_on='device_name'):
         """
 
+        :param index_on:
+        :param index_dict:
         """
         param1 = pre_map_indexing(index_dict, index_on=index_on)
 
         return param1
 
-
     def map_results(self, perf_result, qs):
         """
 
+        :param qs:
+        :param perf_result:
         """
         param1 = map_results(perf_result, qs)
 
         return param1
 
-
     def combined_indexed_gis_devices(self, indexes, monitored_only=True, technology=None, type_rf=None):
         """
 
+        :param type_rf:
+        :param technology:
+        :param monitored_only:
+        :param indexes:
         """
         param1, param2, param3, param4, param5, param6, param7 = combined_indexed_gis_devices(
             indexes, 
@@ -126,10 +143,14 @@ class PerformanceUtilsGateway(View):
 
         return param1, param2, param3, param4, param5, param6, param7
 
-
     def prepare_gis_devices(self, devices, page_type, monitored_only=True, technology=None, type_rf=None):
         """
 
+        :param type_rf:
+        :param technology:
+        :param monitored_only:
+        :param page_type:
+        :param devices:
         """
         param1 = prepare_gis_devices(
             devices, 
@@ -141,46 +162,49 @@ class PerformanceUtilsGateway(View):
 
         return param1
 
-
     def indexed_polled_results(self, performance_data):
         """
 
+        :param performance_data:
         """
         param1 = indexed_polled_results(performance_data)
 
         return param1
 
-
     def get_time(self, start_date, end_date, date_format, data_for):
         """
 
+        :param data_for:
+        :param date_format:
+        :param end_date:
+        :param start_date:
         """
         param1, param2, param3 = get_time(start_date, end_date, date_format, data_for)
 
         return param1, param2, param3
 
-
     def color_picker(self):
-        """
-
-        """
         param1 = color_picker()
 
         return param1
 
-
     def create_perf_chart_img(self, device_name, service, data_source):
         """
 
+        :param data_source:
+        :param service:
+        :param device_name:
         """
         param1 = create_perf_chart_img(device_name, service, data_source)
 
         return param1
 
-
     def dataTableOrdering(self, self_instance, qs, order_columns):
         """
 
+        :param order_columns:
+        :param qs:
+        :param self_instance:
         """
         param1 = dataTableOrdering(self_instance, qs, order_columns)
 
@@ -192,6 +216,7 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
     """
     The raw query preparation.
 
+    :param condition:
     :param table_name:
     :param devices:
     :param data_sources:
@@ -228,6 +253,11 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
 def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     """
 
+    :param condition:
+    :param columns:
+    :param data_sources:
+    :param devices:
+    :param table_name:
     :return:
     """
     in_string = lambda x: "'" + str(x) + "'"
@@ -286,6 +316,10 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
 def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     """
     ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
+    :param model_is:
+    :param machine_dict:
+    :param multi_proc:
+    :param qs:
     """
     # Fetching the data for the device w.r.t to their machine.
     ## multi processing module here
@@ -302,7 +336,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
                 target=get_multiprocessing_performance_data,
                 args=(q, machine_device_list, machine, model)
             ) for machine, machine_device_list in machine_dict.items()
-            ]
+        ]
 
         for j in jobs:
             j.start()
@@ -344,6 +378,10 @@ def pre_map_indexing(index_dict, index_on='device_name'):
 @cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def map_results(perf_result, qs):
     """
+
+
+    :param qs:
+    :param perf_result:
     """
     result_qs = []
     performance = perf_result
@@ -367,6 +405,10 @@ def map_results(perf_result, qs):
 def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, type_rf=None):
     """
     indexes={
+    :param type_rf:
+    :param technology:
+    :param monitored_only:
+    :param indexes:
             'sector': 'SECTOR_CONF_ON_NAME',
             'ss': 'SSDEVICENAME',
             'bh': 'BHCONF',
@@ -410,7 +452,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_sector[defined_sector_index] = []
             try:
                 indexed_sector[defined_sector_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing DR
@@ -418,7 +460,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_dr[defined_dr_conv_index] = list()
             try:
                 indexed_dr[defined_dr_conv_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing ss
@@ -426,7 +468,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_ss[defined_ss_index] = []
             try:
                 indexed_ss[defined_ss_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing bh
@@ -434,7 +476,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_bh[defined_bh_index] = []
             try:
                 indexed_bh[defined_bh_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # pop, aggrigation, bs conveter
@@ -443,7 +485,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_bh_pop[defined_bh_pop_index] = []
             try:
                 indexed_bh_pop[defined_bh_pop_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing bsconv
@@ -451,14 +493,14 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_bh_conv[defined_bh_conv_index] = []
             try:
                 indexed_bh_conv[defined_bh_conv_index].append(result)
-            except:
+            except Exception as e:
                 pass
             # indexing aggregation
             if defined_bh_aggr_index and defined_bh_aggr_index not in indexed_bh_aggr:
                 indexed_bh_aggr[defined_bh_aggr_index] = []
             try:
                 indexed_bh_aggr[defined_bh_aggr_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
     return indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv, indexed_dr
@@ -468,13 +510,18 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
 def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None, type_rf=None):
     """
     map the devices with gis data
+    :param type_rf:
+    :param technology:
+    :param monitored_only:
+    :param page_type:
+    :param devices:
     :return:
     """
 
     def put_na(bsdict, key):
         """
         put NA for keys of a dictionary
-        :param dict: dictionary
+        :param bsdict:
         :param key : key in the dictionary
         """
         if key in bsdict:
@@ -544,10 +591,10 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
             "bh_connectivity": "",
             # BS names & ids in case of BH & other devices
-            "bs_names_list" : "",
-            "bs_ids_list" : "",
-            "bs_bh_ports_list" : "",
-            "bs_bh_capacity_list" : ""
+            "bs_names_list": "",
+            "bs_ids_list": "",
+            "bs_bh_ports_list": "",
+            "bs_bh_capacity_list": ""
         })
 
         is_sector = False
@@ -673,7 +720,7 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "bh_type_id": put_na(bs_row, 'BHTYPEID'),
                     "planned_freq": put_na(bs_row, 'SECTOR_PLANNED_FREQUENCY'),
                     "polled_freq": put_na(bs_row, 'SECTOR_FREQUENCY'),
-                    "qos_bw": put_na(bs_row, 'QOS'), #bs_row.get('QOS', 0) / 1000,
+                    "qos_bw": put_na(bs_row, 'QOS'),
                     "ss_name": put_na(bs_row, 'SS_ALIAS'),
                     "sector_id_str": ",".join(sector_id_str),
                     "pmp_port_str": ",".join(pmp_port_str),
@@ -693,10 +740,10 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
                     "bh_connectivity": put_na(bs_row, 'BH_CONNECTIVITY'),
                     # BS names & ids in case of BH & other devices
-                    "bs_names_list" : ",".join(bs_names_list),
-                    "bs_ids_list" : ",".join(bs_ids_list),
-                    "bs_bh_ports_list" : ",".join(bs_bh_ports_list),
-                    "bs_bh_capacity_list" : ",".join(bs_bh_capacity_list)
+                    "bs_names_list": ",".join(bs_names_list),
+                    "bs_ids_list": ",".join(bs_ids_list),
+                    "bs_bh_ports_list": ",".join(bs_bh_ports_list),
+                    "bs_bh_capacity_list": ",".join(bs_bh_capacity_list)
                 })
 
                 if is_sector:
@@ -761,6 +808,8 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
 def indexed_polled_results(performance_data):
     """
 
+
+    :param performance_data:
     :return: dictionary for polled results w.r.t to device name
     """
     indexed_raw_results = {}
@@ -779,6 +828,8 @@ def get_performance_data(device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
 
+    :param model:
+    :param machine:
     :param device_list:
     :return:
     """
@@ -830,7 +881,7 @@ def get_performance_data(device_list, machine, model):
                 perf_result["packet_loss"] = float(data['pl'])
                 # if d_src == "rta":
                 perf_result["latency"] = float(data['rta'])
-            except:
+            except Exception as e:
                 # if d_src == "pl":
                 perf_result["packet_loss"] = data['pl']
                 # if d_src == "rta":
@@ -851,6 +902,14 @@ def get_performance_data(device_list, machine, model):
 
 
 def get_time(start_date, end_date, date_format, data_for):
+    """
+
+    :param start_date:
+    :param end_date:
+    :param date_format:
+    :param data_for:
+    :return:
+    """
     isSet = False
 
     if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
@@ -896,6 +955,11 @@ def get_time(start_date, end_date, date_format, data_for):
 
 
 def color_picker():
+    """
+
+
+    :return:
+    """
     import random
 
     color = "#"
@@ -907,6 +971,9 @@ def create_perf_chart_img(device_name, service, data_source):
     """
     This function create performance chart image for given device, 
     service & data_source and return image url
+    :param data_source:
+    :param service:
+    :param device_name:
     """
 
     kwargs_dict = {
@@ -1013,6 +1080,8 @@ def create_perf_chart_img(device_name, service, data_source):
 def dataTableOrdering(self_instance, qs, order_columns):
     """ 
      Get parameters from the request and prepare order by clause
+    :param order_columns:
+    :param self_instance:
     :param qs:
     """
     request = self_instance.request
@@ -1111,7 +1180,7 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
                 perf_result["packet_loss"] = float(data['pl'])
                 # if d_src == "rta":
                 perf_result["latency"] = float(data['rta'])
-            except:
+            except Exception as e:
                 # if d_src == "pl":
                 perf_result["packet_loss"] = data['pl']
                 # if d_src == "rta":

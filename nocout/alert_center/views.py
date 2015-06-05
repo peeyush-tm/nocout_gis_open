@@ -21,6 +21,9 @@ from performance.utils.util import PerformanceUtilsGateway
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
 
+# Import alert_center utils gateway class
+from alert_center.utils.util import AlertCenterUtilsGateway
+
 from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
@@ -32,14 +35,15 @@ from nocout.utils import util as nocout_utils
 #get the organisation of logged in user
 from nocout.utils import logged_in_user_organizations
 
-#alert center utilities
-from alert_center.utils import util as alert_utils
-
 import logging
 logger = logging.getLogger(__name__)
 
 # Create instance of 'InventoryUtilsGateway' class
 inventory_utils = InventoryUtilsGateway()
+
+# Create instance of 'AlertCenterUtilsGateway' class
+alert_utils = AlertCenterUtilsGateway()
+
 
 class CustomerAlertDetailHeaders(ListView):
     """
@@ -51,6 +55,11 @@ class CustomerAlertDetailHeaders(ListView):
 
     def get_context_data(self, **kwargs):
 
+        """
+
+        :param kwargs:
+        :return:
+        """
         starting_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
         ]
@@ -160,7 +169,6 @@ class GetCustomerAlertDetail(BaseDatatableView):
         Generic function required to fetch the initial data with respect 
         to the page_type parameter in the get request requested.
 
-        :param device_association:
         :param kwargs:
         :return: list of devices
         """
@@ -200,6 +208,10 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
     def prepare_devices(self, qs, perf_results):
         """
+
+
+        :param perf_results:
+        :param qs:
         :return:
         """
         page_type = "customer"
@@ -219,7 +231,6 @@ class GetCustomerAlertDetail(BaseDatatableView):
         # Create instance of 'PerformanceUtilsGateway' class
         perf_utils = PerformanceUtilsGateway()
 
-
         return perf_utils.prepare_gis_devices(
             qs,
             page_type,
@@ -230,6 +241,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
     def prepare_machines(self, qs):
         """
+
+        :param qs:
         """
         device_list = []
         for device in qs:
@@ -246,6 +259,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
         """
         preparing polled results
         after creating static inventory first
+        :param machine_dict:
+        :param qs:
         """
 
         device_tab_technology = self.request.GET.get('data_tab')
@@ -357,6 +372,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
     def ordering(self, qs):
         """
         sorting for the table
+        :param qs:
         """
         request = self.request
 
@@ -411,6 +427,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
         """
         The maine function call to fetch, search, prepare and display the data on the data table.
 
+        :param kwargs:
+        :param args:
         """
 
         request = self.request
@@ -458,6 +476,11 @@ class NetworkAlertDetailHeaders(ListView):
 
     def get_context_data(self, **kwargs):
 
+        """
+
+        :param kwargs:
+        :return:
+        """
         starting_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
         ]
@@ -519,7 +542,6 @@ class NetworkAlertDetailHeaders(ListView):
         backhaul_headers += polled_headers
         backhaul_headers += other_headers
 
-
         ul_issue_datatable_headers = []
         ul_issue_datatable_headers += starting_headers
         ul_issue_datatable_headers += ul_issue_specific_headers
@@ -578,8 +600,6 @@ class NetworkAlertDetailHeaders(ListView):
         bh_utils_headers = []
         bh_utils_headers += bh_util_hidden_headers
         bh_utils_headers += bh_util_common_headers
-
-
 
         context = {
             'datatable_headers': json.dumps(datatable_headers),
@@ -721,6 +741,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
         """
         preparing polled results
         after creating static inventory first
+        :param machine_dict:
+        :param qs:
         """
 
         search_table = self.table_name
@@ -747,15 +769,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
         for machine, machine_device_list in machine_dict.items():
             device_list = list()
             performance_data = list()
-            performance_data = alert_utils.raw_prepare_result(performance_data=performance_data,
-                                                              machine=machine,
-                                                              table_name=search_table,
-                                                              devices=machine_device_list,
-                                                              data_sources=self.data_sources,
-                                                              columns=self.polled_columns,
-                                                              condition=extra_query_condition
-                                                              if extra_query_condition
-                                                              else None
+            performance_data = alert_utils.raw_prepare_result(
+                performance_data=performance_data,
+                machine=machine,
+                table_name=search_table,
+                devices=machine_device_list,
+                data_sources=self.data_sources,
+                columns=self.polled_columns,
+                condition=extra_query_condition if extra_query_condition else None
             )
 
             device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
@@ -766,6 +787,10 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
     def prepare_devices(self, qs, perf_results):
         """
+
+
+        :param perf_results:
+        :param qs:
         :return:
         """
         page_type = self.request.GET.get('page_type', "network")
@@ -777,6 +802,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
     def prepare_machines(self, qs):
         """
+
+        :param qs:
         """
         device_list = []
         for device in qs:
@@ -833,6 +860,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
         """
         The maine function call to fetch, search, prepare and display the data on the data table.
 
+        :param kwargs:
+        :param args:
         """
 
         request = self.request
@@ -892,6 +921,7 @@ class AlertCenterListing(ListView):
         """
         Preparing the Context Variable required in the template rendering.
 
+        :param kwargs:
         """
 
         context = super(AlertCenterListing, self).get_context_data(**kwargs)
@@ -1081,7 +1111,6 @@ class AlertListingTable(BaseDatatableView):
         Generic function required to fetch the initial data with respect to 
         the page_type parameter in the get request requested.
 
-        :param device_association:
         :param kwargs:
         :return: list of devices
         """
@@ -1118,6 +1147,10 @@ class AlertListingTable(BaseDatatableView):
 
     def prepare_devices(self, qs, perf_results):
         """
+
+
+        :param perf_results:
+        :param qs:
         :return:
         """
         page_type = self.request.GET.get('page_type')
@@ -1147,6 +1180,8 @@ class AlertListingTable(BaseDatatableView):
 
     def prepare_machines(self, qs):
         """
+
+        :param qs:
         """
         device_list = []
         for device in qs:
@@ -1163,6 +1198,8 @@ class AlertListingTable(BaseDatatableView):
         """
         preparing polled results
         after creating static inventory first
+        :param machine_dict:
+        :param qs:
         """
         data_source = self.request.GET.get('data_source')
 
@@ -1285,6 +1322,7 @@ class AlertListingTable(BaseDatatableView):
     def ordering(self, qs):
         """
         sorting for the table
+        :param qs:
         """
         request = self.request
 
@@ -1372,6 +1410,8 @@ class AlertListingTable(BaseDatatableView):
         """
         The maine function call to fetch, search, prepare and display the data on the data table.
 
+        :param kwargs:
+        :param args:
         """
 
         request = self.request
@@ -1421,6 +1461,11 @@ class SingleDeviceAlertsInit(ListView):
 
     def get_context_data(self, **kwargs):
 
+        """
+
+        :param kwargs:
+        :return:
+        """
         data_source = self.kwargs['data_source']
         page_type = self.kwargs['page_type']
         device_id = self.kwargs['device_id']
@@ -1560,7 +1605,9 @@ class SingleDeviceAlertsListing(BaseDatatableView):
     order_columns = required_columns
 
     def filter_queryset(self, qs):
-        """ Filter datatable as per requested value """
+        """ Filter datatable as per requested value
+        :param qs:
+        """
 
         sSearch = self.request.GET.get('sSearch', None)
 
@@ -1719,6 +1766,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
     def prepare_results(self, qs):
         """
         Preparing Final dataset for rendering the data table.
+        :param qs:
         """
         final_list = list()
         if qs:
@@ -1738,6 +1786,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
+        :param qs:
         """
         request = self.request
         # Number of columns that are used in sorting
@@ -1768,7 +1817,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
             else:
                 order.append('%s%s' % (sdir, sortcol))
         if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
+            key_name = order[0][1:] if '-' in order[0] else order[0]
             sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse=True if '-' in order[0] else False)
             return sorted_device_data
         return qs
@@ -1846,6 +1895,8 @@ class SingleDeviceAlertsListing(BaseDatatableView):
     def get_context_data(self, *args, **kwargs):
         """
         The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        :param kwargs:
+        :param args:
         """
 
         request = self.request
@@ -1894,6 +1945,11 @@ class SIAListing(ListView):
     template_name = 'alert_center/current_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
         context = super(SIAListing, self).get_context_data(**kwargs)
 
         datatable_headers = [
@@ -1923,6 +1979,12 @@ class SIAListingTable(BaseDatatableView):
                      'severity', 'traptime']
 
     def get_context_data(self, *args, **kwargs):
+        """
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -1943,6 +2005,11 @@ class SIAListingTable(BaseDatatableView):
         return ret
 
     def get_initial_queryset(self):
+        """
+
+
+        :return: :raise NotImplementedError:
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return self.model.objects.using(TRAPS_DATABASE).values(*self.columns).all()
