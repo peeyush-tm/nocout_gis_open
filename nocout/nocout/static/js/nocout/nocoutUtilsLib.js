@@ -807,10 +807,12 @@ function nocout_livePollCurrentDevice(
                 var fetched_val = result.data.devices[device_name] ? result.data.devices[device_name]['value'] : "",
                     shown_val = "",
                     current_val_html = "",
-                    ds_key = result.data.data_source ? result.data.data_source : "",
+                    ds_key = result.data.meta ? result.data.meta : "",
                     data_type = ds_key && ds_key["data_source_type"] ? ds_key["data_source_type"] : "numeric",
                     chart_type = ds_key && ds_key["chart_type"] ? ds_key["chart_type"] : "column",
                     chart_color = ds_key && ds_key["chart_color"] ? ds_key["chart_color"] : "#70AFC4",
+                    warning_threshold = ds_key && ds_key["warning"] ? ds_key["warning"] : "",
+                    critical_threshold = ds_key && ds_key["critical"] ? ds_key["critical"] : "",
                     dateObj = new Date(),
                     epoch_time = dateObj.getTime(),
                     month = Number(dateObj.getMonth()) + 1,
@@ -869,11 +871,11 @@ function nocout_livePollCurrentDevice(
                             "epoch_time" : epoch_time ? epoch_time : "",
                             "type" : data_type ? data_type : "numeric",
                             "chart_type" : chart_type ? chart_type : "column",
-                            "chart_color" : chart_color ? chart_color : "#70AFC4"
+                            "chart_color" : chart_color ? chart_color : "#70AFC4",
+                            "warning_threshold" : warning_threshold,
+                            "critical_threshold" : critical_threshold
                         };
                     }
-
-
                 } else {
                     if (!fetched_val) {
                         fetched_val = "N/A";
@@ -885,7 +887,9 @@ function nocout_livePollCurrentDevice(
                         "epoch_time" : epoch_time ? epoch_time : "",
                         "type" : data_type ? data_type : "numeric",
                         "chart_type" : chart_type ? chart_type : "column",
-                        "chart_color" : chart_color ? chart_color : "#70AFC4"
+                        "chart_color" : chart_color ? chart_color : "#70AFC4",
+                        "critical_threshold" : critical_threshold,
+                        "warning_threshold" : warning_threshold
                     };
                 }
                 callback(fetched_data);
@@ -1058,7 +1062,7 @@ function initSingleDevicePolling(callback) {
             polled_val_shown_dom_id,
             false,
             function(response) {
-
+                
                 if (!(response instanceof Array)) {
                     response = [response];
                 }
@@ -1106,22 +1110,49 @@ function checkpollvalues(result, is_new_data, callback) {
     }
 
     var chart_config = {
-        "type" : "column",
-        "value_text": block_title,
-        "x_min_range" : 10000,
-        "valuesuffix": " %",
-        "chart_data": [{
-            "name" : block_title,
-            "data" : []
-        }]
-    };
+            "type" : "column",
+            "value_text": block_title,
+            "x_min_range" : 10000,
+            "valuesuffix": " %",
+            "chart_data": []
+        },
+        chart_data_list = {
+            "warning" : {
+                "color": 0,
+                "name": "Warning Threshold",
+                "type" : "line",
+                "data" : []
+            },
+            "critical" : {
+                "color": 0,
+                "name": "Critical Threshold",
+                "type" : "line",
+                "data" : []
+            },
+            "normal" : {
+                "color": 0,
+                "name": block_title,
+                "type" : "column",
+                "data" : []
+            }
+        };
 
     for(var i=0;i<result.length;i++) {
 
-        var fetched_val = result[i]['val'];
+        var fetched_val = result[i]['val'],
+            fetch_warning_threshold =  result[i]['warning_threshold'],
+            fetch_critical_threshold =  result[i]['critical_threshold'];
 
-        if(fetched_val instanceof Array) {
+        if(fetched_val && fetched_val instanceof Array) {
             fetched_val = fetched_val[0];
+        }
+
+        if(fetch_warning_threshold && fetch_warning_threshold instanceof Array) {
+            fetch_warning_threshold = fetch_warning_threshold[0];
+        }
+
+        if(fetch_critical_threshold && fetch_critical_threshold instanceof Array) {
+            fetch_critical_threshold = fetch_critical_threshold[0];
         }
 
         if (result[i].type.toLowerCase() == 'numeric' && draw_type == 'chart') {
@@ -1133,20 +1164,43 @@ function checkpollvalues(result, is_new_data, callback) {
 
             // Update the chart type & data key as per the given params
             chart_config["type"] = result[i]["chart_type"];
-            chart_config["chart_data"][0]["data"] = [{
+            
+            if (fetch_warning_threshold) {
+                if(!chart_data_list["warning"]["color"]) {
+                    chart_data_list["warning"]["color"] = "#FF0000";
+                }
+                chart_data_list["warning"]["data"].push({
+                    "color": "#FF0000",
+                    "y": Number(fetch_warning_threshold),
+                    "name": "Warning Threshold",
+                    "x": result[i]['epoch_time']
+                });
+            }
+
+            if (fetch_critical_threshold) {
+                if(!chart_data_list["critical"]["color"]) {
+                    chart_data_list["critical"]["color"] = "#CCCCCC";
+                }
+                chart_data_list["critical"]["data"].push({
+                    "color": "#CCCCCC",
+                    "y": Number(fetch_critical_threshold),
+                    "name": "Critical Threshold",
+                    "x": result[i]['epoch_time']
+                });
+            }
+
+            if(!chart_data_list["normal"]["color"]) {
+                chart_data_list["normal"]["color"] = result[i]['chart_color'];
+            }
+
+            chart_data_list["normal"]["type"] = result[i]["chart_type"];
+
+            chart_data_list["normal"]["data"].push({
                 "color": result[i]['chart_color'],
                 "y": Number(fetched_val),
                 "name": block_title,
                 "x": result[i]['epoch_time']
-            }];
-
-            if (!$('#' + dom_id+ '_chart').highcharts()) {
-                createHighChart_nocout(chart_config,dom_id, false, false, function(status) {
-                    // pass
-                });
-            } else {
-                addPointsToChart_nocout(chart_config.chart_data,dom_id);
-            }
+            });
         } else {
             if(result[i].type.toLowerCase() == 'numeric' && dom_id.indexOf('_status_') == -1 && dom_id.indexOf('_inventory_') == -1) {
                 // Hide display type option from only table tabs
@@ -1162,12 +1216,16 @@ function checkpollvalues(result, is_new_data, callback) {
                 grid_headers = [
                     "service_name",
                     "value",
-                    "time"
+                    "time",
+                    "warning_threshold",
+                    "critical_threshold"
                 ],
                 table_data = [{
                     "service_name": block_title,
                     "value": fetched_val,
                     "time": date_time_str,
+                    "warning_threshold": fetch_warning_threshold,
+                    "critical_threshold": fetch_critical_threshold
                 }];
 
             if ($("#other_perf_table").length == 0) {
@@ -1184,6 +1242,22 @@ function checkpollvalues(result, is_new_data, callback) {
                 grid_headers,
                 'other_perf_table'
             );
+        }
+    }
+
+    if (draw_type == 'chart') {
+        for (key in chart_data_list) {
+            if (chart_data_list[key] && chart_data_list[key]["data"].length) {
+                chart_config["chart_data"].push(chart_data_list[key]);
+            }
+        }
+
+        if (!$('#' + dom_id+ '_chart').highcharts()) {
+            createHighChart_nocout(chart_config,dom_id, false, false, function(status) {
+                // pass
+            });
+        } else {
+            addPointsToChart_nocout(chart_config.chart_data,dom_id);
         }
     }
     
