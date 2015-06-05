@@ -115,7 +115,7 @@ def pre_clean(line_args, live_mysql_configs=None, historical_mysql_configs=None)
 
 
 def get_partitions_names(db, tables, older_than):
-    # we would store one week's extra data, if we want to delete by partition
+    # we would need to store one week's extra data, if we want to delete by partition
     days = (older_than - older_than % 7) + 7 + 1
     timerange = (datetime.now() - timedelta(days=days)).strftime('%s')
     cur = db.cursor()
@@ -133,10 +133,10 @@ def get_partitions_names(db, tables, older_than):
 def clean_data(db, tables):
     cursor = db.cursor()
     for table, partitions in tables.items():
-        qry = "ALTER TABLE {0} DROP PARTITION {1}".format(table, partitions)
+        qry = "ALTER TABLE {0} TRUNCATE PARTITION {1}".format(table, partitions)
         cursor.execute(qry)
         #db.commit()
-        print "Dropped partitions for table - {0} : {1}".format(table, partitions)
+        print "Truncated partitions for table - {0} : {1}".format(table, partitions)
     cursor.close()
     print '\n'
 

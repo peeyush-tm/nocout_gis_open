@@ -1,0 +1,267 @@
+"""
+db_ops.py
+==========
+
+Maintains per process database connections and handles 
+data manipulations, used in site-wide ETL operations.
+[for celery]
+"""
+
+
+from pymongo import MongoClient
+from mysql.connector import connect
+from pprint import pprint
+from datetime import datetime, timedelta
+from random import randint
+from redis import Redis
+from ConfigParser import ConfigParser
+from celery import Task
+
+from main_app import celery
+app = celery.app
+
+
+class DatabaseTask(Task):
+    abstract = True
+    db_conf = app.conf.CNX_FROM_CONF
+    # maintains database connections based on database types
+    connect_pool = {}
+    # mongo connection object
+    mongo_db = None
+    # mysql connection object
+    mysql_db = None
+
+    conf = ConfigParser()
+    conf.read(db_conf)
+    # mongo connection config
+    mo_conf = {
+            'host': conf.get('mongo', 'host'),
+            'port': int(conf.get('mongo', 'port')),
+            }
+    # mysql connection config
+    my_conf = {
+            'host': conf.get('mysql', 'host'),
+            'port': int(conf.get('mysql', 'port')),
+            'user': conf.get('mysql', 'user'),
+            'password': conf.get('mysql', 'password'),
+            'database': conf.get('mysql', 'database'),
+            }
+
+    @property
+    def mongo_cnx(self):
+        if not self.mongo_db:
+        	try:
+        		self.mongo_db = MongoClient(**self.mo_conf)[self.conf.get('mongo', 
+        			'database')]
+        	except Exception as exc:
+        		print 'Mongo connection error...', exc
+        		#raise self.retry(max_retries=2, countdown=10, exc=exc)
+
+        return self.mongo_db
+
+    @property
+    def mysql_cnx(self):
+        try_connect = False
+        if not (self.mysql_db and self.mysql_db.is_connected()):
+            try_connect = True
+        if try_connect:
+        	try:
+        		self.mysql_db = connect(**self.my_conf)
+        	except Exception as exc:
+        		print 'Mysql connection problem, retrying...', exc
+        		#raise self.retry(max_retries=2, countdown=10, exc=exc)
+
+        return self.mysql_db
+
+
+@app.task(base=DatabaseTask, name='nw-mongo-update', bind=True)
+def mongo_update(self, data_values, indexes, col):
+	lcl_cnx = mongo_update.mongo_cnx[col]
+	if data_values and lcl_cnx:
+		try:
+			for val in data_values:
+				find_query = {}
+				[find_query.update({x: val.get(x)}) for x in indexes]
+				lcl_cnx.update(find_query, val, upsert=True)
+		except Exception as exc:
+			print 'Mongo update problem, retrying...', exc
+			raise self.retry(args=(data_values, indexes, col), max_retries=1,
+					countdown=10, exc=exc)
+	else:
+		# TODO :: mark the task as failed
+		print 'Mongo update failed...'
+
+
+@app.task(base=DatabaseTask, name='nw-mongo-insert', bind=True)
+def mongo_insert(self, data_values, col):
+	if data_values:
+		try:
+			mongo_insert.mongo_cnx[col].insert(data_values)
+		except Exception as exc:
+			print 'Mongo insert problem, retrying...', exc
+			raise self.retry(args=(data_values, col), max_retries=1,
+					exc=exc)
+	else:
+		# TODO :: mark the task as failed
+		print 'Mongo insert failed...'
+
+
+@app.task(base=DatabaseTask, name='nw-mysql-handler', bind=True)
+def mysql_insert_handler(self, data_values):
+	""" mysql insert and also updates last entry into mongodb"""
+	
+	# TODO :: remove this extra iteration
+	for entry in data_values:
+		entry.pop('_id', '')
+		entry['sys_timestamp'] = entry['sys_timestamp'].strftime('%s')
+		entry['check_timestamp'] = entry['check_timestamp'].strftime('%s')
+
+	try:
+		# executing the task locally
+		mysql_insert.s('performance_performancenetwork', data_values).apply()
+	except Exception as exc:
+		#lcl_cnx.rollback()
+		# may be retry
+		print 'Mysql insert problem...', exc
+
+	else:
+		# timestamp of most latest insert made to mysql
+		last_timestamp = latest_entry(op='S') 
+		# last timestamp for this insert
+		last_timestamp_local = data_values[-1].get('sys_timestamp')
+		if (last_timestamp and ((last_timestamp + 900) < last_timestamp_local)):
+			print 'last_timestamp %s' % last_timestamp
+			print 'last_timestamp_local %s' % last_timestamp_local
+			# mysql is down for more than 30 minutes from now,
+			# import data from mongo
+			rds_cli = Redis(port=app.conf.REDIS_PORT)
+			lock = rds_cli.lock('unique_key', timeout=5*60)
+			have_lock = lock.acquire(blocking=False)
+			# ensure, only one task is executed at one time
+			# TODO :: call the commented task
+			if have_lock:
+				pass
+				#mongo_export_mysql(last_timestamp, last_timestamp_local,
+			    #		'network_perf', 'performance_performancenetwork')
+		
+		# update the `latest_entry` collection
+		latest_entry(op='I', value=last_timestamp_local)
+
+	# sending a message for task, execute asynchronously
+	mysql_update.s('performance_networkstatus', data_values
+			).apply_async()
+
+
+@app.task(base=DatabaseTask, name='nw-mysql-update', bind=True)
+def mysql_update(self, table, data_values):
+    """ mysql update"""
+	
+	# TODO :: transaction management
+    upsert_dict = {'inserts': [], 'updates': []}
+    slct_qry = """
+             SELECT 1 FROM performance_networkstatus 
+             WHERE device_name = %(device_name)s AND
+             service_name = %(service_name)s AND
+             data_source = %(data_source)s
+             """
+    updt_qry = "UPDATE %(table)s SET " % {'table': table}
+    updt_qry += """
+             machine_name = %(machine_name)s, site_name = %(site_name)s, 
+             current_value = %(current_value)s, min_value = %(min_value)s, 
+             max_value = %(max_value)s, avg_value = %(avg_value)s, 
+             warning_threshold = %(warning_threshold)s, critical_threshold = 
+             %(critical_threshold)s, sys_timestamp = %(sys_timestamp)s, 
+             check_timestamp = %(check_timestamp)s, ip_address = %(ip_address)s, 
+             severity = %(severity)s, age = %(age)s, refer = %(refer)s
+             WHERE device_name = %(device_name)s AND service_name = 
+             %(service_name)s AND data_source = %(data_source)s
+             """
+          
+    lcl_cnx = mysql_update.mysql_cnx
+    cur = lcl_cnx.cursor()
+    for i in xrange(len(data_values)):
+    	cur.execute(slct_qry, data_values[i])
+    	if cur.fetchone():
+    		upsert_dict['updates'].append(data_values[i])
+    	else:
+    		upsert_dict['inserts'].append(data_values[i])
+    cur.close()
+    print 'Len for status inserts %s' % len(upsert_dict['inserts'])
+    print 'Len for status updates %s\n' % len(upsert_dict['updates'])
+
+    if upsert_dict['updates']:
+    	# make a new cursor instance, to get rid of `unread results` error
+    	cur = lcl_cnx.cursor()
+    	try:
+    		cur.executemany(updt_qry, upsert_dict['updates'])
+    		lcl_cnx.commit()
+    		cur.close()
+    	except Exception as exc:
+    		# TODO :: manage task retries
+    		print 'Problem in network update, rollback...', exc
+    		lcl_cnx.rollback()
+    if upsert_dict['inserts']:
+    	mysql_insert.s('performance_networkstatus', upsert_dict['inserts']
+    			).apply_async()
+
+
+@app.task(base=DatabaseTask, name='nw-mysql-insert', bind=True)
+def mysql_insert(self, table, data_values):
+	""" mysql batch insert"""
+	
+	# TODO :: custom option for retries
+	try:
+		fmt_qry = "INSERT INTO %(table)s " % {'table': table}
+		fmt_qry += """
+		        (device_name, service_name, machine_name,
+				site_name, ip_address, data_source, severity, current_value,
+				min_value, max_value, avg_value, warning_threshold, 
+				critical_threshold, sys_timestamp, check_timestamp, age, refer) 
+				VALUES 
+				(%(device_name)s, %(service_name)s, %(machine_name)s, %(site_name)s, 
+				%(ip_address)s, %(data_source)s, %(severity)s, %(current_value)s, 
+				%(min_value)s, %(max_value)s, %(avg_value)s, %(warning_threshold)s, 
+				%(critical_threshold)s, %(sys_timestamp)s, %(check_timestamp)s, 
+				%(age)s, %(refer)s)
+		    	"""
+		lcl_cnx = mysql_insert.mysql_cnx
+		cur = lcl_cnx.cursor()
+		#cur.executemany(qry, map(lambda x: fmt_qry(**x), data_values))
+		cur.executemany(fmt_qry, data_values)
+		lcl_cnx.commit()
+		cur.close()
+	except Exception as exc:
+		# rollback transaction
+		lcl_cnx.rollback()
+		print 'Error in mysql_insert task, ', exc
+
+
+@app.task(base=DatabaseTask, name='get-latest-entry', bind=True)
+def latest_entry(self, op='S', value=None):
+	stamp = None
+	if op == 'S':
+		# select operation
+		try:
+			stamp = list(latest_entry.mongo_cnx['latest_entry'
+				].find())[0].get('time')
+		except: pass
+	elif op == 'I':
+		# insert operation
+		latest_entry.mongo_cnx['latest_entry'].update({'_id': 1}, 
+				{'time': value, '_id': 1}, upsert=True)
+
+	return float(stamp) if stamp else stamp
+
+
+@app.task(base=DatabaseTask, name='mongo-export-mysql', bind=True)
+def mongo_export_mysql(self, start_time, end_time, col, table):
+	""" Export old data which is not in mysql due to its downtime"""
+	
+	print 'Mongo export mysql called'
+	data_values = list(mongo_export_mysql.mongo_cnx[col].find(
+			{'local_timestamp': {'$gt': start_time, '$lt': end_time}}))
+
+	# TODO :: data should be sent into batches
+	# or send the task into celery chuncks, dont execute the task locally
+	mysql_insert.s('performance_performancenetwork', data_values).apply_async()
+
