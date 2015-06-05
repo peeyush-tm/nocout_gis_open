@@ -1062,18 +1062,7 @@ function initSingleDevicePolling(callback) {
             polled_val_shown_dom_id,
             false,
             function(response) {
-                x = new Date()
-                response = {
-                            "val" : [62],
-                            "time" : '14th July 1991',
-                            "epoch_time" : x.getTime(),
-                            "type" : "numeric",
-                            "chart_type" : "column",
-                            "chart_color" : "#70AFC4",
-                            "warning_threshold" : "",
-                            "critical_threshold" : ""
-                        };
-
+                
                 if (!(response instanceof Array)) {
                     response = [response];
                 }
