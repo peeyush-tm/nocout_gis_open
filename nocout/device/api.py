@@ -49,7 +49,10 @@ from performance.formulae import display_time, rta_null
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME,\
+    PING_RTA_WARNING, PING_RTA_CRITICAL,\
+    PING_PL_WARNING, PING_PL_CRITICAL, \
+    SERVICE_DATA_SOURCE
 from user_profile.models import UserProfile
 from inventory.models import (BaseStation, LivePollingSettings,
                               ThresholdConfiguration, ThematicSettings,
@@ -1455,16 +1458,30 @@ class BulkFetchLPDataApi(View):
 
         # In case of 'rta' and 'pl', fetch data from 'service_data_sources' function.
         if ds_name in ['pl', 'rta']:
-            # Create instance of 'ServiceUtilsGateway' class
-            service_utils = ServiceUtilsGateway()
-
-            ds_dict = service_utils.service_data_sources()
-            result['data']['data_source'] = dict()
-            result['data']['data_source']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
-            result['data']['data_source']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[ds_name] else ""
+            ds_dict = SERVICE_DATA_SOURCE
+            result['data']['meta'] = dict()
+            result['data']['meta']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
+            result['data']['meta']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[ds_name] else ""
             result['data']['meta']['data_source_type'] = ds_dict[ds_name]['data_source_type'] if 'data_source_type' in ds_dict[ds_name] else "Numeric"
-            result['data']['meta']['warning'] = ds_dict[ds_name]['warning'] if 'warning' in ds_dict[ds_name] else ""
-            result['data']['meta']['critical'] = ds_dict[ds_name]['critical'] if 'critical' in ds_dict[ds_name] else ""
+            result['data']['meta']['is_inverted'] = ds_dict[ds_name]['is_inverted'] if 'is_inverted' in ds_dict[ds_name] else ""
+            # Device Type Parameter of Device Name.
+            device_type = Device.objects.filter(device_name__in=devices).values_list('device_type', flat = True)
+            # Device Type warn crit params corresponding to Device.
+            ds_warn_crit_param = DeviceType.objects.filter(id__in=device_type).values('pl_warning', 'pl_critical', 'rta_warning', 'rta_critical')
+        
+            if ds_name in ['pl']:
+                result['data']['meta']['warning'] = ds_warn_crit_param[0]['pl_warning']
+                result['data']['meta']['critical'] = ds_warn_crit_param[0]['pl_critical'] 
+            elif ds_name in ['pl'] and not (ds_warn_crit_param[0]['pl_warning'] and ds_warn_crit_param[0]['pl_critical']):
+                result['data']['meta']['warning'] = PING_PL_WARNING
+                result['data']['meta']['critical'] = PING_PL_CRITICAL
+            elif ds_name in ['rta']:
+                result['data']['meta']['warning'] = ds_warn_crit_param[0]['rta_warning']
+                result['data']['meta']['critical'] = ds_warn_crit_param[0]['rta_critical']
+            elif ds_name in ['rta'] and not (ds_warn_crit_param[0]['rta_warning'] and ds_warn_crit_param[0]['rta_critical']):
+                result['data']['meta']['warning'] = PING_RTA_WARNING
+                result['data']['meta']['critical'] = PING_RTA_CRITICAL
+
             ds_formula = ds_dict[ds_name]['formula'] if 'formula' in ds_dict[ds_name] else ""
         else:
             # Data source object.
@@ -1480,6 +1497,7 @@ class BulkFetchLPDataApi(View):
                 result['data']['meta'] = dict()
                 result['data']['meta']['chart_type'] = ds_obj.chart_type
                 result['data']['meta']['chart_color'] = ds_obj.chart_color
+                result['data']['meta']['is_inverted'] = ds_obj.is_inverted
                 result['data']['meta']['data_source_type'] = ds_obj.ds_type_name()
                 try:
                     result['data']['meta']['warning'] = ds_obj.warning 
