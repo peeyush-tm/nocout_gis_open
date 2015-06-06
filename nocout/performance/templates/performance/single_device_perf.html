@@ -281,7 +281,11 @@
             current_device_ip = "",
             device_name = "",
             bold_class = "",
-            is_dr_device = false;
+            is_dr_device = false
+            warn_color = "",
+            crit_color = "",
+            warn_type = "",
+            crit_type = "";
 
 
         $(document).ready(function (e) {
@@ -310,6 +314,10 @@
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
             device_name = current_device;
+            warn_color = "{{ settings.WARN_COLOR}}";
+            warn_type = "{{ settings.WARN_TYPE}}";
+            crit_color = "{{ settings.CRIT_COLOR}}";
+            crit_type = "{{ settings.CRIT_TYPE}}";
             // Update global variable as per context data
             {% if is_dr_device %}
                 is_dr_device = true;

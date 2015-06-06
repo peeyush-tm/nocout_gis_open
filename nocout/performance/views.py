@@ -42,7 +42,8 @@ from service.utils.util import service_data_sources
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
-    AVG_CHART_COLOR, CACHE_TIME
+    AVG_CHART_COLOR, CACHE_TIME, \
+    WARN_COLOR, CRIT_COLOR, WARN_TYPE, CRIT_TYPE
 
 from performance.formulae import display_time, rta_null
 
@@ -3462,24 +3463,24 @@ class GetServiceTypePerformanceData(View):
                                     'enabled': False
                                 }
                             })
-
-                        if len(crit_data_list):
+                        # Condition should be of length of warning list
+                        if len(warn_data_list):
                             chart_data.append({
                                 'name': str("warning threshold").title(),
-                                'color': '#FFE90D',
+                                'color': WARN_COLOR,
                                 'data': warn_data_list,
-                                'type': 'line',
+                                'type': WARN_TYPE,
                                 'marker': {
                                     'enabled': False
                                 }
                             })
-
-                        if len(warn_data_list):
+                        # Condition should be of length of critical list
+                        if len(crit_data_list):
                             chart_data.append({
                                 'name': str("critical threshold").title(),
-                                'color': '#FF193B',
+                                'color': CRIT_COLOR,
                                 'data': crit_data_list,
-                                'type': 'line',
+                                'type': CRIT_TYPE,
                                 'marker': {
                                     'enabled': False
                                 }
@@ -3807,23 +3808,24 @@ class GetServiceTypePerformanceData(View):
                                     }
                                 })
 
-                        if len(crit_data_list):
+                        # Condition of length of warning list  
+                        if len(warn_data_list):
                             chart_data.append({
                                 'name': str("warning threshold").title(),
-                                'color': '#FFE90D',
+                                'color': WARN_COLOR,
                                 'data': warn_data_list,
-                                'type': 'line',
+                                'type': WARN_TYPE,
                                 'marker': {
                                     'enabled': False
                                 }
                             })
-
-                        if len(warn_data_list):
+                        # Condition of length of warning list  
+                        if len(crit_data_list):
                             chart_data.append({
                                 'name': str("critical threshold").title(),
-                                'color': '#FF193B',
+                                'color': CRIT_COLOR,
                                 'data': crit_data_list,
-                                'type': 'line',
+                                'type': CRIT_TYPE,
                                 'marker': {
                                     'enabled': False
                                 }
