@@ -2,8 +2,8 @@
 network_etl.py
 ================
 
-This script collects and stores data for host checks 
-running on all configured devices for this site
+This script collects and stores data for all services 
+running on all configured devices for this poller.
 
 """
 
@@ -13,9 +13,8 @@ import socket
 from itertools import izip_longest
 from celery import group
 
-from main_app import celery
+from start import app
 from db_ops import *
-app = celery.app
 
 
 def calculate_refer_field_for_host(device_first_down_list, host_name, ds_values, 
@@ -109,7 +108,7 @@ def build_export(site, network_perf_data):
 		host_severity = host_state = 'unknown'
 		refer = ''
 		# Process network perf data
-		device_first_down_list = list(build_export.mongo_cnx.device_first_down.find())
+		device_first_down_list = list(build_export.mongo_cnx(site).device_first_down.find())
 		try:
 			threshold_values = get_threshold(h_chk_val[-1])
 			rt_min = threshold_values.get('rtmin').get('cur')
@@ -168,7 +167,7 @@ def build_export(site, network_perf_data):
 			data_dict = {}
 		
 	# send aggregator task
-	aggregator.s(data_array).apply_async()
+	aggregator.s(data_array, site).apply_async()
 
 
 @app.task(name='get-host-checks', ignore_result=True)
@@ -198,16 +197,16 @@ def get_host_checks_output(site_name=None):
 
 
 @app.task(base=DatabaseTask, name='aggregator')
-def aggregator(data_values):
+def aggregator(data_values, site):
 	""" sends task messages"""
 
 	if data_values:
 		# mongo/mysql inserts/updates
 		group(
 				[mongo_update.s(data_values, ('device_name', 'service_name', 'data_source'), 
-					'network_status'), 
-					mongo_insert.s(data_values, 'network_perf'),
-					mysql_insert_handler.s(data_values)]
+					'network_status', site), 
+					mongo_insert.s(data_values, 'network_perf', site),
+					mysql_insert_handler.s(data_values, site)]
 				).apply_async()
 
 
@@ -277,7 +276,7 @@ def pivot_timestamp_fwd(timestamp):
 		).replace(second=0, microsecond=0))
 
 
-@app.task(name='network-main')
+@app.task(name='network-main-pub')
 def main(**opts):
 	opts = {'site_name': 'pardeep_slave_1'}
 	get_host_checks_output.s(**opts).apply_async()
