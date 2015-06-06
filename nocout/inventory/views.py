@@ -73,6 +73,9 @@ from django.views.decorators.csrf import csrf_exempt
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
 
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
 
 # **************************************** Inventory *********************************************
 def inventory(request):
@@ -375,8 +378,6 @@ class AntennaUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_antenna',)
 
     def get_queryset(self):
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         return Antenna.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
@@ -512,8 +513,6 @@ class BaseStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_basestation',)
 
     def get_queryset(self):
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         return BaseStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
@@ -656,8 +655,6 @@ class BackhaulUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_backhaul',)
 
     def get_queryset(self):
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         return Backhaul.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
@@ -825,8 +822,6 @@ class SectorUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_sector',)
 
     def get_queryset(self):
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         return Sector.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
@@ -949,8 +944,6 @@ class CustomerUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_customer',)
 
     def get_queryset(self):
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         return Customer.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
@@ -1119,8 +1112,6 @@ class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         So as user can update the substation of self organization or it's descendants.
         :return queryset:
         """
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         return SubStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
@@ -1270,8 +1261,6 @@ class CircuitUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_circuit',)
 
     def get_queryset(self):
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         return Circuit.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
@@ -1548,37 +1537,8 @@ class AllL2ReportListingTable(BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
 
     def get_context_data(self, *args, **kwargs):
@@ -2900,9 +2860,6 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
-
         for dct in json_data:
 
             # add error filename in dct
@@ -3606,9 +3563,6 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
 
         for dct in json_data:
             try:
@@ -4848,9 +4802,6 @@ def getModelForSearch(request,search_by='default'):
 
     # Get self for custom class for "logged_in_user_organizations" function
     self = GetSelfObject(request)
-
-    # Create instance of 'NocoutUtilsGateway' class
-    nocout_utils = NocoutUtilsGateway()
 
     # Get the list of organization for logged in user
     current_user_organizations = list(nocout_utils.logged_in_user_organizations(self))

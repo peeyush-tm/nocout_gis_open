@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.views.generic.base import View
-
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import P2P, WiMAX, PMP, CACHE_TIME
 
@@ -28,7 +26,7 @@ VALID_SPECIFICATION = ['all', 'ss', 'bs']
 nocout_utils = NocoutUtilsGateway()
 
 
-class InventoryUtilsGateway(View):
+class InventoryUtilsGateway:
     """
     This class works as gateway between inventory utils & other apps
     """

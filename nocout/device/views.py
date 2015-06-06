@@ -39,6 +39,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
 # ***************************************** Device Views ********************************************
 class SelectDeviceListView(Select2Mixin, ListView):
     """
@@ -145,16 +148,48 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
     model = Device
     required_permissions = ('device.view_device',)
     # columns are used for list of fields which should be displayed on data table.
-    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    columns = [
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
     # order_columns is used for list of fields which is used for sorting the data table.
-    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    order_columns = [
+        'status_icon',
+        'organization__name', 
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
     # search_columns is used for list of fields which is used for searching the data table.
-    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    search_columns = [
+        'device_alias', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'host_state',
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
     # extra_qs_kwargs is used for filter the device using some extra fields in Mixin DatatableOrganizationFilterMixin.
     extra_qs_kwargs = {
@@ -191,35 +226,8 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         """
         Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col - 1]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def prepare_results(self, qs):
         """
@@ -346,12 +354,49 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
     Render JQuery datatables for listing non-operational devices only
     """
     model = Device
-    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
-    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
-    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # columns are used for list of fields which should be displayed on data table.
+    columns = [
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
+
+    # order_columns is used for list of fields which is used for sorting the data table.
+    order_columns = [
+        'status_icon',
+        'organization__name', 
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
+
+    # search_columns is used for list of fields which is used for searching the data table.
+    search_columns = [
+        'device_alias', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'host_state',
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
     extra_qs_kwargs = {
         "is_deleted": 0,
@@ -386,35 +431,8 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         """
         Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col - 1]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def prepare_results(self, qs):
         """
@@ -518,14 +536,49 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
     """
     model = Device
 
-    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # columns are used for list of fields which should be displayed on data table.
+    columns = [
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
-    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # order_columns is used for list of fields which is used for sorting the data table.
+    order_columns = [
+        'status_icon',
+        'organization__name', 
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
-    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # search_columns is used for list of fields which is used for searching the data table.
+    search_columns = [
+        'device_alias', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'host_state',
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
     extra_qs_kwargs = {
         "is_deleted": 0,
@@ -557,35 +610,8 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col - 1]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def prepare_results(self, qs):
         """
@@ -689,14 +715,49 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
     model = Device
 
-    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # columns are used for list of fields which should be displayed on data table.
+    columns = [
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
-    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # order_columns is used for list of fields which is used for sorting the data table.
+    order_columns = [
+        'status_icon',
+        'organization__name', 
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
-    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # search_columns is used for list of fields which is used for searching the data table.
+    search_columns = [
+        'device_alias', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'host_state',
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
     extra_qs_kwargs = {
         'is_deleted': 1
@@ -727,35 +788,8 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col - 1]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def prepare_results(self, qs):
         """
@@ -831,14 +865,49 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
     """
     model = Device
 
-    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # columns are used for list of fields which should be displayed on data table.
+    columns = [
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
-    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # order_columns is used for list of fields which is used for sorting the data table.
+    order_columns = [
+        'status_icon',
+        'organization__name', 
+        'device_name', 
+        'site_instance__name', 
+        'machine__name', 
+        'device_technology',
+        'device_type', 
+        'host_state', 
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
-    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
+    # search_columns is used for list of fields which is used for searching the data table.
+    search_columns = [
+        'device_alias', 
+        'site_instance__name', 
+        'machine__name', 
+        'organization__name', 
+        'host_state',
+        'ip_address', 
+        'mac_address', 
+        'state__state_name', 
+        'city__city_name'
+    ]
 
     extra_qs_kwargs = {
         'is_deleted': 0
@@ -869,35 +938,8 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
         """
         Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col - 1]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def prepare_results(self, qs):
         """
@@ -1111,8 +1153,6 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('device.change_device',)
 
     def get_queryset(self):
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
 
         return Device.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
@@ -1241,9 +1281,6 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
             return cleaned_data_field_dict
 
         cleaned_data_field_dict = cleaned_data_field()
-
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
 
         changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
         try:
@@ -1397,35 +1434,8 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1606,35 +1616,8 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1740,9 +1723,6 @@ class DeviceTechnologyUpdate(PermissionsRequiredMixin, UpdateView):
             cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
             if field in ('device_vendors') and form.cleaned_data[field] else form.cleaned_data[field] for field in
                                        form.cleaned_data.keys()}
-            
-            # Create instance of 'NocoutUtilsGateway' class
-            nocout_utils = NocoutUtilsGateway()
 
             changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
             if changed_fields_dict:
@@ -1861,35 +1841,8 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def prepare_results(self, qs):
         """
@@ -2008,9 +1961,6 @@ class DeviceVendorUpdate(PermissionsRequiredMixin, UpdateView):
             cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
             if field in ('device_models') and form.cleaned_data[field] else form.cleaned_data[field]
                                        for field in form.cleaned_data.keys()}
-
-            # Create instance of 'NocoutUtilsGateway' class
-            nocout_utils = NocoutUtilsGateway()
 
             changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
             if changed_fields_dict:
@@ -2139,36 +2089,8 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
-
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -2400,37 +2322,9 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-        return qs
-
-
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
+        
     def get_context_data(self, *args, **kwargs):
         """
         The main function call to fetch, search, ordering , prepare and display the data on the data table.
@@ -3758,15 +3652,10 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
     order_columns = ['status', 'message', 'description', 'sync_by', 'added_on', 'completed_on']
     search_columns = ['status', 'message', 'description', 'sync_by']
 
-    # Create instance of 'NocoutUtilsGateway' class
-    nocout_utils = NocoutUtilsGateway()
-
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
-
         """
-
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         # queryset
@@ -3906,9 +3795,6 @@ def get_current_sync_status():
         if device_history_obj:
             # time of last sync run
             try:
-                # Create instance of 'NocoutUtilsGateway' class
-                nocout_utils = NocoutUtilsGateway()
-
                 last_sync_time = nocout_utils.convert_utc_to_local_timezone(device_history_obj.added_on)
             except Exception as e:
                 pass

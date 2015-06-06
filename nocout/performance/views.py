@@ -40,7 +40,8 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import performance utils gateway class
 from performance.utils.util import PerformanceUtilsGateway
 
-from service.utils.util import service_data_sources
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
@@ -48,9 +49,11 @@ from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
 
 from performance.formulae import display_time, rta_null
 
+# Create instance of 'ServiceUtilsGateway' class
+service_utils = ServiceUtilsGateway()
+
 ##execute this globally
-SERVICE_DATA_SOURCE = service_data_sources()
-##execute this globally
+SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
 import logging
 
@@ -63,7 +66,7 @@ perf_utils = PerformanceUtilsGateway()
 nocout_utils = NocoutUtilsGateway()
 
 
-class PerformanceViewsGateway(View):
+class PerformanceViewsGateway:
     """
     This class works as gateway between performance views & other apps
     """
@@ -947,11 +950,7 @@ class SectorDashboardListing(BaseDatatableView):
          Get parameters from the request and prepare order by clause
         :param qs:
         """
-
-        # Call function to get sorted data
-        sorted_data = perf_utils.dataTableOrdering(self, qs, self.static_columns)
-        
-        return sorted_data
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.static_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -2026,10 +2025,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         """ Get parameters from the request and prepare order by clause
         :param qs:
         """
-        # Call function to get sorted data
-        sorted_data = perf_utils.dataTableOrdering(self, qs, self.order_columns)
-        
-        return sorted_data
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """

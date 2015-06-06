@@ -1,3 +1,4 @@
+# coding=utf-8
 import datetime
 from random import randint
 from HTMLParser import HTMLParser
@@ -5,7 +6,7 @@ import htmlentitydefs
 
 from dateutil import tz
 from django.db import connections
-
+from operator import itemgetter
 from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
@@ -41,7 +42,6 @@ except Exception as e:
 
 import random
 from django.core.cache import cache
-from django.views.generic.base import View
 # import Organization model
 from organization.models import Organization
 
@@ -57,41 +57,83 @@ if getattr(settings, 'PROFILE'):
     from memory_profiler import show_results
 
 
-class NocoutUtilsGateway(View):
+class NocoutUtilsGateway:
     """
     This class works as gateway between nocout utils & other apps
     """
     def fetch_raw_result(self, query, machine='default'):
+        """
 
+        :param query:
+        :param machine:
+        :return:
+        """
         param1 = fetch_raw_result(query, machine=machine)
 
         return param1
 
     def format_value(self, format_this, type_of=None):
+        """
 
+        :param format_this:
+        :param type_of:
+        :return:
+        """
         param1 = format_value(format_this, type_of=type_of)
-
+        
         return param1
 
     def cache_for(self, time):
+        """
 
+        :param time:
+        :return:
+        """
         param1 = cache_for(time)
-
+        
         return param1
 
-    def non_cached_all_gis_inventory(self, monitored_only=False, technology=None, type_rf=None, bs_id=None):
+    def non_cached_all_gis_inventory(
+        self, 
+        monitored_only=False, 
+        technology=None, 
+        type_rf=None, 
+        bs_id=None
+    ):
+        """
 
+        :param monitored_only:
+        :param technology:
+        :param type_rf:
+        :param bs_id:
+        :return:
+        """
         param1 = non_cached_all_gis_inventory(
             monitored_only=monitored_only, 
             technology=technology, 
             type_rf=type_rf, 
             bs_id=bs_id
         )
-
+        
         return param1
 
-    def cached_all_gis_inventory(self, monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
+    def cached_all_gis_inventory(
+        self, 
+        monitored_only=False, 
+        technology=None, 
+        type_rf=None, 
+        bs_id=None, 
+        device_list=None
+    ):
+        """
 
+        :param monitored_only:
+        :param technology:
+        :param type_rf:
+        :param bs_id:
+        :param device_list:
+        :return:
+        """
         param1 = cached_all_gis_inventory(
             monitored_only=monitored_only, 
             technology=technology, 
@@ -99,11 +141,26 @@ class NocoutUtilsGateway(View):
             bs_id=bs_id, 
             device_list=device_list
         )
-
+        
         return param1
 
-    def query_all_gis_inventory(self, monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
+    def query_all_gis_inventory(
+        self, 
+        monitored_only=False, 
+        technology=None, 
+        type_rf=None, 
+        bs_id=None, 
+        device_list=None
+    ):
+        """
 
+        :param monitored_only:
+        :param technology:
+        :param type_rf:
+        :param bs_id:
+        :param device_list:
+        :return:
+        """
         param1 = query_all_gis_inventory(
             monitored_only=monitored_only, 
             technology=technology, 
@@ -111,79 +168,138 @@ class NocoutUtilsGateway(View):
             bs_id=bs_id, 
             device_list=device_list
         )
-
+        
         return param1
 
     def convert_utc_to_local_timezone(self, datetime_obj=None):
+        """
 
+        :param datetime_obj:
+        :return:
+        """
         param1 = convert_utc_to_local_timezone(datetime_obj=datetime_obj)
-
+        
         return param1
 
     def indexed_query_set(self, query_set, indexes, values, is_raw=False):
+        """
 
+        :param query_set:
+        :param indexes:
+        :param values:
+        :param is_raw:
+        :return:
+        """
         param1 = indexed_query_set(query_set, indexes, values, is_raw=is_raw)
-
+        
         return param1
 
     def check_item_is_list(self, items):
+        """
 
+        :param items:
+        :return:
+        """
         param1 = check_item_is_list(items)
-
+        
         return param1
 
     def is_lat_long_in_state(self, latitude, longitude, state):
+        """
 
+        :param latitude:
+        :param longitude:
+        :param state:
+        :return:
+        """
         param1 = is_lat_long_in_state(latitude, longitude, state)
-
+        
         return param1
 
     def disable_for_loaddata(self, signal_handler):
+        """
 
+        :param signal_handler:
+        :return:
+        """
         param1 = disable_for_loaddata(signal_handler)
-
+        
         return param1
 
     def nocout_datatable_ordering(self, self_instance, qs, order_columns):
+        """
 
+        :param self_instance:
+        :param qs:
+        :param order_columns:
+        :return:
+        """
         param1 = nocout_datatable_ordering(self_instance, qs, order_columns)
-
+        
         return param1
 
     def logged_in_user_organizations(self, self_object):
+        """
 
+        :param self_object:
+        :return:
+        """
         param1 = logged_in_user_organizations(self_object)
-
+        
         return param1
 
     def html_to_text(self, html):
+        """
 
+        :param html:
+        :return:
+        """
         param1 = html_to_text(html)
-
+        
         return param1
 
     def init_dict_differ_added(self, current_dict, past_dict):
+        """
 
+        :param current_dict:
+        :param past_dict:
+        :return:
+        """
         param1 = DictDiffer(current_dict, past_dict).added()
-
+        
         return param1
 
     def init_dict_differ_removed(self, current_dict, past_dict):
+        """
 
+        :param current_dict:
+        :param past_dict:
+        :return:
+        """
         param1 = DictDiffer(current_dict, past_dict).removed()
-
+        
         return param1
 
     def init_dict_differ_changed(self, current_dict, past_dict):
+        """
 
+        :param current_dict:
+        :param past_dict:
+        :return:
+        """
         param1 = DictDiffer(current_dict, past_dict).changed()
-
+        
         return param1
 
     def init_dict_differ_unchanged(self, current_dict, past_dict):
+        """
 
+        :param current_dict:
+        :param past_dict:
+        :return:
+        """
         param1 = DictDiffer(current_dict, past_dict).unchanged()
-
+        
         return param1
 
 
@@ -202,24 +318,57 @@ class DictDiffer(object):
         self.intersect = self.set_current.intersection(self.set_past)
 
     def added(self):
+        """
+
+
+        :return:
+        """
         return self.set_current - self.intersect
 
     def removed(self):
+        """
+
+
+        :return:
+        """
         return self.set_past - self.intersect
 
     def changed(self):
+        """
+
+
+        :return:
+        """
         return set(o for o in self.intersect if self.past_dict[o] != self.current_dict[o])
 
     def unchanged(self):
+        """
+
+
+        :return:
+        """
         return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
 
 
 def time_it(debug=getattr(settings, 'PROFILE')):
     """
     Profiler
+    :param debug:
     """
     def decorator(fn):
+        """
+
+        :param fn:
+        :return:
+        """
+
         def wrapper(*args, **kwargs):
+            """
+
+            :param args:
+            :param kwargs:
+            :return:
+            """
             st = datetime.datetime.now()
             if debug:
                 log.debug("+++" * 40)
@@ -318,12 +467,13 @@ def dict_fetchall(cursor):
     return [
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
-        ]
+    ]
 
 
 def format_value(format_this, type_of=None):
     """
 
+    :param type_of:
     :param format_this:
     :return:
     """
@@ -366,6 +516,8 @@ def format_value(format_this, type_of=None):
 def cache_get_key(*args, **kwargs):
     """
     Get the cache key for storage
+    :param kwargs:
+    :param args:
     """
     import hashlib
 
@@ -382,9 +534,22 @@ def cache_get_key(*args, **kwargs):
 def cache_for(time):
     """
     decorator for caching functions
+    :param time:
     """
     def decorator(fn):
+        """
+
+        :param fn:
+        :return:
+        """
+
         def wrapper(*args, **kwargs):
+            """
+
+            :param args:
+            :param kwargs:
+            :return:
+            """
             debug = getattr(settings, 'PROFILE')
             st = datetime.datetime.now()
             if debug:
@@ -460,7 +625,6 @@ def non_cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=
 @cache_for(CACHE_TIME.get('INVENTORY', 300))  # caching GIS inventory
 def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
-
 
     :param monitored_only: true false
     :param technology: technology name
@@ -914,6 +1078,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
 def convert_utc_to_local_timezone(datetime_obj=None):
     """
     Convert datetime object timezone from 'utc' to 'local'
+    :param datetime_obj:
     Parameters:
         - datetime_obj ('datetime.datetime') - timestamp as datetime object for e.g. 2014-12-25 12:26:00+00:00
 
@@ -953,6 +1118,7 @@ def indexed_query_set(query_set, indexes, values, is_raw=False):
     # since query sets are not evaluated by default, we will evaluate the query set
     # index the query set on a few attributes
     # and return a disctionary if indexes
+    :param is_raw:
     :param query_set: the original query set and subclasses : Query set must be complete and must be having a db
     :param indexes: required indexes for indexing the query set
     :param values: required values of the query set
@@ -1002,6 +1168,13 @@ def check_item_is_list(items):
 
 
 def is_lat_long_in_state(latitude, longitude, state):
+    """
+
+    :param latitude:
+    :param longitude:
+    :param state:
+    :return:
+    """
     if compare_geo:
         # commented because of goes package is not supported for python 2.7 on centos 6.5
         # check whether lat log lies in state co-ordinates or not
@@ -1042,11 +1215,18 @@ def is_lat_long_in_state(latitude, longitude, state):
 def disable_for_loaddata(signal_handler):
     """
     Decorator that turns off signal handlers when loading fixture data.
+    :param signal_handler:
     Ref: http://stackoverflow.com/questions/15624817/have-loaddata-ignore-or-disable-post-save-signals
     """
 
     @wraps(signal_handler)
     def wrapper(*args, **kwargs):
+        """
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
         if 'raw' in kwargs and kwargs['raw']:
             return
         signal_handler(*args, **kwargs)
@@ -1058,6 +1238,7 @@ def logged_in_user_organizations(self_object):
     """
     If the user role is admin then append its descendants organization as well, otherwise not
 
+    :param self_object:
     :params self_object:
     :return organization_list:
     """
@@ -1109,33 +1290,71 @@ def nocout_datatable_ordering(self_instance, qs, order_columns):
             order.append('%s%s' % (sdir, sortcol))
     if order:
         key_name = order[0][1:] if '-' in order[0] else order[0]
-        sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse=True if '-' in order[0] else False)
+        # Try catch is added because in some cases 
+        # we receive instead of queryset
+        try:
+            sorted_device_data = qs.order_by(*order)
+        except Exception, e:
+            try:
+                sorted_device_data = sorted(
+                    qs, 
+                    key=itemgetter(key_name), 
+                    reverse=True if '-' in order[0] else False
+                )
+            except Exception, e:
+                sorted_device_data = qs
+                log.info(e.message)
         return sorted_device_data
-
     return qs 
 
 
 class HTMLTextExtractor(HTMLParser):
+    """
+
+    """
+
     def __init__(self):
         HTMLParser.__init__(self)
         self.result = []
 
     def handle_data(self, d):
+        """
+
+        :param d:
+        """
         self.result.append(d)
 
     def handle_charref(self, number):
+        """
+
+        :param number:
+        """
         codepoint = int(number[1:], 16) if number[0] in (u'x', u'X') else int(number)
         self.result.append(unichr(codepoint))
 
     def handle_entityref(self, name):
+        """
+
+        :param name:
+        """
         codepoint = htmlentitydefs.name2codepoint[name]
         self.result.append(unichr(codepoint))
 
     def get_text(self):
+        """
+
+
+        :return:
+        """
         return u''.join(self.result)
 
 
 def html_to_text(html):
+    """
+
+    :param html:
+    :return:
+    """
     s = HTMLTextExtractor()
     s.feed(html)
     return s.get_text()

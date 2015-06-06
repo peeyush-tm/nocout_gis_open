@@ -1,26 +1,26 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 import datetime
-
-from django.views.generic.base import View
 # Import nocout utils gateway(NocoutUtilsGateway) class
 from nocout.utils.util import NocoutUtilsGateway
 
 # Import performance utils gateway class
 from performance.utils.util import PerformanceUtilsGateway
 
-from service.utils.util import service_data_sources
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
 
 from nocout.settings import DATE_TIME_FORMAT, CACHE_TIME
 
-##execute this globally
-SERVICE_DATA_SOURCE = service_data_sources()
-##execute this globally
+# Create instance of 'ServiceUtilsGateway' class
+service_utils = ServiceUtilsGateway()
+
+SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
-class AlertCenterUtilsGateway(View):
+class AlertCenterUtilsGateway:
     """
     This class works as gateway between alert center utils & other apps
     """

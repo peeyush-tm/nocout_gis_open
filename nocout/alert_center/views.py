@@ -41,6 +41,9 @@ inventory_utils = InventoryUtilsGateway()
 # Create instance of 'AlertCenterUtilsGateway' class
 alert_utils = AlertCenterUtilsGateway()
 
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
 
 class CustomerAlertDetailHeaders(ListView):
     """
@@ -157,8 +160,6 @@ class GetCustomerAlertDetail(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         organizations = nocout_utils.logged_in_user_organizations(self)
 
         return self.get_initial_query_set_data(organizations=organizations)
@@ -373,41 +374,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         sorting for the table
         :param qs:
         """
-        request = self.request
-
-        i_sort_col = 0
-
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            reverse = True if s_sort_dir == 'desc' else False
-
-        if i_sorting_cols:
-            sort_data = qs
-            try:
-                sort_using = self.columns[i_sort_col]
-                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-                return sorted_qs
-
-            except Exception as nocolumn:
-                return qs
-
-        else:
-            return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
 
     def paging(self, qs):
         """
@@ -658,8 +625,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        # Create instance of 'NocoutUtilsGateway' class
-        nocout_utils = NocoutUtilsGateway()
         organizations = nocout_utils.logged_in_user_organizations(self)
 
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
@@ -1325,39 +1290,7 @@ class AlertListingTable(BaseDatatableView):
         sorting for the table
         :param qs:
         """
-        request = self.request
-
-        i_sort_col = 0
-
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            reverse = True if s_sort_dir == 'desc' else False
-
-        if i_sorting_cols:
-            try:
-                sort_using = self.columns[i_sort_col]
-                sorted_qs = sorted(qs, key=itemgetter(sort_using), reverse=reverse)
-                return sorted_qs
-
-            except Exception as nocolumn:
-                return qs
-        else:
-            return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
 
     def prepare_initial_params(self):
         """
@@ -1605,9 +1538,6 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
     order_columns = required_columns
 
-    # Create instance of 'NocoutUtilsGateway' class
-    nocout_utils = NocoutUtilsGateway()
-
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value
         :param qs:
@@ -1792,39 +1722,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         """ Get parameters from the request and prepare order by clause
         :param qs:
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
-
-        order_columns = self.required_columns
-
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name = order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse=True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.required_columns)
 
     def initialize_params(self):
         """

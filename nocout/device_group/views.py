@@ -16,6 +16,9 @@ from organization.models import Organization
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin
 
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
 
 class DeviceGroupList(PermissionsRequiredMixin, ListView):
     """
@@ -81,35 +84,8 @@ class DeviceGroupListingTable(PermissionsRequiredMixin, DatatableSearchMixin, Ba
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key= itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
 
     def get_context_data(self, *args, **kwargs):
@@ -197,9 +173,6 @@ class DeviceGroupUpdate(PermissionsRequiredMixin, UpdateView):
                     cleaned_data_field_dict[field]= form.cleaned_data[field].pk if form.cleaned_data[field] else None
                 else:
                     cleaned_data_field_dict[field]= form.cleaned_data[field]
-
-            # Create instance of 'NocoutUtilsGateway' class
-            nocout_utils = NocoutUtilsGateway()
             
             changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
 

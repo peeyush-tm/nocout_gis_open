@@ -26,7 +26,8 @@ from alarm_escalation.models import EscalationStatus, EscalationLevel
 from performance.utils.util import PerformanceUtilsGateway
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
-from scheduling_management.views import get_today_event_list
+# Import inventory utils gateway class
+from scheduling_management.views import SchedulingViewsGateway
 from inventory.tasks import bulk_update_create
 import logging
 logger = logging.getLogger(__name__)
@@ -454,8 +455,11 @@ def check_device_status():
     # Create instance of 'InventoryUtilsGateway' class
     inventory_utils = InventoryUtilsGateway()
 
+    # Create instance of 'SchedulingViewsGateway' class
+    scheduling_utils = SchedulingViewsGateway()
+
     #get the device list which is in downtime scheduling today.
-    device_id_list = get_today_event_list()['device_ids']
+    device_id_list = scheduling_utils.get_today_event_list()['device_ids']
     for org in Organization.objects.all():
         # get the objects which require escalation
         required_objects = EscalationLevel.objects.filter(organization__in=[org])

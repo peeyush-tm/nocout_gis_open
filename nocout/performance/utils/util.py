@@ -11,7 +11,6 @@ from operator import itemgetter
 from multiprocessing import Process, Queue
 
 from django.utils.dateformat import format
-from django.views.generic.base import View
 
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
@@ -34,7 +33,7 @@ from django.http import HttpRequest
 nocout_utils = NocoutUtilsGateway()
 
 
-class PerformanceUtilsGateway(View):
+class PerformanceUtilsGateway:
     """
     This class works as gateway between performance utils & other apps
     """

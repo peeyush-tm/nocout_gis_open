@@ -46,7 +46,8 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
 from performance.formulae import display_time, rta_null
-from service.utils.util import service_data_sources
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME
 from user_profile.models import UserProfile
@@ -1472,7 +1473,10 @@ class BulkFetchLPDataApi(View):
 
         # In case of 'rta' and 'pl', fetch data from 'service_data_sources' function.
         if ds_name in ['pl', 'rta']:
-            ds_dict = service_data_sources()
+            # Create instance of 'ServiceUtilsGateway' class
+            service_utils = ServiceUtilsGateway()
+
+            ds_dict = service_utils.service_data_sources()
             result['data']['data_source'] = dict()
             result['data']['data_source']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
             result['data']['data_source']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[

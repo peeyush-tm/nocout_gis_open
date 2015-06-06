@@ -45,7 +45,7 @@ class SiteInstanceList(PermissionsRequiredMixin, ListView):
         """
         context = super(SiteInstanceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto'},
+            {'mData': 'is_device_change', 'sTitle': '', 'sWidth': 'auto'},
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -69,8 +69,16 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
     """
     model = SiteInstance
     required_permissions = ('site_instance.view_siteinstance',)
-    columns = ['name', 'alias', 'machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
-    order_columns = ['name', 'alias', 'machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
+    columns = ['is_device_change', 'name', 'alias', 'machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
+    order_columns = [
+        'is_device_change',
+        'name', 
+        'alias', 
+        'machine__name', 
+        'live_status_tcp_port', 
+        'web_service_port', 
+        'username'
+    ]
 
     def prepare_results(self, qs):
         """
@@ -79,22 +87,16 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            current_site = None
-            try:
-                current_site = SiteInstance.objects.get(id=dct['id'])
-            except Exception as e:
-                pass
-
-            # if device is already added to nms core than show icon in device table
+            
             icon = ""
             try:
-                if current_site.is_device_change == 1:
+                if dct['is_device_change'] == 1:
                     icon = '<i class="fa fa-circle red-dot"></i>'
                 else:
                     icon = '<i class="fa fa-circle green-dot"></i>'
-                dct.update(status_icon=icon)
             except Exception as e:
-                dct.update(status_icon='<img src="">')
+                icon = ""
+            dct.update(is_device_change=icon)
             try:
                 dct.update(actions='<a href="/site/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                     <a href="/site/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id']))
