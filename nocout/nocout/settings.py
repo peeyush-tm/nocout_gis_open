@@ -797,6 +797,13 @@ MIN_CHART_COLOR = '#0000FF'
 MAX_CHART_COLOR = '#FF00FF'
 AVG_CHART_COLOR = '#00FFFF'
 
+####################### Warnign, Critical Color & Type ########################
+# 6 June 2015
+WARN_COLOR = '#FFE90D' 
+CRIT_COLOR = '#FF193B'
+WARN_TYPE = 'line'
+CRIT_TYPE = 'line'
+
 ####################### Display flag for severity distrubution pie chart #######################
 # 15 April 2015
 DISPLAY_SEVERITY_PIE_CHART = False
@@ -819,7 +826,11 @@ SETTINGS_EXPORT = [
     'GLOBAL_SEARCH_FLAG',
     'DATATABLES_DOWNLOAD_FLAG',
     'WHITE_MAP_CONFIGURATION',
-    'HISTORICAL_ON_PERFORMANCE'
+    'HISTORICAL_ON_PERFORMANCE',
+    'WARN_COLOR',
+    'CRIT_COLOR',
+    'WARN_TYPE',
+    'CRIT_TYPE'
 ]
 # #### Access Variables in Templates
 
