@@ -13,7 +13,8 @@ from models import ProcessedReportDetails, ReportSettings, CityCharterP2P, CityC
 from django.db.models import Q
 from django.conf import settings
 from nocout.mixins.permissions import SuperUserRequiredMixin
-from nocout.utils.util import convert_utc_to_local_timezone
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 import os
 import logging
@@ -129,6 +130,10 @@ class DownloadCenterListing(BaseDatatableView):
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
         for dct in qs:
             # icon for excel file
             excel_green = static("img/ms-office-icons/excel_2013_green.png")
@@ -145,13 +150,13 @@ class DownloadCenterListing(BaseDatatableView):
 
             # 'created on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['created_on'] = convert_utc_to_local_timezone(dct['created_on'])
+                dct['created_on'] = nocout_utils.convert_utc_to_local_timezone(dct['created_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # 'report date' field timezone conversion from 'utc' to 'local'
             try:
-                dct['report_date'] = convert_utc_to_local_timezone(dct['report_date'])
+                dct['report_date'] = nocout_utils.convert_utc_to_local_timezone(dct['report_date'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 

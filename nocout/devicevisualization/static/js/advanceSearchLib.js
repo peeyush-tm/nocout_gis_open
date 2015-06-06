@@ -594,9 +594,9 @@ function advanceSearchClass() {
 
 		var current_data_array = [];
 
-		if(window.location.pathname.indexOf("googleEarth") > -1) {
+		if(window.location.pathname.indexOf("gearth") > -1) {
 			current_data_array = main_devices_data_earth;
-		} else if (window.location.pathname.indexOf("white_background") > -1) { 
+		} else if (window.location.pathname.indexOf("wmap") > -1) { 
 			current_data_array = main_devices_data_wmap;
 		}else {
 			current_data_array = main_devices_data_gmaps;
@@ -673,7 +673,7 @@ function advanceSearchClass() {
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
 
-//        if(window.location.pathname.indexOf("googleEarth") == -1) {
+//        if(window.location.pathname.indexOf("gearth") == -1) {
 //
 //            /*Create a instance of networkMapClass*/
 //            gmapInstance = new devicePlottingClass_gmap();
@@ -787,7 +787,7 @@ function advanceSearchClass() {
 
     this.result_plotting= function() {
         
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(window.location.pathname.indexOf("gearth") > -1) {
 
         	/*Save filtered data in global variable*/
 			data_for_filters_earth = result_plot_devices;
@@ -801,7 +801,7 @@ function advanceSearchClass() {
 	        /*create the BS-SS network on the google earth*/
 	        earth_instance.plotDevices_earth(data_for_filters_earth,"base_station");
 
-        } else if (window.location.pathname.indexOf("white_background") > -1) { 
+        } else if (window.location.pathname.indexOf("wmap") > -1) { 
 
         		showWmapFilteredData(result_plot_devices);
 

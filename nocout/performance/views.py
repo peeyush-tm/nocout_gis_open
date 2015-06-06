@@ -30,15 +30,18 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     PerformanceStatusDaily, PerformanceStatusWeekly, PerformanceStatusMonthly, PerformanceStatusYearly, \
     PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly,\
     UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly
-from nocout.utils import util as nocout_utils
 
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
-#utilities inventory
-from inventory.utils import util as inventory_utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
-from performance.utils import util as perf_utils
+# Import performance utils gateway class
+from performance.utils.util import PerformanceUtilsGateway
 
-from service.utils.util import service_data_sources
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
 
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
@@ -47,13 +50,66 @@ from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
 
 from performance.formulae import display_time, rta_null
 
+# Create instance of 'ServiceUtilsGateway' class
+service_utils = ServiceUtilsGateway()
+
 ##execute this globally
-SERVICE_DATA_SOURCE = service_data_sources()
-##execute this globally
+SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
 import logging
 
 log = logging.getLogger(__name__)
+
+# Create instance of 'PerformanceUtilsGateway' class
+perf_utils = PerformanceUtilsGateway()
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
+
+class PerformanceViewsGateway:
+    """
+    This class works as gateway between performance views & other apps
+    """
+
+    def getLastXMonths(self, params):
+
+        response_param1, response_param2 = getLastXMonths(params)
+
+        return response_param1, response_param2
+
+
+    def get_device_status_headers(self, page_type='network', type_of_device=None, technology=None):
+        response_param1 = get_device_status_headers(
+            page_type=page_type,
+            type_of_device=type_of_device,
+            technology=technology
+        )
+
+        return response_param1
+
+
+    def get_higher_severity(self, severity_dict):
+        response_param1, response_param2 = get_higher_severity(severity_dict)
+
+        return response_param1, response_param2
+
+
+    def device_current_status(self, device_object):
+        response_param1, response_param2 = device_current_status(device_object)
+
+        return response_param1, response_param2
+
+
+    def device_last_down_time(self, device_object):
+        response_param1 = device_last_down_time(device_object)
+
+        return response_param1
+
+    def initGetServiceTypePerformanceData(self):
+        class_instance = GetServiceTypePerformanceData()
+
+        return class_instance
 
 
 class LivePerformance(ListView):
@@ -148,6 +204,9 @@ class LivePerformanceListing(BaseDatatableView):
     is_polled = False
     is_searched = False
     is_initialised = True
+    
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
 
     columns = [
         'id',
@@ -203,7 +262,7 @@ class LivePerformanceListing(BaseDatatableView):
 
         device_tab_technology = self.request.GET.get('data_tab')
 
-        devices = inventory_utils.filter_devices(
+        devices = self.inventory_utils.filter_devices(
             organizations=kwargs['organizations'],
             data_tab=device_tab_technology,
             page_type=page_type,
@@ -402,7 +461,7 @@ class LivePerformanceListing(BaseDatatableView):
                 }
             )
 
-        return inventory_utils.prepare_machines(device_list)
+        return self.inventory_utils.prepare_machines(device_list)
 
     def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
         """
@@ -447,10 +506,10 @@ class LivePerformanceListing(BaseDatatableView):
                 dct.update(
                     actions='<a href="/performance/{0}_live/{1}/" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="/alert_center/{3}/device/{1}/service_tab/{2}/" title="Device Alert">\
+                            <a href="/alert_center/{3}_alert/{2}/{1}/" title="Device Alert">\
                             <i class="fa fa-warning text-warning"></i></a> \
                             <a href="/device/{1}" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'], 'ping', alert_page_type)
+                            <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'], 'down', alert_page_type)
                 )
 
         return qs
@@ -576,7 +635,7 @@ class GetPerfomance(View):
             kwargs={
                 'page_type': link_page_type,
                 'device_id': device_id,
-                'service_name': 'ping'
+                'data_source': 'down'
             },
             current_app='alert_center'
         )
@@ -634,44 +693,6 @@ class PerformanceDashboard(View):
         :return Http response object:
         """
         return render_to_response('home/home.html')
-
-
-def getLastXMonths(months_count):
-
-    """
-    This function returns last x months 'years,month' tuple & all months name, alias list
-    :param months_count:
-    :return:
-    """
-    all_months_list = [
-        {"name": "jan", "alias": "Jan"},
-        {"name": "feb", "alias": "Feb"},
-        {"name": "march", "alias": "March"},
-        {"name": "april", "alias": "April"},
-        {"name": "may", "alias": "May"},
-        {"name": "june", "alias": "June"},
-        {"name": "july", "alias": "July"},
-        {"name": "aug", "alias": "Aug"},
-        {"name": "sept", "alias": "Sept"},
-        {"name": "oct", "alias": "Oct"},
-        {"name": "nov", "alias": "Nov"},
-        {"name": "dec", "alias": "Dec"}
-    ]
-
-    now = time.localtime()
-
-    last_six_months_list = [
-        time.localtime(
-            time.mktime(
-                (now.tm_year, now.tm_mon - n, 1, 0, 0, 0, 0, 0, 0)
-            )
-        )[:2] for n in range(months_count)
-    ]
-
-    # Reverse months list
-    last_six_months_list.reverse()
-
-    return last_six_months_list, all_months_list
 
 
 class SectorDashboard(ListView):
@@ -930,11 +951,7 @@ class SectorDashboardListing(BaseDatatableView):
          Get parameters from the request and prepare order by clause
         :param qs:
         """
-
-        # Call function to get sorted data
-        sorted_data = perf_utils.dataTableOrdering(self, qs, self.static_columns)
-        
-        return sorted_data
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.static_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -974,294 +991,6 @@ class SectorDashboardListing(BaseDatatableView):
         }
 
         return ret
-
-
-def get_device_status_headers(page_type='network', type_of_device=None, technology=None):
-    """
-    This function returns device status headers as per given
-    technology & type_of_device(sub_station, sector, backhaul, other)
-    :param technology:
-    :param type_of_device:
-    :param page_type:
-    """
-    headers_list = []
-    # app names
-    inventory_app = 'inventory'
-    device_app = 'device'
-
-    # technology & type
-    device_tech_name = "device_technology"
-    device_tech_key = "device_technology_id"
-
-    device_type_name = "device_type"
-    device_type_key = "device_type_id"
-
-    if type_of_device in ['sub_station']:
-        device_tech_name = "ss_technology"
-        device_tech_key = "ss_technology_id"
-
-        device_type_name = "ss_type"
-        device_type_key = "ss_type_id"
-
-    elif type_of_device in ['backhaul']:
-        device_tech_name = "bh_technology"
-        device_tech_key = "bh_technology_id"
-        
-        device_type_name = "bh_type"
-        device_type_key = "bh_type_id"
-
-    # common Params
-    bs_name_obj = {
-        "name": "bs_name",
-        "title": "BS Name",
-        "value": "N/A",
-        "url": "",
-        "app_name": inventory_app,
-        "url_name": "base_station_edit",
-        "kwargs_name": 'pk',
-        'pk_key' : 'bs_id'
-    }
-
-    ss_name_obj = {
-        "name": "ss_name",
-        "title": "SS Name",
-        "value": "N/A",
-        "url": "",
-        "app_name": inventory_app,
-        "url_name": "sub_station_edit",
-        "kwargs_name": 'pk',
-        'pk_key' : 'ss_id'
-    }
-
-    ckt_obj = {
-        "name": "circuit_id",
-        "title": "Circuit ID",
-        "value": "N/A",
-        "url": "",
-        "app_name": inventory_app,
-        "url_name": "circuit_edit",
-        "kwargs_name": 'pk',
-        'pk_key' : 'ckt_id'
-    }
-
-    cust_obj = {
-        "name": "customer_name",
-        "title": "Customer Name",
-        "value": "N/A",
-        "url": "",
-        "app_name": inventory_app,
-        "url_name": "customer_edit",
-        "kwargs_name": 'pk',
-        'pk_key' : 'cust_id'
-    }
-
-    tech_name_obj = {
-        "name": device_tech_name,
-        "title": "Technology",
-        "value": "N/A",
-        "url": "",
-        "app_name": device_app,
-        "url_name": "device_technology_edit",
-        "kwargs_name": "pk",
-        'pk_key' : device_tech_key
-    }
-
-    type_name_obj = {
-        "name": device_type_name,
-        "title": "Type",
-        "value": "N/A",
-        "url": "",
-        "app_name": device_app,
-        "url_name": "wizard-device-type-update",
-        "kwargs_name": "pk",
-        'pk_key' : device_type_key
-    }
-
-    city_name_obj = {
-        "name": "city",
-        "title": "City",
-        "value": "N/A",
-        "url": "",
-        "app_name": device_app,
-        "url_name": "city_edit",
-        "kwargs_name": "pk",
-        'pk_key' : 'city_id'
-    }
-
-    state_name_obj = {
-        "name": "state",
-        "title": "State",
-        "value": "N/A",
-        "url": "",
-        "app_name": device_app,
-        "url_name": "state_edit",
-        "kwargs_name": "pk",
-        'pk_key' : 'state_id'
-    }
-
-    device_url_params = {
-        "value": "N/A",
-        "url": "",
-        "app_name": device_app,
-        "url_name": "device_edit",
-        "kwargs_name": "pk",
-        'pk_key' : 'device_id'
-    }
-
-    ip_specific_params = {
-        "name": "ip_address",
-        "title": "IP Address"
-    }
-
-    mac_specific_params = {
-        "name": "mac_address",
-        "title": "MAC Address"
-    }
-
-    near_ip_obj = {
-        "name": "near_end_ip",
-        "title": "Near End IP",
-        "value": "N/A",
-        "url": "",
-        "app_name": device_app,
-        "url_name": "device_edit",
-        "kwargs_name": "pk",
-        'pk_key' : 'near_end_id'
-    }
-
-    polled_freq_obj = {
-        "name": "polled_freq",
-        "title": "Frequency(MHz)",
-        "value": "N/A",
-        "url": "",
-        "app_name": device_app,
-        "url_name": "device_frequency_edit",
-        "kwargs_name": "pk",
-        'pk_key' : 'freq_id'
-    }
-
-    ip_obj = ip_specific_params.copy()
-    ip_obj.update(device_url_params)
-
-    mac_obj = mac_specific_params.copy()
-    mac_obj.update(device_url_params)
-
-    if type_of_device in ['sector']:
-        headers_list = [
-            bs_name_obj,
-            tech_name_obj,
-            type_name_obj,
-            city_name_obj,
-            state_name_obj,
-            ip_obj,
-            {
-                "name": "planned_freq",
-                "title": "Planned Frequency(MHz)",
-                "value": "N/A",
-                "url": ""
-            },
-            polled_freq_obj
-        ]
-
-        if technology in ['P2P', 'PTP', 'ptp', 'p2p']:
-            headers_list.append(cust_obj)
-            # For PTP near end devices add QOS BW column
-            if page_type == 'customer':
-                headers_list.append({
-                    "name": "qos_bw",
-                    "title": "Qos(Mbps)",
-                    "value": "N/A",
-                    "url": ""
-                })
-        elif technology.lower() in ['wimax']:
-            headers_list.append({
-                "name": "sector_id_str",
-                "title": "Sector ID",
-                "value": "N/A",
-                "url": "",
-                "app_name": inventory_app,
-                "url_name": "sector_edit",
-                "kwargs_name": "pk",
-                'pk_key' : 'sector_pk'
-            })
-            headers_list.append({
-                "name": "pmp_port_str",
-                "title": "PMP Port",
-                "value": "N/A",
-                "url": "",
-                "app_name": inventory_app,
-                "url_name": "sector_edit",
-                "kwargs_name": "pk",
-                'pk_key' : 'sector_pk'
-            })
-        else:
-            headers_list.append({
-                "name": "sector_id",
-                "title": "Sector ID",
-                "value": "N/A",
-                "url": "",
-                "app_name": inventory_app,
-                "url_name": "sector_edit",
-                "kwargs_name": "pk",
-                'pk_key' : 'sector_pk'
-            })
-
-    elif type_of_device in ['sub_station']:
-        headers_list = [
-            bs_name_obj,
-            ss_name_obj,
-            ckt_obj,
-            cust_obj,
-            tech_name_obj,
-            type_name_obj,
-            city_name_obj,
-            state_name_obj,
-            near_ip_obj,
-            ip_obj,
-            mac_obj,
-            {
-                "name": "qos_bw",
-                "title": "Qos(Mbps)",
-                "value": "N/A",
-                "url": ""
-            },
-            polled_freq_obj
-        ]
-
-    elif type_of_device in ['backhaul', 'other']:
-        headers_list = [
-            ip_obj,
-            tech_name_obj,
-            type_name_obj,
-            bs_name_obj,
-            city_name_obj,
-            state_name_obj
-        ]
-
-        if type_of_device in ['backhaul']:
-            headers_list.append({
-                "name": "bh_port",
-                "title": "BH Port",
-                "value": "N/A",
-                "url": "",
-                "app_name": inventory_app,
-                "url_name": "backhaul_edit",
-                "kwargs_name": "pk",
-                'pk_key' : 'bh_id'
-            })
-
-            headers_list.append({
-                "name": "bh_capacity",
-                "title": "BH Capacity(mbps)",
-                "value": "N/A",
-                "url": "",
-                "app_name": inventory_app,
-                "url_name": "backhaul_edit",
-                "kwargs_name": "pk",
-                'pk_key' : 'bh_id'
-            })
-
-    return headers_list
 
 
 class InventoryDeviceStatus(View):
@@ -1325,14 +1054,16 @@ class InventoryDeviceStatus(View):
             type_of_device = "other"
             technology_key = 'bh_technology'
             result['data']['objects']['is_others_page'] = 1
-                
-        devices_info_list = [{
+
+        device_obj = {
             "device_name" : device.device_name,
             "ip_address" : device.ip_address,
             "mac_address" : device.mac_address,
             "machine_name" : device.machine.name,
             "device_id" : device.id
-        }]
+        }
+
+        devices_info_list = [device_obj]
 
         # GET the devices name
         if device.sector_configured_on.exists():
@@ -1381,6 +1112,7 @@ class InventoryDeviceStatus(View):
                 pass
 
         if devices_info_list:
+
             list_devices_invent_info = perf_utils.prepare_gis_devices(devices_info_list, page_type=None)
 
             if list_devices_invent_info:
@@ -1449,7 +1181,7 @@ class InventoryDeviceStatus(View):
         )
 
         if type_of_device in ['sector'] and device_technology in ['WiMAX']:
-            updated_dataset = []
+            updated_dataset = list()
             for data in dataset:
                 sector_id_list = data['sector_id_str'].split(',') if 'sector_id_str' in data else ''
                 sector_pk_list = data['sector_pk_str'].split(',') if 'sector_pk_str' in data else ''
@@ -2294,10 +2026,7 @@ class ServiceDataSourceListing(BaseDatatableView):
         """ Get parameters from the request and prepare order by clause
         :param qs:
         """
-        # Call function to get sorted data
-        sorted_data = perf_utils.dataTableOrdering(self, qs, self.order_columns)
-        
-        return sorted_data
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -4072,6 +3801,332 @@ class DeviceServiceDetail(View):
         return HttpResponse(json.dumps(result), content_type="application/json")
 
 
+def getLastXMonths(months_count):
+
+    """
+    This function returns last x months 'years,month' tuple & all months name, alias list
+    :param months_count:
+    :return:
+    """
+    all_months_list = [
+        {"name": "jan", "alias": "Jan"},
+        {"name": "feb", "alias": "Feb"},
+        {"name": "march", "alias": "March"},
+        {"name": "april", "alias": "April"},
+        {"name": "may", "alias": "May"},
+        {"name": "june", "alias": "June"},
+        {"name": "july", "alias": "July"},
+        {"name": "aug", "alias": "Aug"},
+        {"name": "sept", "alias": "Sept"},
+        {"name": "oct", "alias": "Oct"},
+        {"name": "nov", "alias": "Nov"},
+        {"name": "dec", "alias": "Dec"}
+    ]
+
+    now = time.localtime()
+
+    last_six_months_list = [
+        time.localtime(
+            time.mktime(
+                (now.tm_year, now.tm_mon - n, 1, 0, 0, 0, 0, 0, 0)
+            )
+        )[:2] for n in range(months_count)
+    ]
+
+    # Reverse months list
+    last_six_months_list.reverse()
+
+    return last_six_months_list, all_months_list
+
+
+def get_device_status_headers(page_type='network', type_of_device=None, technology=None):
+    """
+    This function returns device status headers as per given
+    technology & type_of_device(sub_station, sector, backhaul, other)
+    :param technology:
+    :param type_of_device:
+    :param page_type:
+    """
+    headers_list = []
+    # app names
+    inventory_app = 'inventory'
+    device_app = 'device'
+
+    # technology & type
+    device_tech_name = "device_technology"
+    device_tech_key = "device_technology_id"
+
+    device_type_name = "device_type"
+    device_type_key = "device_type_id"
+
+    if type_of_device in ['sub_station']:
+        device_tech_name = "ss_technology"
+        device_tech_key = "ss_technology_id"
+
+        device_type_name = "ss_type"
+        device_type_key = "ss_type_id"
+
+    elif type_of_device in ['backhaul']:
+        device_tech_name = "bh_technology"
+        device_tech_key = "bh_technology_id"
+        
+        device_type_name = "bh_type"
+        device_type_key = "bh_type_id"
+
+    # common Params
+    bs_name_obj = {
+        "name": "bs_name",
+        "title": "BS Name",
+        "value": "N/A",
+        "url": "",
+        "app_name": inventory_app,
+        "url_name": "base_station_edit",
+        "kwargs_name": 'pk',
+        'pk_key' : 'bs_id'
+    }
+
+    ss_name_obj = {
+        "name": "ss_name",
+        "title": "SS Name",
+        "value": "N/A",
+        "url": "",
+        "app_name": inventory_app,
+        "url_name": "sub_station_edit",
+        "kwargs_name": 'pk',
+        'pk_key' : 'ss_id'
+    }
+
+    ckt_obj = {
+        "name": "circuit_id",
+        "title": "Circuit ID",
+        "value": "N/A",
+        "url": "",
+        "app_name": inventory_app,
+        "url_name": "circuit_edit",
+        "kwargs_name": 'pk',
+        'pk_key' : 'ckt_id'
+    }
+
+    cust_obj = {
+        "name": "customer_name",
+        "title": "Customer Name",
+        "value": "N/A",
+        "url": "",
+        "app_name": inventory_app,
+        "url_name": "customer_edit",
+        "kwargs_name": 'pk',
+        'pk_key' : 'cust_id'
+    }
+
+    tech_name_obj = {
+        "name": device_tech_name,
+        "title": "Technology",
+        "value": "N/A",
+        "url": "",
+        "app_name": device_app,
+        "url_name": "device_technology_edit",
+        "kwargs_name": "pk",
+        'pk_key' : device_tech_key
+    }
+
+    type_name_obj = {
+        "name": device_type_name,
+        "title": "Type",
+        "value": "N/A",
+        "url": "",
+        "app_name": device_app,
+        "url_name": "wizard-device-type-update",
+        "kwargs_name": "pk",
+        'pk_key' : device_type_key
+    }
+
+    city_name_obj = {
+        "name": "city",
+        "title": "City",
+        "value": "N/A",
+        "url": "",
+        "app_name": device_app,
+        "url_name": "city_edit",
+        "kwargs_name": "pk",
+        'pk_key' : 'city_id'
+    }
+
+    state_name_obj = {
+        "name": "state",
+        "title": "State",
+        "value": "N/A",
+        "url": "",
+        "app_name": device_app,
+        "url_name": "state_edit",
+        "kwargs_name": "pk",
+        'pk_key' : 'state_id'
+    }
+
+    device_url_params = {
+        "value": "N/A",
+        "url": "",
+        "app_name": device_app,
+        "url_name": "device_edit",
+        "kwargs_name": "pk",
+        'pk_key' : 'device_id'
+    }
+
+    ip_specific_params = {
+        "name": "ip_address",
+        "title": "IP Address"
+    }
+
+    mac_specific_params = {
+        "name": "mac_address",
+        "title": "MAC Address"
+    }
+
+    near_ip_obj = {
+        "name": "near_end_ip",
+        "title": "Near End IP",
+        "value": "N/A",
+        "url": "",
+        "app_name": device_app,
+        "url_name": "device_edit",
+        "kwargs_name": "pk",
+        'pk_key' : 'near_end_id'
+    }
+
+    polled_freq_obj = {
+        "name": "polled_freq",
+        "title": "Frequency(MHz)",
+        "value": "N/A",
+        "url": "",
+        "app_name": device_app,
+        "url_name": "device_frequency_edit",
+        "kwargs_name": "pk",
+        'pk_key' : 'freq_id'
+    }
+
+    ip_obj = ip_specific_params.copy()
+    ip_obj.update(device_url_params)
+
+    mac_obj = mac_specific_params.copy()
+    mac_obj.update(device_url_params)
+
+    if type_of_device in ['sector']:
+        headers_list = [
+            bs_name_obj,
+            tech_name_obj,
+            type_name_obj,
+            city_name_obj,
+            state_name_obj,
+            ip_obj,
+            {
+                "name": "planned_freq",
+                "title": "Planned Frequency(MHz)",
+                "value": "N/A",
+                "url": ""
+            },
+            polled_freq_obj
+        ]
+
+        if technology in ['P2P', 'PTP', 'ptp', 'p2p']:
+            headers_list.append(cust_obj)
+            # For PTP near end devices add QOS BW column
+            if page_type == 'customer':
+                headers_list.append({
+                    "name": "qos_bw",
+                    "title": "Qos(Mbps)",
+                    "value": "N/A",
+                    "url": ""
+                })
+        elif technology.lower() in ['wimax']:
+            headers_list.append({
+                "name": "sector_id_str",
+                "title": "Sector ID",
+                "value": "N/A",
+                "url": "",
+                "app_name": inventory_app,
+                "url_name": "sector_edit",
+                "kwargs_name": "pk",
+                'pk_key' : 'sector_pk'
+            })
+            headers_list.append({
+                "name": "pmp_port_str",
+                "title": "PMP Port",
+                "value": "N/A",
+                "url": "",
+                "app_name": inventory_app,
+                "url_name": "sector_edit",
+                "kwargs_name": "pk",
+                'pk_key' : 'sector_pk'
+            })
+        else:
+            headers_list.append({
+                "name": "sector_id",
+                "title": "Sector ID",
+                "value": "N/A",
+                "url": "",
+                "app_name": inventory_app,
+                "url_name": "sector_edit",
+                "kwargs_name": "pk",
+                'pk_key' : 'sector_pk'
+            })
+
+    elif type_of_device in ['sub_station']:
+        headers_list = [
+            bs_name_obj,
+            ss_name_obj,
+            ckt_obj,
+            cust_obj,
+            tech_name_obj,
+            type_name_obj,
+            city_name_obj,
+            state_name_obj,
+            near_ip_obj,
+            ip_obj,
+            mac_obj,
+            {
+                "name": "qos_bw",
+                "title": "Qos(Mbps)",
+                "value": "N/A",
+                "url": ""
+            },
+            polled_freq_obj
+        ]
+
+    elif type_of_device in ['backhaul', 'other']:
+        headers_list = [
+            ip_obj,
+            tech_name_obj,
+            type_name_obj,
+            bs_name_obj,
+            city_name_obj,
+            state_name_obj
+        ]
+
+        if type_of_device in ['backhaul']:
+            headers_list.append({
+                "name": "bh_port",
+                "title": "BH Port",
+                "value": "N/A",
+                "url": "",
+                "app_name": inventory_app,
+                "url_name": "base_station_edit",
+                "kwargs_name": "pk",
+                'pk_key' : 'bs_id'
+            })
+
+            headers_list.append({
+                "name": "bh_capacity",
+                "title": "BH Capacity(mbps)",
+                "value": "N/A",
+                "url": "",
+                "app_name": inventory_app,
+                "url_name": "base_station_edit",
+                "kwargs_name": "pk",
+                'pk_key' : 'bs_id'
+            })
+
+    return headers_list
+
+
 #TODO: Move to performance utils
 def get_higher_severity(severity_dict):
     """
@@ -4157,5 +4212,4 @@ def device_last_down_time(device_object):
     """
     #first check the current PL state of the device
     s, a = device_current_status(device_object=device_object)
-
     return a['down']  # return the last down time of the device

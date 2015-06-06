@@ -48,7 +48,7 @@ if(!base_url) {
     }
 }
 
-if((window.location.pathname.indexOf("googleEarth") > -1) || (window.location.pathname.indexOf("white_background") > -1)) {
+if((window.location.pathname.indexOf("gearth") > -1) || (window.location.pathname.indexOf("wmap") > -1)) {
     hiddenIconObj = base_url+'/static/img/icons/1x1.png';
 } else {
     hiddenIconObj = new google.maps.MarkerImage(
@@ -65,7 +65,7 @@ if((window.location.pathname.indexOf("googleEarth") > -1) || (window.location.pa
  */
 function GisPerformance() {
     // If google earth page then update loader color
-    if(window.location.pathname.indexOf('google_earth') > -1) {
+    if(window.location.pathname.indexOf('setellite') > -1) {
         loaderInfoboxStyle['color'] = "#F9F9F9";
     }
     //Is Frozen variable.. Get value from isFreeze Global Variable defined.
@@ -236,9 +236,9 @@ function GisPerformance() {
                 loader_label = "",
                 allMarkersObject = "";
             
-            if(window.location.pathname.indexOf("white_background") > -1) {
+            if(window.location.pathname.indexOf("wmap") > -1) {
                 allMarkersObject = allMarkersObject_wmap;    
-            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+            } else if(window.location.pathname.indexOf("gearth") > -1) {
                 // pass
             } else {
                 allMarkersObject = allMarkersObject_gmap;
@@ -276,7 +276,7 @@ function GisPerformance() {
                 if(data) {
                     //Store data in gisData
                     if(data.id) {
-                        if(window.location.pathname.indexOf("white_background") > -1) {
+                        if(window.location.pathname.indexOf("wmap") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
@@ -288,7 +288,7 @@ function GisPerformance() {
                                     perf_self.sendRequest(counter);
                                 }
                             });
-                        } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                        } else if(window.location.pathname.indexOf("gearth") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
                                 calls_completed++;
@@ -372,9 +372,9 @@ function GisPerformance() {
                 sector_infoWindow_content = sector_info_list ? sector_info_list : [],
                 bs_marker = "";
 
-            if(window.location.pathname.indexOf("googleEarth") > -1) {
+            if(window.location.pathname.indexOf("gearth") > -1) {
                 bs_marker = allMarkersObject_earth['base_station']['bs_'+bs_name];
-            } else if (window.location.pathname.indexOf("white_background") > -1) {
+            } else if (window.location.pathname.indexOf("wmap") > -1) {
                 bs_marker = allMarkersObject_wmap['base_station']['bs_'+bs_name];
             } else {
                 bs_marker = allMarkersObject_gmap['base_station']['bs_'+bs_name];
@@ -433,10 +433,10 @@ function GisPerformance() {
                     sector_polygon = "",
                     startEndObj = {};
 
-                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                if(window.location.pathname.indexOf("gearth") > -1) {
                     sector_marker = allMarkersObject_earth['sector_device']['sector_'+sector_ip];
                     sector_polygon = allMarkersObject_earth['sector_polygon']['poly_'+sector_ip+"_"+sector_id];
-                } else if(window.location.pathname.indexOf("white_background") > -1) {
+                } else if(window.location.pathname.indexOf("wmap") > -1) {
                     sector_marker = allMarkersObject_wmap['sector_device']['sector_'+sector_ip];
                     sector_polygon = allMarkersObject_wmap['sector_polygon']['poly_'+sector_ip+"_"+sector_id];
                 } else {
@@ -508,7 +508,7 @@ function GisPerformance() {
                             polyStartLon = pointsArray[halfPt].lon;
                         }
 
-                        if(window.location.pathname.indexOf("googleEarth") > -1) {
+                        if(window.location.pathname.indexOf("gearth") > -1) {
                             try {
 
                                 // Add points for poly coordinates.
@@ -539,7 +539,7 @@ function GisPerformance() {
                                 // pass
                             }
 
-                        } else if(window.location.pathname.indexOf("white_background") > -1) {
+                        } else if(window.location.pathname.indexOf("wmap") > -1) {
                             for(var i=0;i<pointsArray.length;i++) {
                                 var pt = new OpenLayers.Geometry.Point(pointsArray[i].lon, pointsArray[i].lat);
                                 polyPathArray.push(pt);
@@ -673,7 +673,7 @@ function GisPerformance() {
                                     windowTitle      : "Sub Station"
                                 };
 
-                                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                if(window.location.pathname.indexOf("gearth") > -1) {
                                     
                                     ss_marker_object['map'] = 'current';
                                     ss_marker_object['icon'] = base_url+"/"+ss_marker_data.data.markerUrl;
@@ -743,7 +743,7 @@ function GisPerformance() {
                                     allMarkersObject_earth['sub_station']['ss_'+ss_marker.name] = ss_marker;
                                     allMarkersArray_earth.push(ss_marker);
 
-                                } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                } else if (window.location.pathname.indexOf("wmap") > -1) {
 
                                     var iconImageObj = base_url+"/"+ss_marker_data.data.markerUrl,
                                         ss_marker_icon = ss_marker_data.data.markerUrl ? iconImageObj : "";
@@ -963,7 +963,7 @@ function GisPerformance() {
 
                                 var isLineChecked = $("#showConnLines:checked").length;
 
-                                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                if(window.location.pathname.indexOf("gearth") > -1) {
                                     /*Create the link between BS & SS or Sector & SS*/
                                     var ss_link_line = earth_self.createLink_earth(
                                         startEndObj,
@@ -994,7 +994,7 @@ function GisPerformance() {
                                     allMarkersObject_earth['path']['line_'+ss_marker_data.name] = ss_link_line;
 
                                     allMarkersArray_earth.push(ss_link_line);
-                                } else if (window.location.pathname.indexOf('white_background') > -1) {
+                                } else if (window.location.pathname.indexOf('wmap') > -1) {
                                     /*Create the link between BS & SS or Sector & SS*/
                                     var ss_link_line = whiteMapClass.plotLines_wmap(
                                         startEndObj,
@@ -1177,9 +1177,9 @@ function GisPerformance() {
                                 // Create Label for Perf Value
                                 var existing_index = -1;
                                 for (var x = 0; x < labelsArray.length; x++) {
-                                    if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                    if(window.location.pathname.indexOf("gearth") > -1) {
                                         // pass
-                                    } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                    } else if (window.location.pathname.indexOf("wmap") > -1) {
                                         if(labelsArray[x].id == "perfLabel_"+ss_marker.name) {
                                             ccpl_map.removePopup(labelsArray[x]);
                                         }
@@ -1236,10 +1236,10 @@ function GisPerformance() {
 
                                 if($.trim(perf_val)) {
 
-                                    if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                    if(window.location.pathname.indexOf("gearth") > -1) {
                                         ss_marker_data.perf_val = perf_val;
                                         //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
-                                    } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                    } else if (window.location.pathname.indexOf("wmap") > -1) {
                                        var perfLabel_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
                                             new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
                                             new OpenLayers.Size(80,18),
@@ -1302,7 +1302,7 @@ function GisPerformance() {
                                     for(var b=0; b< connected_sub_stations.length; b++) {
                                         var ss = connected_sub_stations[b]['name'] ? connected_sub_stations[b]['name'] : "";
                                         if(connected_sub_stations[b] && ss) {
-                                            if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                            if(window.location.pathname.indexOf("gearth") > -1) {
                                                 // Remove Line from map & array
                                                 if(allMarkersObject_earth['path']['line_'+ss]) {
                                                     if(startEndObj["startLat"] && startEndObj["startLon"]) {
@@ -1316,7 +1316,7 @@ function GisPerformance() {
                                                         lineString.getCoordinates().pushLatLngAlt((+current_line.ss_lat), (+current_line.ss_lon), 0);
                                                     }
                                                 }
-                                            } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                            } else if (window.location.pathname.indexOf("wmap") > -1) {
                                                 // Remove Line from map & array
                                                 if(allMarkersObject_wmap['path']['line_'+ss]) {
                                                     if(startEndObj["startLat"] && startEndObj["startLon"]) {
@@ -1403,7 +1403,7 @@ function GisPerformance() {
             // Update Loki Object
             all_devices_loki_db.update(bs_object);
 
-            if(window.location.pathname.indexOf("white_background") > -1) {
+            if(window.location.pathname.indexOf("wmap") > -1) {
                 ccpl_map.getLayersByName("Markers")[0].redraw();
                 ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
                 ccpl_map.getLayersByName("Lines")[0].redraw();
@@ -1427,7 +1427,7 @@ function GisPerformance() {
             old_icon_obj = iconUrl,
             hidden_icon_instance = hiddenIconObj;
 
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(window.location.pathname.indexOf("gearth") > -1) {
 
             try {
                 marker['clusterIcon'] = hidden_icon_instance;
@@ -1437,7 +1437,7 @@ function GisPerformance() {
             }
 
             updateGoogleEarthPlacemark(marker, old_icon_obj);
-        } else if (window.location.pathname.indexOf("white_background") > -1) {
+        } else if (window.location.pathname.indexOf("wmap") > -1) {
 
             isBaseStation = false;
             if(marker_type == 'base_station') {
@@ -1490,7 +1490,7 @@ function GisPerformance() {
      */
     this.removeOldSS = function(ss_name) {
 
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(window.location.pathname.indexOf("gearth") > -1) {
             // Remove SS if exists
             if (allMarkersObject_earth['sub_station']['ss_'+ss_name]){
                 // Remove from google map
@@ -1504,7 +1504,7 @@ function GisPerformance() {
                 deleteGoogleEarthPlacemarker(allMarkersObject_earth['path']['line_'+ss_name]);
                 delete allMarkersObject_earth['path']['ss_'+ss_name];
             }
-        } else if (window.location.pathname.indexOf("white_background") > -1) {
+        } else if (window.location.pathname.indexOf("wmap") > -1) {
             // Remove SS if exists
             if (allMarkersObject_wmap['sub_station']['ss_'+ss_name]){
                 try {
@@ -1739,7 +1739,7 @@ function GisPerformance() {
 
         if(loader_icon_dict[bs_marker.bs_name]) {
             setTimeout(function() {
-                if(window.location.pathname.indexOf("white_background") > -1) {
+                if(window.location.pathname.indexOf("wmap") > -1) {
                     if(bs_marker.getVisibility()) {
                         hideOpenLayerFeature(bs_marker);
                     } else {
@@ -1747,7 +1747,7 @@ function GisPerformance() {
                     }
                     // Redraw BS marker
                     bs_marker.layerReference.redraw();
-                } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                } else if(window.location.pathname.indexOf("gearth") > -1) {
                     // pass
                 } else {
                     if(bs_marker.map) {
@@ -1759,13 +1759,13 @@ function GisPerformance() {
                 perf_self.animateBaseStationIcon(bs_marker);
             },350);
         } else {
-            if(window.location.pathname.indexOf("white_background") > -1) {
+            if(window.location.pathname.indexOf("wmap") > -1) {
                 if(!bs_marker.getVisibility()) {
                     showOpenLayerFeature(bs_marker);
                     // Redraw BS marker
                     bs_marker.layerReference.redraw();
                 }
-            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+            } else if(window.location.pathname.indexOf("gearth") > -1) {
                 // pass
             } else {
                 if(tooltipInfoLabel["bs_"+bs_marker.bs_name] && !tooltipInfoLabel["bs_"+bs_marker.bs_name].map) {

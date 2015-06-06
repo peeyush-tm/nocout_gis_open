@@ -7,10 +7,14 @@ from PIL import Image
 from django.core.files import File
 from django.db.models.loading import get_model
 
-from nocout.utils.util import disable_for_loaddata
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
-@disable_for_loaddata
+@nocout_utils.disable_for_loaddata
 def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     """
     If a new user is created auto assign rssi thematic settings for P2P, PMP and WiMAX technologies.
@@ -61,7 +65,7 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
         )
 
 
-@disable_for_loaddata
+@nocout_utils.disable_for_loaddata
 def resize_icon_size(sender, instance=None, **kwargs):
     """
     Resize the icon as the icon setting is created.
@@ -97,7 +101,7 @@ def resize_icon_size(sender, instance=None, **kwargs):
         pass
 
 
-@disable_for_loaddata
+@nocout_utils.disable_for_loaddata
 def delete_antenna_of_sector(sender, instance=None, **kwargs):
     """
     Deletes the antenna of a sector if sector is deleted.
@@ -106,7 +110,7 @@ def delete_antenna_of_sector(sender, instance=None, **kwargs):
         instance.antenna.delete()
 
 
-@disable_for_loaddata
+@nocout_utils.disable_for_loaddata
 def delete_antenna_of_substation(sender, instance=None, **kwargs):
     """
     Deletes the antenna of a sub-station if sub-station is deleted.
@@ -115,7 +119,7 @@ def delete_antenna_of_substation(sender, instance=None, **kwargs):
         instance.antenna.delete()
 
 
-@disable_for_loaddata
+@nocout_utils.disable_for_loaddata
 def delete_customer_of_circuit(sender, instance=None, **kwargs):
     """
     Deletes the customer of a circuit if circuit is deleted.

@@ -1,6 +1,7 @@
 from django.db.models import Q
 
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 
 class ValuesQuerySetMixin(object):
@@ -51,7 +52,9 @@ class DatatableOrganizationFilterMixin(object):
             raise NotImplementedError("Need to provide a model.")
         qs = self.model.objects.all()
         if not self.request.user.is_superuser:
-            qs = qs.filter(**{self.organization_field + "__in": logged_in_user_organizations(self)})
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
+            qs = qs.filter(**{self.organization_field + "__in": nocout_utils.logged_in_user_organizations(self)})
 
         if self.values_queryset:
             qs = qs.values(*self.columns + ['id'])

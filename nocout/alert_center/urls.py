@@ -4,14 +4,9 @@ from alert_center import views
 
 urlpatterns = patterns('',
                        # common page for both customer and network
-                       url(r'^((?!detail)(?P<page_type>\w+))/(?P<data_source>\w+)/$',
+                       url(r'^((?P<page_type>\w+))_alert/(?P<data_source>\w+)/$',
                            views.AlertCenterListing.as_view(),
                            name='alert_list_without_tabname'
-                       ),
-
-                       url(r'^((?!detail)(?P<page_type>\w+))/(?P<data_source>\w+)/(?P<data_tab>\w+)/$',
-                           views.AlertCenterListing.as_view(),
-                           name='alert_list_with_tabname'
                        ),
 
                        url(r'^networklistingtable/',
@@ -20,32 +15,32 @@ urlpatterns = patterns('',
                        ),
                        # common page for both customer and network
 
-                       url(r'^(?P<page_type>\w+)/device/(?P<device_id>\w+)/service_tab/(?P<service_name>\w+)/$',
+                       url(r'^(?P<page_type>\w+)_alert/(?P<data_source>\w+)/(?P<device_id>\w+)/$',
                            views.SingleDeviceAlertsInit.as_view(),
                            name='SingleDeviceAlertsInit'
                        ),
 
-                       url(r'^listing/(?P<page_type>\w+)/device/(?P<device_id>\w+)/service_tab/$',
+                       url(r'^(?P<page_type>\w+)_alert/(?P<data_source>\w+)/(?P<device_id>\w+)/listing/$',
                            views.SingleDeviceAlertsListing.as_view(),
                            name='SingleDeviceAlertsListing_clone'
                        ),
 
-                       url(r'^detail/network_detail/$',
+                       url(r'^network_detail/$',
                            views.NetworkAlertDetailHeaders.as_view(),
                            name='NetworkAlertDetailsHeader'
                        ),
 
-                       url(r'^detail/network_detail_listing_table$', views.GetNetworkAlertDetail.as_view(),
+                       url(r'^network_detail_listing_table$',
+                           views.GetNetworkAlertDetail.as_view(),
                            name='NetworkAlertDetails'),
 
-                       url(r'^detail/customer_detail/$',
+                       url(r'^customer_detail/$',
                            views.CustomerAlertDetailHeaders.as_view(),
                            name='CustomerAlertDetailsHeader'
                        ),
 
-                       url(r'^detail/customer_detail_listing_table/',
+                       url(r'^customer_detail_listing_table/',
                            views.GetCustomerAlertDetail.as_view(),
                            name='CustomerAlertDetails'
                        ),
-
 )

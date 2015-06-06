@@ -248,12 +248,12 @@ function goMapsFullScreen() {
 
     var screen_height = screen.height;
 
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
+    if(window.location.pathname.indexOf("gearth") > -1) {
         /*Set width-height for map div in fullscreen*/
         var mapDiv = $("#google_earth_container");
         mapDiv.attr('style', 'width: 100%; height:'+ screen_height+ 'px');
      
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    } else if (window.location.pathname.indexOf("wmap") > -1) {
         /*Set width-height for map div in fullscreen*/
         var mapDiv = $("#wmap_container");
         mapDiv.attr('style', 'width: 100%; height:'+ screen_height+ 'px');
@@ -294,7 +294,7 @@ function exitMapsFullScreen() {
     showControlDiv= "";
     $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
 
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
+    if(window.location.pathname.indexOf("gearth") > -1) {
         /*Reset width-height for map div in normal screen*/
         var mapDiv = $("#google_earth_container");
         mapDiv.attr('style', 'width: 100%; height: 550px');
@@ -302,7 +302,7 @@ function exitMapsFullScreen() {
         $("#content").removeAttr("style");
         $(".mapContainerBlock .box-title").removeClass('hide');
      
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    } else if (window.location.pathname.indexOf("wmap") > -1) {
         /*Reset width-height for map div in normal screen*/
         var mapDiv = $("#wmap_container");
         mapDiv.attr('style', 'width: 100%; height: 550px');

@@ -39,14 +39,15 @@ from django.db.models import Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City
-from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import time_it, cached_all_gis_inventory, cache_for
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
 from performance.formulae import display_time, rta_null
-from service.utils.util import service_data_sources
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME,\
     PING_RTA_WARNING, PING_RTA_CRITICAL,\
@@ -61,7 +62,10 @@ from inventory.models import (BaseStation, LivePollingSettings,
 logger = logging.getLogger(__name__)
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_raw_result(bs_dict=None):
     """
     To fetch dictionary of base station objects.
@@ -440,10 +444,10 @@ class DeviceStatsApi(View):
                                 }
                             }
     """
-    # Formatted inventory wrt the base stations.
-    raw_result = prepare_raw_result(cached_all_gis_inventory(monitored_only=True))
 
-    # @time_it()
+    # Formatted inventory wrt the base stations.
+    raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
+
     def get(self, request):
 
         self.result = {
@@ -455,10 +459,7 @@ class DeviceStatsApi(View):
             }
         }
 
-        # page_number= request.GET['page_number']
-        # limit= request.GET['limit']
-
-        organizations = logged_in_user_organizations(self)
+        organizations = nocout_utils.logged_in_user_organizations(self)
 
         if organizations:
             page_number = self.request.GET.get('page_number', None)

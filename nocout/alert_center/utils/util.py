@@ -1,29 +1,167 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 import datetime
+# Import nocout utils gateway(NocoutUtilsGateway) class
+from nocout.utils.util import NocoutUtilsGateway
 
-# utilities core
-from nocout.utils import util as nocout_utils
+# Import performance utils gateway class
+from performance.utils.util import PerformanceUtilsGateway
 
-from performance.utils import util as perf_utils
-
-from service.utils.util import service_data_sources
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
 
 from nocout.settings import DATE_TIME_FORMAT, CACHE_TIME
 
-##execute this globally
-SERVICE_DATA_SOURCE = service_data_sources()
-##execute this globally
+# Create instance of 'ServiceUtilsGateway' class
+service_utils = ServiceUtilsGateway()
+
+SERVICE_DATA_SOURCE = service_utils.service_data_sources()
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
+class AlertCenterUtilsGateway:
+    """
+    This class works as gateway between alert center utils & other apps
+    """
+    def prepare_query(
+        self, 
+        table_name=None, 
+        devices=None, 
+        data_sources=["pl", "rta"], 
+        columns=None, 
+        condition=None, 
+        offset=None, 
+        limit=None
+    ):
+        """
+
+        :param limit:
+        :param offset:
+        :param condition:
+        :param columns:
+        :param data_sources:
+        :param devices:
+        :param table_name:
+        """
+        param1 = prepare_query(
+            table_name=table_name, 
+            devices=devices, 
+            data_sources=data_sources, 
+            columns=columns, 
+            condition=condition, 
+            offset=offset, 
+            limit=limit
+        )
+
+        return param1
+
+    def severity_level_check(self, list_to_check):
+        """
+
+        :param list_to_check:
+        """
+        param1 = severity_level_check(list_to_check)
+
+        return param1
+
+    def raw_prepare_result(
+        self, 
+        performance_data, 
+        machine, 
+        table_name=None, 
+        devices=None, 
+        data_sources=["pl", "rta"], 
+        columns=None, 
+        condition=None, 
+        offset=0, 
+        limit=5000
+    ):
+        """
+
+        :param limit:
+        :param offset:
+        :param condition:
+        :param columns:
+        :param data_sources:
+        :param devices:
+        :param table_name:
+        :param machine:
+        :param performance_data:
+        """
+        param1 = raw_prepare_result(
+            performance_data, 
+            machine, 
+            table_name=table_name, 
+            devices=devices, 
+            data_sources=data_sources, 
+            columns=columns, 
+            condition=condition, 
+            offset=offset, 
+            limit=limit
+        )
+
+        return param1
+
+    def indexed_alert_results(self, performance_data):
+        """
+
+        :param performance_data:
+        """
+        param1 = indexed_alert_results(performance_data)
+
+        return param1
+
+    def prepare_raw_alert_results(self, performance_data=None):
+        """
+
+        :param performance_data:
+        """
+        param1 = prepare_raw_alert_results(performance_data=performance_data)
+
+        return param1
+
+    def map_results(self, perf_result, qs):
+        """
+
+        :param qs:
+        :param perf_result:
+        """
+        param1 = map_results(perf_result, qs)
+
+        return param1
+
+    def ping_service_query(self, device_name, start_date, end_date):
+        """
+
+        :param end_date:
+        :param start_date:
+        :param device_name:
+        """
+        param1 = ping_service_query(device_name, start_date, end_date)
+
+        return param1
+
+    def common_prepare_results(self, dct):
+        """
+
+        :param dct:
+        """
+        param1 = common_prepare_results(dct)
+
+        return param1
 
 
 # misc utility functions
-
-def prepare_query(table_name=None,
-                  devices=None,
-                  data_sources=["pl", "rta"],
-                  columns=None, condition=None,
-                  offset=None,
-                  limit=None):
+def prepare_query(
+    table_name=None, 
+    devices=None, 
+    data_sources=["pl", "rta"], 
+    columns=None, 
+    condition=None, 
+    offset=None, 
+    limit=None
+):
     """
 
     :param table_name:
@@ -75,6 +213,8 @@ def prepare_query(table_name=None,
 def severity_level_check(list_to_check):
     """
 
+
+    :param list_to_check:
     :return:
     """
     severity_check = ['DOWN', 'CRITICAL', 'WARNING', "WARN", "CRIT"]
@@ -85,15 +225,16 @@ def severity_level_check(list_to_check):
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_ALERT', 300))
-def raw_prepare_result(performance_data,
-                       machine,
-                       table_name=None,
-                       devices=None,
-                       data_sources=["pl", "rta"],
-                       columns=None,
-                       condition=None,
-                       offset=0,
-                       limit=5000
+def raw_prepare_result(
+    performance_data, 
+    machine, 
+    table_name=None, 
+    devices=None, 
+    data_sources=["pl", "rta"], 
+    columns=None, 
+    condition=None, 
+    offset=0, 
+    limit=5000
 ):
     """
 
@@ -108,26 +249,20 @@ def raw_prepare_result(performance_data,
     :param limit:
     :return:
     """
-
-    count = 0
-
-    # while count <= math.ceil(len(devices) / limit):
-
-    query = prepare_query(table_name=table_name,
-                          devices=devices,  # [limit * count:limit * (count + 1)],# spilicing the devices here
-                          data_sources=data_sources,
-                          columns=columns,
-                          condition=condition,
-                          offset=offset,
-                          limit=None
+    query = prepare_query(
+        table_name=table_name,
+        devices=devices,
+        data_sources=data_sources,
+        columns=columns,
+        condition=condition,
+        offset=offset,
+        limit=None
     )
-    # print(query)
+
     if query:
         performance_data += nocout_utils.fetch_raw_result(query, machine)
     else:
         return []
-
-        # count += 1
 
     return performance_data
 
@@ -144,7 +279,7 @@ def indexed_alert_results(performance_data):
 
     for data in performance_data:
         # this would be a unique combination
-        if data['data_source'] is not None and data['device_name'] is not None and data['service_name'] is not None:
+        if data['data_source'] and data['device_name'] and data['service_name']:
             defined_index = data['device_name'], data['service_name'], data['data_source']
             if defined_index not in indexed_raw_results:
                 indexed_raw_results[defined_index] = None
@@ -158,7 +293,6 @@ def prepare_raw_alert_results(performance_data=None):
     """
     prepare GIS result using raw query
 
-    :param device_list:
     :param performance_data:
     :return:
     """
@@ -168,20 +302,6 @@ def prepare_raw_alert_results(performance_data=None):
     device_list = list()
 
     for device_alert in indexed_alert_data:
-        # the data would be a tuple of ("device_name"."data_source")
-        # sample index data
-        #{(u'511', u'pl'): {
-        # 'service_name': u'ping',
-        # 'data_source': u'pl',
-        # 'severity': u'down',
-        # 'max_value': u'0',
-        # 'age': 1416309593L,
-        # 'device_name': u'511',
-        # 'sys_timestamp': 0L,
-        # 'current_value': u'49',
-        # 'ip_address': u'10.157.66.9',
-        # 'id': 59440L}
-        # }
 
         device_name, service_name, data_source = device_alert
 
@@ -211,10 +331,9 @@ def prepare_raw_alert_results(performance_data=None):
                 'sys_timestamp': datetime.datetime.fromtimestamp(
                     float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
                 'age': datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime(DATE_TIME_FORMAT)
-                if data["age"]
-                else "",
-                'description': '',  #data['description']
+                    float(data["age"])
+                ).strftime(DATE_TIME_FORMAT) if data["age"] else "",
+                'description': '',
                 'refer': data["refer"] if ('refer' in data and data['refer']) else ''
             })
 
@@ -233,7 +352,11 @@ def map_results(perf_result, qs):
     """
     result_qs = []
 
-    indexed_qs = perf_utils.pre_map_indexing(index_dict=qs)
+    # Create instance of 'PerformanceUtilsGateway' class
+    perf_utils = PerformanceUtilsGateway()
+
+    # Call 'pre_map_indexing' method of 'PerformanceUtilsGateway' class
+    # indexed_qs = perf_utils.pre_map_indexing(index_dict=qs)
     indexed_perf = perf_utils.pre_map_indexing(index_dict=perf_result)
     
     for device in indexed_perf:
@@ -245,6 +368,9 @@ def map_results(perf_result, qs):
 def ping_service_query(device_name, start_date, end_date):
     """
 
+    :param end_date:
+    :param start_date:
+    :param device_name:
     :return:
     """
     query = " " \
@@ -272,19 +398,14 @@ def ping_service_query(device_name, start_date, end_date):
             "    original_table.`sys_timestamp` BETWEEN {1} AND {2} " \
             " ) " \
             " GROUP BY original_table.`sys_timestamp` " \
-            " ORDER BY original_table.`sys_timestamp` DESC ".format(
-        # (',').join(["original_table.`" + col_name + "`" for col_name in required_columns]),
-        device_name,
-        start_date,
-        end_date
-    )
+            " ORDER BY original_table.`sys_timestamp` DESC ".format(device_name, start_date, end_date)
     return query
 
 
 def common_prepare_results(dct):
     """
     Common function to prepare result on query set
-
+    :param dct:
     :params qs:
     :return qs:
     """
@@ -292,8 +413,9 @@ def common_prepare_results(dct):
     current_value = dct['current_value']
     try:
         current_value = float(current_value)
-    except:
+    except Exception, e:
         pass
+
     if dct['severity'].upper() == 'DOWN' \
             or "CRITICAL" in dct['description'].upper() \
             or dct['severity'].upper() == 'CRITICAL':

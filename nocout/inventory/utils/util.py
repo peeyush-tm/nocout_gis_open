@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-
-#python core functions
-import datetime
-
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import P2P, WiMAX, PMP, DEBUG, CACHE_TIME
+from nocout.settings import P2P, WiMAX, PMP, CACHE_TIME
 
 #django core model functions
 from django.db.models import Count, Q
@@ -15,8 +11,8 @@ from device.models import Device, DeviceTechnology
 #inventory specific functions
 from inventory.models import Sector, Circuit, SubStation, Backhaul
 
-#nocout utilities
-from nocout.utils.util import cache_for, check_item_is_list
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 #logging the performance of function
 import logging
@@ -26,20 +22,156 @@ log = logging.getLogger(__name__)
 VALID_PAGE_LIST = ["customer", "network", "backhaul", "others"]
 VALID_SPECIFICATION = ['all', 'ss', 'bs']
 
-# common function to get the devices
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
+
+class InventoryUtilsGateway:
+    """
+    This class works as gateway between inventory utils & other apps
+    """
+    def ptp_device_circuit_backhaul(self, specify_type='all'):
+        """
+
+        :param specify_type:
+        """
+        param1 = ptp_device_circuit_backhaul(specify_type=specify_type)
+
+        return param1
+
+    def organization_customer_devices(
+        self,
+        organizations,
+        technology=None, 
+        specify_ptp_type='all'
+    ):
+        """
+
+        :param technology:
+        :param specify_ptp_type:
+        :param organizations:
+        """
+        param1 = organization_customer_devices(
+            organizations,
+            technology=technology,
+            specify_ptp_type=specify_ptp_type
+        )
+
+        return param1
+
+    def organization_network_devices(
+        self, 
+        organizations, 
+        technology=None, 
+        specify_ptp_bh_type='all'
+    ):
+        """
+
+        :param organizations:
+        :param technology:
+        :param specify_ptp_bh_type:
+        """
+        param1 = organization_network_devices(
+            organizations, 
+            technology=technology, 
+            specify_ptp_bh_type=specify_ptp_bh_type
+        )
+
+        return param1
+
+    def organization_backhaul_devices(
+        self, 
+        organizations, 
+        technology=None, 
+        others=False, 
+        other_type="backhaul"
+    ):
+        """
+
+        :param organizations:
+        :param others:
+        :param other_type:
+        :param technology:
+        """
+        param1 = organization_backhaul_devices(
+            organizations, 
+            technology=technology, 
+            others=others, 
+            other_type=other_type
+        )
+
+        return param1
+
+    def filter_devices(
+        self, 
+        organizations, 
+        data_tab=None, 
+        page_type="customer", 
+        other_type=None, 
+        required_value_list=None, 
+        other_bh=False
+    ):
+        """
+
+        :param organizations:
+        :param page_type:
+        :param required_value_list:
+        :param other_bh:
+        :param other_type:
+        :param data_tab:
+        """
+        param1 = filter_devices(
+            organizations, 
+            data_tab=data_tab, 
+            page_type=page_type, 
+            other_type=other_type, 
+            required_value_list=required_value_list, 
+            other_bh=other_bh
+        )
+
+        return param1
+
+    def prepare_machines(self, device_list, machine_key='device_machine'):
+        """
+
+        :param device_list:
+        :param machine_key:
+        """
+        param1 = prepare_machines(device_list, machine_key=machine_key)
+
+        return param1
+
+    def organization_sectors(self, organization, technology=0):
+        """
+
+        :param technology:
+        :param organization:
+        """
+        param1 = organization_sectors(organization, technology=technology)
+
+        return param1
+
+    def list_to_indexed_dict(self, inventory_list, key):
+        """
+
+        :param key:
+        :param inventory_list:
+        """
+        param1 = list_to_indexed_dict(inventory_list, key)
+
+        return param1
 
 
 def organization_monitored_devices(organizations, **kwargs):
     """
-
+    Common function to get the devices
     :param organizations: list of organizations
     :param kwargs: keyword arguments defining the elements that are required to be gathered
     :return: Devices for the organization, based on the argumentas passed
     """
-    organization_devices = list()
     if not organizations:
         return list()
-    organizations = check_item_is_list(organizations)
+    organizations = nocout_utils.check_item_is_list(organizations)
 
     organization_devices = Device.objects.select_related(
         'organization',
@@ -67,16 +199,17 @@ def organization_monitored_devices(organizations, **kwargs):
         # technology would denote the section to be monitored devices
         # this must be the name of the technology
         # or the ID of the technology
-        required_techs = check_item_is_list(kwargs['technology'])
+        required_techs = nocout_utils.check_item_is_list(kwargs['technology'])
 
         try:
             technology = DeviceTechnology.objects.filter(
                 id__in=required_techs
             )
-        except:
+        except Exception, e:
             technology = DeviceTechnology.objects.filter(
                 name__in=required_techs
             )
+
         technology = technology.values_list('id', flat=True)
         organization_devices = organization_devices.filter(
             device_technology__in=technology
@@ -93,7 +226,6 @@ def organization_monitored_devices(organizations, **kwargs):
             # check for the P2P devices required
             # by the configuration of ' specify_type ' = all. ss. bs
             if {'specify_type'}.issubset(kwargs.keys()):
-                type_specification = 'all'
                 # this means that key is present
                 # key must indicate one of the words all. ss. bs
                 type_specification = kwargs['specify_type']
@@ -126,29 +258,46 @@ def organization_monitored_devices(organizations, **kwargs):
 def ptp_device_circuit_backhaul(specify_type='all'):
     """
     Special case fot PTP technology devices. Wherein Circuit type backhaul is required
+    :param specify_type:
     :return:
     """
     if specify_type == 'all':
         device_list_with_circuit_type_backhaul = Device.objects.filter(
-            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sector', flat=True)).
-                                            values_list('sector_configured_on', flat=True))
+            Q(
+                id__in=Sector.objects.filter(
+                    id__in=Circuit.objects.filter(
+                        circuit_type__icontains="Backhaul"
+                    ).values_list('sector', flat=True)
+                ).values_list('sector_configured_on', flat=True)
+            )
             |
-            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sub_station', flat=True)).
-                                            values_list('device', flat=True))
+            Q(
+                id__in=SubStation.objects.filter(
+                    id__in=Circuit.objects.filter(
+                        circuit_type__icontains="Backhaul"
+                    ).values_list('sub_station', flat=True)
+                ).values_list('device', flat=True)
+            )
         )
     elif specify_type == 'ss':
         device_list_with_circuit_type_backhaul = Device.objects.filter(
-            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sub_station', flat=True)).
-                                            values_list('device', flat=True))
+            Q(
+                id__in=SubStation.objects.filter(
+                    id__in=Circuit.objects.filter(
+                        circuit_type__icontains="Backhaul"
+                    ).values_list('sub_station', flat=True)
+                ).values_list('device', flat=True)
+            )
         )
     elif specify_type == 'bs':
         device_list_with_circuit_type_backhaul = Device.objects.filter(
-            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sector', flat=True)).
-                                            values_list('sector_configured_on', flat=True))
+            Q(
+                id__in=Sector.objects.filter(
+                    id__in=Circuit.objects.filter(
+                        circuit_type__icontains="Backhaul"
+                    ).values_list('sector', flat=True)
+                ).values_list('sector_configured_on', flat=True)
+            )
         )
     else:
         device_list_with_circuit_type_backhaul = []
@@ -156,141 +305,159 @@ def ptp_device_circuit_backhaul(specify_type='all'):
     return device_list_with_circuit_type_backhaul
 
 
-def organization_customer_devices(organizations, technology = None, specify_ptp_type='all'):
+def organization_customer_devices(organizations, technology=None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
 
-    :param organization:
+
+    :param specify_ptp_type:
+    :param technology:
+    :param organizations:
     :return list of customer devices
     """
     if not technology:
-        organization_customer_devices= Device.objects.filter(
-                                    Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
-                                    is_added_to_nms=1,
-                                    is_deleted=0,
-                                    organization__in= organizations
+        customer_devices = Device.objects.filter(
+            Q(sector_configured_on__isnull=False) 
+            | 
+            Q(substation__isnull=False),
+            is_added_to_nms=1,
+            is_deleted=0,
+            organization__in=organizations
         )
     else:
         if int(technology) == int(P2P.ID):
-            if specify_ptp_type in ['ss','bs']:
-                choose_ss_bs = None
+            if specify_ptp_type in ['ss', 'bs']:
                 if specify_ptp_type == 'ss':
                     choose_ss_bs = Q(substation__isnull=False)
                 else:
                     choose_ss_bs = Q(sector_configured_on__isnull=False)
-                organization_customer_devices = Device.objects.filter(
+
+                customer_devices = Device.objects.filter(
                     ~Q(id__in=ptp_device_circuit_backhaul(specify_type=specify_ptp_type)),
-                    choose_ss_bs,  #calls the specific set of devices
-                    is_added_to_nms= 1,
-                    is_deleted= 0,
-                    organization__in= organizations,
-                    device_technology= technology
+                    choose_ss_bs,  # calls the specific set of devices
+                    is_added_to_nms=1,
+                    is_deleted=0,
+                    organization__in=organizations,
+                    device_technology=technology
                 )
             else:
-                organization_customer_devices = Device.objects.filter(
+                customer_devices = Device.objects.filter(
                     ~Q(id__in=ptp_device_circuit_backhaul()),
                     Q(substation__isnull=False)
                     |
                     Q(sector_configured_on__isnull=False),
-                    is_added_to_nms= 1,
-                    is_deleted= 0,
-                    organization__in= organizations,
-                    device_technology= technology
+                    is_added_to_nms=1,
+                    is_deleted=0,
+                    organization__in=organizations,
+                    device_technology=technology
                 )
         else:
-            organization_customer_devices = Device.objects.filter(
-                is_added_to_nms= 1,
+            customer_devices = Device.objects.filter(
+                is_added_to_nms=1,
                 substation__isnull=False,
-                is_deleted= 0,
-                organization__in= organizations,
-                device_technology= technology
+                is_deleted=0,
+                organization__in=organizations,
+                device_technology=technology
             )
 
-    return organization_customer_devices
+    return customer_devices
 
 
-def organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all'):
+def organization_network_devices(organizations, technology=None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
 
+    :param specify_ptp_bh_type:
     :param organizations:
     :param technology:
-    :param organization:
+    :param organizations:
     :return list of network devices
     """
 
     if not technology:
-        devices = Device.objects.filter(Q(id__in=ptp_device_circuit_backhaul())
-                                        |
-                                        (
-                                            Q(
-                                                device_technology=int(PMP.ID),
-                                                sector_configured_on__isnull=False,
-                                                sector_configured_on__sector_id__isnull=False
-                                            )
-                                            |
-                                            Q(
-                                                device_technology=int(WiMAX.ID),
-                                                sector_configured_on__isnull=False,
-                                                sector_configured_on__sector_id__isnull=False
-                                            )
-                                        ),
-                                        is_added_to_nms=1,
-                                        is_deleted=0,
-                                        organization__in=organizations)
+        devices = Device.objects.filter(
+            Q(id__in=ptp_device_circuit_backhaul())
+            |
+            (
+                Q(
+                    device_technology=int(PMP.ID),
+                    sector_configured_on__isnull=False,
+                    sector_configured_on__sector_id__isnull=False
+                )
+                |
+                Q(
+                    device_technology=int(WiMAX.ID),
+                    sector_configured_on__isnull=False,
+                    sector_configured_on__sector_id__isnull=False
+                )
+            ),
+            is_added_to_nms=1,
+            is_deleted=0,
+            organization__in=organizations
+        )
 
     elif (not technology) and (not specify_ptp_bh_type):
-        devices = Device.objects.filter(Q(
-                                            device_technology=int(PMP.ID),
-                                            sector_configured_on__isnull=False,
-                                            sector_configured_on__sector_id__isnull=False
-                                        )
-                                        |
-                                        Q(
-                                            device_technology=int(WiMAX.ID),
-                                            sector_configured_on__isnull=False,
-                                            sector_configured_on__sector_id__isnull=False
-                                        )
-                                        ,
-                                        is_added_to_nms=1,
-                                        is_deleted=0,
-                                        organization__in=organizations)
+        devices = Device.objects.filter(
+            Q(
+                device_technology=int(PMP.ID),
+                sector_configured_on__isnull=False,
+                sector_configured_on__sector_id__isnull=False
+            )
+            |
+            Q(
+                device_technology=int(WiMAX.ID),
+                sector_configured_on__isnull=False,
+                sector_configured_on__sector_id__isnull=False
+            )
+            ,
+            is_added_to_nms=1,
+            is_deleted=0,
+            organization__in=organizations
+        )
 
     else:
         if int(technology) == int(P2P.ID):
             if specify_ptp_bh_type in ['ss', 'bs']:
                 devices = Device.objects.filter(
-                                            Q(id__in= ptp_device_circuit_backhaul(specify_type=specify_ptp_bh_type)),
-                                            is_added_to_nms=1,
-                                            is_deleted=0,
-                                            organization__in=organizations
+                    Q(
+                        id__in=ptp_device_circuit_backhaul(
+                            specify_type=specify_ptp_bh_type
+                        )
+                    ),
+                    is_added_to_nms=1,
+                    is_deleted=0,
+                    organization__in=organizations
                 )
             else:
                 devices = Device.objects.filter(
-                                            Q(id__in= ptp_device_circuit_backhaul()),
-                                            is_added_to_nms=1,
-                                            is_deleted=0,
-                                            organization__in=organizations
+                    Q(
+                        id__in=ptp_device_circuit_backhaul()
+                    ),
+                    is_added_to_nms=1,
+                    is_deleted=0,
+                    organization__in=organizations
                 )
         elif int(technology) == int(WiMAX.ID):
             devices = Device.objects.filter(
-                Q(sector_configured_on__isnull=False, sector_configured_on__sector_id__isnull=False)
+                Q(
+                    sector_configured_on__isnull=False,
+                    sector_configured_on__sector_id__isnull=False
+                )
                 |
                 Q(dr_configured_on__isnull=False),
                 device_technology=int(technology),
-                is_added_to_nms=1,
-                # sector id must be present for PMP and WiMAX
+                is_added_to_nms=1,  # sector id must be present for PMP and WiMAX
                 is_deleted=0,
                 organization__in=organizations
             ).annotate(dcount=Count('id'))
         else:
             devices = Device.objects.filter(
-                                            device_technology = int(technology),
-                                            is_added_to_nms=1,
-                                            sector_configured_on__isnull = False,
-                                            sector_configured_on__sector_id__isnull=False, #sector id must be present for PMP and WiMAX
-                                            is_deleted=0,
-                                            organization__in=organizations
+                device_technology=int(technology),
+                is_added_to_nms=1,
+                sector_configured_on__isnull=False,
+                sector_configured_on__sector_id__isnull=False,  # sector id must be present for PMP and WiMAX
+                is_deleted=0,
+                organization__in=organizations
             ).annotate(dcount=Count('id'))
 
     return devices
@@ -300,31 +467,46 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
     """
     To result back the all the network devices from the respective organization..
 
+    :param other_type:
+    :param others:
     :param organizations:
     :param technology:
-    :param organization:
+    :param organizations:
     :return list of network devices
     """
 
     backhaul_devices = Device.objects.filter(
-                                backhaul__isnull=False,
-                                is_added_to_nms=1,
-                                is_deleted=0,
-                                organization__in=organizations
+        backhaul__isnull=False,
+        is_added_to_nms=1,
+        is_deleted=0,
+        organization__in=organizations
     ).prefetch_related('backhaul')
 
-
     if others:
-        backhaul_objects = Backhaul.objects.filter(bh_configured_on_id__in=backhaul_devices.values_list('id', flat=True))
+        backhaul_objects = Backhaul.objects.filter(
+            bh_configured_on_id__in=backhaul_devices.values_list('id', flat=True)
+        )
 
         backhaul_devices = Device.objects.filter(
             ~Q(id__in=backhaul_devices.values_list('id', flat=True)),
             (
-                Q(id__in=backhaul_objects.filter(pop__isnull=False).values_list('pop', flat=True))
+                Q(
+                    id__in=backhaul_objects.filter(
+                        pop__isnull=False
+                    ).values_list('pop', flat=True)
+                )
                 |
-                Q(id__in=backhaul_objects.filter(aggregator__isnull=False).values_list('aggregator', flat=True))
+                Q(
+                    id__in=backhaul_objects.filter(
+                        aggregator__isnull=False
+                    ).values_list('aggregator', flat=True)
+                )
                 |
-                Q(id__in=backhaul_objects.filter(bh_switch__isnull=False).values_list('bh_switch', flat=True))
+                Q(
+                    id__in=backhaul_objects.filter(
+                        bh_switch__isnull=False
+                    ).values_list('bh_switch', flat=True)
+                )
             ),
             is_added_to_nms=1,
             is_deleted=0,
@@ -334,12 +516,20 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
     return backhaul_devices.annotate(dcount=Count('id'))
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
-def filter_devices(organizations, data_tab=None, page_type="customer", other_type=None,
-                   required_value_list=None, other_bh=False):
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
+def filter_devices(
+    organizations, 
+    data_tab=None, 
+    page_type="customer", 
+    other_type=None, 
+    required_value_list=None, 
+    other_bh=False
+):
 
     """
 
+
+    :param other_type:
     :param organizations: list of organizations
     :param data_tab: technology
     :param page_type: customer, network, backhaul, others
@@ -350,37 +540,42 @@ def filter_devices(organizations, data_tab=None, page_type="customer", other_typ
     if not organizations:
         return list()
 
-    # organizations = check_item_is_list(organizations)  #need to upgrade this function
-    device_list = list()
-    organization_devices = list()
-
     if required_value_list:
         device_value_list = required_value_list
     else:
-        device_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
+        device_value_list = [
+            'id', 
+            'machine__name', 
+            'device_name', 
+            'ip_address'
+        ]
 
-    device_tab_technology = data_tab ##
+    device_tab_technology = data_tab
     device_technology_id = None
     try:
         device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
     except Exception as e:
-        log.exception("Backhaul Device Filter %s" %(e.message))
+        log.exception("Backhaul Device Filter %s" % e.message)
 
     if page_type == "customer":
-        device_list = organization_customer_devices(organizations, device_technology_id
+        device_list = organization_customer_devices(
+            organizations,
+            device_technology_id
         ).values(*device_value_list)
     elif page_type == "network":
-        device_list = organization_network_devices(organizations, device_technology_id
+        device_list = organization_network_devices(
+            organizations,
+            device_technology_id
         ).values(*device_value_list)
     elif page_type == "other":
         if other_type == "backhaul":
-            device_list = organization_backhaul_devices(organizations,
-                                                        technology=None,
-                                                        others=False).values(*device_value_list)
+            device_list = organization_backhaul_devices(
+                organizations
+            ).values(*device_value_list)
         else:
-            device_list = organization_backhaul_devices(organizations,
-                                                        technology=None,
-                                                        others=True).values(*device_value_list)
+            device_list = organization_backhaul_devices(
+                organizations
+            ).values(*device_value_list)
     else:
         device_list = []
     # get the devices in an organisation which are added for monitoring
@@ -397,7 +592,7 @@ def filter_devices(organizations, data_tab=None, page_type="customer", other_typ
     return organization_devices
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_machines(device_list, machine_key='device_machine'):
     """
 
@@ -427,11 +622,11 @@ def organization_sectors(organization, technology=0):
     :return list of sector
     """
     sector_objects = Sector.objects.select_related(
-            'sector_configured_on',
-            'sector_configured_on__machine',
-            'sector_configured_on__site_instance',
-            'organization',
-        ).filter(
+        'sector_configured_on',
+        'sector_configured_on__machine',
+        'sector_configured_on__site_instance',
+        'organization'
+    ).filter(
         sector_configured_on__is_added_to_nms=1,
         sector_configured_on__isnull=False
     )
@@ -441,10 +636,12 @@ def organization_sectors(organization, technology=0):
 
     if int(technology) == int(PMP.ID):
         sector_list = sector_objects.filter(
-                sector_id__isnull=False,
-                sector_configured_on_port__isnull=True,
-                sector_configured_on__device_technology=technology,
-            ).annotate(total_sector=Count('sector_id'))
+            sector_id__isnull=False,
+            sector_configured_on_port__isnull=True,
+            sector_configured_on__device_technology=technology
+        ).annotate(
+            total_sector=Count('sector_id')
+        )
 
     elif int(technology) == int(WiMAX.ID):
         sector_list = sector_objects.select_related(
@@ -452,8 +649,10 @@ def organization_sectors(organization, technology=0):
         ).filter(
             sector_id__isnull=False,
             sector_configured_on_port__isnull=False,
-            sector_configured_on__device_technology=technology,
-        ).annotate(total_sector=Count('sector_id'))
+            sector_configured_on__device_technology=technology
+        ).annotate(
+            total_sector=Count('sector_id')
+        )
 
     elif int(technology) == int(P2P.ID):
         sector_list = Sector.objects.select_related(
@@ -462,19 +661,24 @@ def organization_sectors(organization, technology=0):
             'sector_configured_on__site_instance',
             'organization',
         ).filter(
-            sector_configured_on__device_technology=technology,
-        ).annotate(total_sector=Count('id'))
+            sector_configured_on__device_technology=technology
+        ).annotate(
+            total_sector=Count('id')
+        )
 
     else:
         sector_list = sector_objects
 
     return sector_list
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def list_to_indexed_dict(inventory_list, key):
     """
     Convert list of dictionaries into indexed dictionaries
 
+    :param inventory_list:
+    :param key:
     Args:
         inventory_list (list): List of dictionaries
         key (str): Element needs to be the key of dictionary

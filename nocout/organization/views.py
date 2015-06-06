@@ -10,9 +10,9 @@ from device_group.models import DeviceGroup
 from .forms import OrganizationForm
 from .models import Organization
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
@@ -115,7 +115,9 @@ class OrganizationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView)
     required_permissions = ('organization.change_organization',)
 
     def get_queryset(self):
-        return logged_in_user_organizations(self)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return nocout_utils.logged_in_user_organizations(self)
 
     def form_valid(self, form):
         """
@@ -136,4 +138,6 @@ class OrganizationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteVie
     required_permissions = ('organization.delete_organization',)
 
     def get_queryset(self):
-        return logged_in_user_organizations(self)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return nocout_utils.logged_in_user_organizations(self)
