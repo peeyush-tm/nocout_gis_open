@@ -2,13 +2,9 @@
 
 # project settings
 from nocout.settings import SERVICE_DATA_SOURCE
-
-from nocout.utils.util import cache_for
-
 from service.models import ServiceSpecificDataSource
 
 
-#@cache_for(60)
 def service_data_sources():
     """ Fetch service data sources information in a dictionary
 

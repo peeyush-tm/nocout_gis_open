@@ -15,7 +15,6 @@ from datetime import datetime
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, YEARLY
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.select2 import Select2Mixin
-from nocout.utils import logged_in_user_organizations
 
 from scheduling_management.models import Event, Weekdays, SNMPTrapSettings
 from scheduling_management.forms import EventForm, SNMPTrapSettingsForm

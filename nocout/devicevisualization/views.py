@@ -27,7 +27,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse_lazy
 import re, ast
 from activity_stream.models import UserAction
-from nocout.utils.util import non_cached_all_gis_inventory
 from device.api import prepare_raw_result
 from sitesearch.views import prepare_raw_bs_result
 
@@ -38,7 +37,8 @@ from performance.formulae import rta_null, display_time
 
 # update the service data sources
 from service.utils.util import service_data_sources
-from nocout.utils.util import format_value
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
 
@@ -2236,6 +2236,9 @@ class GISPerfData(View):
         # connected bs ip
         connected_bs_ip = ""
 
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
         # is device is a substation device than add static inventory parameters in list
         if is_static:
             if ss:
@@ -2380,151 +2383,151 @@ class GISPerfData(View):
                         'name': 'ss_ip',
                         'title': 'SS IP',
                         'show': 1,
-                        'value': format_value(substation_device.ip_address)
+                        'value': nocout_utils.format_value(substation_device.ip_address)
                     },
                     {
                         'name': 'ss_mac',
                         'title': 'SS MAC',
                         'show': 0,
-                        'value': format_value(substation_device.mac_address)
+                        'value': nocout_utils.format_value(substation_device.mac_address)
                     },
                     {
                         'name': 'name',
                         'title': 'SS Name',
                         'show': 0,
-                        'value': format_value(substation.name)
+                        'value': nocout_utils.format_value(substation.name)
                     },
                     {
                         'name': 'connected_bs_ip',
                         'title': 'Connected BS IP',
                         'show': 1,
-                        'value': format_value(connected_bs_ip)
+                        'value': nocout_utils.format_value(connected_bs_ip)
                     },
                     {
                         'name': 'cktid',
                         'title': 'Circuit ID',
                         'show': 1,
-                        'value': format_value(circuit_id)
+                        'value': nocout_utils.format_value(circuit_id)
                     },
                     {
                         'name': 'qos_bandwidth',
                         'title': 'QOS(BW)',
                         'show': 1,
-                        'value': format_value(qos)
+                        'value': nocout_utils.format_value(qos)
                     },
                     {
                         'name': 'lat_lon',
                         'title': 'Lat, Long',
                         'show': 1,
-                        'value': format_value(str(substation.latitude)+","+str(substation.longitude))
+                        'value': nocout_utils.format_value(str(substation.latitude)+","+str(substation.longitude))
                     },
                     {
                         'name': 'antenna_height',
                         'title': 'Antenna Height',
                         'show': 1,
-                        'value': format_value(antenna_height)
+                        'value': nocout_utils.format_value(antenna_height)
                     },
                     {
                         'name': 'polarisation',
                         'title': 'Antenna Polarisation',
                         'show': 1,
-                        'value': format_value(antenna_polarization)
+                        'value': nocout_utils.format_value(antenna_polarization)
                     },
                     {
                         'name': 'ss_technology',
                         'title': 'Technology',
                         'show': 1,
-                        'value': format_value(substation_technology)
+                        'value': nocout_utils.format_value(substation_technology)
                     },
                     {
                         'name': 'pe_ip',
                         'title': 'PE IP',
                         'show': 1,
-                        'value': format_value(pe_ip)
+                        'value': nocout_utils.format_value(pe_ip)
                     },
                     {
                         'name': 'building_height',
                         'title': 'Building Height',
                         'show': 1,
-                        'value': format_value(substation.building_height)
+                        'value': nocout_utils.format_value(substation.building_height)
                     },
                     {
                         'name': 'tower_height',
                         'title': 'Tower Height',
                         'show': 1,
-                        'value': format_value(substation.tower_height)
+                        'value': nocout_utils.format_value(substation.tower_height)
                     },
                     {
                         'name': 'mount_type',
                         'title': 'SS MountType',
                         'show': 1,
-                        'value': format_value(antenna_mount_type)
+                        'value': nocout_utils.format_value(antenna_mount_type)
                     },
                     {
                         'name': 'alias',
                         'title': 'Alias',
                         'show': 1,
-                        'value': format_value(substation.alias)
+                        'value': nocout_utils.format_value(substation.alias)
                     },
                     {
                         'name': 'ss_device_id',
                         'title': 'SS Device ID',
                         'show': 0,
-                        'value': format_value(substation_device.id)
+                        'value': nocout_utils.format_value(substation_device.id)
                     },
                     {
                         'name': 'antenna_type',
                         'title': 'Antenna Type',
                         'show': 1,
-                        'value': format_value(antenna_type)
+                        'value': nocout_utils.format_value(antenna_type)
                     },
                     {
                         'name': 'ethernet_extender',
                         'title': 'Ethernet Extender',
                         'show': 1,
-                        'value': format_value(substation.ethernet_extender)
+                        'value': nocout_utils.format_value(substation.ethernet_extender)
                     },
                     {
                         'name': 'cable_length',
                         'title': 'Cable Length',
                         'show': 1,
-                        'value': format_value(substation.cable_length)
+                        'value': nocout_utils.format_value(substation.cable_length)
                     },
                     {
                         'name': 'customer_alias',
                         'title': 'Customer Name',
                         'show': 1,
-                        'value': format_value(customer_alias)
+                        'value': nocout_utils.format_value(customer_alias)
                     },
                     {
                         'name': 'customer_address',
                         'title': 'Customer Address',
                         'show': 1,
-                        'value': format_value(customer_address)
+                        'value': nocout_utils.format_value(customer_address)
                     },
                     {
                         'name': 'date_of_acceptance',
                         'title': 'Date of Acceptance',
                         'show': 1,
-                        'value': format_value(date_of_acceptance)
+                        'value': nocout_utils.format_value(date_of_acceptance)
                     },
                     {
                         'name': 'dl_rssi_during_acceptance',
                         'title': 'RSSI During Acceptance',
                         'show': 1,
-                        'value': format_value(dl_rssi_during_acceptance)
+                        'value': nocout_utils.format_value(dl_rssi_during_acceptance)
                     },
                     {
                         'name': 'dl_cinr_during_acceptance',
                         'title': 'CINR During Acceptance',
                         'show': 1,
-                        'value': format_value(dl_cinr_during_acceptance)
+                        'value': nocout_utils.format_value(dl_cinr_during_acceptance)
                     },
                     {
                         'name': 'planned_frequency',
                         'title': 'Planned Frequency',
                         'show': 1,
-                        'value': format_value(ss_sector_frequency)
+                        'value': nocout_utils.format_value(ss_sector_frequency)
                     }
                 ]
 
@@ -2600,7 +2603,7 @@ class GISPerfData(View):
                     'name': 'connected_bs_ip',
                     'title': 'Connected BS IP',
                     'show': 1,
-                    'value': format_value(connected_bs_ip)
+                    'value': nocout_utils.format_value(connected_bs_ip)
                 }
 
                 device_info.append(connected_bs_ip_info)
@@ -3997,6 +4000,9 @@ class GISStaticInfo(View):
         # Create instance of 'InventoryUtilsGateway' class
         inventory_utils = InventoryUtilsGateway()
 
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
         # loop through all base stations having id's in bs_ids list
         try:
             for bs_id in bs_ids:
@@ -4004,7 +4010,7 @@ class GISStaticInfo(View):
                 bs_counter += 1
 
                 # get raw bs inventory
-                bs_result = non_cached_all_gis_inventory(bs_id=bs_id)
+                bs_result = nocout_utils.non_cached_all_gis_inventory(bs_id=bs_id)
 
                 # we need to prepare bs wise list # this would cache static data for 300 seconds
                 # bs_id_wise_result = prepare_raw_result(bs_result)

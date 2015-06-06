@@ -10,7 +10,8 @@ from device.models import Device
 from device_group.models import DeviceGroup
 from forms import DeviceGroupForm
 from django.db.models import Q
-from nocout.utils.util import DictDiffer
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from organization.models import Organization
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin
@@ -197,7 +198,10 @@ class DeviceGroupUpdate(PermissionsRequiredMixin, UpdateView):
                 else:
                     cleaned_data_field_dict[field]= form.cleaned_data[field]
 
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
+            
+            changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
 
             if changed_fields_dict:
                 initial_field_dict['parent'] = DeviceGroup.objects.get(pk=initial_field_dict['parent']).name \

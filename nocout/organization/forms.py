@@ -2,7 +2,8 @@ from django.core.exceptions import ValidationError
 import re
 from django import forms
 from .models import Organization
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from django.forms.util import ErrorList
 import logging
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 class OrganizationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
 
-        self.request = kwargs.pop('request') # Also used in logged_in_user_organizations below
+        self.request = kwargs.pop('request')  # Also used in logged_in_user_organizations below
         if 'instance' in kwargs and kwargs['instance']:
             self.id = kwargs['instance'].id
         else:
@@ -25,7 +26,9 @@ class OrganizationForm(forms.ModelForm):
             # Organization's parent is required but can not be set to self.
             self.fields['parent'].empty_label = 'Select'
             self.fields['parent'].required = True
-            parent_queryset = self.fields['parent'].queryset.filter(id__in=logged_in_user_organizations(self))
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
+            parent_queryset = self.fields['parent'].queryset.filter(id__in=nocout_utils.logged_in_user_organizations(self))
             if self.id:
                 self.fields['parent'].queryset = parent_queryset.exclude(id=self.id)
 

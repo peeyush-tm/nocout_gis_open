@@ -1,8 +1,11 @@
 from rest_framework import viewsets, generics
 from inventory.models import Antenna, Backhaul, Sector, BaseStation, SubStation, Customer, Circuit
-#from inventory.serializers import AntennaSerializer, BackhaulSerializer, SectorSerializer, CircuitSerializer, BaseStationSerializer, SubStationSerializer, CustomerSerializer
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from nocout import permissions
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 class AntennaViewSet(viewsets.ModelViewSet):
     """
@@ -12,7 +15,7 @@ class AntennaViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
-        return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Antenna.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class BackhaulViewSet(viewsets.ModelViewSet):
@@ -23,7 +26,7 @@ class BackhaulViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
-        return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Backhaul.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class SectorViewSet(viewsets.ModelViewSet):
@@ -34,7 +37,7 @@ class SectorViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
-        return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Sector.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class SubStationViewSet(viewsets.ModelViewSet):
@@ -45,7 +48,7 @@ class SubStationViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
-        return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
+        return SubStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class BaseStationViewSet(viewsets.ModelViewSet):
@@ -56,7 +59,7 @@ class BaseStationViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
-        return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
+        return BaseStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
@@ -67,7 +70,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
-        return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Customer.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class CircuitViewSet(viewsets.ModelViewSet):
@@ -78,4 +81,4 @@ class CircuitViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
-        return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Circuit.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))

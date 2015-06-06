@@ -13,8 +13,8 @@ from device.models import Device, DeviceTechnology
 #inventory specific functions
 from inventory.models import Sector, Circuit, SubStation, Backhaul
 
-#nocout utilities
-from nocout.utils.util import cache_for, check_item_is_list
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 #logging the performance of function
 import logging
@@ -23,6 +23,9 @@ log = logging.getLogger(__name__)
 
 VALID_PAGE_LIST = ["customer", "network", "backhaul", "others"]
 VALID_SPECIFICATION = ['all', 'ss', 'bs']
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 class InventoryUtilsGateway(View):
@@ -170,7 +173,7 @@ def organization_monitored_devices(organizations, **kwargs):
     """
     if not organizations:
         return list()
-    organizations = check_item_is_list(organizations)
+    organizations = nocout_utils.check_item_is_list(organizations)
 
     organization_devices = Device.objects.select_related(
         'organization',
@@ -198,7 +201,7 @@ def organization_monitored_devices(organizations, **kwargs):
         # technology would denote the section to be monitored devices
         # this must be the name of the technology
         # or the ID of the technology
-        required_techs = check_item_is_list(kwargs['technology'])
+        required_techs = nocout_utils.check_item_is_list(kwargs['technology'])
 
         try:
             technology = DeviceTechnology.objects.filter(
@@ -515,7 +518,7 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
     return backhaul_devices.annotate(dcount=Count('id'))
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def filter_devices(
     organizations, 
     data_tab=None, 
@@ -591,7 +594,7 @@ def filter_devices(
     return organization_devices
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_machines(device_list, machine_key='device_machine'):
     """
 
@@ -671,7 +674,7 @@ def organization_sectors(organization, technology=0):
     return sector_list
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def list_to_indexed_dict(inventory_list, key):
     """
     Convert list of dictionaries into indexed dictionaries

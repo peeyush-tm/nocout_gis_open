@@ -8,7 +8,6 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelF
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device_group.models import DeviceGroup
-from nocout.utils.util import DictDiffer
 from user_group.models import UserGroup, Organization
 from forms import UserGroupForm
 from user_profile.models import UserProfile

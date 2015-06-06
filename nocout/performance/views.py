@@ -30,7 +30,9 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     PerformanceStatusDaily, PerformanceStatusWeekly, PerformanceStatusMonthly, PerformanceStatusYearly, \
     PerformanceInventoryDaily, PerformanceInventoryWeekly, PerformanceInventoryMonthly, PerformanceInventoryYearly,\
     UtilizationBiHourly, UtilizationHourly, UtilizationDaily, UtilizationWeekly, UtilizationMonthly, UtilizationYearly
-from nocout.utils import util as nocout_utils
+
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
@@ -56,6 +58,9 @@ log = logging.getLogger(__name__)
 
 # Create instance of 'PerformanceUtilsGateway' class
 perf_utils = PerformanceUtilsGateway()
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 class PerformanceViewsGateway(View):

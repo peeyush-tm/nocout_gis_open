@@ -3,8 +3,8 @@ from celery import task, group
 import math
 from django.db.models import Avg, F, Q
 
-# nocout utils import
-from nocout.utils.util import fetch_raw_result
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 # performance gateway class import
 from performance.views import PerformanceViewsGateway
 # getLastXMonths
@@ -357,16 +357,6 @@ def get_sector_augmentation_data(sector_ids=[]):
 
     in_string = lambda x: "'" + str(x) + "'"
 
-    # augmentation_raw_query = '''
-    #                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
-    #                         FROM {0}
-    #                         WHERE
-    #                           sector_id IN ( {1} )
-    #                           AND
-    #                           severity IN ( 'warning', 'critical' )
-    #                           AND
-    #                           sys_timestamp - age > 600
-    #                         '''.format(table_name, (",".join(map(in_string, sector_ids))))
     augmentation_raw_query = '''
                             SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
                             FROM {0}
@@ -376,8 +366,10 @@ def get_sector_augmentation_data(sector_ids=[]):
                               severity IN ( 'warning', 'critical' )
                             '''.format(table_name, (",".join(map(in_string, sector_ids))))
 
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
     # Execute Query to get augmentation data
-    augmentation_data = fetch_raw_result(augmentation_raw_query)
+    augmentation_data = nocout_utils.fetch_raw_result(augmentation_raw_query)
     #logger.debug(augmentation_data)
     return augmentation_data
 
@@ -409,9 +401,11 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
                                     (",".join(map(in_string, devices_names))),
                                     (",".join(map(in_string, ds_list)))
                                 )
-
+    
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
     # Execute Query to get augmentation data
-    ul_issue_data = fetch_raw_result(query=ul_issue_raw_query, machine=machine)
+    ul_issue_data = nocout_utils.fetch_raw_result(query=ul_issue_raw_query, machine=machine)
     #logger.debug(ul_issue_data)
     return ul_issue_data
 

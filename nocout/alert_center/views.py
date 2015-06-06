@@ -24,16 +24,13 @@ from inventory.utils.util import InventoryUtilsGateway
 # Import alert_center utils gateway class
 from alert_center.utils.util import AlertCenterUtilsGateway
 
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+
 from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE
-
-#utilities core
-from nocout.utils import util as nocout_utils
-
-#get the organisation of logged in user
-from nocout.utils import logged_in_user_organizations
 
 import logging
 logger = logging.getLogger(__name__)
@@ -159,10 +156,12 @@ class GetCustomerAlertDetail(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        else:
-            organizations = logged_in_user_organizations(self)
 
-            return self.get_initial_query_set_data(organizations=organizations)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        organizations = nocout_utils.logged_in_user_organizations(self)
+
+        return self.get_initial_query_set_data(organizations=organizations)
 
     def get_initial_query_set_data(self, **kwargs):
         """
@@ -659,7 +658,9 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organizations = logged_in_user_organizations(self)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        organizations = nocout_utils.logged_in_user_organizations(self)
 
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
@@ -1604,6 +1605,9 @@ class SingleDeviceAlertsListing(BaseDatatableView):
 
     order_columns = required_columns
 
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value
         :param qs:
@@ -1640,7 +1644,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 else:
                     final_query += query
 
-                qs = nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
+                qs = self.nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
 
             else:
                 if self.public_params['service_name'] == 'service':
@@ -1720,7 +1724,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 self.public_params['start_date'],
                 self.public_params['end_date']
             )
-            report_resultset = nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
+            report_resultset = self.nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
 
         elif self.public_params['service_name'] == 'latency':
 

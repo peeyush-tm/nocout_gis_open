@@ -3,8 +3,8 @@
 import datetime
 
 from django.views.generic.base import View
-# utilities core
-from nocout.utils import util as nocout_utils
+# Import nocout utils gateway(NocoutUtilsGateway) class
+from nocout.utils.util import NocoutUtilsGateway
 
 # Import performance utils gateway class
 from performance.utils.util import PerformanceUtilsGateway
@@ -17,6 +17,8 @@ from nocout.settings import DATE_TIME_FORMAT, CACHE_TIME
 SERVICE_DATA_SOURCE = service_data_sources()
 ##execute this globally
 
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 class AlertCenterUtilsGateway(View):
     """

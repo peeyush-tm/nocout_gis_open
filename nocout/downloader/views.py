@@ -16,7 +16,8 @@ from django.http import HttpResponseRedirect
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from nocout.utils.util import convert_utc_to_local_timezone
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 import logging
 from operator import itemgetter
 
@@ -379,6 +380,10 @@ class DownloaderListing(BaseDatatableView):
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
         for dct in qs:
             # icon for excel file
             excel_green = static("img/ms-office-icons/excel_2013_green.png")
@@ -413,13 +418,13 @@ class DownloaderListing(BaseDatatableView):
 
             # 'requested on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['requested_on'] = convert_utc_to_local_timezone(dct['requested_on'])
+                dct['requested_on'] = nocout_utils.convert_utc_to_local_timezone(dct['requested_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # 'request completion on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['request_completion_on'] = convert_utc_to_local_timezone(dct['request_completion_on'])
+                dct['request_completion_on'] = nocout_utils.convert_utc_to_local_timezone(dct['request_completion_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
@@ -641,6 +646,9 @@ class DownloaderCompleteListing(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
         for dct in qs:
 
             # modified module name
@@ -747,13 +755,13 @@ class DownloaderCompleteListing(BaseDatatableView):
 
             # 'requested on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['requested_on'] = convert_utc_to_local_timezone(dct['requested_on'])
+                dct['requested_on'] = nocout_utils.convert_utc_to_local_timezone(dct['requested_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # 'request completion on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['request_completion_on'] = convert_utc_to_local_timezone(dct['request_completion_on'])
+                dct['request_completion_on'] = nocout_utils.convert_utc_to_local_timezone(dct['request_completion_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 

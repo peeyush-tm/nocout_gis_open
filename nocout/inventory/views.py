@@ -37,9 +37,8 @@ from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
 from nocout.mixins.select2 import Select2Mixin
-from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import DictDiffer, cache_for, cache_get_key, convert_utc_to_local_timezone
-
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from organization.models import Organization
 from user_profile.models import UserProfile
 from user_group.models import UserGroup
@@ -376,7 +375,9 @@ class AntennaUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_antenna',)
 
     def get_queryset(self):
-        return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return Antenna.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -511,7 +512,9 @@ class BaseStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_basestation',)
 
     def get_queryset(self):
-        return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return BaseStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -653,7 +656,9 @@ class BackhaulUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_backhaul',)
 
     def get_queryset(self):
-        return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return Backhaul.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -820,7 +825,9 @@ class SectorUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_sector',)
 
     def get_queryset(self):
-        return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return Sector.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -942,7 +949,9 @@ class CustomerUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_customer',)
 
     def get_queryset(self):
-        return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return Customer.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1110,7 +1119,9 @@ class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         So as user can update the substation of self organization or it's descendants.
         :return queryset:
         """
-        return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return SubStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1259,7 +1270,9 @@ class CircuitUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_circuit',)
 
     def get_queryset(self):
-        return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return Circuit.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2886,6 +2899,10 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
         for dct in json_data:
 
             # add error filename in dct
@@ -3132,13 +3149,13 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
             # added on field timezone conversion from 'utc' to 'local'
             try:
-                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+                dct['added_on'] = nocout_utils.convert_utc_to_local_timezone(dct['added_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # modified on field timezone conversion from 'utc' to 'local'
             try:
-                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+                dct['modified_on'] = nocout_utils.convert_utc_to_local_timezone(dct['modified_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
@@ -3589,6 +3606,10 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
         for dct in json_data:
             try:
                 excel_green = static("img/ms-office-icons/excel_2013_green.png")
@@ -3646,13 +3667,13 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
 
             # added on field timezone conversion from 'utc' to 'local'
             try:
-                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+                dct['added_on'] = nocout_utils.convert_utc_to_local_timezone(dct['added_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # modified on field timezone conversion from 'utc' to 'local'
             try:
-                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+                dct['modified_on'] = nocout_utils.convert_utc_to_local_timezone(dct['modified_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
@@ -4827,8 +4848,12 @@ def getModelForSearch(request,search_by='default'):
 
     # Get self for custom class for "logged_in_user_organizations" function
     self = GetSelfObject(request)
+
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
     # Get the list of organization for logged in user
-    current_user_organizations = list(logged_in_user_organizations(self))
+    current_user_organizations = list(nocout_utils.logged_in_user_organizations(self))
 
     return (search_model , current_user_organizations)
 

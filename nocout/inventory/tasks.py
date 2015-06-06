@@ -13163,7 +13163,8 @@ from inventory.utils.util import InventoryUtilsGateway
 from organization.models import Organization
 from device.models import DeviceTechnology, SiteInstance
 from inventory.models import Sector, Circuit, SubStation
-from nocout.utils.util import indexed_query_set
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 #The Django !!
 from django.db.models import Count, Q
 
@@ -13296,21 +13297,23 @@ def get_topology(technology, rf_type=None, site_name=None):
     # because the ss devices can be get directly with SS only
 
     if topology.exists() and polled_sectors.exists():  # evaluate the query set
+        # # Create instance of 'NocoutUtilsGateway' class
+        # nocout_utils = NocoutUtilsGateway()
         # index_this = topology
-        # indexed_topology = indexed_query_set(
+        # indexed_topology = nocout_utils.indexed_query_set(
         #     query_set=index_this,
         #     indexes=['sector_id', 'connected_device_ip'],
         #     values=['sector_id', 'connected_device_ip', 'connected_device_mac', 'mac_address', 'ip_address'],
         #     is_raw=False
         # )
-        # ss_indexed_topology = indexed_query_set(
+        # ss_indexed_topology = nocout_utils.indexed_query_set(
         #     query_set=index_this,
         #     indexes=['connected_device_ip'],
         #     values=['sector_id', 'connected_device_ip', 'connected_device_mac', 'mac_address', 'ip_address'],
         #     is_raw=False
         # )
         # index_this = polled_sectors
-        # sector_indexed_topology = indexed_query_set(
+        # sector_indexed_topology = nocout_utils.indexed_query_set(
         #     query_set=index_this,
         #     indexes=['sector_id'],
         #     values=['sector_id', 'id'],

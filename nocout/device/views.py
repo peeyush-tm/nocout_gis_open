@@ -16,7 +16,6 @@ from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, 
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
     WizardDeviceTypeForm, WizardDeviceTypeServiceForm, DeviceTypeServiceDataSourceCreateFormset, \
     DeviceTypeServiceDataSourceUpdateFormset, DeviceSyncHistoryEditForm
-from nocout.utils.util import DictDiffer, convert_utc_to_local_timezone
 from django.http.response import HttpResponseRedirect, HttpResponse
 from organization.models import Organization
 from service.models import Service
@@ -25,7 +24,8 @@ from django.template import RequestContext
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin, SuperUserRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
@@ -1111,7 +1111,10 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('device.change_device',)
 
     def get_queryset(self):
-        return Device.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        return Device.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -1238,7 +1241,11 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
             return cleaned_data_field_dict
 
         cleaned_data_field_dict = cleaned_data_field()
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
         try:
             if changed_fields_dict:
                 initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
@@ -1733,8 +1740,11 @@ class DeviceTechnologyUpdate(PermissionsRequiredMixin, UpdateView):
             cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
             if field in ('device_vendors') and form.cleaned_data[field] else form.cleaned_data[field] for field in
                                        form.cleaned_data.keys()}
+            
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
 
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
             if changed_fields_dict:
                 initial_field_dict['device_vendors'] = ', '.join(
                     [DeviceVendor.objects.get(pk=vendor).name for vendor in initial_field_dict['device_vendors']])
@@ -1999,7 +2009,10 @@ class DeviceVendorUpdate(PermissionsRequiredMixin, UpdateView):
             if field in ('device_models') and form.cleaned_data[field] else form.cleaned_data[field]
                                        for field in form.cleaned_data.keys()}
 
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
+
+            changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
             if changed_fields_dict:
                 initial_field_dict['device_models'] = ', '.join(
                     [DeviceModel.objects.get(pk=vendor).name for vendor in initial_field_dict['device_models']])
@@ -3745,6 +3758,9 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
     order_columns = ['status', 'message', 'description', 'sync_by', 'added_on', 'completed_on']
     search_columns = ['status', 'message', 'description', 'sync_by']
 
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -3756,8 +3772,6 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         # queryset
         queryset = DeviceSyncHistory.objects.all().values(*self.columns + ['id'])
 
-        # if self.request.user.is_superuser:
-        #     queryset = DeviceSyncHistory.objects.filter().values(*self.columns+['id'])
         return queryset
 
     def prepare_results(self, qs):
@@ -3775,35 +3789,45 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
                 try:
                     if not dct.get('status'):
                         status_icon_color = "grey-dot"
-                        dct.update(status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color))
+                        dct.update(
+                            status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color)
+                        )
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == 0:
                         status_icon_color = "grey-dot"
-                        dct.update(status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color))
+                        dct.update(
+                            status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color)
+                        )
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == 1:
                         status_icon_color = "green-dot"
-                        dct.update(status='<i class="fa fa-circle {0}"></i> Success'.format(status_icon_color))
+                        dct.update(
+                            status='<i class="fa fa-circle {0}"></i> Success'.format(status_icon_color)
+                        )
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == 2:
                         status_icon_color = "red-dot"
-                        dct.update(status='<i class="fa fa-circle {0}"></i> Failed'.format(status_icon_color))
+                        dct.update(
+                            status='<i class="fa fa-circle {0}"></i> Failed'.format(status_icon_color)
+                        )
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == 3:
                         status_icon_color = "orange-dot"
-                        dct.update(status='<i class="fa fa-circle {0}"></i> Deadlock'.format(status_icon_color))
+                        dct.update(
+                            status='<i class="fa fa-circle {0}"></i> Deadlock'.format(status_icon_color)
+                        )
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3820,13 +3844,13 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
 
             # added on field timezone conversion from 'utc' to 'local'
             try:
-                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+                dct['added_on'] = nocout_utils.convert_utc_to_local_timezone(dct['added_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # completed on field timezone conversion from 'utc' to 'local'
             try:
-                dct['completed_on'] = convert_utc_to_local_timezone(dct['completed_on'])
+                dct['completed_on'] = nocout_utils.convert_utc_to_local_timezone(dct['completed_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
@@ -3882,7 +3906,10 @@ def get_current_sync_status():
         if device_history_obj:
             # time of last sync run
             try:
-                last_sync_time = convert_utc_to_local_timezone(device_history_obj.added_on)
+                # Create instance of 'NocoutUtilsGateway' class
+                nocout_utils = NocoutUtilsGateway()
+
+                last_sync_time = nocout_utils.convert_utc_to_local_timezone(device_history_obj.added_on)
             except Exception as e:
                 pass
 

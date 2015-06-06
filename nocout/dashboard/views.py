@@ -21,23 +21,24 @@ from nocout.settings import PMP, WiMAX, TCLPOP, DEBUG, PERIODIC_POLL_PROCESS_COU
 # Import 404 page function from nocout views
 from nocout.views import handler404
 
-from nocout.utils import logged_in_user_organizations
-# from nocout.utils.util import convert_utc_to_local_timezone
 from inventory.models import Sector
 from device.models import DeviceTechnology, Device
 from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, \
     Topology, NetworkStatus, RfNetworkAvailability
 
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
 
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, \
     DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily, DashboardRangeStatusDaily
+
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, \
-    get_pie_chart_json_response_dict, \
-    get_highchart_response, \
+    get_pie_chart_json_response_dict, get_highchart_response, \
     get_unused_dashboards, get_range_status, get_guege_chart_max_n_stops
+
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
@@ -46,6 +47,9 @@ from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 import logging
 logger = logging.getLogger(__name__)
 # END: logging module
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 class DashbaordSettingsListView(TemplateView):
@@ -247,7 +251,7 @@ class PerformanceDashboardMixin(object):
         # Get User's organizations
         # (admin : organization + sub organization)
         # (operator + viewer : same organization)
-        user_organizations = logged_in_user_organizations(self)
+        user_organizations = nocout_utils.logged_in_user_organizations(self)
         dashboard_status_dict, processed_for_key = view_range_status(dashboard_name, user_organizations)
         chart_series = []
         colors = []
@@ -956,7 +960,7 @@ class SectorCapacityMixin(object):
         :retun dictionary containing data used for main dashboard charts.
         '''
         tech_name = self.tech_name
-        organization = logged_in_user_organizations(self)
+        organization = nocout_utils.logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
@@ -1020,7 +1024,7 @@ class BackhaulCapacityMixin(object):
         :retun dictionary containing data used for main dashboard charts.
         '''
         tech_name = self.tech_name
-        organization = logged_in_user_organizations(self)
+        organization = nocout_utils.logged_in_user_organizations(self)
         # Getting Technology ID
         try:
             technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
@@ -1116,7 +1120,7 @@ class SalesOpportunityMixin(object):
         # Get Model Name from queried data_source
         model = data_source_config[data_source]['model']
 
-        organization = logged_in_user_organizations(self)
+        organization = nocout_utils.logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name).id
         # convert the data source in format topology-pmp/topology-wimax
         data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
@@ -1285,7 +1289,7 @@ class DashboardDeviceStatus(View):
             # replace the '-wimax' with ''. (e.g: 'dash-wimax' => 'dash')
             dashboard_status_name = dashboard_status_name.replace('-wimax', '')
 
-        organizations = logged_in_user_organizations(self)
+        organizations = nocout_utils.logged_in_user_organizations(self)
 
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology,
@@ -1626,7 +1630,7 @@ class MonthlyTrendBackhaulMixin(object):
         '''
         tech_name = self.tech_name
         y_axis_text = 'Number of Base Station'
-        organization = logged_in_user_organizations(self)
+        organization = nocout_utils.logged_in_user_organizations(self)
         # Getting Technology ID
         try:
             technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
@@ -1688,7 +1692,7 @@ class MonthlyTrendSectorMixin(object):
     def get(self, request):
         tech_name = self.tech_name
         y_axis_text = 'Number of Sectors'
-        organization = logged_in_user_organizations(self)
+        organization = nocout_utils.logged_in_user_organizations(self)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         # Function call for calculating no. of hosts in different states on different days
@@ -1745,7 +1749,7 @@ class MonthlyTrendSalesMixin(object):
         service_name = data_source_config[data_source]['service_name']
         model = data_source_config[data_source]['model']
 
-        organization = logged_in_user_organizations(self)
+        organization = nocout_utils.logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name).id
         # convert the data source in format topology_pmp/topology_wimax
         data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
@@ -1826,7 +1830,7 @@ class GetMonthlyRFTrendData(View):
         dashboard_status_name=dashboard_name+'_'+tech_name
         if int(is_bh):
             dashboard_status_name=dashboard_status_name+'_bh'
-        organization = logged_in_user_organizations(self)
+        organization = nocout_utils.logged_in_user_organizations(self)
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology,
                                                              page_name='rf_dashboard',
@@ -1892,7 +1896,7 @@ class MonthlyTrendDashboardDeviceStatus(View):
             # replace the '-wimax' with ''. (e.g: 'dash-wimax' => 'dash')
             dashboard_status_name = dashboard_status_name.replace('-wimax', '')
         # Finding Organization of user   
-        organizations = logged_in_user_organizations(self)
+        organizations = nocout_utils.logged_in_user_organizations(self)
 
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology,

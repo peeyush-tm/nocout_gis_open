@@ -17,11 +17,10 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
         DashboardRangeStatusWeekly, DashboardRangeStatusMonthly, DashboardRangeStatusYearly,
     )
 
-# 25th march update
-from nocout.utils.util import fetch_raw_result
-
 import math
-# 25th march update
+
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
@@ -1128,7 +1127,11 @@ def calculate_hourly_speedometer_dashboard():
         then,
         counter=12
     )
-    raw_result = fetch_raw_result(last_hour_timely_range_status_query)
+
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    raw_result = nocout_utils.fetch_raw_result(last_hour_timely_range_status_query)
 
     organizations = Organization.objects.all()
     hourly_range_status_list = list()
@@ -1512,7 +1515,11 @@ def calculate_daily_speedometer_dashboard():
         then=yesterday,
         counter=24
     )
-    raw_result = fetch_raw_result(last_hour_timely_range_status_query)
+
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    raw_result = nocout_utils.fetch_raw_result(last_hour_timely_range_status_query)
 
     organizations = Organization.objects.all()
 

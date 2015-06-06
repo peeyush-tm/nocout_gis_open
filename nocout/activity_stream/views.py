@@ -28,8 +28,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from user_profile.models import UserProfile
 from activity_stream.models import UserAction
-from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import convert_utc_to_local_timezone
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+
 from nocout.mixins.permissions import PermissionsRequiredMixin
 import logging
 
@@ -78,6 +79,9 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
     order_columns = columns
 
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
@@ -108,7 +112,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         # Get all the user ids of logged in user's organization.
         user_id_list = UserProfile.objects.filter(
-            organization__in=logged_in_user_organizations(self)
+            organization__in=self.nocout_utils.logged_in_user_organizations(self)
         ).values_list('id')
 
         # Show logs from start time to end time.
@@ -131,7 +135,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         if qs:
             for dct in qs:
-                dct['logged_at'] = convert_utc_to_local_timezone(dct['logged_at'])
+                dct['logged_at'] = self.nocout_utils.convert_utc_to_local_timezone(dct['logged_at'])
                 user_id = dct['user_id']
                 try:
                     dct['user_id'] = unicode(UserProfile.objects.get(id=user_id))

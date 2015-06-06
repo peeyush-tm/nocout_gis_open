@@ -13,10 +13,8 @@ from multiprocessing import Process, Queue
 from django.utils.dateformat import format
 from django.views.generic.base import View
 
-# nocout utilities
-from nocout.utils.util import fetch_raw_result, \
-    format_value, cache_for, \
-    cached_all_gis_inventory
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 # nocout utilities
 
 # python logging
@@ -31,6 +29,9 @@ from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
     MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, CACHE_TIME
 
 from django.http import HttpRequest
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 class PerformanceUtilsGateway(View):
@@ -312,7 +313,7 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     return query
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     """
     ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
@@ -357,7 +358,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     return result_qs
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def pre_map_indexing(index_dict, index_on='device_name'):
     """
 
@@ -375,7 +376,7 @@ def pre_map_indexing(index_dict, index_on='device_name'):
     return indexed_results
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def map_results(perf_result, qs):
     """
 
@@ -401,7 +402,7 @@ def map_results(perf_result, qs):
     return result_qs
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, type_rf=None):
     """
     indexes={
@@ -433,7 +434,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
     indexed_bh_conv = {}
 
     if indexes:
-        raw_results = cached_all_gis_inventory(monitored_only=monitored_only, technology=technology, type_rf=type_rf)
+        raw_results = nocout_utils.cached_all_gis_inventory(monitored_only=monitored_only, technology=technology, type_rf=type_rf)
 
         for result in raw_results:
             defined_sector_index = result[indexes['sector']]
@@ -506,7 +507,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
     return indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv, indexed_dr
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None, type_rf=None):
     """
     map the devices with gis data
@@ -767,44 +768,44 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
                             device.update({
-                                "bs_name": format_value(bs_row['CUST']).upper(),
+                                "bs_name": nocout_utils.format_value(bs_row['CUST']).upper(),
                             })
 
                     device.update({
                         "id": bs_row.get('SS_DEVICE_ID', 0),
-                        "sector_id": apnd.upper() + format_value(bs_row['SECTOR_SECTOR_ID']),
-                        "device_type": format_value(bs_row['SS_TYPE']),
-                        "device_technology": format_value(bs_row['SECTOR_TECH'])
+                        "sector_id": apnd.upper() + nocout_utils.format_value(bs_row['SECTOR_SECTOR_ID']),
+                        "device_type": nocout_utils.format_value(bs_row['SS_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['SECTOR_TECH'])
                     })
                 elif is_bh:
                     device.update({
                         "id": bs_row.get('BH_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['BHTYPE']),
-                        "device_technology": format_value(bs_row['BHTECH'])
+                        "device_type": nocout_utils.format_value(bs_row['BHTYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['BHTECH'])
                     })
                 elif is_pop:
                     device.update({
                         "id": bs_row.get('POP_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['POP_TYPE']),
-                        "device_technology": format_value(bs_row['POP_TECH'])
+                        "device_type": nocout_utils.format_value(bs_row['POP_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['POP_TECH'])
                     })
                 elif is_aggr:
                     device.update({
                         "id": bs_row.get('AGGR_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['AGGR_TYPE']),
-                        "device_technology": format_value(bs_row['AGGR_TECH'])
+                        "device_type": nocout_utils.format_value(bs_row['AGGR_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['AGGR_TECH'])
                     })
                 elif is_conv:
                     device.update({
                         "id": bs_row.get('BSCONV_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['BSCONV_TYPE']),
-                        "device_technology": format_value(bs_row['BSCONV_TECH'])
+                        "device_type": nocout_utils.format_value(bs_row['BSCONV_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['BSCONV_TECH'])
                     })
 
     return devices
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def indexed_polled_results(performance_data):
     """
 
@@ -823,7 +824,7 @@ def indexed_polled_results(performance_data):
     return indexed_raw_results
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def get_performance_data(device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
@@ -848,7 +849,7 @@ def get_performance_data(device_list, machine, model):
                               devices=device_list
                               )
 
-    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
+    performance_data = nocout_utils.fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
 
     indexed_perf_data = indexed_polled_results(performance_data)
 
@@ -1118,7 +1119,7 @@ def dataTableOrdering(self_instance, qs, order_columns):
     return qs
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def get_multiprocessing_performance_data(q, device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
@@ -1146,7 +1147,7 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
                               devices=device_list,
                               )
     # (query)
-    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
+    performance_data = nocout_utils.fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
 
     indexed_perf_data = indexed_polled_results(performance_data)
 
