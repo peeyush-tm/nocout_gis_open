@@ -1453,24 +1453,6 @@ class BulkFetchLPDataApi(View):
             service = service_name
             data_source = ds_name
 
-        # Fetch values specific to data source.
-        # Formula corresponding to 'data_source'
-        ds_formula = ""
-
-        # Data source object.
-        ds_obj = None
-        try:
-            ds_obj = ServiceDataSource.objects.get(name=data_source)
-            ds_formula = ds_obj.formula
-        except Exception as e:
-            pass
-
-        if ds_obj:
-            result['data']['data_source'] = dict()
-            result['data']['data_source']['chart_type'] = ds_obj.chart_type
-            result['data']['data_source']['chart_color'] = ds_obj.chart_color
-            result['data']['data_source']['data_source_type'] = ds_obj.ds_type_name()
-
         # In case of 'rta' and 'pl', fetch data from 'service_data_sources' function.
         if ds_name in ['pl', 'rta']:
             # Create instance of 'ServiceUtilsGateway' class
@@ -1479,12 +1461,32 @@ class BulkFetchLPDataApi(View):
             ds_dict = service_utils.service_data_sources()
             result['data']['data_source'] = dict()
             result['data']['data_source']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
-            result['data']['data_source']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[
-                ds_name] else ""
-            result['data']['data_source']['data_source_type'] = ds_dict[ds_name]['data_source_type'] if 'data_source_type' in ds_dict[ds_name] else "Numeric"
+            result['data']['data_source']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[ds_name] else ""
+            result['data']['meta']['data_source_type'] = ds_dict[ds_name]['data_source_type'] if 'data_source_type' in ds_dict[ds_name] else "Numeric"
+            result['data']['meta']['warning'] = ds_dict[ds_name]['warning'] if 'warning' in ds_dict[ds_name] else ""
+            result['data']['meta']['critical'] = ds_dict[ds_name]['critical'] if 'critical' in ds_dict[ds_name] else ""
+            ds_formula = ds_dict[ds_name]['formula'] if 'formula' in ds_dict[ds_name] else ""
+        else:
+            # Data source object.
+            ds_formula = ""
+            ds_obj = None
+            try:
+                ds_obj = ServiceDataSource.objects.get(name=data_source)
+                ds_formula = ds_obj.formula
+            except Exception as e:
+                logger.info(e.message)
 
-            if ds_name in ['pl', 'rta']:
-                ds_formula = ds_dict[ds_name]['formula'] if 'formula' in ds_dict[ds_name] else ""
+            if ds_obj:
+                result['data']['meta'] = dict()
+                result['data']['meta']['chart_type'] = ds_obj.chart_type
+                result['data']['meta']['chart_color'] = ds_obj.chart_color
+                result['data']['meta']['data_source_type'] = ds_obj.ds_type_name()
+                try:
+                    result['data']['meta']['warning'] = ds_obj.warning 
+                    result['data']['meta']['critical'] = ds_obj.critical
+                except Exception as e:
+                    result['data']['meta']['warning'] = ''
+                    result['data']['meta']['critical'] = ''
 
         # BS device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services').
         bs_device, site_name = None, None
