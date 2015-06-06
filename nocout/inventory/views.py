@@ -37,9 +37,8 @@ from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
 from nocout.mixins.select2 import Select2Mixin
-from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import DictDiffer, cache_for, cache_get_key, convert_utc_to_local_timezone
-
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from organization.models import Organization
 from user_profile.models import UserProfile
 from user_group.models import UserGroup
@@ -71,7 +70,11 @@ from django.core.cache import cache
 
 from django.views.decorators.csrf import csrf_exempt
 
-from inventory.utils.util import ptp_device_circuit_backhaul
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 # **************************************** Inventory *********************************************
@@ -375,7 +378,7 @@ class AntennaUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_antenna',)
 
     def get_queryset(self):
-        return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Antenna.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -510,7 +513,7 @@ class BaseStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_basestation',)
 
     def get_queryset(self):
-        return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
+        return BaseStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -652,7 +655,7 @@ class BackhaulUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_backhaul',)
 
     def get_queryset(self):
-        return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Backhaul.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -819,7 +822,7 @@ class SectorUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_sector',)
 
     def get_queryset(self):
-        return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Sector.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -941,7 +944,7 @@ class CustomerUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_customer',)
 
     def get_queryset(self):
-        return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Customer.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1109,7 +1112,7 @@ class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         So as user can update the substation of self organization or it's descendants.
         :return queryset:
         """
-        return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
+        return SubStation.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1258,7 +1261,7 @@ class CircuitUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('inventory.change_circuit',)
 
     def get_queryset(self):
-        return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
+        return Circuit.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1534,37 +1537,8 @@ class AllL2ReportListingTable(BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
 
     def get_context_data(self, *args, **kwargs):
@@ -2803,18 +2777,7 @@ class BulkUploadValidData(View):
         ## we need to reset caching, as soon as
         ##user bulk uploads
         try:
-            # cached_functions = ['prepare_raw_gis_info',
-            #                     'organization_backhaul_devices',
-            #                     'organization_network_devices',
-            #                     'organization_customer_devices',
-            #                     'ptp_device_circuit_backhaul',
-            #                     'perf_gis_raw_inventory'
-            #                     ]
-            # keys = []
-            # for cf in cached_functions:
-            #     keys.append(cache_get_key(cf))
-            # cache.delete_many(keys)
-            cache.clear() #delete GIS cache on bulk upload
+            cache.clear()  # delete GIS cache on bulk upload
         except Exception as caching_exp:
             logger.exception(caching_exp.message)
         return HttpResponseRedirect('/bulk_import/')
@@ -2896,6 +2859,7 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
         for dct in json_data:
 
             # add error filename in dct
@@ -3142,13 +3106,13 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
             # added on field timezone conversion from 'utc' to 'local'
             try:
-                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+                dct['added_on'] = nocout_utils.convert_utc_to_local_timezone(dct['added_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # modified on field timezone conversion from 'utc' to 'local'
             try:
-                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+                dct['modified_on'] = nocout_utils.convert_utc_to_local_timezone(dct['modified_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
@@ -3599,6 +3563,7 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
         for dct in json_data:
             try:
                 excel_green = static("img/ms-office-icons/excel_2013_green.png")
@@ -3656,13 +3621,13 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
 
             # added on field timezone conversion from 'utc' to 'local'
             try:
-                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+                dct['added_on'] = nocout_utils.convert_utc_to_local_timezone(dct['added_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # modified on field timezone conversion from 'utc' to 'local'
             try:
-                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+                dct['modified_on'] = nocout_utils.convert_utc_to_local_timezone(dct['modified_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
@@ -4837,8 +4802,9 @@ def getModelForSearch(request,search_by='default'):
 
     # Get self for custom class for "logged_in_user_organizations" function
     self = GetSelfObject(request)
+
     # Get the list of organization for logged in user
-    current_user_organizations = list(logged_in_user_organizations(self))
+    current_user_organizations = list(nocout_utils.logged_in_user_organizations(self))
 
     return (search_model , current_user_organizations)
 
@@ -4851,6 +4817,9 @@ def getPageType(deviceObj):
     page_type = 'customer'
 
     if deviceObj:
+        # Create instance of 'InventoryUtilsGateway' class
+        inventory_utils = InventoryUtilsGateway()
+
         if deviceObj.sector_configured_on.exists() or deviceObj.dr_configured_on.exists():
             
             # GET technology name for current device
@@ -4862,7 +4831,7 @@ def getPageType(deviceObj):
             
             # Fetch BH devices list
             try:
-                bh_devices_qs = ptp_device_circuit_backhaul()
+                bh_devices_qs = inventory_utils.ptp_device_circuit_backhaul()
                 bh_devices_list = bh_devices_qs.values_list('id', flat=True)
             except Exception, e:
                 bh_devices_list = list()
@@ -4876,7 +4845,7 @@ def getPageType(deviceObj):
         elif deviceObj.substation_set.exists():
             # Fetch BH devices list
             try:
-                bh_devices_qs = ptp_device_circuit_backhaul()
+                bh_devices_qs = inventory_utils.ptp_device_circuit_backhaul()
                 bh_devices_list = bh_devices_qs.values_list('id', flat=True)
             except Exception, e:
                 bh_devices_list = list()
@@ -4981,6 +4950,7 @@ def getSearchData(request, search_by="default", pk=0):
                 if search_by in ['ip_address','mac_address']:
                     # Get the page type as per the device
                     page_type = getPageType(query_result[0])
+                    alert_page_type = page_type
 
                     # Device Inventory page url
                     inventory_page_url = reverse(
@@ -4995,15 +4965,15 @@ def getSearchData(request, search_by="default", pk=0):
                         current_app='performance'
                     )
 
-                    alert_page_url = ''
-                    # don't pass alert page link for other device
-                    if page_type not in ['other']:
-                        # Single Device alert page url
-                        alert_page_url = reverse(
-                            'SingleDeviceAlertsInit',
-                            kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
-                            current_app='alert_center'
-                        )
+                    if alert_page_type not in ['customer', 'network']:
+                        alert_page_type = 'network'
+
+                    # Single Device alert page url
+                    alert_page_url = reverse(
+                        'SingleDeviceAlertsInit',
+                        kwargs={'page_type': alert_page_type, 'device_id' : query_result[0].id, 'data_source' : 'down'},
+                        current_app='alert_center'
+                    )
                 elif search_by in ['circuit_id']:
 
                     ss_device_obj = SubStation.objects.filter(pk=query_result[0].sub_station_id).values('device_id')
@@ -5012,6 +4982,7 @@ def getSearchData(request, search_by="default", pk=0):
                     deviceObj = Device.objects.get(pk=ss_device_id)
                     # Get the page type as per the device
                     page_type = getPageType(deviceObj)
+                    alert_page_type = page_type
 
                     # SS Device Inventory page url
                     inventory_page_url = reverse(
@@ -5034,15 +5005,15 @@ def getSearchData(request, search_by="default", pk=0):
                         current_app='performance'
                     )
 
-                    alert_page_url = ''
-                    # don't pass alert page link for other device
-                    if page_type not in ['other']:
-                        # Single Device alert page url
-                        alert_page_url = reverse(
-                            'SingleDeviceAlertsInit',
-                            kwargs={'page_type': page_type, 'device_id' : ss_device_id, 'service_name' : 'ping'},
-                            current_app='alert_center'
-                        )
+                    if alert_page_type not in ['customer', 'network']:
+                        alert_page_type = 'network'
+
+                    # Single Device alert page url
+                    alert_page_url = reverse(
+                        'SingleDeviceAlertsInit',
+                        kwargs={'page_type': alert_page_type, 'device_id' : ss_device_id, 'data_source' : 'down'},
+                        current_app='alert_center'
+                    )
 
                 elif search_by in ['sector_id']:
 
@@ -5057,6 +5028,7 @@ def getSearchData(request, search_by="default", pk=0):
 
                     # Get page type as per the technology
                     page_type = 'customer' if current_technology in ['ptp','p2p'] else 'network'
+                    alert_page_type = page_type
 
                     # Sector Conf. On Device Inventory page url
                     inventory_page_url = reverse(
@@ -5077,15 +5049,17 @@ def getSearchData(request, search_by="default", pk=0):
                         kwargs={'page_type': page_type, 'device_id' : query_result[0].sector_configured_on_id},
                         current_app='performance'
                     )
+
+                    if alert_page_type not in ['customer', 'network']:
+                        alert_page_type = 'network'
+
                     # Single Device alert page url
                     alert_page_url = reverse(
                         'SingleDeviceAlertsInit',
-                        kwargs={'page_type': page_type, 'device_id' : query_result[0].sector_configured_on_id, 'service_name' : 'ping'},
+                        kwargs={'page_type': alert_page_type, 'device_id' : query_result[0].sector_configured_on_id, 'data_source' : 'down'},
                         current_app='alert_center'
                     )
-
                 else:
-
                     inventory_page_url = ''
                     perf_page_url = ''
                     alert_page_url = ''

@@ -53,7 +53,7 @@ function advanceSearchMainClass() {
     //We will remove all Setted Search Markers here in the Array from the map and then clear the Array.
     this.removeSearchMarkers= function() {
 
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(window.location.pathname.indexOf("gearth") > -1) {
 
             var children = ge.getFeatures().getChildNodes();
             for(var i=0;i<children.getLength();i++) { 
@@ -62,7 +62,7 @@ function advanceSearchMainClass() {
                     ge.getFeatures().removeChild(child);
                 }
             }
-        } else if(window.location.pathname.indexOf("white_background") > -1) {
+        } else if(window.location.pathname.indexOf("wmap") > -1) {
             ccpl_map.getLayersByName("Search Layer")[0].removeAllFeatures();
             ccpl_map.getLayersByName("Search Layer")[0].setVisibility(false);
             // whiteMapClass.searchMarkerLayer.removeAllFeatures();
@@ -83,7 +83,7 @@ function advanceSearchMainClass() {
         var searchMarker, searchedInputs, isOnlyStateorCityIsApplied= false;
         search_marker_count++;
 
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(window.location.pathname.indexOf("gearth") > -1) {
 
             iconUrl = iconUrl ? iconUrl : base_url+'/static/img/icons/bs_bounce.png';
             // Create the placemark.
@@ -112,7 +112,7 @@ function advanceSearchMainClass() {
             // });
 
 
-        } else if (window.location.pathname.indexOf("white_background") > -1) {
+        } else if (window.location.pathname.indexOf("wmap") > -1) {
             
             ccpl_map.getLayersByName("Search Layer")[0].setVisibility(true);
 
@@ -401,22 +401,22 @@ function advanceSearchMainClass() {
         this.resetVariables();
 
         var bounds = "";
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(window.location.pathname.indexOf("gearth") > -1) {
             
-        } else if(window.location.pathname.indexOf("white_background") > -1) {
+        } else if(window.location.pathname.indexOf("wmap") > -1) {
             bounds = new OpenLayers.Bounds();
         } else {
             bounds= new google.maps.LatLngBounds();
         }
 
         function extendBound(lat, lon) {
-            if(window.location.pathname.indexOf("googleEarth") > -1) {
+            if(window.location.pathname.indexOf("gearth") > -1) {
                   var lookAt = ge.createLookAt('');
                   lookAt.setLatitude(lat);
                   lookAt.setLongitude(lon);
                   lookAt.setRange(ZoomToAlt(13));
                   ge.getView().setAbstractView(lookAt);
-            } else if(window.location.pathname.indexOf("white_background") > -1) {
+            } else if(window.location.pathname.indexOf("wmap") > -1) {
                 bounds.extend(new OpenLayers.LonLat(lon, lat));
             } else {
 
@@ -433,9 +433,9 @@ function advanceSearchMainClass() {
 
                 searchedStations.push(devicesInMap[i]);
 
-                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                if(window.location.pathname.indexOf("gearth") > -1) {
 
-                } else if(window.location.pathname.indexOf("white_background") > -1) {
+                } else if(window.location.pathname.indexOf("wmap") > -1) {
                     bounds.extend(new OpenLayers.LonLat(devicesInMap[i]['data']['lon'], devicesInMap[i]['data']['lat']));
                 } else {
                     bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
@@ -456,8 +456,8 @@ function advanceSearchMainClass() {
 
         if(this.searchedCircuitLines.length) {
             for(var i=0; i< this.searchedCircuitLines.length; i++) {
-                if(window.location.pathname.indexOf("googleEarth") > -1) {
-                } else if(window.location.pathname.indexOf("white_background") > -1) {
+                if(window.location.pathname.indexOf("gearth") > -1) {
+                } else if(window.location.pathname.indexOf("wmap") > -1) {
                 } else {
                     bounds.extend(this.searchedCircuitLines[i]);
                 }
@@ -469,8 +469,8 @@ function advanceSearchMainClass() {
                 // this.searchedLinesByCircuitIDs= [];
                 this.removeSearchMarkers();
             }
-            if(window.location.pathname.indexOf("googleEarth") > -1) {
-            } else if(window.location.pathname.indexOf("white_background") > -1) {
+            if(window.location.pathname.indexOf("gearth") > -1) {
+            } else if(window.location.pathname.indexOf("wmap") > -1) {
                 ccpl_map.zoomToExtent(bounds);
                 // if(mapInstance.getZoom() >= this.constants.maxZoomLevel) {
                 //     mapInstance.setZoom(this.constants.maxZoomLevel);

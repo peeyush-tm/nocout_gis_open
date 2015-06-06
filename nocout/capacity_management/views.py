@@ -17,8 +17,8 @@ import ujson as json
 
 from device.models import DeviceTechnology, Device
 
-#get the organisation of logged in user
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 from nocout.settings import DATE_TIME_FORMAT
 
@@ -29,32 +29,8 @@ from performance.formulae import display_time
 import logging
 logger = logging.getLogger(__name__)
 
-
-def get_daily_alerts(request):
-    """
-    get request to render daily alerts pages.
-
-    :params request object:
-    :params alert_type:
-    :return Https response object:
-
-    """
-
-    alert_template = 'capacity_management/backhaul_capacity_alert.html'
-    return render_to_response(alert_template,context_instance=RequestContext(request))
-
-
-def get_utilization_status(request):
-    """
-    get request to render utilization pages
-
-    :params request object:
-    :params status_type:
-    :return Https response object:
-    """
-    status_template = 'capacity_management/backhaul_capacity_status.html'
-
-    return render_to_response(status_template, context_instance=RequestContext(request))
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 class SectorStatusHeaders(ListView):
@@ -225,7 +201,7 @@ class SectorStatusListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 
@@ -286,40 +262,7 @@ class SectorStatusListing(BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
-        order_columns = self.order_columns
-
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -457,7 +400,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 
@@ -698,7 +641,7 @@ class BackhaulStatusListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 
@@ -885,7 +828,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 

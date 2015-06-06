@@ -16,11 +16,15 @@ from django.http import HttpResponseRedirect
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
-from nocout.utils.util import convert_utc_to_local_timezone
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 import logging
 from operator import itemgetter
 
 logger = logging.getLogger(__name__)
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 class DownloaderHome(View):
@@ -379,6 +383,7 @@ class DownloaderListing(BaseDatatableView):
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
         for dct in qs:
             # icon for excel file
             excel_green = static("img/ms-office-icons/excel_2013_green.png")
@@ -413,13 +418,13 @@ class DownloaderListing(BaseDatatableView):
 
             # 'requested on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['requested_on'] = convert_utc_to_local_timezone(dct['requested_on'])
+                dct['requested_on'] = nocout_utils.convert_utc_to_local_timezone(dct['requested_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # 'request completion on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['request_completion_on'] = convert_utc_to_local_timezone(dct['request_completion_on'])
+                dct['request_completion_on'] = nocout_utils.convert_utc_to_local_timezone(dct['request_completion_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
@@ -567,52 +572,8 @@ class DownloaderCompleteListing(BaseDatatableView):
         """ 
         Get parameters from the request and prepare order by clause
         """
-        request = self.request
-
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.order_columns
-
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-
-        if order:
-            # key_name=order[0][1:] if '-' in order[0] else order[0]
-            
-            # In case of null 'request_completion_on' field, it gives error.
-            try:
-                # sorted_device_data = sorted(
-                #     qs,
-                #     key=operator.attrgetter(key_name),
-                #     reverse= True if '-' in order[0] else False
-                # )
-                sorted_device_data = qs.order_by(*order)
-            except Exception, e:
-                sorted_device_data = qs
-
-            return sorted_device_data
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_initial_queryset(self):
         """
@@ -747,13 +708,13 @@ class DownloaderCompleteListing(BaseDatatableView):
 
             # 'requested on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['requested_on'] = convert_utc_to_local_timezone(dct['requested_on'])
+                dct['requested_on'] = nocout_utils.convert_utc_to_local_timezone(dct['requested_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             # 'request completion on' field timezone conversion from 'utc' to 'local'
             try:
-                dct['request_completion_on'] = convert_utc_to_local_timezone(dct['request_completion_on'])
+                dct['request_completion_on'] = nocout_utils.convert_utc_to_local_timezone(dct['request_completion_on'])
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 

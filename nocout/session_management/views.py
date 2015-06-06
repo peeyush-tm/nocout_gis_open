@@ -38,6 +38,8 @@ from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from session_management.models import Visitor
 from user_profile.models import UserProfile
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 
 class UserStatusList(PermissionsRequiredMixin, ListView):
@@ -130,15 +132,25 @@ class UserStatusTable(BaseDatatableView):
         """
         if qs:
             sanity_dicts_list = [
-                OrderedDict({'dict_final_key': 'full_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'})]
+                OrderedDict({
+                    'dict_final_key': 'full_name', 
+                    'dict_key1': 'first_name', 
+                    'dict_key2': 'last_name'
+                })
+            ]
             qs, qs_headers = Datatable_Generation(qs, sanity_dicts_list).main()
             logged_in_users_ids = [visitor.user_id for visitor in Visitor.objects.all()]
             for dct in qs:
-                dct.update(actions='<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>'
-                           if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
-                           onclick="change_user_status(this);"> &nbsp;</h3>', logged_in_status='NO')
+                dct.update(
+                    actions='<h3 class="fa fa-lock text-danger" title="Lock User" \
+                            onclick="change_user_status(this);"> &nbsp;</h3>'
+                            if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
+                            title="Unlock User" onclick="change_user_status(this);"> &nbsp;</h3>',
+                    logged_in_status='NO'
+                )
                 if dct.pop('id') in logged_in_users_ids:
-                    dct['actions'] += '<h3 class="fa fa-sign-out text-danger" onclick="logout_user(this);"> &nbsp;</h3>'
+                    dct['actions'] += '<h3 class="fa fa-sign-out text-danger" title="Log-Off User" \
+                                      onclick="logout_user(this);"> &nbsp;</h3>'
                     dct['logged_in_status'] = 'YES'
 
         return qs
@@ -149,44 +161,12 @@ class UserStatusTable(BaseDatatableView):
         If nothing is specified then by default the ordering will be done
         on the basis of first column in the data table.
         """
-        request = self.request
-
-        # Number of columns that are used in sorting.
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
+        
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
 
-        for i in range(i_sorting_cols):
-            # Sorting column.
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-
-            # Sorting order.
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-            try:
-                sortcol = order_columns[i_sort_col]
-            except IndexError:
-                return qs
-
-            # For the mutiple sorting of the columns at a time.
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
-
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """

@@ -10,23 +10,6 @@ var last_clicked_tab = "",
 
 $(".nav-tabs li a").click(function (e, isFirst) {
 
-    var clicked_tab = e.currentTarget.innerText ? $.trim(e.currentTarget.innerText) : $.trim($(this).text()),
-        splitted_link = window.location.href.split('/');
-
-    if(clicked_tab == 'PTP' || clicked_tab == 'PTP BH') {
-        clicked_tab = "P2P";
-    }
-    
-    if(window.location.href.indexOf(clicked_tab) == -1) {
-        if(tech_list.indexOf(splitted_link[splitted_link.length-2]) == -1) {
-            window.location.href = clicked_tab;
-        } else {
-            splitted_link[splitted_link.length-2] = clicked_tab;
-            window.location.href = splitted_link.join("/");
-        }
-        return;
-    }
-
     // Update the breadcrumb as per clicked tab
     $(".breadcrumb li.active").html(e.currentTarget.innerText);
 
@@ -46,6 +29,14 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     } else {
         second_condition = false;
     }
+
+    /*Current Tab content id or anchor tab hyperlink*/
+    // new_url = e.currentTarget.href;
+
+
+    // if (!isFirst) {
+    //     window.location.href = new_url;
+    // }
 
     var destroy = false,
         div_id = e.currentTarget.href.split("#")[1],

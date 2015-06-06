@@ -17,14 +17,14 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
         DashboardRangeStatusWeekly, DashboardRangeStatusMonthly, DashboardRangeStatusYearly,
     )
 
-# 25th march update
-from nocout.utils.util import fetch_raw_result
-
 import math
-# 25th march update
 
-# inventory utilitites
-from inventory.utils.util import organization_sectors, organization_network_devices, organization_customer_devices 
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
+
 from inventory.models import get_default_org, Circuit
 
 from inventory.tasks import bulk_update_create
@@ -75,12 +75,16 @@ def network_speedometer_dashboards():
         }
     }
 
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     for organization in user_organizations:
 
-        required_devices = organization_network_devices(organizations=[organization.id],
-                                                        technology=None,
-                                                        specify_ptp_bh_type=None
-                                                        )  # this will give PMP and WiMAX devices
+        required_devices = inventory_utils.organization_network_devices(
+            organizations=[organization.id],
+            technology=None,
+            specify_ptp_bh_type=None
+        )  # this will give PMP and WiMAX devices
 
         if not required_devices.exists():  # this evaluates the query set
             continue
@@ -132,12 +136,16 @@ def temperature_speedometer_dashboards():
     if DEBUG:
         temperatures = ['IDU', 'ACB', 'FAN']
 
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     for organization in user_organizations:
 
-        required_devices = organization_network_devices(organizations=[organization.id],
-                                                        technology=WiMAX.ID,
-                                                        specify_ptp_bh_type=None
-                                                        )
+        required_devices = inventory_utils.organization_network_devices(
+            organizations=[organization.id],
+            technology=WiMAX.ID,
+            specify_ptp_bh_type=None
+        )
         if required_devices.exists():
             sector_devices = required_devices.values('machine__name', 'device_name')
             machine_dict = prepare_machines(sector_devices)
@@ -211,11 +219,15 @@ def calculate_status_dashboards(technology):
         }
     }
 
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     for organization in user_organizations:
-        required_devices = organization_network_devices(organizations=[organization.id],
-                                                        technology=tech_id,
-                                                        specify_ptp_bh_type=None
-                                                        )
+        required_devices = inventory_utils.organization_network_devices(
+            organizations=[organization.id],
+            technology=tech_id,
+            specify_ptp_bh_type=None
+        )
         if required_devices.exists():
             sector_devices = required_devices.values('machine__name', 'device_name')
             machine_dict = prepare_machines(sector_devices)
@@ -470,10 +482,13 @@ def calculate_timely_sales_opportunity(organizations, technology, model, process
         logger.info("DashboardSetting for %s is not available." % dashboard_name)
         return False
 
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     for organization in organizations:
 
         # get the sector of User's Organization [and Sub Organization]
-        sector_objects = organization_sectors([organization], technology_id)
+        sector_objects = inventory_utils.organization_sectors([organization], technology_id)
         # get the device of the user sector.
         # sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
@@ -803,7 +818,11 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
     tech=technology
     user_organizations = Organization.objects.all()
     processed_for = timezone.now()
-    devices_method_to_call = organization_customer_devices
+
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
+    devices_method_to_call = inventory_utils.organization_customer_devices
     devices_method_kwargs = dict(specify_ptp_type='all')
     if technology == 'WiMAX' and is_bh == False:
         dashboards = {
@@ -900,7 +919,8 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
                 'service_name': 'availability',
             }
         }
-        devices_method_to_call = organization_network_devices
+
+        devices_method_to_call = inventory_utils.organization_network_devices
         devices_method_kwargs = dict(specify_ptp_bh_type='ss')
 
     for organization in user_organizations:
@@ -968,10 +988,11 @@ def prepare_Rf_dashboard_devices(organizations,
     g_jobs = list()
     ret = False
 
-    user_devices = devices_method_to_call(organizations=[organizations.id],
-                                                        technology=technology_id,
-                                                        **devices_method_kwargs
-                                                        )
+    user_devices = devices_method_to_call(
+        organizations=[organizations.id],
+        technology=technology_id,
+        **devices_method_kwargs
+    )
 
     dashboard_status_name=dashboard_name
     model = dashboard_config[dashboard_name]['model']
@@ -1106,7 +1127,11 @@ def calculate_hourly_speedometer_dashboard():
         then,
         counter=12
     )
-    raw_result = fetch_raw_result(last_hour_timely_range_status_query)
+
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    raw_result = nocout_utils.fetch_raw_result(last_hour_timely_range_status_query)
 
     organizations = Organization.objects.all()
     hourly_range_status_list = list()
@@ -1490,7 +1515,11 @@ def calculate_daily_speedometer_dashboard():
         then=yesterday,
         counter=24
     )
-    raw_result = fetch_raw_result(last_hour_timely_range_status_query)
+
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    raw_result = nocout_utils.fetch_raw_result(last_hour_timely_range_status_query)
 
     organizations = Organization.objects.all()
 

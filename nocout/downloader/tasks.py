@@ -1,4 +1,5 @@
-from nocout.utils.util import html_to_text
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 import os
 from downloader.models import Downloader
 from nocout.settings import MEDIA_ROOT
@@ -184,6 +185,9 @@ def get_datatable_response(payload):
         if result['aaData']:
             headers = headers_list
             if headers:
+                # Create instance of 'NocoutUtilsGateway' class
+                nocout_utils = NocoutUtilsGateway()
+
                 # create list of lists containing excel rows data (except header)
                 for val in result['aaData']:
                     temp_list = list()
@@ -217,7 +221,7 @@ def get_datatable_response(payload):
                         i += 1
                         for j, col in enumerate(l):
                             try:
-                                col = html_to_text(col)
+                                col = nocout_utils.html_to_text(col)
                             except Exception as e:
                                 pass
                             ws.write(i, j, col)

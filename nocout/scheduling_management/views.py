@@ -2,7 +2,6 @@ import json
 
 from datetime import datetime, timedelta
 
-
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import TemplateView, ListView, DetailView
 
@@ -15,7 +14,6 @@ from datetime import datetime
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, YEARLY
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.select2 import Select2Mixin
-from nocout.utils import logged_in_user_organizations
 
 from scheduling_management.models import Event, Weekdays, SNMPTrapSettings
 from scheduling_management.forms import EventForm, SNMPTrapSettingsForm
@@ -26,10 +24,29 @@ from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationF
 from nocout.mixins.user_action import UserLogDeleteMixin
 from device.models import Device, DeviceType
 
-# Create your views here.
-# def get_scheduler(request):
 
-# 	return render_to_response('scheduling_management/scheduler_template.html',context_instance=RequestContext(request))
+class SchedulingViewsGateway:
+    """
+    This class works as gateway between scheduling_management views & other apps
+    """
+    def last_day_of_the_month(self, any_day):
+
+        param1 = last_day_of_the_month(any_day)
+
+        return param1
+
+    def event_today_status(self, dic):
+
+        param1 = event_today_status(dic)
+
+        return param1
+
+    def get_today_event_list(self):
+
+        param1 = get_today_event_list()
+
+        return param1
+
 
 class EventList(PermissionsRequiredMixin, TemplateView):
     """
@@ -67,10 +84,7 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         return context
 
 
-class EventListingTable(PermissionsRequiredMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Event Data table.
     """
@@ -271,7 +285,6 @@ class EventDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     obj_alias = 'name'
 
 
-#**************************************************#
 def last_day_of_the_month(any_day):
     """
     Return the last day of the month.
@@ -536,11 +549,10 @@ class SNMPTrapSettingsList(PermissionsRequiredMixin, TemplateView):
         return context
 
 
-class SNMPTrapSettingsListingTable(PermissionsRequiredMixin,
-        DatatableOrganizationFilterMixin,
-        DatatableSearchMixin,
-        BaseDatatableView,
-    ):
+class SNMPTrapSettingsListingTable(PermissionsRequiredMixin, 
+    DatatableOrganizationFilterMixin, 
+    DatatableSearchMixin, 
+    BaseDatatableView):
     """
     Class based View to render SNMPTrapSettings Data table. Returns json data for data table.
     :param Mixins- PermissionsRequiredMixin

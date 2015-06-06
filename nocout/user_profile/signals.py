@@ -14,10 +14,14 @@ Functions
 """
 
 from django.db.models import Q
-from nocout.utils.util import disable_for_loaddata
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
-@disable_for_loaddata
+@nocout_utils.disable_for_loaddata
 def assign_default_thematics_to_user(sender, instance=None, created=False, **kwargs):
     """
         Assigning default thematics to user on it's creation.

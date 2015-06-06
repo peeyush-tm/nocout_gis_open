@@ -4,13 +4,13 @@ from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, D
     DeviceSyncHistory
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet
-from nocout.utils.util import is_lat_long_in_state
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 from service.models import Service, ServiceDataSource
 
 from django.forms.util import ErrorList
-from nocout.utils import logged_in_user_organizations
 import re
 import logging
 logger = logging.getLogger(__name__)
@@ -31,9 +31,6 @@ class DeviceForm(forms.ModelForm):
                                              required=True)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
                                             required=True)
-
-    #latitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
-    #longitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
 
     def __init__(self, *args, **kwargs):
 
@@ -59,7 +56,9 @@ class DeviceForm(forms.ModelForm):
 
         # setting select menus default values which is by default '---------'
         if not self.request is None:
-            self.fields['organization'].queryset = logged_in_user_organizations(self)
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
+            self.fields['organization'].queryset = nocout_utils.logged_in_user_organizations(self)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].widget.choices = self.fields['organization'].choices
@@ -87,9 +86,6 @@ class DeviceForm(forms.ModelForm):
         self.fields['country'].required = True
         self.fields['state'].required = True
         self.fields['city'].required = True
-
-        #self.fields['latitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
-        #self.fields['longitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
 
         # to redisplay the extra fields form with already filled values we follow these steps:
         # 1. check that device type exist in 'kwargs' or not
@@ -201,7 +197,10 @@ class DeviceForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
 
-        is_lat_long_valid = is_lat_long_in_state(latitude, longitude, state)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(

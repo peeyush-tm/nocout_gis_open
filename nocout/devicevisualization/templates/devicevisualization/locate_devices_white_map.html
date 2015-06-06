@@ -5,7 +5,7 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-map-marker'></i> Network Maps" "javascript:;" %}
-    {% breadcrumb_safe "White Background" "white_background_map" %}
+    {% breadcrumb_safe "White Background" "init_network_maps" page_type %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -15,7 +15,6 @@
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
-    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css"
           href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
