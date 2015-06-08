@@ -6,7 +6,7 @@ urlpatterns = patterns('',
                        # common page for both customer and network
                        url(r'^((?P<page_type>\w+))_alert/(?P<data_source>\w+)/$',
                            views.AlertCenterListing.as_view(),
-                           name='alert_list_without_tabname'
+                           name='init_alert_listing'
                        ),
 
                        url(r'^networklistingtable/',
@@ -27,7 +27,7 @@ urlpatterns = patterns('',
 
                        url(r'^network_detail/$',
                            views.NetworkAlertDetailHeaders.as_view(),
-                           name='NetworkAlertDetailsHeader'
+                           name='network_alert_details'
                        ),
 
                        url(r'^network_detail_listing_table$',
@@ -36,7 +36,7 @@ urlpatterns = patterns('',
 
                        url(r'^customer_detail/$',
                            views.CustomerAlertDetailHeaders.as_view(),
-                           name='CustomerAlertDetailsHeader'
+                           name='customer_alert_details'
                        ),
 
                        url(r'^customer_detail_listing_table/',

@@ -375,14 +375,28 @@ def prepare_raw_sector(sectors=None,with_data=False):
 
                 near_end_perf_url = ""
                 near_end_inventory_url = ""
+                page_type = 'customer'
                 # Check for technology to make perf page url
                 if techno_to_append.lower() in ['pmp', 'wimax', 'ptp bh']:
-                    near_end_perf_url = '/performance/network_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
-                else:
-                    near_end_perf_url = '/performance/customer_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+                    page_type = 'network'
+
+                near_end_perf_url = reverse(
+                    'SingleDevicePerf',
+                    kwargs={
+                        'page_type': page_type, 
+                        'device_id': sector['SECTOR_CONF_ON_ID']
+                    },
+                    current_app='performance'
+                )
 
                 # Sector Device Inventory URL
-                near_end_inventory_url = '/device/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+                near_end_inventory_url = reverse(
+                    'device_edit',
+                    kwargs={
+                        'pk': sector['SECTOR_CONF_ON_ID']
+                    },
+                    current_app='device'
+                )
 
                 circuit_ids += circuit_id
                 sector_configured_on_devices += substation_ip
@@ -757,6 +771,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
                 if circuit['SID'] and circuit['SID'] == sector_id:
                     far_end_perf_url = ""
                     far_end_inventory_url = ""
+                    page_type = 'network'
 
                     #unique circuit id condition
                     if circuit_id not in circuit_ids:
@@ -770,12 +785,28 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
                     if circuit['SSIP'] and circuit['SSIP'] not in substation_ip:
                         # Check for technology to make perf page url
                         if techno_to_append.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
-                            far_end_perf_url = '/performance/customer_live/'+str(circuit['SS_DEVICE_ID'])+'/'
-                        elif techno_to_append.lower() in ['ptp bh']:
-                            far_end_perf_url = '/performance/network_live/'+str(circuit['SS_DEVICE_ID'])+'/'
+                            page_type = 'customer'
+
+                        try:
+                            far_end_perf_url = reverse(
+                                'SingleDevicePerf',
+                                kwargs={
+                                    'page_type': page_type, 
+                                    'device_id': circuit['SS_DEVICE_ID']
+                                },
+                                current_app='performance'
+                            )
+                        except Exception, e:
+                            far_end_perf_url = ''
 
                         # Sector Device Inventory URL
-                        far_end_inventory_url = '/device/'+str(circuit['SS_DEVICE_ID'])+'/'
+                        far_end_inventory_url = reverse(
+                            'device_edit',
+                            kwargs={
+                                'pk': circuit['SS_DEVICE_ID']
+                            },
+                            current_app='device'
+                        )
 
                         substation_ip.append(circuit['SSIP'])
 

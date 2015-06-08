@@ -1,23 +1,9 @@
 <div id="sidebar" class="sidebar">
-<div class="sidebar-menu nav-collapse">
-<!-- <div class="divide-20"></div> -->
-<!-- SEARCH BAR -->
-<!-- <div id="search-bar">
-    <input class="search" type="text" placeholder="Search"><i class="fa fa-search search-icon"></i>
-</div> -->
-<!-- /SEARCH BAR -->
-
-<!-- SIDEBAR QUICK-LAUNCH -->
-<!-- <div id="quicklaunch">
-<!-- /SIDEBAR QUICK-LAUNCH -->
+    <div class="sidebar-menu nav-collapse">
         <!-- SIDEBAR MENU -->
         <ul>
             <li class="has-sub">
-                <!-- <a href="/home/">
-                    <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
-                    <span class="selected"></span>
-                </a> -->
-                <a href="javascript:;" class="">
+                <a href="javascript:;">
                     <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
                     <span class="arrow"></span>
                 </a>
@@ -44,56 +30,111 @@
                     </li>
                 </ul>
             </li>
+            
             <li class="has-sub">
-                <a href="javascript:;" class="">
+                <a href="javascript:;">
                     <i class="fa fa-map-marker"></i> <span class="menu-text">Network Maps</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
-                    <li><a class="" href="/network_maps/maps/gmap/"><span class="sub-menu-text">Google Map</span></a></li>
-                    <li><a class="" href="/network_maps/maps/setellite/"><span class="sub-menu-text">Google Earth</span></a></li>
 
-                    <li><a class="" href="/network_maps/maps/wmap/"><span class="sub-menu-text">White Background</span></a></li>
-                    <li><a class="" href="/network_maps/kmz/"><span class="sub-menu-text">KMZ</span></a></li>
-                    <li><a class="" href="/network_maps/points/"><span class="sub-menu-text">Points</span></a></li>
+                    <li>
+                        <a href="{% url 'init_network_maps' 'gmap' %}">
+                            <span class="sub-menu-text">Google Map</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'init_network_maps' 'setellite' %}">
+                            <span class="sub-menu-text">Google Earth</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{% url 'init_network_maps' 'wmap' %}">
+                            <span class="sub-menu-text">White Background</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'kmz_list' %}">
+                            <span class="sub-menu-text">KMZ</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'point_listing' %}">
+                            <span class="sub-menu-text">Points</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
+            
             <li class="has-sub">
-                <a href="javascript:;" class="">
+                <a href="javascript:;">
                     <i class="fa fa-bell"></i> <span class="menu-text">Alert Center</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Network Alert Center</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/alert_center/network_alert/packet_drop/"><span class="sub-menu-text">Packet Drop</span></a></li>
-                            <li><a class="" href="/alert_center/network_alert/latency/"><span class="sub-menu-text">Latency</span></a></li>
-                            <li><a class="" href="/alert_center/network_alert/down/"><span class="sub-menu-text">Down</span></a></li>
+                            <li>
+                                <a href="{% url 'init_alert_listing' 'network' 'packet_drop' %}">
+                                    <span class="sub-menu-text">Packet Drop</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'init_alert_listing' 'network' 'latency' %}">
+                                    <span class="sub-menu-text">Latency</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'init_alert_listing' 'network' 'down' %}">
+                                    <span class="sub-menu-text">Down</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Customer Alert Center</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/alert_center/customer_alert/packet_drop/"><span class="sub-menu-text">Packet Drop</span></a></li>
-                            <li><a class="" href="/alert_center/customer_alert/latency/"><span class="sub-menu-text">Latency</span></a></li>
-                            <li><a class="" href="/alert_center/customer_alert/down/"><span class="sub-menu-text">Down</span></a></li>
+                            <li>
+                                <a href="{% url 'init_alert_listing' 'customer' 'packet_drop' %}">
+                                    <span class="sub-menu-text">Packet Drop</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'init_alert_listing' 'customer' 'latency' %}">
+                                    <span class="sub-menu-text">Latency</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'init_alert_listing' 'customer' 'down' %}">
+                                    <span class="sub-menu-text">Down</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Alert Detail</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/alert_center/network_detail/"><span class="sub-menu-text">Network Details</span></a></li>
-                            <li><a class="" href="/alert_center/customer_detail/"><span class="sub-menu-text">Customer Details</span></a></li>
+                            <li>
+                                <a href="{% url 'network_alert_details' %}">
+                                    <span class="sub-menu-text">Network Details</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'customer_alert_details' %}">
+                                    <span class="sub-menu-text">Customer Details</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% if settings.SIA_ENABLED %}
@@ -106,306 +147,598 @@
 
                 </ul>
             </li>
+            
             <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-bullhorn"></i> <span class="menu-text">Escalation</span>
+                <a href="javascript:;">
+                    <i class="fa fa-bullhorn"></i>
+                    <span class="menu-text">Escalation</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
-                    <li><a class="" href="/escalation/level/"><span class="sub-menu-text">Escalation Level</span></a></li>
+                    <li>
+                        <a href="{% url 'level_list' %}">
+                            <span class="sub-menu-text">Escalation Level</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
+            
             <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-flask"></i> <span class="menu-text">Capacity Management</span>
+                <a href="javascript:;">
+                    <i class="fa fa-flask"></i>
+                    <span class="menu-text">Capacity Management</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Daily Alerts</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/capacity_management/daily_alert/sector/"><span class="sub-menu-text">Sector Augmentation</span></a></li>
-                            <li><a class="" href="/capacity_management/daily_alert/backhaul/"><span class="sub-menu-text">Backhaul Augmentation</span></a></li>
+                            <li>
+                                <a href="{% url 'SectorAugmentationAlertsHeaders' %}">
+                                    <span class="sub-menu-text">Sector Augmentation</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'BackhaulAugmentationAlertsHeaders' %}">
+                                    <span class="sub-menu-text">Backhaul Augmentation</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Utilization Status</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/capacity_management/status/sector/"><span class="sub-menu-text">Sector Status</span></a></li>
-                            <li><a class="" href="/capacity_management/status/backhaul/"><span class="sub-menu-text">Backhaul Status</span></a></li>
+                            <li>
+                                <a href="{% url 'SectorStatusHeaders' %}">
+                                    <span class="sub-menu-text">Sector Status</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'BackhaulStatusHeaders' %}">
+                                    <span class="sub-menu-text">Backhaul Status</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 </ul>
             </li>
+            
             <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-file-text"></i> <span class="menu-text">Performance Reports</span>
+                <a href="javascript:;">
+                    <i class="fa fa-file-text"></i>
+                    <span class="menu-text">Performance Reports</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
-                    <li><a class="" href="/performance/network_live/"><span class="sub-menu-text">Network Live</span></a></li>
-                    <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
-                    <li><a class="" href="/performance/other_live/"><span class="sub-menu-text">Other</span></a></li>
+                    <li>
+                        <a href="{% url 'performance_listing' 'network' %}">
+                            <span class="sub-menu-text">Network Live</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'performance_listing' 'customer' %}">
+                            <span class="sub-menu-text">Customer Live</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'performance_listing' 'other' %}">
+                            <span class="sub-menu-text">Other</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
+            
             <li class="has-sub">
-                <a href="javascript:;" class="">
+                <a href="javascript:;">
                     <i class="fa fa-download"></i> <span class="menu-text">Download Center</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Inventory</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/download_center/inventory/bs_dump/"><span class="sub-menu-text">BS Dump</span></a></li>
-                            <li><a class="" href="/download_center/inventory/ss_dump/"><span class="sub-menu-text">SS Dump</span></a></li>
-                            <li><a class="" href="/download_center/inventory/ptp_dump/"><span class="sub-menu-text">PTP Dump</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Network Synopsis</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Daily Updates</span></a></li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'bs_dump' %}">
+                                    <span class="sub-menu-text">BS Dump</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'ss_dump' %}">
+                                    <span class="sub-menu-text">SS Dump</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'ptp_dump' %}">
+                                    <span class="sub-menu-text">PTP Dump</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">Network Synopsis</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">Daily Updates</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Customer Reports</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/download_center/inventory/customer_report/"><span class="sub-menu-text">Customer RF Health</span></a></li>
-                            <li><a class="" href="/download_center/inventory/modulation/"><span class="sub-menu-text">Wimax Modulation CHG Report</span></a></li>
-                            <li><a class="" href="/download_center/inventory/rectification_segment/"><span class="sub-menu-text">Wimax Rectification Segment</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">PMP Rogue SM</span></a></li>
-                            <li><a class="" href="/download_center/inventory/latency_dump/"><span class="sub-menu-text">Latency Report</span></a></li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'customer_report' %}">
+                                    <span class="sub-menu-text">Customer RF Health</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'modulation' %}">
+                                    <span class="sub-menu-text">Wimax Modulation CHG Report</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'rectification_segment' %}">
+                                    <span class="sub-menu-text">Wimax Rectification Segment</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;">
+                                    <span class="sub-menu-text">PMP Rogue SM</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'latency_dump' %}">
+                                    <span class="sub-menu-text">Latency Report</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Network Reports</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/download_center/inventory/utilization_tot/"><span class="sub-menu-text">BS Utilisation(TOT)</span></a></li>
-                            <li><a class="" href="/download_center/inventory/duplex_report/"><span class="sub-menu-text">Duplex Report</span></a></li>
-                            <li><a class="" href="/download_center/inventory/temperature/"><span class="sub-menu-text">Temperature</span></a></li>
-                            <li><a class="" href="/download_center/inventory/health_ptp_bh/"><span class="sub-menu-text">Health BH</span></a></li>
-                            <li><a class="" href="/dashboard/mfr-dfr-reports/"><span class="sub-menu-text">MFR DFR Reports</span></a></li>
-                            <li><a class="" href="/dashboard/dfr-reports/"><span class="sub-menu-text">DFR</span></a></li>
-                            <li><a class="" href="/dashboard/mfr-reports/"><span class="sub-menu-text">MFR</span></a></li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'utilization_tot' %}">
+                                    <span class="sub-menu-text">BS Utilisation(TOT)</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'duplex_report' %}">
+                                    <span class="sub-menu-text">Duplex Report</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'temperature' %}">
+                                    <span class="sub-menu-text">Temperature</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'InventoryDownloadCenter' 'health_ptp_bh' %}">
+                                    <span class="sub-menu-text">Health BH</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'mfr-dfr-reports-list' %}">
+                                    <span class="sub-menu-text">MFR DFR Reports</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'dfr-reports-list' %}">
+                                    <span class="sub-menu-text">DFR</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'mfr-reports-list' %}">
+                                    <span class="sub-menu-text">MFR</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
-                    <li><a class="" href="/gis_downloaded_inventories/"><span class="sub-menu-text">GIS Inventory Reports</span></a></li>
+                    <li>
+                        <a href="{% url 'gis_selected_bs_inventories_list' %}">
+                            <span class="sub-menu-text">GIS Inventory Reports</span>
+                        </a>
+                    </li>
                     {% if settings.DATATABLES_DOWNLOAD_FLAG %}
-                    <li><a class="" href="/downloader/"><span class="sub-menu-text">User Downloaded Reports</span></a></li>
+                    <li>
+                        <a href="{% url 'DownloaderCompleteHeaders' %}">
+                            <span class="sub-menu-text">User Downloaded Reports</span>
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
             </li>
+            
             <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-dropbox"></i> <span class="menu-text">Inventory</span>
+                <a href="javascript:;">
+                    <i class="fa fa-dropbox"></i>
+                    <span class="menu-text">Inventory</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
                     {% if perms.device.view_device %}
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Device Inventory</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
                             {% if perms.device.view_device %}
-                            <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
+                            <li>
+                                <a href="{% url 'device_list' %}">
+                                    <span class="sub-menu-text">Devices</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.device.view_devicetypefields %}
-                            <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
+                            <li>
+                                <a href="{% url 'device_extra_field_list' %}">
+                                    <span class="sub-menu-text">Device Fields</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.device.view_devicetechnology %}
-                            <li><a class="" href="/technology/"><span class="sub-menu-text">Device Technology</span></a></li>
+                            <li>
+                                <a href="{% url 'device_technology_list' %}">
+                                    <span class="sub-menu-text">Device Technology</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.device.view_devicevendor %}
-                            <li><a class="" href="/vendor/"><span class="sub-menu-text">Device Vendors</span></a></li>
+                            <li>
+                                <a href="{% url 'device_vendor_list' %}">
+                                    <span class="sub-menu-text">Device Vendors</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.device.view_devicemodel %}
-                            <li><a class="" href="/model/"><span class="sub-menu-text">Device Models</span></a></li>
+                            <li>
+                                <a href="{% url 'device_model_list' %}">
+                                    <span class="sub-menu-text">Device Models</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.device.view_devicetype %}
-                            <li><a class="" href="/type/"><span class="sub-menu-text">Device Types</span></a></li>
+                            <li>
+                                <a href="{% url 'device_type_list' %}">
+                                    <span class="sub-menu-text">Device Types</span>
+                                </a>
+                            </li>
                             {% endif %}
 
                             {% if perms.device.view_deviceport %}
-                            <li><a class="" href="/device_port/"><span class="sub-menu-text">Device Ports</span></a></li>
+                            <li>
+                                <a href="{% url 'device_ports_list' %}">
+                                    <span class="sub-menu-text">Device Ports</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.machine.view_machine %}
-                            <li><a class="" href="/machine/"><span class="sub-menu-text">Machine</span></a></li>
+                            <li>
+                                <a href="{% url 'machines_list' %}">
+                                    <span class="sub-menu-text">Machine</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.site_instance.view_siteinstance %}
-                            <li><a class="" href="/site/"><span class="sub-menu-text">Site Instance</span></a></li>
+                            <li>
+                                <a href="{% url 'site_instance_list' %}">
+                                    <span class="sub-menu-text">Site Instance</span>
+                                </a>
+                            </li>
                             {% endif %}
-                            <li><a class="" href="/device_sync_history/"><span class="sub-menu-text">Device Sync History</span></a></li>
+                            <li>
+                                <a href="{% url 'device_sync_history_list' %}">
+                                    <span class="sub-menu-text">Device Sync History</span>
+                                </a>
+                            </li>
                             {% if perms.service.view_service %}
-                            <li><a class="" href="/service/"><span class="sub-menu-text">Services</span></a></li>
+                            <li>
+                                <a href="{% url 'services_list' %}">
+                                    <span class="sub-menu-text">Services</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.service.view_servicedatasource %}
-                            <li><a class="" href="/service_data_source/"><span class="sub-menu-text">Service Data Sources</span></a></li>
+                            <li>
+                                <a href="{% url 'service_data_sources_list' %}">
+                                    <span class="sub-menu-text">Service Data Sources</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.service.view_serviceparameters %}
-                            <li><a class="" href="/service_parameter/"><span class="sub-menu-text">Service Parameters</span></a></li>
+                            <li>
+                                <a href="{% url 'services_parameter_list' %}">
+                                    <span class="sub-menu-text">Service Parameters</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.service.view_deviceserviceconfiguration %}
-                            <li><a class="" href="/device_service_configuration/"><span class="sub-menu-text">Service Configurations</span></a></li>
+                            <li>
+                                <a href="{% url 'device_service_configuration_list' %}">
+                                    <span class="sub-menu-text">Service Configurations</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.service.view_protocol %}
-                            <li><a class="" href="/protocol/"><span class="sub-menu-text">SNMP Parameters</span></a></li>
+                            <li>
+                                <a href="{% url 'protocols_list' %}">
+                                    <span class="sub-menu-text">SNMP Parameters</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.command.view_command %}
-                            <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
+                            <li>
+                                <a href="{% url 'commands_list' %}">
+                                    <span class="sub-menu-text">Commands</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.command.view_country %}
-                            <li><a class="" href="/country/"><span class="sub-menu-text">Country</span></a></li>
+                            <li>
+                                <a href="{% url 'country_list' %}">
+                                    <span class="sub-menu-text">Country</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.command.view_state %}
-                            <li><a class="" href="/state/"><span class="sub-menu-text">State</span></a></li>
+                            <li>
+                                <a href="{% url 'state_list' %}">
+                                    <span class="sub-menu-text">State</span>
+                                </a>
+                            </li>
                             {% endif %}
                             {% if perms.command.view_city %}
-                            <li><a class="" href="/city/"><span class="sub-menu-text">City</span></a></li>
+                            <li>
+                                <a href="{% url 'city_list' %}">
+                                    <span class="sub-menu-text">City</span>
+                                </a>
+                            </li>
                             {% endif %}
                         </ul>
                     </li>
                     {% endif %}
                     <li class="has-sub-sub">
-                      <a class="" href="javascript:;">
-                        <span class="sub-menu-text">GIS Wizard</span>
-                        <span class="arrow"></span>
-                      </a>
-                      <ul class="sub-sub">
-                        <li><a class="" href="/gis-wizard/base-station/"><span class="sub-menu-text">Base Station Wizard</span></a></li>
-                        <li><a class="" href="/gis-wizard/ptp/"><span class="sub-menu-text">PTP Wizard</span></a></li>
-                        <li><a class="" href="/gis-wizard/sub-station/"><span class="sub-menu-text">Sub Station Wizard</span></a></li>
-                      </ul>
-                    </li>
-
-                            <li class="has-sub-sub">
-                            <a class="" href="javascript:;">
-                                <span class="sub-menu-text">GIS Inventory</span>
-                                <span class="arrow"></span>
-                            </a>
-                            <ul class="sub-sub">
-                                {% if perms.inventory.view_antenna %}
-                                <li><a class="" href="/antenna/"><span class="sub-menu-text">Antenna</span></a></li>
-                                {% endif %}
-                                {% if perms.inventory.view_backhaul %}
-                                <li><a class="" href="/backhaul/"><span class="sub-menu-text">Backhaul</span></a></li>
-                                {% endif %}
-                                {% if perms.inventory.view_basestation %}
-                                <li><a class="" href="/base_station/"><span class="sub-menu-text">Base Station</span></a></li>
-                                {% endif %}
-                                {% if perms.inventory.view_sector %}
-                                <li><a class="" href="/sector/"><span class="sub-menu-text">Sector/PTP Near End</span></a></li>
-                                {% endif %}
-                                {% if perms.inventory.view_substation %}
-                                <li><a class="" href="/sub_station/"><span class="sub-menu-text">Sub Station/PTP Far End</span></a></li>
-                                {% endif %}
-                                {% if perms.inventory.view_customer %}
-                                <li><a class="" href="/customer/"><span class="sub-menu-text">Customer</span></a></li>
-                                {% endif %}
-                                {% if perms.inventory.view_circuit %}
-                                <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
-                                <li><a class="" href="/circuit/l2_reports/show_all/"><span class="sub-menu-text">L2 Reports</span></a></li>
-                                {% endif %}
-                            </ul>
-                        </li>
-
-                        <li class="has-sub-sub">
-                            <a class="" href="javascript:;">
-                                <span class="sub-menu-text">Bulk Import</span>
-                                <span class="arrow"></span>
-                            </a>
-                            <ul class="sub-sub">
-                                <li><a class="" href="/bulk_import/"><span class="sub-menu-text">GIS Inventory</span></a></li>
-                            </ul>
-                        </li>
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">GIS Wizard</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li>
+                                <a href="{% url 'gis-wizard-base-station-list' %}">
+                                    <span class="sub-menu-text">Base Station Wizard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'gis-wizard-list-ptp' %}">
+                                    <span class="sub-menu-text">PTP Wizard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'gis-wizard-list-sub-station' %}">
+                                    <span class="sub-menu-text">Sub Station Wizard</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
-                {% if perms.user_profile %}
-                <li class="has-sub">
-                    <a href="javascript:;" class="">
-                        <i class="fa fa-user"></i> <span class="menu-text">User Management</span>
-                        <span class="arrow"></span>
-                    </a>
-                    <ul class="sub">
-                        <li><a class="" href="/user/"><span class="sub-menu-text">Users</span></a></li>
-                        <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
-                        <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">GIS Inventory</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            {% if perms.inventory.view_antenna %}
+                            <li>
+                                <a href="{% url 'antennas_list' %}">
+                                    <span class="sub-menu-text">Antenna</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if perms.inventory.view_backhaul %}
+                            <li>
+                                <a href="{% url 'backhauls_list' %}">
+                                    <span class="sub-menu-text">Backhaul</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if perms.inventory.view_basestation %}
+                            <li>
+                                <a href="{% url 'base_stations_list' %}">
+                                    <span class="sub-menu-text">Base Station</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if perms.inventory.view_sector %}
+                            <li>
+                                <a href="{% url 'sectors_list' %}">
+                                    <span class="sub-menu-text">Sector/PTP Near End</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if perms.inventory.view_substation %}
+                            <li>
+                                <a href="{% url 'sub_stations_list' %}">
+                                    <span class="sub-menu-text">Sub Station/PTP Far End</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if perms.inventory.view_customer %}
+                            <li>
+                                <a href="{% url 'customers_list' %}">
+                                    <span class="sub-menu-text">Customer</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if perms.inventory.view_circuit %}
+                            <li>
+                                <a href="{% url 'circuits_list' %}">
+                                    <span class="sub-menu-text">Circuit</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'l2_report' %}">
+                                    <span class="sub-menu-text">L2 Reports</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    <li class="has-sub-sub">
+                        <a href="javascript:;">
+                            <span class="sub-menu-text">Bulk Import</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li>
+                                <a href="{% url 'gis_inventory_bulk_import_list' %}">
+                                    <span class="sub-menu-text">GIS Inventory</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            
+            {% if perms.user_profile %}
+            <li class="has-sub">
+                <a href="javascript:;">
+                    <i class="fa fa-user"></i>
+                    <span class="menu-text">User Management</span>
+                    <span class="arrow"></span>
+                </a>
+                <ul class="sub">
+                    <li>
+                        <a href="{% url 'user_list' %}">
+                            <span class="sub-menu-text">Users</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'sm_list' %}">
+                            <span class="sub-menu-text">User Session</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'organization_list' %}">
+                            <span class="sub-menu-text">Organization</span>
+                        </a>
+                    </li>
 
-                        {% if perms.activity_stream.view_useraction %}
-                            <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
-                        {% endif %}
-                    </ul>
-                </li>
+                    {% if perms.activity_stream.view_useraction %}
+                        <li>
+                            <a href="{% url 'actionlist' %}">
+                                <span class="sub-menu-text">User Logs</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </li>
             {% endif %}
+
             <li>
-                <a class="" href="/scheduling/"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
+                <a href="{% url 'event_list' %}">
+                    <i class="fa fa-calendar"></i>
+                    <span class="menu-text">Scheduling</span>
+                </a>
             </li>
 
             <li class="has-sub">
-                <a href="javascript:;" class="">
+                <a href="javascript:;">
                     <i class="fa fa-cog"></i> <span class="menu-text">Settings</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
-                    <li><a class="" href="/icon_settings/"><span class="sub-menu-text">Icon Settings</span></a></li>
-                    <li><a class="" href="/frequency/"><span class="sub-menu-text">Device Frequency</span></a></li>
-                    <!-- <li><a class="" href="/threshold_configuration/"><span class="sub-menu-text">Threshold Configuration</span></a></li> -->
-                    <!-- <li><a class="" href="/live_polling_settings/"><span class="sub-menu-text">Live Polling Settings</span></a></li> -->
-                {% if user.is_superuser %}
-                    <!-- <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Thematic Settings</span>
-                            <span class="arrow"></span>
+                    <li>
+                        <a href="{% url 'icon_settings_list' %}">
+                            <span class="sub-menu-text">Icon Settings</span>
                         </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="/thematic_settings/"><span class="sub-menu-text">Global Thematic Settings</span></a></li>
-                            <li><a class="" href="/thematic_settings/admin/"><span class="sub-menu-text">Admin Thematic Settings</span></a></li>
-                        </ul>
-                    </li> -->
+                    </li>
+                    <li>
+                        <a href="{% url 'device_frequency_list' %}">
+                            <span class="sub-menu-text">Device Frequency</span>
+                        </a>
+                    </li>
+                {% if user.is_superuser %}
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Service Thematic Settings</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/serv_thematic_settings/"><span class="sub-menu-text">Global Service Thematic Settings</span></a></li>
-                            <li><a class="" href="/serv_thematic_settings/admin/"><span class="sub-menu-text">Admin Service Thematic Settings</span></a></li>
+                            <li>
+                                <a href="{% url 'service_thematic_settings_list' %}">
+                                    <span class="sub-menu-text">Global Service Thematic Settings</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'service-admin-thematic-settings-list' %}">
+                                    <span class="sub-menu-text">Admin Service Thematic Settings</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
+                        <a href="javascript:;">
                             <span class="sub-menu-text">Ping Thematic Settings</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
-                            <li><a class="" href="/ping_thematic_settings/"><span class="sub-menu-text">Global Thematic Settings</span></a></li>
-                            <li><a class="" href="/ping_thematic_settings/admin/"><span class="sub-menu-text">Admin Thematic Settings</span></a></li>
+                            <li>
+                                <a href="{% url 'ping_thematic_settings_list' %}">
+                                    <span class="sub-menu-text">Global Thematic Settings</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'ping-admin-thematic-settings-list' %}">
+                                    <span class="sub-menu-text">Admin Thematic Settings</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 {% else %}
-                    <li><a class="" href="/serv_thematic_settings/"><span class="sub-menu-text">Service Thematic Settings</span></a></li>
-                    <li><a class="" href="/ping_thematic_settings/"><span class="sub-menu-text">Ping Thematic Settings</span></a></li>
+                    <li>
+                        <a href="{% url 'service_thematic_settings_list' %}">
+                            <span class="sub-menu-text">Service Thematic Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'ping_thematic_settings_list' %}">
+                            <span class="sub-menu-text">Ping Thematic Settings</span>
+                        </a>
+                    </li>
                 {% endif %}
-                    <li><a class="" href="{% url 'dashboard-settings' %}"><span class="sub-menu-text">Dashboard Settings</span></a></li>
-                    <li><a class="" href="/snmp_trap_settings/"><span class="sub-menu-text">SNMP Trap Settings</span></a></li>
-                    <li><a class="" href="/city_charter_settings/"><span class="sub-menu-text">City Charter Settings</span></a></li>
+                    <li>
+                        <a href="{% url 'dashboard-settings' %}">
+                            <span class="sub-menu-text">Dashboard Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'snmp_trap_settings_list' %}">
+                            <span class="sub-menu-text">SNMP Trap Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'city_charter_settings' %}">
+                            <span class="sub-menu-text">City Charter Settings</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
-
         </ul>
-<!-- /SIDEBAR MENU -->
-</div>
+        <!-- /SIDEBAR MENU -->
+    </div>
 </div>

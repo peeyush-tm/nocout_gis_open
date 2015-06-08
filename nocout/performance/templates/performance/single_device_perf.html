@@ -5,15 +5,15 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
-    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing_url" page_type %}
+    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
 
     {% if page_type == 'network' and device_technology|upper == 'P2P'  %}
-        {% breadcrumb_safe "PTP BH" "performance_listing_url" page_type  %}
+        {% breadcrumb_safe "PTP BH" "performance_listing" page_type  %}
     {% else %}
         {% if page_type == 'customer' and device_technology|upper == 'P2P'  %}
-            {% breadcrumb_safe "PTP" "performance_listing_url" page_type  %}
+            {% breadcrumb_safe "PTP" "performance_listing" page_type  %}
         {% else %}
-            {% breadcrumb_safe device_technology|upper "performance_listing_url" page_type  %}
+            {% breadcrumb_safe device_technology|upper "performance_listing" page_type  %}
         {% endif %}
     {% endif %}
     {% breadcrumb_safe realdevice.ip_address "javascript:;" %}
