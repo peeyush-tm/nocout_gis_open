@@ -18,25 +18,30 @@ class NQueue(object):
     def __init__(self, qconf=None, qname='nocout', serializer=pickle):
         """The default connection parameters are: host='localhost', port=6379, db=0"""
 
-        self._settings = getattr(settings, 'QUEUES')
+        self._settings = getattr(settings, 'QUEUES', {})
+        print(self._settings)
         self._params = self._settings.get(
             qconf,
             self._settings.get(
                 'default', {
+                    'protocol': 'redis',
                     'host': 'localhost',
                     'port': 6379,
                     'db': 0
                 }
             )
         )
+        # TODO: Support all the configuration parameters for REDIS
         self._timeout = self._params.get('TIMEOUT', 60)
-        self._url = self._params.get('LOCATION', self._params)
+        self._url = self._params.get('LOCATION',
+                                     '{protocol}://{host}:{port}/{db}'.format(**self._params)
+                                     )
         self._namespace = self._params.get('NAMESPACE', 'noc:queue:')
 
         self.serializer = serializer
         self.qkey = '%s:%s' % (self._namespace, qname)
 
-        self.__redis = StrictRedis(self._url, socket_timeout=self._timeout)
+        self.__redis = StrictRedis.from_url(self._url)
 
     def __len__(self):
         return self.__redis.llen(self.qkey)
