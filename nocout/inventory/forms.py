@@ -245,14 +245,6 @@ class BackhaulForm(forms.ModelForm):
         ('SDH', 'SDH'),
         ('UBR', 'UBR')
     )
-    BH_CONNECTIVITY = (
-        ('', 'Select'),
-        ('Onnet', 'Onnet'),
-        ('Offnet', 'Offnet'),
-        ('ONNET/Colo', 'ONNET/Colo'),
-        ('ONNET+UBR', 'ONNET+UBR'),
-        ('OFFNET + ONNET', 'OFFNET + ONNET')
-    )
 
     DR_SITE = (
         ('', 'Select'),
@@ -261,7 +253,6 @@ class BackhaulForm(forms.ModelForm):
     )
 
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
-    bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
     dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
     pe_hostname = forms.CharField(label='PE Hostname', required=False,
             validators=[RegexValidator(regex=r'^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$',
