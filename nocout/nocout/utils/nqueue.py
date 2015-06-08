@@ -33,9 +33,9 @@ class NQueue(object):
         )
         # TODO: Support all the configuration parameters for REDIS
         self._timeout = self._params.get('TIMEOUT', 60)
-        self._url = self._params.get('LOCATION',
-                                     '{protocol}://{host}:{port}/{db}'.format(**self._params)
-                                     )
+        self._url = self._params.get('LOCATION', None)
+                                     #'{protocol}://{host}:{port}/{db}'.format(**self._params)
+                                     #)
         self._namespace = self._params.get('NAMESPACE', 'noc:queue:')
 
         self.serializer = serializer
