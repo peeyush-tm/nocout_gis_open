@@ -16,6 +16,9 @@ from django.utils.dateformat import format
 from nocout.utils.util import NocoutUtilsGateway
 # nocout utilities
 
+# Queue implementation using REDIS
+from nocout.utils.nqueue import NQueue
+
 # python logging
 import logging
 
@@ -330,7 +333,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     perf_result = []
     if multi_proc:
 
-        q = Queue()
+        q = NQueue()  # using Nocout Queue instead of Python Queue
         jobs = [
             Process(
                 target=get_multiprocessing_performance_data,
