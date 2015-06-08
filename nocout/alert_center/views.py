@@ -133,7 +133,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
         'state',
         'data_source_name',
         'current_value',
-        'sys_timestamp'
+        'sys_timestamp',
+        'age'
     ]
 
     order_columns = columns
@@ -374,7 +375,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         sorting for the table
         :param qs:
         """
-        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def paging(self, qs):
         """
@@ -388,6 +389,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         start = int(self.request.REQUEST.get('iDisplayStart', 0))
         offset = start + limit
         return qs[start:offset]
+
 
     def get_context_data(self, *args, **kwargs):
         """
