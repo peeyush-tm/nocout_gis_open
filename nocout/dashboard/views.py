@@ -28,9 +28,7 @@ from performance.models import ServiceStatus, NetworkAvailabilityDaily, Utilizat
 
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
-# Import inventory utils gateway class
-from inventory.utils.util import InventoryUtilsGateway
-
+# Import Dashboard Models
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, \
     DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily, DashboardRangeStatusDaily
 
@@ -1762,15 +1760,6 @@ class MonthlyTrendSalesMixin(object):
                 "message": "Corresponding dashboard setting is not available.",
                 "success": 0
             }))
-
-        # Create instance of 'InventoryUtilsGateway' class
-        inventory_utils = InventoryUtilsGateway()
-
-        # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector = inventory_utils.organization_sectors(organization, technology)
-        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True),
-                                                    is_added_to_nms=1)
-        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
         dashboard_status_dict = view_range_status_monthly(dashboard_name=dashboard_name, organizations=organization, dashboard_settings=dashboard_setting)
