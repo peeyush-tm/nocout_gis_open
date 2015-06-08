@@ -4877,12 +4877,20 @@ def getAutoSuggestion(request, search_by="default", search_txt=""):
     if search_model and search_by:
         # Condition to fetch data
         condition = '%s__istartswith'% search_by
-        # fetch queryset as per the condition
-        query_result = search_model.objects.filter(
-            Q(**{condition : str(search_txt)}),
-            Q(organization__in=current_user_organizations)
-        )[:30]
-
+        if search_model.__name__ == 'Device':
+            # fetch queryset as per the condition, for device model take one more condition of is_added_to_nms
+            query_result = search_model.objects.filter(
+                Q(**{condition : str(search_txt)}),
+                Q(organization__in=current_user_organizations),
+                Q(is_added_to_nms=1)
+            )[:30] 
+        else:
+            # fetch queryset as per the condition
+            query_result = search_model.objects.filter(
+                Q(**{condition : str(search_txt)}),
+                Q(organization__in=current_user_organizations)
+            )[:30]
+            
         # If any records found in queryset
         if len(query_result) > 0:
             # Initialize data list
