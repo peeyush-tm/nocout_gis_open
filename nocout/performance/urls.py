@@ -7,7 +7,7 @@ urlpatterns = patterns('',
                        url(
                           r'^(?P<page_type>\w+)_live/$',
                           views.LivePerformance.as_view(),
-                          name='performance_listing_url'
+                          name='performance_listing'
                         ),
                        url(r'^liveperformancelistingtable/$',
                            views.LivePerformanceListing.as_view(),
