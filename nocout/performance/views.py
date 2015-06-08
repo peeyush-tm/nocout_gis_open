@@ -503,13 +503,41 @@ class LivePerformanceListing(BaseDatatableView):
                     if str((dct['packet_loss'])) in ["100", "100.0", "100.00"]:
                         dct['latency'] = "DOWN"
 
+                performance_url = reverse(
+                    'SingleDevicePerf',
+                    kwargs={
+                        'page_type': page_type, 
+                        'device_id': dct['id']
+                    },
+                    current_app='performance'
+                )
+
+                alert_url = reverse(
+                    'SingleDeviceAlertsInit',
+                    kwargs={
+                        'page_type': alert_page_type, 
+                        'data_source' : 'down', 
+                        'device_id': dct['id']
+                    },
+                    current_app='alert_center'
+                )
+
+                inventory_url = reverse(
+                    'device_edit',
+                    kwargs={
+                        'pk': dct['id']
+                    },
+                    current_app='device'
+                )
+
                 dct.update(
-                    actions='<a href="/performance/{0}_live/{1}/" title="Device Performance">\
+                    actions='<a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="/alert_center/{3}_alert/{2}/{1}/" title="Device Alert">\
+                            <a href="' + alert_url + '" title="Device Alert">\
                             <i class="fa fa-warning text-warning"></i></a> \
-                            <a href="/device/{1}" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted" ></i></a>'.format(page_type, dct['id'], 'down', alert_page_type)
+                            <a href="' + inventory_url + '" title="Device Inventory">\
+                            <i class="fa fa-dropbox text-muted" ></i>\
+                            </a>'.format(page_type, dct['id'], 'down', alert_page_type)
                 )
 
         return qs

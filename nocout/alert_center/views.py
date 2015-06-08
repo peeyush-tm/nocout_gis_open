@@ -133,7 +133,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
         'state',
         'data_source_name',
         'current_value',
-        'sys_timestamp'
+        'sys_timestamp',
+        'age'
     ]
 
     order_columns = columns
@@ -324,13 +325,40 @@ class GetCustomerAlertDetail(BaseDatatableView):
         if qs:
             service_tab_name = 'down'
             for dct in qs:
+                performance_url = reverse(
+                    'SingleDevicePerf',
+                    kwargs={
+                        'page_type': page_type, 
+                        'device_id': dct['id']
+                    },
+                    current_app='performance'
+                )
+
+                alert_url = reverse(
+                    'SingleDeviceAlertsInit',
+                    kwargs={
+                        'page_type': page_type, 
+                        'data_source' : service_tab_name, 
+                        'device_id': dct['id']
+                    },
+                    current_app='alert_center'
+                )
+
+                inventory_url = reverse(
+                    'device_edit',
+                    kwargs={
+                        'pk': dct['id']
+                    },
+                    current_app='device'
+                )
+
                 dct.update(
-                    action='<a href="/alert_center/{2}_alert/{1}/{0}/" title="Device Alerts">\
-                           <i class="fa fa-warning text-warning">&nbsp;</i></a>'
-                           '<a href="/performance/{2}_live/{0}/" title="Device Performance">\
-                           <i class="fa fa-bar-chart-o text-info">&nbsp;</i></a>'
-                           '<a href="/device/{0}" title="Device Inventory">\
-                           <i class="fa fa-dropbox text-muted">&nbsp;</i>\
+                    action='<a href="' + alert_url + '" title="Device Alerts">\
+                           <i class="fa fa-warning text-warning"></i></a>'
+                           '<a href="' + performance_url + '" title="Device Performance">\
+                           <i class="fa fa-bar-chart-o text-info"></i></a>'
+                           '<a href="' + inventory_url + '" title="Device Inventory">\
+                           <i class="fa fa-dropbox text-muted"></i>\
                            </a>'.format(dct['id'], service_tab_name, page_type)
                 )
                 dct = alert_utils.common_prepare_results(dct)
@@ -374,7 +402,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         sorting for the table
         :param qs:
         """
-        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def paging(self, qs):
         """
@@ -388,6 +416,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         start = int(self.request.REQUEST.get('iDisplayStart', 0))
         offset = start + limit
         return qs[start:offset]
+
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -808,12 +837,40 @@ class GetNetworkAlertDetail(BaseDatatableView):
                     service_tab_name = 'down'
 
             for dct in qs:
+
+                performance_url = reverse(
+                    'SingleDevicePerf',
+                    kwargs={
+                        'page_type': perf_page_type, 
+                        'device_id': dct['id']
+                    },
+                    current_app='performance'
+                )
+
+                alert_url = reverse(
+                    'SingleDeviceAlertsInit',
+                    kwargs={
+                        'page_type': page_type, 
+                        'data_source' : service_tab_name, 
+                        'device_id': dct['id']
+                    },
+                    current_app='alert_center'
+                )
+
+                inventory_url = reverse(
+                    'device_edit',
+                    kwargs={
+                        'pk': dct['id']
+                    },
+                    current_app='device'
+                )
+
                 dct.update(
-                    action='<a href="/alert_center/{2}_alert/{1}/{0}/" title="Device Alerts">\
+                    action='<a href="' + alert_url + '" title="Device Alerts">\
                             <i class="fa fa-warning text-warning"></i></a>\
-                            <a href="/performance/{3}_live/{0}/" title="Device Performance">\
+                            <a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="/device/{0}" title="Device Inventory">\
+                            <a href="' + inventory_url + '" title="Device Inventory">\
                             <i class="fa fa-dropbox text-muted"></i>\
                             </a>'.format(dct["id"], service_tab_name, page_type, perf_page_type)
                 )
@@ -1243,12 +1300,40 @@ class AlertListingTable(BaseDatatableView):
                     dct.update(current_value=float(dct["current_value"]))
                 except:
                     dct.update(current_value=dct["current_value"] + " " + data_unit)
+
+                performance_url = reverse(
+                    'SingleDevicePerf',
+                    kwargs={
+                        'page_type': page_type, 
+                        'device_id': dct['id']
+                    },
+                    current_app='performance'
+                )
+
+                alert_url = reverse(
+                    'SingleDeviceAlertsInit',
+                    kwargs={
+                        'page_type': page_type, 
+                        'data_source' : service_tab, 
+                        'device_id': dct['id']
+                    },
+                    current_app='alert_center'
+                )
+
+                inventory_url = reverse(
+                    'device_edit',
+                    kwargs={
+                        'pk': dct['id']
+                    },
+                    current_app='device'
+                )
+
                 dct.update(
-                    action='<a href="/alert_center/{2}_alert/{1}/{0}/" title="Device Alerts">\
+                    action='<a href="' + alert_url + '" title="Device Alerts">\
                             <i class="fa fa-warning text-warning"></i></a>\
-                            <a href="/performance/{2}_live/{0}/" title="Device Performance">\
+                            <a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
-                            <a href="/device/{0}" title="Device Inventory">\
+                            <a href="' + inventory_url + '" title="Device Inventory">\
                             <i class="fa fa-dropbox text-muted"></i>\
                             </a>'.format(dct['id'], service_tab, page_type)
                 )
@@ -1574,7 +1659,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 else:
                     final_query += query
 
-                qs = self.nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
+                qs = nocout_utils.fetch_raw_result(final_query, self.public_params['machine_name'])
 
             else:
                 if self.public_params['service_name'] == 'service':
@@ -1654,7 +1739,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 self.public_params['start_date'],
                 self.public_params['end_date']
             )
-            report_resultset = self.nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
+            report_resultset = nocout_utils.fetch_raw_result(query, self.public_params['machine_name'])
 
         elif self.public_params['service_name'] == 'latency':
 

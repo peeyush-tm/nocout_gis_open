@@ -10,6 +10,8 @@ from django.db.models import Q, Count, F
 from django.db.models.query import ValuesQuerySet
 from django.utils.dateformat import format
 
+from django.core.urlresolvers import reverse
+
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
@@ -241,11 +243,19 @@ class SectorStatusListing(BaseDatatableView):
 
                 perf_page_link = ''
                 if device_id:
-                    perf_page_link = '<a href="/performance/network_live/'+str(device_id)+'/?is_util=1" \
-                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+                    performance_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={
+                            'page_type': 'network', 
+                            'device_id': device_id
+                        },
+                        current_app='performance'
+                    )
+                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                                      title="Device Performance"><i class="fa \
+                                      fa-bar-chart-o text-info"></i></a>'
 
-                item['actions']=perf_page_link
-
+                item['actions'] = perf_page_link
                 item['sector__sector_configured_on__device_technology'] = techno_name
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
@@ -674,13 +684,20 @@ class BackhaulStatusListing(BaseDatatableView):
 
                 perf_page_link = ''
                 if device_id:
-                    perf_page_link = '<a href="/performance/other_live/'+str(device_id)+'/?is_util=1" \
-                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+                    performance_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={
+                            'page_type': 'other', 
+                            'device_id': device_id
+                        },
+                        current_app='performance'
+                    )
+                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                                      title="Device Performance"><i class="fa \
+                                      fa-bar-chart-o text-info"></i></a>'
 
-                item['actions']=perf_page_link
-
+                item['actions'] = perf_page_link
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
-                
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
                 ).strftime(DATE_TIME_FORMAT) if item['peak_out_timestamp'] else ''
