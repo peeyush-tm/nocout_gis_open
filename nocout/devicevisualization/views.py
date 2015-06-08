@@ -2864,13 +2864,27 @@ class GISPerfData(View):
                 techno_to_append = "PTP BH"
         # Check for technology to make perf page url
         if techno_to_append:
-            if techno_to_append.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
-                far_end_perf_url = '/performance/customer_live/'+str(ss_device_id)+'/'
-            elif techno_to_append.lower() in ['ptp bh']:
-                far_end_perf_url = '/performance/network_live/'+str(ss_device_id)+'/'
+            page_type = 'customer'
+            if techno_to_append.lower() in ['ptp bh']:
+                page_type = 'network'
+
+            far_end_perf_url = reverse(
+                'SingleDevicePerf',
+                kwargs={
+                    'page_type': page_type,
+                    'device_id': ss_device_id
+                },
+                current_app='performance'
+            )
 
         # SS Device Inventory URL
-        far_end_inventory_url = '/device/'+str(ss_device_id)+'/'
+        far_end_inventory_url = reverse(
+            'device_edit',
+            kwargs={
+                'pk': ss_device_id
+            },
+            current_app='device'
+        )
 
         substation_info['antenna_height'] = substation.antenna.height
         substation_info['lat'] = substation.latitude
