@@ -329,7 +329,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                     'SingleDevicePerf',
                     kwargs={
                         'page_type': page_type, 
-                        'device_id': dct['id']
+                        'device_id': dct.get('id', 0)
                     },
                     current_app='performance'
                 )
@@ -339,7 +339,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                     kwargs={
                         'page_type': page_type, 
                         'data_source' : service_tab_name, 
-                        'device_id': dct['id']
+                        'device_id': dct.get('id', 0)
                     },
                     current_app='alert_center'
                 )
@@ -347,7 +347,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                 inventory_url = reverse(
                     'device_edit',
                     kwargs={
-                        'pk': dct['id']
+                        'pk': dct.get('id', 0)
                     },
                     current_app='device'
                 )
@@ -1305,7 +1305,7 @@ class AlertListingTable(BaseDatatableView):
                     'SingleDevicePerf',
                     kwargs={
                         'page_type': page_type, 
-                        'device_id': dct['id']
+                        'device_id': dct.get('id', 0)
                     },
                     current_app='performance'
                 )
@@ -1315,7 +1315,7 @@ class AlertListingTable(BaseDatatableView):
                     kwargs={
                         'page_type': page_type, 
                         'data_source' : service_tab, 
-                        'device_id': dct['id']
+                        'device_id': dct.get('id', 0)
                     },
                     current_app='alert_center'
                 )
@@ -1323,7 +1323,7 @@ class AlertListingTable(BaseDatatableView):
                 inventory_url = reverse(
                     'device_edit',
                     kwargs={
-                        'pk': dct['id']
+                        'pk': dct.get('id', 0)
                     },
                     current_app='device'
                 )
@@ -1334,8 +1334,7 @@ class AlertListingTable(BaseDatatableView):
                             <a href="' + performance_url + '" title="Device Performance">\
                             <i class="fa fa-bar-chart-o text-info"></i></a>\
                             <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted"></i>\
-                            </a>'.format(dct['id'], service_tab, page_type)
+                            <i class="fa fa-dropbox text-muted"></i></a>'
                 )
 
                 dct = alert_utils.common_prepare_results(dct)

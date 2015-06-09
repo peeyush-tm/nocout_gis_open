@@ -155,6 +155,9 @@ class PerformanceUtilsGateway:
         :param page_type:
         :param devices:
         """
+        print "DEVICES"
+        print type(devices)
+        print "DEVICES"
         param1 = prepare_gis_devices(
             devices, 
             page_type, 
@@ -546,12 +549,16 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             monitored_only=monitored_only, technology=technology, type_rf=type_rf
         )
 
-    # gis_result = indexed_gis_devices(page_type=page_type)
-    processed_device = {}
+    result_devices = list() # all the devices which can properly map to their inventory
 
     for device in devices:
 
+        device_name = device.get('device_name')
+        if not device_name:
+            continue
+
         device.update({
+            "id": 0,
             "near_end_ip": "",
             "sector_id": "",
             "circuit_id": "",
@@ -687,124 +694,122 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     bs_ids_list.append(str(bs_row.get('BSID')))
                     bs_bh_ports_list.append(str(bs_row.get('BS_BH_PORT')))
                     bs_bh_capacity_list.append(str(bs_row.get('BS_BH_CAPACITY')))
-
-        elif is_bh or is_pop or is_aggr or is_conv:  # In case of BH & Other devices
-
-            for bs_row in raw_result:
-                if bs_row.get('BSID') and str(bs_row.get('BSID')) not in bs_ids_list:
-                    bs_ids_list.append(str(bs_row.get('BSID')))
-                    bs_names_list.append(bs_row.get('BSALIAS').upper())
-                    bs_bh_ports_list.append(str(bs_row.get('BS_BH_PORT')))
-                    bs_bh_capacity_list.append(str(bs_row.get('BS_BH_CAPACITY')))
+        else:
+            pass
 
         for bs_row in raw_result:
-            if device_name is not None:
-                processed_device[device_name] = []
+            device.update({
+                "near_end_ip": put_na(bs_row, 'SECTOR_CONF_ON_IP'),
+                "sector_id": " ".join(sector_details),
+                "circuit_id": put_na(bs_row, 'CCID'),
+                "customer_name": put_na(bs_row, 'CUST'),
+                "bs_name": put_na(bs_row, 'BSALIAS'),
+                "city": put_na(bs_row, 'BSCITY'),
+                "state": put_na(bs_row, 'BSSTATE'),
+                "device_type": put_na(bs_row, 'SECTOR_TYPE'),
+                "device_technology": put_na(bs_row, 'SECTOR_TECH'),
+                # Newly added keys for inventory status headers: 15-May-15
+                "device_type_id": put_na(bs_row, 'SECTOR_TYPE_ID'),
+                "device_technology_id": put_na(bs_row, 'SECTOR_TECH_ID'),
+                "ss_technology": put_na(bs_row, 'SS_TECH'),
+                "ss_technology_id": put_na(bs_row, 'SS_TECH_ID'),
+                "ss_type": put_na(bs_row, 'SS_TYPE'),
+                "ss_type_id": put_na(bs_row, 'SS_TYPE_ID'),
+                "bh_technology": put_na(bs_row, 'BHTECH'),
+                "bh_technology_id": put_na(bs_row, 'BHTECHID'),
+                "bh_type": put_na(bs_row, 'BHTYPE'),
+                "bh_type_id": put_na(bs_row, 'BHTYPEID'),
+                "planned_freq": put_na(bs_row, 'SECTOR_PLANNED_FREQUENCY'),
+                "polled_freq": put_na(bs_row, 'SECTOR_FREQUENCY'),
+                "qos_bw": put_na(bs_row, 'QOS'),
+                "ss_name": put_na(bs_row, 'SS_ALIAS'),
+                "sector_id_str": ",".join(sector_id_str),
+                "pmp_port_str": ",".join(pmp_port_str),
+                "bh_capacity": put_na(bs_row, 'BH_CAPACITY'),
+                "bh_port": put_na(bs_row, 'BH_PORT'),
+                "bh_id": put_na(bs_row, 'BHID'),
+                "bs_id": put_na(bs_row, 'BSID'),
+                "ss_id": put_na(bs_row, 'SSID'),
+                "sector_pk": put_na(bs_row, 'SECTOR_ID'),
+                "sector_pk_str": ",".join(sector_pk_str),
+                "ckt_id": put_na(bs_row, 'CID'),
+                "cust_id": put_na(bs_row, 'CUSTID'),
+                "city_id": put_na(bs_row, 'BSCITYID'),
+                "state_id": put_na(bs_row, 'BSSTATEID'),
+                "near_end_id": put_na(bs_row, 'SECTOR_CONF_ON_ID'),
+                "freq_id": put_na(bs_row, 'SECTOR_FREQUENCY_ID'),
+                # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
+                "bh_connectivity": put_na(bs_row, 'BH_CONNECTIVITY'),
+                # BS names & ids in case of BH & other devices
+                "bs_names_list": ",".join(bs_names_list),
+                "bs_ids_list": ",".join(bs_ids_list),
+                "bs_bh_ports_list": ",".join(bs_bh_ports_list),
+                "bs_bh_capacity_list": ",".join(bs_bh_capacity_list)
+            })
+
+            if is_sector:
                 device.update({
-                    "near_end_ip": put_na(bs_row, 'SECTOR_CONF_ON_IP'),
-                    "sector_id": " ".join(sector_details),
-                    "circuit_id": put_na(bs_row, 'CCID'),
-                    "customer_name": put_na(bs_row, 'CUST'),
-                    "bs_name": put_na(bs_row, 'BSALIAS'),
-                    "city": put_na(bs_row, 'BSCITY'),
-                    "state": put_na(bs_row, 'BSSTATE'),
-                    "device_type": put_na(bs_row, 'SECTOR_TYPE'),
-                    "device_technology": put_na(bs_row, 'SECTOR_TECH'),
-                    # Newly added keys for inventory status headers: 15-May-15
-                    "device_type_id": put_na(bs_row, 'SECTOR_TYPE_ID'),
-                    "device_technology_id": put_na(bs_row, 'SECTOR_TECH_ID'),
-                    "ss_technology": put_na(bs_row, 'SS_TECH'),
-                    "ss_technology_id": put_na(bs_row, 'SS_TECH_ID'),
-                    "ss_type": put_na(bs_row, 'SS_TYPE'),
-                    "ss_type_id": put_na(bs_row, 'SS_TYPE_ID'),
-                    "bh_technology": put_na(bs_row, 'BHTECH'),
-                    "bh_technology_id": put_na(bs_row, 'BHTECHID'),
-                    "bh_type": put_na(bs_row, 'BHTYPE'),
-                    "bh_type_id": put_na(bs_row, 'BHTYPEID'),
-                    "planned_freq": put_na(bs_row, 'SECTOR_PLANNED_FREQUENCY'),
-                    "polled_freq": put_na(bs_row, 'SECTOR_FREQUENCY'),
-                    "qos_bw": put_na(bs_row, 'QOS'),
-                    "ss_name": put_na(bs_row, 'SS_ALIAS'),
-                    "sector_id_str": ",".join(sector_id_str),
-                    "pmp_port_str": ",".join(pmp_port_str),
-                    "bh_capacity": put_na(bs_row, 'BH_CAPACITY'),
-                    "bh_port": put_na(bs_row, 'BH_PORT'),
-                    "bh_id": put_na(bs_row, 'BHID'),
-                    "bs_id": put_na(bs_row, 'BSID'),
-                    "ss_id": put_na(bs_row, 'SSID'),
-                    "sector_pk": put_na(bs_row, 'SECTOR_ID'),
-                    "sector_pk_str": ",".join(sector_pk_str),
-                    "ckt_id": put_na(bs_row, 'CID'),
-                    "cust_id": put_na(bs_row, 'CUSTID'),
-                    "city_id": put_na(bs_row, 'BSCITYID'),
-                    "state_id": put_na(bs_row, 'BSSTATEID'),
-                    "near_end_id": put_na(bs_row, 'SECTOR_CONF_ON_ID'),
-                    "freq_id": put_na(bs_row, 'SECTOR_FREQUENCY_ID'),
-                    # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
-                    "bh_connectivity": put_na(bs_row, 'BH_CONNECTIVITY'),
-                    # BS names & ids in case of BH & other devices
-                    "bs_names_list": ",".join(bs_names_list),
-                    "bs_ids_list": ",".join(bs_ids_list),
-                    "bs_bh_ports_list": ",".join(bs_bh_ports_list),
-                    "bs_bh_capacity_list": ",".join(bs_bh_capacity_list)
+                    "id": bs_row.get('SECTOR_CONF_ON_ID', 0)
                 })
+            elif is_dr:
+                device.update({
+                    "id": bs_row.get('DR_CONF_ON_ID', 0),
+                    "sector_id": "DR:</br>" + " ".join(sector_details),
+                })
+            elif is_ss:
+                mrc = bs_row['SECTOR_MRC']
+                port = bs_row['SECTOR_PORT']
+                if mrc and mrc.strip().lower() == 'yes':
+                    apnd = "MRC:</br>(PMP 1, PMP 2) "
+                else:
+                    if port:
+                        apnd = "(" + port + ")</br>"
 
-                if is_sector:
-                    device.update({
-                        "id": bs_row.get('SECTOR_CONF_ON_ID', 0)
-                    })
-                if is_dr:
-                    device.update({
-                        "id": bs_row.get('DR_CONF_ON_ID', 0),
-                        "sector_id": "DR:</br>" + " ".join(sector_details),
-                    })
-                elif is_ss:
-                    mrc = bs_row['SECTOR_MRC']
-                    port = bs_row['SECTOR_PORT']
-                    if mrc and mrc.strip().lower() == 'yes':
-                        apnd = "MRC:</br>(PMP 1, PMP 2) "
-                    else:
-                        if port:
-                            apnd = "(" + port + ")</br>"
+                if bs_row['CIRCUIT_TYPE']:
+                    if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
+                        device.update({
+                            "bs_name": nocout_utils.format_value(bs_row['CUST']).upper(),
+                        })
 
-                    if bs_row['CIRCUIT_TYPE']:
-                        if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
-                            device.update({
-                                "bs_name": nocout_utils.format_value(bs_row['CUST']).upper(),
-                            })
+                device.update({
+                    "id": bs_row.get('SS_DEVICE_ID', 0),
+                    "sector_id": apnd.upper() + nocout_utils.format_value(bs_row['SECTOR_SECTOR_ID']),
+                    "device_type": nocout_utils.format_value(bs_row['SS_TYPE']),
+                    "device_technology": nocout_utils.format_value(bs_row['SECTOR_TECH'])
+                })
+            elif is_bh:
+                device.update({
+                    "id": bs_row.get('BH_DEVICE_ID', 0),
+                    "device_type": nocout_utils.format_value(bs_row['BHTYPE']),
+                    "device_technology": nocout_utils.format_value(bs_row['BHTECH'])
+                })
+            elif is_pop:
+                device.update({
+                    "id": bs_row.get('POP_DEVICE_ID', 0),
+                    "device_type": nocout_utils.format_value(bs_row['POP_TYPE']),
+                    "device_technology": nocout_utils.format_value(bs_row['POP_TECH'])
+                })
+            elif is_aggr:
+                device.update({
+                    "id": bs_row.get('AGGR_DEVICE_ID', 0),
+                    "device_type": nocout_utils.format_value(bs_row['AGGR_TYPE']),
+                    "device_technology": nocout_utils.format_value(bs_row['AGGR_TECH'])
+                })
+            elif is_conv:
+                device.update({
+                    "id": bs_row.get('BSCONV_DEVICE_ID', 0),
+                    "device_type": nocout_utils.format_value(bs_row['BSCONV_TYPE']),
+                    "device_technology": nocout_utils.format_value(bs_row['BSCONV_TECH'])
+                })
+            else:
+                continue
 
-                    device.update({
-                        "id": bs_row.get('SS_DEVICE_ID', 0),
-                        "sector_id": apnd.upper() + nocout_utils.format_value(bs_row['SECTOR_SECTOR_ID']),
-                        "device_type": nocout_utils.format_value(bs_row['SS_TYPE']),
-                        "device_technology": nocout_utils.format_value(bs_row['SECTOR_TECH'])
-                    })
-                elif is_bh:
-                    device.update({
-                        "id": bs_row.get('BH_DEVICE_ID', 0),
-                        "device_type": nocout_utils.format_value(bs_row['BHTYPE']),
-                        "device_technology": nocout_utils.format_value(bs_row['BHTECH'])
-                    })
-                elif is_pop:
-                    device.update({
-                        "id": bs_row.get('POP_DEVICE_ID', 0),
-                        "device_type": nocout_utils.format_value(bs_row['POP_TYPE']),
-                        "device_technology": nocout_utils.format_value(bs_row['POP_TECH'])
-                    })
-                elif is_aggr:
-                    device.update({
-                        "id": bs_row.get('AGGR_DEVICE_ID', 0),
-                        "device_type": nocout_utils.format_value(bs_row['AGGR_TYPE']),
-                        "device_technology": nocout_utils.format_value(bs_row['AGGR_TECH'])
-                    })
-                elif is_conv:
-                    device.update({
-                        "id": bs_row.get('BSCONV_DEVICE_ID', 0),
-                        "device_type": nocout_utils.format_value(bs_row['BSCONV_TYPE']),
-                        "device_technology": nocout_utils.format_value(bs_row['BSCONV_TECH'])
-                    })
+            if device.get('id'):
+                result_devices.append(device)
+            else:
+                continue
 
-    return devices
+    return result_devices
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
