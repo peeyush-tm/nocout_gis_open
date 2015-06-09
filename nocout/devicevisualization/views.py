@@ -24,7 +24,7 @@ from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Pe
 from user_profile.models import UserProfile
 from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 import re, ast
 from activity_stream.models import UserAction
 from device.api import prepare_raw_result

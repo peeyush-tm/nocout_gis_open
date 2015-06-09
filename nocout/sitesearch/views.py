@@ -6,6 +6,7 @@ import datetime
 from nocout.settings import DEBUG
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+from django.core.urlresolvers import reverse
 
 logger = logging.getLogger(__name__)
 
