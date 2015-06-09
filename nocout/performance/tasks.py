@@ -3,17 +3,17 @@ from celery import task, group
 import math
 from django.db.models import Avg, F, Q
 
-# nocout utils import
-from nocout.utils.util import fetch_raw_result
-# performance views import
-import performance.views as perf_views
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+# performance gateway class import
+from performance.views import PerformanceViewsGateway
 # getLastXMonths
 from performance.models import SpotDashboard, RfNetworkAvailability, NetworkAvailabilityDaily
 from device.models import DeviceType, DeviceTechnology, SiteInstance, Device
 from inventory.models import Sector
 import inventory.tasks as inventory_tasks
-
-import inventory.utils.util as inventory_utils
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 from celery.utils.log import get_task_logger
 # Django Dateformat utility
@@ -88,6 +88,8 @@ def device_last_down_time_site_wise(devices):
     :return: True
     """
     if devices and devices.count():
+        # Create instance of 'PerformanceViewsGateway' class
+        perf_views = PerformanceViewsGateway()
         for device_object in devices:
             x = perf_views.device_last_down_time(device_object=device_object)
         return True
@@ -130,7 +132,13 @@ def get_all_sector_devices(technology):
         'sector_configured_on__ip_address'
     ]
 
-    sector_objects = inventory_utils.organization_sectors(organization=organizations, technology=tech)
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
+    sector_objects = inventory_utils.organization_sectors(
+        organization=organizations,
+        technology=tech
+    )
 
     if not sector_objects.exists():
         return False
@@ -209,6 +217,9 @@ def get_all_sector_devices(technology):
     # Format UL issue data
     if len(complete_ul_issue_data) > 0:
         complete_ul_issue_data = format_polled_data(data=complete_ul_issue_data, key_column_name='sector_id')
+
+    # Create instance of 'PerformanceViewsGateway' class
+    perf_views = PerformanceViewsGateway()
 
     # Reverse the list to get the current month at first index
     last_six_months_list, months_list = perf_views.getLastXMonths(6)
@@ -346,16 +357,6 @@ def get_sector_augmentation_data(sector_ids=[]):
 
     in_string = lambda x: "'" + str(x) + "'"
 
-    # augmentation_raw_query = '''
-    #                         SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
-    #                         FROM {0}
-    #                         WHERE
-    #                           sector_id IN ( {1} )
-    #                           AND
-    #                           severity IN ( 'warning', 'critical' )
-    #                           AND
-    #                           sys_timestamp - age > 600
-    #                         '''.format(table_name, (",".join(map(in_string, sector_ids))))
     augmentation_raw_query = '''
                             SELECT FROM_UNIXTIME(sys_timestamp,"%c") AS sys_timestamp, sector_sector_id as sector_id
                             FROM {0}
@@ -365,8 +366,10 @@ def get_sector_augmentation_data(sector_ids=[]):
                               severity IN ( 'warning', 'critical' )
                             '''.format(table_name, (",".join(map(in_string, sector_ids))))
 
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
     # Execute Query to get augmentation data
-    augmentation_data = fetch_raw_result(augmentation_raw_query)
+    augmentation_data = nocout_utils.fetch_raw_result(augmentation_raw_query)
     #logger.debug(augmentation_data)
     return augmentation_data
 
@@ -398,9 +401,11 @@ def get_sector_ul_issue_data(devices_names=[], ds_list=[], machine='default'):
                                     (",".join(map(in_string, devices_names))),
                                     (",".join(map(in_string, ds_list)))
                                 )
-
+    
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
     # Execute Query to get augmentation data
-    ul_issue_data = fetch_raw_result(query=ul_issue_raw_query, machine=machine)
+    ul_issue_data = nocout_utils.fetch_raw_result(query=ul_issue_raw_query, machine=machine)
     #logger.debug(ul_issue_data)
     return ul_issue_data
 
@@ -527,6 +532,9 @@ def calculate_rf_network_availability(technology=None):
     except Exception as e:
         return False
 
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     organization_devices = inventory_utils.filter_devices(
         organizations=organizations,
         data_tab=technology,
@@ -536,7 +544,10 @@ def calculate_rf_network_availability(technology=None):
     )
 
     # Get machine wise data
-    machine_wise_devices = inventory_utils.prepare_machines(organization_devices, machine_key='machine_name')
+    machine_wise_devices = inventory_utils.prepare_machines(
+        organization_devices,
+        machine_key='machine_name'
+    )
 
     # Model used to collect data from distributed databases
     availability_model = NetworkAvailabilityDaily

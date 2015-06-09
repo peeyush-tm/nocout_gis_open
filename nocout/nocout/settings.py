@@ -217,18 +217,7 @@ AUTHENTICATION_BACKENDS = (
 # Celery Settings
 
 import djcelery
-
 djcelery.setup_loader()
-
-# MongoDB configuration for django-celery
-# CELERY_RESULT_BACKEND = "mongodb"
-# CELERY_MONGODB_BACKEND_SETTINGS = {
-#     "host": "10.133.12.163",
-#     "port": 27163,
-#     "database": "nocout_celery_db",  # mongodb database for django-celery
-#     "taskmeta_collection": "c_queue"  # collection name to use for task output
-# }
-# BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
 
 # REDIS
 REDIS_HOST = "localhost"
@@ -244,23 +233,12 @@ BROKER_VHOST = (REDIS_DB + 1)   # Maps to database number.
 # celery broker configuration
 BROKER_URL = 'redis://' + str(BROKER_HOST) + ':' + str(BROKER_PORT) + '/' + str(BROKER_VHOST)
 
-
-# MEMCACHED
-# CELERY_CACHE_BACKEND = 'memory'
-# CELERY_RESULT_BACKEND = 'cache+memcached://127.0.0.1:11211/'
-
-# USE WITH PYLIB MC
-# CELERY_CACHE_BACKEND_OPTIONS = {'binary': True,
-#                                 'behaviors': {'tcp_nodelay': True}}
-
 from celery import crontab
-
-#=time zone for celery periodic tasks
+# =time zone for celery periodic tasks
 CELERY_TIMEZONE = 'Asia/Calcutta'
 CELERY_ENABLE_UTC = False
 CELERYD_TASK_TIME_LIMIT = 300
 CELERY_IGNORE_RESULT = True
-
 
 REDIS_CACHE_HOST = REDIS_HOST
 REDIS_CACHE_PORT = REDIS_PORT
@@ -282,75 +260,19 @@ CACHES = {
     }
 }
 
+REDIS_QUEUE_HOST = REDIS_HOST
+REDIS_QUEUE_PORT = REDIS_PORT
+REDIS_QUEUE_DB = (REDIS_DB + 3)
+REDIS_QUEUE_URL = 'redis://' + str(REDIS_QUEUE_HOST) + ':' + str(REDIS_QUEUE_PORT) + '/' + str(REDIS_QUEUE_DB)
 
-##TODO: dynamically populate cache
-#
-# def get_cache():
-# import os
-#
-#     try:
-#         os.environ['MEMCACHE_SERVERS'] = os.environ['MEMCACHIER_SERVERS'].replace(',', ';')
-#         os.environ['MEMCACHE_USERNAME'] = os.environ['MEMCACHIER_USERNAME']
-#         os.environ['MEMCACHE_PASSWORD'] = os.environ['MEMCACHIER_PASSWORD']
-#         return {
-#             'default': {
-#                 'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-#                 'TIMEOUT': 500,
-#                 'BINARY': True,
-#                 'OPTIONS': {'tcp_nodelay': True}
-#             }
-#         }
-#     except:
-#         return {
-#             'default': {
-#                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-#                 'LOCATION': 'nocout-gis-rf-critical'
-#             }
-#         }
-#
-# CACHES = get_cache()
-
-
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-#         'LOCATION': '127.0.0.1:11211',
-#         'TIMEOUT': 300,
-#         'OPTIONS': {
-#             'MAX_ENTRIES': 1000
-#         }
-#     }
-# }
-
-#if pylibmc is isntalled
-
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-#         'LOCATION': 'localhost:11211',
-#         'TIMEOUT': 500,
-#         'BINARY': True,
-#         'OPTIONS': {  # Maps to pylibmc "behaviors"
-#             'tcp_nodelay': True,
-#             #'ketama': True
-#         }
-#     }
-# }
-
-
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-#         'LOCATION': 'nocout-gis-rf-critical',
-#         'OPTIONS': {
-#             'MAX_ENTRIES': 1000
-#         }
-#     }
-# }
-
+QUEUES = {
+    'default': {
+        'LOCATION': REDIS_QUEUE_URL,
+        'TIMEOUT': 60,
+        'NAMESPACE': 'noc:queue:'
+    }
+}
 # 16th March 2016 : Using Redis Server as Cache Server instead of much performant Memcached
-
-
 
 ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
@@ -797,6 +719,13 @@ MIN_CHART_COLOR = '#0000FF'
 MAX_CHART_COLOR = '#FF00FF'
 AVG_CHART_COLOR = '#00FFFF'
 
+####################### Warnign, Critical Color & Type ########################
+# 6 June 2015
+WARN_COLOR = '#FFE90D' 
+CRIT_COLOR = '#FF193B'
+WARN_TYPE = 'line'
+CRIT_TYPE = 'line'
+
 ####################### Display flag for severity distrubution pie chart #######################
 # 15 April 2015
 DISPLAY_SEVERITY_PIE_CHART = False
@@ -819,7 +748,11 @@ SETTINGS_EXPORT = [
     'GLOBAL_SEARCH_FLAG',
     'DATATABLES_DOWNLOAD_FLAG',
     'WHITE_MAP_CONFIGURATION',
-    'HISTORICAL_ON_PERFORMANCE'
+    'HISTORICAL_ON_PERFORMANCE',
+    'WARN_COLOR',
+    'CRIT_COLOR',
+    'WARN_TYPE',
+    'CRIT_TYPE'
 ]
 # #### Access Variables in Templates
 

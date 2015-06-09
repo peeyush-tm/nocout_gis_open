@@ -39,16 +39,20 @@ from django.db.models import Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City
-from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import time_it, cached_all_gis_inventory, cache_for
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
-import performance.utils as perf_util
-from service.utils.util import service_data_sources
+from performance.formulae import display_time, rta_null
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME,\
+    PING_RTA_WARNING, PING_RTA_CRITICAL,\
+    PING_PL_WARNING, PING_PL_CRITICAL, \
+    SERVICE_DATA_SOURCE
 from user_profile.models import UserProfile
 from inventory.models import (BaseStation, LivePollingSettings,
                               ThresholdConfiguration, ThematicSettings,
@@ -58,7 +62,10 @@ from inventory.models import (BaseStation, LivePollingSettings,
 logger = logging.getLogger(__name__)
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_raw_result(bs_dict=None):
     """
     To fetch dictionary of base station objects.
@@ -437,10 +444,10 @@ class DeviceStatsApi(View):
                                 }
                             }
     """
-    # Formatted inventory wrt the base stations.
-    raw_result = prepare_raw_result(cached_all_gis_inventory(monitored_only=True))
 
-    # @time_it()
+    # Formatted inventory wrt the base stations.
+    raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
+
     def get(self, request):
 
         self.result = {
@@ -452,10 +459,7 @@ class DeviceStatsApi(View):
             }
         }
 
-        # page_number= request.GET['page_number']
-        # limit= request.GET['limit']
-
-        organizations = logged_in_user_organizations(self)
+        organizations = nocout_utils.logged_in_user_organizations(self)
 
         if organizations:
             page_number = self.request.GET.get('page_number', None)
@@ -1452,36 +1456,55 @@ class BulkFetchLPDataApi(View):
             service = service_name
             data_source = ds_name
 
-        # Fetch values specific to data source.
-        # Formula corresponding to 'data_source'
-        ds_formula = ""
-
-        # Data source object.
-        ds_obj = None
-        try:
-            ds_obj = ServiceDataSource.objects.get(name=data_source)
-            ds_formula = ds_obj.formula
-        except Exception as e:
-            pass
-
-        if ds_obj:
-            result['data']['data_source'] = dict()
-            result['data']['data_source']['chart_type'] = ds_obj.chart_type
-            result['data']['data_source']['chart_color'] = ds_obj.chart_color
-            result['data']['data_source']['data_source_type'] = ds_obj.ds_type_name()
-
         # In case of 'rta' and 'pl', fetch data from 'service_data_sources' function.
         if ds_name in ['pl', 'rta']:
-            ds_dict = service_data_sources()
-            result['data']['data_source'] = dict()
-            result['data']['data_source']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
-            result['data']['data_source']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[
-                ds_name] else ""
-            result['data']['data_source']['data_source_type'] = ds_dict[ds_name][
-                'data_source_type'] if 'data_source_type' in ds_dict[ds_name] else ""
+            ds_dict = SERVICE_DATA_SOURCE
+            result['data']['meta'] = dict()
+            result['data']['meta']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
+            result['data']['meta']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[ds_name] else ""
+            result['data']['meta']['data_source_type'] = ds_dict[ds_name]['data_source_type'] if 'data_source_type' in ds_dict[ds_name] else "Numeric"
+            result['data']['meta']['is_inverted'] = ds_dict[ds_name]['is_inverted'] if 'is_inverted' in ds_dict[ds_name] else ""
+            # Device Type Parameter of Device Name.
+            device_type = Device.objects.filter(device_name__in=devices).values_list('device_type', flat = True)
+            # Device Type warn crit params corresponding to Device.
+            ds_warn_crit_param = DeviceType.objects.filter(id__in=device_type).values('pl_warning', 'pl_critical', 'rta_warning', 'rta_critical')
+        
+            if ds_name in ['pl']:
+                result['data']['meta']['warning'] = ds_warn_crit_param[0]['pl_warning']
+                result['data']['meta']['critical'] = ds_warn_crit_param[0]['pl_critical'] 
+            elif ds_name in ['pl'] and not (ds_warn_crit_param[0]['pl_warning'] and ds_warn_crit_param[0]['pl_critical']):
+                result['data']['meta']['warning'] = PING_PL_WARNING
+                result['data']['meta']['critical'] = PING_PL_CRITICAL
+            elif ds_name in ['rta']:
+                result['data']['meta']['warning'] = ds_warn_crit_param[0]['rta_warning']
+                result['data']['meta']['critical'] = ds_warn_crit_param[0]['rta_critical']
+            elif ds_name in ['rta'] and not (ds_warn_crit_param[0]['rta_warning'] and ds_warn_crit_param[0]['rta_critical']):
+                result['data']['meta']['warning'] = PING_RTA_WARNING
+                result['data']['meta']['critical'] = PING_RTA_CRITICAL
 
-            if ds_name in ['pl', 'rta']:
-                ds_formula = ds_dict[ds_name]['formula'] if 'formula' in ds_dict[ds_name] else ""
+            ds_formula = ds_dict[ds_name]['formula'] if 'formula' in ds_dict[ds_name] else ""
+        else:
+            # Data source object.
+            ds_formula = ""
+            ds_obj = None
+            try:
+                ds_obj = ServiceDataSource.objects.get(name=data_source)
+                ds_formula = ds_obj.formula
+            except Exception as e:
+                logger.info(e.message)
+
+            if ds_obj:
+                result['data']['meta'] = dict()
+                result['data']['meta']['chart_type'] = ds_obj.chart_type
+                result['data']['meta']['chart_color'] = ds_obj.chart_color
+                result['data']['meta']['is_inverted'] = ds_obj.is_inverted
+                result['data']['meta']['data_source_type'] = ds_obj.ds_type_name()
+                try:
+                    result['data']['meta']['warning'] = ds_obj.warning 
+                    result['data']['meta']['critical'] = ds_obj.critical
+                except Exception as e:
+                    result['data']['meta']['warning'] = ''
+                    result['data']['meta']['critical'] = ''
 
         # BS device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services').
         bs_device, site_name = None, None
@@ -1697,13 +1720,18 @@ class BulkFetchLPDataApi(View):
 
                         # Evaluate value if formula is available for data source.
                         if ds_formula:
+                            device_val = device_value
                             try:
-                                result['data']['devices'][device_name]['value'] = eval(
-                                    "perf_util.ds_formula(device_value)")
+                                if type(device_value) == list:
+                                    device_val = device_value[0]
+
+                                result['data']['devices'][device_name]['value'] = eval(str(ds_formula) + "(" + str(device_val) + ")" )
                             except Exception as e:
+                                result['data']['devices'][device_name]['value'] = device_val
                                 pass
                         else:
                             result['data']['devices'][device_name]['value'] = device_value
+
 
                         if not all([service_name, ds_name]):
                             # Default icon.

@@ -4,8 +4,8 @@ import json
 
 from django.db.models import Q
 from django.http import HttpResponse
-
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 
 class Select2Mixin(object):
@@ -25,7 +25,9 @@ class Select2Mixin(object):
         org_id = self.request.GET.get('org', '0')
         sSearch = self.request.GET.get('sSearch', None)
         if str(org_id) == "0":
-            organizations = logged_in_user_organizations(self)
+            # Create instance of 'NocoutUtilsGateway' class
+            nocout_utils = NocoutUtilsGateway()
+            organizations = nocout_utils.logged_in_user_organizations(self)
             qs = qs.filter(organization__id__in=organizations)
         else:
             qs = qs.filter(organization_id=org_id)

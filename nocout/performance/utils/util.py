@@ -12,12 +12,12 @@ from multiprocessing import Process, Queue
 
 from django.utils.dateformat import format
 
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+# nocout utilities
 
-# nocout utilities
-from nocout.utils.util import fetch_raw_result, \
-    format_value, cache_for, \
-    cached_all_gis_inventory
-# nocout utilities
+# Queue implementation using REDIS
+from nocout.utils.nqueue import NQueue
 
 # python logging
 import logging
@@ -32,11 +32,194 @@ from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
 
 from django.http import HttpRequest
 
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
+
+
+class PerformanceUtilsGateway:
+    """
+    This class works as gateway between performance utils & other apps
+    """
+    def prepare_query(
+        self,
+        table_name=None, 
+        devices=None, 
+        data_sources=["pl", "rta"], 
+        columns=None, 
+        condition=None
+    ):
+        """
+
+        :param condition:
+        :param columns:
+        :param data_sources:
+        :param devices:
+        :param table_name:
+        """
+        param1 = prepare_query(
+            table_name=table_name, 
+            devices=devices, 
+            data_sources=data_sources, 
+            columns=columns, 
+            condition=condition
+        )
+
+        return param1
+
+    def prepare_row_query(
+        self, 
+        table_name=None, 
+        devices=None, 
+        data_sources=["pl", "rta"], 
+        columns=None, 
+        condition=None
+    ):
+        """
+
+        :param condition:
+        :param columns:
+        :param data_sources:
+        :param devices:
+        :param table_name:
+        """
+        param1 = prepare_row_query(
+            table_name=table_name, 
+            devices=devices, 
+            data_sources=data_sources, 
+            columns=columns, 
+            condition=condition
+        )
+
+        return param1
+
+    def polled_results(self, qs, multi_proc=False, machine_dict={}, model_is=None):
+        """
+
+        :param model_is:
+        :param machine_dict:
+        :param multi_proc:
+        :param qs:
+        """
+        param1 = polled_results(
+            qs, 
+            multi_proc=multi_proc, 
+            machine_dict=machine_dict, 
+            model_is=model_is
+        )
+
+        return param1
+
+    def pre_map_indexing(self, index_dict, index_on='device_name'):
+        """
+
+        :param index_on:
+        :param index_dict:
+        """
+        param1 = pre_map_indexing(index_dict, index_on=index_on)
+
+        return param1
+
+    def map_results(self, perf_result, qs):
+        """
+
+        :param qs:
+        :param perf_result:
+        """
+        param1 = map_results(perf_result, qs)
+
+        return param1
+
+    def combined_indexed_gis_devices(self, indexes, monitored_only=True, technology=None, type_rf=None):
+        """
+
+        :param type_rf:
+        :param technology:
+        :param monitored_only:
+        :param indexes:
+        """
+        param1, param2, param3, param4, param5, param6, param7 = combined_indexed_gis_devices(
+            indexes, 
+            monitored_only=monitored_only, 
+            technology=technology, 
+            type_rf=type_rf
+        )
+
+        return param1, param2, param3, param4, param5, param6, param7
+
+    def prepare_gis_devices(self, devices, page_type, monitored_only=True, technology=None, type_rf=None):
+        """
+
+        :param type_rf:
+        :param technology:
+        :param monitored_only:
+        :param page_type:
+        :param devices:
+        """
+        param1 = prepare_gis_devices(
+            devices, 
+            page_type, 
+            monitored_only=monitored_only, 
+            technology=technology, 
+            type_rf=type_rf
+        )
+
+        return param1
+
+    def indexed_polled_results(self, performance_data):
+        """
+
+        :param performance_data:
+        """
+        param1 = indexed_polled_results(performance_data)
+
+        return param1
+
+    def get_time(self, start_date, end_date, date_format, data_for):
+        """
+
+        :param data_for:
+        :param date_format:
+        :param end_date:
+        :param start_date:
+        """
+        param1, param2, param3 = get_time(start_date, end_date, date_format, data_for)
+
+        return param1, param2, param3
+
+    def color_picker(self):
+        param1 = color_picker()
+
+        return param1
+
+    def create_perf_chart_img(self, device_name, service, data_source):
+        """
+
+        :param data_source:
+        :param service:
+        :param device_name:
+        """
+        param1 = create_perf_chart_img(device_name, service, data_source)
+
+        return param1
+
+    def dataTableOrdering(self, self_instance, qs, order_columns):
+        """
+
+        :param order_columns:
+        :param qs:
+        :param self_instance:
+        """
+        param1 = dataTableOrdering(self_instance, qs, order_columns)
+
+        return param1
+
+
 # misc utility functions
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     """
     The raw query preparation.
 
+    :param condition:
     :param table_name:
     :param devices:
     :param data_sources:
@@ -73,6 +256,11 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
 def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     """
 
+    :param condition:
+    :param columns:
+    :param data_sources:
+    :param devices:
+    :param table_name:
     :return:
     """
     in_string = lambda x: "'" + str(x) + "'"
@@ -127,10 +315,14 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     return query
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     """
     ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
+    :param model_is:
+    :param machine_dict:
+    :param multi_proc:
+    :param qs:
     """
     # Fetching the data for the device w.r.t to their machine.
     ## multi processing module here
@@ -141,13 +333,13 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     perf_result = []
     if multi_proc:
 
-        q = Queue()
+        q = NQueue()  # using Nocout Queue instead of Python Queue
         jobs = [
             Process(
                 target=get_multiprocessing_performance_data,
                 args=(q, machine_device_list, machine, model)
             ) for machine, machine_device_list in machine_dict.items()
-            ]
+        ]
 
         for j in jobs:
             j.start()
@@ -168,7 +360,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     return result_qs
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def pre_map_indexing(index_dict, index_on='device_name'):
     """
 
@@ -186,9 +378,13 @@ def pre_map_indexing(index_dict, index_on='device_name'):
     return indexed_results
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def map_results(perf_result, qs):
     """
+
+
+    :param qs:
+    :param perf_result:
     """
     result_qs = []
     performance = perf_result
@@ -208,10 +404,14 @@ def map_results(perf_result, qs):
     return result_qs
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, type_rf=None):
     """
     indexes={
+    :param type_rf:
+    :param technology:
+    :param monitored_only:
+    :param indexes:
             'sector': 'SECTOR_CONF_ON_NAME',
             'ss': 'SSDEVICENAME',
             'bh': 'BHCONF',
@@ -236,7 +436,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
     indexed_bh_conv = {}
 
     if indexes:
-        raw_results = cached_all_gis_inventory(monitored_only=monitored_only, technology=technology, type_rf=type_rf)
+        raw_results = nocout_utils.cached_all_gis_inventory(monitored_only=monitored_only, technology=technology, type_rf=type_rf)
 
         for result in raw_results:
             defined_sector_index = result[indexes['sector']]
@@ -255,7 +455,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_sector[defined_sector_index] = []
             try:
                 indexed_sector[defined_sector_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing DR
@@ -263,7 +463,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_dr[defined_dr_conv_index] = list()
             try:
                 indexed_dr[defined_dr_conv_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing ss
@@ -271,7 +471,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_ss[defined_ss_index] = []
             try:
                 indexed_ss[defined_ss_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing bh
@@ -279,7 +479,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_bh[defined_bh_index] = []
             try:
                 indexed_bh[defined_bh_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # pop, aggrigation, bs conveter
@@ -288,7 +488,7 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_bh_pop[defined_bh_pop_index] = []
             try:
                 indexed_bh_pop[defined_bh_pop_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
             # indexing bsconv
@@ -296,30 +496,35 @@ def combined_indexed_gis_devices(indexes, monitored_only=True, technology=None, 
                 indexed_bh_conv[defined_bh_conv_index] = []
             try:
                 indexed_bh_conv[defined_bh_conv_index].append(result)
-            except:
+            except Exception as e:
                 pass
             # indexing aggregation
             if defined_bh_aggr_index and defined_bh_aggr_index not in indexed_bh_aggr:
                 indexed_bh_aggr[defined_bh_aggr_index] = []
             try:
                 indexed_bh_aggr[defined_bh_aggr_index].append(result)
-            except:
+            except Exception as e:
                 pass
 
     return indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv, indexed_dr
 
 
-@cache_for(CACHE_TIME.get('INVENTORY', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None, type_rf=None):
     """
     map the devices with gis data
+    :param type_rf:
+    :param technology:
+    :param monitored_only:
+    :param page_type:
+    :param devices:
     :return:
     """
 
     def put_na(bsdict, key):
         """
         put NA for keys of a dictionary
-        :param dict: dictionary
+        :param bsdict:
         :param key : key in the dictionary
         """
         if key in bsdict:
@@ -389,10 +594,10 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
             "bh_connectivity": "",
             # BS names & ids in case of BH & other devices
-            "bs_names_list" : "",
-            "bs_ids_list" : "",
-            "bs_bh_ports_list" : "",
-            "bs_bh_capacity_list" : ""
+            "bs_names_list": "",
+            "bs_ids_list": "",
+            "bs_bh_ports_list": "",
+            "bs_bh_capacity_list": ""
         })
 
         is_sector = False
@@ -453,25 +658,35 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
 
         if is_sector or is_dr:
             for bs_row in raw_result:
-                if bs_row['SECTOR_SECTOR_ID'] and bs_row['SECTOR_SECTOR_ID'] not in sector_id:
-                    sector_id.append(bs_row['SECTOR_SECTOR_ID'])
-                    mrc = bs_row['SECTOR_MRC']
+                if bs_row.get('SECTOR_SECTOR_ID') and bs_row.get('SECTOR_SECTOR_ID') not in sector_id:
+                    sector_id.append(bs_row.get('SECTOR_SECTOR_ID'))
+                    mrc = bs_row.get('SECTOR_MRC')
 
                     if mrc and mrc.strip().lower() == 'yes':
                         apnd = "MRC:</br>(PMP 1, PMP 2) "
                     else:
-                        port = bs_row['SECTOR_PORT']
+                        port = bs_row.get('SECTOR_PORT')
                         if port:
                             apnd = "(" + port + ")</br> "
                             pmp_port_str.append(port)
                     # append formatted sector id with port in list
-                    sector_details.append(apnd.upper() + bs_row['SECTOR_SECTOR_ID'])
-
-                    # append sector id in list
-                    sector_id_str.append(bs_row['SECTOR_SECTOR_ID'])
+                    sector_details.append(apnd.upper() + bs_row.get('SECTOR_SECTOR_ID'))
+                    if bs_row.get('SECTOR_SECTOR_ID', False):
+                        # append sector id in list
+                        sector_id_str.append(bs_row.get('SECTOR_SECTOR_ID'))
 
                     # append sector primary key in list
-                    sector_pk_str.append(str(bs_row['SECTOR_ID']))
+                    if bs_row.get('SECTOR_ID', False):
+                        sector_pk_str.append(str(bs_row.get('SECTOR_ID')))
+
+        elif is_bh or is_pop or is_aggr or is_conv:  # In case of BH & Other devices
+
+            for bs_row in raw_result:
+                if bs_row.get('BSID') and str(bs_row.get('BSID')) not in bs_ids_list:
+                    bs_names_list.append(bs_row.get('BSALIAS').upper())
+                    bs_ids_list.append(str(bs_row.get('BSID')))
+                    bs_bh_ports_list.append(str(bs_row.get('BS_BH_PORT')))
+                    bs_bh_capacity_list.append(str(bs_row.get('BS_BH_CAPACITY')))
 
         elif is_bh or is_pop or is_aggr or is_conv:  # In case of BH & Other devices
 
@@ -508,7 +723,7 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     "bh_type_id": put_na(bs_row, 'BHTYPEID'),
                     "planned_freq": put_na(bs_row, 'SECTOR_PLANNED_FREQUENCY'),
                     "polled_freq": put_na(bs_row, 'SECTOR_FREQUENCY'),
-                    "qos_bw": put_na(bs_row, 'QOS'), #bs_row.get('QOS', 0) / 1000,
+                    "qos_bw": put_na(bs_row, 'QOS'),
                     "ss_name": put_na(bs_row, 'SS_ALIAS'),
                     "sector_id_str": ",".join(sector_id_str),
                     "pmp_port_str": ",".join(pmp_port_str),
@@ -528,10 +743,10 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     # Newly added keys for Network Alert Details Bakhaul Tab: 20-May-15
                     "bh_connectivity": put_na(bs_row, 'BH_CONNECTIVITY'),
                     # BS names & ids in case of BH & other devices
-                    "bs_names_list" : ",".join(bs_names_list),
-                    "bs_ids_list" : ",".join(bs_ids_list),
-                    "bs_bh_ports_list" : ",".join(bs_bh_ports_list),
-                    "bs_bh_capacity_list" : ",".join(bs_bh_capacity_list)
+                    "bs_names_list": ",".join(bs_names_list),
+                    "bs_ids_list": ",".join(bs_ids_list),
+                    "bs_bh_ports_list": ",".join(bs_bh_ports_list),
+                    "bs_bh_capacity_list": ",".join(bs_bh_capacity_list)
                 })
 
                 if is_sector:
@@ -555,47 +770,49 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
                             device.update({
-                                "bs_name": format_value(bs_row['CUST']).upper(),
+                                "bs_name": nocout_utils.format_value(bs_row['CUST']).upper(),
                             })
 
                     device.update({
                         "id": bs_row.get('SS_DEVICE_ID', 0),
-                        "sector_id": apnd.upper() + format_value(bs_row['SECTOR_SECTOR_ID']),
-                        "device_type": format_value(bs_row['SS_TYPE']),
-                        "device_technology": format_value(bs_row['SECTOR_TECH'])
+                        "sector_id": apnd.upper() + nocout_utils.format_value(bs_row['SECTOR_SECTOR_ID']),
+                        "device_type": nocout_utils.format_value(bs_row['SS_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['SECTOR_TECH'])
                     })
                 elif is_bh:
                     device.update({
                         "id": bs_row.get('BH_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['BHTYPE']),
-                        "device_technology": format_value(bs_row['BHTECH'])
+                        "device_type": nocout_utils.format_value(bs_row['BHTYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['BHTECH'])
                     })
                 elif is_pop:
                     device.update({
                         "id": bs_row.get('POP_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['POP_TYPE']),
-                        "device_technology": format_value(bs_row['POP_TECH'])
+                        "device_type": nocout_utils.format_value(bs_row['POP_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['POP_TECH'])
                     })
                 elif is_aggr:
                     device.update({
                         "id": bs_row.get('AGGR_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['AGGR_TYPE']),
-                        "device_technology": format_value(bs_row['AGGR_TECH'])
+                        "device_type": nocout_utils.format_value(bs_row['AGGR_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['AGGR_TECH'])
                     })
                 elif is_conv:
                     device.update({
                         "id": bs_row.get('BSCONV_DEVICE_ID', 0),
-                        "device_type": format_value(bs_row['BSCONV_TYPE']),
-                        "device_technology": format_value(bs_row['BSCONV_TECH'])
+                        "device_type": nocout_utils.format_value(bs_row['BSCONV_TYPE']),
+                        "device_technology": nocout_utils.format_value(bs_row['BSCONV_TECH'])
                     })
 
     return devices
 
 
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def indexed_polled_results(performance_data):
     """
 
+
+    :param performance_data:
     :return: dictionary for polled results w.r.t to device name
     """
     indexed_raw_results = {}
@@ -609,96 +826,13 @@ def indexed_polled_results(performance_data):
     return indexed_raw_results
 
 
-## for distributed performance collection
-## function to accept machine wise device list
-## and fetch result from the desired machine
-## max processes = 7 (number of total machines)
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
-def get_multiprocessing_performance_data(q, device_list, machine, model):
-    """
-    Consolidated Performance Data from the Data base.
-
-    :param q:
-    :param machine:
-    :param model:
-    :param device_list:
-    :return:
-    """
-
-    device_result = {}
-    perf_result = {"packet_loss": "N/A",
-                   "latency": "N/A",
-                   "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A",
-                   "age": "N/A"
-                   }
-
-    query = prepare_row_query(table_name="performance_networkstatus",
-                              devices=device_list,
-                              )
-    # (query)
-    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
-
-    indexed_perf_data = indexed_polled_results(performance_data)
-
-    # (len(performance_data))
-    for device in device_list:
-        if device not in device_result:
-            device_result[device] = perf_result
-
-    processed = []
-    for device in indexed_perf_data:
-        if device not in processed:
-            processed.append(device)
-            perf_result = {"packet_loss": "N/A",
-                           "latency": "N/A",
-                           "last_updated": "N/A",
-                           "last_updated_date": "N/A",
-                           "last_updated_time": "N/A",
-                           "device_name": "N/A",
-                           "age": "N/A",
-                           }
-            data = indexed_perf_data[device]
-            # for data in performance_data:
-            #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
-            perf_result['device_name'] = data['device_name']
-
-            # d_src = str(data['data_source']).strip().lower()
-            # current_val = str(data['current_value'])
-
-            try:
-                # if d_src == "pl":
-                perf_result["packet_loss"] = float(data['pl'])
-                # if d_src == "rta":
-                perf_result["latency"] = float(data['rta'])
-            except:
-                # if d_src == "pl":
-                perf_result["packet_loss"] = data['pl']
-                # if d_src == "rta":
-                perf_result["latency"] = data['rta']
-
-            perf_result["last_updated"] = datetime.datetime.fromtimestamp(
-                float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
-
-            perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
-
-            device_result[device] = perf_result
-    # (device_result)
-    try:
-        q.put(device_result)
-
-    except Exception as e:
-        log.exception(e.message)
-
-
-@cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def get_performance_data(device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
 
+    :param model:
+    :param machine:
     :param device_list:
     :return:
     """
@@ -717,7 +851,7 @@ def get_performance_data(device_list, machine, model):
                               devices=device_list
                               )
 
-    performance_data = fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
+    performance_data = nocout_utils.fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
 
     indexed_perf_data = indexed_polled_results(performance_data)
 
@@ -750,7 +884,7 @@ def get_performance_data(device_list, machine, model):
                 perf_result["packet_loss"] = float(data['pl'])
                 # if d_src == "rta":
                 perf_result["latency"] = float(data['rta'])
-            except:
+            except Exception as e:
                 # if d_src == "pl":
                 perf_result["packet_loss"] = data['pl']
                 # if d_src == "rta":
@@ -771,6 +905,14 @@ def get_performance_data(device_list, machine, model):
 
 
 def get_time(start_date, end_date, date_format, data_for):
+    """
+
+    :param start_date:
+    :param end_date:
+    :param date_format:
+    :param data_for:
+    :return:
+    """
     isSet = False
 
     if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
@@ -816,6 +958,11 @@ def get_time(start_date, end_date, date_format, data_for):
 
 
 def color_picker():
+    """
+
+
+    :return:
+    """
     import random
 
     color = "#"
@@ -827,6 +974,9 @@ def create_perf_chart_img(device_name, service, data_source):
     """
     This function create performance chart image for given device, 
     service & data_source and return image url
+    :param data_source:
+    :param service:
+    :param device_name:
     """
 
     kwargs_dict = {
@@ -838,19 +988,22 @@ def create_perf_chart_img(device_name, service, data_source):
     # create http request for getting rows data (for accessing list view classes)
     request_object = HttpRequest()
 
-    # import 'GetServiceTypePerformanceData' from performance views
-    from performance.views import GetServiceTypePerformanceData
+    # import performance views gateway class
+    from performance.views import PerformanceViewsGateway
 
-    # Create instance of "GetServiceTypePerformanceData"
-    perf_data_class = GetServiceTypePerformanceData()
+    # Create instance of 'PerformanceViewsGateway' class
+    perf_views = PerformanceViewsGateway()
 
-    # Attach request HTTP object with 'GetServiceTypePerformanceData' instance
+    # call "initGetServiceTypePerformanceData"
+    perf_data_class = perf_views.initGetServiceTypePerformanceData()
+
+    # Attach request HTTP object with 'initGetServiceTypePerformanceData' instance
     perf_data_class.request = request_object
 
-    # Attach 'kwargs' with 'GetServiceTypePerformanceData' instance
+    # Attach 'kwargs' with 'initGetServiceTypePerformanceData' instance
     perf_data_class.kwargs = kwargs_dict
 
-    # Make 'GET' request to 'GetServiceTypePerformanceData' class
+    # Make 'GET' request to 'initGetServiceTypePerformanceData' class
     fetched_result = perf_data_class.get(request_object, service, data_source, device_name)
 
     # convert the fetched content to json format
@@ -927,12 +1080,14 @@ def create_perf_chart_img(device_name, service, data_source):
     return result
 
 
-def dataTableOrdering(self, qs, order_columns):
+def dataTableOrdering(self_instance, qs, order_columns):
     """ 
      Get parameters from the request and prepare order by clause
+    :param order_columns:
+    :param self_instance:
     :param qs:
     """
-    request = self.request
+    request = self_instance.request
     # Number of columns that are used in sorting
     try:
         i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
@@ -964,3 +1119,88 @@ def dataTableOrdering(self, qs, order_columns):
         return sorted_device_data
 
     return qs
+
+
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
+def get_multiprocessing_performance_data(q, device_list, machine, model):
+    """
+    Consolidated Performance Data from the Data base.
+    - for distributed performance collection
+    - function to accept machine wise device list and 
+      fetch result from the desired machine
+    - max processes = 7 (number of total machines)
+    :param q:
+    :param machine:
+    :param model:
+    :param device_list:
+    :return:
+    """
+
+    device_result = {}
+    perf_result = {"packet_loss": "N/A",
+                   "latency": "N/A",
+                   "last_updated": "N/A",
+                   "last_updated_date": "N/A",
+                   "last_updated_time": "N/A",
+                   "age": "N/A"
+                   }
+
+    query = prepare_row_query(table_name="performance_networkstatus",
+                              devices=device_list,
+                              )
+    # (query)
+    performance_data = nocout_utils.fetch_raw_result(query=query, machine=machine)  # model.objects.raw(query).using(alias=machine)
+
+    indexed_perf_data = indexed_polled_results(performance_data)
+
+    # (len(performance_data))
+    for device in device_list:
+        if device not in device_result:
+            device_result[device] = perf_result
+
+    processed = []
+    for device in indexed_perf_data:
+        if device not in processed:
+            processed.append(device)
+            perf_result = {"packet_loss": "N/A",
+                           "latency": "N/A",
+                           "last_updated": "N/A",
+                           "last_updated_date": "N/A",
+                           "last_updated_time": "N/A",
+                           "device_name": "N/A",
+                           "age": "N/A",
+                           }
+            data = indexed_perf_data[device]
+            # for data in performance_data:
+            #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
+            perf_result['device_name'] = data['device_name']
+
+            # d_src = str(data['data_source']).strip().lower()
+            # current_val = str(data['current_value'])
+
+            try:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = float(data['pl'])
+                # if d_src == "rta":
+                perf_result["latency"] = float(data['rta'])
+            except Exception as e:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = data['pl']
+                # if d_src == "rta":
+                perf_result["latency"] = data['rta']
+
+            perf_result["last_updated"] = datetime.datetime.fromtimestamp(
+                float(data['sys_timestamp'])
+            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+
+            perf_result["age"] = datetime.datetime.fromtimestamp(
+                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+
+            device_result[device] = perf_result
+    # (device_result)
+    try:
+        q.put(device_result)
+
+    except Exception as e:
+        log.exception(e.message)
+

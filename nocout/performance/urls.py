@@ -1,17 +1,13 @@
 # coding=utf-8
 from django.conf.urls import patterns, url
 from performance import views
-from performance.views import GetServiceTypePerformanceData, \
-    GetServiceStatus, DeviceServiceDetail, ServiceDataSourceListing, \
-    ServiceDataSourceHeaders
-
 from django.views.decorators.cache import cache_page
 
 urlpatterns = patterns('',
                        url(
                           r'^(?P<page_type>\w+)_live/$',
                           views.LivePerformance.as_view(),
-                          name='performance_listing_url'
+                          name='performance_listing'
                         ),
                        url(r'^liveperformancelistingtable/$',
                            views.LivePerformanceListing.as_view(),
@@ -40,25 +36,27 @@ urlpatterns = patterns('',
                            views.InventoryDeviceServiceDataSource.as_view(), name='get_service_data_source_url'),
                        url(
                            r'^service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)$',
-                           GetServiceTypePerformanceData.as_view(),
+                           views.GetServiceTypePerformanceData.as_view(),
                            name='GetServiceTypePerformanceData'
                        ),
                        url(
-                           r'^headers/single_perf_page/$', ServiceDataSourceHeaders.as_view(), name='ServiceDataSourceHeaders'
+                           r'^headers/single_perf_page/$', 
+                           views.ServiceDataSourceHeaders.as_view(), 
+                           name='ServiceDataSourceHeaders'
                        ),
                        url(
                            r'^listing/service/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)$',
-                           ServiceDataSourceListing.as_view(),
+                           views.ServiceDataSourceListing.as_view(),
                            name='ServiceDataSourceListing'
                        ),
                        url(
                            r'^servicestatus/(?P<service_name>\w+)/service_data_source/(?P<service_data_source_type>\w+)/device/(?P<device_id>\d+)/$',
-                           cache_page(60 * 2)(GetServiceStatus.as_view()),
+                           cache_page(60 * 2)(views.GetServiceStatus.as_view()),
                            name='GetServiceStatus'
                        ),
                        url(
                            r'^servicedetail/(?P<service_name>\w+)/device/(?P<device_id>\d+)',
-                           DeviceServiceDetail.as_view(),
+                           views.DeviceServiceDetail.as_view(),
                            name='DeviceServiceDetail'
                        )
 )

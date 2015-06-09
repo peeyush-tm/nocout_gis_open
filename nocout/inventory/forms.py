@@ -3,7 +3,8 @@ from django.core.exceptions import ValidationError
 import re
 import ast
 from django import forms
-from nocout.utils.util import is_lat_long_in_state
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from device.models import Country, State, City, StateGeoInfo
 from device_group.models import DeviceGroup
@@ -17,7 +18,6 @@ from device.models import Device
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, CircuitL2Report
 from django.utils.html import escape
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet, modelformset_factory
-from nocout.utils import logged_in_user_organizations
 import logging
 logger = logging.getLogger(__name__)
 
@@ -245,14 +245,6 @@ class BackhaulForm(forms.ModelForm):
         ('SDH', 'SDH'),
         ('UBR', 'UBR')
     )
-    BH_CONNECTIVITY = (
-        ('', 'Select'),
-        ('Onnet', 'Onnet'),
-        ('Offnet', 'Offnet'),
-        ('ONNET/Colo', 'ONNET/Colo'),
-        ('ONNET+UBR', 'ONNET+UBR'),
-        ('OFFNET + ONNET', 'OFFNET + ONNET')
-    )
 
     DR_SITE = (
         ('', 'Select'),
@@ -261,7 +253,6 @@ class BackhaulForm(forms.ModelForm):
     )
 
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
-    bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
     dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
     pe_hostname = forms.CharField(label='PE Hostname', required=False,
             validators=[RegexValidator(regex=r'^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$',
@@ -473,7 +464,10 @@ class BaseStationForm(forms.ModelForm):
         state = self.cleaned_data.get('state')
         name = self.cleaned_data.get('name')
 
-        is_lat_long_valid = is_lat_long_in_state(latitude, longitude, state)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(
@@ -772,7 +766,10 @@ class SubStationForm(forms.ModelForm):
         state = self.cleaned_data.get('state')
         name = self.cleaned_data.get('name')
 
-        is_lat_long_valid = is_lat_long_in_state(latitude, longitude, state)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(
@@ -1653,7 +1650,10 @@ class WizardBaseStationForm(BaseStationForm):
                 self._errors['alias'] = ErrorList(
                     [u"This name already in use."])
 
-        is_lat_long_valid = is_lat_long_in_state(latitude, longitude, state)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(
@@ -1851,7 +1851,10 @@ class WizardSubStationForm(SubStationForm):
         except Exception as e:
             pass
 
-        is_lat_long_valid = is_lat_long_in_state(latitude, longitude, state)
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        is_lat_long_valid = nocout_utils.is_lat_long_in_state(latitude, longitude, state)
 
         if not is_lat_long_valid:
             self._errors["latitude"] = ErrorList(

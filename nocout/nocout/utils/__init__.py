@@ -1,6 +1,4 @@
-from organization.models import Organization
-
-
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
 def logged_in_user_organizations(self_object):
     """
     If the user role is admin then append its descendants organization as well, otherwise not

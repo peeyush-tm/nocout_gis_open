@@ -20,170 +20,84 @@ from inventory.models import ThematicSettings, UserThematicSettings, BaseStation
     PingThematicSettings, Circuit, CircuitL2Report, Sector
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService, Status, Topology, Utilization, UtilizationStatus
-from performance.views import device_last_down_time
+# from performance.views import device_last_down_time
 from user_profile.models import UserProfile
 from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 import re, ast
 from activity_stream.models import UserAction
-from nocout.utils.util import non_cached_all_gis_inventory
 from device.api import prepare_raw_result
 from sitesearch.views import prepare_raw_bs_result
-
-#formulaes
+# Import performance formulae methods
 from performance.formulae import rta_null, display_time
-#formulaes
-
-
-# update the service data sources
-from service.utils.util import service_data_sources
-from nocout.utils.util import format_value
-
-from inventory.utils import util as inventory_utils
+# Import service utils gateway class
+from service.utils.util import ServiceUtilsGateway
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
 
 logger = logging.getLogger(__name__)
 
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
-def locate_devices(request , device_name = "default_device_name"):
+
+def init_network_maps(request, device_name="default_device_name", page_type="gmap"):
     """
-    Returns the Context Variable to GIS Map page.
+    This function initializes gmap or gearth or wmap as per page type
     """
-    
     is_admin = 'other'
     user_roles_list = []
-    
+    template_path = 'devicevisualization/locate_devices.html'
+
+    # Update template_path as per the page type
+    if page_type == "setellite":
+        template_path = 'devicevisualization/google_earth_template.html'
+    elif page_type == "gearth":
+        template_path = 'devicevisualization/locate_devices_earth.html'
+    elif page_type == "wmap":
+        template_path = 'devicevisualization/locate_devices_white_map.html'
+
     try:
         user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
     except Exception, e:
+        logger.info(e.message)
         pass
 
     if(request.user.is_superuser or 'admin' in user_roles_list):
         is_admin = 'admin'
 
-    template_data = {
-        'username' : request.user.username,
-        'device_name' : device_name,
-        'is_admin' : is_admin,
-        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
-        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
+    context_data = {
+        'username': request.user.username,
+        'device_name': device_name,
+        'is_admin': is_admin,
+        'live_poll_config': json.dumps(LIVE_POLLING_CONFIGURATION),
+        'periodic_poll_process_count': PERIODIC_POLL_PROCESS_COUNT,
+        'page_type': page_type
     }
 
-    return render_to_response('devicevisualization/locate_devices.html',
-                                template_data,
-                                context_instance=RequestContext(request))
-
-def load_google_earth(request, device_name = "default_device_name"):
-
-    """
-    Returns the Context Variable for google earth.
-    """
-    is_admin = 'other'
-    user_roles_list = []
-    
-    try:
-        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
-    except Exception, e:
-        pass
-
-    if(request.user.is_superuser or 'admin' in user_roles_list):
-        is_admin = 'admin'
-
-    template_data = {
-        'username' : request.user.username,
-        'device_name' : device_name,
-        'is_admin' : is_admin,
-        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
-        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
-    }
-
-    return render_to_response('devicevisualization/google_earth_template.html',
-                                template_data,
-                                context_instance=RequestContext(request))
-
-def load_earth(request, device_name = "default_device_name"):
-    """
-    Returns the Context Variable for google earth.
-    """
-    is_admin = 'other'
-    user_roles_list = []
-    
-    try:
-        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
-    except Exception, e:
-        pass
-
-    if(request.user.is_superuser or 'admin' in user_roles_list):
-        is_admin = 'admin'
-
-    template_data = {
-        'username' : request.user.username,
-        'device_name' : device_name,
-        'is_admin' : is_admin,
-        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
-        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
-    }
-
-    return render_to_response('devicevisualization/locate_devices_earth.html',
-                                template_data,
-                                context_instance=RequestContext(request))
-
-
-def load_white_background(request , device_name = "default_device_name"):
-    """
-    Returns the Context Variable to GIS Map page.
-    """
-    is_admin = 'other'
-    user_roles_list = []
-    
-    try:
-        user_roles_list = request.user.userprofile.role.values_list('role_name', flat=True)
-    except Exception, e:
-        pass
-
-    if(request.user.is_superuser or 'admin' in user_roles_list):
-        is_admin = 'admin'
-
-    template_data = {
-        'username' : request.user.username,
-        'device_name' : device_name,
-        'is_admin' : is_admin,
-        'live_poll_config' : json.dumps(LIVE_POLLING_CONFIGURATION),
-        'periodic_poll_process_count' : PERIODIC_POLL_PROCESS_COUNT
-    }
-
-    return render_to_response('devicevisualization/locate_devices_white_map.html',
-                                template_data,
-                                context_instance=RequestContext(request))
-
-
-def get_url(req, method):
-    """
-    Return Url w.r.t to the request type.
-    """
-    url = None
-    if method == 'GET':
-        url = "/gis/get_filters/"
-    elif method == 'POST':
-        url = "/gis/set_filters/"
-
-    return url
+    return render_to_response(
+        template_path, 
+        context_data, 
+        context_instance=RequestContext(request)
+    )
 
 
 class Gis_Map_Performance_Data(View):
         """
         The request data will be
         {
-            'basestation':{'id':<BS_ID>
-               'sector':{
+            'basestation': {
+                'id':<BS_ID>
+                'sector':{
+                    'device_name':<device_name>
+                    'substation': {
                         'device_name':<device_name>
-                        'substation':{
-                                'device_name':<device_name>
-                            }
-               }
-
-
-               }
+                    }
+                }
+           }
         }
 
         """
@@ -512,9 +426,10 @@ class Gis_Map_Performance_Data(View):
             return performance_data
 
 
-" This class is used to add, update or delete point tool data"
 class PointToolClass(View):
-
+    """
+    This class is used to add, update or delete point tool data
+    """
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super(PointToolClass, self).dispatch(*args, **kwargs)
@@ -761,38 +676,8 @@ class Kmzreport_listingtable(BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
-
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -929,7 +814,7 @@ class PointListingTable(BaseDatatableView):
 
     model = GISPointTool
     columns = ['name', 'description', 'icon_url', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
-    order_columns = ['name', 'description', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
+    order_columns = columns
 
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
@@ -995,37 +880,8 @@ class PointListingTable(BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
-        order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+        order_columns = self.order_columns
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1489,6 +1345,9 @@ class GISPerfData(View):
 
         # base station counter
         bs_counter = 0
+
+        # Create instance of 'InventoryUtilsGateway' class
+        inventory_utils = InventoryUtilsGateway()
 
         # loop through all base stations having id's in bs_ids list
         try:
@@ -2377,151 +2236,151 @@ class GISPerfData(View):
                         'name': 'ss_ip',
                         'title': 'SS IP',
                         'show': 1,
-                        'value': format_value(substation_device.ip_address)
+                        'value': nocout_utils.format_value(substation_device.ip_address)
                     },
                     {
                         'name': 'ss_mac',
                         'title': 'SS MAC',
                         'show': 0,
-                        'value': format_value(substation_device.mac_address)
+                        'value': nocout_utils.format_value(substation_device.mac_address)
                     },
                     {
                         'name': 'name',
                         'title': 'SS Name',
                         'show': 0,
-                        'value': format_value(substation.name)
+                        'value': nocout_utils.format_value(substation.name)
                     },
                     {
                         'name': 'connected_bs_ip',
                         'title': 'Connected BS IP',
                         'show': 1,
-                        'value': format_value(connected_bs_ip)
+                        'value': nocout_utils.format_value(connected_bs_ip)
                     },
                     {
                         'name': 'cktid',
                         'title': 'Circuit ID',
                         'show': 1,
-                        'value': format_value(circuit_id)
+                        'value': nocout_utils.format_value(circuit_id)
                     },
                     {
                         'name': 'qos_bandwidth',
                         'title': 'QOS(BW)',
                         'show': 1,
-                        'value': format_value(qos)
+                        'value': nocout_utils.format_value(qos)
                     },
                     {
                         'name': 'lat_lon',
                         'title': 'Lat, Long',
                         'show': 1,
-                        'value': format_value(str(substation.latitude)+","+str(substation.longitude))
+                        'value': nocout_utils.format_value(str(substation.latitude)+","+str(substation.longitude))
                     },
                     {
                         'name': 'antenna_height',
                         'title': 'Antenna Height',
                         'show': 1,
-                        'value': format_value(antenna_height)
+                        'value': nocout_utils.format_value(antenna_height)
                     },
                     {
                         'name': 'polarisation',
                         'title': 'Antenna Polarisation',
                         'show': 1,
-                        'value': format_value(antenna_polarization)
+                        'value': nocout_utils.format_value(antenna_polarization)
                     },
                     {
                         'name': 'ss_technology',
                         'title': 'Technology',
                         'show': 1,
-                        'value': format_value(substation_technology)
+                        'value': nocout_utils.format_value(substation_technology)
                     },
                     {
                         'name': 'pe_ip',
                         'title': 'PE IP',
                         'show': 1,
-                        'value': format_value(pe_ip)
+                        'value': nocout_utils.format_value(pe_ip)
                     },
                     {
                         'name': 'building_height',
                         'title': 'Building Height',
                         'show': 1,
-                        'value': format_value(substation.building_height)
+                        'value': nocout_utils.format_value(substation.building_height)
                     },
                     {
                         'name': 'tower_height',
                         'title': 'Tower Height',
                         'show': 1,
-                        'value': format_value(substation.tower_height)
+                        'value': nocout_utils.format_value(substation.tower_height)
                     },
                     {
                         'name': 'mount_type',
                         'title': 'SS MountType',
                         'show': 1,
-                        'value': format_value(antenna_mount_type)
+                        'value': nocout_utils.format_value(antenna_mount_type)
                     },
                     {
                         'name': 'alias',
                         'title': 'Alias',
                         'show': 1,
-                        'value': format_value(substation.alias)
+                        'value': nocout_utils.format_value(substation.alias)
                     },
                     {
                         'name': 'ss_device_id',
                         'title': 'SS Device ID',
                         'show': 0,
-                        'value': format_value(substation_device.id)
+                        'value': nocout_utils.format_value(substation_device.id)
                     },
                     {
                         'name': 'antenna_type',
                         'title': 'Antenna Type',
                         'show': 1,
-                        'value': format_value(antenna_type)
+                        'value': nocout_utils.format_value(antenna_type)
                     },
                     {
                         'name': 'ethernet_extender',
                         'title': 'Ethernet Extender',
                         'show': 1,
-                        'value': format_value(substation.ethernet_extender)
+                        'value': nocout_utils.format_value(substation.ethernet_extender)
                     },
                     {
                         'name': 'cable_length',
                         'title': 'Cable Length',
                         'show': 1,
-                        'value': format_value(substation.cable_length)
+                        'value': nocout_utils.format_value(substation.cable_length)
                     },
                     {
                         'name': 'customer_alias',
                         'title': 'Customer Name',
                         'show': 1,
-                        'value': format_value(customer_alias)
+                        'value': nocout_utils.format_value(customer_alias)
                     },
                     {
                         'name': 'customer_address',
                         'title': 'Customer Address',
                         'show': 1,
-                        'value': format_value(customer_address)
+                        'value': nocout_utils.format_value(customer_address)
                     },
                     {
                         'name': 'date_of_acceptance',
                         'title': 'Date of Acceptance',
                         'show': 1,
-                        'value': format_value(date_of_acceptance)
+                        'value': nocout_utils.format_value(date_of_acceptance)
                     },
                     {
                         'name': 'dl_rssi_during_acceptance',
                         'title': 'RSSI During Acceptance',
                         'show': 1,
-                        'value': format_value(dl_rssi_during_acceptance)
+                        'value': nocout_utils.format_value(dl_rssi_during_acceptance)
                     },
                     {
                         'name': 'dl_cinr_during_acceptance',
                         'title': 'CINR During Acceptance',
                         'show': 1,
-                        'value': format_value(dl_cinr_during_acceptance)
+                        'value': nocout_utils.format_value(dl_cinr_during_acceptance)
                     },
                     {
                         'name': 'planned_frequency',
                         'title': 'Planned Frequency',
                         'show': 1,
-                        'value': format_value(ss_sector_frequency)
+                        'value': nocout_utils.format_value(ss_sector_frequency)
                     }
                 ]
 
@@ -2597,7 +2456,7 @@ class GISPerfData(View):
                     'name': 'connected_bs_ip',
                     'title': 'Connected BS IP',
                     'show': 1,
-                    'value': format_value(connected_bs_ip)
+                    'value': nocout_utils.format_value(connected_bs_ip)
                 }
 
                 device_info.append(connected_bs_ip_info)
@@ -2638,21 +2497,12 @@ class GISPerfData(View):
                                                         }
                                                     ]
         """
+        # Create instance of 'ServiceUtilsGateway' class
+        service_utils = ServiceUtilsGateway()
 
-        SERVICE_DATA_SOURCE = service_data_sources()
+        SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
         device_info = list()
-        #
-        # # device object
-        # device_obj = Device.objects.filter(pk=device_id)[0]
-        #
-        # perf_info = {
-        #     "name": None,
-        #     "title": None,
-        #     "show": 0,
-        #     "url": None,
-        #     "value": None,
-        # }
 
         for perf in performance:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
@@ -2718,9 +2568,11 @@ class GISPerfData(View):
                 - show_gis (int) - 1 to show data source; 0 for not to show
         """
 
-        # execute this globally
+        # Create instance of 'ServiceUtilsGateway' class
+        service_utils = ServiceUtilsGateway()
+
         # fetch all data sources
-        SERVICE_DATA_SOURCE = service_data_sources()
+        SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
         # if data_source and data_source[:1].isalpha():
         if data_source:
@@ -3012,13 +2864,27 @@ class GISPerfData(View):
                 techno_to_append = "PTP BH"
         # Check for technology to make perf page url
         if techno_to_append:
-            if techno_to_append.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
-                far_end_perf_url = '/performance/customer_live/'+str(ss_device_id)+'/'
-            elif techno_to_append.lower() in ['ptp bh']:
-                far_end_perf_url = '/performance/network_live/'+str(ss_device_id)+'/'
+            page_type = 'customer'
+            if techno_to_append.lower() in ['ptp bh']:
+                page_type = 'network'
+
+            far_end_perf_url = reverse(
+                'SingleDevicePerf',
+                kwargs={
+                    'page_type': page_type,
+                    'device_id': ss_device_id
+                },
+                current_app='performance'
+            )
 
         # SS Device Inventory URL
-        far_end_inventory_url = '/device/'+str(ss_device_id)+'/'
+        far_end_inventory_url = reverse(
+            'device_edit',
+            kwargs={
+                'pk': ss_device_id
+            },
+            current_app='device'
+        )
 
         substation_info['antenna_height'] = substation.antenna.height
         substation_info['lat'] = substation.latitude
@@ -3991,6 +3857,9 @@ class GISStaticInfo(View):
 
         inventory = ""
 
+        # Create instance of 'InventoryUtilsGateway' class
+        inventory_utils = InventoryUtilsGateway()
+
         # loop through all base stations having id's in bs_ids list
         try:
             for bs_id in bs_ids:
@@ -3998,7 +3867,7 @@ class GISStaticInfo(View):
                 bs_counter += 1
 
                 # get raw bs inventory
-                bs_result = non_cached_all_gis_inventory(bs_id=bs_id)
+                bs_result = nocout_utils.non_cached_all_gis_inventory(bs_id=bs_id)
 
                 # we need to prepare bs wise list # this would cache static data for 300 seconds
                 # bs_id_wise_result = prepare_raw_result(bs_result)
@@ -4992,6 +4861,9 @@ class GISPerfInfo(View):
                                                                           'device_technology', 'device_type',
                                                                           'ip_address')
 
+            # Create instance of 'InventoryUtilsGateway' class
+            inventory_utils = InventoryUtilsGateway()
+
             machine_dict = inventory_utils.prepare_machines(bs_devices, 'machine__name')
 
             complete_performance = get_complete_performance(machine_dict)
@@ -5079,8 +4951,10 @@ class GISPerfInfo(View):
                                                         }
                                                     ]
         """
+        # Create instance of 'ServiceUtilsGateway' class
+        service_utils = ServiceUtilsGateway()
 
-        SERVICE_DATA_SOURCE = service_data_sources()
+        SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
         device_info = list()
 
@@ -5154,10 +5028,11 @@ class GISPerfInfo(View):
                 - title (str) - data source name to display for e.g. 'Latency'
                 - show_gis (int) - 1 to show data source; 0 for not to show
         """
+        # Create instance of 'ServiceUtilsGateway' class
+        service_utils = ServiceUtilsGateway()
 
-        # execute this globally
         # fetch all data sources
-        SERVICE_DATA_SOURCE = service_data_sources()
+        SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 
         # if data_source and data_source[:1].isalpha():
         if data_source:

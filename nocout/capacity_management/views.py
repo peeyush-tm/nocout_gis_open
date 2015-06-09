@@ -10,6 +10,8 @@ from django.db.models import Q, Count, F
 from django.db.models.query import ValuesQuerySet
 from django.utils.dateformat import format
 
+from django.core.urlresolvers import reverse
+
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
@@ -17,8 +19,8 @@ import ujson as json
 
 from device.models import DeviceTechnology, Device
 
-#get the organisation of logged in user
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 from nocout.settings import DATE_TIME_FORMAT
 
@@ -29,32 +31,8 @@ from performance.formulae import display_time
 import logging
 logger = logging.getLogger(__name__)
 
-
-def get_daily_alerts(request):
-    """
-    get request to render daily alerts pages.
-
-    :params request object:
-    :params alert_type:
-    :return Https response object:
-
-    """
-
-    alert_template = 'capacity_management/backhaul_capacity_alert.html'
-    return render_to_response(alert_template,context_instance=RequestContext(request))
-
-
-def get_utilization_status(request):
-    """
-    get request to render utilization pages
-
-    :params request object:
-    :params status_type:
-    :return Https response object:
-    """
-    status_template = 'capacity_management/backhaul_capacity_status.html'
-
-    return render_to_response(status_template, context_instance=RequestContext(request))
+# Create instance of 'NocoutUtilsGateway' class
+nocout_utils = NocoutUtilsGateway()
 
 
 class SectorStatusHeaders(ListView):
@@ -225,7 +203,7 @@ class SectorStatusListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 
@@ -265,11 +243,19 @@ class SectorStatusListing(BaseDatatableView):
 
                 perf_page_link = ''
                 if device_id:
-                    perf_page_link = '<a href="/performance/network_live/'+str(device_id)+'/?is_util=1" \
-                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+                    performance_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={
+                            'page_type': 'network', 
+                            'device_id': device_id
+                        },
+                        current_app='performance'
+                    )
+                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                                      title="Device Performance"><i class="fa \
+                                      fa-bar-chart-o text-info"></i></a>'
 
-                item['actions']=perf_page_link
-
+                item['actions'] = perf_page_link
                 item['sector__sector_configured_on__device_technology'] = techno_name
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
@@ -286,40 +272,7 @@ class SectorStatusListing(BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
-        order_columns = self.order_columns
-
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -457,7 +410,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 
@@ -698,7 +651,7 @@ class BackhaulStatusListing(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 
@@ -731,13 +684,20 @@ class BackhaulStatusListing(BaseDatatableView):
 
                 perf_page_link = ''
                 if device_id:
-                    perf_page_link = '<a href="/performance/other_live/'+str(device_id)+'/?is_util=1" \
-                                      title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>'
+                    performance_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={
+                            'page_type': 'other', 
+                            'device_id': device_id
+                        },
+                        current_app='performance'
+                    )
+                    perf_page_link = '<a href="' + performance_url + '?is_util=1" \
+                                      title="Device Performance"><i class="fa \
+                                      fa-bar-chart-o text-info"></i></a>'
 
-                item['actions']=perf_page_link
-
+                item['actions'] = perf_page_link
                 item['backhaul__bh_configured_on__device_technology'] = techno_name
-                
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
                 ).strftime(DATE_TIME_FORMAT) if item['peak_out_timestamp'] else ''
@@ -885,7 +845,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            organizations = logged_in_user_organizations(self)
+            organizations = nocout_utils.logged_in_user_organizations(self)
 
             return self.get_initial_query_set_data(organizations=organizations)
 

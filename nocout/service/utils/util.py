@@ -2,13 +2,20 @@
 
 # project settings
 from nocout.settings import SERVICE_DATA_SOURCE
-
-from nocout.utils.util import cache_for
-
 from service.models import ServiceSpecificDataSource
 
 
-#@cache_for(60)
+class ServiceUtilsGateway:
+    """
+    This class works as a gateway between service utils & other apps
+    """
+    def service_data_sources(self):
+
+        param1 = service_data_sources()
+
+        return param1
+
+
 def service_data_sources():
     """ Fetch service data sources information in a dictionary
 

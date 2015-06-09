@@ -5,15 +5,15 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
-    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing_url" page_type %}
+    {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
 
     {% if page_type == 'network' and device_technology|upper == 'P2P'  %}
-        {% breadcrumb_safe "PTP BH" "performance_listing_url" page_type  %}
+        {% breadcrumb_safe "PTP BH" "performance_listing" page_type  %}
     {% else %}
         {% if page_type == 'customer' and device_technology|upper == 'P2P'  %}
-            {% breadcrumb_safe "PTP" "performance_listing_url" page_type  %}
+            {% breadcrumb_safe "PTP" "performance_listing" page_type  %}
         {% else %}
-            {% breadcrumb_safe device_technology|upper "performance_listing_url" page_type  %}
+            {% breadcrumb_safe device_technology|upper "performance_listing" page_type  %}
         {% endif %}
     {% endif %}
     {% breadcrumb_safe realdevice.ip_address "javascript:;" %}
@@ -279,8 +279,13 @@
             endDate = "",
             dataTableInstance = "",
             current_device_ip = "",
+            device_name = "",
             bold_class = "",
-            is_dr_device = false;
+            is_dr_device = false
+            warn_color = "",
+            crit_color = "",
+            warn_type = "",
+            crit_type = "";
 
 
         $(document).ready(function (e) {
@@ -308,7 +313,11 @@
             current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
             is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
             is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
-
+            device_name = current_device;
+            warn_color = "{{ settings.WARN_COLOR}}";
+            warn_type = "{{ settings.WARN_TYPE}}";
+            crit_color = "{{ settings.CRIT_COLOR}}";
+            crit_type = "{{ settings.CRIT_TYPE}}";
             // Update global variable as per context data
             {% if is_dr_device %}
                 is_dr_device = true;
@@ -373,26 +382,9 @@
          */
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-
-                var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
-                    top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
-                
-
-                if(show_historical_on_performance) {
-                    var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
-                        left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
-
-                    var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a"),
-                        service_id = active_inner_tab.attr("id").slice(0, -4),
-                        get_service_data_url = active_inner_tab.attr("url");
-
-                } else {
-
-                    var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
-                        active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                        service_id = left_active_tab_anchor.attr("id").slice(0, -4),
-                        get_service_data_url = left_active_tab_anchor.attr("url");
-                }
+                var active_tab_obj = nocout_getPerfTabDomId(),
+                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
 
                 if(
                     service_id.indexOf('availability') > -1
@@ -435,25 +427,9 @@
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);
 
-                var top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
-                    top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
-                
-
-                if(show_historical_on_performance) {
-                    var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
-                        left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
-
-                    var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a"),
-                        service_id = active_inner_tab.attr("id").slice(0, -4),
-                        get_service_data_url = active_inner_tab.attr("url");
-
-                } else {
-
-                    var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
-                        active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                        service_id = left_active_tab_anchor.attr("id").slice(0, -4),
-                        get_service_data_url = left_active_tab_anchor.attr("url");
-                }
+                var active_tab_obj = nocout_getPerfTabDomId(),
+                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
 
                 if(
                     service_id.indexOf('availability') > -1
@@ -554,49 +530,11 @@
          * This event triggers when poll now button clicked
          * @event click
          */
-        $("body").delegate('.perf_poll_now','click',function(e) {
-            
-            var sparkline_dom_id = 'perf_live_poll_chart',
-                hidden_input_dom_id = 'perf_live_poll_input',
-                polled_val_shown_dom_id = "last_polled_val",
-                device_name = "{{ device.device_name }}",
-                current_active_tab_url = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("url"),
-                service_name = "",
-                ds_name = "",
-                container_id = "",
-                block_dom_id_str = $(".top_perf_tab_content div.active ul.left_tabs_container li.active a").attr("href");
-
-            if(current_active_tab_url && current_active_tab_url.indexOf("service/") > -1 && current_active_tab_url.indexOf("service_data_source/") > -1 ) {
-                service_name = current_active_tab_url ? current_active_tab_url.split("service/")[1].split("/")[0] : "";
-                ds_name = current_active_tab_url ? current_active_tab_url.split("service_data_source/")[1].split("/")[0] : "";
-            }
-
-            if(block_dom_id_str && block_dom_id_str.indexOf("#") > -1) {
-                container_id = "last_updated_"+block_dom_id_str.split("#")[1];
-            }
-
-            if(live_poll_condition1 || live_poll_condition2) {
-                if(device_name.length > 0 && service_name.length > 0 && ds_name.length > 0) {
-                    // Disable the "Poll Now" button
-                    $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
-
-                    // Call function to fetch live polling data
-                    nocout_livePollCurrentDevice(
-                        service_name,
-                        ds_name,
-                        [device_name],
-                        container_id,
-                        sparkline_dom_id,
-                        hidden_input_dom_id,
-                        polled_val_shown_dom_id,
-                        function(response) {
-                            // console.log(response);
-                        }
-                    );
-                }
-            }
-
-        });
+        // $(".perfContainerBlock").delegate('.perf_poll_now, .poll_play_btn','click',function(e) {
+        //     initSingleDevicePolling(function(response) {
+        //         // pass
+        //     });
+        // });
     </script>
 
 {% endblock %}

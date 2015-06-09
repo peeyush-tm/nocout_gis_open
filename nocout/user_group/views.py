@@ -8,11 +8,12 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelF
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device_group.models import DeviceGroup
-from nocout.utils.util import DictDiffer
 from user_group.models import UserGroup, Organization
 from forms import UserGroupForm
 from user_profile.models import UserProfile
 from nocout.mixins.permissions import PermissionsRequiredMixin
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 
 class UserGroupList(PermissionsRequiredMixin, ListView):
@@ -108,38 +109,12 @@ class UserGroupListingTable(PermissionsRequiredMixin, BaseDatatableView):
         If Nothing is specified then by default the ordering will be done on the basis of first column
         in the data table.
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
         order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
 
-            sdir = '-' if s_sort_dir == 'desc' else ' '
-            try:
-                sortcol = order_columns[i_sort_col]
-            except IndexError:
-                return qs
-            #for the mutiple sorting of the columns at a time
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
-        return qs
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
 
     def get_context_data(self, *args, **kwargs):
         """

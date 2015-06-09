@@ -12,8 +12,8 @@ from django.utils.dateformat import format
 
 from dashboard.models import DashboardSetting
 from dashboard.config import dashboards
-
-from nocout.utils.util import fetch_raw_result
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 import logging
 log = logging.getLogger(__name__)
@@ -413,7 +413,10 @@ def get_total_connected_device_per_sector(user_sector):
                     ) AS result
                 GROUP BY sector_id'''.format((",".join(map(in_string, user_sector))))
 
-    status_results = fetch_raw_result(query)
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    status_results = nocout_utils.fetch_raw_result(query)
 
     return status_results
 

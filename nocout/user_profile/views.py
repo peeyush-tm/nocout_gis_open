@@ -46,8 +46,8 @@ from django.contrib.auth.hashers import make_password
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.template.loader import render_to_string
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from nocout.utils.util import project_group_role_dict_mapper, convert_utc_to_local_timezone
-from nocout.utils import logged_in_user_organizations
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway, project_group_role_dict_mapper
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
@@ -133,11 +133,12 @@ class UserListingTable(PermissionsRequiredMixin,
             # Show 'actions' column only if user role is 'admin'.
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
                 datatable_headers = self.request.GET.get('datatable_headers', '').replace('false', "\"False\"")
-
+                # Create instance of 'NocoutUtilsGateway' class
+                nocout_utils = NocoutUtilsGateway()
                 for dct in json_data:
                     # Last login field timezone conversion from 'utc' to 'local'.
                     try:
-                        dct['last_login'] = convert_utc_to_local_timezone(dct['last_login'])
+                        dct['last_login'] = nocout_utils.convert_utc_to_local_timezone(dct['last_login'])
                     except Exception as e:
                         pass
 
@@ -197,10 +198,12 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
 
             # Show 'actions' column only if user role is 'admin'.
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+                # Create instance of 'NocoutUtilsGateway' class
+                nocout_utils = NocoutUtilsGateway()
                 for dct in json_data:
                     # Last login field timezone conversion from 'utc' to 'local'.
                     try:
-                        dct['last_login'] = convert_utc_to_local_timezone(dct['last_login'])
+                        dct['last_login'] = nocout_utils.convert_utc_to_local_timezone(dct['last_login'])
                     except Exception as e:
                         pass
 
@@ -228,7 +231,9 @@ class UserDetail(PermissionsRequiredMixin, DetailView):
         Get the queryset to look an object up against.
         Only objects which belongs to organization's accessible to the user were returned.
         """
-        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        return UserProfile.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
 
 
 class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
@@ -285,7 +290,9 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         Only objects which belongs to organization's accessible to the user were returned.
         """
         queryset = super(UserUpdate, self).get_queryset()
-        queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        queryset = queryset.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
         queryset = queryset.exclude(id=self.request.user.id)
 
         return queryset
@@ -346,7 +353,9 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
         User can't delete self.
         """
         queryset = super(UserDelete, self).get_queryset()
-        queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+        queryset = queryset.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
         queryset = queryset.exclude(id=self.request.user.id)
 
         return queryset

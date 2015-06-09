@@ -9,11 +9,14 @@ from capacity_management.models import SectorCapacityStatus, BackhaulCapacitySta
 from inventory.models import get_default_org, Sector, Backhaul, BaseStation
 from device.models import DeviceTechnology, Device, DevicePort, DeviceType
 from service.models import ServiceDataSource
-from inventory.utils.util import prepare_machines
+
+# Import inventory utils gateway class
+from inventory.utils.util import InventoryUtilsGateway
+
+# Import nocout utils gateway class
+from nocout.utils.util import NocoutUtilsGateway
 
 from inventory.tasks import get_devices, bulk_update_create
-
-from nocout.utils.util import fetch_raw_result, indexed_query_set, check_item_is_list
 
 from performance.models import UtilizationStatus, InventoryStatus, ServiceStatus, Utilization, PerformanceService, Topology
 
@@ -346,6 +349,10 @@ def gather_sector_status(technology):
 
     network_devices = get_devices(technology)
     device_list = []
+
+    # Create instance of 'InventoryUtilsGateway' class
+    inventory_utils = InventoryUtilsGateway()
+
     for device in network_devices:
         device_list.append(
             {
@@ -356,8 +363,8 @@ def gather_sector_status(technology):
         )
 
     machine_dict = {}
-    #prepare_machines(device_list)
-    machine_dict = prepare_machines(device_list)
+
+    machine_dict = inventory_utils.prepare_machines(device_list)
     #need to gather from various sources
     #will do a raw query
 
@@ -647,9 +654,12 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
     :param getit: val or per ( as in value or percentage)
     :return:
     """
-    devices = check_item_is_list(items=devices)
-    services = check_item_is_list(items=services)
-    data_sources = check_item_is_list(items=data_sources)
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    devices = nocout_utils.check_item_is_list(items=devices)
+    services = nocout_utils.check_item_is_list(items=services)
+    data_sources = nocout_utils.check_item_is_list(items=data_sources)
 
     start_date, end_date = get_time()
 
@@ -690,7 +700,12 @@ def get_avg_max_sector_util(devices, services, data_sources, machine, getit):
             start_date,
             end_date
         )
-        perf = fetch_raw_result(query=query, machine=machine)
+
+        # Create instance of 'NocoutUtilsGateway' class
+        nocout_utils = NocoutUtilsGateway()
+
+        perf = nocout_utils.fetch_raw_result(query=query, machine=machine)
+
     except Exception as e:
         logger.exception(e)
         return None
@@ -885,13 +900,16 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     if not kpi.exists() and not val.exists():
         return False
 
-    indexed_kpi = indexed_query_set(
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
+    indexed_kpi = nocout_utils.indexed_query_set(
         query_set=kpi,
         indexes=['device_name', 'service_name', 'data_source'],
         values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
     )
 
-    indexed_val = indexed_query_set(
+    indexed_val = nocout_utils.indexed_query_set(
         query_set=val,
         indexes=['device_name', 'service_name', 'data_source'],
         values=['device_name', 'service_name', 'data_source', 'current_value'],
@@ -900,13 +918,13 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
     indexed_avg_max_val = dict()
     indexed_avg_max_per = dict()
     if avg_max_per and avg_max_val:
-        indexed_avg_max_val = indexed_query_set(
+        indexed_avg_max_val = nocout_utils.indexed_query_set(
             query_set=avg_max_val,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
             is_raw=True
         )
-        indexed_avg_max_per = indexed_query_set(
+        indexed_avg_max_per = nocout_utils.indexed_query_set(
             query_set=avg_max_per,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
@@ -1226,16 +1244,20 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     indexed_val = dict()
     indexed_avg_max_val = dict()
     indexed_avg_max_per = dict()
+
+    # Create instance of 'NocoutUtilsGateway' class
+    nocout_utils = NocoutUtilsGateway()
+
     # force evaluation of query set
     if technology.lower() == 'wimax' and cbw.exists():
-        indexed_cbw = indexed_query_set(
+        indexed_cbw = nocout_utils.indexed_query_set(
             query_set=cbw,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value'],
         )
 
     if kpi.exists():  # and val.exists():
-        indexed_kpi = indexed_query_set(
+        indexed_kpi = nocout_utils.indexed_query_set(
             query_set=kpi,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'current_value', 'age', 'severity', 'sys_timestamp'],
@@ -1246,7 +1268,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
 
     if avg_max_per:
 
-        indexed_avg_max_per = indexed_query_set(
+        indexed_avg_max_per = nocout_utils.indexed_query_set(
             query_set=avg_max_per,
             indexes=['device_name', 'service_name', 'data_source'],
             values=['device_name', 'service_name', 'data_source', 'max_val', 'avg_val'],
