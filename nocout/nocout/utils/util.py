@@ -393,17 +393,24 @@ def time_it(debug=getattr(settings, 'PROFILE')):
                 profile_type = getattr(settings, 'PROFILE_TYPE')
                 if profile_type == 'line':
                     profiler = LLP()
-                    profiled_func = profiler(fn)
-                else:
+                elif profile_type == 'memory':
                     profiler = MLP()
-                    profiled_func = profiler(fn)
+                else:
+                    profiler = None
                 try:
-                    result = profiled_func(*args, **kwargs)
-                finally:
-                    if profile_type == 'line':
-                        profiler.print_stats()
+                    if profiler:
+                        profiled_func = profiler(fn)
+                        result = profiled_func(*args, **kwargs)
                     else:
-                        show_results(profiler)
+                        result = fn(*args, **kwargs)
+                finally:
+                    if profiler:
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        elif profile_type == 'memory':
+                            show_results(profiler)
+                        else:
+                            pass
             else:
                 result = fn(*args, **kwargs)
             end = datetime.datetime.now()
