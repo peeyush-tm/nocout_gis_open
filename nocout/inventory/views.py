@@ -4683,7 +4683,7 @@ class GisWizardPTPListingTable(SectorListingTable):
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
-        qs = qs.filter(bs_technology__name='P2P')
+        qs = qs.filter(base_station__alias__isnull=False, bs_technology__name='P2P')
         return qs
 
     def prepare_results(self, qs):
