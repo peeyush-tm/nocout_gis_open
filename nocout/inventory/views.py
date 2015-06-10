@@ -4248,17 +4248,21 @@ class GisWizardSectorMixin(object):
         form_kwargs = self.get_form_kwargs()
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
         technology = self.kwargs['selected_technology']
-        sector_configured_on_id = form_kwargs['data']['sector_configured_on']
-        sector_configured_on = Device.objects.get(id=sector_configured_on_id)
+        sector_id = form_kwargs['data']['sector_id']
+        # sector_configured_on_id = form_kwargs['data']['sector_configured_on']
+        # sector_configured_on = Device.objects.get(id=sector_configured_on_id)
 
         antenna = antenna_form.save(commit=False)
-        antenna.name = sector_configured_on.ip_address
-        antenna.alias = sector_configured_on.ip_address
+        # antenna.name = sector_configured_on.ip_address
+        # antenna.alias = sector_configured_on.ip_address
+        antenna.name = sector_id
+        antenna.alias = sector_id
         antenna.organization = base_station.organization
         antenna.save()
 
         self.object = sector_form.save(commit=False)
-        self.object.name = sector_configured_on.ip_address
+        # self.object.name = sector_configured_on.ip_address
+        self.object.name = sector_id
 
         # Alias: the IP address of the device for P2P; FOR PMP and WIMAX this would be Sector ID.
         # if int(technology) == 2:
