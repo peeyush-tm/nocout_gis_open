@@ -332,8 +332,9 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     processed = []
     perf_result = []
     if multi_proc:
-
-        q = NQueue()  # using Nocout Queue instead of Python Queue
+        q_start_at = time.time()
+        q_name = ("%s:%s" %('nocout', q_start_at))
+        q = NQueue(qname=q_name)  # using Nocout Queue instead of Python Queue
         jobs = [
             Process(
                 target=get_multiprocessing_performance_data,
