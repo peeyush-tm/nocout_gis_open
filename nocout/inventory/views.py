@@ -4695,23 +4695,28 @@ class GisWizardPTPListingTable(SectorListingTable):
 
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in json_data:
-            if dct['sector_configured_on__country']:
-                dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
-            if dct['sector_configured_on__state']:
-                dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
-            if dct['sector_configured_on__city']:
-                dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
 
-            device_id = dct.pop('id')
-            sector = Sector.objects.get(id=device_id)
-            kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id , 'pk': sector.id}
-            detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
-            if self.request.user.has_perm('inventory.change_sector'):
-                edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
-            else:
-                edit_action = ''
-            dct.update(actions=detail_action+edit_action)
+        for dct in json_data:
+            dct.update(actions='')
+            try:
+                if dct['sector_configured_on__country']:
+                    dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
+                if dct['sector_configured_on__state']:
+                    dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
+                if dct['sector_configured_on__city']:
+                    dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
+
+                device_id = dct.pop('id')
+                sector = Sector.objects.get(id=device_id)
+                kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id , 'pk': sector.id}
+                detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+                if self.request.user.has_perm('inventory.change_sector'):
+                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
+                else:
+                    edit_action = ''
+                dct.update(actions=detail_action+edit_action)
+            except Exception, e:
+                pass
         return json_data
 
 

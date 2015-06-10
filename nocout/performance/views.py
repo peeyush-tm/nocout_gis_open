@@ -261,7 +261,7 @@ class LivePerformanceListing(BaseDatatableView):
         required_value_list = ['id', 'machine__name', 'device_name', 'ip_address']
 
         device_tab_technology = self.request.GET.get('data_tab')
-
+        
         devices = self.inventory_utils.filter_devices(
             organizations=kwargs['organizations'],
             data_tab=device_tab_technology,
@@ -507,7 +507,7 @@ class LivePerformanceListing(BaseDatatableView):
                     'SingleDevicePerf',
                     kwargs={
                         'page_type': page_type, 
-                        'device_id': dct['id']
+                        'device_id': dct.get('id', 0)
                     },
                     current_app='performance'
                 )
@@ -517,7 +517,7 @@ class LivePerformanceListing(BaseDatatableView):
                     kwargs={
                         'page_type': alert_page_type, 
                         'data_source' : 'down', 
-                        'device_id': dct['id']
+                        'device_id': dct.get('id', 0)
                     },
                     current_app='alert_center'
                 )
@@ -525,7 +525,7 @@ class LivePerformanceListing(BaseDatatableView):
                 inventory_url = reverse(
                     'device_edit',
                     kwargs={
-                        'pk': dct['id']
+                        'pk': dct.get('id', 0)
                     },
                     current_app='device'
                 )
@@ -536,8 +536,7 @@ class LivePerformanceListing(BaseDatatableView):
                             <a href="' + alert_url + '" title="Device Alert">\
                             <i class="fa fa-warning text-warning"></i></a> \
                             <a href="' + inventory_url + '" title="Device Inventory">\
-                            <i class="fa fa-dropbox text-muted" ></i>\
-                            </a>'.format(page_type, dct['id'], 'down', alert_page_type)
+                            <i class="fa fa-dropbox text-muted" ></i></a>'
                 )
 
         return qs
@@ -1551,10 +1550,16 @@ class GetServiceStatus(View):
         age = a['age'] if(a and 'age' in a) else ""
 
         if age:
-            age = datetime.datetime.fromtimestamp(float(age)).strftime(DATE_TIME_FORMAT)
+            try:
+                age = datetime.datetime.fromtimestamp(float(age)).strftime(DATE_TIME_FORMAT)
+            except Exception, e:
+                age = age
 
         if last_down_time:
-            last_down_time = datetime.datetime.fromtimestamp(float(last_down_time)).strftime(DATE_TIME_FORMAT)
+            try:
+                last_down_time = datetime.datetime.fromtimestamp(float(last_down_time)).strftime(DATE_TIME_FORMAT)
+            except Exception, e:
+                last_down_time = last_down_time
 
         self.result = {
             'success': 1,

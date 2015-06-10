@@ -302,6 +302,12 @@ class NocoutUtilsGateway:
         
         return param1
 
+    def time_it(self):
+
+        param1 = time_it()
+
+        return param1 
+
 
 class DictDiffer(object):
     """
@@ -636,7 +642,7 @@ def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None
     query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id, device_list=device_list)
     return fetch_raw_result(query)
 
-
+@time_it()
 def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
     Function to get complete GIS inventory raw query(sql)
@@ -651,29 +657,38 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
 
     tech = " "
 
-    rf_tech = " "
-
     if monitored_only:
         added_device = "where device.is_added_to_nms = 1 "
 
-        if technology:
-            tech = " and technology.name = '{0}'".format(technology)
-            if type_rf != 'bh':
-                rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
-
-    elif not monitored_only:
-        if technology:
-            tech = " where technology.name = '{0}'".format(technology)
-            if type_rf != 'bh':
-                rf_tech = " where SECTOR_TECH = '{0}' ".format(technology)
-
-    else:
-        added_device = ""
-        tech = ""
-        rf_tech = " "
+    if technology:
+        tech = " and technology.name = '{0}'".format(technology)
 
     added_device += tech
 
+    # based on devices
+    get_these_devices = list()
+    where_these_devices = ''
+
+    # if device_list:
+    #     for device in device_list:
+    #         if device.get('id'):
+    #             where_these_devices = ' device.id in '
+    #             get_these_devices.append(device.get('id'))
+    #         elif device.get('device_name'):
+    #             where_these_devices = ' device.device_name in '
+    #             get_these_devices.append(device.get('device_name'))
+    #         elif device.get('name'):
+    #             where_these_devices = ' device.device_name in '
+    #             get_these_devices.append(device.get('name'))
+    #         else:
+    #             continue
+
+    # search_these_devices = ''
+    # if len(get_these_devices):
+    #     search_these_devices = where_these_devices + " ( " + ",".join(get_these_devices) + " ) "
+
+
+    # based on RF tech
     if type_rf == 'sector':
         rf_tech = " where SECTOR_TECH = '{0}' ".format(technology)
     elif type_rf == 'ss':
@@ -681,7 +696,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
     elif type_rf == 'bh':
         rf_tech = " where BHTECH = '{0}' ".format(technology)
     else:
-        pass
+        rf_tech = " "
 
     where_bs = ''
     if bs_id:
