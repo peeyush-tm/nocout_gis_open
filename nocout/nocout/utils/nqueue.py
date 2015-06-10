@@ -2,6 +2,8 @@
 # based on REDIS & Django-Redis & Python Redis
 # would provide dropin replacement for QUEUE python
 
+import time
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -39,7 +41,8 @@ class NQueue(object):
         self._namespace = self._params.get('NAMESPACE', 'noc:queue:')
 
         self.serializer = serializer
-        self.qkey = '%s:%s' % (self._namespace, qname)
+        # all queue names must be different
+        self.qkey = '%s:%s:%s' % (self._namespace, qname, time.time())
 
         self.__redis = StrictRedis.from_url(self._url)
 
