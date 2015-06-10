@@ -155,9 +155,6 @@ class PerformanceUtilsGateway:
         :param page_type:
         :param devices:
         """
-        print "DEVICES"
-        print type(devices)
-        print "DEVICES"
         param1 = prepare_gis_devices(
             devices, 
             page_type, 
@@ -362,7 +359,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     result_qs = map_results(perf_result, devices)
     return result_qs
 
-
+@nocout_utils.time_it()
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def pre_map_indexing(index_dict, index_on='device_name'):
     """
@@ -690,8 +687,8 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
 
             for bs_row in raw_result:
                 if bs_row.get('BSID') and str(bs_row.get('BSID')) not in bs_ids_list:
-                    bs_names_list.append(bs_row.get('BSALIAS').upper())
                     bs_ids_list.append(str(bs_row.get('BSID')))
+                    bs_names_list.append(bs_row.get('BSALIAS').upper())
                     bs_bh_ports_list.append(str(bs_row.get('BS_BH_PORT')))
                     bs_bh_capacity_list.append(str(bs_row.get('BS_BH_CAPACITY')))
         else:
@@ -804,10 +801,10 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
             else:
                 continue
 
-            if device.get('id'):
-                result_devices.append(device)
-            else:
-                continue
+        result_devices.append(device)
+        # if device.get('id'):
+        # else:
+        #     continue
 
     return result_devices
 
