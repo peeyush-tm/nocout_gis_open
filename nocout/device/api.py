@@ -445,11 +445,12 @@ class DeviceStatsApi(View):
                             }
     """
 
-    # Formatted inventory wrt the base stations.
-    raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
+    def __init__(self):
+        # Formatted inventory wrt the base stations.
+        self.raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
+        super(DeviceStatsApi, self).__init__()
 
     def get(self, request):
-
         self.result = {
             "success": 0,
             "message": "Device Loading Completed",
