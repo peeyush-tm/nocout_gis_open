@@ -151,6 +151,12 @@ class AlertCenterUtilsGateway:
 
         return param1
 
+    def common_get_severity_icon(self, severity):
+
+        param1 = common_get_severity_icon(severity)
+
+        return param1
+
 
 # misc utility functions
 def prepare_query(
@@ -324,6 +330,7 @@ def prepare_raw_alert_results(performance_data=None):
                 'device_name': device_name,
                 'severity': data['severity'],
                 'ip_address': data["ip_address"],
+                'data_source_key': data_source,
                 'data_source_name': sds_name,
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
@@ -416,26 +423,26 @@ def common_prepare_results(dct):
     except Exception, e:
         pass
 
-    if dct['severity'].upper() == 'DOWN' \
-            or "CRITICAL" in dct['description'].upper() \
-            or dct['severity'].upper() == 'CRITICAL':
+    if dct['severity'].strip().upper() == 'DOWN' \
+            or "CRITICAL" in dct['description'].strip().upper() \
+            or dct['severity'].strip().upper() == 'CRITICAL':
         dct[
             'severity'
         ] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">DOWN</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
-    elif dct['severity'].upper() == 'WARNING' \
-            or "WARNING" in dct['description'].upper() \
-            or "WARN" in dct['description'].upper():
+    elif dct['severity'].strip().upper() == 'WARNING' \
+            or "WARNING" in dct['description'].strip().upper() \
+            or "WARN" in dct['description'].strip().upper():
         dct[
             'severity'
         ] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">WARNING</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
 
-    elif dct['severity'].upper() == 'UP' \
-            or "OK" in dct['description'].upper():
+    elif dct['severity'].strip().upper() == 'UP' \
+            or "OK" in dct['description'].strip().upper():
         dct[
             'severity'
         ] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">UP</span></i>'
@@ -450,3 +457,31 @@ def common_prepare_results(dct):
         dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
     return dct
+
+
+def common_get_severity_icon(severity):
+    """
+    this function return the severity icon as per the given param
+    """
+
+    severity_icon = '<i class="fa fa-circle grey-dot" title="Unknown">\
+                     <span style="display:none">Unknown</span></i>'
+
+    if not severity or severity.lower() == 'unknown':
+        return severity_icon
+
+    severity = severity.lower()
+
+    if severity in ['down', 'critical', 'crit']:
+        severity_icon = '<i class="fa fa-circle red-dot" title="Critical">\
+                         <span style="display:none">DOWN</span></i>'
+    
+    elif severity in ['warning', 'warn']:
+        severity_icon = '<i class="fa fa-circle orange-dot" title="Warning">\
+                         <span style="display:none">WARNING</span></i>'
+
+    elif severity in ['up', 'ok']:
+        severity_icon = '<i class="fa fa-circle green-dot" title="Ok">\
+                         <span style="display:none">UP</span></i>'
+
+    return severity_icon

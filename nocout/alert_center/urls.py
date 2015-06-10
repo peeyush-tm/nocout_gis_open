@@ -34,13 +34,13 @@ urlpatterns = patterns('',
                            views.GetNetworkAlertDetail.as_view(),
                            name='NetworkAlertDetails'),
 
-                       url(r'^customer_detail/$',
-                           views.CustomerAlertDetailHeaders.as_view(),
+                       url(r'^(?P<page_type>\w+)_detail/$',
+                           views.AlertCenterListing.as_view(),
                            name='customer_alert_details'
                        ),
 
                        url(r'^customer_detail_listing_table/',
-                           views.GetCustomerAlertDetail.as_view(),
+                           views.AlertListingTable.as_view(),
                            name='CustomerAlertDetails'
-                       ),
+                       )
 )
