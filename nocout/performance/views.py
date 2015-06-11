@@ -450,18 +450,7 @@ class LivePerformanceListing(BaseDatatableView):
 
         :param qs:
         """
-        device_list = []
-        for device in qs:
-            device_list.append(
-                {
-                    'device_name': device['device_name'],
-                    'device_machine': device['machine_name'],
-                    'id': device['id'],
-                    'ip_address': device['ip_address']
-                }
-            )
-
-        return self.inventory_utils.prepare_machines(device_list)
+        return self.inventory_utils.prepare_machines(device_list, machine_key='machine_name')
 
     def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
         """
@@ -589,13 +578,15 @@ class LivePerformanceListing(BaseDatatableView):
         ## dont call prepare_devices
 
         if self.is_initialised and not (self.is_searched or self.is_ordered):
-            #prepare devices with GIS information
+            # prepare devices with GIS information
             qs = self.prepare_devices(qs=qs)
-            #end prepare devices with GIS information
+            # end prepare devices with GIS information
 
         if not self.is_polled:
-            #preparing machine list
-            machines = self.prepare_machines(qs)
+            # preparing machine list
+            machines = self.inventory_utils.prepare_machines(
+                qs, machine_key='machine_name'
+            )
             #preparing the polled results
             if download_excel == "yes":
                 qs = self.prepare_polled_results(qs, multi_proc=False, machine_dict=machines)
