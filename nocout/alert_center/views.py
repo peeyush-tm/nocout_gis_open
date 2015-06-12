@@ -23,6 +23,9 @@ from inventory.utils.util import InventoryUtilsGateway
 
 # Import alert_center utils gateway class
 from alert_center.utils.util import AlertCenterUtilsGateway
+# @yogender-tm : Cleanup this
+import alert_center.utils.util as au
+# @yogender-tm : Cleanup this
 
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
@@ -30,7 +33,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from django.utils.dateformat import format
 
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
-from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE
+from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED
 
 import logging
 logger = logging.getLogger(__name__)
@@ -317,12 +320,13 @@ class AlertListingTable(BaseDatatableView):
             type_rf=type_rf
         )
 
-    def prepare_polled_results(self, qs, machine_dict=None):
+    def prepare_polled_results(self, qs, machine_dict=None, multi_proc=False):
         """
         preparing polled results
         after creating static inventory first
         :param machine_dict:
         :param qs:
+        :param multi_proc: multiprocessing module introduced
         """
         data_source = self.request.GET.get('data_source')
         device_technology = self.request.GET.get('data_tab', '')
@@ -354,47 +358,15 @@ class AlertListingTable(BaseDatatableView):
 
         required_data_columns = self.polled_columns
 
-        sorted_device_list = list()
-
-        #Fetching the data for the device w.r.t to their machine.
-        for machine, machine_device_list in machine_dict.items():
-            device_list = list()
-            performance_data = list()
-            performance_data = alert_utils.raw_prepare_result(
-                performance_data=performance_data,
-                machine=machine,
-                table_name=search_table,
-                devices=machine_device_list,
-                data_sources=data_sources_list,
-                columns=required_data_columns,
-                condition=extra_query_condition if extra_query_condition else None
-            )
-
-            device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
-
-            sorted_device_list += device_list
-
-        # In case of wimax tab we also have to fetch data 
-        # from 'performance_inventorystatus'  table
-        if is_customer_detail_page and device_technology.lower() in ['wimax']:
-            search_table = "performance_inventorystatus"
-            extra_query_condition = severity_condition
-            for machine, machine_device_list in machine_dict.items():
-                device_list = list()
-                performance_data = list()
-                performance_data = alert_utils.raw_prepare_result(
-                    performance_data=performance_data,
-                    machine=machine,
-                    table_name=search_table,
-                    devices=machine_device_list,
-                    data_sources=data_sources_list,
-                    columns=self.polled_columns,
-                    condition=extra_query_condition if extra_query_condition else None
-                )
-
-                device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
-
-                sorted_device_list += device_list
+        # @yogender-tm : check this. clean up
+        sorted_device_list = au.polled_results(
+            multi_proc=MULTI_PROCESSING_ENABLED,
+            machine_dict=machine_dict,
+            table_name=search_table,
+            data_sources=data_sources_list,
+            columns=required_data_columns,
+            condition=extra_query_condition if extra_query_condition else None
+        )
 
         return sorted_device_list
 
@@ -973,23 +945,34 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         sorted_device_list = list()
 
-        #Fetching the data for the device w.r.t to their machine.
-        for machine, machine_device_list in machine_dict.items():
-            device_list = list()
-            performance_data = list()
-            performance_data = alert_utils.raw_prepare_result(
-                performance_data=performance_data,
-                machine=machine,
-                table_name=search_table,
-                devices=machine_device_list,
-                data_sources=self.data_sources,
-                columns=self.polled_columns,
-                condition=extra_query_condition if extra_query_condition else None
-            )
+        # @yogender-tm : clean this
+        # Fetching the data for the device w.r.t to their machine.
+        # for machine, machine_device_list in machine_dict.items():
+        #     device_list = list()
+        #     performance_data = list()
+        #     performance_data = alert_utils.raw_prepare_result(
+        #         performance_data=performance_data,
+        #         machine=machine,
+        #         table_name=search_table,
+        #         devices=machine_device_list,
+        #         data_sources=self.data_sources,
+        #         columns=self.polled_columns,
+        #         condition=extra_query_condition if extra_query_condition else None
+        #     )
+        #
+        #     device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
+        #
+        #     sorted_device_list += device_list
 
-            device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
-
-            sorted_device_list += device_list
+        # @yogender-tm : check this. clean up
+        sorted_device_list = au.polled_results(
+            multi_proc=MULTI_PROCESSING_ENABLED,
+            machine_dict=machine_dict,
+            table_name=search_table,
+            data_sources=self.data_sources,
+            columns=self.polled_columns,
+            condition=extra_query_condition if extra_query_condition else None
+        )
 
         return sorted_device_list
 
@@ -1013,16 +996,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         :param qs:
         """
-        device_list = []
-        for device in qs:
-            device_list.append({
-                'device_name': device['device_name'],
-                'device_machine': device['machine_name'],
-                'id': device['id'],
-                'ip_address': device['ip_address']
-            })
-
-        return inventory_utils.prepare_machines(device_list)
+        return inventory_utils.prepare_machines(qs, machine_key='machine_name')
 
     def prepare_results(self, qs):
         """
