@@ -509,8 +509,9 @@ def polled_results(
     # # to fetch the deice results from corrosponding machines
 
     perf_result = list()
-    if multi_proc:
-        q = NQueue()  # using Nocout Queue instead of Python Queue
+    q = NQueue()
+    if multi_proc and q.ping():
+
         jobs = [
             Process(
                 target=get_multiprocessing_performance_data,
