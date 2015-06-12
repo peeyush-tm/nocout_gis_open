@@ -28,6 +28,9 @@ log = logging.getLogger(__name__)
 
 # # commented because of goes package is not supported for python 2.7 on centos 6.5
 compare_geo = False
+# Cause of MEMORY EXCEPTION
+# TODO: Replace package
+"""
 try:
     import pyproj
     from shapely.geometry import Polygon, Point
@@ -39,6 +42,7 @@ try:
 except Exception as e:
     log.exception(e)
     compare_geo = False
+"""
 
 import random
 from django.core.cache import cache
@@ -1206,7 +1210,8 @@ def is_lat_long_in_state(latitude, longitude, state):
     :param latitude:
     :param longitude:
     :param state:
-    :return:
+    :return: True
+    """
     """
     if compare_geo:
         # commented because of goes package is not supported for python 2.7 on centos 6.5
@@ -1243,7 +1248,8 @@ def is_lat_long_in_state(latitude, longitude, state):
                 return False
     else:
         return False
-
+    """
+    return True
 
 def disable_for_loaddata(signal_handler):
     """
