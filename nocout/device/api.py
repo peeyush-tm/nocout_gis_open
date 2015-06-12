@@ -28,7 +28,7 @@ Methods
 
 import ast
 import json
-import ujson
+
 import urllib
 import requests
 import logging
@@ -58,6 +58,16 @@ from inventory.models import (BaseStation, LivePollingSettings,
                               ThresholdConfiguration, ThematicSettings,
                               PingThematicSettings, UserThematicSettings,
                               UserPingThematicSettings)
+
+import platform
+current_platform = platform.python_implementation()
+if current_platform.lower() == 'PyPy'.lower():
+    import json as ujson
+elif current_platform.lower() == 'CPython':
+    import ujson
+else:
+    import json
+
 
 logger = logging.getLogger(__name__)
 

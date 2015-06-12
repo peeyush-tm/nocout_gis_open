@@ -129,7 +129,7 @@ MIDDLEWARE_CLASSES = (
     # site caching
     # 'django.middleware.cache.UpdateCacheMiddleware',
     # site caching
-    'corsheaders.middleware.CorsMiddleware',
+    #'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -200,7 +200,7 @@ INSTALLED_APPS = (
     'dajax',
     'django.contrib.admin',
     'session_management',
-    'corsheaders',
+    #'corsheaders',
     'activity_stream',
     'jsonify',
     'djcelery',
@@ -251,7 +251,7 @@ CACHES = {
         "LOCATION": REDIS_CACHE_URL,
         'TIMEOUT': 60,
         "OPTIONS": {
-            "PARSER_CLASS": "redis.connection.HiredisParser",
+            # "PARSER_CLASS": "redis.connection.HiredisParser",
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             'MAX_ENTRIES': 1000,
             "COMPRESS_MIN_LEN": 10,

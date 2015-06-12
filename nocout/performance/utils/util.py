@@ -3,7 +3,7 @@
 # python utilities
 # python utilities
 
-import ujson as json
+
 import os
 import datetime
 import time
@@ -34,6 +34,15 @@ from django.http import HttpRequest
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
+
+import platform
+current_platform = platform.python_implementation()
+if current_platform.lower() == 'PyPy'.lower():
+    import simplejson as json
+elif current_platform.lower() == 'CPython':
+    import ujson as json
+else:
+    pass
 
 
 class PerformanceUtilsGateway:

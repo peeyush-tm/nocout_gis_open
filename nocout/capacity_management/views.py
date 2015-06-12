@@ -15,7 +15,7 @@ from django.core.urlresolvers import reverse
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-import ujson as json
+# import ujson as json
 
 from device.models import DeviceTechnology, Device
 
@@ -33,6 +33,15 @@ logger = logging.getLogger(__name__)
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
+
+import platform
+current_platform = platform.python_implementation()
+if current_platform.lower() == 'PyPy'.lower():
+    import simplejson as json
+elif current_platform.lower() == 'CPython':
+    import ujson as json
+else:
+    import json
 
 
 class SectorStatusHeaders(ListView):

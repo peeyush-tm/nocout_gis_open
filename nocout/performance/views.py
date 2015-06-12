@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # import json
-import ujson as json
+# import ujson as json
 import datetime
 import time
 from operator import itemgetter
@@ -65,6 +65,16 @@ perf_utils = PerformanceUtilsGateway()
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
+
+
+import platform
+current_platform = platform.python_implementation()
+if current_platform.lower() == 'PyPy'.lower():
+    import json
+elif current_platform.lower() == 'CPython':
+    import ujson as json
+else:
+    import json
 
 
 class PerformanceViewsGateway:

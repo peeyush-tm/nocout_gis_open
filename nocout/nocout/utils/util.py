@@ -55,10 +55,21 @@ project_group_role_dict_mapper = {
     'viewer': 'group_viewer',
 }
 
-if getattr(settings, 'PROFILE'):
-    from line_profiler import LineProfiler as LLP
-    from memory_profiler import LineProfiler as MLP
-    from memory_profiler import show_results
+# check if the platform is cPython or PyPy
+
+import platform
+current_platform = platform.python_implementation()
+if current_platform.lower() == 'PyPy'.lower():
+    LLP = None
+    MLP = None
+    show_results = None
+elif current_platform.lower() == 'CPython':
+    if getattr(settings, 'PROFILE'):
+        from line_profiler import LineProfiler as LLP
+        from memory_profiler import LineProfiler as MLP
+        from memory_profiler import show_results
+else:
+    pass
 
 
 class NocoutUtilsGateway:

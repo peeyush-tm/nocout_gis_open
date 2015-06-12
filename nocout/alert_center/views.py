@@ -2,7 +2,7 @@
 
 import datetime
 # faster json processing module
-import ujson as json
+# import ujson as json
 
 from django.db.models.query import ValuesQuerySet
 from django.core.urlresolvers import reverse
@@ -47,6 +47,14 @@ alert_utils = AlertCenterUtilsGateway()
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
+import platform
+current_platform = platform.python_implementation()
+if current_platform.lower() == 'PyPy'.lower():
+    import simplejson as json
+elif current_platform.lower() == 'CPython':
+    import ujson as json
+else:
+    import json
 
 class AlertCenterListing(ListView):
     """
