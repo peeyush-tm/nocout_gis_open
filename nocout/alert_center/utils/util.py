@@ -20,6 +20,10 @@ SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 class AlertCenterUtilsGateway:
     """
     This class works as gateway between alert center utils & other apps
@@ -162,7 +166,7 @@ class AlertCenterUtilsGateway:
 def prepare_query(
     table_name=None, 
     devices=None, 
-    data_sources=["pl", "rta"], 
+    data_sources=None,
     columns=None, 
     condition=None, 
     offset=None, 
@@ -187,29 +191,24 @@ def prepare_query(
         return None
 
     if table_name and devices:
-        query = "SELECT {0} FROM {1} AS original_table " \
-                "LEFT OUTER JOIN ({1} AS derived_table) " \
-                "ON ( " \
-                "        original_table.data_source = derived_table.data_source " \
-                "    AND original_table.device_name = derived_table.device_name " \
-                "    AND original_table.id < derived_table.id" \
-                ") " \
-                "WHERE ( " \
-                "        derived_table.id IS NULL " \
-                "    AND original_table.device_name IN ( {2} ) " \
-                "    {3}" \
-                "    {4}" \
-                ")" \
-                "ORDER BY original_table.id DESC " \
-                "".format(
-            (',').join(["original_table.`" + col_name + "`" for col_name in columns]),
+        query = """
+        SELECT {0} FROM {1} AS original_table
+        WHERE (
+            original_table.device_name IN ( {2} )
+            {3}
+            {4}
+        )
+        ORDER BY original_table.id DESC
+        """.format(
+            ','.join(["original_table.`" + col_name + "`" for col_name in columns]),
             table_name,
             (",".join(map(in_string, devices))),
             "AND original_table.data_source in ( {0} )".format(
-                (',').join(map(in_string, data_sources))
+                ','.join(map(in_string, data_sources))
             ) if data_sources else "",
             condition.format("original_table") if condition else "",
         )
+
         if limit is not None and offset is not None:
             query += "LIMIT {0}, {1}".format(offset, limit)
 
@@ -485,3 +484,96 @@ def common_get_severity_icon(severity):
                          <span style="display:none">UP</span></i>'
 
     return severity_icon
+
+# Introducing multiprocessing for Alert Center
+from nocout.utils.nqueue import NQueue
+from multiprocessing import Process
+
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_ALERT', 300))
+def polled_results(
+                   multi_proc=False,
+                   machine_dict=None,
+                   table_name=None,
+                   data_sources=None,
+                   columns=None,
+                   condition=None
+                   ):
+    """
+    ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
+    :param table_name: name of the table to query from RAW query
+    :param machine_dict:
+    :param multi_proc:
+    """
+    # Fetching the data for the device w.r.t to their machine.
+    # # multi processing module here
+    # # to fetch the deice results from corrosponding machines
+
+    perf_result = list()
+    q = NQueue()
+    if multi_proc and q.ping():
+
+        jobs = [
+            Process(
+                target=get_multiprocessing_performance_data,
+                args=(q, machine_device_list, machine, data_sources, columns, condition, table_name)
+            ) for machine, machine_device_list in machine_dict.items()
+        ]
+
+        for j in jobs:
+            j.start()
+        for k in jobs:
+            k.join()
+
+        while True:
+            if not q.empty():
+                perf_result.extend(q.get())
+            else:
+                break
+        q.clear()  # removing the queue after its emptied
+
+    else:
+        for machine, machine_device_list in machine_dict.items():
+            perf_result.extend(
+                get_performance_data(
+                    machine_device_list, machine, data_sources, columns, condition, table_name
+                )
+            )
+
+    return perf_result
+
+
+def get_multiprocessing_performance_data(q, machine_device_list, machine, data_sources, columns, condition, table_name):
+    """
+
+    :return:
+    """
+
+    query = prepare_query(
+        table_name=table_name,
+        devices=machine_device_list,
+        data_sources=data_sources,
+        columns=columns,
+        condition=condition
+    )
+
+    try:
+        q.put(prepare_raw_alert_results(nocout_utils.fetch_raw_result(query, machine)))
+
+    except Exception as e:
+        logger.exception(e.message)
+
+
+def get_performance_data(machine_device_list, machine, data_sources, columns, condition, table_name):
+    """
+
+    :return:
+    """
+    query = prepare_query(
+        table_name=table_name,
+        devices=machine_device_list,
+        data_sources=data_sources,
+        columns=columns,
+        condition=condition
+    )
+    return prepare_raw_alert_results(nocout_utils.fetch_raw_result(query, machine))
+

@@ -323,14 +323,15 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     :param qs:
     """
     # Fetching the data for the device w.r.t to their machine.
-    ## multi processing module here
-    ## to fetch the deice results from corrosponding machines
+    # # multi processing module here
+    # # to fetch the deice results from corrosponding machines
     model = model_is
     devices = qs
     processed = []
     perf_result = []
-    if multi_proc:
-        q = NQueue()  # using Nocout Queue instead of Python Queue
+    q = NQueue()
+    if multi_proc and q.ping():
+          # using Nocout Queue instead of Python Queue
         jobs = [
             Process(
                 target=get_multiprocessing_performance_data,
@@ -348,6 +349,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
                 perf_result.append(q.get())
             else:
                 break
+        q.clear()  # removing the queue after its emptied
 
     else:
         for machine, machine_device_list in machine_dict.items():

@@ -46,7 +46,7 @@ from service.utils.util import ServiceUtilsGateway
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
     AVG_CHART_COLOR, CACHE_TIME, \
-    WARN_COLOR, CRIT_COLOR, WARN_TYPE, CRIT_TYPE
+    WARN_COLOR, CRIT_COLOR, WARN_TYPE, CRIT_TYPE, MULTI_PROCESSING_ENABLED
 
 from performance.formulae import display_time, rta_null
 
@@ -402,7 +402,8 @@ class LivePerformanceListing(BaseDatatableView):
                     ##we can quickly call upon prepare_devices
                     machines = self.prepare_machines(sort_data)
                     #preparing the polled results
-                    result_qs = self.prepare_polled_results(sort_data, multi_proc=False, machine_dict=machines)
+                    result_qs = self.prepare_polled_results(sort_data, multi_proc=MULTI_PROCESSING_ENABLED,
+                                                            machine_dict=machines)
                     sort_data = result_qs
                 else:
                     self.is_polled = False
@@ -468,9 +469,9 @@ class LivePerformanceListing(BaseDatatableView):
 
         :param qs:
         """
-        return self.inventory_utils.prepare_machines(device_list, machine_key='machine_name')
+        return self.inventory_utils.prepare_machines(qs, machine_key='machine_name')
 
-    def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
+    def prepare_polled_results(self, qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict={}):
         """
         preparing polled results
         after creating static inventory first
@@ -548,18 +549,6 @@ class LivePerformanceListing(BaseDatatableView):
 
         return qs
 
-    def paging(self, qs):
-        """ Paging
-        :param qs:
-        """
-        limit = min(int(self.request.REQUEST.get('iDisplayLength', 10)), self.max_display_length)
-        # if pagination is disabled ("bPaginate": false)
-        if limit == -1:
-            return qs
-        start = int(self.request.REQUEST.get('iDisplayStart', 0))
-        offset = start + limit
-        return qs[start:offset]
-
     def get_context_data(self, *args, **kwargs):
         """
         The maine function call to fetch, search, ordering , prepare and display the data on the data table.
@@ -607,9 +596,9 @@ class LivePerformanceListing(BaseDatatableView):
             )
             #preparing the polled results
             if download_excel == "yes":
-                qs = self.prepare_polled_results(qs, multi_proc=False, machine_dict=machines)
+                qs = self.prepare_polled_results(qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict=machines)
             else:
-                qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
+                qs = self.prepare_polled_results(qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict=machines)
 
         # if the qs is empty then JSON is unable to serialize the empty
         # ValuesQuerySet.Therefore changing its type to list.
