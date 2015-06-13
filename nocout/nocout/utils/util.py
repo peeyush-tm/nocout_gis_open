@@ -308,6 +308,15 @@ class NocoutUtilsGateway:
 
         return param1 
 
+    def fetch_ss_inventory(self, monitored_only=True, technology=None, device_name_list=None):
+
+        param1 = fetch_ss_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list
+        )
+
+        return param1
 
 class DictDiffer(object):
     """
@@ -1393,16 +1402,15 @@ def html_to_text(html):
     return s.get_text()
 
 
-# http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
-# defining utility to exatly choose a database to query from
-# django routers are of no use
-# we will pass in the machine name
-# we will test the connection
-# and we will return the results of the database to be used
 @time_it()
 def nocout_db_router(db='default', levels=0):
     """
-
+    http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+    defining utility to exatly choose a database to query from
+    django routers are of no use
+    we will pass in the machine name
+    we will test the connection
+    and we will return the results of the database to be used
     :param db: pass the name for the database
     :param levels: number of slaves available
     :return:the database to be queried on
@@ -1442,4 +1450,589 @@ def nocout_query_results(query_set=None, using='default', levels=0):
             db = nocout_db_router(db=using, levels=levels)
             return query_set.using(alias=db)
     return None
+
+
+def fetch_ss_inventory(monitored_only=True, technology=None, device_name_list=None):
+    """
+    This function fetch SS inventory data except PTPBH SS.
+    If any technology is given then fetch data for specific technology.
+    """
+    ss_query = get_inventory_ss_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list
+    )
+
+    result_list = fetch_raw_result(ss_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SSDEVICENAME'
+    )
+
+
+def fetch_ptpbh_ss_inventory(monitored_only=True, technology='P2P', device_name_list=None):
+    """
+    This function fetch PTP BH SS inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    ss_query = get_inventory_ss_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list,
+        is_ptpbh=True
+    )
+
+    result_list = fetch_raw_result(ss_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SSDEVICENAME'
+    )
+
+
+def get_inventory_ss_query(monitored_only=True, technology=None, device_name_list=None, is_ptpbh=False):
+    """
+    This function return SQL query to get sub-station inventory 
+    as per the given params
+    """
+    technology_condition = ''
+    nms_device_condition = ''
+    device_name_condition = ''
+    circuit_type_condition = ''
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if technology:
+        # Check that the given technology name is exists or not
+        try:
+            is_correct_technology = DeviceTechnology.objects.get(name=technology)
+            technology_condition = ' AND technology.name = {0} '.format(technology)
+        except Exception, e:
+            technology_condition = ''
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if is_ptpbh:
+        circuit_type_condition = " AND circuit.circuit_type LIKE '%backhaul%' "
+    else:
+        circuit_type_condition = " AND ( isnull(circuit.circuit_type) OR \
+                                  circuit.circuit_type LIKE '%customer%' ) "
+
+    ss_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
+            IF(not isnull(city.city_name), city.city_name, 'NA') as BSCITY,
+            IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
+            device_port.name as SECTOR_PORT,
+            IF(
+                not isnull(device_port.name),
+                concat(
+                    '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
+                ),
+                ss_info.SECTOR_SECTOR_ID
+            ) as SECTOR_PORT_SECTOR_ID,
+            ss_info.*
+        FROM (
+            SELECT
+                sector.sector_id AS SECTOR_SECTOR_ID,
+                sector.id AS SECTOR_ID,
+                sector.sector_configured_on_port_id as sector_port_id,
+                circuit.circuit_id AS CCID,
+                circuit.id AS CID,
+                customer.alias AS CUST,
+                customer.id AS CUSTID,
+                sector_device.ip_address as SECTOR_CONF_ON_IP,
+                sector_device.device_name as SECTOR_CONF_ON,
+                sector_device.id as SECTOR_CONF_ON_ID,
+                device.ip_address AS SSIP,
+                device.device_name AS SSDEVICENAME,
+                device.id AS SS_DEVICE_ID,
+                devicetype.name AS DEVICE_TYPE,
+                devicetype.id AS DEVICE_TYPE_ID,
+                technology.name AS SS_TECH,
+                technology.id AS SS_TECH_ID,
+                sector.base_station_id as BSID
+            FROM
+                inventory_circuit AS circuit
+            LEFT JOIN (
+                inventory_substation AS substation,
+                inventory_sector AS sector,
+                inventory_customer AS customer,
+                device_device AS device,
+                device_device AS sector_device,
+                device_devicetechnology AS technology,
+                device_devicetype AS devicetype
+            )
+            ON (
+                substation.id = circuit.sub_station_id
+                AND
+                sector.id = circuit.sector_id
+                AND
+                sector.sector_configured_on_id = sector_device.id
+                AND
+                customer.id = circuit.customer_id
+                AND
+                {2}
+                device.id = substation.device_id
+                AND
+                technology.id = device.device_technology
+                AND
+                devicetype.id = device.device_type
+                {0}
+            )
+            where 
+                device.is_deleted = 0
+                {1}
+                {3}
+        ) AS ss_info
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+          bs.id = ss_info.BSID
+        LEFT JOIN
+            device_state AS state
+        on 
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        on 
+            city.id = bs.city_id
+        LEFT JOIN
+            device_deviceport AS device_port
+        ON
+            device_port.id = ss_info.sector_port_id
+        and
+            not isnull(ss_info.sector_port_id);
+        '''.format(
+            technology_condition,
+            nms_device_condition,
+            device_name_condition,
+            circuit_type_condition
+        )
+
+    return ss_query
+
+
+def fetch_sector_inventory(monitored_only=True, technology=None, device_name_list=None):
+    """
+    This function fetch all the Sector inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    # Get the sector query as per the params
+    sector_query = get_inventory_sector_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list
+    )
+
+    result_list = fetch_raw_result(sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def fetch_dr_sector_inventory(monitored_only=True, technology='WiMAX', device_name_list=None):
+    """
+    This function fetch all the DR Sector inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    # Get the sector query as per the params
+    dr_sector_query = get_inventory_sector_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list,
+        is_dr=True
+    )
+
+    result_list = fetch_raw_result(dr_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def get_inventory_sector_query(monitored_only=True, technology=None, device_name_list=None, is_dr=False):
+    """
+    This function returns query to fetch sectors inventory
+    """
+    technology_condition = ""
+    nms_device_condition = ""
+    device_name_condition = ""
+    dr_sector_id_prefix = " "
+    dr_device_condition = ""
+    device_condition = " device.id = sector.sector_configured_on_id "
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if technology:
+        # Check that the given technology name is exists or not
+        try:
+            is_correct_technology = DeviceTechnology.objects.get(name=technology)
+            technology_condition = ' AND technology.name = {0} '.format(technology)
+        except Exception, e:
+            technology_condition = ''
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if is_dr:
+        dr_sector_id_prefix = "DR: "
+        dr_device_condition = " AND sector.dr_site = 'yes' "
+        device_condition = " device.id = sector.dr_configured_on_id "
+
+    sector_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
+            IF(not isnull(city.city_name), city.city_name, 'NA') as BSCITY,
+            IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
+            device_port.name as SECTOR_PORT,
+            group_concat(IF(
+                not isnull(device_port.name),
+                concat(
+                    '{3}', '(', upper(device_port.name), ') ', sector_info.SECTOR_SECTOR_ID
+                ),
+                sector_info.SECTOR_SECTOR_ID
+            ) SEPARATOR ' ') as SECTOR_PORT_SECTOR_ID,
+            sector_info.* 
+        from
+            (
+                select
+                    device.ip_address as SECTOR_CONF_ON_IP,
+                    devicetype.name as DEVICE_TYPE,
+                    
+                    sector.base_station_id AS BSID,
+                    sector.sector_id as SECTOR_SECTOR_ID,
+                    sector.id as SECTOR_ID,
+                    sector.base_station_id as SECTOR_BS_ID,
+                    sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
+                    sector.sector_configured_on_port_id as sector_port_id,
+
+                    technology.name as SECTOR_TECH,
+                    technology.id as SECTOR_TECH_ID,
+                    devicetype.id as SECTOR_TYPE_ID,
+
+                    device.id as SECTOR_CONF_ON_ID,
+                    device.device_name as SECTOR_CONF_ON_NAME
+
+                from 
+                    inventory_sector as sector
+                join (
+                    device_device as device,
+                    device_devicetechnology as technology,
+                    device_devicetype as devicetype
+                )
+                on (
+                    {5}
+                    AND
+                    {2}
+                    technology.id = device.device_technology
+                    {0}
+                    AND
+                    devicetype.id = device.device_type
+                )
+                where 
+                    not isnull(sector.sector_configured_on_id)
+                    AND
+                    device.is_deleted = 0
+                    {1}
+                    {4}
+            ) as sector_info
+        LEFT JOIN
+            inventory_basestation as bs
+        ON
+            bs.id = sector_info.BSID
+        LEFT JOIN
+            device_state AS state
+        on 
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        on 
+            city.id = bs.city_id
+        LEFT JOIN
+            device_deviceport AS device_port
+        ON
+            device_port.id = sector_info.sector_port_id
+        and
+            not isnull(sector_info.sector_port_id)
+        group by sector_info.SECTOR_CONF_ON_IP;
+
+        '''.format(
+            technology_condition,
+            nms_device_condition,
+            device_name_condition,
+            dr_sector_id_prefix,
+            dr_device_condition,
+            device_condition
+        )
+
+    return sector_query
+
+
+def fetch_ptp_sector_inventory(monitored_only=True, device_name_list=None):
+    """
+
+    """
+    ptp_sector_query = get_ptp_sector_query(
+        device_name_list=device_name_list
+    )
+    result_list = fetch_raw_result(ptp_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def fetch_ptpbh_sector_inventory(monitored_only=True, device_name_list=None):
+    """
+    This function returns PTPBH sectors inventory.
+    """
+    ptpbh_sector_query = get_ptp_sector_query(
+        device_name_list=device_name_list,
+        is_ptpbh=True
+    )
+    result_list = fetch_raw_result(ptpbh_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=False):
+    """
+    This function return the SQL query to get PTP or PTP BH sectors
+    """
+
+    nms_device_condition = ''
+    device_name_condition = ''
+    ptp_condition = ''
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if is_ptpbh:
+        ptp_condition = " circuit.circuit_type LIKE '%backhaul%' AND "
+    else:
+        ptp_condition = " circuit.circuit_type NOT LIKE '%backhaul%' AND "
+
+    ptp_sector_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias, 'NA') AS BSALIAS,
+            IF(not isnull(city.city_name), city.city_name, 'NA') AS BSCITY,
+            IF(not isnull(state.state_name), state.state_name, 'NA') AS BSSTATE,
+            sector_info.* 
+        FROM
+            (
+                SELECT
+                    circuit.circuit_id AS CCID,
+                    customer.alias AS CUST,
+                    device.ip_address AS SECTOR_CONF_ON_IP,
+                    devicetype.name AS DEVICE_TYPE,
+                    
+                    sector.base_station_id AS BSID,
+                    sector.sector_id AS SECTOR_SECTOR_ID,
+                    sector.id AS SECTOR_ID,
+                    sector.base_station_id AS SECTOR_BS_ID,
+                    sector.planned_frequency AS SECTOR_PLANNED_FREQUENCY,
+                    sector.sector_configured_on_port_id AS sector_port_id,
+
+                    technology.name AS SECTOR_TECH,
+                    technology.id AS SECTOR_TECH_ID,
+                    devicetype.id AS SECTOR_TYPE_ID,
+
+                    device.id AS SECTOR_CONF_ON_ID,
+                    device.device_name AS SECTOR_CONF_ON_NAME,
+
+                    customer.id AS CUST_ID,
+                    circuit.id AS CID
+
+                FROM 
+                    inventory_sector AS sector
+                JOIN (
+                    inventory_circuit AS circuit,
+                    inventory_customer AS customer,
+                    device_device AS device,
+                    device_devicetechnology AS technology,
+                    device_devicetype AS devicetype
+                )
+                ON (
+                    circuit.sector_id = sector.id
+                AND
+                    {2}
+                    customer.id = circuit.customer_id
+                AND 
+                    device.id = sector.sector_configured_on_id
+                AND
+                {1}
+                    technology.id = device.device_technology
+                AND
+                    devicetype.id = device.device_type
+                )
+                where 
+                    device.is_deleted = 0
+                    {0}
+            ) as sector_info
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+            bs.id = sector_info.BSID
+        LEFT JOIN
+            device_state AS state
+        ON 
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        ON 
+            city.id = bs.city_id
+        GROUP BY 
+            sector_info.SECTOR_CONF_ON_IP;
+    '''.format(
+        nms_device_condition,
+        device_name_condition,
+        ptp_condition
+    )
+
+    return ptp_sector_query
+
+
+def fetch_backhaul_inventory(monitored_only=True, device_name_list=None, type_rf='backhaul'):
+    """
+    This funtion return Backhaul inventory
+    """
+    bh_query = get_bh_other_query(
+        device_name_list=device_name_list,
+        type_rf=type_rf
+    )
+
+    result_list = fetch_raw_result(bh_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'BHDEVICENAME'
+    )
+
+
+def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='backhaul'):
+    """
+    This function return SQL query to fetch BH or Other devices inventory
+    """
+    nms_device_condition = ""
+    device_name_condition = ""
+    is_bh_condition = " bh.bh_configured_on_id = device.id AND "
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if type_rf != 'backhaul':
+        is_bh_condition = " ( bh.pop_id = device.id OR \
+                            bh.aggregator_id = device.id OR \
+                            bh.bh_switch_id = device.id ) AND \
+                        not isnull(bh.bh_configured_on_id) AND "
+
+    bh_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias , 'NA') AS BSALIAS,
+            IF(not isnull(bs.city_id), bs.city_id , '0') AS BSCITYID,
+            IF(not isnull(bs.state_id), bs.state_id , '0') AS BSSTATEID,
+            IF(not isnull(city.city_name), city.city_name , 'NA') AS BSCITY,
+            IF(not isnull(state.state_name), state.state_name , 'NA') AS BSSTATE,
+            bh_info.* 
+        FROM 
+            (
+                select
+                    device.ip_address AS BHIP,
+                    technology.name AS DEVICE_TECH,
+                    devicetype.name AS DEVICE_TYPE,
+                        
+                    bh.id AS BHID,
+                    bh.bh_connectivity AS BH_CONNECTIVITY,
+
+                    technology.id AS TECHID,
+                    devicetype.id AS TYPENAMEID,
+                    device.device_name AS BHDEVICENAME
+                from
+                    inventory_backhaul AS bh
+                JOIN (
+                    device_device AS device,
+                    device_devicetechnology AS technology,
+                    device_devicetype AS devicetype
+                )
+                on (
+                    {2}
+                    {1}
+                    device.device_type = devicetype.id
+                    AND
+                    device.device_technology = technology.id
+                )
+                WHERE
+                    device.is_deleted = 0
+                    {0}
+                GROUP BY
+                    device.id
+            ) AS bh_info
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+            bs.backhaul_id = bh_info.BHID
+        LEFT JOIN
+            device_state AS state
+        ON
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        ON
+            city.id = bs.city_id;
+    '''.format(
+        nms_device_condition,
+        device_name_condition,
+        is_bh_condition
+    )
+
+    print " --- QUERY --- "*5
+    print bh_query
+    print " --- QUERY --- "*5
+
+    return bh_query
+
+
+def create_specific_key_dict(data_list, key_str):
+    """
+    This function create dict from list with key 
+    as per given 'key_str' param
+    """
+
+    if not (data_list or len(data_list)):
+        return data_list
+
+    data_dict = dict()
+
+    for data in data_list:
+        try:
+            dict_key = data.get(key_str)
+
+            if dict_key and dict_key not in data_dict:
+                data_dict[dict_key] = data
+        except Exception, e:
+            continue
+
+    return data_dict
 

@@ -1,8 +1,4 @@
-# -*- encoding: utf-8; py-indent-offset: 4 -*-
-
-# python utilities
-# python utilities
-
+# -*- encoding: utf-8; py-indent-offset: 4 -*-e
 import ujson as json
 import os
 import datetime
@@ -13,7 +9,9 @@ from multiprocessing import Process, Queue
 from django.utils.dateformat import format
 
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway
+from nocout.utils.util import NocoutUtilsGateway, fetch_ss_inventory, fetch_ptpbh_ss_inventory, get_inventory_ss_query, \
+                             fetch_sector_inventory, fetch_dr_sector_inventory, get_inventory_sector_query, \
+                             fetch_ptpbh_sector_inventory, fetch_backhaul_inventory, fetch_ptp_sector_inventory
 # nocout utilities
 
 # Queue implementation using REDIS
@@ -550,8 +548,8 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     for device in devices:
 
         device_name = device.get('device_name')
-        if not device_name:
-            continue
+        # if not device_name:
+        #     continue
 
         device.update({
             "id": 0,
@@ -808,6 +806,230 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     return result_devices
 
 
+def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technology='', type_rf='', device_name_list=None):
+    """
+    This function first fetch inventory data as per the params & then 
+    map the inventory data with given data
+    """
+    if not qs:
+        return qs
+
+    resultant_dataset = list()
+
+    if page_type in ['customer']:
+
+        if technology.upper() in ['P2P', 'PTP', 'PTP-BH']:
+            inventory_resultset = fetch_ss_inventory(
+                technology=technology,
+                device_name_list=device_name_list
+            )
+
+            sector_inventory_resultset = fetch_ptp_sector_inventory(
+                device_name_list=device_name_list
+            )
+
+            inventory_resultset.update(sector_inventory_resultset)
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA"
+                })
+
+
+                device_name = data.get('device_name')
+                if not device_name:
+                    continue
+
+                inventory_row = inventory_resultset.get(device_name)
+
+                if not inventory_row:
+                    continue
+
+                data.update({
+                    "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                    "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                    "circuit_id": inventory_row.get('CCID', 'NA'),
+                    "customer_name": inventory_row.get('CUST', 'NA'),
+                    "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                    "city": inventory_row.get('BSCITY', 'NA'),
+                    "state": inventory_row.get('BSSTATE', 'NA'),
+                    "device_type": inventory_row.get('DEVICE_TYPE', 'NA')
+                })
+
+        else:
+            inventory_resultset = fetch_ss_inventory(
+                technology=technology,
+                device_name_list=device_name_list
+            )
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA"
+                })
+
+
+                device_name = data.get('device_name')
+                if not device_name:
+                    continue
+
+                inventory_row = inventory_resultset.get(device_name)
+
+                if not inventory_row:
+                    continue
+
+                data.update({
+                    "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                    "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                    "circuit_id": inventory_row.get('CCID', 'NA'),
+                    "customer_name": inventory_row.get('CUST', 'NA'),
+                    "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                    "city": inventory_row.get('BSCITY', 'NA'),
+                    "state": inventory_row.get('BSSTATE', 'NA'),
+                    "device_type": inventory_row.get('DEVICE_TYPE', 'NA')
+                })
+
+    elif page_type in ['network']:
+        if technology.upper() in ['P2P', 'PTP', 'PTP-BH']:
+            ptpbh_ss_inventory_resultset = fetch_ptpbh_ss_inventory(
+                technology=technology,
+                device_name_list=device_name_list
+            )
+
+            ptpbh_sector_inventory_resultset = fetch_ptpbh_sector_inventory(
+                device_name_list=device_name_list
+            )
+            # Merge 'ptpbh_sector_inventory_resultset' dict with 'ptpbh_ss_inventory_resultset'
+            ptpbh_ss_inventory_resultset.update(ptpbh_sector_inventory_resultset)
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA"
+                })
+
+
+                device_name = data.get('device_name')
+                if not device_name:
+                    continue
+
+                inventory_row = ptpbh_ss_inventory_resultset.get(device_name)
+
+                if not inventory_row:
+                    continue
+
+                data.update({
+                    "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                    "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                    "circuit_id": inventory_row.get('CCID', 'NA'),
+                    "customer_name": inventory_row.get('CUST', 'NA'),
+                    "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                    "city": inventory_row.get('BSCITY', 'NA'),
+                    "state": inventory_row.get('BSSTATE', 'NA'),
+                    "device_type": inventory_row.get('DEVICE_TYPE', 'NA')
+                })
+
+        else:
+            sector_inventory_resultset = fetch_sector_inventory(
+                technology=technology,
+                device_name_list=device_name_list
+            )
+
+            if technology in ['WiMAX']:
+                dr_inventory_resultset = fetch_dr_sector_inventory(device_name_list=device_name_list)
+                # Merge 'dr_inventory_resultset' dict with sector_inventory_resultset
+                sector_inventory_resultset.update(dr_inventory_resultset)
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA"
+                })
+
+
+                device_name = data.get('device_name')
+                if not device_name:
+                    continue
+
+                inventory_row = sector_inventory_resultset.get(device_name)
+
+                if not inventory_row:
+                    continue
+
+                data.update({
+                    "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                    "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                    "circuit_id": inventory_row.get('CCID', 'NA'),
+                    "customer_name": inventory_row.get('CUST', 'NA'),
+                    "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                    "city": inventory_row.get('BSCITY', 'NA'),
+                    "state": inventory_row.get('BSSTATE', 'NA'),
+                    "device_type": inventory_row.get('DEVICE_TYPE', 'NA')
+                })        
+
+    else:
+        backhaul_inventory_resultset = fetch_backhaul_inventory(
+            device_name_list=device_name_list,
+            type_rf=type_rf
+        )
+
+        for data in qs:
+            data.update({
+                "bs_name": "NA",
+                "city": "NA",
+                "state": "NA",
+                "device_type": "NA",
+                "device_technology": "NA",
+                "bh_id" : 0
+            })
+
+
+            device_name = data.get('device_name')
+            if not device_name:
+                continue
+
+            inventory_row = backhaul_inventory_resultset.get(device_name)
+
+            if not inventory_row:
+                continue
+
+            data.update({
+                "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                "city": inventory_row.get('BSCITY', 'NA'),
+                "state": inventory_row.get('BSSTATE', 'NA'),
+                "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
+                "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                "bh_id" : inventory_row.get('BHID', 0)
+            })
+
+    return qs
+
+
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
 def indexed_polled_results(performance_data):
     """
@@ -843,8 +1065,6 @@ def get_performance_data(device_list, machine, model):
     perf_result = {"packet_loss": "N/A",
                    "latency": "N/A",
                    "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A",
                    "age": "N/A"
                    }
 
@@ -868,8 +1088,6 @@ def get_performance_data(device_list, machine, model):
             perf_result = {"packet_loss": "N/A",
                            "latency": "N/A",
                            "last_updated": "N/A",
-                           "last_updated_date": "N/A",
-                           "last_updated_time": "N/A",
                            "device_name": "N/A",
                            "age": "N/A",
                            }
@@ -1054,7 +1272,7 @@ def create_perf_chart_img(device_name, service, data_source):
     phantom_url = PHANTOM_PROTOCOL + "://" + PHANTOM_HOST + ":" + PHANTOM_PORT + "/"
 
     # Start PhantomJS server in background
-    os.system("phantomjs " + HIGHCHARTS_CONVERT_JS + " -host " + PHANTOM_HOST + " -port " + PHANTOM_PORT + "&")
+    # os.system("phantomjs " + HIGHCHARTS_CONVERT_JS + " -host " + PHANTOM_HOST + " -port " + PHANTOM_PORT + "&")
 
     # Make POST request to phantom js host to create the chart image
     chart_img_request = requests.post(phantom_url, data=json.dumps(infile_str))
@@ -1141,8 +1359,6 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
     perf_result = {"packet_loss": "N/A",
                    "latency": "N/A",
                    "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A",
                    "age": "N/A"
                    }
 
@@ -1166,8 +1382,6 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
             perf_result = {"packet_loss": "N/A",
                            "latency": "N/A",
                            "last_updated": "N/A",
-                           "last_updated_date": "N/A",
-                           "last_updated_time": "N/A",
                            "device_name": "N/A",
                            "age": "N/A",
                            }

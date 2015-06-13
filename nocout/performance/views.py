@@ -38,7 +38,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from inventory.utils.util import InventoryUtilsGateway
 
 # Import performance utils gateway class
-from performance.utils.util import PerformanceUtilsGateway
+from performance.utils.util import PerformanceUtilsGateway, prepare_gis_devices_v2
 
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
@@ -429,20 +429,38 @@ class LivePerformanceListing(BaseDatatableView):
         """
         page_type = self.request.GET.get('page_type')
         device_tab_technology = self.request.GET.get('data_tab')
+        other_type = self.request.GET.get('other_type')
 
         if page_type == 'network':
             type_rf = 'sector'
         elif page_type == 'customer':
             type_rf = 'ss'
         else:
-            type_rf = None
+            type_rf = other_type
+                
 
-        return perf_utils.prepare_gis_devices(
+        device_name_list = list()
+
+        # GET all device name list from the list
+        try:
+            map(lambda x: device_name_list.append(x['device_name']), qs)
+        except Exception, e:
+            # logger.info(e.message)
+            pass
+
+        # return perf_utils.prepare_gis_devices(
+        #     qs,
+        #     page_type,
+        #     monitored_only=True,
+        #     technology=device_tab_technology,
+        #     type_rf=type_rf
+        # )
+        return prepare_gis_devices_v2(
             qs,
-            page_type,
-            monitored_only=True,
+            page_type=page_type,
             technology=device_tab_technology,
-            type_rf=type_rf
+            type_rf=type_rf,
+            device_name_list=device_name_list
         )
 
     def prepare_machines(self, qs):
