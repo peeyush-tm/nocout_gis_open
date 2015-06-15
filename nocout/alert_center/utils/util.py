@@ -161,6 +161,57 @@ class AlertCenterUtilsGateway:
 
         return param1
 
+    def polled_results(
+        self,
+        multi_proc=False,
+        machine_dict=None,
+        table_name=None,
+        data_sources=None,
+        columns=None,
+        condition=None
+    ):
+        """
+        """
+        param1 = polled_results(
+            multi_proc=multi_proc,
+            machine_dict=machine_dict,
+            table_name=table_name,
+            data_sources=data_sources,
+            columns=columns,
+            condition=condition
+        )
+
+        return param1
+
+    def get_multiprocessing_performance_data(self, q, machine_device_list, machine, data_sources, columns, condition, table_name):
+        """
+        """
+        param1 = get_multiprocessing_performance_data(
+            q,
+            machine_device_list,
+            machine,
+            data_sources,
+            columns,
+            condition,
+            table_name
+        )
+
+        return param1
+
+    def get_performance_data(self, machine_device_list, machine, data_sources, columns, condition, table_name):
+        """
+        """
+        param1 = get_performance_data(
+            machine_device_list,
+            machine,
+            data_sources,
+            columns,
+            condition,
+            table_name
+        )
+
+        return param1
+
 
 # misc utility functions
 def prepare_query(
@@ -499,7 +550,7 @@ def polled_results(
                    condition=None
                    ):
     """
-    ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
+    since the perfomance status data would be refreshed per 5 minutes## we will cache it
     :param table_name: name of the table to query from RAW query
     :param machine_dict:
     :param multi_proc:

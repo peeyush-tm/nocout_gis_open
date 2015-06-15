@@ -9,10 +9,7 @@ from multiprocessing import Process, Queue
 from django.utils.dateformat import format
 
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway, fetch_ss_inventory, fetch_ptpbh_ss_inventory, get_inventory_ss_query, \
-                             fetch_sector_inventory, fetch_dr_sector_inventory, get_inventory_sector_query, \
-                             fetch_ptpbh_sector_inventory, fetch_backhaul_inventory, fetch_ptp_sector_inventory
-# nocout utilities
+from nocout.utils.util import NocoutUtilsGateway
 
 # Queue implementation using REDIS
 from nocout.utils.nqueue import NQueue
@@ -208,6 +205,27 @@ class PerformanceUtilsGateway:
         :param self_instance:
         """
         param1 = dataTableOrdering(self_instance, qs, order_columns)
+
+        return param1
+
+    def prepare_gis_devices_optimized(
+        self,
+        qs,
+        page_type='network',
+        monitored_only=True,
+        technology='',
+        type_rf='',
+        device_name_list=None
+    ):
+
+        param1 = prepare_gis_devices_optimized(
+            qs,
+            page_type=page_type,
+            monitored_only=monitored_only,
+            technology=technology,
+            type_rf=type_rf,
+            device_name_list=device_name_list
+        )
 
         return param1
 
@@ -801,17 +819,14 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                 continue
 
         result_devices.append(device)
-        # if device.get('id'):
-        # else:
-        #     continue
 
     return result_devices
 
 
-def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technology='', type_rf='', device_name_list=None):
+def prepare_gis_devices_optimized(qs, page_type='network', monitored_only=True, technology='', type_rf='', device_name_list=None):
     """
     This function first fetch inventory data as per the params & then 
-    map the inventory data with given data
+    map the inventory data with given qs
     """
     if not qs:
         return qs
@@ -821,12 +836,12 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
     if page_type in ['customer']:
 
         if technology.upper() in ['P2P', 'PTP', 'PTP-BH']:
-            inventory_resultset = fetch_ss_inventory(
+            inventory_resultset = nocout_utils.fetch_ss_inventory(
                 technology=technology,
                 device_name_list=device_name_list
             )
 
-            sector_inventory_resultset = fetch_ptp_sector_inventory(
+            sector_inventory_resultset = nocout_utils.fetch_ptp_sector_inventory(
                 device_name_list=device_name_list
             )
 
@@ -834,6 +849,7 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
 
             for data in qs:
                 data.update({
+                    "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -855,6 +871,7 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                     continue
 
                 data.update({
+                    "id" : inventory_row.get('DEVICE_ID', 0),
                     "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                     "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                     "circuit_id": inventory_row.get('CCID', 'NA'),
@@ -866,13 +883,14 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                 })
 
         else:
-            inventory_resultset = fetch_ss_inventory(
+            inventory_resultset = nocout_utils.fetch_ss_inventory(
                 technology=technology,
                 device_name_list=device_name_list
             )
 
             for data in qs:
                 data.update({
+                    "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -894,6 +912,7 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                     continue
 
                 data.update({
+                    "id" : inventory_row.get('DEVICE_ID', 0),
                     "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                     "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                     "circuit_id": inventory_row.get('CCID', 'NA'),
@@ -906,19 +925,25 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
 
     elif page_type in ['network']:
         if technology.upper() in ['P2P', 'PTP', 'PTP-BH']:
-            ptpbh_ss_inventory_resultset = fetch_ptpbh_ss_inventory(
+            ptpbh_ss_inventory_resultset = nocout_utils.fetch_ptpbh_ss_inventory(
                 technology=technology,
                 device_name_list=device_name_list
             )
+            
 
-            ptpbh_sector_inventory_resultset = fetch_ptpbh_sector_inventory(
+            ptpbh_sector_inventory_resultset = nocout_utils.fetch_ptpbh_sector_inventory(
                 device_name_list=device_name_list
             )
-            # Merge 'ptpbh_sector_inventory_resultset' dict with 'ptpbh_ss_inventory_resultset'
-            ptpbh_ss_inventory_resultset.update(ptpbh_sector_inventory_resultset)
+            
+            if len(ptpbh_ss_inventory_resultset):
+                # Merge 'ptpbh_sector_inventory_resultset' dict with 'ptpbh_ss_inventory_resultset'
+                ptpbh_ss_inventory_resultset.update(ptpbh_sector_inventory_resultset)
+            else:
+                ptpbh_ss_inventory_resultset = ptpbh_sector_inventory_resultset
 
             for data in qs:
                 data.update({
+                    "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -940,6 +965,7 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                     continue
 
                 data.update({
+                    "id" : inventory_row.get('DEVICE_ID', 0),
                     "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                     "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                     "circuit_id": inventory_row.get('CCID', 'NA'),
@@ -951,18 +977,35 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                 })
 
         else:
-            sector_inventory_resultset = fetch_sector_inventory(
+            sector_inventory_resultset = nocout_utils.fetch_sector_inventory(
                 technology=technology,
                 device_name_list=device_name_list
             )
 
             if technology in ['WiMAX']:
-                dr_inventory_resultset = fetch_dr_sector_inventory(device_name_list=device_name_list)
-                # Merge 'dr_inventory_resultset' dict with sector_inventory_resultset
-                sector_inventory_resultset.update(dr_inventory_resultset)
+                # Fetch DR devices
+                dr_inventory_resultset = nocout_utils.fetch_dr_sector_inventory(device_name_list=device_name_list)
+
+                if len(sector_inventory_resultset):
+                    # Merge 'dr_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset.update(dr_inventory_resultset)
+                else:
+                    # Merge 'dr_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset = dr_inventory_resultset
+
+                # Fetch MRC devices
+                mrc_inventory_resultset = nocout_utils.fetch_mrc_sector_inventory(device_name_list=device_name_list)
+
+                if len(sector_inventory_resultset):
+                    # Merge 'mrc_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset.update(mrc_inventory_resultset)
+                else:
+                    # Merge 'mrc_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset = mrc_inventory_resultset
 
             for data in qs:
                 data.update({
+                    "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -984,6 +1027,7 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                     continue
 
                 data.update({
+                    "id" : inventory_row.get('DEVICE_ID', 0),
                     "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                     "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                     "circuit_id": inventory_row.get('CCID', 'NA'),
@@ -995,19 +1039,20 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                 })        
 
     else:
-        backhaul_inventory_resultset = fetch_backhaul_inventory(
+        backhaul_inventory_resultset = nocout_utils.fetch_backhaul_inventory(
             device_name_list=device_name_list,
             type_rf=type_rf
         )
 
         for data in qs:
             data.update({
+                "id" : 0,
                 "bs_name": "NA",
                 "city": "NA",
                 "state": "NA",
                 "device_type": "NA",
                 "device_technology": "NA",
-                "bh_id" : 0
+                "bh_connectivity" : ""
             })
 
 
@@ -1021,12 +1066,13 @@ def prepare_gis_devices_v2(qs, page_type='network', monitored_only=True, technol
                 continue
 
             data.update({
+                "id" : inventory_row.get('DEVICE_ID', 0),
                 "bs_name": inventory_row.get('BSALIAS', 'NA'),
                 "city": inventory_row.get('BSCITY', 'NA'),
                 "state": inventory_row.get('BSSTATE', 'NA'),
                 "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
                 "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
-                "bh_id" : inventory_row.get('BHID', 0)
+                "bh_connectivity" : inventory_row.get('BH_CONNECTIVITY', 'NA')
             })
 
     return qs

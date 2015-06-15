@@ -38,7 +38,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from inventory.utils.util import InventoryUtilsGateway
 
 # Import performance utils gateway class
-from performance.utils.util import PerformanceUtilsGateway, prepare_gis_devices_v2
+from performance.utils.util import PerformanceUtilsGateway
 
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
@@ -134,21 +134,19 @@ class LivePerformance(ListView):
         ]
 
         common_headers = [
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
 
         ]
 
         polled_headers = [
-            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
         ]
 
         action_headers = [
@@ -157,30 +155,22 @@ class LivePerformance(ListView):
 
         if page_type in ["network"]:
             specific_headers = [
-                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
             ]
 
         elif page_type in ["customer"]:
             specific_headers = [
-                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'bSortable': True},
             ]
 
         else:
             specific_headers = [
-                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             ]
 
         datatable_headers = hidden_headers
@@ -282,30 +272,27 @@ class LivePerformanceListing(BaseDatatableView):
 
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            if len(sSearch) > 3:
-                self.is_initialised = False
-                self.is_searched = True
-                result = self.prepare_devices(qs)
-                result_list = list()
-                for search_data in result:
-                    temp_var = json.dumps(search_data)
-                    search_data = json.loads(temp_var)
-                    for data in search_data:
-                        if search_data[data]:
-                            if(
-                                (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
-                                and
-                                (search_data not in result_list)
-                            ):
-                                if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
-                                    result_list.append(search_data)
-                            else:
-                                if sSearch == search_data[data] and search_data not in result_list:
-                                    result_list.append(search_data)
+            self.is_initialised = False
+            self.is_searched = True
+            result = self.prepare_devices(qs)
+            result_list = list()
+            for search_data in result:
+                temp_var = json.dumps(search_data)
+                search_data = json.loads(temp_var)
+                for data in search_data:
+                    if search_data[data]:
+                        if(
+                            (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
+                            and
+                            (search_data not in result_list)
+                        ):
+                            if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
+                                result_list.append(search_data)
+                        else:
+                            if sSearch == search_data[data] and search_data not in result_list:
+                                result_list.append(search_data)
 
-                return result_list
-            else:
-                self.is_searched = False
+            return result_list
         return qs
 
     def ordering(self, qs):
@@ -320,8 +307,8 @@ class LivePerformanceListing(BaseDatatableView):
         if page_type == 'customer':
             columns = [
                 'id',
-                'circuit_id',
                 'sector_id',
+                'circuit_id',
                 'customer_name',
                 'near_end_ip',
                 'ip_address',
@@ -337,8 +324,8 @@ class LivePerformanceListing(BaseDatatableView):
         elif page_type == 'network':
             columns = [
                 'id',
-                'circuit_id',
                 'sector_id',
+                'circuit_id',
                 'customer_name',
                 'ip_address',
                 'device_type',
@@ -386,36 +373,30 @@ class LivePerformanceListing(BaseDatatableView):
 
             reverse = True if s_sort_dir == 'desc' else False
 
-        if i_sorting_cols and i_sort_col:
-            self.is_initialised = False
-            self.is_ordered = True
-            sort_data = self.prepare_devices(qs)
-            try:
-                sort_using = columns[i_sort_col]
-                if sort_using in self.polled_columns:
-                    self.is_polled = True
-                    ##now we need to poll the devices
-                    ##here we can limit the number of devices in query
-                    ##to get the data from
-                    ##that needs to be per machine basis
-                    ##once we have the results
-                    ##we can quickly call upon prepare_devices
-                    machines = self.prepare_machines(sort_data)
-                    #preparing the polled results
-                    result_qs = self.prepare_polled_results(sort_data, multi_proc=MULTI_PROCESSING_ENABLED,
-                                                            machine_dict=machines)
-                    sort_data = result_qs
-                else:
-                    self.is_polled = False
-                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-                return sorted_qs
-
-            except Exception, e:
-                self.is_initialised = True
-                self.is_ordered = False
+        self.is_initialised = False
+        self.is_ordered = True
+        sort_data = self.prepare_devices(qs)
+        try:
+            sort_using = columns[i_sort_col]
+            if sort_using in self.polled_columns:
+                self.is_polled = True
+                # Now we need to poll the devices
+                # here we can limit the number of devices in query
+                # to get the data from
+                # that needs to be per machine basis
+                # once we have the results
+                # we can quickly call upon prepare_devices
+                machines = self.prepare_machines(sort_data)
+                #preparing the polled results
+                result_qs = self.prepare_polled_results(sort_data, multi_proc=MULTI_PROCESSING_ENABLED,
+                                                        machine_dict=machines)
+                sort_data = result_qs
+            else:
                 self.is_polled = False
+            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+            return sorted_qs
 
-        else:
+        except Exception, e:
             self.is_initialised = True
             self.is_ordered = False
             self.is_polled = False
@@ -449,14 +430,7 @@ class LivePerformanceListing(BaseDatatableView):
             # logger.info(e.message)
             pass
 
-        # return perf_utils.prepare_gis_devices(
-        #     qs,
-        #     page_type,
-        #     monitored_only=True,
-        #     technology=device_tab_technology,
-        #     type_rf=type_rf
-        # )
-        return prepare_gis_devices_v2(
+        return perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
             technology=device_tab_technology,

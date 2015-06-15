@@ -313,14 +313,146 @@ class NocoutUtilsGateway:
         return param1 
 
     def fetch_ss_inventory(self, monitored_only=True, technology=None, device_name_list=None):
-
+        """
+        """
         param1 = fetch_ss_inventory(
+            monitored_only=monitored_only,
+            technology=monitored_only,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def fetch_ptpbh_ss_inventory(self, monitored_only=True, technology='P2P', device_name_list=None):
+        """
+        """
+        param1 = fetch_ptpbh_ss_inventory(
             monitored_only=monitored_only,
             technology=technology,
             device_name_list=device_name_list
         )
 
         return param1
+
+    def get_inventory_ss_query(self, monitored_only=True, technology=None, device_name_list=None, is_ptpbh=False):
+        """
+        """
+        param1 = get_inventory_ss_query(
+            monitored_only=monitored_only,
+            technology=monitored_only,
+            device_name_list=device_name_list,
+            is_ptpbh=is_ptpbh
+        )
+
+        return param1
+
+    def fetch_sector_inventory(self, monitored_only=True, technology=None, device_name_list=None):
+        """
+        """
+        param1 = fetch_sector_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def fetch_dr_sector_inventory(self, monitored_only=True, technology='WiMAX', device_name_list=None):
+        """
+        """
+        param1 = fetch_dr_sector_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def fetch_mrc_sector_inventory(self, monitored_only=True, technology='WiMAX', device_name_list=None):
+        """
+        """
+        param1 = fetch_mrc_sector_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def get_inventory_sector_query(self, monitored_only=True, technology=None, device_name_list=None, is_dr=False, is_mrc=False):
+        """
+        """
+        param1 = get_inventory_sector_query(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list,
+            is_dr=is_dr,
+            is_mrc=is_mrc
+        )
+
+        return param1
+
+    def fetch_ptp_sector_inventory(self, monitored_only=True, device_name_list=None):
+        """
+        """
+        param1 = fetch_ptp_sector_inventory(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def fetch_ptpbh_sector_inventory(self, monitored_only=True, device_name_list=None):
+        """
+        """
+        param1 = fetch_ptpbh_sector_inventory(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def get_ptp_sector_query(self, monitored_only=True, device_name_list=None, is_ptpbh=False):
+        """
+        """
+        param1 = get_ptp_sector_query(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list,
+            is_ptpbh=is_ptpbh
+        )
+
+        return param1
+
+    def fetch_backhaul_inventory(self, monitored_only=True, device_name_list=None, type_rf='backhaul'):
+        """
+        """
+        param1 = fetch_backhaul_inventory(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list,
+            type_rf=type_rf
+        )
+
+        return param1
+
+    def get_bh_other_query(self, monitored_only=True, device_name_list=None, type_rf='backhaul'):
+        """
+        """
+        param1 = get_bh_other_query(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list,
+            type_rf=type_rf
+        )
+
+        return param1
+
+    def create_specific_key_dict(self, data_list, key_str):
+        """
+        """
+        param1 = create_specific_key_dict(data_list, key_str)
+
+        return param1
+
+
 
 class DictDiffer(object):
     """
@@ -672,6 +804,7 @@ def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None
     """
     query = query_all_gis_inventory(monitored_only, technology, type_rf, bs_id=bs_id, device_list=device_list)
     return fetch_raw_result(query)
+
 
 @time_it()
 def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
@@ -1260,6 +1393,7 @@ def is_lat_long_in_state(latitude, longitude, state):
     """
     return True
 
+
 def disable_for_loaddata(signal_handler):
     """
     Decorator that turns off signal handlers when loading fixture data.
@@ -1543,57 +1677,69 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             ) as SECTOR_PORT_SECTOR_ID,
             ss_info.*
         FROM (
-            SELECT
+            SELECT 
                 sector.sector_id AS SECTOR_SECTOR_ID,
                 sector.id AS SECTOR_ID,
                 sector.sector_configured_on_port_id as sector_port_id,
-                circuit.circuit_id AS CCID,
-                circuit.id AS CID,
-                customer.alias AS CUST,
-                customer.id AS CUSTID,
+                sector.base_station_id as BSID,
                 sector_device.ip_address as SECTOR_CONF_ON_IP,
                 sector_device.device_name as SECTOR_CONF_ON,
                 sector_device.id as SECTOR_CONF_ON_ID,
-                device.ip_address AS SSIP,
-                device.device_name AS SSDEVICENAME,
-                device.id AS SS_DEVICE_ID,
-                devicetype.name AS DEVICE_TYPE,
-                devicetype.id AS DEVICE_TYPE_ID,
-                technology.name AS SS_TECH,
-                technology.id AS SS_TECH_ID,
-                sector.base_station_id as BSID
-            FROM
-                inventory_circuit AS circuit
-            LEFT JOIN (
-                inventory_substation AS substation,
-                inventory_sector AS sector,
-                inventory_customer AS customer,
-                device_device AS device,
-                device_device AS sector_device,
-                device_devicetechnology AS technology,
-                device_devicetype AS devicetype
-            )
-            ON (
-                substation.id = circuit.sub_station_id
-                AND
-                sector.id = circuit.sector_id
-                AND
-                sector.sector_configured_on_id = sector_device.id
-                AND
-                customer.id = circuit.customer_id
-                AND
-                {2}
-                device.id = substation.device_id
-                AND
-                technology.id = device.device_technology
-                AND
-                devicetype.id = device.device_type
-                {0}
-            )
-            where 
-                device.is_deleted = 0
-                {1}
-                {3}
+                only_ss_info.*
+            FROM (
+                SELECT
+                    circuit.sector_id AS SECT_ID,
+                    circuit.circuit_id AS CCID,
+                    circuit.id AS CID,
+                    
+                    customer.alias AS CUST,
+                    customer.id AS CUSTID,
+
+                    device.ip_address AS SSIP,
+                    device.device_name AS SSDEVICENAME,
+                    device.id AS DEVICE_ID,
+                    device.id AS SS_DEVICE_ID,
+                    
+                    devicetype.name AS DEVICE_TYPE,
+                    devicetype.id AS DEVICE_TYPE_ID,
+                    
+                    technology.name AS SS_TECH,
+                    technology.id AS SS_TECH_ID
+                FROM
+                    inventory_circuit AS circuit
+                LEFT JOIN (
+                    inventory_substation AS substation,
+                    inventory_customer AS customer,
+                    device_device AS device,
+                    device_devicetechnology AS technology,
+                    device_devicetype AS devicetype
+                )
+                ON (
+                    substation.id = circuit.sub_station_id
+                    AND
+                    customer.id = circuit.customer_id
+                    AND
+                    {2}
+                    device.id = substation.device_id
+                    AND
+                    technology.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
+                    {0}
+                )
+                where 
+                    device.is_deleted = 0
+                    {1}
+                    {3}
+            ) as only_ss_info
+            LEFT JOIN
+                inventory_sector AS sector
+            ON
+                sector.id = only_ss_info.SECT_ID
+            LEFT JOIN
+                device_device AS sector_device
+            ON
+                sector_device.id = sector.sector_configured_on_id
         ) AS ss_info
         LEFT JOIN
             inventory_basestation AS bs
@@ -1664,7 +1810,28 @@ def fetch_dr_sector_inventory(monitored_only=True, technology='WiMAX', device_na
     )
 
 
-def get_inventory_sector_query(monitored_only=True, technology=None, device_name_list=None, is_dr=False):
+def fetch_mrc_sector_inventory(monitored_only=True, technology='WiMAX', device_name_list=None):
+    """
+    This function fetch all the MRC enabled Sector inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    # Get the sector query as per the params
+    mrc_sector_query = get_inventory_sector_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list,
+        is_mrc=True
+    )
+
+    result_list = fetch_raw_result(mrc_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def get_inventory_sector_query(monitored_only=True, technology=None, device_name_list=None, is_dr=False, is_mrc=False):
     """
     This function returns query to fetch sectors inventory
     """
@@ -1695,19 +1862,24 @@ def get_inventory_sector_query(monitored_only=True, technology=None, device_name
         dr_device_condition = " AND sector.dr_site = 'yes' "
         device_condition = " device.id = sector.dr_configured_on_id "
 
+    if is_mrc:
+        dr_sector_id_prefix = "MRC: "
+        dr_device_condition = " AND sector.mrc = 'yes' "
+
+
     sector_query = '''
         SELECT 
             IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
             IF(not isnull(city.city_name), city.city_name, 'NA') as BSCITY,
             IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
             device_port.name as SECTOR_PORT,
-            group_concat(IF(
+            concat('{3} ', group_concat(IF(
                 not isnull(device_port.name),
                 concat(
-                    '{3}', '(', upper(device_port.name), ') ', sector_info.SECTOR_SECTOR_ID
+                    '(', upper(device_port.name), ') ', sector_info.SECTOR_SECTOR_ID
                 ),
                 sector_info.SECTOR_SECTOR_ID
-            ) SEPARATOR ' ') as SECTOR_PORT_SECTOR_ID,
+            ) SEPARATOR ' ')) as SECTOR_PORT_SECTOR_ID,
             sector_info.* 
         from
             (
@@ -1727,6 +1899,7 @@ def get_inventory_sector_query(monitored_only=True, technology=None, device_name
                     devicetype.id as SECTOR_TYPE_ID,
 
                     device.id as SECTOR_CONF_ON_ID,
+                    device.id AS DEVICE_ID,
                     device.device_name as SECTOR_CONF_ON_NAME
 
                 from 
@@ -1845,53 +2018,58 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
         FROM
             (
                 SELECT
-                    circuit.circuit_id AS CCID,
-                    customer.alias AS CUST,
-                    device.ip_address AS SECTOR_CONF_ON_IP,
-                    devicetype.name AS DEVICE_TYPE,
-                    
-                    sector.base_station_id AS BSID,
-                    sector.sector_id AS SECTOR_SECTOR_ID,
-                    sector.id AS SECTOR_ID,
-                    sector.base_station_id AS SECTOR_BS_ID,
-                    sector.planned_frequency AS SECTOR_PLANNED_FREQUENCY,
-                    sector.sector_configured_on_port_id AS sector_port_id,
-
-                    technology.name AS SECTOR_TECH,
-                    technology.id AS SECTOR_TECH_ID,
-                    devicetype.id AS SECTOR_TYPE_ID,
-
-                    device.id AS SECTOR_CONF_ON_ID,
-                    device.device_name AS SECTOR_CONF_ON_NAME,
-
+                    IF(not isnull(circuit.circuit_id), circuit.circuit_id, 'NA') AS CCID,
+                    if(not isnull(customer.alias), customer.alias, 'NA') AS CUST,
                     customer.id AS CUST_ID,
-                    circuit.id AS CID
+                    circuit.id AS CID,
+                    sector_device_info.*
+                FROM(
+                        SELECT
+                            device.ip_address AS SECTOR_CONF_ON_IP,
+                            devicetype.name AS DEVICE_TYPE,
+                            sector.id AS SECT_ID,
+                            sector.base_station_id AS BSID,
+                            sector.sector_id AS SECTOR_SECTOR_ID,
+                            sector.id AS SECTOR_ID,
+                            sector.base_station_id AS SECTOR_BS_ID,
+                            sector.planned_frequency AS SECTOR_PLANNED_FREQUENCY,
+                            sector.sector_configured_on_port_id AS sector_port_id,
 
-                FROM 
-                    inventory_sector AS sector
-                JOIN (
-                    inventory_circuit AS circuit,
-                    inventory_customer AS customer,
-                    device_device AS device,
-                    device_devicetechnology AS technology,
-                    device_devicetype AS devicetype
-                )
-                ON (
-                    circuit.sector_id = sector.id
-                AND
+                            technology.name AS SECTOR_TECH,
+                            technology.id AS SECTOR_TECH_ID,
+                            devicetype.id AS SECTOR_TYPE_ID,
+
+                            device.id AS SECTOR_CONF_ON_ID,
+                            device.id AS DEVICE_ID,
+                            device.device_name AS SECTOR_CONF_ON_NAME
+                        FROM 
+                            inventory_sector AS sector
+                        JOIN (
+                            device_device AS device,
+                            device_devicetechnology AS technology,
+                            device_devicetype AS devicetype
+                        )
+                        ON (
+                            device.id = sector.sector_configured_on_id
+                        AND
+                            {1}
+                            technology.id = device.device_technology
+                        AND
+                            devicetype.id = device.device_type
+                        )
+                        where 
+                            device.is_deleted = 0
+                            {0}
+                ) as sector_device_info
+                LEFT JOIN
+                    inventory_circuit AS circuit
+                ON
                     {2}
+                    circuit.sector_id = sector_device_info.SECT_ID
+                LEFT JOIN
+                    inventory_customer AS customer
+                ON
                     customer.id = circuit.customer_id
-                AND 
-                    device.id = sector.sector_configured_on_id
-                AND
-                {1}
-                    technology.id = device.device_technology
-                AND
-                    devicetype.id = device.device_type
-                )
-                where 
-                    device.is_deleted = 0
-                    {0}
             ) as sector_info
         LEFT JOIN
             inventory_basestation AS bs
@@ -1974,6 +2152,7 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
 
                     technology.id AS TECHID,
                     devicetype.id AS TYPENAMEID,
+                    device.id AS DEVICE_ID,
                     device.device_name AS BHDEVICENAME
                 from
                     inventory_backhaul AS bh
@@ -2012,10 +2191,6 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
         device_name_condition,
         is_bh_condition
     )
-
-    print " --- QUERY --- "*5
-    print bh_query
-    print " --- QUERY --- "*5
 
     return bh_query
 
