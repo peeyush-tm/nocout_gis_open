@@ -825,6 +825,7 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     return result_devices
 
 
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_gis_devices_optimized(
     qs,
     page_type='network',
@@ -1189,9 +1190,15 @@ def prepare_gis_devices_optimized(
                     # append the deep copied dict
                     resultant_dataset.append(json.loads(json.dumps(data)))
     else:
+        if is_single_call:
+            grouped_query = False
+        else:
+            grouped_query = True
+            
         backhaul_inventory_resultset = nocout_utils.fetch_backhaul_inventory(
             device_name_list=device_name_list,
-            type_rf=type_rf
+            type_rf=type_rf,
+            grouped_query=grouped_query
         )
 
         for data in qs:

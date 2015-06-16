@@ -388,8 +388,11 @@ class LivePerformanceListing(BaseDatatableView):
                 # we can quickly call upon prepare_devices
                 machines = self.prepare_machines(sort_data)
                 #preparing the polled results
-                result_qs = self.prepare_polled_results(sort_data, multi_proc=MULTI_PROCESSING_ENABLED,
-                                                        machine_dict=machines)
+                result_qs = self.prepare_polled_results(
+                    sort_data,
+                    multi_proc=MULTI_PROCESSING_ENABLED,
+                    machine_dict=machines
+                )
                 sort_data = result_qs
             else:
                 self.is_polled = False
@@ -1029,10 +1032,6 @@ class InventoryDeviceStatus(View):
         
         # type of device flag
         type_of_device = ""
-
-        # dictionary key to get technology name
-        technology_key = 'device_technology'
-
         list_devices_invent_info = ''
 
         # Get Device Object
@@ -1048,7 +1047,6 @@ class InventoryDeviceStatus(View):
             is_ss = True
             type_of_device = "sub_station"
             type_rf = 'ss'
-            technology_key = 'ss_technology'
         elif device.sector_configured_on.exists() or device.dr_configured_on.exists():
             is_sector = True
             type_of_device = "sector"
@@ -1057,12 +1055,12 @@ class InventoryDeviceStatus(View):
             is_bh = True
             type_of_device = "backhaul"
             type_rf = 'backhaul'
-            technology_key = 'bh_technology'
+            page_type = 'other'
         elif device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
             is_other = True
             type_of_device = "other"
-            type_rf = 'other'
-            technology_key = 'bh_technology'
+            type_rf = type_of_device
+            page_type = type_of_device
             result['data']['objects']['is_others_page'] = 1
 
         device_obj = {
@@ -1123,8 +1121,7 @@ class InventoryDeviceStatus(View):
                     device_name_list.append(sector_device_name[0]['sector_configured_on__device_name'])
 
         if devices_info_list:
-
-            if device_tech in ['WiMAX']:
+            if device_tech in ['WiMAX'] or page_type == 'other':
                 is_single_call = True
             else:
                 is_single_call = False

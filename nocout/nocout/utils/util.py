@@ -478,14 +478,16 @@ class NocoutUtilsGateway:
         self,
         monitored_only=True,
         device_name_list=None,
-        type_rf='backhaul'
+        type_rf='backhaul',
+        grouped_query=True
     ):
         """
         """
         param1 = fetch_backhaul_inventory(
             monitored_only=monitored_only,
             device_name_list=device_name_list,
-            type_rf=type_rf
+            type_rf=type_rf,
+            grouped_query=grouped_query
         )
 
         return param1
@@ -494,14 +496,16 @@ class NocoutUtilsGateway:
         self,
         monitored_only=True,
         device_name_list=None,
-        type_rf='backhaul'
+        type_rf='backhaul',
+        grouped_query=True
     ):
         """
         """
         param1 = get_bh_other_query(
             monitored_only=monitored_only,
             device_name_list=device_name_list,
-            type_rf=type_rf
+            type_rf=type_rf,
+            grouped_query=grouped_query
         )
 
         return param1
@@ -2199,13 +2203,14 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
     return ptp_sector_query
 
 
-def fetch_backhaul_inventory(monitored_only=True, device_name_list=None, type_rf='backhaul'):
+def fetch_backhaul_inventory(monitored_only=True, device_name_list=None, type_rf='backhaul', grouped_query=True):
     """
     This funtion return Backhaul inventory
     """
     bh_query = get_bh_other_query(
         device_name_list=device_name_list,
-        type_rf=type_rf
+        type_rf=type_rf,
+        grouped_query=grouped_query
     )
 
     result_list = fetch_raw_result(bh_query)
@@ -2216,13 +2221,14 @@ def fetch_backhaul_inventory(monitored_only=True, device_name_list=None, type_rf
     )
 
 
-def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='backhaul'):
+def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='backhaul', grouped_query=True):
     """
     This function return SQL query to fetch BH or Other devices inventory
     """
     nms_device_condition = ""
     device_name_condition = ""
     is_bh_condition = " bh.bh_configured_on_id = device.id AND "
+    grouping_condition = " GROUP BY bh_info.BHIP "
 
     if monitored_only:
         nms_device_condition = ' AND device.is_added_to_nms = 1 '
@@ -2236,6 +2242,10 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                             bh.aggregator_id = device.id OR \
                             bh.bh_switch_id = device.id ) AND \
                         not isnull(bh.bh_configured_on_id) AND "
+
+    if not grouped_query:
+        grouping_condition = ""
+
 
     bh_query = '''
         SELECT 
@@ -2279,8 +2289,6 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                 WHERE
                     device.is_deleted = 0
                     {0}
-                GROUP BY
-                    device.id
             ) AS bh_info
         LEFT JOIN
             inventory_basestation AS bs
@@ -2293,11 +2301,13 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
         LEFT JOIN
             device_city AS city
         ON
-            city.id = bs.city_id;
+            city.id = bs.city_id
+        {3};
     '''.format(
         nms_device_condition,
         device_name_condition,
-        is_bh_condition
+        is_bh_condition,
+        grouping_condition
     )
 
     return bh_query
