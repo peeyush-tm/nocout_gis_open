@@ -23,9 +23,6 @@ from inventory.utils.util import InventoryUtilsGateway
 
 # Import alert_center utils gateway class
 from alert_center.utils.util import AlertCenterUtilsGateway
-# @yogender-tm : Cleanup this
-import alert_center.utils.util as au
-# @yogender-tm : Cleanup this
 
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
@@ -312,12 +309,21 @@ class AlertListingTable(BaseDatatableView):
         # Create instance of 'PerformanceUtilsGateway' class
         perf_utils = PerformanceUtilsGateway()
 
-        return perf_utils.prepare_gis_devices(
+        device_name_list = list()
+
+        # GET all device name list from the list
+        try:
+            map(lambda x: device_name_list.append(x['device_name']), qs)
+        except Exception, e:
+            # logger.info(e.message)
+            pass
+
+        return perf_utils.prepare_gis_devices_optimized(
             qs,
-            page_type,
-            monitored_only=True,
+            page_type=page_type,
             technology=device_tab_technology,
-            type_rf=type_rf
+            type_rf=type_rf,
+            device_name_list=device_name_list
         )
 
     def prepare_polled_results(self, qs, machine_dict=None, multi_proc=False):
@@ -358,8 +364,7 @@ class AlertListingTable(BaseDatatableView):
 
         required_data_columns = self.polled_columns
 
-        # @yogender-tm : check this. clean up
-        sorted_device_list = au.polled_results(
+        sorted_device_list = alert_utils.polled_results(
             multi_proc=MULTI_PROCESSING_ENABLED,
             machine_dict=machine_dict,
             table_name=search_table,
@@ -495,23 +500,17 @@ class AlertListingTable(BaseDatatableView):
 
             reverse = True if s_sort_dir == 'desc' else False
 
-        if i_sorting_cols and i_sort_col:
-            self.is_initialised = False
-            self.is_ordered = True
+        self.is_initialised = False
+        self.is_ordered = True
+        sort_data = self.prepare_devices(qs)
+        try:
+            sort_using = order_columns[i_sort_col]
             sort_data = self.prepare_devices(qs)
-            try:
-                sort_using = order_columns[i_sort_col]
-                sort_data = self.prepare_devices(qs)
 
-                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-                return sorted_qs
+            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+            return sorted_qs
 
-            except Exception, e:
-                self.is_initialised = True
-                self.is_ordered = False
-                self.is_polled = False
-
-        else:
+        except Exception, e:
             self.is_initialised = True
             self.is_ordered = False
             self.is_polled = False
@@ -670,7 +669,7 @@ class NetworkAlertDetailHeaders(ListView):
             {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True}
         ]
 
-        bh_specific_headers = [
+        bh_dt_specific_headers = [
             {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
         ]
@@ -708,7 +707,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         backhaul_headers = []
         backhaul_headers += starting_headers
-        backhaul_headers += specific_headers
+        # backhaul_headers += specific_headers
         backhaul_headers += common_headers
         backhaul_headers += bh_specific_headers
         backhaul_headers += polled_headers
@@ -723,7 +722,7 @@ class NetworkAlertDetailHeaders(ListView):
 
         bh_dt_headers = []
         bh_dt_headers += starting_headers
-        bh_dt_headers += bh_specific_headers
+        bh_dt_headers += bh_dt_specific_headers
         bh_dt_headers += common_headers
         bh_dt_headers += polled_headers
         bh_dt_headers += other_headers
@@ -790,6 +789,11 @@ class GetNetworkAlertDetail(BaseDatatableView):
     Generic Class Based View for the Alert Center Network  Detail Listing Tables.
 
     """
+    is_ordered = False
+    is_polled = False
+    is_searched = False
+    is_initialised = True
+
     model = EventNetwork
     columns = [
         'device_name',
@@ -804,7 +808,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         'description'
     ]
 
-    order_columns = columns
+    order_columns = []
 
     polled_columns = [
         "id",
@@ -903,16 +907,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
                     required_value_list=required_value_list,
                     other_type='backhaul'
                 )
-                # Uncomment to show other devices with backhaul devices
-                # device_list += inventory_utils.filter_devices(
-                #     organizations=organizations,
-                #     data_tab=None,
-                #     page_type=page_type,
-                #     required_value_list=required_value_list,
-                #     other_type='other'
-                # )
 
-            return device_list
+            # machines dict
+            machines = inventory_utils.prepare_machines(device_list, machine_key='machine_name')
+
+            # prepare the polled results
+            perf_results = self.prepare_polled_results(device_list, machine_dict=machines)
+
+            return perf_results
 
         else:
             return []
@@ -945,27 +947,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         sorted_device_list = list()
 
-        # @yogender-tm : clean this
-        # Fetching the data for the device w.r.t to their machine.
-        # for machine, machine_device_list in machine_dict.items():
-        #     device_list = list()
-        #     performance_data = list()
-        #     performance_data = alert_utils.raw_prepare_result(
-        #         performance_data=performance_data,
-        #         machine=machine,
-        #         table_name=search_table,
-        #         devices=machine_device_list,
-        #         data_sources=self.data_sources,
-        #         columns=self.polled_columns,
-        #         condition=extra_query_condition if extra_query_condition else None
-        #     )
-        #
-        #     device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
-        #
-        #     sorted_device_list += device_list
-
-        # @yogender-tm : check this. clean up
-        sorted_device_list = au.polled_results(
+        sorted_device_list = alert_utils.polled_results(
             multi_proc=MULTI_PROCESSING_ENABLED,
             machine_dict=machine_dict,
             table_name=search_table,
@@ -976,27 +958,44 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         return sorted_device_list
 
-    def prepare_devices(self, qs, perf_results):
+    def prepare_devices(self, qs):
         """
-
-
         :param perf_results:
         :param qs:
         :return:
         """
         page_type = self.request.GET.get('page_type', "network")
+        data_source = self.request.GET.get('data_source')
+        type_rf = 'sector'
+        device_name_list = list()
+        device_tab_technology = ""
+
+        if data_source in ['PMP', 'P2P', 'WiMAX']:
+            device_tab_technology = data_source
+
+        if data_source in ['Temperature']:
+            device_tab_technology = 'WiMAX'
+
+        if data_source in ['Backhaul', 'Temperature_BH', 'Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
+            page_type = 'other'
+            type_rf = "backhaul"
+
+        # GET all device name list from the list
+        try:
+            map(lambda x: device_name_list.append(x['device_name']), qs)
+        except Exception, e:
+            # logger.info(e.message)
+            pass
 
         # Create instance of 'PerformanceUtilsGateway' class
         perf_utils = PerformanceUtilsGateway()
-
-        return perf_utils.prepare_gis_devices(qs, page_type)
-
-    def prepare_machines(self, qs):
-        """
-
-        :param qs:
-        """
-        return inventory_utils.prepare_machines(qs, machine_key='machine_name')
+        return perf_utils.prepare_gis_devices_optimized(
+            qs,
+            page_type=page_type,
+            technology=device_tab_technology,
+            type_rf=type_rf,
+            device_name_list=device_name_list
+        )
 
     def prepare_results(self, qs):
         """
@@ -1066,6 +1065,178 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 
         return qs
 
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return result_list:
+        """
+
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            self.is_initialised = False
+            self.is_searched = True
+            result = self.prepare_devices(qs)
+            result_list = list()
+            for search_data in result:
+                temp_var = json.dumps(search_data)
+                search_data = json.loads(temp_var)
+                for data in search_data:
+                    if search_data[data]:
+                        if(
+                            (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
+                            and
+                            (search_data not in result_list)
+                        ):
+                            if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
+                                result_list.append(search_data)
+                        else:
+                            if sSearch == search_data[data] and search_data not in result_list:
+                                result_list.append(search_data)
+
+            return result_list
+        return qs
+
+    def ordering(self, qs):
+        """
+        Get parameters from the request and prepare order by clause
+        :param qs:
+        """
+        # Initilize order columns variable
+        self.prepare_initial_params()
+
+        request = self.request      
+ 
+        i_sort_col = 0
+
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        reverse = True
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            reverse = True if s_sort_dir == 'desc' else False
+
+        sort_data = self.prepare_devices(qs)
+        sort_using = self.order_columns[i_sort_col]
+        try:
+            qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+        except Exception, e:
+            pass
+            # logger.info(e.message)
+        return qs
+
+    def prepare_initial_params(self):
+        """
+        This function prepares initial params
+        """
+        data_source = self.request.GET.get('data_source')
+
+        if data_source in ['WiMAXULIssue', 'PMPULIssue']:
+            self.order_columns = [
+                'severity',
+                'sector_id',
+                'refer',
+                'circuit_id',
+                'customer_name',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'data_source_name',
+                'current_value',
+                'sys_timestamp',
+                'age'
+            ]
+        elif data_source in ['Backhaul']:
+            self.order_columns = [
+                'severity',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'bh_connectivity',
+                'data_source_name',
+                'current_value',
+                'sys_timestamp',
+                'age'
+            ]
+        elif data_source in ['Backhaul_PD', 'Backhaul_Down']:
+            self.order_columns = [
+                'severity',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'bh_connectivity',
+                'current_value',
+                'sys_timestamp',
+                'age'
+            ]
+        elif data_source in ['Backhaul_RTA']:
+            self.order_columns = [
+                'severity',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'bh_connectivity',
+                'current_value',
+                'max_value',
+                'min_value',
+                'sys_timestamp',
+                'age'
+            ]
+        elif data_source in ['Temperature_bh']:
+            self.order_columns = [
+                'severity',
+                'alias',
+                'bh_port_name',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'data_source_name',
+                'current_value',
+                'sys_timestamp',
+                'age'
+            ]
+        else:
+            self.order_columns = [
+                'severity',
+                'sector_id',
+                'circuit_id',
+                'customer_name',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'data_source_name',
+                'current_value',
+                'sys_timestamp',
+                'age'
+            ]
+
+        return True
+
     def get_context_data(self, *args, **kwargs):
         """
         The maine function call to fetch, search, prepare and display the data on the data table.
@@ -1075,36 +1246,29 @@ class GetNetworkAlertDetail(BaseDatatableView):
         """
 
         request = self.request
+        
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
 
-        #machines dict
-        machines = self.prepare_machines(qs)
-        #machines dict
-
-        #prepare the polled results
-        perf_results = self.prepare_polled_results(qs, machine_dict=machines)
-        # this is query set with complete polled result
-
-        qs = alert_utils.map_results(perf_results, qs)
-
-        #this function is for mapping to GIS inventory
-        qs = self.prepare_devices(qs, perf_results)
-        #this function is for mapping to GIS inventory
-
         # number of records before filtering
         total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
 
-        # qs = self.ordering(qs)
-        # qs = self.paging(qs) #Removing pagination as of now to render all the data at once.
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
         # if the qs is empty then JSON is unable to serialize the 
         # empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
+
+        # this function is for mapping to GIS inventory
+        qs = self.prepare_devices(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)

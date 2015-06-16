@@ -134,21 +134,19 @@ class LivePerformance(ListView):
         ]
 
         common_headers = [
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': True},
 
         ]
 
         polled_headers = [
-            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
         ]
 
         action_headers = [
@@ -157,30 +155,22 @@ class LivePerformance(ListView):
 
         if page_type in ["network"]:
             specific_headers = [
-                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
             ]
 
         elif page_type in ["customer"]:
             specific_headers = [
-                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-                {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'bSortable': True},
+                {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'bSortable': True},
             ]
 
         else:
             specific_headers = [
-                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
             ]
 
         datatable_headers = hidden_headers
@@ -282,30 +272,27 @@ class LivePerformanceListing(BaseDatatableView):
 
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            if len(sSearch) > 3:
-                self.is_initialised = False
-                self.is_searched = True
-                result = self.prepare_devices(qs)
-                result_list = list()
-                for search_data in result:
-                    temp_var = json.dumps(search_data)
-                    search_data = json.loads(temp_var)
-                    for data in search_data:
-                        if search_data[data]:
-                            if(
-                                (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
-                                and
-                                (search_data not in result_list)
-                            ):
-                                if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
-                                    result_list.append(search_data)
-                            else:
-                                if sSearch == search_data[data] and search_data not in result_list:
-                                    result_list.append(search_data)
+            self.is_initialised = False
+            self.is_searched = True
+            result = self.prepare_devices(qs)
+            result_list = list()
+            for search_data in result:
+                temp_var = json.dumps(search_data)
+                search_data = json.loads(temp_var)
+                for data in search_data:
+                    if search_data[data]:
+                        if(
+                            (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
+                            and
+                            (search_data not in result_list)
+                        ):
+                            if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
+                                result_list.append(search_data)
+                        else:
+                            if sSearch == search_data[data] and search_data not in result_list:
+                                result_list.append(search_data)
 
-                return result_list
-            else:
-                self.is_searched = False
+            return result_list
         return qs
 
     def ordering(self, qs):
@@ -320,8 +307,8 @@ class LivePerformanceListing(BaseDatatableView):
         if page_type == 'customer':
             columns = [
                 'id',
-                'circuit_id',
                 'sector_id',
+                'circuit_id',
                 'customer_name',
                 'near_end_ip',
                 'ip_address',
@@ -337,8 +324,8 @@ class LivePerformanceListing(BaseDatatableView):
         elif page_type == 'network':
             columns = [
                 'id',
-                'circuit_id',
                 'sector_id',
+                'circuit_id',
                 'customer_name',
                 'ip_address',
                 'device_type',
@@ -386,36 +373,33 @@ class LivePerformanceListing(BaseDatatableView):
 
             reverse = True if s_sort_dir == 'desc' else False
 
-        if i_sorting_cols and i_sort_col:
-            self.is_initialised = False
-            self.is_ordered = True
-            sort_data = self.prepare_devices(qs)
-            try:
-                sort_using = columns[i_sort_col]
-                if sort_using in self.polled_columns:
-                    self.is_polled = True
-                    ##now we need to poll the devices
-                    ##here we can limit the number of devices in query
-                    ##to get the data from
-                    ##that needs to be per machine basis
-                    ##once we have the results
-                    ##we can quickly call upon prepare_devices
-                    machines = self.prepare_machines(sort_data)
-                    #preparing the polled results
-                    result_qs = self.prepare_polled_results(sort_data, multi_proc=MULTI_PROCESSING_ENABLED,
-                                                            machine_dict=machines)
-                    sort_data = result_qs
-                else:
-                    self.is_polled = False
-                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-                return sorted_qs
-
-            except Exception, e:
-                self.is_initialised = True
-                self.is_ordered = False
+        self.is_initialised = False
+        self.is_ordered = True
+        sort_data = self.prepare_devices(qs)
+        try:
+            sort_using = columns[i_sort_col]
+            if sort_using in self.polled_columns:
+                self.is_polled = True
+                # Now we need to poll the devices
+                # here we can limit the number of devices in query
+                # to get the data from
+                # that needs to be per machine basis
+                # once we have the results
+                # we can quickly call upon prepare_devices
+                machines = self.prepare_machines(sort_data)
+                #preparing the polled results
+                result_qs = self.prepare_polled_results(
+                    sort_data,
+                    multi_proc=MULTI_PROCESSING_ENABLED,
+                    machine_dict=machines
+                )
+                sort_data = result_qs
+            else:
                 self.is_polled = False
+            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+            return sorted_qs
 
-        else:
+        except Exception, e:
             self.is_initialised = True
             self.is_ordered = False
             self.is_polled = False
@@ -430,20 +414,31 @@ class LivePerformanceListing(BaseDatatableView):
         """
         page_type = self.request.GET.get('page_type')
         device_tab_technology = self.request.GET.get('data_tab')
+        other_type = self.request.GET.get('other_type')
 
         if page_type == 'network':
             type_rf = 'sector'
         elif page_type == 'customer':
             type_rf = 'ss'
         else:
-            type_rf = None
+            type_rf = other_type
+                
 
-        return perf_utils.prepare_gis_devices(
+        device_name_list = list()
+
+        # GET all device name list from the list
+        try:
+            map(lambda x: device_name_list.append(x['device_name']), qs)
+        except Exception, e:
+            # logger.info(e.message)
+            pass
+
+        return perf_utils.prepare_gis_devices_optimized(
             qs,
-            page_type,
-            monitored_only=True,
+            page_type=page_type,
             technology=device_tab_technology,
-            type_rf=type_rf
+            type_rf=type_rf,
+            device_name_list=device_name_list
         )
 
     def prepare_machines(self, qs):
@@ -567,13 +562,15 @@ class LivePerformanceListing(BaseDatatableView):
         ## dont call prepare_devices
 
         if self.is_initialised and not (self.is_searched or self.is_ordered):
-            #prepare devices with GIS information
+            # prepare devices with GIS information
             qs = self.prepare_devices(qs=qs)
-            #end prepare devices with GIS information
+            # end prepare devices with GIS information
 
         if not self.is_polled:
-            #preparing machine list
-            machines = self.prepare_machines(qs)
+            # preparing machine list
+            machines = self.inventory_utils.prepare_machines(
+                qs, machine_key='machine_name'
+            )
             #preparing the polled results
             if download_excel == "yes":
                 qs = self.prepare_polled_results(qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict=machines)
@@ -1030,34 +1027,40 @@ class InventoryDeviceStatus(View):
         is_sector = False
         is_bh = False
         is_other = False
+
+        page_type = self.kwargs.get('page_type')
         
         # type of device flag
         type_of_device = ""
-
-        # dictionary key to get technology name
-        technology_key = 'device_technology'
-
         list_devices_invent_info = ''
 
         # Get Device Object
         device = Device.objects.get(id=device_id)
+
+        try:
+            device_tech = DeviceTechnology.objects.get(pk=device.device_technology).name
+        except Exception, e:
+            device_tech = ''
         
         # check that the device is SS, sector, BH or other and update the flag accordingly
         if device.substation_set.exists():
             is_ss = True
             type_of_device = "sub_station"
-            technology_key = 'ss_technology'
+            type_rf = 'ss'
         elif device.sector_configured_on.exists() or device.dr_configured_on.exists():
             is_sector = True
             type_of_device = "sector"
+            type_rf = 'sector'
         elif device.backhaul.exists():
             is_bh = True
             type_of_device = "backhaul"
-            technology_key = 'bh_technology'
+            type_rf = 'backhaul'
+            page_type = 'other'
         elif device.backhaul_switch.exists() or device.backhaul_pop.exists() or device.backhaul_aggregator.exists():
             is_other = True
             type_of_device = "other"
-            technology_key = 'bh_technology'
+            type_rf = type_of_device
+            page_type = type_of_device
             result['data']['objects']['is_others_page'] = 1
 
         device_obj = {
@@ -1067,63 +1070,77 @@ class InventoryDeviceStatus(View):
             "machine_name" : device.machine.name,
             "device_id" : device.id
         }
-
         devices_info_list = [device_obj]
+        device_name_list = [device.device_name]
 
-        # GET the devices name
-        if device.sector_configured_on.exists():
-            dr_device_name = Sector.objects.filter(
-                sector_configured_on=device.id
-            ).values(
-                'dr_configured_on__id',
-                'dr_configured_on__device_name',
-                'dr_configured_on__ip_address',
-                'dr_configured_on__mac_address',
-                'dr_configured_on__machine__name'
-            )[:1]
+        # If wimax device then append 
+        # corresponding DR or Sector device in list.
+        if device_tech in ['WiMAX'] and page_type in ['network']:
+            if device.sector_configured_on.exists():
+                dr_device_name = Sector.objects.filter(
+                    sector_configured_on=device.id
+                ).values(
+                    'dr_configured_on__id',
+                    'dr_configured_on__device_name',
+                    'dr_configured_on__ip_address',
+                    'dr_configured_on__mac_address',
+                    'dr_configured_on__machine__name'
+                )[:1]
 
-            if dr_device_name and dr_device_name[0]['dr_configured_on__device_name']:
-                devices_info_list.append({
-                    "device_name" : dr_device_name[0]['dr_configured_on__device_name'],
-                    "ip_address" : dr_device_name[0]['dr_configured_on__ip_address']+"(DR)",
-                    "mac_address" : dr_device_name[0]['dr_configured_on__mac_address'],
-                    "device_id" : dr_device_name[0]['dr_configured_on__id'],
-                    "machine_name" : dr_device_name[0]['dr_configured_on__machine__name']
-                })
+                if dr_device_name and dr_device_name[0]['dr_configured_on__device_name']:
+                    devices_info_list.append({
+                        "device_name" : dr_device_name[0]['dr_configured_on__device_name'],
+                        "ip_address" : dr_device_name[0]['dr_configured_on__ip_address']+"(DR)",
+                        "mac_address" : dr_device_name[0]['dr_configured_on__mac_address'],
+                        "device_id" : dr_device_name[0]['dr_configured_on__id'],
+                        "machine_name" : dr_device_name[0]['dr_configured_on__machine__name']
+                    })
+                    device_name_list.append(dr_device_name[0]['dr_configured_on__device_name'])
 
-        elif device.dr_configured_on.exists():
-            
-            devices_info_list[0]['ip_address'] += "(DR)"
+            # Check for DR device
+            if device.dr_configured_on.exists():
+                devices_info_list[0]['ip_address'] += '(DR)'
+                sector_device_name = Sector.objects.filter(
+                    dr_configured_on=device.id
+                ).values(
+                    'sector_configured_on__id',
+                    'sector_configured_on__device_name',
+                    'sector_configured_on__ip_address',
+                    'sector_configured_on__mac_address',
+                    'sector_configured_on__machine__name'
+                )[:1]
 
-            sector_device_name = Sector.objects.filter(
-                dr_configured_on=device.id
-            ).values(
-                'sector_configured_on__id',
-                'sector_configured_on__device_name',
-                'sector_configured_on__ip_address',
-                'sector_configured_on__mac_address',
-                'sector_configured_on__machine__name'
-            )[:1]
-
-            if sector_device_name and sector_device_name[0]['sector_configured_on__device_name']:
-                devices_info_list.append({
-                    "device_name" : sector_device_name[0]['sector_configured_on__device_name'],
-                    "ip_address" : sector_device_name[0]['sector_configured_on__ip_address'],
-                    "mac_address" : sector_device_name[0]['sector_configured_on__mac_address'],
-                    "device_id" : sector_device_name[0]['sector_configured_on__id'],
-                    "machine_name" : sector_device_name[0]['sector_configured_on__machine__name']
-                })
-            else:
-                pass
+                if sector_device_name and sector_device_name[0]['sector_configured_on__device_name']:
+                    devices_info_list.append({
+                        "device_name" : sector_device_name[0]['sector_configured_on__device_name'],
+                        "ip_address" : sector_device_name[0]['sector_configured_on__ip_address'],
+                        "mac_address" : sector_device_name[0]['sector_configured_on__mac_address'],
+                        "device_id" : sector_device_name[0]['sector_configured_on__id'],
+                        "machine_name" : sector_device_name[0]['sector_configured_on__machine__name']
+                    })
+                    device_name_list.append(sector_device_name[0]['sector_configured_on__device_name'])
 
         if devices_info_list:
+            if device_tech in ['WiMAX'] or page_type == 'other':
+                is_single_call = True
+            else:
+                is_single_call = False
 
-            list_devices_invent_info = perf_utils.prepare_gis_devices(devices_info_list, page_type=None)
+            list_devices_invent_info = perf_utils.prepare_gis_devices_optimized(
+                devices_info_list,
+                page_type=page_type,
+                technology=device_tech,
+                type_rf=type_rf,
+                device_name_list=device_name_list,
+                is_single_call=is_single_call
+            )
+
+            # list_devices_invent_info = perf_utils.prepare_gis_devices(devices_info_list, page_type=None)
 
             if list_devices_invent_info:
                 lowered_device_tech = list_devices_invent_info[0]['device_technology'].lower()
                 # If SS device & of PMP or Wimax Technology then fetch the qos_bandwidth from distributed DB
-                if is_ss and lowered_device_tech in ['pmp', 'wimax']:
+                if page_type == 'customer' and lowered_device_tech in ['pmp', 'wimax']:
                     # get device name from fetched info
                     device_name = list_devices_invent_info[0]['device_name']
                     # get machine name from fetched info
@@ -1152,10 +1169,10 @@ class InventoryDeviceStatus(View):
 
         # Format fetched inventory data in desired format
         resultant_data = self.prepareInventoryStatusResult(
-            list_devices_invent_info,
-            page_type,
-            type_of_device,
-            technology_key
+            dataset=list_devices_invent_info,
+            page_type=page_type,
+            type_of_device=type_of_device,
+            technology=device_tech
         )
 
         result['success'] = 1
@@ -1169,117 +1186,29 @@ class InventoryDeviceStatus(View):
         dataset=[],
         page_type='network',
         type_of_device='sector',
-        technology_key='device_technology'
+        technology_key='device_technology',
+        technology=None
     ):
 
         if not len(dataset):
             return []
 
         resultant_data = []
-        updated_dataset = dataset
-        device_technology = dataset[0][technology_key]
 
         headers_list = get_device_status_headers(
             page_type,
             type_of_device,
-            device_technology
+            technology
         )
-
-        if type_of_device in ['sector'] and device_technology in ['WiMAX']:
-            updated_dataset = list()
-            for data in dataset:
-                sector_id_list = data['sector_id_str'].split(',') if 'sector_id_str' in data else ''
-                sector_pk_list = data['sector_pk_str'].split(',') if 'sector_pk_str' in data else ''
-                pmp_port_list = data['pmp_port_str'].split(',') if 'pmp_port_str' in data else ''
-
-                # initialize counter
-                counter = 0
-
-                for sector_id in sector_id_list:
-                    # Deep copy object due to same reference
-                    deepCopiedData = json.loads(json.dumps(data))
-
-                    try:
-                        pmp_port = pmp_port_list[counter].upper()
-                    except Exception, e:
-                        pmp_port = 'N/A'
-
-                    try:
-                        sector_pk = sector_pk_list[counter]
-                    except Exception, e:
-                        sector_pk = ''
-
-                    # Update sector_id & pmp port in dict
-                    deepCopiedData.update(
-                        sector_id_str=sector_id,
-                        pmp_port_str=pmp_port,
-                        sector_pk=sector_pk
-                    )
-
-                    # Append deepCopiedData to list
-                    updated_dataset.append(deepCopiedData)
-
-                    # Reset deep copied object
-                    deepCopiedData = ""
-
-                    # Increment the counter by 1
-                    counter += 1
-
-        elif type_of_device in ["backhaul", "other"]:
-            updated_dataset = list()
-            for data in dataset:
-                bs_ids_list = data['bs_ids_list'].split(',') if 'bs_ids_list' in data else ''
-                bs_names_list = data['bs_names_list'].split(',') if 'bs_names_list' in data else ''
-                bs_bh_ports_list = data['bs_bh_ports_list'].split(',') if 'bs_bh_ports_list' in data else ''
-                bs_bh_capacity_list = data['bs_bh_capacity_list'].split(',') if 'bs_bh_capacity_list' in data else ''
-
-                # initialize counter
-                counter = 0
-
-                for bs_name in bs_names_list:
-                    # Deep copy object due to same reference
-                    deepCopiedData = json.loads(json.dumps(data))
-
-                    try:
-                        bs_id = bs_ids_list[counter]
-                    except Exception, e:
-                        bs_id = ''
-
-                    try:
-                        bh_port = bs_bh_ports_list[counter]
-                    except Exception, e:
-                        bh_port = 'NA'
-
-                    try:
-                        bh_capacity = bs_bh_capacity_list[counter]
-                    except Exception, e:
-                        bh_capacity = 'NA'
-
-                    # Update bs_name & pmp port in dict
-                    deepCopiedData.update(
-                        bs_name=bs_name,
-                        bs_id=bs_id,
-                        bh_port=bh_port,
-                        bh_capacity=bh_capacity
-                    )
-
-                    # Append deepCopiedData to list
-                    updated_dataset.append(deepCopiedData)
-
-                    # Reset deep copied object
-                    deepCopiedData = ""
-
-                    # Increment the counter by 1
-                    counter += 1
         
-        for data in updated_dataset:
+        for data in dataset:
             # deep copy headers object
             new_headers = json.loads(json.dumps(headers_list))
             for header in new_headers:
                 header_key = header["name"]
                 if header_key in data:
                     header["value"] = data[header_key]
-                    if header["value"]:
+                    if header["value"] and header["value"] != 'NA':
                         try:
                             header["url"] = reverse(
                                 header["url_name"],
@@ -3865,30 +3794,16 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
 
     # technology & type
     device_tech_name = "device_technology"
-    device_tech_key = "device_technology_id"
+    device_tech_key = "tech_id"
 
     device_type_name = "device_type"
-    device_type_key = "device_type_id"
-
-    if type_of_device in ['sub_station']:
-        device_tech_name = "ss_technology"
-        device_tech_key = "ss_technology_id"
-
-        device_type_name = "ss_type"
-        device_type_key = "ss_type_id"
-
-    elif type_of_device in ['backhaul']:
-        device_tech_name = "bh_technology"
-        device_tech_key = "bh_technology_id"
-        
-        device_type_name = "bh_type"
-        device_type_key = "bh_type_id"
+    device_type_key = "type_id"
 
     # common Params
     bs_name_obj = {
         "name": "bs_name",
         "title": "BS Name",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": inventory_app,
         "url_name": "base_station_edit",
@@ -3899,7 +3814,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     ss_name_obj = {
         "name": "ss_name",
         "title": "SS Name",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": inventory_app,
         "url_name": "sub_station_edit",
@@ -3910,18 +3825,18 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     ckt_obj = {
         "name": "circuit_id",
         "title": "Circuit ID",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": inventory_app,
         "url_name": "circuit_edit",
         "kwargs_name": 'pk',
-        'pk_key' : 'ckt_id'
+        'pk_key' : 'ckt_pk'
     }
 
     cust_obj = {
         "name": "customer_name",
         "title": "Customer Name",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": inventory_app,
         "url_name": "customer_edit",
@@ -3932,7 +3847,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     tech_name_obj = {
         "name": device_tech_name,
         "title": "Technology",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": device_app,
         "url_name": "device_technology_edit",
@@ -3943,7 +3858,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     type_name_obj = {
         "name": device_type_name,
         "title": "Type",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": device_app,
         "url_name": "wizard-device-type-update",
@@ -3954,7 +3869,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     city_name_obj = {
         "name": "city",
         "title": "City",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": device_app,
         "url_name": "city_edit",
@@ -3965,7 +3880,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     state_name_obj = {
         "name": "state",
         "title": "State",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": device_app,
         "url_name": "state_edit",
@@ -3974,7 +3889,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     }
 
     device_url_params = {
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": device_app,
         "url_name": "device_edit",
@@ -3995,18 +3910,18 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
     near_ip_obj = {
         "name": "near_end_ip",
         "title": "Near End IP",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": device_app,
         "url_name": "device_edit",
         "kwargs_name": "pk",
-        'pk_key' : 'near_end_id'
+        'pk_key' : 'near_device_id'
     }
 
     polled_freq_obj = {
-        "name": "polled_freq",
+        "name": "polled_frequency",
         "title": "Frequency(MHz)",
-        "value": "N/A",
+        "value": "NA",
         "url": "",
         "app_name": device_app,
         "url_name": "device_frequency_edit",
@@ -4029,9 +3944,9 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             state_name_obj,
             ip_obj,
             {
-                "name": "planned_freq",
+                "name": "planned_frequency",
                 "title": "Planned Frequency(MHz)",
-                "value": "N/A",
+                "value": "NA",
                 "url": ""
             },
             polled_freq_obj
@@ -4044,40 +3959,40 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
                 headers_list.append({
                     "name": "qos_bw",
                     "title": "Qos(Mbps)",
-                    "value": "N/A",
+                    "value": "NA",
                     "url": ""
                 })
         elif technology.lower() in ['wimax']:
             headers_list.append({
-                "name": "sector_id_str",
+                "name": "sector_sector_id",
                 "title": "Sector ID",
-                "value": "N/A",
+                "value": "NA",
                 "url": "",
                 "app_name": inventory_app,
                 "url_name": "sector_edit",
                 "kwargs_name": "pk",
-                'pk_key' : 'sector_pk'
+                'pk_key' : 'sect_pk'
             })
             headers_list.append({
-                "name": "pmp_port_str",
+                "name": "pmp_port",
                 "title": "PMP Port",
-                "value": "N/A",
+                "value": "NA",
                 "url": "",
                 "app_name": inventory_app,
                 "url_name": "sector_edit",
                 "kwargs_name": "pk",
-                'pk_key' : 'sector_pk'
+                'pk_key' : 'sect_pk'
             })
         else:
             headers_list.append({
-                "name": "sector_id",
+                "name": "sector_sector_id",
                 "title": "Sector ID",
-                "value": "N/A",
+                "value": "NA",
                 "url": "",
                 "app_name": inventory_app,
                 "url_name": "sector_edit",
                 "kwargs_name": "pk",
-                'pk_key' : 'sector_pk'
+                'pk_key' : 'sect_pk'
             })
 
     elif type_of_device in ['sub_station']:
@@ -4096,7 +4011,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             {
                 "name": "qos_bw",
                 "title": "Qos(Mbps)",
-                "value": "N/A",
+                "value": "NA",
                 "url": ""
             },
             polled_freq_obj
@@ -4116,7 +4031,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             headers_list.append({
                 "name": "bh_port",
                 "title": "BH Port",
-                "value": "N/A",
+                "value": "NA",
                 "url": "",
                 "app_name": inventory_app,
                 "url_name": "base_station_edit",
@@ -4127,7 +4042,7 @@ def get_device_status_headers(page_type='network', type_of_device=None, technolo
             headers_list.append({
                 "name": "bh_capacity",
                 "title": "BH Capacity(mbps)",
-                "value": "N/A",
+                "value": "NA",
                 "url": "",
                 "app_name": inventory_app,
                 "url_name": "base_station_edit",
