@@ -500,23 +500,17 @@ class AlertListingTable(BaseDatatableView):
 
             reverse = True if s_sort_dir == 'desc' else False
 
-        if i_sorting_cols and i_sort_col:
-            self.is_initialised = False
-            self.is_ordered = True
+        self.is_initialised = False
+        self.is_ordered = True
+        sort_data = self.prepare_devices(qs)
+        try:
+            sort_using = order_columns[i_sort_col]
             sort_data = self.prepare_devices(qs)
-            try:
-                sort_using = order_columns[i_sort_col]
-                sort_data = self.prepare_devices(qs)
 
-                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-                return sorted_qs
+            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+            return sorted_qs
 
-            except Exception, e:
-                self.is_initialised = True
-                self.is_ordered = False
-                self.is_polled = False
-
-        else:
+        except Exception, e:
             self.is_initialised = True
             self.is_ordered = False
             self.is_polled = False
