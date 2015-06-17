@@ -2123,6 +2123,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                 SELECT
                     IF(not isnull(circuit.circuit_id), circuit.circuit_id, 'NA') AS CCID,
                     if(not isnull(customer.alias), customer.alias, 'NA') AS CUST,
+                    if(not isnull(substation.alias), substation.alias, 'NA') AS SSALIAS,
                     customer.id AS CUSTID,
                     circuit.id AS CID,
                     IF(circuit.qos_bandwidth, circuit.qos_bandwidth/1000, 'NA') AS CKT_QOS,
@@ -2171,6 +2172,10 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
                 ON
                     {2}
                     circuit.sector_id = sector_device_info.SECT_ID
+                LEFT JOIN
+                    inventory_substation as substation
+                ON
+                    substation.id = circuit.sub_station_id
                 LEFT JOIN
                     inventory_customer AS customer
                 ON

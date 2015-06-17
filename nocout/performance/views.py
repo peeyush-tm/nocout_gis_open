@@ -1468,6 +1468,8 @@ class GetServiceStatus(View):
             except Exception, e:
                 last_down_time = last_down_time
 
+        severity_status = severity.lower().strip() if severity else None
+
         self.result = {
             'success': 1,
             'message': 'Service Status Fetched Successfully',
@@ -1476,7 +1478,7 @@ class GetServiceStatus(View):
                 'objects': {
                     'perf': None,
                     'last_updated': None,
-                    'status': severity.lower().strip() if severity else None,
+                    'status': severity_status,
                     'age': age,
                     'last_down_time': last_down_time
                 }
@@ -1489,7 +1491,6 @@ class GetServiceStatus(View):
                 service_name=service_name,
                 data_source=service_data_source_type
             ).using(alias=inventory_device_machine_name)
-
         elif "rf" == service_name and "rf" == service_data_source_type:
             performance_data_query_set = None
 
@@ -1528,14 +1529,22 @@ class GetServiceStatus(View):
                 data_source=service_data_source_type
             ).using(alias=inventory_device_machine_name)
 
-        # Calculate the severity of current device from all the Models
-        severity_count = self.get_status_severity(
-            device_name=inventory_device_name,
-            machine_name=inventory_device_machine_name
-        )
+        # IF device is not down only then fetch the severity count
+        if severity_status and severity_status not in ['down', 'critical', 'crit']:
+            # Calculate the severity of current device from all the Models
+            severity_count = self.get_status_severity(
+                device_name=inventory_device_name,
+                machine_name=inventory_device_machine_name
+            )
+        else:
+            severity_count = {
+                "ok": "X",
+                "warn": "X",
+                "crit": "X",
+                "unknown": "X"
+            }
 
-        if severity_count:
-            self.result['data']['objects']['severity'] = severity_count
+        self.result['data']['objects']['severity'] = severity_count
 
         if performance_data_query_set:
             performance_data = performance_data_query_set
@@ -1575,9 +1584,9 @@ class GetServiceStatus(View):
             return severity_count_dict
 
         # Network Status Severity
-        network_severity = NetworkStatus.objects.filter(
-            device_name=device_name
-        ).values_list('severity', flat=True).using(alias=machine_name)
+        # network_severity = NetworkStatus.objects.filter(
+        #     device_name=device_name
+        # ).values_list('severity', flat=True).using(alias=machine_name)
 
         # Status Status Severity
         status_severity = Status.objects.filter(
@@ -1602,7 +1611,7 @@ class GetServiceStatus(View):
         total_severity_list = list()
 
         # Concat all severity list fetched from all Model
-        total_severity_list += list(network_severity)
+        # total_severity_list += list(network_severity)
         total_severity_list += list(status_severity)
         total_severity_list += list(invent_severity)
         total_severity_list += list(utilization_severity)
