@@ -158,10 +158,6 @@
                 ajax_url_pmp = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=PMP',
                 ajax_url_p2p = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=P2P';
 
-            console.log(ajax_url_p2p);
-            console.log(ajax_url_pmp);
-            console.log(ajax_url_wifi);
-
             $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
             $("#customer_wifi_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
 
