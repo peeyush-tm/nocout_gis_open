@@ -18,8 +18,11 @@
 {% block content %}
     {% for group in user.groups.all %}
         {% if group.name == 'group_admin' or group.name == 'group_operator' %}
-            {% if page_type == 'individual' %}
+            {% if page_type == 'individual' and key == 'circuit' %}
                 <p><a href="/circuit/{{ circuit_id }}/l2_reports/create/"><i class="fa fa-plus">&nbsp;</i> Upload Report</a></p>
+            {% endif %}
+            {% if page_type == 'individual' and key == 'bs' %}
+                <p><a href="/base_station/{{ bs_id }}/l2_reports/create/"><i class="fa fa-plus">&nbsp;</i> Upload Report</a></p>
             {% endif %}
         {% endif %}
     {% endfor %}
@@ -27,11 +30,46 @@
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> L2 REPORTS LISTING</h4>
         </div>
-        <div id="l2ReportContainer" class="box-body" style="overflow:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="L2ListingTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
+        <div id="l2ReportContainer" class="box-body">
+            {% if page_type == 'all' %}
+                <div class="tabbable header-tabs">
+                    <ul class="nav nav-tabs">
+                        <li>
+                            <a href="#bs_report_block" id="bs_report_tab" data-toggle="tab">
+                                <span>Base Station</span>
+                            </a>
+                        </li>
+                        <li class="active">
+                            <a href="#ckt_report_block" id="ckt_report_tab" data-toggle="tab">
+                                <span>Circuit ID</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" style="overflow-y:auto;">
+                        <div class="tab-pane" id="bs_report_block">
+                            <table class="datatable table table-striped table-bordered table-hover" id="bs_L2ListingTable">
+                                    <thead></thead>
+                                    <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane active" id="ckt_report_block">
+                            <table class="datatable table table-striped table-bordered table-hover" id="ckt_L2ListingTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Tab-Content END-->
+                </div>
+                <!-- Tabbable END-->
+            {% else %}
+                <table class="datatable table table-striped table-bordered table-hover" id="L2ListingTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+
+            {% endif %}
         </div>
     </div>
 {% endblock %}
@@ -42,14 +80,39 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget(),
-                gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+                gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+                bsgridHeadersObj = "",
+                ajax_url = "",
+                destroy = false;
 
-            /*Ajax url to get grid data*/
-            var ajax_url = '{% url "L2ReportListingTable" circuit_id %}';
-            
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
-            dataTableInstance.createDataTable("L2ListingTable", gridHeadersObj, ajax_url, destroy);
+            {% if key %}
+
+                {% if key == 'circuit' %} 
+                    /*Ajax url to get grid data*/
+                    ajax_url = '{% url "L2ReportListingTable" circuit_id %}';
+                {% endif %}
+
+                {% if key == 'bs' %} 
+                    /*Ajax url to get grid data*/
+                    ajax_url = '{% url "BSL2ReportListingTable" bs_id %}';
+                {% endif %}
+
+                /*Call createDataTable function of ourDataTableWidget class*/
+                dataTableInstance.createDataTable("L2ListingTable", gridHeadersObj, ajax_url, destroy);
+            {% else %}
+                gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+                bsgridHeadersObj = $.parseJSON('{{ bs_datatable_header|safe }}')
+
+                var bs_ajax_url = '{% url "BSL2ReportListingTable" bs_id %}',
+                    ckt_ajax_url = '{% url "L2ReportListingTable" circuit_id %}';
+
+                /*Call createDataTable function of ourDataTableWidget class*/
+                dataTableInstance.createDataTable("ckt_L2ListingTable", gridHeadersObj, ckt_ajax_url, destroy);
+
+                /*Call createDataTable function of ourDataTableWidget class*/
+                dataTableInstance.createDataTable("bs_L2ListingTable", bsgridHeadersObj, bs_ajax_url, destroy);
+            {% endif %}
+
 
             $('#l2ReportContainer').delegate('.delete_l2report','click',function(e){
                 var delete_btn = this;
