@@ -50,7 +50,7 @@ from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, 
         IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, GISInventoryBulkImport,
         UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings, GISExcelDownload)
 from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm,
-        CircuitForm, CircuitL2ReportForm, InventoryForm, IconSettingsForm, LivePollingSettingsForm,
+        CircuitForm, L2ReportForm, InventoryForm, IconSettingsForm, LivePollingSettingsForm,
         ThresholdConfigurationForm, ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm,
         PingThematicSettingsForm,  ServiceThematicSettingsForm, ServiceThresholdConfigurationForm,
         ServiceLivePollingSettingsForm, WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm,
@@ -470,15 +470,21 @@ class BaseStationListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_basestation'):
-                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_basestation'):
-                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                # dct.update(actions= edit_action+delete_action)
+                actions = edit_action+delete_action
+            else:
+                actions = ''
+            actions = actions + '<a href="/base_station/{0}/l2_reports/"><i class="fa fa-sign-in text-info" title="View L2 reports for Base station"\
+                            alt="View L2 reports for Base station"></i></a>&nbsp&nbsp'.format(device_id)
+            dct.update(actions=actions)
         return json_data
 
 
@@ -1274,11 +1280,11 @@ class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_circuit',)
 
 
-#********************************* Circuit L2 Reports*******************************************
+#********************************* Circuit & Base Station L2 Reports*******************************************
 
 class CircuitL2Report_Init(ListView):
     """
-    Class Based View to render Circuit based L2 reports List Page.
+    Class Based View to render Circuit/Base Station based L2 reports List Page.
     """
     model = CircuitL2Report
     template_name = 'circuit_l2/circuit_l2_list.html'
@@ -1295,24 +1301,49 @@ class CircuitL2Report_Init(ListView):
             {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
             {'mData': 'user_id__username', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
         ]
-        if not ('circuit_id' in self.kwargs):
-            datatable_headers.append({'mData': 'circuit_id__alias', 'sTitle': 'Circuit ID', 'sWidth': 'auto', });
+        
+        bs_datatable_header = list()
+        bs_datatable_header += datatable_headers
+        if not ('circuit_id' in self.kwargs or 'bs_id' in self.kwargs):
+
+            datatable_headers.append({
+                'mData': 'type_id',
+                'sTitle': 'Circuit ID',
+                'sWidth': 'auto'
+            })
+            bs_datatable_header.append({
+                'mData': 'type_id',
+                'sTitle': 'BaseStation',
+                'sWidth': 'auto'
+            })
+
 
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if (
             ('admin' in user_role or 'operator' in user_role)
             and
-            ('circuit_id' in self.kwargs and self.kwargs['circuit_id'] != 0)
+            ( 
+             ('circuit_id' in self.kwargs and self.kwargs['circuit_id'] != 0)
+            or
+             ('bs_id' in self.kwargs and self.kwargs['bs_id'] != 0)
+            )
         ):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
+        context['bs_datatable_header'] = json.dumps(bs_datatable_header)
         if 'circuit_id' in self.kwargs:
             context['circuit_id'] = self.kwargs['circuit_id']
             context['page_type'] = 'individual'
+            context['key'] = 'circuit'
+        elif 'bs_id' in self.kwargs:
+            context['bs_id'] = self.kwargs['bs_id']
+            context['page_type'] = 'individual'
+            context['key'] = 'bs'
         else:
             context['circuit_id'] = 0
+            context['bs_id'] = 0
             context['page_type'] = 'all'
 
         return context
@@ -1331,13 +1362,14 @@ class L2ReportListingTable(BaseDatatableView):
         'file_name',
         'added_on',
         'user_id__username',
-        'circuit_id__alias'
+        'type_id'
     ]
     
     order_columns = columns
 
     ckt_id = 0
 
+    
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
@@ -1346,9 +1378,9 @@ class L2ReportListingTable(BaseDatatableView):
 
         if int(self.ckt_id) > 0:
             # condition to fetch l2 reports data from db
-            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=self.ckt_id))
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(report_type='circuit') & Q(type_id=self.ckt_id))
         else:
-            condition = (Q(user_id=self.request.user) | Q(is_public=1))
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & Q(report_type='circuit')
 
         queryset = self.model.objects.filter(condition).values(*self.columns+['id'])
 
@@ -1365,7 +1397,7 @@ class L2ReportListingTable(BaseDatatableView):
                 |
                 Q(user_id__username__icontains=sSearch)
                 |
-                Q(circuit_id__alias__icontains=sSearch)
+                Q(type_id__icontains=sSearch)
             )
 
             qs = qs.filter(search_condition).values(
@@ -1394,6 +1426,13 @@ class L2ReportListingTable(BaseDatatableView):
         eml_icon = static("img/ms-office-icons/eml_icon.png")
 
         for dct in qs:
+            if not int(self.ckt_id):
+                type_name = ''
+                try:
+                    type_name = Circuit.objects.get(id=dct['type_id']).circuit_id
+                except Exception, e:
+                    logger.info(e.message)
+                dct.update(type_id=type_name)
 
             file_type_icon = ''
             file_path = dct['file_name']
@@ -1445,6 +1484,9 @@ class L2ReportListingTable(BaseDatatableView):
         if 'circuit_id' in self.kwargs:
             self.ckt_id = self.kwargs['circuit_id']
 
+        # if 'bs_id' in self.kwargs:
+        #     self.bs_id = self.kwargs['bs_id']
+
         qs = self.get_initial_queryset()
 
         # number of records before filtering
@@ -1470,14 +1512,44 @@ class L2ReportListingTable(BaseDatatableView):
 
         return ret
 
-## This class load all L2 reports datatable
-class AllL2ReportListingTable(BaseDatatableView):
+
+## This class load L2 reports datatable for particular Base Station
+class BSL2ReportListingTable(BaseDatatableView):
     """
-    Class based View to render Circuit Data table.
+    Class based View to render Base Station Data table.
     """
+
     model = CircuitL2Report
-    columns = ['name', 'file_name', 'added_on', 'user_id']
-    order_columns = ['name', 'file_name', 'added_on']
+
+    columns = [
+        'name',
+        'name',
+        'file_name',
+        'added_on',
+        'user_id__username',
+        'type_id'
+    ]
+    
+    order_columns = columns
+
+    bs_id = 0
+
+    
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        condition = ""
+
+        if int(self.bs_id) > 0:
+            # condition to fetch l2 reports data from db
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(report_type='base_station') & Q(type_id=self.bs_id))
+        else:
+            condition = (Q(user_id=self.request.user) | Q(is_public=1)) & Q(report_type='base_station')
+
+        queryset = self.model.objects.filter(condition).values(*self.columns+['id'])
+
+        return queryset
 
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
@@ -1485,60 +1557,84 @@ class AllL2ReportListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                # avoid search on 'added_on'
-                if column == 'added_on':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+            search_condition = (
+                Q(name__icontains=sSearch)
+                |
+                Q(user_id__username__icontains=sSearch)
+                |
+                Q(type_id__icontains=sSearch)
+            )
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
+            qs = qs.filter(search_condition).values(
+                *self.columns+['id']
+            )
+
         return qs
-
-    def get_initial_queryset(self,circuit_id):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        # condition to fetch l2 reports data from db
-        condition = (Q(user_id=self.request.user) | Q(is_public=1))
-        # Query to fetch L2 reports data from db
-        l2ReportsResult = CircuitL2Report.objects.filter(condition).values(*self.columns + ['id'])
-
-        report_resultset = []
-        for data in l2ReportsResult:
-            report_object = {}
-            report_object['name'] = data['name'].title()
-            filename_str_array = data['file_name'].split('/')
-            report_object['file_name'] = filename_str_array[len(filename_str_array)-1]
-            report_object['file_url'] = data['file_name']
-            report_object['added_on'] = data['added_on']
-            username = UserProfile.objects.filter(id=data['user_id']).values('username')
-            report_object['user_id'] = username[0]['username'].title()
-            report_object['id'] = data['id']
-            #add data to report_resultset list
-            report_resultset.append(report_object)
-        return report_resultset
 
     def prepare_results(self, qs):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
-        return qs
+        if not len(qs):
+            return []
 
-    def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
-        """
-        order_columns = self.get_order_columns()
-        return nocout_utils.nocout_datatable_ordering(self, qs, order_columns)
+        resultant_data = list()
+
+        # EXCEL icon for excel file
+        excel_icon = static("img/ms-office-icons/excel_2013_green.png")
+
+        # PDF icon for excel file
+        pdf_icon = static("img/ms-office-icons/pdf_icon.png")
+
+        # DOC icon for excel file
+        doc_icon = static("img/ms-office-icons/doc_icon.png")
+
+        # EML icon for excel file
+        eml_icon = static("img/ms-office-icons/eml_icon.png")
+
+        for dct in qs:
+            if not int(self.bs_id):
+                type_name = ''
+                try:
+                    type_name = BaseStation.objects.get(id=dct['type_id']).alias
+                except Exception, e:
+                    logger.info(e.message)
+                dct.update(type_id=type_name)
+            file_type_icon = ''
+            file_path = dct['file_name']
+            splitted_name = file_path.split("/")
+            downloaded_file_name = splitted_name[len(splitted_name)-1]
+            download_path = MEDIA_URL + file_path
+
+            try:
+                name_split = downloaded_file_name.split(".")
+                file_type = name_split[len(name_split)-1]
+            except Exception, e:
+                file_type = 'xls'
+
+            if file_type in ['doc', 'docx']:
+                file_type_icon = doc_icon
+            elif file_type in ['pdf']:
+                file_type_icon = pdf_icon
+            elif file_type in ['eml']:
+                file_type_icon = eml_icon
+            else:
+                file_type_icon = excel_icon
+
+            dct.update(
+                file='<a href="{}" title="Download L2 Report" target="_blank">\
+                      <img src="{}" style="width:25px;"></a>'.format(download_path, file_type_icon),
+                file_name=downloaded_file_name,
+                added_on=dct['added_on'].strftime("%Y-%m-%d  %H:%M:%S") if dct['added_on'] != "" else "",
+                actions=''
+            )
+
+            if int(self.bs_id) != 0:
+                dct.update(actions='<a class="delete_l2report" style="cursor:pointer;" title="Delete Report" \
+                                    url="{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>\
+                    '.format(dct.pop('id')))
+
+            resultant_data.append(dct)
+
+        return resultant_data
 
 
     def get_context_data(self, *args, **kwargs):
@@ -1549,39 +1645,50 @@ class AllL2ReportListingTable(BaseDatatableView):
         request = self.request
         self.initialize(*args, **kwargs)
 
-        ckt_id = self.kwargs['circuit_id']
+        if 'bs_id' in self.kwargs:
+            self.bs_id = self.kwargs['bs_id']
 
-        qs = self.get_initial_queryset(ckt_id)
+        qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = len(qs)
+        total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
-        total_display_records = len(qs)
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
+
 
         aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
+
         return ret
 
-class CircuitL2ReportCreate(CreateView):
+
+class BSL2ReportCreate(CreateView):
     """
     Class based view to create new Circuit.
     """
 
     template_name = 'circuit_l2/circuit_l2_new.html'
     model = CircuitL2Report
-    form_class = CircuitL2ReportForm
+    form_class = L2ReportForm
+    def get_context_data(self, **kwargs):
+        """
+        """
+        context = super(BSL2ReportCreate, self).get_context_data(**kwargs)
+        context['type_id'] =  BaseStation.objects.get(id=self.kwargs['bs_id']).id
+        context['report_type'] = 'base_station'
+        return context
 
     def form_valid(self, form):
         """
@@ -1589,10 +1696,98 @@ class CircuitL2ReportCreate(CreateView):
         """
         self.object = form.save(commit=False)
         self.object.user_id =  UserProfile.objects.get(id=self.request.user.id)
-        self.object.circuit_id =  Circuit.objects.get(id=self.kwargs['circuit_id'])
+        previous_reports = None
 
+        if 'bs_id' in self.kwargs:
+            self.object.type_id =  BaseStation.objects.get(id=self.kwargs['bs_id']).id
+            self.object.report_type = 'base_station'
+            previous_reports = CircuitL2Report.objects.filter(type_id=self.kwargs['bs_id'])
+
+        if previous_reports and previous_reports.exists():
+            l2_obj=previous_reports.values()
+            file_name = lambda x: MEDIA_ROOT + x
+            for data in l2_obj:
+                try:
+                    # remove all the previous uploaded files for this entity
+                    os.remove(file_name(data['file_name']))
+                except Exception as e:
+                    logger.info(e.message)
+                    pass
+            # Delete all the entries from database for particular Base station
+            previous_reports.delete()
+        # save the new entry 
         self.object.save()
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'bs_id' : self.kwargs['bs_id']}))
+
+class CircuitL2ReportCreate(CreateView):
+    """
+    Class based view to create new L2 report of Circuit.
+    """
+
+    template_name = 'circuit_l2/circuit_l2_new.html'
+    model = CircuitL2Report
+    form_class = L2ReportForm
+
+    def get_context_data(self, **kwargs):
+        context = super(CircuitL2ReportCreate, self).get_context_data(**kwargs)
+        context['type_id'] =  Circuit.objects.get(id=self.kwargs['circuit_id']).id
+        context['report_type'] = 'circuit'
+        return context
+
+    def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+        self.object = form.save(commit=False)
+        self.object.user_id =  UserProfile.objects.get(id=self.request.user.id)
+        previous_reports = None
+
+        if 'circuit_id' in self.kwargs: 
+            self.object.type_id =  Circuit.objects.get(id=self.kwargs['circuit_id']).id
+            self.object.report_type = 'circuit'
+            previous_reports = CircuitL2Report.objects.filter(type_id=self.kwargs['circuit_id'])
+
+        if previous_reports and previous_reports.exists():
+            l2_obj=previous_reports.values()
+            file_name = lambda x: MEDIA_ROOT + x
+            for data in l2_obj:
+                try:
+                    # remove all the previous uploaded files for this entity
+                    os.remove(file_name(data['file_name']))
+                except Exception as e:
+                    logger.info(e.message)
+                    pass
+            # Delete all entries from database for particular cicuit id
+            previous_reports.delete()
+        # save the new entry
+        self.object.save()
+
         return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
+
+class BsL2ReportDelete(DeleteView):
+
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(BsL2ReportDelete, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        report_id = self.kwargs['l2_id']
+        file_name = lambda x: MEDIA_ROOT + x
+        # l2 report object
+        l2_obj = CircuitL2Report.objects.filter(id=report_id).values()
+
+        # remove original file if it exists
+        try:
+            os.remove(file_name(l2_obj[0]['file_name']))
+        except Exception as e:
+            logger.info(e.message)
+
+        # delete entry from database
+        CircuitL2Report.objects.filter(id=report_id).delete()
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'bs_id' : self.kwargs['bs_id']}))
+
 
 class CircuitL2ReportDelete(DeleteView):
 
@@ -1617,6 +1812,37 @@ class CircuitL2ReportDelete(DeleteView):
         # delete entry from database
         CircuitL2Report.objects.filter(id=report_id).delete()
         return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
+
+def get_l2report_count(request, type_id=None, report_type=None):
+    """
+
+    Check that whether L2 report for particular type_id and report_type is exists or not?
+
+    params: type_id - ID of entity
+            report_type - Type of L2 report_type
+
+    return: Dictionary with success, message as key
+    """
+
+    result = {
+        "success" : int(),
+        "message" : ""
+    }
+
+    try:
+        is_exists = CircuitL2Report.objects.filter(
+            report_type=report_type,
+            type_id=int(type_id)
+        ).exists()
+
+        if is_exists:
+            report_type ='Base Station' if report_type == 'base_station' else report_type
+            result["success"] = 1
+            result["message"] = "Are you sure you want to remove the existing file for this {0} ?".format(report_type)
+    except Exception, e:
+        logger.info(e.message)
+        pass
+    return HttpResponse(json.dumps(result), content_type="application/json")
 
 #**************************************** IconSettings *********************************************
 class IconSettingsList(PermissionsRequiredMixin, ListView):
