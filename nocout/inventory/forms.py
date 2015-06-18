@@ -924,7 +924,7 @@ class L2ReportForm(forms.ModelForm):
         extension = os.path.splitext(input_excel.name)[1]
         if not (extension in IMPORT_FILE_TYPES):
             raise ValidationError(
-                u'%s is not the supported file format. Please make sure your input file is in .xls, .xlsx, .doc, .docx, .pdf, .eml .msg file format.' % extension )
+                u'%s is not the supported file format. Please make sure your input file is in .xls, .xlsx, .doc, .docx, .pdf, .eml, .msg file format.' % extension )
         else:
             return input_excel
 

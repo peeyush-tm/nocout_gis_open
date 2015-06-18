@@ -1425,6 +1425,9 @@ class L2ReportListingTable(BaseDatatableView):
         # EML icon for excel file
         eml_icon = static("img/ms-office-icons/eml_icon.png")
 
+        # Other icon for excel file
+        other_icon = static("img/ms-office-icons/other_icon.png")
+
         for dct in qs:
             if not int(self.ckt_id):
                 type_name = ''
@@ -1452,8 +1455,10 @@ class L2ReportListingTable(BaseDatatableView):
                 file_type_icon = pdf_icon
             elif file_type in ['eml']:
                 file_type_icon = eml_icon
-            else:
+            elif file_type in ['xls', 'xlsx']:
                 file_type_icon = excel_icon
+            else:
+                file_type_icon = other_icon
 
             dct.update(
                 file='<a href="{}" title="Download L2 Report" target="_blank">\
@@ -1590,6 +1595,9 @@ class BSL2ReportListingTable(BaseDatatableView):
         # EML icon for excel file
         eml_icon = static("img/ms-office-icons/eml_icon.png")
 
+        # Other icon for excel file
+        other_icon = static("img/ms-office-icons/other_icon.png")
+
         for dct in qs:
             if not int(self.bs_id):
                 type_name = ''
@@ -1616,8 +1624,10 @@ class BSL2ReportListingTable(BaseDatatableView):
                 file_type_icon = pdf_icon
             elif file_type in ['eml']:
                 file_type_icon = eml_icon
-            else:
+            elif file_type in ['xls', 'xlsx']:
                 file_type_icon = excel_icon
+            else:
+                file_type_icon = other_icon
 
             dct.update(
                 file='<a href="{}" title="Download L2 Report" target="_blank">\
