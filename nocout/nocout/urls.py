@@ -5,6 +5,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic import RedirectView
 # Include dajaxice ajax module
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
+from nocout import api
 
 dajaxice_autodiscover()
 
@@ -84,13 +85,15 @@ urlpatterns = patterns('',
                        url(r'^gis_downloaded_inventories/', include('inventory.gis_selected_bs_inventories_urls')),
                        url(r'^device_sync_history/', include('device.device_sync_history_urls')),
                        url(r'^api/', include('inventory.api_urls')),
+                       url(r'^api/', include('device.api_urls')),
                        url(r'^country/', include('device.country_urls')),
                        url(r'^state/', include('device.state_urls')),
                        url(r'^cities/', include('device.city_urls')),
                        url(r'^city_charter_settings/', include('download_center.city_charter_settings_url')),
                        url(r'^wizard/', include('device.wizard_device_type_urls')),
                        url(r'^escalation/', include('alarm_escalation.urls')),
-                       url(r'^global_search/', include('inventory.global_search_urls'))
+                       url(r'^global_search/', include('inventory.global_search_urls')),
+                       url(r'^docs/', include('rest_framework_swagger.urls')),
                        )
 
 # if settings.DEBUG:

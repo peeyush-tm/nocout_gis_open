@@ -30,6 +30,9 @@ import ast
 import json
 import ujson
 import urllib
+from device.serializers import DeviceParentSerializer, DeviceInventorySerializer
+from machine.models import Machine
+from nocout import settings
 import requests
 import logging
 from copy import deepcopy
@@ -38,10 +41,10 @@ from multiprocessing import Process, Queue
 from django.db.models import Count
 from django.views.generic.base import View
 from django.http import HttpResponse
-from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City
+from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City, DeviceModel
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
-from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
+from service.models import DeviceServiceConfiguration, Service, ServiceDataSource, DevicePingConfiguration
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
@@ -58,6 +61,9 @@ from inventory.models import (BaseStation, LivePollingSettings,
                               ThresholdConfiguration, ThematicSettings,
                               PingThematicSettings, UserThematicSettings,
                               UserPingThematicSettings)
+from device.models import DeviceTechnology
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -2003,3 +2009,1026 @@ def nocout_live_polling(q, site):
             q.put(temp_dict)
     except Exception as e:
         pass
+
+
+class GetVendorsForTech(APIView):
+    """
+    Fetch vendors corresponding to the selected technology.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_tech_vendors/4/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+        Args:
+            pk (unicode): Selected option value.
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "alias": "Cambium",
+                                    "id": 4,
+                                    "name": "Cambium"
+                                },
+                                {
+                                    "alias": "RAD",
+                                    "id": 7,
+                                    "name": "RAD"
+                                },
+                                {
+                                    "alias": "MROTek",
+                                    "id": 8,
+                                    "name": "MROtek"
+                                }
+                            ]
+        """
+        tech_id = pk
+
+        # Response of api.
+        result = list()
+
+        # Technology object.
+        tech = None
+        if tech_id:
+            tech = DeviceTechnology.objects.filter(id=tech_id)
+
+        # Fetch vendors associated with the selected technology.
+        if tech:
+            vendors = tech[0].device_vendors.all()
+
+            result = [{'id': value.id,
+                       'name': value.name,
+                       'alias': value.alias} for value in vendors]
+
+        return Response(result)
+
+
+class GetModelsForVendor(APIView):
+    """
+    Fetch models corresponding to the selected vendor.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_vendor_models/4/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+        Args:
+            pk (unicode): Selected option value.
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "alias": "CanopyPM100",
+                                    "id": 4,
+                                    "name": "CanopyPM100"
+                                },
+                                {
+                                    "alias": "CanopySM100",
+                                    "id": 5,
+                                    "name": "CanopySM100"
+                                }
+                            ]
+        """
+        vendor_id = pk
+
+        # Response of api.
+        result = list()
+
+        # Vendor object.
+        vendor = None
+        if vendor_id:
+            vendor = DeviceVendor.objects.filter(id=vendor_id)
+
+        # Fetch models associated with the selected vendor.
+        if vendor:
+            models = vendor[0].device_models.all()
+
+            result = [{'id': value.id,
+                       'name': value.name,
+                       'alias': value.alias} for value in models]
+
+        return Response(result)
+
+
+class GetTypesForModel(APIView):
+    """
+    Fetch types corresponding to the selected model.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_model_types/4/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+        Args:
+            pk (unicode): Selected option value.
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "alias": "CanopyPM100",
+                                    "id": 4,
+                                    "name": "CanopyPM100"
+                                },
+                                {
+                                    "alias": "CanopySM100",
+                                    "id": 5,
+                                    "name": "CanopySM100"
+                                }
+                            ]
+        """
+        model_id = pk
+
+        # Response of api.
+        result = list()
+
+        # Model object.
+        model = None
+        if model_id:
+            model = DeviceModel.objects.filter(id=model_id)
+
+        # Fetch types associated with the selected model.
+        if model:
+            types = model[0].device_types.all()
+
+            result = [{'id': value.id,
+                       'name': value.name,
+                       'alias': value.alias} for value in types]
+
+        return Response(result)
+
+
+class GetDevicePorts(APIView):
+    """
+    Fetch device ports corresponding to the selected device type.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_device_ports/4/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+        Args:
+            pk (unicode): Selected option value.
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "alias": "PMP Port 1",
+                                    "id": 1,
+                                    "value": 1,
+                                    "name": "pmp_port_1"
+                                },
+                                {
+                                    "alias": "PMP Port 2",
+                                    "id": 2,
+                                    "value": 2,
+                                    "name": "pmp_port_2"
+                                }
+                            ]
+        """
+        type_id = pk
+
+        # Response of api.
+        result = list()
+
+        # Device type object.
+        device_types = None
+        if type_id:
+            device_types = DeviceType.objects.filter(id=type_id)
+
+        # Fetch ports associated with the selected device type.
+        if device_types:
+            ports = device_types[0].device_port.all()
+
+            result = [{'id': value.id,
+                       'name': value.name,
+                       'alias': value.alias,
+                       'value': value.value} for value in ports]
+
+        return Response(result)
+
+
+class GetSitesForMachine(APIView):
+    """
+    Fetch sites corresponding to the selected machine.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_machine_sites/4/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+        Args:
+            pk (unicode): Selected option value.
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "alias": "CanopyPM100",
+                                    "id": 4,
+                                    "name": "CanopyPM100"
+                                },
+                                {
+                                    "alias": "CanopySM100",
+                                    "id": 5,
+                                    "name": "CanopySM100"
+                                }
+                            ]
+        """
+        machine_id = pk
+
+        # Response of api.
+        result = list()
+
+        # Machine object.
+        machine = None
+        if machine_id:
+            machine = Machine.objects.filter(id=machine_id)
+
+        # Fetch sites associated with the selected machine.
+        if machine:
+            sites = machine[0].siteinstance_set.all()
+
+            result = [{'id': value.id,
+                       'name': value.name,
+                       'alias': value.alias} for value in sites]
+
+        return Response(result)
+
+
+class GetDeviceTypeExtraFields(APIView):
+    """
+    Fetch device extra fields corresponding to the device type.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_extra_fields/4/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+        Args:
+            pk (unicode): Selected option value.
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "alias": "CanopyPM100",
+                                    "id": 4,
+                                    "name": "CanopyPM100"
+                                },
+                                {
+                                    "alias": "CanopySM100",
+                                    "id": 5,
+                                    "name": "CanopySM100"
+                                }
+                            ]
+        """
+        device_type_id = pk
+
+        # Response of api.
+        result = list()
+
+        # Device Type object.
+        device_types = None
+        if device_type_id:
+            device_types = DeviceType.objects.filter(id=device_type_id)
+
+        # Fetch device extra fields.
+        device_extra_fields = None
+        if device_extra_fields:
+            device_extra_fields = device_types[0].devicetypefields_set.all()
+
+        # Fetch sites associated with the selected machine.
+        if device_extra_fields:
+            result = [{'id': value.id,
+                       'name': value.field_name,
+                       'alias': value.field_display_name} for value in device_extra_fields]
+
+        return Response(result)
+
+
+class GetDevicesForSelectionMenu(APIView):
+    """
+    Fetch list of devices for selection menu.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/devices_for_menu/m/"
+    """
+
+    def get(self, request, flag):
+        """
+        Processing API request.
+        Args:
+            state (unicode): Device state.
+                             all: a
+                             is_added_to_nms: n
+                             is_monitored_on_nms: m
+                             enable: e
+                             disable: d
+                             is_deleted: sd
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "id": 11343,
+                                    "device_name": "11343",
+                                    "device_alias": "1131208803",
+                                    "ip_address": "10.168.40.21"
+                                },
+                                {
+                                    "id": 11345,
+                                    "device_name": "11345",
+                                    "device_alias": "091NEWD030008192497",
+                                    "ip_address": "10.168.28.49"
+                                }
+                            ]
+        """
+        # Status flag.
+        flag = flag
+
+        # Response of api.
+        result = list()
+
+        # Get all devices.
+        devices = None
+        if flag == 'a':
+            devices = Device.objects.all()
+        elif flag == 'n':
+            devices = Device.objects.filter(is_added_to_nms__in=[1, 2]).values('id',
+                                                                               'device_name',
+                                                                               'device_alias',
+                                                                               'ip_address')
+        elif flag == 'm':
+            devices = Device.objects.filter(is_monitored_on_nms__in=[1, 2]).values('id',
+                                                                                   'device_name',
+                                                                                   'device_alias',
+                                                                                   'ip_address')
+        elif flag == 'e':
+            devices = Device.objects.filter(host_state='enable').values('id',
+                                                                        'device_name',
+                                                                        'device_alias',
+                                                                        'ip_address')
+        elif flag == 'd':
+            devices = Device.objects.filter(host_state='disable').values('id',
+                                                                         'device_name',
+                                                                         'device_alias',
+                                                                         'ip_address')
+        elif flag == 'sd':
+            devices = Device.objects.filter(is_deleted=1).values('id',
+                                                                 'device_name',
+                                                                 'device_alias',
+                                                                 'ip_address')
+        else:
+            pass
+        
+        serializer = DeviceParentSerializer(devices, many=True)
+
+        return Response(serializer.data)
+
+
+class GetDeviceInventory(APIView):
+    """
+    Fetch list of devices corresponding to the passed status.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/device_inventory/m/"
+    """
+    def get(self, request, flag):
+        """
+        Processing API request.
+
+        Args:
+            state (unicode): Device state.
+                             all: a
+                             is_added_to_nms: n
+                             is_monitored_on_nms: m
+                             enable: e
+                             disable: d
+                             is_deleted: sd
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "id": 11343,
+                                    "device_name": "11343",
+                                    "device_alias": "1131208803",
+                                    "device_technology": 3,
+                                    "device_vendor": 3,
+                                    "device_model": 3,
+                                    "device_type": 5,
+                                    "ip_address": "10.168.40.21",
+                                    "mac_address": "00:02:73:92:d9:73",
+                                    "netmask": null,
+                                    "gateway": null,
+                                    "dhcp_state": "Disable",
+                                    "host_priority": "Normal",
+                                    "host_state": "Disable",
+                                    "latitude": 28.7174,
+                                    "longitude": 77.1235,
+                                    "timezone": "Asia/Kolkata",
+                                    "address": "PLOT NO.-5 VIKAS SURYA PLAZA COMMUNITYCENTRE DC CHOWK SECTOR-9
+                                                ROHININEW DELHI 110085",
+                                    "description": "Sub Station created on 25-Feb-2015 at 17:29:16.",
+                                    "is_deleted": 0,
+                                    "is_added_to_nms": 1,
+                                    "is_monitored_on_nms": 1,
+                                    "lft": 1340,
+                                    "rght": 1341,
+                                    "tree_id": 2,
+                                    "level": 1,
+                                    "machine": 4,
+                                    "site_instance": 5,
+                                    "organization": 1,
+                                    "parent": 10244,
+                                    "country": 1,
+                                    "state": null,
+                                    "city": null,
+                                    "ports": []
+                                }
+                            ]
+        """
+
+        # Status flag.
+        flag = flag
+
+        # Get all devices.
+        devices = None
+        if flag == 'a':
+            devices = Device.objects.all()
+        elif flag == 'n':
+            devices = Device.objects.filter(is_added_to_nms__in=[1, 2])
+        elif flag == 'm':
+            devices = Device.objects.filter(is_monitored_on_nms__in=[1, 2])
+        elif flag == 'e':
+            devices = Device.objects.filter(host_state='enable')
+        elif flag == 'd':
+            devices = Device.objects.filter(host_state='disable')
+        elif flag == 'sd':
+            devices = Device.objects.filter(is_deleted=1)
+        else:
+            pass
+
+        serializer = DeviceInventorySerializer(devices, many=True)
+
+        return Response(serializer.data)
+
+
+class GetEligibleParentDevices(APIView):
+    """
+    Fetch devices which are eligible to be the parent of child devices of device which needs to be soft deleted.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_eligible_parent/10244/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            value (int): Device ID.
+
+        Returns:
+            result (dictionary): Dictionary contains device and it's children's values.
+                                 For e.g.,
+                                    {
+                                        "message": "Successfully render form.",
+                                        "data": {
+                                            "meta": "",
+                                            "objects": {
+                                                "childs": [
+                                                    {
+                                                        "value": "11337",
+                                                        "key": 11337
+                                                    },
+                                                    {
+                                                        "value": "11339",
+                                                        "key": 11339
+                                                    },
+                                                    {
+                                                        "value": "11343",
+                                                        "key": 11343
+                                                    }
+                                                ],
+                                                "form_title": "device",
+                                                "form_type": "device",
+                                                "id": 10244
+                                            }
+                                        },
+                                        "success": 1
+                                    }
+
+        Note:
+            * Child Devices: These are the devices which are associated with the device,
+                             which needs to be deleted in parent-child relationship.
+            * Child Device Descendant: Set of all child devices descendants (needs for
+                                       filtering new parent devices choice).
+            * Eligible Devices: These are the devices which are not associated with the device,
+                                (which needs to be deleted) & are eligible to be the
+                                parent of devices in child devices.
+        """
+        device = Device.objects.get(id=pk)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to render form correctly."
+        result['data']['meta'] = ''
+        result['data']['objects'] = {}
+        result['data']['objects']['form_type'] = 'device'
+        result['data']['objects']['form_title'] = 'device'
+        result['data']['objects']['id'] = device.id
+        result['data']['objects']['name'] = device.device_name
+
+        # These are the devices which are associated with the device,
+        # which needs to be deleted in parent-child relationship.
+        child_devices = Device.objects.filter(parent_id=pk, is_deleted=0)
+
+        # Set of all child devices descendants (needs for filtering new parent devices choice).
+        child_device_descendants = []
+        for child_device in child_devices:
+            device_descendant = child_device.get_descendants()
+            for cd in device_descendant:
+                child_device_descendants.append(cd)
+
+        result['data']['objects']['childs'] = []
+        result['data']['objects']['eligible'] = []
+
+        # Future device parent is needed to find out only if our device is
+        # associated with any other device i.e if child_devices.count() > 0.
+        if child_devices.count() > 0:
+            # These are the devices which are not associated with the
+            # device (which needs to be deleted) & are eligible to be the
+            # parent of devices in child_devices.
+            remaining_devices = Device.objects.exclude(parent_id=pk)
+            selected_devices = set(remaining_devices) - set(child_device_descendants)
+            result['data']['objects']['eligible'] = []
+            for e_dv in selected_devices:
+                e_dict = dict()
+                e_dict['key'] = e_dv.id
+                e_dict['value'] = e_dv.device_name
+                # For excluding 'device' which we are deleting from eligible
+                # device choices.
+                if e_dv.id == device.id:
+                    continue
+                if e_dv.is_deleted == 1:
+                    continue
+                # For excluding devices from eligible device choices those are not from
+                # same device_group as the device which we are deleting.
+                # if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
+                result['data']['objects']['eligible'].append(e_dict)
+            for c_dv in child_devices:
+                c_dict = dict()
+                c_dict['key'] = c_dv.id
+                c_dict['value'] = c_dv.device_name
+                result['data']['objects']['childs'].append(c_dict)
+
+        result['success'] = 1
+        result['message'] = "Successfully render form."
+
+        return Response(result)
+
+
+class DeviceSoftDelete(APIView):
+    """
+    Soft delete device i.e. not deleting device from database, it just set
+    it's is_deleted field value to 1 & remove it's relationship with any other device
+    & make some other device parent of associated device.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/device_soft_delete/10244/1/"
+    """
+    def get(self, request, device_id, new_parent_id):
+        """
+        Processing API request.
+
+        Args:
+            device_id (unicode): ID of device which needs to be deleted.
+            new_parent_id (unicode): ID of device which is new parent of child devices.
+
+        Returns:
+            result (dictionary): Dictionary contains device and it's children's values.
+                                 For e.g.,
+                                    {
+                                        "message": "Successfully deleted.",
+                                        "data": {
+                                            "meta": "",
+                                            "objects": {
+                                                "device_name": "10244",
+                                                "device_id": "10244"
+                                            }
+                                        },
+                                        "success": 1
+                                    }
+        """
+        device = Device.objects.get(id=device_id)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "No data exists."
+        result['data']['meta'] = ''
+        result['data']['objects'] = {}
+        result['data']['objects']['device_id'] = device_id
+        result['data']['objects']['device_name'] = device.device_name
+
+        # New parent device for associated devices.
+        new_parent = ""
+
+        try:
+            new_parent = Device.objects.get(id=new_parent_id)
+        except Exception as e:
+            logger.info("No new device parent exist. Exception: ", e.message)
+
+        # Fetching all child devices of device which needs to be deleted.
+        child_devices = ""
+        try:
+            child_devices = Device.objects.filter(parent_id=device_id)
+        except Exception as e:
+            logger.info("No child device exists. Exception: ", e.message)
+
+        # Assign new parent device to all child devices.
+        if new_parent:
+            if child_devices.count() > 0:
+                child_devices.update(parent=new_parent)
+
+        # Delete device from nms core if it is already added there(nms core).
+        if device.host_state != "Disable" and device.is_added_to_nms != 0:
+            device.is_added_to_nms = 0
+            device.is_monitored_on_nms = 0
+            device.save()
+            # Remove device services from 'service_deviceserviceconfiguration' table.
+            DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+            # Remove device ping service from 'service_devicepingconfiguration' table.
+            DevicePingConfiguration.objects.filter(device_name=device.device_name).delete()
+
+        # Setting 'is_deleted' bit of device to 1 which means device is soft deleted.
+        if device.is_deleted == 0:
+            device.is_deleted = 1
+            device.save()
+            # Modify site instance 'is_device_change' bit to reflect change in corresponding site for sync.
+            try:
+                device.site_instance.is_device_change = 1
+                device.site_instance.save()
+            except Exception as e:
+                pass
+            result['success'] = 1
+            result['message'] = "Successfully deleted."
+        else:
+            result['success'] = 0
+            result['message'] = "Already soft deleted."
+
+        return Response(result)
+
+
+class DeviceRestoreDispalyData(APIView):
+    """
+    Get data to show on device restore form.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/device_restore_display_data/1/"
+    """
+    def get(self, request, value):
+        """
+        Processing API request.
+
+        Args:
+            value (unicode): Device ID.
+
+        Returns:
+            result (dictionary): Dictionary contains device and it's children's values.
+                                 For e.g.,
+                                    {
+                                        'message': 'Successfully render form.',
+                                        'data': {
+                                            'meta': '',
+                                            'objects': {
+                                                'alias': u'091HYDE030007077237_NE',
+                                                'id': 6247L,
+                                                'name': u'1'
+                                            }
+                                        },
+                                        'success': 1
+                                    }
+        """
+        device = Device.objects.get(id=value)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to render form correctly."
+        result['data']['meta'] = ''
+        result['data']['objects'] = {}
+
+        if device:
+            result['data']['objects']['id'] = device.id
+            result['data']['objects']['name'] = device.device_name
+            result['data']['objects']['alias'] = device.device_alias
+            result['success'] = 1
+            result['message'] = "Successfully render form."
+
+        return Response(result)
+
+
+class RestoreDevice(APIView):
+    """
+    Restoring device to device inventory.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/device_restore/1/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            device_id (unicode): Device ID.
+
+        Returns:
+            result (dictionary): Dictionary contains device and it's children's values.
+                                 For e.g.,
+                                    {
+                                        'message': 'Successfully restored device (091HYDE030007077237_NE).',
+                                        'data': {
+                                            'meta': '',
+                                            'objects': {
+                                                'device_name': u'1',
+                                                'device_id': u'6247'
+                                            }
+                                        },
+                                        'success': 1
+                                    }
+
+        """
+        device = Device.objects.get(id=pk)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "No data exists."
+        result['data']['meta'] = ''
+        result['data']['objects'] = {}
+        result['data']['objects']['device_id'] = pk
+        result['data']['objects']['device_name'] = device.device_name
+
+        # Setting 'is_deleted' bit of device to 0 which means device is restored.
+        if device.is_deleted == 1:
+            device.is_deleted = 0
+            device.save()
+            # Modify site instance 'is_device_change' bit to reflect change in corresponding site for sync.
+            try:
+                device.site_instance.is_device_change = 1
+                device.site_instance.save()
+            except Exception as e:
+                pass
+            result['success'] = 1
+            result['message'] = "Successfully restored device ({}).".format(device.device_alias)
+        else:
+            result['success'] = 0
+            result['message'] = "Already restored."
+
+        return Response(result)
+
+
+class AddDeviceToNMSDisplayInfo(APIView):
+    """
+    Generate form content for device addition to nms core.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/add_device_to_nms_display_info/10244/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (unicode): Device ID.
+
+        Returns:
+            result (dict): Dictionary of ping parameters associated with device type.
+                           For e.g.,
+                                {
+                                    "message": "Successfully fetched ping parameters from database.",
+                                    "data": {
+                                        "rta_critical": 30,
+                                        "packets": 10,
+                                        "meta": "",
+                                        "timeout": 10,
+                                        "pl_critical": 30,
+                                        "normal_check_interval": 5,
+                                        "pl_warning": 20,
+                                        "rta_warning": 20,
+                                        "device_id": "10244"
+                                    },
+                                    "success": 1
+                                }
+
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to get device ping data."
+        result['data']['meta'] = ''
+
+        device = Device.objects.get(pk=pk)
+
+        try:
+            device_type = DeviceType.objects.get(pk=device.device_type)
+            # Get device ping information which is a ssociated which device type (if exist).
+            ping_packets = device_type.packets if device_type.packets else settings.PING_PACKETS
+            ping_timeout = device_type.timeout if device_type.timeout else settings.PING_TIMEOUT
+            ping_normal_check_interval = device_type.normal_check_interval if device_type.normal_check_interval \
+                else settings.PING_NORMAL_CHECK_INTERVAL
+            ping_rta_warning = device_type.rta_warning if device_type.rta_warning else settings.PING_RTA_WARNING
+            ping_rta_critical = device_type.rta_critical if device_type.rta_critical else settings.PING_RTA_CRITICAL
+            ping_pl_warning = device_type.pl_warning if device_type.pl_warning else settings.PING_PL_WARNING
+            ping_pl_critical = device_type.pl_critical if device_type.pl_critical else settings.PING_PL_CRITICAL
+            result['message'] = "Successfully fetched ping parameters from database."
+            result['success'] = 1
+        except Exception as e:
+            # If device type doesn't have ping parameters associated than use default ones.
+            ping_packets = 60
+            ping_timeout = 20
+            ping_normal_check_interval = 5
+            ping_rta_warning = 1500
+            ping_rta_critical = 3000
+            ping_pl_warning = 80
+            ping_pl_critical = 100
+            result['message'] = "Successfully get default ping parameters."
+            result['success'] = 1
+            logger.info(e.message)
+
+        result['data']['device_id'] = pk
+        result['data']['packets'] = ping_packets
+        result['data']['timeout'] = ping_timeout
+        result['data']['normal_check_interval'] = ping_normal_check_interval
+        result['data']['rta_warning'] = ping_rta_warning
+        result['data']['rta_critical'] = ping_rta_critical
+        result['data']['pl_warning'] = ping_pl_warning
+        result['data']['pl_critical'] = ping_pl_critical
+
+        return Response(result)
+
+
+class AddDeviceToNMS(APIView):
+    """
+    Adding device to nms core.
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (unicode): Device ID.
+            ping_data (unicode): String containing device ping data in dictionary format.
+
+        Returns:
+            result (dict): Dictionary of device info.
+                           For e.g.,
+                              {
+                                  'message': 'Deviceaddedsuccessfully.',
+                                  'data': {
+                                      'site': u'nocout_gis_slave',
+                                      'agent_tag': u'snmp',
+                                      'mode': 'addhost',
+                                      'device_name': u'device_116',
+                                      'device_alias': u'Device116',
+                                      'ip_address': u'115.111.183.116'
+                                  },
+                                  'success': 1
+                              }
+        """
+        # Ping data.
+        ping_data = None
+        try:
+            ping_data = eval(self.request.GET.get('ping_data'))
+        except Exception as e:
+            pass
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "<i class=\"fa fa-times red-dot\"></i>Device addition failed."
+        result['data']['meta'] = ''
+
+        device = Device.objects.get(pk=pk)
+
+        ping_levels = {"rta": (ping_data['rta_warning'] if ping_data['rta_warning'] else 1500,
+                               ping_data['rta_critical'] if ping_data['rta_critical'] else 3000),
+                       "loss": (ping_data['pl_warning'] if ping_data['pl_warning'] else 80,
+                                ping_data['pl_critical'] if ping_data['pl_critical'] else 100),
+                       "packets": ping_data['packets'] if ping_data['packets'] and ping_data['packets'] <= 20 else 6,
+                       "timeout": ping_data['timeout'] if ping_data['timeout'] else 20}
+
+        if device.host_state != "Disable":
+            # Get 'agent_tag' from DeviceType model.
+            agent_tag = ""
+            device_type_name = ""
+            try:
+                device_type_object = DeviceType.objects.get(id=device.device_type)
+                agent_tag = device_type_object.agent_tag
+                device_type_name = device_type_object.name
+            except Exception as e:
+                logger.info(e.message)
+
+            device_data = {
+                'device_name': str(device.device_name),
+                'device_alias': str(device.device_alias),
+                'ip_address': str(device.ip_address),
+                'agent_tag': str(agent_tag),
+                'site': str(device.site_instance.name),
+                'mode': 'addhost',
+                'ping_levels': ping_levels,
+                'parent_device_name': None,
+                'mac': str(device.mac_address),
+                'device_type': device_type_name
+            }
+
+            device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
+            if len(device_tech) and device_tech[0].name.lower() in ['pmp', 'wimax']:
+                if device.substation_set.exists():
+                    try:
+                        substation = device.substation_set.get()
+
+                        # Check for the circuit.
+                        if substation.circuit_set.exists():
+                            circuit = substation.circuit_set.get()
+                            sector = circuit.sector
+                            parent_device = sector.sector_configured_on
+                            device_data.update({
+                                'parent_device_name': parent_device.device_name
+                            })
+                        else:
+                            result['message'] = "<i class=\"fa fa-check red-dot\"></i> \
+                                                 Could not find BS for this SS in the topology."
+                            return json.dumps({'result': result})
+
+                    except Exception as e:
+                        result['message'] = "<i class=\"fa fa-check red-dot\"></i> \
+                                             Could not find BS for this SS in the topology."
+                        logger.exception(e.message)
+                        return json.dumps({'result': result})
+
+            dpc = DevicePingConfiguration()
+            dpc.device_name = device.device_name
+            dpc.device_alias = device.device_alias
+            dpc.packets = ping_data['packets']
+            dpc.timeout = ping_data['timeout']
+            dpc.normal_check_interval = ping_data['normal_check_interval']
+            dpc.rta_warning = ping_data['rta_warning']
+            dpc.rta_critical = ping_data['rta_critical']
+            dpc.pl_warning = ping_data['pl_warning']
+            dpc.pl_critical = ping_data['pl_critical']
+            dpc.save()
+            result['message'] = "<i class=\"fa fa-check green-dot\"></i> Device added successfully."
+            # Set 'is_added_to_nms' to 1 after device successfully added to nocout nms core.
+            device.is_added_to_nms = 1
+            result['success'] = 1
+            # Modify site instance 'is_device_change' bit to reflect change in corresponding site for sync.
+            try:
+                device.site_instance.is_device_change = 1
+                device.site_instance.save()
+            except Exception as e:
+                pass
+            device.save()
+        else:
+            result['message'] = "<i class=\"fa fa-check red-dot\"></i> Device state is disabled. \
+                                 First enable it than add it to nms core."
+        return Response(result)
