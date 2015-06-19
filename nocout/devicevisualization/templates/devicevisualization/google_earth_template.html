@@ -579,18 +579,11 @@
 
             } else {
 
-                var searchString = JSON.stringify([
-                                                      {"field": "device_name", "value": [deviceName]}
-                                                  ]);
-                advSearch.setFilters(searchString, setFilterApi);
-
                 /*Hide Remove Filters button*/
                 if (!$("#removeFilterBtn").hasClass("hide")) {
                     $("#removeFilterBtn").addClass("hide");
                 }
             }
-            /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
-            // networkMapInstance.getBasicFilters();
         });
     </script>
 {% endblock %}
