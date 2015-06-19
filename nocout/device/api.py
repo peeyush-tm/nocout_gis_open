@@ -29,7 +29,9 @@ Methods
 import ast
 import json
 import ujson
+import time
 import urllib
+from datetime import datetime
 from device.serializers import DeviceParentSerializer, DeviceInventorySerializer
 from machine.models import Machine
 from nocout import settings
@@ -41,10 +43,12 @@ from multiprocessing import Process, Queue
 from django.db.models import Count
 from django.views.generic.base import View
 from django.http import HttpResponse
-from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City, DeviceModel
+from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City, DeviceModel, \
+    DeviceSyncHistory
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
-from service.models import DeviceServiceConfiguration, Service, ServiceDataSource, DevicePingConfiguration
+from service.models import DeviceServiceConfiguration, Service, ServiceDataSource, DevicePingConfiguration, \
+    ServiceParameters
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
@@ -2910,6 +2914,10 @@ class AddDeviceToNMSDisplayInfo(APIView):
 class AddDeviceToNMS(APIView):
     """
     Adding device to nms core.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/add_device_to_nms/10244/?ping_data={}"
     """
     def get(self, request, pk):
         """
@@ -2948,87 +2956,824 @@ class AddDeviceToNMS(APIView):
         result['message'] = "<i class=\"fa fa-times red-dot\"></i>Device addition failed."
         result['data']['meta'] = ''
 
-        device = Device.objects.get(pk=pk)
+        # Device object.
+        device = None
+        try:
+            device = Device.objects.get(pk=pk)
+        except Exception as e:
+            pass
 
-        ping_levels = {"rta": (ping_data['rta_warning'] if ping_data['rta_warning'] else 1500,
-                               ping_data['rta_critical'] if ping_data['rta_critical'] else 3000),
-                       "loss": (ping_data['pl_warning'] if ping_data['pl_warning'] else 80,
-                                ping_data['pl_critical'] if ping_data['pl_critical'] else 100),
-                       "packets": ping_data['packets'] if ping_data['packets'] and ping_data['packets'] <= 20 else 6,
-                       "timeout": ping_data['timeout'] if ping_data['timeout'] else 20}
+        if device:
+            ping_levels = {"rta": (ping_data['rta_warning'] if ping_data['rta_warning'] else 1500,
+                                   ping_data['rta_critical'] if ping_data['rta_critical'] else 3000),
+                           "loss": (ping_data['pl_warning'] if ping_data['pl_warning'] else 80,
+                                    ping_data['pl_critical'] if ping_data['pl_critical'] else 100),
+                           "packets": ping_data['packets'] if ping_data['packets'] and ping_data['packets'] <= 20 else 6,
+                           "timeout": ping_data['timeout'] if ping_data['timeout'] else 20}
 
-        if device.host_state != "Disable":
-            # Get 'agent_tag' from DeviceType model.
-            agent_tag = ""
-            device_type_name = ""
-            try:
-                device_type_object = DeviceType.objects.get(id=device.device_type)
-                agent_tag = device_type_object.agent_tag
-                device_type_name = device_type_object.name
-            except Exception as e:
-                logger.info(e.message)
+            if device.host_state != "Disable":
+                # Get 'agent_tag' from DeviceType model.
+                agent_tag = ""
+                device_type_name = ""
+                try:
+                    device_type_object = DeviceType.objects.get(id=device.device_type)
+                    agent_tag = device_type_object.agent_tag
+                    device_type_name = device_type_object.name
+                except Exception as e:
+                    logger.info(e.message)
 
-            device_data = {
-                'device_name': str(device.device_name),
-                'device_alias': str(device.device_alias),
-                'ip_address': str(device.ip_address),
-                'agent_tag': str(agent_tag),
-                'site': str(device.site_instance.name),
-                'mode': 'addhost',
-                'ping_levels': ping_levels,
-                'parent_device_name': None,
-                'mac': str(device.mac_address),
-                'device_type': device_type_name
-            }
+                device_data = {
+                    'device_name': str(device.device_name),
+                    'device_alias': str(device.device_alias),
+                    'ip_address': str(device.ip_address),
+                    'agent_tag': str(agent_tag),
+                    'site': str(device.site_instance.name),
+                    'mode': 'addhost',
+                    'ping_levels': ping_levels,
+                    'parent_device_name': None,
+                    'mac': str(device.mac_address),
+                    'device_type': device_type_name
+                }
 
-            device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
-            if len(device_tech) and device_tech[0].name.lower() in ['pmp', 'wimax']:
-                if device.substation_set.exists():
-                    try:
-                        substation = device.substation_set.get()
+                device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
+                if len(device_tech) and device_tech[0].name.lower() in ['pmp', 'wimax']:
+                    if device.substation_set.exists():
+                        try:
+                            substation = device.substation_set.get()
 
-                        # Check for the circuit.
-                        if substation.circuit_set.exists():
-                            circuit = substation.circuit_set.get()
-                            sector = circuit.sector
-                            parent_device = sector.sector_configured_on
-                            device_data.update({
-                                'parent_device_name': parent_device.device_name
-                            })
-                        else:
+                            # Check for the circuit.
+                            if substation.circuit_set.exists():
+                                circuit = substation.circuit_set.get()
+                                sector = circuit.sector
+                                parent_device = sector.sector_configured_on
+                                device_data.update({
+                                    'parent_device_name': parent_device.device_name
+                                })
+                            else:
+                                result['message'] = "<i class=\"fa fa-check red-dot\"></i> \
+                                                     Could not find BS for this SS in the topology."
+                                return json.dumps({'result': result})
+
+                        except Exception as e:
                             result['message'] = "<i class=\"fa fa-check red-dot\"></i> \
                                                  Could not find BS for this SS in the topology."
+                            logger.exception(e.message)
                             return json.dumps({'result': result})
 
-                    except Exception as e:
-                        result['message'] = "<i class=\"fa fa-check red-dot\"></i> \
-                                             Could not find BS for this SS in the topology."
-                        logger.exception(e.message)
-                        return json.dumps({'result': result})
+                dpc = DevicePingConfiguration()
+                dpc.device_name = device.device_name
+                dpc.device_alias = device.device_alias
+                dpc.packets = ping_data['packets']
+                dpc.timeout = ping_data['timeout']
+                dpc.normal_check_interval = ping_data['normal_check_interval']
+                dpc.rta_warning = ping_data['rta_warning']
+                dpc.rta_critical = ping_data['rta_critical']
+                dpc.pl_warning = ping_data['pl_warning']
+                dpc.pl_critical = ping_data['pl_critical']
+                dpc.save()
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i> Device added successfully."
+                # Set 'is_added_to_nms' to 1 after device successfully added to nocout nms core.
+                device.is_added_to_nms = 1
+                result['success'] = 1
+                # Modify site instance 'is_device_change' bit to reflect change in corresponding site for sync.
+                try:
+                    device.site_instance.is_device_change = 1
+                    device.site_instance.save()
+                except Exception as e:
+                    pass
+                device.save()
+            else:
+                result['message'] = "<i class=\"fa fa-check red-dot\"></i> Device state is disabled. \
+                                     First enable it than add it to nms core."
+        else:
+            result['message'] = "Device doesn't exist."
 
-            dpc = DevicePingConfiguration()
-            dpc.device_name = device.device_name
-            dpc.device_alias = device.device_alias
-            dpc.packets = ping_data['packets']
-            dpc.timeout = ping_data['timeout']
-            dpc.normal_check_interval = ping_data['normal_check_interval']
-            dpc.rta_warning = ping_data['rta_warning']
-            dpc.rta_critical = ping_data['rta_critical']
-            dpc.pl_warning = ping_data['pl_warning']
-            dpc.pl_critical = ping_data['pl_critical']
-            dpc.save()
-            result['message'] = "<i class=\"fa fa-check green-dot\"></i> Device added successfully."
-            # Set 'is_added_to_nms' to 1 after device successfully added to nocout nms core.
-            device.is_added_to_nms = 1
+        return Response(result)
+
+
+class EditDeviceInNMS(APIView):
+    """
+    Editing device in nms core.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/edit_device_in_nms/10244/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (unicode): Device ID.
+
+        Returns:
+            result (dict): Dictionary of device info.
+                           For e.g,
+                              {
+                                  'message': 'Deviceeditedsuccessfully.',
+                                  'data': {
+                                      'site': u'nocout_gis_slave',
+                                      'agent_tag': u'snmp',
+                                      'mode': 'edithost',
+                                      'device_name': u'device_116',
+                                      'device_alias': u'Device116',
+                                      'ip_address': u'115.111.183.116'
+                                  },
+                                  'success': 1
+                              }
+
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Device edit failed."
+        result['data']['meta'] = ''
+
+        # Device object.
+        device = None
+        try:
+            device = Device.objects.get(pk=pk)
+        except Exception as e:
+            pass
+
+        if device:
+            if device.host_state != "Disable":
+                # Get 'agent_tag' from DeviceType model.
+                agent_tag = ""
+                try:
+                    agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+                except Exception as e:
+                    logger.info(e.message)
+                device_data = {
+                    'device_name': device.device_name,
+                    'device_alias': device.device_alias,
+                    'ip_address': device.ip_address,
+                    'agent_tag': agent_tag,
+                    'site': device.site_instance.name,
+                    'mode': 'edithost',
+                    'parent_device_name': None,
+                    'mac': device.mac_address
+                }
+                device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
+
+                if len(device_tech) and device_tech[0].name.lower() in ['pmp', 'wimax']:
+                    if device.substation_set.exists():
+                        try:
+                            substation = device.substation_set.get()
+                            # Check for the circuit.
+                            if substation.circuit_set.exists():
+                                circuit = substation.circuit_set.get()
+                                sector = circuit.sector
+                                parent_device = sector.sector_configured_on
+                                device_data.update({
+                                    'parent_device_name': parent_device.device_name
+                                })
+                            else:
+                                result['message'] = "<i class=\"fa fa-check red-dot\"></i> \
+                                                     Could not find BS for this SS in the topology."
+                                return json.dumps({'result': result})
+                        except Exception as e:
+                            result['message'] = "<i class=\"fa fa-check red-dot\"></i> \
+                                                 Could not find BS for this SS in the topology."
+                            logger.exception(e.message)
+                            return json.dumps({'result': result})
+
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i> Device edited successfully."
+                # Set 'is_added_to_nms' to 1 after device successfully edited in nocout nms core.
+                device.is_added_to_nms = 1
+                device.save()
+                result['success'] = 1
+
+                # Modify site instance 'is_device_change' bit to reflect change in corresponding site for sync.
+                try:
+                    device.site_instance.is_device_change = 1
+                    device.site_instance.save()
+                except Exception as e:
+                    pass
+            else:
+                result['message'] = "<i class=\"fa fa-info text-info\"></i> Device state is disabled. \
+                                     First enable it than add it to nms core."
+        else:
+            result['message'] = "Device doesn't exist."
+
+        return Response(result)
+
+
+class DeleteDeviceFromNMS(APIView):
+    """
+    Delete device from nms core.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/delete_device_from_nms/10244/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (unicode): Device ID.
+
+        Returns:
+            result (dict): Dictionary of device info.
+                           For e.g,
+                             {
+                                 'message': 'Devicedeletedsuccessfully',
+                                 'data': {
+                                 },
+                                 'success': 1
+                             }
+
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Device deletion failed."
+        result['data']['meta'] = ''
+
+        # Device object.
+        device = None
+        try:
+            device = Device.objects.get(id=pk)
+        except Exception as e:
+            pass
+
+        if device:
+            if device.host_state != "Disable":
+                result['success'] = 1
+                result['message'] = "Device disabled and deleted Successfully."
+
+                # Set 'is_added_to_nms' to 1 after device successfully added to nocout nms core.
+                device.is_added_to_nms = 0
+
+                # Set 'is_monitored_on_nms' to 1 if service is added successfully.
+                device.is_monitored_on_nms = 0
+
+                # Set device state to 'Disable'.
+                device.host_state = "Disable"
+                device.save()
+
+                # Remove device services from 'service_deviceserviceconfiguration' table.
+                DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+
+                # Remove device ping service from 'service_devicepingconfiguration' table.
+                DevicePingConfiguration.objects.filter(device_name=device.device_name).delete()
+
+                # Modify site instance 'is_device_change' bit to reflect change in corresponding site for sync.
+                try:
+                    device.site_instance.is_device_change = 1
+                    device.site_instance.save()
+                except Exception as e:
+                    pass
+            else:
+                result['message'] = "<i class=\"fa fa-times red-dot\"></i> Device state is disabled. \
+                                     First enable it than add it to nms core."
+        else:
+            result['message'] = "Device doesn't exist."
+
+        return Response(result)
+
+
+class ModifyDeviceState(APIView):
+    """
+    Enable or disable device state.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/modify_device_state/11341/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (unicode): Device ID.
+
+        Returns:
+            result (dict): Dictionary of device info.
+                           For e.g.,
+                             {
+                                 'message': 'Device state modified successfully.',
+                                 'success': 1
+                             }
+
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Device state modifictaion failed."
+        result['data']['meta'] = ''
+
+        # Device object.
+        device = None
+        try:
+            device = Device.objects.get(pk=pk)
+        except Exception as e:
+            pass
+
+        if device:
             result['success'] = 1
+            result['message'] = "Device state modified successfully."
+
+            # Revert current device state.
+            if device.host_state == "Enable":
+                device.host_state = "Disable"
+            else:
+                device.host_state = "Enable"
+
+            device.save()
+
             # Modify site instance 'is_device_change' bit to reflect change in corresponding site for sync.
             try:
                 device.site_instance.is_device_change = 1
                 device.site_instance.save()
             except Exception as e:
                 pass
-            device.save()
         else:
-            result['message'] = "<i class=\"fa fa-check red-dot\"></i> Device state is disabled. \
-                                 First enable it than add it to nms core."
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Device state modification failed."
+
         return Response(result)
+
+class SyncDevicesInNMS(APIView):
+    """
+    Sync devices configuration with nms core.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/sync_devices_in_nms/"
+    """
+    def get(self, request):
+        """
+        Processing API request.
+
+        Returns:
+            result (dict): Dictionary of device info.
+                        For e.g.,
+                             {
+                                'message': 'Configpushedtomysite,nocout_gis_slave',
+                                'data': {
+                                    'mode': 'sync'
+                                },
+                                'success': 1
+                             }
+
+        Note:
+            Sync status bits are as following:
+            0 => Pending
+            1 => Success
+            2 => Failed
+            3 => Deadlock Removal
+            4 => Table(device_device_devicesynchistory) has no entry
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Device activation for monitoring failed."
+        result['data']['meta'] = ''
+
+        timestamp = time.time()
+        fulltime = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+
+        # Get last status bit of 'DeviceSyncHistory'.
+        try:
+            last_sync_obj = DeviceSyncHistory.objects.latest('id')
+            # Last sync status.
+            last_syn_status = last_sync_obj.status
+        except Exception as e:
+            last_syn_status = 4
+            logger.error("DeviceSyncHistory table has no entry.")
+
+        # Sync status bits are as following:
+        #     0 => Pending
+        #     1 => Success
+        #     2 => Failed
+        #     3 => Deadlock Removal
+        #     4 => Table(device_device_devicesynchistory) has no entry
+        if last_syn_status in [1, 2, 3, 4]:
+            # Current user's username.
+            username = request.user.username
+            # Create entry in 'device_devicesynchistory' table.
+            device_sync_history = DeviceSyncHistory()
+            device_sync_history.status = 0
+            device_sync_history.description = "Sync run at {}.".format(fulltime)
+            device_sync_history.sync_by = username
+            device_sync_history.save()
+
+            # Get 'device sync history' object.
+            sync_obj_id = device_sync_history.id
+
+            device_data = {
+                'mode': 'sync',
+                'sync_obj_id': sync_obj_id
+            }
+
+            # Site to which configuration needs to be pushed.
+            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+
+            # URL for nocout.py.
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                    master_site.password,
+                                                                    master_site.machine.machine_ip,
+                                                                    master_site.web_service_port,
+                                                                    master_site.name)
+
+            # Sending post request to device app for syncing configuration to associated sites.
+            r = requests.post(url, data=device_data)
+
+            try:
+                # Converting raw string 'r' into dictionary.
+                response_dict = ast.literal_eval(r.text)
+                if r:
+                    result['data'] = device_data
+                    result['success'] = 1
+                    result['message'] = response_dict['message'].capitalize()
+            except Exception as e:
+                device_sync_history.status = 2
+                device_sync_history.description = "Sync failed to run at {}.".format(fulltime)
+                device_sync_history.completed_on = datetime.now()
+                device_sync_history.save()
+                result['message'] = "Failed to sync device and services."
+                logger.info(r.text)
+        else:
+            result['message'] = "Someone is already running sync."
+
+        return Response(result)
+
+
+class RemoveSyncDeadlock(APIView):
+    """
+    Remove deadlock created in sync history table.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/remove_sync_deadlock/"
+    """
+    def get(self, request):
+        """
+        Processing API request.
+
+        Returns:
+            result (dict): Dictionary of device info.
+                           For e.g.,
+                                {
+                                    "result": {
+                                        "message": "Successfully removed sync deadlock.",
+                                        "data": {
+                                            "meta": ""
+                                        },
+                                        "success": 1
+                                    }
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Deadlock removal for sync failed."
+        result['data']['meta'] = ''
+
+        # Get last id of 'DeviceSyncHistory'.
+        try:
+            # Get a formatted timestamp.
+            timestamp = time.time()
+            fulltime = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+            # Updating last device sync history object.
+            last_sync_obj = DeviceSyncHistory.objects.latest('id')
+            # Modify status of last 'sync' to 3 i.e. 'Deadlock'.
+            last_sync_obj.status = 3
+            last_sync_obj.description = "Deadlock created during this sync, removed at {}.".format(fulltime)
+            last_sync_obj.save()
+            result['success'] = 1
+            result['message'] = "Successfully removed sync deadlock."
+        except Exception as e:
+            logger.error("DeviceSyncHistory table has no entry. Exception: ", e.message)
+
+        return Response(result)
+
+
+class EditSingleServiceDisplayData(APIView):
+    """
+    Edit single service for a device from nms core.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/edit_single_svc_display_data/"
+    """
+    def get(self, request, dsc_id):
+        """
+        Processing API request.
+
+        Args:
+            dsc_id (unicode): Device service configuration ID.
+
+        Returns:
+            result (dict): Dictionary of device service info.
+                           For e.g.,
+                                {
+                                    'message': '',
+                                    'data': {
+                                        'meta': {
+
+                                        },
+                                        'objects': {
+                                            'current_template': u'radwin_snmp_v1_222',
+                                            'templates': [
+                                                {
+                                                    'value': u'radwin_snmp_v1_224',
+                                                    'key': 1L
+                                                },
+                                                {
+                                                    'value': u'radwin_snmp_v1_223',
+                                                    'key': 2L
+                                                }
+                                            ],
+                                            'data_source': u'rssi',
+                                            'agent_tag': u'snmp',
+                                            'version': u'v1',
+                                            'read_community': u'public',
+                                            'service_name': u'radwin_rssi',
+                                            'device_alias': u'Device116',
+                                            'dsc_id': 68,
+                                            'warning': u'-50',
+                                            'critical': u'-85',
+                                            'retry_check_interval': 1L,
+                                            'normal_check_interval': 6L,
+                                            'max_check_attempts': 6L,
+                                            'device_name': u'device_116',
+                                            'port': 163L
+                                        }
+                                    },
+                                    'success': 0
+                                }
+
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        # Device service configuration object.
+        dsc = None
+        try:
+            dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
+        except Exception as e:
+            pass
+
+        if dsc:
+            try:
+                device = Device.objects.get(device_name=dsc.device_name)
+                service_data = result['data']['objects']
+                service_data['dsc_id'] = dsc_id
+                service_data['device_name'] = dsc.device_name
+                service_data['device_alias'] = device.device_alias
+                service_data['service_name'] = dsc.service_name
+                service_data['current_template'] = dsc.svc_template
+                service_data['normal_check_interval'] = dsc.normal_check_interval
+                service_data['retry_check_interval'] = dsc.retry_check_interval
+                service_data['max_check_attempts'] = dsc.max_check_attempts
+                service_data['data_source'] = dsc.data_source
+                service_data['warning'] = dsc.warning
+                service_data['critical'] = dsc.critical
+                service_data['agent_tag'] = dsc.agent_tag
+                service_data['version'] = dsc.version
+                service_data['read_community'] = dsc.read_community
+                service_data['port'] = dsc.port
+                service_data['templates'] = []
+                service_templates = ServiceParameters.objects.all()
+                for svc_template in service_templates:
+                    temp_dict = dict()
+                    temp_dict['key'] = svc_template.id
+                    temp_dict['value'] = svc_template.parameter_description
+                    service_data['templates'].append(temp_dict)
+            except Exception as e:
+                logger.info(e)
+        else:
+            result['message'] = "Device service configuration doesn't exist."
+
+        return Response(result)
+
+
+class GetServiceParaTableData(APIView):
+    """
+    Get service parameters and data source tables for service edit form.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_svc_para_table_data/10582/radwin_uas/4/"
+    """
+    def get(self, request, device_name, service_name, template_id=""):
+        """
+        Processing API request.
+
+        Args:
+            device_name (unicode): Device name.
+            service_name (unicode): Service name.
+
+        Kwargs:
+            template_id (unicode): Template ID.
+
+        Returns:
+            result (str): Result dictionary.
+                         For e.g.,
+                                {
+                                    "message": "",
+                                    "data": {
+                                        "objects": {},
+                                        "data_sources": [],
+                                        "retry_check_interval": 1,
+                                        "meta": {},
+                                        "normal_check_interval": 5,
+                                        "max_check_attempts": 1
+                                    },
+                                    "success": 0
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        if template_id:
+            svc_template= None
+            try:
+                svc_template = ServiceParameters.objects.get(id=template_id)
+            except Exception as e:
+                pass
+
+            result['data']['normal_check_interval'] = svc_template.normal_check_interval
+            result['data']['retry_check_interval'] = svc_template.retry_check_interval
+            result['data']['max_check_attempts'] = svc_template.max_check_attempts
+
+            result['data']['data_sources'] = list()
+
+            for sds in DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name):
+                ds_dict = dict()
+                ds_dict['ds_name'] = sds.data_source
+                ds_dict['warning'] = sds.warning
+                ds_dict['critical'] = sds.critical
+
+                result['data']['data_sources'].append()
+        else:
+            result['message'] = "No data to show."
+
+        return Response(result)
+
+
+class EditSingleService(APIView):
+    """
+    Edit single service corresponding to a device.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/edit_single_service/1/4/?data_sources={}"
+    """
+    def get(self, request, dsc_id, svc_temp_id):
+        """
+        Processing API request.
+
+        Args:
+            dsc_id (unicode): Device service configuration ID.
+            svc_temp_id (unicode): Service template ID.
+            data_sources (list): List of data sources dictionaries.
+                                 For e.g.,
+                                    [
+                                        {
+                                            'data_source': u'rssi',
+                                            'warning': u'-50',
+                                            'critical': u'-85'
+                                        }
+                                    ]
+
+        Returns:
+            result (dict): Dictionary containing service information.
+                           For e.g.,
+                                {
+                                    "snmp_community": {
+                                        "read_community": "public",
+                                        "version": "v2c"
+                                    },
+                                    "agent_tag": "snmp",
+                                    "service_name": "radwin_rssi",
+                                    "snmp_port": 161,
+                                    "serv_params": {
+                                        "normal_check_interval": 5,
+                                        "max_check_attempts": 5,
+                                        "retry_check_interval": 5
+                                    },
+                                    "device_name": "radwin",
+                                    "mode": "editservice",
+                                    "cmd_params": {
+                                        "rssi": {
+                                            "warning": "-50",
+                                            "critical": "-80"
+                                        }
+                                    }
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        # Data sources.
+        data_sources = None
+        try:
+            data_sources = eval(self.request.GET.get('data_sources'))
+        except Exception as e:
+            pass
+
+        # Device service configuration object.
+        dsc = ""
+        try:
+            dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
+            try:
+                # Payload data for post request.
+                service_data = result['data']['objects']
+                service_para = ServiceParameters.objects.get(pk=svc_temp_id)
+                service_data['mode'] = "editservice"
+                service_data['device_name'] = str(dsc.device_name)
+                service_data['service_name'] = str(dsc.service_name)
+                service_data['serv_params'] = {}
+                service_data['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
+                service_data['serv_params']['retry_check_interval'] = int(service_para.retry_check_interval)
+                service_data['serv_params']['max_check_attempts'] = int(service_para.max_check_attempts)
+                service_data['snmp_community'] = {}
+                service_data['snmp_community']['version'] = str(service_para.protocol.version)
+                service_data['snmp_community']['read_community'] = str(service_para.protocol.read_community)
+                service_data['cmd_params'] = {}
+
+                # Looping through data sources add them to 'cmd_params' dictionary.
+                for sds in data_sources:
+                    service_data['cmd_params'][str(sds['data_source'])] = {'warning': str(sds['warning']),
+                                                                           'critical': str(sds['critical'])}
+
+                service_data['snmp_port'] = str(dsc.port)
+                service_data['agent_tag'] = str(dsc.agent_tag) if eval(dsc.agent_tag) is not None else "snmp"
+
+                # Master site on which service needs to be added.
+                master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+                # URL for nocout.py.
+                url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                        master_site.password,
+                                                                        master_site.machine.machine_ip,
+                                                                        master_site.web_service_port,
+                                                                        master_site.name)
+                # Encode payload data.
+                encoded_data = urllib.urlencode(service_data)
+
+                # Sending post request to nocout device app to add service.
+                r = requests.post(url, data=encoded_data)
+
+                # Converting post response data into python dictionary.
+                response_dict = ast.literal_eval(r.text)
+
+                # If response(r) is given by post request than process it further to get success/failure messages.
+                if r:
+                    result['data'] = service_data
+                    result['success'] = 1
+
+                    # If response_dict doesn't have key 'success'.
+                    if not response_dict.get('success'):
+                        logger.info(response_dict.get('error_message'))
+                        result['message'] += "<i class=\"fa fa-times red-dot\"></i>\
+                                              Failed to updated service '%s'. <br />" % dsc.service_name
+                    else:
+                        result[
+                            'message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                           Successfully updated service '%s'. <br />" % dsc.service_name
+
+                        # Saving service to 'service_deviceserviceconfiguration' table.
+                        try:
+                            # If service exist in 'service_deviceserviceconfiguration' table then update it.
+                            for data_source in data_sources:
+                                dsc_obj = DeviceServiceConfiguration.objects.get(device_name=dsc.device_name,
+                                                                                 service_name=dsc.service_name,
+                                                                                 data_source=data_source['data_source'])
+                                dsc_obj.agent_tag = str(dsc.agent_tag)
+                                dsc_obj.port = str(service_para.protocol.port)
+                                dsc_obj.version = str(service_para.protocol.version)
+                                dsc_obj.read_community = str(service_para.protocol.read_community)
+                                dsc_obj.svc_template = str(service_para.parameter_description)
+                                dsc_obj.normal_check_interval = int(service_para.normal_check_interval)
+                                dsc_obj.retry_check_interval = int(service_para.retry_check_interval)
+                                dsc_obj.max_check_attempts = int(service_para.max_check_attempts)
+                                dsc_obj.warning = data_source['warning']
+                                dsc_obj.critical = data_source['critical']
+                                dsc_obj.save()
+                        except Exception as e:
+                            logger.info(e)
+            except Exception as e:
+                logger.info(e)
+                result['message'] = "Failed to updated service '%s'. <br />" % dsc.service_name
+        except Exception as e:
+            logger.info(e)
+            result['message'] = "Failed to updated service '%s'. <br />" % dsc.service_name
+
+        return Response(result)
+
+
