@@ -2527,7 +2527,7 @@ def get_ping_configuration_for_svc_edit(request, device_id):
 
 
 @dajaxice_register(method='GET')
-def edit_services(request, svc_data, svc_ping="", device_id=""):
+def edit_services(request, svc_data, svc_ping=None, device_id=""):
     """
     Edit services corresponding to the device.
 
@@ -2561,6 +2561,20 @@ def edit_services(request, svc_data, svc_ping="", device_id=""):
                                     'device_id': u'545'
                                 }
                             ]
+
+        svc_ping (dict): Dictionary containing ping data.
+                         For e.g.,
+                             {
+                                'rta_critical': 3000,
+                                'packets': 60,
+                                'timeout': 20,
+                                'pl_critical': 100,
+                                'normal_check_interval': 5,
+                                'pl_warning': 80,
+                                'rta_warning': 1500
+                            }
+
+        device_id (int): 11343
 
     Returns:
         result (dict): Dictionary containing service information.
@@ -2976,23 +2990,10 @@ def delete_services(request, device_id, service_data):
     Delete services corresponding to the device.
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest): GET request.
-        service_data (list): List of dictionaries containing service data.
-                             For e.g.
-                                 [
-                                    {
-                                        'service_id': u'1',
-                                        'device_id': u'545'
-                                    },
-                                    {
-                                        'service_id': u'7',
-                                        'device_id': u'545'
-                                    },
-                                    {
-                                        'service_id': u'14',
-                                        'device_id': u'545'
-                                    }
-                                ]
+        device_id (int): Device ID.
+        service_data (list): List containing service data.
+                             For e.g.,
+                                 [u'54', u'55', u'56']
 
     Returns:
         result (dict):  Dictionary containing service information.
@@ -3662,15 +3663,135 @@ def reset_service_configuration(request):
 
     Returns:
         result (dict): Dictionary containing device information.
-                   i.e. {
-                            "result": {
-                                "message": "Successfully reset device service configuration.",
+                       For e.g.,
+                            {
+                                "message": "Failed to render form correctly.",
                                 "data": {
-                                    "meta": ""
+                                    "meta": "",
+                                    "objects": {
+                                        "master_site": "master_UA",
+                                        "device_alias": "1131208803",
+                                        "is_added": 1,
+                                        "services": [
+                                            {
+                                                "value": "downlink cinr",
+                                                "key": 54
+                                            },
+                                            {
+                                                "value": "uplink cinr",
+                                                "key": 55
+                                            },
+                                            {
+                                                "value": "downlink intrf",
+                                                "key": 56
+                                            },
+                                            {
+                                                "value": "uplink intrf",
+                                                "key": 57
+                                            },
+                                            {
+                                                "value": "uplink rssi",
+                                                "key": 59
+                                            },
+                                            {
+                                                "value": "dl_modulation_change",
+                                                "key": 60
+                                            },
+                                            {
+                                                "value": "modulation_dl_fec",
+                                                "key": 61
+                                            },
+                                            {
+                                                "value": "modulation_ul_fec",
+                                                "key": 62
+                                            },
+                                            {
+                                                "value": "ss_autonegotiation_status",
+                                                "key": 63
+                                            },
+                                            {
+                                                "value": "ss_dl_utilization",
+                                                "key": 64
+                                            },
+                                            {
+                                                "value": "ss_ul_utilization",
+                                                "key": 65
+                                            },
+                                            {
+                                                "value": "ss_duplex_status",
+                                                "key": 66
+                                            },
+                                            {
+                                                "value": "ss_errors_status",
+                                                "key": 67
+                                            },
+                                            {
+                                                "value": "ss_frequency",
+                                                "key": 68
+                                            },
+                                            {
+                                                "value": "ss_ip",
+                                                "key": 69
+                                            },
+                                            {
+                                                "value": "ss_link_status",
+                                                "key": 70
+                                            },
+                                            {
+                                                "value": "ss_ptx_invent",
+                                                "key": 72
+                                            },
+                                            {
+                                                "value": "ss_mac",
+                                                "key": 71
+                                            },
+                                            {
+                                                "value": "ss_sector_id",
+                                                "key": 73
+                                            },
+                                            {
+                                                "value": "downlink rssi",
+                                                "key": 58
+                                            },
+                                            {
+                                                "value": "wimax_qos_invent",
+                                                "key": 108
+                                            },
+                                            {
+                                                "value": "ss_session_uptime",
+                                                "key": 74
+                                            },
+                                            {
+                                                "value": "SS Uptime",
+                                                "key": 76
+                                            },
+                                            {
+                                                "value": "ss_speed_status",
+                                                "key": 75
+                                            },
+                                            {
+                                                "value": "ss_vlan_invent",
+                                                "key": 77
+                                            },
+                                            {
+                                                "value": "ss provisioning ",
+                                                "key": 150
+                                            },
+                                            {
+                                                "value": "ss ul issue",
+                                                "key": 149
+                                            },
+                                            {
+                                                "value": "wimax_ss_port_params",
+                                                "key": 159
+                                            }
+                                        ],
+                                        "device_name": "11343",
+                                        "device_id": "11343"
+                                    }
                                 },
-                                "success": 1
+                                "success": 0
                             }
-                        }
     """
     result = dict()
     result['data'] = {}

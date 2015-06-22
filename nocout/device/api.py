@@ -3777,3 +3777,1486 @@ class EditSingleService(APIView):
         return Response(result)
 
 
+class DeleteSingleServiceDisplayData(APIView):
+    """
+    Get parameters for single service deletion form.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/delete_single_svc_display_data/1/"
+    """
+    def get(self, request, dsc_id):
+        """
+        Processing API request.
+
+        Args:
+            dsc_id (unicode): Device service configuration object ID.
+
+        Returns:
+            result (dict): Dictionary containing service information.
+                           For e.g.,
+                                {
+                                    'message': '',
+                                    'data': {
+                                        'meta': {
+
+                                        },
+                                        'objects': {
+                                            'service_name': u'radwin_rssi',
+                                            'data_sources': [
+                                                u'rssi'
+                                            ],
+                                            'device_alias': u'Device116',
+                                            'service_alias': u'Receivedsignalstrength',
+                                            'device_name': u'device_116'
+                                        }
+                                    },
+                                    'success': 0
+                                }
+        """
+        # Device service configuration object.
+        dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        try:
+            service_data = result['data']['objects']
+            service_data['service_name'] = dsc.service_name
+            service_data['service_alias'] = Service.objects.get(name=str(dsc.service_name)).alias
+            service_data['device_name'] = dsc.device_name
+            service_data['device_alias'] = Device.objects.get(device_name=str(dsc.device_name)).device_alias
+            service_data['data_sources'] = []
+            try:
+                # Fetch data sources from 'DeviceServiceConfiguration' model.
+                dsc_for_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dsc.device_name,
+                                                                                 service_name=dsc.service_name)
+                for dsc_for_data_source in dsc_for_data_sources:
+                    service_data['data_sources'].append(dsc_for_data_source.data_source)
+            except Exception as e:
+                logger.info(e)
+        except Exception as e:
+            logger.info(e)
+
+        return Response(result)
+
+
+class DeleteSingleService(APIView):
+    """
+    Delete service corresponding to the device.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/delete_single_svc/1/"n
+    """
+    def get(self, request, device_name, service_name):
+        """
+        Processing API request.
+
+        Args:
+            device_name (unicode): Device name.
+            service_name (unicode): Service name.
+
+        Returns:
+            result (dict): Dictionary containing service information.
+                           For e.g.,
+                                {
+                                    'message': '',
+                                    'data': {
+                                        'meta': {
+
+                                        },
+                                        'objects': {
+                                            'service_name': u'radwin_rssi',
+                                            'data_sources': [
+                                                u'rssi'
+                                            ],
+                                            'device_alias': u'Device116',
+                                            'service_alias': u'Receivedsignalstrength',
+                                            'device_name': u'device_116'
+                                        }
+                                    },
+                                    'success': 0
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        try:
+            service_data = {
+                'mode': 'deleteservice',
+                'device_name': str(device_name),
+                'service_name': str(service_name)
+            }
+
+            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+            # URL for nocout.py.
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                    master_site.password,
+                                                                    master_site.machine.machine_ip,
+                                                                    master_site.web_service_port,
+                                                                    master_site.name)
+
+            # Encode service payload data.
+            encoded_data = urllib.urlencode(service_data)
+
+            # Sending post request to nocout device app to add a service.
+            r = requests.post(url, data=encoded_data)
+
+            # Converting post response data into python dictionary.
+            response_dict = ast.literal_eval(r.text)
+
+            # If response(r) is given by post request than process it further to get success/failure messages.
+            if r:
+                result['data'] = service_data
+                result['success'] = 1
+
+                # If response dictionary doesn't have key 'success'.
+                if not response_dict.get('success'):
+                    logger.info(response_dict.get('error_message'))
+                    result['message'] += "<i class=\"fa fa-times red-dot\"></i>\
+                                          Failed to delete service '%s'. <br />" % service_name
+                else:
+                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                          Successfully updated service '%s'. <br />" % service_name
+
+                # Delete service rows form 'service_deviceserviceconfiguration' table.
+                DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name).delete()
+        except Exception as e:
+            result['message'] += e.message
+
+        return Response(result)
+
+
+class EditServiceDisplayData(APIView):
+    """
+    Service parameters to display on form.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/edit_svc_display_data/12452/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            value (unicode): Device ID.
+
+        Returns:
+            result (dict): Dictionary containing service information.
+                           For e.g,
+                                {
+                                    'message': 'Successfully render form.',
+                                    'data': {
+                                        'meta': '',
+                                        'objects': {
+                                            'master_site': u'master_UA',
+                                            'device_alias': u'Device116',
+                                            'is_added': 1L,
+                                            'services': [
+                                                {
+                                                    'value': u'ODUserialnumber',
+                                                    'key': 14L
+                                                }
+                                            ],
+                                            'device_name': u'device_116',
+                                            'device_id': 545
+                                        }
+                                    },
+                                    'success': 0
+                                }
+        """
+        # Device object.
+        device = Device.objects.get(id=pk)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to render form correctly."
+        result['data']['meta'] = ''
+        result['data']['objects'] = {}
+        result['data']['objects']['device_id'] = pk
+        result['data']['objects']['device_name'] = device.device_name
+        result['data']['objects']['device_alias'] = device.device_alias
+        result['data']['objects']['services'] = []
+        result['data']['objects']['master_site'] = ""
+        result['data']['objects']['is_added'] = device.is_added_to_nms
+
+        # Get device type.
+        device_type = None
+        try:
+            device_type = DeviceType.objects.get(id=device.device_type)
+        except Exception as e:
+            pass
+
+        # Get all services associated with the devic type.
+        dt_services = None
+        try:
+            dt_services = device_type.service.all()
+        except Exception as e:
+            pass
+
+        # Get deleted services.
+        del_svc = list()
+        try:
+            del_svc = list(set(DeviceServiceConfiguration.objects.filter(
+                device_name=device.device_name, operation="d").values_list('service_name', flat=True)))
+        except Exception as e:
+            pass
+
+        # Get monitored services except in deletion queue.
+        editable_svc = dt_services.exclude(name__in=del_svc)
+
+        # Get services associated with device.
+        try:
+            try:
+                master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
+                result['data']['objects']['master_site'] = master_site_name
+            except Exception as e:
+                logger.info("Master site doesn't exist.")
+
+            if device.is_added_to_nms == 1:
+                result['data']['objects']['services'] = []
+                for svc in editable_svc:
+                    service = Service.objects.get(name=svc)
+                    svc_dict = dict()
+                    svc_dict['key'] = service.id
+                    svc_dict['value'] = service.alias
+                    result['data']['objects']['services'].append(svc_dict)
+            else:
+                result['message'] = "First add device in nms core."
+        except Exception as e:
+            logger.info("No service to monitor.")
+
+        return Response(result)
+
+
+class ServiceEditOldConf(APIView):
+    """
+    Show currently present information of service in schema.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/svc_edit_old_conf/4/12/10585/"
+    """
+    def get(self, request, option="", service_id="", device_id=""):
+        """
+        Processing API request.
+
+        Args:
+            option (unicode): Checkbox value.
+            service_id (unicode): Service ID.
+            device_id (unicode): Device ID.
+
+        Returns:
+            dajax (str): Dictionary containing service old configuration.
+                         For e.g.,
+                             {
+                                "message": "",
+                                "data": {
+                                    "objects": {},
+                                    "retry_check_interval": 1,
+                                    "svc_param": [
+                                        {
+                                            "parameter_description": "radwin_snmp_performance_5_min",
+                                            "id": 4
+                                        },
+                                        {
+                                            "parameter_description": "radwin_snmp_performance_10_min",
+                                            "id": 5
+                                        },
+                                        {
+                                            "parameter_description": "radwin_snmp_status_60_min",
+                                            "id": 6
+                                        },
+                                        {
+                                            "parameter_description": "radwin_snmp_inventory_1_day",
+                                            "id": 7
+                                        },
+                                        {
+                                            "parameter_description": "cambium_snmp_inventory_1_day",
+                                            "id": 8
+                                        },
+                                        {
+                                            "parameter_description": "cambium_snmp_performance_5_min",
+                                            "id": 9
+                                        },
+                                        {
+                                            "parameter_description": "cambium_snmp_status_60_min",
+                                            "id": 10
+                                        },
+                                        {
+                                            "parameter_description": "wimax_snmp_performance_5_min",
+                                            "id": 11
+                                        },
+                                        {
+                                            "parameter_description": "wimax_snmp_inventory_1_day",
+                                            "id": 12
+                                        },
+                                        {
+                                            "parameter_description": "wimax_snmp_status_60_min",
+                                            "id": 13
+                                        },
+                                        {
+                                            "parameter_description": "mrotek_snmp_performance_5_min",
+                                            "id": 14
+                                        },
+                                        {
+                                            "parameter_description": "mrotek_snmp_inventory_1_day",
+                                            "id": 15
+                                        },
+                                        {
+                                            "parameter_description": "mrotek_snmp_status_60_min",
+                                            "id": 16
+                                        },
+                                        {
+                                            "parameter_description": "rici_snmp_performance_5_min",
+                                            "id": 17
+                                        },
+                                        {
+                                            "parameter_description": "rici_snmp_inventory_1_day",
+                                            "id": 18
+                                        },
+                                        {
+                                            "parameter_description": "rici_snmp_status_60_min",
+                                            "id": 19
+                                        }
+                                    ],
+                                    "meta": {},
+                                    "normal_check_interval": 60,
+                                    "max_check_attempts": 1,
+                                    "old_conf": [
+                                        {
+                                            "data_source": "1",
+                                            "warning": "",
+                                            "critical": ""
+                                        }
+                                    ]
+                                },
+                                "success": 0
+                            }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        # Get device.
+        device = None
+        try:
+            device = Device.objects.get(pk=device_id)
+        except Exception as e:
+            pass
+
+        # Get service.
+        service = None
+        try:
+            service = Service.objects.get(pk=service_id)
+        except Exception as e:
+            pass
+
+        # Get service template.
+        svc_template = None
+        try:
+            svc_template = service.parameters
+        except Exception as e:
+            pass
+
+        # Get service data sources.
+        svc_data_sources = None
+        try:
+            svc_data_sources = service.service_data_sources.all()
+        except Exception as e:
+            pass
+
+        if option and option != "":
+            svc_params = ServiceParameters.objects.all()
+            if svc_params:
+                try:
+                    if svc_params:
+                        # Get device service configuration.
+                        dsc = DeviceServiceConfiguration.objects.filter(
+                            device_name=device.device_name,
+                            service_name=service.name).exclude(operation="d")
+
+                        if dsc:
+                            svc_template = dsc[0]
+                            svc_data_sources = dsc
+
+                        result['data']['normal_check_interval'] = svc_template.normal_check_interval
+                        result['data']['retry_check_interval'] = svc_template.retry_check_interval
+                        result['data']['max_check_attempts'] = svc_template.max_check_attempts
+                        result['data']['old_conf'] = list()
+
+                        # Set show templates or not bit.
+                        show_svc_templates = True
+
+                        if svc_data_sources:
+                            for sds in svc_data_sources:
+                                ds_dict = dict()
+                                if dsc:
+                                    data_source = sds.data_source
+                                else:
+                                    data_source = sds.name
+                                try:
+                                    ds_dict['data_source'] = data_source
+                                    ds_dict['warning'] = sds.warning
+                                    ds_dict['critical'] = sds.critical
+                                    result['data']['old_conf'].append(ds_dict)
+                                    result['message'] = "Successfully fetched service old configuration."
+                                except Exception as e:
+                                    show_svc_templates = False
+
+                            if show_svc_templates:
+                                result['data']['svc_param'] = list()
+                                for svc_param in svc_params:
+                                    svc_param_dict = dict()
+                                    svc_param_dict['id'] = svc_param.id
+                                    svc_param_dict['parameter_description'] = svc_param.parameter_description
+                                    result['data']['svc_param'].append(svc_param_dict)
+                                    result['message'] = "Successfully fetched service old configuration."
+                            else:
+                                result['message'] = "Data source parameters are not editable."
+                    else:
+                        result['message'] = "No data source associated."
+                except Exception as e:
+                    logger.info("No data source available.")
+        else:
+            result['message'] = "No data source associated."
+
+        return Response(result)
+
+
+class ServiceEditNewConf(APIView):
+    """
+    Show modified information of the service.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/svc_edit_new_conf/4/12/"
+    """
+    def get(self, request, service_id="", template_id=""):
+        """
+        Processing API request.
+
+        Args:
+            service_id (unicode): Service ID.
+            template_id (unicode): Template ID.
+
+        Returns:
+            dajax (str): Dictionary containing modified configuration of service.
+                         For e.g.,
+                            {
+                                "message": "",
+                                "data": {
+                                    "objects": {},
+                                    "data_sources": [
+                                        {
+                                            "ds_name": "color_code",
+                                            "warning": "",
+                                            "critical": ""
+                                        }
+                                    ],
+                                    "retry_check_interval": 1,
+                                    "meta": {},
+                                    "normal_check_interval": 5,
+                                    "max_check_attempts": 1
+                                },
+                                "success": 0
+                            }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        # Get service.
+        service = None
+        try:
+            service = Service.objects.get(id=service_id)
+        except Exception as e:
+            pass
+
+        # Get template.
+        template = None
+        try:
+            template = ServiceParameters.objects.get(pk=template_id)
+        except Exception as e:
+            pass
+
+        # Get data sources.
+        data_sources = None
+        try:
+            data_sources = service.service_data_sources.all()
+        except Exception as e:
+            pass
+
+        result['data']['normal_check_interval'] = template.normal_check_interval
+        result['data']['retry_check_interval'] = template.retry_check_interval
+        result['data']['max_check_attempts'] = template.max_check_attempts
+        result['data']['data_sources'] = list()
+
+        for sds in data_sources:
+            ds_dict = dict()
+            ds_dict['ds_name'] = sds.name
+            ds_dict['warning'] = sds.warning
+            ds_dict['critical'] = sds.critical
+            result['data']['data_sources'].append(ds_dict)
+
+        return Response(result)
+
+
+class ServiceEditPingConf(APIView):
+    """
+    Show modified information of the service.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/svc_edit_ping_conf/10585/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            device_id (unicode): Device ID.
+
+        Returns:
+            dajax (str): Dictionary containing ping service configuration.
+                         For e.g.,
+                            {
+                                "message": "",
+                                "data": {
+                                    "rta_critical": 3000,
+                                    "objects": {},
+                                    "packets": 60,
+                                    "meta": {},
+                                    "timeout": 20,
+                                    "pl_critical": 100,
+                                    "normal_check_interval": 5,
+                                    "pl_warning": 80,
+                                    "rta_warning": 1500
+                                },
+                                "success": 0
+                            }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        # Get device.
+        device = Device.objects.get(pk=pk)
+
+        try:
+            # Get device ping configuration object.
+            dpc = DevicePingConfiguration.objects.get(device_name=device.device_name)
+            packets = dpc.packets
+            timeout = dpc.timeout
+            normal_check_interval = dpc.normal_check_interval
+            rta_warning = dpc.rta_warning
+            rta_critical = dpc.rta_critical
+            pl_warning = dpc.pl_warning
+            pl_critical = dpc.pl_critical
+        except Exception as e:
+            # If there are no ping parmeters for this device in 'service_devicepingconfiguration'
+            # then get default ping parameters from 'settings.py".
+            packets = settings.PING_PACKETS
+            timeout = settings.PING_TIMEOUT
+            normal_check_interval = settings.PING_NORMAL_CHECK_INTERVAL
+            rta_warning = settings.PING_RTA_WARNING
+            rta_critical = settings.PING_RTA_CRITICAL
+            pl_warning = settings.PING_PL_WARNING
+            pl_critical = settings.PING_PL_CRITICAL
+            logger.info(e.message)
+
+        result['data']['packets'] = packets
+        result['data']['timeout'] = timeout
+        result['data']['normal_check_interval'] = normal_check_interval
+        result['data']['rta_warning'] = rta_warning
+        result['data']['rta_critical'] = rta_critical
+        result['data']['pl_warning'] = pl_warning
+        result['data']['pl_critical'] = pl_critical
+
+        return Response(result)
+
+
+class EditServices(APIView):
+    """
+    Edit services corresponding to the device.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/edit_services/11343/?svc_data=[{'service_id': u'54', 'data_source': [{
+         'warning': u'15', 'critical': u'19', 'name': u'dl_cinr'}], 'template_id': u'9'}, {'service_id': u'55',
+         'data_source': [{'warning': u'15', 'critical': u'19', 'name': u'ul_cinr'}], 'template_id': u'13'}]
+         &svc_ping={'rta_critical': 3000, 'packets': 60, 'timeout': 20, 'pl_critical': 100, 'normal_check_interval': 5,
+         'pl_warning': 80, 'rta_warning': 1500}"
+    """
+    def get(self, request, device_id=""):
+        """
+        Processing API request.
+
+        Args:
+            device_id (unicode): Device ID.
+            svc_data (list): List of dictionaries containing service data.
+                             For e.g.,
+                                [
+                                    {
+                                        'service_id': u'1',
+                                        'data_source': [
+                                            {
+                                                'warning': u'-50',
+                                                'critical': u'-85',
+                                                'name': u'rssi'
+                                            }
+                                        ],
+                                        'template_id': u'2',
+                                        'device_id': u'545'
+                                    },
+                                    {
+                                        'service_id': u'13',
+                                        'data_source': [
+                                            {
+                                                'warning': u'',
+                                                'critical': u'',
+                                                'name': u'idu_sn'
+                                            }
+                                        ],
+                                        'template_id': u'3',
+                                        'device_id': u'545'
+                                    }
+                                ]
+
+            svc_ping (dict): Dictionary containing ping data.
+                             For e.g.,
+                                 {
+                                    'rta_critical': 3000,
+                                    'packets': 60,
+                                    'timeout': 20,
+                                    'pl_critical': 100,
+                                    'normal_check_interval': 5,
+                                    'pl_warning': 80,
+                                    'rta_warning': 1500
+                                }
+
+        Returns:
+            result (dict): Dictionary containing service information.
+                           For e.g.,
+                                {
+                                    "message": "<i class=\"fa fa-check green-dot\"></i>Successfully edited service
+                                               'ping'. <br /><i class=\"fa fa-check green-dot\"></i>Successfully edited
+                                                service 'wimax_dl_cinr'. <br /><i class=\"fa fa-check green-dot\"></i>
+                                                Successfully edited service 'wimax_ul_cinr'. <br />",
+                                    "data": {
+                                        "svc_ping": {
+                                            "rta_critical": 3000,
+                                            "packets": 60,
+                                            "timeout": 20,
+                                            "pl_critical": 100,
+                                            "normal_check_interval": 5,
+                                            "pl_warning": 80,
+                                            "rta_warning": 1500
+                                        },
+                                        "svc_data": [
+                                            {
+                                                "service_id": "54",
+                                                "data_source": [
+                                                    {
+                                                        "warning": "15",
+                                                        "critical": "19",
+                                                        "name": "dl_cinr"
+                                                    }
+                                                ],
+                                                "template_id": "9"
+                                            },
+                                            {
+                                                "service_id": "55",
+                                                "data_source": [
+                                                    {
+                                                        "warning": "15",
+                                                        "critical": "19",
+                                                        "name": "ul_cinr"
+                                                    }
+                                                ],
+                                                "template_id": "13"
+                                            }
+                                        ]
+                                    },
+                                    "success": 0
+                                }
+
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        # Service configuration data.
+        svc_data = eval(self.request.GET.get('svc_data', None))
+
+        # Service ping configuration.
+        svc_ping = eval(self.request.GET.get('svc_ping', None))
+
+        # Collects messages returned from service addition api.
+        messages = ""
+
+        # Get device.
+        device = None
+        try:
+            device = Device.objects.get(id=device_id)
+        except Exception as e:
+            pass
+
+        # Edit 'ping' service.
+        try:
+            if device and svc_ping:
+                device_name = device.device_name
+
+                # Get device ping configuration object.
+                dpc = ""
+                try:
+                    dpc = DevicePingConfiguration.objects.get(device_name=device_name)
+                except Exception as e:
+                    logger.info(e.message)
+
+                if dpc:
+                    try:
+                        # Device ping configuration.
+                        dpc.device_name = device_name
+                        dpc.device_alias = device.device_alias
+                        dpc.packets = svc_ping['packets']
+                        dpc.timeout = svc_ping['timeout']
+                        dpc.normal_check_interval = svc_ping['normal_check_interval']
+                        dpc.rta_warning = svc_ping['rta_warning']
+                        dpc.rta_critical = svc_ping['rta_critical']
+                        dpc.pl_warning = svc_ping['pl_warning']
+                        dpc.pl_critical = svc_ping['pl_critical']
+                        dpc.operation = "e"
+                        dpc.save()
+
+                        # Set site instance bit corresponding to the device.
+                        device.site_instance.is_device_change = 1
+                        device.site_instance.save()
+
+                        result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                               Successfully edited service 'ping'. <br />"
+                        messages += result['message']
+                    except Exception as e:
+                        result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit service ping. <br />"
+                        messages += result['message']
+                else:
+                    # Device ping configuration.
+                    try:
+                        dpc = DevicePingConfiguration()
+                        dpc.device_name = device_name
+                        dpc.device_alias = device.device_alias
+                        dpc.packets = svc_ping['packets']
+                        dpc.timeout = svc_ping['timeout']
+                        dpc.normal_check_interval = svc_ping['normal_check_interval']
+                        dpc.rta_warning = svc_ping['rta_warning']
+                        dpc.rta_critical = svc_ping['rta_critical']
+                        dpc.pl_warning = svc_ping['pl_warning']
+                        dpc.pl_critical = svc_ping['pl_critical']
+                        dpc.operation = "c"
+                        dpc.save()
+
+                        # Set site instance bit corresponding to the device.
+                        device.site_instance.is_device_change = 1
+                        device.site_instance.save()
+
+                        result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                               Successfully created service 'ping'. <br />"
+                        messages += result['message']
+                    except Exception as e:
+                        result[
+                            'message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to create service ping. <br />"
+                        messages += result['message']
+        except Exception as e:
+            logger.info(e.message)
+            result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit/create service 'ping'. <br />"
+            messages += result['message']
+
+        # Edit other services.
+        for sd in svc_data:
+            result = dict()
+            result['data'] = {}
+            result['success'] = 0
+            result['message'] = ""
+
+            # Get service.
+            service = None
+            try:
+                service = Service.objects.get(pk=int(sd['service_id']))
+            except Exception as e:
+                pass
+
+            # Get service parameters.
+            service_para = service.parameters
+            try:
+                service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+            except Exception as e:
+                logger.info(e)
+
+            try:
+                for sds in sd['data_source']:
+                    if sds['warning'] != "":
+                        try:
+                            # If service exist in 'service_deviceserviceconfiguration' table
+                            # then update service, else create it.
+                            for data_source in sd['data_source']:
+                                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
+                                                                                service_name=service.name,
+                                                                                data_source=data_source['name'])
+                                if dsc:
+                                    dsc = dsc[0]
+                                    dsc.agent_tag = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+                                    dsc.port = str(service_para.protocol.port)
+                                    dsc.version = str(service_para.protocol.version)
+                                    dsc.read_community = str(service_para.protocol.read_community)
+                                    dsc.svc_template = str(service_para.parameter_description)
+                                    dsc.normal_check_interval = int(service_para.normal_check_interval)
+                                    dsc.retry_check_interval = int(service_para.retry_check_interval)
+                                    dsc.max_check_attempts = int(service_para.max_check_attempts)
+                                    if data_source['warning'] != "":
+                                        dsc.warning = int(data_source['warning'])
+                                    if data_source['critical'] != "":
+                                        dsc.critical = int(data_source['critical'])
+                                    dsc.is_added = 0
+                                    dsc.operation = "e"
+                                    dsc.save()
+
+                                    # Set site instance bit corresponding to the device.
+                                    device.site_instance.is_device_change = 1
+                                    device.site_instance.save()
+
+                                    # Set 'is_monitored_on_nms' to 1 if service is added successfully.
+                                    device.is_monitored_on_nms = 1
+                                    device.save()
+
+                                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                                           Successfully edited service '%s'. <br />" % service.name
+                                    messages += result['message']
+                                else:
+                                    dsc = DeviceServiceConfiguration()
+                                    dsc.device_name = device.device_name
+                                    dsc.service_name = service.name
+                                    dsc.data_source = data_source['name']
+                                    dsc.agent_tag = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+                                    dsc.port = str(service_para.protocol.port)
+                                    dsc.version = str(service_para.protocol.version)
+                                    dsc.read_community = str(service_para.protocol.read_community)
+                                    dsc.svc_template = str(service_para.parameter_description)
+                                    dsc.normal_check_interval = int(service_para.normal_check_interval)
+                                    dsc.retry_check_interval = int(service_para.retry_check_interval)
+                                    dsc.max_check_attempts = int(service_para.max_check_attempts)
+                                    if data_source['warning'] != "":
+                                        dsc.warning = int(data_source['warning'])
+                                    if data_source['critical'] != "":
+                                        dsc.critical = int(data_source['critical'])
+                                    dsc.is_added = 0
+                                    dsc.operation = "c"
+                                    dsc.save()
+
+                                    # Set site instance bit corresponding to the device.
+                                    device.site_instance.is_device_change = 1
+                                    device.site_instance.save()
+
+                                    # Set 'is_monitored_on_nms' to 1 if service is added successfully.
+                                    device.is_monitored_on_nms = 1
+                                    device.save()
+
+                                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                                           Successfully created service '%s'. <br />" % service.name
+                                    messages += result['message']
+
+                        except Exception as e:
+                            logger.exception(e)
+                    else:
+                        # Save service to 'service_deviceserviceconfiguration' table.
+                        try:
+                            # If service exist in 'service_deviceserviceconfiguration' table
+                            # then update service, else create it.
+                            for data_source in sd['data_source']:
+                                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
+                                                                                service_name=service.name,
+                                                                                data_source=data_source['name'])
+                                if dsc:
+                                    dsc = dsc[0]
+                                    dsc.agent_tag = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+                                    dsc.port = str(service_para.protocol.port)
+                                    dsc.version = str(service_para.protocol.version)
+                                    dsc.read_community = str(service_para.protocol.read_community)
+                                    dsc.svc_template = str(service_para.parameter_description)
+                                    dsc.normal_check_interval = int(service_para.normal_check_interval)
+                                    dsc.retry_check_interval = int(service_para.retry_check_interval)
+                                    dsc.max_check_attempts = int(service_para.max_check_attempts)
+                                    dsc.warning = int(data_source['warning']) if data_source['warning'] else ""
+                                    dsc.critical = int(data_source['critical']) if data_source['critical'] else ""
+                                    dsc.is_added = 1
+                                    dsc.operation = "e"
+                                    dsc.save()
+
+                                    # Set site instance bit corresponding to the device.
+                                    device.site_instance.is_device_change = 1
+                                    device.site_instance.save()
+
+                                    # Set 'is_monitored_on_nms' to 1 if service is added successfully.
+                                    device.is_monitored_on_nms = 1
+                                    device.save()
+
+                                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                                           Successfully edited service '%s'. <br />" % service.name
+                                    messages += result['message']
+                                else:
+                                    dsc = DeviceServiceConfiguration()
+                                    dsc.device_name = device.device_name
+                                    dsc.service_name = service.name
+                                    dsc.data_source = data_source['name']
+                                    dsc.agent_tag = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+                                    dsc.port = str(service_para.protocol.port)
+                                    dsc.version = str(service_para.protocol.version)
+                                    dsc.read_community = str(service_para.protocol.read_community)
+                                    dsc.svc_template = str(service_para.parameter_description)
+                                    dsc.normal_check_interval = int(service_para.normal_check_interval)
+                                    dsc.retry_check_interval = int(service_para.retry_check_interval)
+                                    dsc.max_check_attempts = int(service_para.max_check_attempts)
+                                    dsc.warning = int(data_source['warning']) if data_source['warning'] else ""
+                                    dsc.critical = int(data_source['critical']) if data_source['critical'] else ""
+                                    dsc.is_added = 1
+                                    dsc.operation = "c"
+                                    dsc.save()
+
+                                    # Set 'is_monitored_on_nms' to 1 if service is added successfully.
+                                    device.is_monitored_on_nms = 1
+                                    device.save()
+
+                                    # Set site instance bit corresponding to the device.
+                                    device.site_instance.is_device_change = 1
+                                    device.site_instance.save()
+
+                                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                                           Successfully created service '%s'. <br />" % service.name
+                                    messages += result['message']
+                        except Exception as e:
+                            logger.exception(e)
+            except Exception as e:
+                logger.exception(e)
+                result['message'] += "<i class=\"fa fa-times red-dot\"></i>\
+                                       Failed to edit service '%s'. <br />" % service.name
+                messages += result['message']
+
+        # Assign messages to result dict message key.
+        if messages:
+            result['message'] = messages
+        else:
+            result['message'] = "No template is selected for any service"
+
+        result['data']['svc_data'] = svc_data
+        result['data']['svc_ping'] = svc_ping
+
+        return Response(result)
+
+
+class DeleteServiceDisplayData(APIView):
+    """
+    Get parameters for service deletion form.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/delete_svc_display_data/11343/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (int): Device ID.
+
+        Returns:
+            result (dict): Dictionary containing services information.
+                           For e.g.,
+                                {
+                                    "message": "Successfully render data.",
+                                    "data": {
+                                        "meta": "",
+                                        "objects": {
+                                            "master_site": "master_UA",
+                                            "device_alias": "1131208803",
+                                            "is_added": 1,
+                                            "services": [
+                                                {
+                                                    "value": "downlink cinr",
+                                                    "key": 54
+                                                },
+                                                {
+                                                    "value": "uplink cinr",
+                                                    "key": 55
+                                                },
+                                                {
+                                                    "value": "downlink intrf",
+                                                    "key": 56
+                                                },
+                                                {
+                                                    "value": "uplink intrf",
+                                                    "key": 57
+                                                },
+                                                {
+                                                    "value": "uplink rssi",
+                                                    "key": 59
+                                                }
+                                            ],
+                                            "device_name": "11343",
+                                            "device_id": "11343"
+                                        }
+                                    },
+                                    "success": 0
+                                }
+        """
+        # Device to which services are associated.
+        device = Device.objects.get(id=pk)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to render form correctly."
+        result['data']['meta'] = ''
+        result['data']['objects'] = {}
+        result['data']['objects']['device_id'] = pk
+        result['data']['objects']['device_name'] = device.device_name
+        result['data']['objects']['device_alias'] = device.device_alias
+        result['data']['objects']['services'] = []
+        result['data']['objects']['master_site'] = ""
+        result['data']['objects']['is_added'] = device.is_added_to_nms
+
+        # Get device type.
+        device_type = DeviceType.objects.get(id=device.device_type)
+
+        # Get all services associated with the device type.
+        dt_services = device_type.service.all()
+
+        # Get services associated with the device.
+        try:
+            try:
+                master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
+                result['data']['objects']['master_site'] = master_site_name
+            except Exception as e:
+                logger.info("Master site doesn't exist.")
+            if device.is_added_to_nms == 1:
+                # Fetching all services those were already deleted from 'service device configuration' table.
+                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name, operation='d')
+
+                # Services those are already running for this device.
+                services = []
+                for svc in dsc:
+                    services.append(svc.service_name)
+
+                # Extracting unique set of services from 'services' list.
+                monitored_services = dt_services.exclude(name__in=list((set(services))))
+
+                result['data']['objects']['services'] = []
+
+                for svc in monitored_services:
+                    svc_dict = dict()
+                    svc_dict['key'] = svc.id
+                    svc_dict['value'] = svc.alias
+                    result['data']['objects']['services'].append(svc_dict)
+                    result['message'] = "Successfully render data."
+            else:
+                result['message'] = "First add device in nms core."
+        except Exception as e:
+            logger.info("No service to monitor.")
+            logger.info(e.message)
+
+        return Response(result)
+
+
+class DeleteServices(APIView):
+    """
+    Delete services corresponding to the device.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/delete_services/11343/?service_data=["57","59","60"]"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (unicode): Device ID.
+            service_data (list): List of dictionaries containing service data.
+                                 For e.g.,
+                                     [u'54', u'55', u'56']
+
+        Returns:
+            result (dict):  Dictionary containing deleted services information.
+                            For e.g.,
+                                {
+                                    "message": "<i class=\"fa fa-check green-dot\"></i>Successfully deleted service
+                                               'wimax_ul_intrf'. <br /><i class=\"fa fa-check green-dot\"></i>
+                                                Successfully deleted service 'wimax_ul_rssi'. <br />
+                                                <i class=\"fa fa-check green-dot\"></i>Successfully deleted service
+                                                'wimax_dl_modulation_change_invent'. <br />",
+                                    "data": {},
+                                    "success": 1
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+
+        # Get device.
+        device = None
+        try:
+            device = Device.objects.get(id=pk)
+        except Exception as e:
+            pass
+
+        # Services list.
+        service_data = eval(self.request.GET.get('service_data', None))
+
+        # Get agent tag.
+        agent_tag = "snmp"
+        try:
+            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+        except Exception as e:
+            pass
+
+        # Collects messages returned from service addition api.
+        messages = ""
+
+        for svc_id in service_data:
+            result['message'] = ""
+
+            try:
+                # Get service.
+                service = Service.objects.get(pk=svc_id)
+
+                # Delete services corresponding to the device.
+                result['success'] = 1
+
+                # If response dict doesn't have key 'success'.
+                if device:
+                    # Create entry in 'device service configuration'.
+                    dsc = DeviceServiceConfiguration()
+                    dsc.device_name = device.device_name
+                    dsc.service_name = service.name
+                    dsc.agent_tag = agent_tag
+                    dsc.operation = "d"
+                    dsc.save()
+
+                    # Delete service rows from 'service_deviceserviceconfiguration' table.
+                    DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
+                                                              service_name=service.name,
+                                                              operation__in=["c", "e"]).delete()
+
+                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>\
+                                          Successfully deleted service '%s'. <br />" % service.name
+                    messages += result['message']
+                else:
+                    result['message'] += "<i class=\"fa fa-times red-dot\"></i>\
+                                          Failed to delete service '%s'. <br />" % service.name
+                    messages += result['message']
+            except Exception as e:
+                result['message'] += e.message
+
+        result['message'] = messages
+
+        return Response(result)
+
+
+class AddServiceDisplayData(APIView):
+    """
+    Show form for adding services corresponding to the device.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/add_svc_display_data/11343/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (int): Device ID.
+
+        Returns:
+            result (dict): Dictionary containing services information.
+                           For e.g.,
+                                {
+                                    "message": "Successfully render form data.",
+                                    "data": {
+                                        "meta": "",
+                                        "objects": {
+                                            "master_site": "master_UA",
+                                            "device_alias": "1131208803",
+                                            "is_added": 1,
+                                            "services": [
+                                                {
+                                                    "value": "downlink cinr",
+                                                    "key": 54
+                                                },
+                                                {
+                                                    "value": "uplink cinr",
+                                                    "key": 55
+                                                },
+                                                {
+                                                    "value": "downlink intrf",
+                                                    "key": 56
+                                                },
+                                                {
+                                                    "value": "uplink intrf",
+                                                    "key": 57
+                                                },
+                                                {
+                                                    "value": "uplink rssi",
+                                                    "key": 59
+                                                },
+                                                {
+                                                    "value": "dl_modulation_change",
+                                                    "key": 60
+                                                }
+                                            ],
+                                            "device_name": "11343",
+                                            "device_id": "11343"
+                                        }
+                                    },
+                                    "success": 0
+                                }
+        """
+        # Device to which services are associated.
+        device = Device.objects.get(id=pk)
+
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to render form correctly."
+        result['data']['meta'] = ''
+        result['data']['objects'] = {}
+        result['data']['objects']['device_id'] = pk
+        result['data']['objects']['device_name'] = device.device_name
+        result['data']['objects']['device_alias'] = device.device_alias
+        result['data']['objects']['services'] = []
+        result['data']['objects']['master_site'] = ""
+        result['data']['objects']['is_added'] = device.is_added_to_nms
+
+        # Get services associated with device.
+        try:
+            try:
+                master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
+                result['data']['objects']['master_site'] = master_site_name
+            except Exception as e:
+                logger.info(e.message)
+
+            if device.is_added_to_nms == 1:
+                # Fetching all services from 'service device configuration' table.
+                deleted_services = DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
+                                                                             operation="d").values_list('service_name',
+                                                                                                        flat=True)
+
+                # Filter duplicate service entries from 'deleted_services' list.
+                deleted_services = list(set(deleted_services))
+
+                # Get services those can be added (i.e. services already deleted).
+                services = Service.objects.filter(name__in=deleted_services)
+
+                result['data']['objects']['services'] = []
+
+                for svc in services:
+                    svc_dict = dict()
+                    svc_dict['key'] = svc.id
+                    svc_dict['value'] = svc.alias
+                    result['data']['objects']['services'].append(svc_dict)
+                result['message'] = "Successfully render form data."
+            else:
+                result['message'] = "First add device in nms core."
+        except Exception as e:
+            logger.info("No service to monitor.")
+            logger.info(e.message)
+
+        return Response(result)
+
+
+class ServiceAddOldConf(APIView):
+    """
+    Show current information of service present in schema.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/svc_add_old_conf/11343/14/4/"
+    """
+    def get(self, request, device_id="", service_id="", option=""):
+        """
+        Processing API request.
+
+        Args:
+            device_id (unicode): Device ID.
+            service_id (unicode): Service ID.
+            option (unicode): Checkbox value.
+
+        Returns:
+            result (dict): Dictionary containing service data.
+                         For e.g.,
+                            {
+                                "message": "<h5 class='text-red'>Fetched data successfully.</h5> ",
+                                "data": {
+                                    "meta": {},
+                                    "objects": {
+                                        "svc_param": [
+                                            {
+                                                "parameter_description": "radwin_snmp_performance_5_min",
+                                                "id": 4
+                                            },
+                                            {
+                                                "parameter_description": "radwin_snmp_performance_10_min",
+                                                "id": 5
+                                            },
+                                            {
+                                                "parameter_description": "radwin_snmp_status_60_min",
+                                                "id": 6
+                                            },
+                                            {
+                                                "parameter_description": "radwin_snmp_inventory_1_day",
+                                                "id": 7
+                                            },
+                                            {
+                                                "parameter_description": "cambium_snmp_inventory_1_day",
+                                                "id": 8
+                                            }
+                                        ],
+                                        "option": "4"
+                                    }
+                                },
+                                "success": 0
+                            }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to fetch data."
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+        result['data']['objects']['svc_param'] = list()
+
+        if option and option != "":
+            svc_params = ServiceParameters.objects.all()
+            if svc_params:
+                try:
+                    if svc_params:
+                        result['data']['objects']['option'] = option
+
+                        for svc_param in svc_params:
+                            param_dict = dict()
+                            param_dict['id'] = svc_param.id
+                            param_dict['parameter_description'] = svc_param.parameter_description
+                            result['data']['objects']['svc_param'].append(param_dict)
+                        result['message'] = "<h5 class='text-red'>Fetched data successfully.</h5> "
+                    else:
+                        result['message'] = "<h5 class='text-red'>No data source associated.</h5>"
+                except Exception as e:
+                    logger.info("No data source available.")
+                    logger.info(e.message)
+        else:
+            pass
+
+        return Response(result)
+
+
+class ServiceAddNewConf(APIView):
+    """
+    Show modified information of service.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/svc_add_new_conf/14/4/"
+    """
+    def get(self, request, service_id="", template_id=""):
+        """
+        Processing API request.
+
+        Args:
+            service_id (unicode): Service ID.
+            template_id (unicode): Template ID.
+
+        Returns:
+            result (dict): Dictionary containing service data.
+                         For e.g.,
+                            {
+                                "message": "Successfully fetched data.",
+                                "data": {
+                                    "meta": {},
+                                    "objects": {
+                                        "service_id": "14",
+                                        "max_check_attempts": 1,
+                                        "normal_check_interval": 5,
+                                        "retry_check_interval": 1,
+                                        "data_sources": [
+                                            {
+                                                "state": "Editable.",
+                                                "warning": "",
+                                                "critical": "",
+                                                "name": "odu_sn"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "success": 0
+                            }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to fetch data."
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+        result['data']['objects']['data_sources'] = list()
+        result['data']['objects']['service_id'] = service_id
+
+        service = Service.objects.get(pk=service_id)
+        template = ServiceParameters.objects.get(pk=template_id)
+
+        result['data']['objects']['normal_check_interval'] = template.normal_check_interval
+        result['data']['objects']['retry_check_interval'] = template.retry_check_interval
+        result['data']['objects']['max_check_attempts'] = template.max_check_attempts
+
+        # Data sources associated with the service.
+        data_sources = service.service_data_sources.all()
+
+        for sds in data_sources:
+            ds_dict = dict()
+            try:
+                ds_dict['name'] = sds.name
+                ds_dict['state'] = 'Editable.'
+                ds_dict['warning'] = sds.warning
+                ds_dict['critical'] = sds.critical
+                result['data']['objects']['data_sources'].append(ds_dict)
+            except Exception as e:
+                ds_dict['name'] = sds.name
+                ds_dict['state'] = 'Non editable.'
+                ds_dict['warning'] = sds.warning
+                ds_dict['critical'] = sds.critical
+                result['data']['objects']['data_sources'].append(ds_dict)
+
+        if result['data']['objects']['data_sources']:
+            result['message'] = "Successfully fetched data."
+
+        return Response(result)
