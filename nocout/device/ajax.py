@@ -3411,6 +3411,9 @@ def add_services(request, device_id, svc_data):
     result['data']['meta'] = {}
     result['data']['objects'] = {}
 
+    print "***************************** device_id - ", type(device_id), device_id
+    print "***************************** svc_data - ", type(svc_data), svc_data
+
     # Get device.
     device = None
     try:
