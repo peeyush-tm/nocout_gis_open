@@ -4283,7 +4283,7 @@ class ServiceEditNewConf(APIView):
 
 class ServiceEditPingConf(APIView):
     """
-    Show modified information of the service.
+    Show ping information of the service.
 
     Allow: GET, HEAD, OPTIONS
 
@@ -5545,7 +5545,7 @@ class DeviceServiceStatus(APIView):
 
 class ResetServiceConfiguration(APIView):
     """
-    Reset device service configuration
+    Reset device service configuration.
 
     Allow: GET, HEAD, OPTIONS
 
