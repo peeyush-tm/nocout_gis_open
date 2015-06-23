@@ -8,9 +8,10 @@ if($(".formContainer").length) {
 
     var splitted_url_list = window.location.pathname.split("/"),
         notGisWizard = splitted_url_list.indexOf('gis-wizard') < 0,
-        isNewForm = splitted_url_list.indexOf('new') > -1 && notGisWizard,
-        isCreateForm = splitted_url_list.indexOf('create') > -1 && notGisWizard,
-        isAddForm = splitted_url_list.indexOf('add') > -1 && notGisWizard,
+        notL2Report = splitted_url_list.indexOf('l2_reports') < 0,
+        isNewForm = splitted_url_list.indexOf('new') > -1 && notGisWizard && notL2Report,
+        isCreateForm = splitted_url_list.indexOf('create') > -1 && notGisWizard && notL2Report,
+        isAddForm = splitted_url_list.indexOf('add') > -1 && notGisWizard && notL2Report,
         isEditForm = splitted_url_list.indexOf('edit'),
         isUpdateForm = splitted_url_list.indexOf('update'),
         isModifyForm = splitted_url_list.indexOf('modify'),
@@ -55,7 +56,7 @@ if($(".formContainer").length) {
 /*Form Submit Event*/
 $("form").submit(function(e) {
 
-    if(notGisWizard) {
+    if(notGisWizard && notL2Report) {
         // Disabel submit button
         if($("form button[type='submit']").length > 0) {
             if(!$("form button[type='submit']").hasClass("disabled")) {

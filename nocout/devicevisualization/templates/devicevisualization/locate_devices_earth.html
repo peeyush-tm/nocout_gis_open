@@ -221,29 +221,6 @@
         <div id="toolsContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
             <ul class="list-unstyled list-inline">
-                <!-- <li>
-                    <button type="button" id="ruler_select" class="btn btn-sm btn-info">Select Ruler</button>
-                    <button type="button" id="ruler_remove" class="btn btn-sm btn-danger hide">Remove Ruler</button>
-                </li>
-                <li>
-                    <button type="button" id="point_select" class="btn btn-sm btn-info">Add Point</button> -->
-                    <!-- <button type="button" id="point_remove" class="btn btn-sm btn-danger hide">Remove Points</button> -->
-                    <!-- <ul class="list-unstyled list-inline hide" id="point_icons_container"> -->
-                    <!-- If loggedin user is super admin then only show maintainance icon -->
-                        <!-- {% if user.is_superuser %} -->
-                            <!-- <li class="selected_icon"><img src="../../static/img/icons/tools/point/caution.png"/></li> -->
-                        <!-- {% endif %} -->
-                        <!-- <li><img src="../../static/img/icons/tools/point/icon1.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon2.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon3.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon4.png"/></li>
-                        <li class="close_box"><i class="fa fa-times" id="close_points_icon"> </i> </li>
-                    </ul>
-                </li> -->
-                <!-- <li>
-                    <button type="button" id="line_select" class="btn btn-info">Select Line</button>
-                    <button type="button" id="line_remove" class="btn btn-danger hide">Remove Line</button>
-                </li> -->
                 <li>
                     <button type="button" id="freeze_select" class="btn btn-sm btn-info">Freeze</button>
                     <button type="button" id="freeze_remove" class="btn btn-sm btn-danger hide">Un-Freeze</button>
@@ -492,7 +469,7 @@
     <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
     <!-- State boundries Loki object Lib -->
     <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
-    <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
+    <!-- Advance Filters Custom Library-->
     <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
     <!-- Our Library to implement search functionality on gmap & earth-->
     <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>

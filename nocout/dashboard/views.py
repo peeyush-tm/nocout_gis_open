@@ -742,7 +742,9 @@ class MainDashboard(View):
             {'mData': 'wimax_latancy', 'sTitle': 'Latency WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_normal', 'sTitle': 'Normal WiMAX', 'sWidth': 'auto'},
             {'mData': 'wimax_ss_count', 'sTitle': 'Count WiMAX', 'sWidth': 'auto'},
-            {'mData': 'wimax_ss_percentage', 'sTitle': '% WiMAX', 'sWidth': 'auto'}
+            {'mData': 'wimax_ss_percentage', 'sTitle': '% WiMAX', 'sWidth': 'auto'},
+            {'mData': 'total_ss_count', 'sTitle': 'Total Count', 'sWidth': 'auto'},
+            {'mData': 'total_ss_percentage', 'sTitle': 'Total %', 'sWidth': 'auto'}
         ]
 
         dfr_processed_header = [

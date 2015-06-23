@@ -1,3 +1,9 @@
+/**
+ * This library handle events regarding elements on map page
+ * @for devicevisualization
+ */
+
+// Global Variables
 var mapPageType = "",
     hasAdvFilter = 0,
     hasSelectDevice = 0,
@@ -12,30 +18,71 @@ var mapPageType = "",
     live_poll_config = {},
     periodic_poll_process_count = 1,
     is_tooltip_polled_used = false,
-    not_ss_param_labels = ['base_station_alias'];
+    not_ss_param_labels = ['base_station_alias'],
+    pointEventHandler = "",
+    altZoomList = [
+        30000000, 24000000, 18000000, 10000000, 4000000, 1900000, 1100000, 550000, 280000, 
+        170000, 82000, 38000, 19000, 9200, 4300, 2000, 990, 570, 280, 100, 36, 12, 0
+    ];
 
-/*Set the base url of application for ajax calls*/
-if(window.location.origin) {
-    base_url = window.location.origin;
-} else {
-    base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+// set base url 
+try {
+    base_url = getBaseUrl();
+} catch(e) {
+    /*Set the base url of application for ajax calls*/
+    if(window.location.origin) {
+        base_url = window.location.origin;
+    } else {
+        base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+    }
 }
 
 
 /*Save cookie value to variable*/
 isFreeze = $.cookie("isFreezeSelected") ? $.cookie("isFreezeSelected") : 0;
 freezedAt = $.cookie("freezedAt") ? $.cookie("freezedAt") : 0;
-tools_ruler = $.cookie("tools_ruler") ? $.cookie("tools_ruler") : 0;        
-tools_line = $.cookie("tools_line") ? $.cookie("tools_line") : 0;
+tools_ruler = $.cookie("tools_ruler") ? $.cookie("tools_ruler") : 0;
 last_selected_label = $.cookie("tooltipLabel") ? $.cookie("tooltipLabel") : "";
 current_icon_size = $.cookie("markerIconSize") ? $.cookie("markerIconSize") : "medium";
+
+isPollingActive = 0;
+
+// Clear click listener
+if(google && google.maps) {
+    google.maps.event.clearListeners(mapInstance,'click');
+}
+
+// Set globl options of highcharts after 1.5 sec of page loading
+setTimeout(function() {
+    if(window.Highcharts) {
+        Highcharts.setOptions({
+            global : {
+                useUTC : false
+            }
+        });
+    }
+},1500);
+
+/*Call get_page_status function to show the current status*/
+get_page_status();
+
+//defining global varible for city options
+city_options = []
 
 // Select the last selected item in size dropdown 
 $("select#icon_Size_Select_In_Tools").val(current_icon_size);
 
-isPollingActive = 0;
-
-if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
+if(
+    isFreeze == 1
+    ||
+    (tools_ruler && tools_ruler != 0)
+    ||
+    (
+        $.cookie("isLabelChecked") == true
+        ||
+        $.cookie("isLabelChecked")=='true'
+    )
+) {
     $("#showToolsBtn").removeClass("btn-info");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
@@ -46,9 +93,9 @@ if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_li
 // Update "Show Labels"  checkbox as per the cookie value
 if($.cookie("isLabelChecked")) {
     if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
-        $("#show_hide_label")[0].checked= true;
+        $("#show_hide_label")[0].checked = true;
     } else {
-        $("#show_hide_label")[0].checked= false;
+        $("#show_hide_label")[0].checked = false;
     }
 }
 
@@ -70,50 +117,10 @@ if($.cookie("isSSChecked")) {
     }
 }
 
-if(window.location.pathname.indexOf("wmap") > -1) {
-    // pass
-} else {
-    if(google && google.maps) {
-        google.maps.event.clearListeners(mapInstance,'click');
-    }
-    
-}
-
-// Set globl options of highcharts after 1.5 sec of page loading
-setTimeout(function() {
-    if(window.Highcharts) {
-        Highcharts.setOptions({
-            global : {
-                useUTC : false
-            }
-        });
-    }
-},1500);
-
-/*Call get_page_status function to show the current status*/
-get_page_status();
-
 /**
- * This funciton returns the page name of currenly opened page
- * @method getPageType
+ * This event trigger when state dropdown value is changes
+ * @event Change
  */
-function getPageType() {
-
-    if(window.location.pathname.indexOf("gearth") > -1) {
-        mapPageType = "gearth";
-        gmap_self = networkMapInstance;
-    } else if(window.location.pathname.indexOf("wmap") > -1) {
-        mapPageType = "wmap";
-        networkMapInstance = gmap_self;
-    } else {
-        mapPageType = "gmap";
-    }
-}
-
-//defining global varible for city options
-city_options = []
-
-/*This event trigger when state dropdown value is changes*/
 $("#state").change(function(e) {
 
     getPageType();
@@ -140,19 +147,28 @@ $("#state").change(function(e) {
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
-/*This event trigger when city dropdown value is changes*/
+/**
+ * This event trigger when city dropdown value is changes
+ * @event Change
+ */
 $("#city").change(function(e) {
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
-/*This event trigger when vendor dropdown value is changes*/
+/**
+ * This event trigger when vendor dropdown value is changes
+ * @event Change
+ */
 $("#vendor").change(function(e) {
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
-/*This event trigger when technology dropdown value is changes*/
+/**
+ * This event trigger when technology dropdown value is changes
+ * @event Change
+ */
 $("#technology").change(function(e) {
 
     getPageType();
@@ -180,8 +196,10 @@ $("#technology").change(function(e) {
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
-
-/*This event triggers when Reset Filter button clicked*/
+/**
+ * This event triggers when Reset Filter button clicked
+ * @event Click
+ */
 $("#resetFilters").click(function(e) {
 
     var isBasicFilterApplied = $.trim($("#technology").val()) || $.trim($("#vendor").val()) || $.trim($("#state").val()) || $.trim($("#city").val())
@@ -213,9 +231,6 @@ $("#resetFilters").click(function(e) {
         $("#vendor").val($("#vendor option:first").val());
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
-        /*Reset search txt box*/
-        // $("#google_loc_search").val("");
-        // $("#lat_lon_search").val("");
         
         isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
 
@@ -240,8 +255,6 @@ $("#resetFilters").click(function(e) {
             // Update the view in Google Earth 
             ge.getView().setAbstractView(lookAt); 
             
-            // mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-            // mapInstance.setZoom(5);
             data_for_filters_earth = all_devices_loki_db.data;
 
             isApiResponse = 0;
@@ -277,8 +290,6 @@ $("#resetFilters").click(function(e) {
             isApiResponse = 0;
             mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
             mapInstance.setZoom(5);
-            // Load all counters
-            // gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
             networkMapInstance.updateStateCounter_gmaps();
         }
     }
@@ -321,36 +332,10 @@ $("#resetFilters").click(function(e) {
     }
 });
 
-function showAdvSearch() {
-    showSpinner();
-    // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
-    if(!isAdvanceFilter) {
-        $("#filter_technology").select2("val","");
-        $("#filter_vendor").select2("val","");
-        $("#filter_state").select2("val","");
-        $("#filter_city").select2("val","");
-        $("#filter_frequency").select2("val","");
-        $("#filter_polarization").select2("val","");
-
-        // Reset Advance Filters Flag
-        isAdvanceFilter = 0;
-    }
-    if(!$("#advFilterContainerBlock").hasClass("hide")) {
-        $("#advFilterContainerBlock").addClass("hide");
-    }
-
-    if($("#advSearchContainerBlock").hasClass("hide")) {
-        $("#advSearchContainerBlock").removeClass("hide");
-    }
-    hideSpinner();
-    // if (window.location.pathname.indexOf("wmap") > -1) {
-    //     $("#advFilterContainerBlock").hide();
-    //     $("#advSearchContainerBlock").show();
-    //     advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
-    // } else {
-    // }
-}
-
+/**
+ * This event triggers when Submit button of Advance Search clicked
+ * @event Click
+ */
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     
@@ -379,24 +364,20 @@ $("#setAdvSearchBtn").click(function(e) {
     }
 });
 
+/**
+ * This event triggers when Cancel button of Advance Search clicked
+ * @event Click
+ */
 $("#cancelAdvSearchBtn").click(function(e) {
-    
-    // if(window.location.pathname.indexOf("gearth") > -1) {
-    //     $("#advSearchContainerBlock").addClass("hide");
-    // } else if (window.location.pathname.indexOf("wmap") > -1) {
-    //     $("#advFilterSearchContainerBlock").html("");
-    // }
-
     if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
         $("#advSearchContainerBlock").addClass("hide");
     }
-    // advJustSearch.resetVariables();
 });
 
-function resetAdvanceSearch() {
-    $("#resetSearchForm").trigger('click');
-}
-
+/**
+ * This event triggers when Reset button of Advance Search clicked
+ * @event Click
+ */
 $("#resetSearchForm").click(function(e) {
     
     if(isDebug) {
@@ -427,7 +408,6 @@ $("#resetSearchForm").click(function(e) {
 
     advJustSearch.removeSearchMarkers();
     advJustSearch.resetVariables();
-    advJustSearch.hideNotification();
 
     if(isDebug) {
         var time_diff = (new Date().getTime() - start_date_reset_search.getTime())/1000;
@@ -440,29 +420,10 @@ $("#resetSearchForm").click(function(e) {
 });
 
 /**
- * This function triggers when "Advance Filters" button is pressed
- * @method showAdvFilters
- */
-function showAdvFilters() {
-    /*Show the spinner*/
-    showSpinner();
-    if(!isAdvanceSearch) {
-        resetAdvanceSearch();
-    }
-
-    if(!$("#advSearchContainerBlock").hasClass("hide")) {
-        $("#advSearchContainerBlock").addClass("hide");
-    }
-
-    if($("#advFilterContainerBlock").hasClass("hide")) {
-        $("#advFilterContainerBlock").removeClass("hide");
-    }
-    hideSpinner();
-}
-    
-/*If 'Filter' button of advance filter is clicked*/
+ * This event triggers when Submit button of Advance Filters clicked
+ * @event Click
+ */    
 $("#setAdvFilterBtn").click(function(e) {
-
     /*Show spinner*/
     showSpinner();
 
@@ -493,24 +454,17 @@ $("#setAdvFilterBtn").click(function(e) {
 
         bootbox.alert("Please select any filter");
     }
-    // if(window.location.pathname.indexOf("wmap") > -1) {
-    //     advSearch.callSetFilter();
-    // } else {
-    // }
 
     /*Call get_page_status function to show the current status*/
     get_page_status();
 
 });
 
-/*If 'Cancel' button of advance filter form is clicked*/
+/**
+ * This event triggers when Cancel button of Advance Filters clicked
+ * @event Click
+ */
 $("#cancelAdvFilterBtn").click(function(e) {
-
-    // if(window.location.pathname.indexOf("gearth") > -1) {
-    //     // $("#advFilterFormContainer").html("");
-    // } else if(window.location.pathname.indexOf("wmap") > -1) {
-    //     $("#advFilterFormContainer").html("");
-    // }
 
     if(!($("#advFilterContainerBlock").hasClass("hide"))) {
         $("#advFilterContainerBlock").addClass("hide");
@@ -520,37 +474,14 @@ $("#cancelAdvFilterBtn").click(function(e) {
 });
 
 /**
- * This function triggers when remove filters button is clicked
- * @method removeAdvFilters
+ * This event trigers when "Create Polygon" button is clicked
+ * @event Click
  */
-function removeAdvFilters() {
-    /*Reset advance filter status flag*/
-    hasAdvFilter = 0;
-
-    advSearch.removeFilters();
-
-    // if(window.location.pathname.indexOf("gearth") > -1) {
-    //     // data_for_filters_earth = main_devices_data_earth;
-    // } else if(window.location.pathname.indexOf("wmap") > -1) {
-    //     data_for_filters = main_devices_data_wmap;
-    // } else {
-
-    // }
-
-    /*Call get_page_status function to show the current status*/
-    get_page_status();
-}
-
-/*Trigers when "Create Polygon" button is clicked*/
 $("#createPolygonBtn").click(function(e) {
 
     disableAdvanceButton();
     $("#resetFilters").button("loading");
     $("#showToolsBtn").removeAttr("disabled");
-
-    // if(window.location.pathname.indexOf("gearth") > -1) {
-    //     earth_instance.initPolling_earth();
-    // }
 
     $("#polling_tech").val($("#polling_tech option:first").val());
 
@@ -577,6 +508,10 @@ $("#createPolygonBtn").click(function(e) {
     }
 });
 
+/**
+ * This event trigers when "Send" button is clicked to fetch the polling templates
+ * @event Click
+ */
 $("#tech_send").click(function(e) {
 
     if(window.location.pathname.indexOf("gearth") > -1) {
@@ -588,15 +523,18 @@ $("#tech_send").click(function(e) {
     }
 });
 
+/**
+ * This event triggers when Poll Now button of live polling clicked
+ * @event Click
+ */
 $("#fetch_polling").click(function(e) {
-
-    // if(window.location.pathname.indexOf("gearth") > -1) {
-    //     earth_instance.fetchDevicesPollingData_earth();
-    // } else {
-        networkMapInstance.fetchDevicesPollingData();
-    // }
+    networkMapInstance.fetchDevicesPollingData();
 });
 
+/**
+ * This event triggers when Play button of live polling clicked
+ * @event Click
+ */
 $("#play_btn").click(function(e) {
     
     if($(".play_pause_btns").hasClass("disabled")) {
@@ -635,36 +573,38 @@ $("#play_btn").click(function(e) {
     }
 });
 
+/**
+ * This event triggers when Pause button of live polling clicked
+ * @event Click
+ */
 $("#pause_btn").click(function(e) {
     
     if($(".play_pause_btns").hasClass("disabled")) {
         $(".play_pause_btns").removeClass("disabled");
     }
 
-    // if(window.location.pathname.indexOf("gearth") > -1) {
-        
-    // } else if(window.location.pathname.indexOf("wmap") > -1) {
-        
-    // } else {
-        if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
-            if(remainingPollCalls > 0) {
-                if(!$("#pause_btn").hasClass("disabled")) {
-                    $("#pause_btn").addClass("disabled");
-                }
-
-                //stop perf calling
-                if(pollCallingTimeout) {
-                    clearTimeout(pollCallingTimeout);
-                    pollCallingTimeout = "";
-                }
-                isPollingPaused = 1;
+    if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
+        if(remainingPollCalls > 0) {
+            if(!$("#pause_btn").hasClass("disabled")) {
+                $("#pause_btn").addClass("disabled");
             }
-        } else {
-            bootbox.alert("Please select devices & polling template first.");
+
+            //stop perf calling
+            if(pollCallingTimeout) {
+                clearTimeout(pollCallingTimeout);
+                pollCallingTimeout = "";
+            }
+            isPollingPaused = 1;
         }
-    // }
+    } else {
+        bootbox.alert("Please select devices & polling template first.");
+    }
 });
 
+/**
+ * This event triggers when Stop button of live polling clicked
+ * @event Click
+ */
 $("#stop_btn").click(function(e) {
 
     if($(".play_pause_btns").hasClass("disabled")) {
@@ -701,7 +641,10 @@ $("#stop_btn").click(function(e) {
     }
 });
 
-/*Change event on polling technology dropdown*/
+/**
+ * This event triggers when polling technology dropdown changed
+ * @event Change
+ */
 $("#polling_tech").change(function(e) {
     if(window.location.pathname.indexOf("wmap") > -1) {
         whiteMapClass.initLivePolling();
@@ -712,7 +655,10 @@ $("#polling_tech").change(function(e) {
     }
 });
 
-/*When "Tabular View" button for polling widget clicked*/
+/**
+ * This event triggers when "Tabular View" button for polling widget clicked
+ * @event Click
+ */
 $("#polling_tabular_view").click(function(e) {
     if(window.location.pathname.indexOf("wmap") > -1) {
         whiteMapClass.show_polling_datatable_wmaps();
@@ -721,7 +667,10 @@ $("#polling_tabular_view").click(function(e) {
     }
 });
 
-/*triggers when clear selection button is clicked*/
+/**
+ * This event triggers when clear selection button is clicked
+ * @event Click
+ */
 $("#clearPolygonBtn").click(function(e) {
     if(window.location.pathname.indexOf("wmap") > -1) {
         whiteMapClass.stopPolling();
@@ -740,37 +689,10 @@ $("#clearPolygonBtn").click(function(e) {
     }
 });
 
-
-
-function get_page_status() {
-    var status_txt = "";
-
-    if(hasAdvFilter == 1) {
-        status_txt+= '<li>Advance Filters Applied</li>';
-    }
-
-    if(hasSelectDevice == 1) {
-        status_txt+= '<li>Select Devices Applied</li>';
-    }
-
-    if(hasTools == 1) {
-        if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
-            status_txt+= '<li>Gmap Tools Applied<button class="btn btn-sm btn-danger pull-right" onclick="clearTools_gmap()" style="padding: 2px 5px; margin: -3px;">Reset</button><li>';
-        }
-    }
-
-    if($("ul#gis_status_txt li#gis_search_status_txt").length) {
-        status_txt+= $("ul#gis_status_txt li#gis_search_status_txt")[0].outerHTML;
-    }
-
-    if(status_txt == "") {
-        status_txt += "<li>Default</li>";    
-    }
-
-    $("#gis_status_txt").html(status_txt);
-}
-
-//On change of Icon Size, call updateAllMarkers function in DevicePlottingLib with the value.
+/**
+ * This event triggers when icon size dropdown value changed
+ * @event Change
+ */
 $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $.trim($(this).val());
     defaultIconSize= val;
@@ -788,308 +710,10 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     }
 });
 
-
-/*
-Function is used to Disable Advance Search, Advance Filter Button when Call for data is going on.
-When call is completed, we use the same function to enable Button by passing 'no' in parameter.
- */
-function disableAdvanceButton(status) {
-    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'];
-    var selectBoxes = ['technology', 'vendor', 'state', 'city'];
-    var textBoxes = ['google_loc_search','lat_lon_search'];
-    var disablingBit = false;
-    if(!status) {
-        disablingBit= true;
-        for(var i=0; i< buttonEls.length; i++) {
-            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
-            $('#'+buttonEls[i]).button('loading');
-        }
-
-        for(var i=0; i< selectBoxes.length; i++) {
-            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
-        }
-
-        for(var i=0; i< textBoxes.length; i++) {
-            var el = document.getElementById(textBoxes[i]);
-            if(el) {
-                document.getElementById(textBoxes[i]).disabled = disablingBit;    
-            }            
-        }
-    } else {
-        disablingBit= false;
-        for(var i=0; i< buttonEls.length; i++) {
-            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
-            $('#'+buttonEls[i]).button('complete');
-        }
-
-        for(var i=0; i< selectBoxes.length; i++) {
-            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
-        }
-
-        for(var i=0; i< textBoxes.length; i++) {
-            var el = document.getElementById(textBoxes[i]);
-            if(el) {
-                document.getElementById(textBoxes[i]).disabled = disablingBit;    
-            }
-            // document.getElementById(textBoxes[i]).disabled = disablingBit;
-        }
-    }
-}
-
 /**
- * This event triggers keypress event on lat,lon search text box
+ * This event triggers when "Add Ruler" button clicked
+ * @event Click
  */
-function isLatLon(e) {
-
-    var entered_key_code = (e.keyCode ? e.keyCode : e.which),
-        entered_txt = $("#lat_lon_search").val();
-
-    if(entered_key_code == 13) {
-        if(entered_txt.length > 0) {
-            if(entered_txt.split(",").length != 2) {
-                alert("Please Enter Proper Lattitude,Longitude.");
-                $("#lat_lon_search").val("");
-            } else {
-                
-                var lat = $.trim(entered_txt.split(",")[0]),
-                    lng = $.trim(entered_txt.split(",")[1]),
-                    lat_check = (+(lat) >= -90 && +(lat) < 90),
-                    lon_check = (+(lng) >= -180 && +(lng) < 180),
-                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['':]?\s?(?:(\d+(?:\.\d+)?)["?]?)?)?\s?([NSEW])?/i;
-                    dms_regex = new RegExp(dms_pattern);
-                
-                if((lat_check && lon_check) || (dms_regex.exec(lat) && dms_regex.exec(lng))) {
-                    if((lat_check && lon_check)) {
-                        if(window.location.pathname.indexOf("wmap") > -1) {
-                            whiteMapClass.zoomToLonLat(entered_txt);
-                        } else if(window.location.pathname.indexOf("gearth") > -1) {
-                            earth_instance.pointToLatLon(entered_txt);
-                        } else {
-                            networkMapInstance.pointToLatLon(entered_txt);
-                        }
-                    } else {
-                        var converted_lat = dmsToDegree(dms_regex.exec(lat));
-                        var converted_lng = dmsToDegree(dms_regex.exec(lng));
-                        
-                        if(window.location.pathname.indexOf("wmap") > -1) {
-                            whiteMapClass.zoomToLonLat(String(converted_lat)+","+String(converted_lng));
-                        } else if(window.location.pathname.indexOf("gearth") > -1) {
-                            earth_instance.pointToLatLon(String(converted_lat)+","+String(converted_lng));
-                        } else {
-                            networkMapInstance.pointToLatLon(String(converted_lat)+","+String(converted_lng));
-                        }
-                    }
-                } else {
-                    alert("Please Enter Proper Lattitude,Longitude.");
-                    $("#lat_lon_search").val("");
-                }                
-            }                
-        } else {
-            alert("Please Enter Lattitude,Longitude.");
-        }
-    }
-}
-
-/*This function converts dms lat lon to decimal degree lat lon*/
-function dmsToDegree(latLng) {
-
-    var new_pt = NaN,degrees,minutes,seconds,hemisphere;
-
-    degrees = Number(latLng[1]);
-    minutes = typeof (latLng[2]) !== "undefined" ? Number(latLng[2]) / 60 : 0;
-    seconds = typeof (latLng[3]) !== "undefined" ? Number(latLng[3]) / 3600 : 0;
-    hemisphere = latLng[4] || null;
-    if (hemisphere !== null && /[SW]/i.test(hemisphere)) {
-        degrees = Math.abs(degrees) * -1;
-    }
-    if(degrees < 0) {
-        new_pt = degrees - minutes - seconds;
-    } else {
-        new_pt = degrees + minutes + seconds;
-    }
-
-    return new_pt;
-}
-
-/*Object.key for IE*/
-if (!Object.keys) {
-  Object.keys = (function () {
-    'use strict';
-    var hasOwnProperty = Object.prototype.hasOwnProperty,
-        hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
-        dontEnums = [
-          'toString',
-          'toLocaleString',
-          'valueOf',
-          'hasOwnProperty',
-          'isPrototypeOf',
-          'propertyIsEnumerable',
-          'constructor'
-        ],
-        dontEnumsLength = dontEnums.length;
-
-    return function (obj) {
-      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj == null)) {
-        throw new TypeError('Object.keys called on non-object');
-      }
-
-      var result = [], prop, i;
-
-      for (prop in obj) {
-        if (hasOwnProperty.call(obj, prop)) {
-          result.push(prop);
-        }
-      }
-
-      if (hasDontEnumBug) {
-        for (i = 0; i < dontEnumsLength; i++) {
-          if (hasOwnProperty.call(obj, dontEnums[i])) {
-            result.push(dontEnums[i]);
-          }
-        }
-      }
-      return result;
-    };
-  }());
-}
-
-/*indexOf for IE*/
-
-if (!Array.prototype.indexOf) {
-  Array.prototype.indexOf = function(searchElement, fromIndex) {
-
-    var k;
-
-    // 1. Let O be the result of calling ToObject passing
-    //    the this value as the argument.
-    if (this == null) {
-      throw new TypeError('"this" is null or not defined');
-    }
-
-    var O = Object(this);
-
-    // 2. Let lenValue be the result of calling the Get
-    //    internal method of O with the argument "length".
-    // 3. Let len be ToUint32(lenValue).
-    var len = O.length >>> 0;
-
-    // 4. If len is 0, return -1.
-    if (len == 0) {
-      return -1;
-    }
-
-    // 5. If argument fromIndex was passed let n be
-    //    ToInteger(fromIndex); else let n be 0.
-    var n = +fromIndex || 0;
-
-    if (Math.abs(n) == Infinity) {
-      n = 0;
-    }
-
-    // 6. If n >= len, return -1.
-    if (n >= len) {
-      return -1;
-    }
-
-    // 7. If n >= 0, then Let k be n.
-    // 8. Else, n<0, Let k be len - abs(n).
-    //    If k is less than 0, then let k be 0.
-    k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
-
-    // 9. Repeat, while k < len
-    while (k < len) {
-      var kValue;
-      // a. Let Pk be ToString(k).
-      //   This is implicit for LHS operands of the in operator
-      // b. Let kPresent be the result of calling the
-      //    HasProperty internal method of O with argument Pk.
-      //   This step can be combined with c
-      // c. If kPresent is true, then
-      //    i.  Let elementK be the result of calling the Get
-      //        internal method of O with the argument ToString(k).
-      //   ii.  Let same be the result of applying the
-      //        Strict Equality Comparison Algorithm to
-      //        searchElement and elementK.
-      //  iii.  If same is true, return k.
-      if (k in O && O[k] == searchElement) {
-        return k;
-      }
-      k++;
-    }
-    return -1;
-  };
-}
-
-
-/**
- * This function shows tools panel to google map
- *
- */
-function showToolsPanel() {
-    if(isFreeze == 1) {
-        $("#freeze_select").addClass("hide");
-        $("#freeze_remove").removeClass("hide");
-    } else {
-        $("#freeze_remove").addClass("hide");
-        $("#freeze_select").removeClass("hide");
-    }
-
-    if(tools_ruler && tools_ruler != 0) {
-        $("#ruler_select").addClass("hide");
-        $("#ruler_remove").removeClass("hide");
-    } else {
-        $("#ruler_select").removeClass("hide");
-        $("#ruler_remove").addClass("hide");
-    }
-
-    if(tools_line && tools_line != 0) {
-        $("#line_select").addClass("hide");
-        $("#line_remove").removeClass("hide");
-    } else {
-        $("#line_remove").addClass("hide");
-        $("#line_select").removeClass("hide");
-    }
-
-    $("#showToolsBtn").addClass("hide");
-
-    $("#removeToolsBtn").removeClass("hide");
-
-    $("#toolsContainerBlock").removeClass("hide");
-
-    if(window.location.pathname.indexOf("gearth") > -1) {
-
-    } else if(window.location.pathname.indexOf("wmap") > -1) {
-    } else {
-        google.maps.event.clearListeners(mapInstance, 'click');
-    }
-}
-
-function removetoolsPanel() {
-    pointAdded= -1;
-    is_line_active= -1;
-    is_ruler_active= -1;
-
-    if(window.location.pathname.indexOf("gearth") > -1) {
-    } else if(window.location.pathname.indexOf("wmap") > -1) {
-    } else {
-        google.maps.event.clearListeners(mapInstance, 'click');
-    }    
-
-    $("#showToolsBtn").removeClass("hide");
-
-    if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
-        $("#showToolsBtn").removeClass("btn-info").addClass("btn-warning");
-    } else {
-        $("#showToolsBtn").removeClass("btn-warning").addClass("btn-info");
-    }
-
-    $("#removeToolsBtn").addClass("hide");
-
-    $("#toolsContainerBlock").addClass("hide");
-
-    get_page_status();
-}
-
 $("#ruler_select").click(function(e) {
 
     // Set/Reset variables
@@ -1116,7 +740,10 @@ $("#ruler_select").click(function(e) {
     }
 });
 
-
+/**
+ * This event triggers when "Remove Ruler" button clicked
+ * @event Click
+ */
 $("#ruler_remove").click(function(e) {
     pointAdded= -1;
     is_line_active= -1;
@@ -1141,46 +768,10 @@ $("#ruler_remove").click(function(e) {
     }
 });
 
-$("#line_select").click(function(e) {
-    pointAdded= -1;
-    is_line_active= 1;
-    is_ruler_active= -1;
-
-    $(this).addClass("hide");
-    $("#line_remove").removeClass("hide");
-
-    if(window.location.pathname.indexOf("gearth") > -1) {
-
-    } else if(window.location.pathname.indexOf("wmap") > -1) {
-        
-    } else {
-        networkMapInstance.clearLineTool_gmap();
-        google.maps.event.clearListeners(mapInstance, 'click');
-        networkMapInstance.createLineTool_gmap();
-    }
-
-});
-
-$("#line_remove").click(function(e) {
-    pointAdded = -1;
-    is_line_active= -1;
-    is_ruler_active= -1;
-    $(this).addClass("hide");
-    $("#line_select").removeClass("hide");
-
-    if(window.location.pathname.indexOf("gearth") > -1) {
-
-    } else if(window.location.pathname.indexOf("wmap") > -1) {
-        
-    } else {
-        google.maps.event.clearListeners(mapInstance, 'click');
-        networkMapInstance.clearLineTool_gmap();
-    }
-});
-
-
-var pointEventHandler = "";
-
+/**
+ * This event triggers when "Add Point" button clicked
+ * @event Click
+ */
 $("#point_select").click(function(e) {
     pointAdded= 1;
     is_line_active= -1;
@@ -1205,6 +796,10 @@ $("#point_select").click(function(e) {
     }
 });
 
+/**
+ * This event triggers when close icon on point icons clicked
+ * @event Click
+ */
 $("#close_points_icon").click(function(e) {
     
     pointAdded= -1;
@@ -1226,6 +821,10 @@ $("#close_points_icon").click(function(e) {
     }
 });
 
+/**
+ * This event triggers when "Remove Point" button clicked
+ * @event Click
+ */
 $("#point_remove").click(function(e) {
     pointAdded= -1;
     is_line_active= -1;
@@ -1246,12 +845,11 @@ $("#point_remove").click(function(e) {
     networkMapInstance.clearPointsTool_gmap();
 });
 
-
 /**
  * This event trigger when clicked on "Ruler" button
  * @event click
  */
- $("#freeze_select").click(function(e) {
+$("#freeze_select").click(function(e) {
 
     if($("#freeze_remove").hasClass("hide")) {
 
@@ -1265,7 +863,7 @@ $("#point_remove").click(function(e) {
     // $.cookie('isFreezeSelected', true);
 
     networkMapInstance.freezeDevices_gmap();
- });
+});
 
  /**
   * This event unbind ruler click event & show the Ruler button again
@@ -1285,29 +883,8 @@ $("#freeze_remove").click(function(e) {
 });
 
 /**
- * This function get the current status & show it on gmap/google eartg page.
- */
-
-function clearTools_gmap() {
-    google.maps.event.clearListeners(mapInstance,'click');
-    networkMapInstance.clearRulerTool_gmap();
-    networkMapInstance.clearLineTool_gmap();
-    is_line_active = 0;
-    bootbox.confirm("Do you want to reset Maintenance Points too?", function(result) {
-        if(result) {
-            pointAdded= -1;            
-            hasTools = 0;
-            networkMapInstance.clearPointsTool_gmap();
-            $("#showToolsBtn").addClass("btn-info");
-            $("#showToolsBtn").removeClass("btn-warning");
-        }
-        // get_page_status();
-    });   
-}
-
-
-/**
  * This event show/hide perf param label from SS markers
+ * @event Click
  */
 
 $("#show_hide_label").click(function(e) {
@@ -1343,34 +920,6 @@ $("#show_hide_label").click(function(e) {
         }
 
     }
-
-    // Show/Hide tooltip info label
-    // for (key in tooltipInfoLabel) {
-    //     if(window.location.pathname.indexOf("gearth") > -1) {
-            
-    //     } else if(window.location.pathname.indexOf("wmap") > -1) {
-    //         if(e.currentTarget.checked) {
-    //             tooltipInfoLabel[key].show();
-    //         } else {
-    //             tooltipInfoLabel[key].hide();
-    //         }
-
-    //         // Draw the popup to apply show/hide
-    //         tooltipInfoLabel[key].draw();
-
-    //         if(e.currentTarget.checked) {
-    //             // Set SS prop label to left side of marker
-    //             if($("#"+key).length > 0) {
-    //                 // Shift label to left side of marker
-    //                 var current_left = $("#"+key).position().left;
-    //                 current_left = current_left - 125;
-    //                 $("#"+key).css("left",current_left+"px");
-    //             }
-    //         }
-    //     } else {
-    //         tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
-    //     }
-    // }
 });
 
 /**
@@ -1388,6 +937,7 @@ $("#navigation_container button#previous_polling_btn").click(function(e) {
 
 /**
  * This event trigger when next navigation button on polling widget clicked
+ * @event Click
  */
 $("#navigation_container button#next_polling_btn").click(function(e) {
    if(window.location.pathname.indexOf("wmap") > -1) {
@@ -1401,6 +951,7 @@ $("#navigation_container button#next_polling_btn").click(function(e) {
 
 /**
  * This event trigger when clicked on add point icons
+ * @event Click
  */
 $("#point_icons_container li").click(function(e) {
 
@@ -1416,7 +967,10 @@ $("#point_icons_container li").click(function(e) {
     }
 });
 
-/*Close info window when close button is clicked*/
+/**
+ * This event triggers when close button on infowindow clicked
+ * @event Click(Using Delegate)
+ */
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
 
     var current_target_attr = e.currentTarget.attributes,
@@ -1486,6 +1040,10 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
     }
 });
 
+/**
+ * This event triggers when Download inventory button clicked clicked
+ * @event Click(Using Delegate)
+ */
 $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
     var ckt_id = e.currentTarget.attributes['ckt_id'] ? e.currentTarget.attributes['ckt_id'].value : "";
     // If ckt id exist then fetch l2 report url
@@ -1536,7 +1094,7 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
 
 /**
  * This event triggers when any polled param name is clicked
- * @event delegaate
+ * @event Click(Using Delegate)
  */
 $('#infoWindowContainer').delegate('td','click',function(e) {
 
@@ -1657,8 +1215,6 @@ $('#infoWindowContainer').delegate('td','click',function(e) {
     }
 });
 
-
-
 /**
  * This event trigger when export data button is clicked
  * @event click
@@ -1705,185 +1261,6 @@ $("#download_inventory").click(function(e) {
     //call function to download selected inventory.
     networkMapInstance.downloadInventory_gmap(); 
 });
-
-
-/**
- * This function checks that the given point is in given polyon of not.
- * @method isPointInPoly
- * @param poly {Array}, It is the polygon data(lat-lon) array
- * @param pt {Object}, It is point lat lon object
- */
-function isPointInPoly(poly, pt) {
-    if(poly && poly.length > 0) {
-        for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
-                ((poly[i].lat <= pt.lat && pt.lat < poly[j].lat) || (poly[j].lat <= pt.lat && pt.lat < poly[i].lat))
-                && (pt.lon < (poly[j].lon - poly[i].lon) * (pt.lat - poly[i].lat) / (poly[j].lat - poly[i].lat) + poly[i].lon)
-                && (c = !c);
-            return c;
-    } else {
-        return false;
-    }
-}
-
-/**
- * Function to bounds Google Earth
- * @param  {Array} boundsObj Array of Lat and Lon Object
- * @return {[type]}           [description]
- */
-function showGoogleEarthInBounds(boundsArr, callback) {
-
-    gexInstance.dom.clearFeatures();
-
-    var boundPolygonArray= [];
-    for(var i=0;i< boundsArr.length; i++) {
-        (function(i) {
-            var point = gexInstance.dom.buildPointPlacemark([boundsArr[i].lat, boundsArr[i].lon]);
-            // Hide this placemark
-            point.setVisibility(false);
-            boundPolygonArray.push(point);
-        }(i));
-    }
-
-    var folder = gexInstance.dom.addFolder(boundPolygonArray);
-
-    // var bounds = gexInstance.dom.computeBounds(folder);
-    // gexInstance.view.setToBoundsView(bounds, { aspectRatio: 1.0 });
-    gexInstance.util.flyToObject(folder);
-    isFromSearch = true;
-    callback();
-}
-
-function objectsAreSame(x, y) {
-   var objectsAreSame = true;
-   for(var propertyName in x) {
-      if(x[propertyName] !== y[propertyName]) {
-         objectsAreSame = false;
-         break;
-      }
-   }
-   return objectsAreSame;
-}
-
-
-function arraysEqual(a, b) {
-  if (a == b) return true;
-  if (a == null || b == null) return false;
-  if (a.length != b.length) return false;
-
-  // If you don't care about the order of the elements inside
-  // the array, you should sort both arrays here.
-
-  for (var i = 0; i < a.length; ++i) {
-    return objectsAreSame(a[i], b[i]);
-  }
-  return true;
-}
-
-function checkIfMarkerIsInState(marker, array_state_name) {
-    var isMarkerPresent= false, i=0;
-    var lower_array_state_name = array_state_name.map(function(x) {return x.name.toLowerCase();})
-    for(i=0; i< lower_array_state_name.length; i++) {
-        if(!marker.state) {
-            return isMarkerPresent;
-        }
-        if(lower_array_state_name.indexOf(marker.state.toLowerCase()) > -1) {
-            return !isMarkerPresent;
-        }
-    }
-    return isMarkerPresent;
-}
-
-function getEarthZoomLevel() {
-    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-    return lookAt.getRange();
-}
-
-function setEarthZoomLevel(alt) {
-    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-    return lookAt.setRange(alt);
-}
-
-function updateGoogleEarthPlacemark(placemark, newIcon) {
-    // Define a custom icon.next_polling_btn
-    var icon = ge.createIcon('');
-    icon.setHref(newIcon);
-
-    var style = ge.createStyle('');
-    style.getIconStyle().setIcon(icon);
-
-    var place_mark_type = placemark["pointType"] ? placemark["pointType"] : 'other';
-
-    var current_scale = earth_self.getPlacemarkScale_earth(place_mark_type);    
-    style.getIconStyle().setScale(current_scale);
-
-    placemark.setStyleSelector(style);
-}
-
-function updateGoogleEarthPlacedmarkNewSize(placemark, newSize) {
-    // Define a custom icon.next_polling_btn
-    var icon = ge.createIcon('');
-    icon.setHref(placemark.icon);
-    var style = ge.createStyle('');
-    style.getIconStyle().setIcon(icon);
-    style.getIconStyle().setScale(newSize);
-    placemark.setStyleSelector(style);
-}
-
-function getCurrentEarthBoundPolygon() {
-    var poly = [];
-    var globeBounds = ge.getView().getViewportGlobeBounds();
-    poly = [ {lat: globeBounds.getNorth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getEast()}, {lat: globeBounds.getSouth(), lon: globeBounds.getEast()},{lat: globeBounds.getSouth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getWest()} ];
-    return poly;
-}
-
-function openGoogleEarthBaloon(innerHtml, feature) {
-    var balloon = ge.createHtmlDivBalloon('');
-    balloon.setFeature(feature);
-    var div = document.createElement('DIV');
-    div.innerHTML = innerHtml;
-    balloon.setContentDiv(div);
-    ge.setBalloon(balloon);
-}
-
-
-
-var altZoomList = [ // Altitude <-> Zoom level
-    30000000, 24000000, 18000000, 10000000, 4000000, 1900000, 1100000, 550000, 280000,
-    170000, 82000, 38000, 19000, 9200, 4300, 2000, 990, 570, 280, 100, 36, 12, 0 ];
-
-function ZoomToAlt(zoom) {
-    /// <summary>Converts a zoom level to an altitude
-    /// <param name="zoom" />Zoom level
-    /// <returns>Altitude in meters
-    return altZoomList[zoom < 0 ? 0 : zoom > 21 ? 21 : zoom];
-}
-
-function AltToZoom(alt) {
-    /// <summary>Converts an altitude to a zoom level
-    /// <param name="alt" />Altitude in meters
-    /// <returns>Zoom level
-    for (var i = 0; i < 22; ++i) {
-        if (alt > altZoomList[i] - ((altZoomList[i] - altZoomList[i+1]) / 2)) return i;
-    }
-    return 10;
-}
-
-function getRangeInZoom() {
-    var earthRange = getEarthZoomLevel();
-    return AltToZoom(earthRange);
-}
-
-function deleteGoogleEarthPlacemarker(uniqueID) {
-    var children = ge.getFeatures().getChildNodes();
-    for(var i = 0; i < children.getLength(); i++) { 
-        var child = children.item(i);
-        if(child.getType() == 'KmlPlacemark') {
-            if(child.getId()==uniqueID) {
-                ge.getFeatures().removeChild(child);
-            }
-        }
-    }
-}
 
 /**
  * This event trigger when any label is selected or changed from labels dropdown.
@@ -1976,51 +1353,19 @@ $("#apply_label").click(function(e) {
     }
 });
 
-
 /**
- * This function removes the ss param label & updated the button text & dropdown
- * @metho removeSSParamLabel
+ *  This event triggers when service type radio button is changed
+ * @event change
  */
-function removeSSParamLabel() {
-    $("#static_label").val($("#static_label option:first").val());
-    // Save selected value to global variable
-    last_selected_label = "";
-    // Update cookie value with the selected value.
-    $.cookie("tooltipLabel", last_selected_label, {path: '/', secure : true});
-
-    if(window.location.pathname.indexOf("gearth") > -1) {
-        
-    } else if(window.location.pathname.indexOf("wmap") > -1) {
-        // Remove tooltip info label
-        for (key in tooltipInfoLabel) {
-            tooltipInfoLabel[key].destroy();
-        }
-    } else {
-        // Remove tooltip info label
-        for (key in tooltipInfoLabel) {
-            tooltipInfoLabel[key].close();
-        }
-    }
-    // Reset Variables
-    tooltipInfoLabel = {};
-
-    if(!$("#apply_label").hasClass("btn-success")) {
-        $("#apply_label").addClass("btn-success");
-        $("#apply_label").html("Apply Label")
-    }
-
-    if($("#apply_label").hasClass("btn-danger")) {
-        $("#apply_label").removeClass("btn-danger");
-    }
-}
-
-// This event triggers when service type radio button is changed
 $('input[type=radio][name=thematic_type]').change(function(e) {
     // Call function to restart perf calling
     networkMapInstance.restartPerfCalling();
 });
 
-// 
+/**
+ * This event triggers when Tabs on infowindow clicked(or selected) 
+ * @event Click(Using Delegate)
+ */
 $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
 
     var current_device_id = evt.currentTarget.attributes.device_id ? evt.currentTarget.attributes.device_id.value : "",
@@ -2165,7 +1510,10 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
     }
 });
 
-// It triggers when Live polling button in Sector & SS tooltip rows clicked
+/**
+ * This event triggers when Live polling button in Sector & SS tooltip rows clicked
+ * @event Click(Using Delegate)
+ */
 $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
 
     var currentTarget = e.currentTarget,
@@ -2220,7 +1568,10 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
 
 });
 
-// It triggers when Poll Now button on top of Sector & SS tooltip clicked
+/**
+ * This event triggers when Poll Now button on top of Sector & SS tooltip clicked
+ * @event Click(Using Delegate)
+ */
 $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) {
 
     var current_target_attr = e.currentTarget.attributes,
@@ -2358,3 +1709,1071 @@ $('#infoWindowContainer').delegate('.themetic_poll_now_btn','click',function(e) 
         }
     }
 });
+
+/**
+ * This funciton returns the page name of currenly opened page
+ * @method getPageType
+ */
+function getPageType() {
+
+    if(window.location.pathname.indexOf("gearth") > -1) {
+        mapPageType = "gearth";
+        gmap_self = networkMapInstance;
+    } else if(window.location.pathname.indexOf("wmap") > -1) {
+        mapPageType = "wmap";
+        networkMapInstance = gmap_self;
+    } else {
+        mapPageType = "gmap";
+    }
+}
+
+/**
+ * This function display advance search form 
+ * @method showAdvSearch
+ */
+function showAdvSearch() {
+    showSpinner();
+    if(!isAdvanceFilter) {
+        $("#filter_technology").select2("val","");
+        $("#filter_vendor").select2("val","");
+        $("#filter_state").select2("val","");
+        $("#filter_city").select2("val","");
+        $("#filter_frequency").select2("val","");
+        $("#filter_polarization").select2("val","");
+
+        // Reset Advance Filters Flag
+        isAdvanceFilter = 0;
+    }
+    if(!$("#advFilterContainerBlock").hasClass("hide")) {
+        $("#advFilterContainerBlock").addClass("hide");
+    }
+
+    if($("#advSearchContainerBlock").hasClass("hide")) {
+        $("#advSearchContainerBlock").removeClass("hide");
+    }
+    hideSpinner();
+}
+
+/**
+ * This function trigger event to reset the advance search form 
+ * @method resetAdvanceSearch
+ */
+function resetAdvanceSearch() {
+    $("#resetSearchForm").trigger('click');
+}
+
+/**
+ * This function triggers when "Advance Filters" button is pressed
+ * @method showAdvFilters
+ */
+function showAdvFilters() {
+    /*Show the spinner*/
+    showSpinner();
+    if(!isAdvanceSearch) {
+        resetAdvanceSearch();
+    }
+
+    if(!$("#advSearchContainerBlock").hasClass("hide")) {
+        $("#advSearchContainerBlock").addClass("hide");
+    }
+
+    if($("#advFilterContainerBlock").hasClass("hide")) {
+        $("#advFilterContainerBlock").removeClass("hide");
+    }
+    hideSpinner();
+}
+
+/**
+ * This function triggers when remove filters button is clicked
+ * @method removeAdvFilters
+ */
+function removeAdvFilters() {
+    /*Reset advance filter status flag*/
+    hasAdvFilter = 0;
+
+    advSearch.removeFilters();
+
+    /*Call get_page_status function to show the current status*/
+    get_page_status();
+}
+
+/**
+ * This function set the page status as per the tools usability
+ * @method get_page_status
+ */
+function get_page_status() {
+    var status_txt = "";
+
+    if(hasAdvFilter == 1) {
+        status_txt+= '<li>Advance Filters Applied</li>';
+    }
+
+    if(hasSelectDevice == 1) {
+        status_txt+= '<li>Select Devices Applied</li>';
+    }
+
+    if(hasTools == 1) {
+        if(isFreeze == 1 || (tools_ruler && tools_ruler != 0)) {
+            status_txt+= '<li>Gmap Tools Applied<button class="btn btn-sm btn-danger pull-right" onclick="clearTools_gmap()" style="padding: 2px 5px; margin: -3px;">Reset</button><li>';
+        }
+    }
+
+    if($("ul#gis_status_txt li#gis_search_status_txt").length) {
+        status_txt+= $("ul#gis_status_txt li#gis_search_status_txt")[0].outerHTML;
+    }
+
+    if(status_txt == "") {
+        status_txt += "<li>Default</li>";    
+    }
+
+    $("#gis_status_txt").html(status_txt);
+}
+
+/**
+ * Function is used to Disable Advance Search, Advance Filter Button when Call for data is going on.
+   When call is completed, we use the same function to enable Button by passing 'no' in parameter.
+ * @method disableAdvanceButton
+ * @param {String} status , It contains the info either to enable/disable buttons
+ */
+function disableAdvanceButton(status) {
+    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'];
+    var selectBoxes = ['technology', 'vendor', 'state', 'city'];
+    var textBoxes = ['google_loc_search','lat_lon_search'];
+    var disablingBit = false;
+    if(!status) {
+        disablingBit= true;
+        for(var i=0; i< buttonEls.length; i++) {
+            $('#'+buttonEls[i]).button('loading');
+        }
+
+        for(var i=0; i< selectBoxes.length; i++) {
+            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+        }
+
+        for(var i=0; i< textBoxes.length; i++) {
+            var el = document.getElementById(textBoxes[i]);
+            if(el) {
+                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            }            
+        }
+    } else {
+        disablingBit= false;
+        for(var i=0; i< buttonEls.length; i++) {
+            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
+            $('#'+buttonEls[i]).button('complete');
+        }
+
+        for(var i=0; i< selectBoxes.length; i++) {
+            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+        }
+
+        for(var i=0; i< textBoxes.length; i++) {
+            var el = document.getElementById(textBoxes[i]);
+            if(el) {
+                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            }
+        }
+    }
+}
+
+/**
+ * This event triggers keypress event on lat,lon search text box
+ * @method isLatLon
+ * @param {Object} evt, It contains the event object
+ */
+function isLatLon(evt) {
+
+    var entered_key_code = (evt.keyCode ? evt.keyCode : evt.which),
+        entered_txt = $("#lat_lon_search").val();
+
+    if(entered_key_code == 13) {
+        if(entered_txt.length > 0) {
+            if(entered_txt.split(",").length != 2) {
+                alert("Please Enter Proper Lattitude,Longitude.");
+                $("#lat_lon_search").val("");
+            } else {
+                
+                var lat = $.trim(entered_txt.split(",")[0]),
+                    lng = $.trim(entered_txt.split(",")[1]),
+                    lat_check = (+(lat) >= -90 && +(lat) < 90),
+                    lon_check = (+(lng) >= -180 && +(lng) < 180),
+                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['':]?\s?(?:(\d+(?:\.\d+)?)["?]?)?)?\s?([NSEW])?/i;
+                    dms_regex = new RegExp(dms_pattern);
+                
+                if((lat_check && lon_check) || (dms_regex.exec(lat) && dms_regex.exec(lng))) {
+                    if((lat_check && lon_check)) {
+                        if(window.location.pathname.indexOf("wmap") > -1) {
+                            whiteMapClass.zoomToLonLat(entered_txt);
+                        } else if(window.location.pathname.indexOf("gearth") > -1) {
+                            earth_instance.pointToLatLon(entered_txt);
+                        } else {
+                            networkMapInstance.pointToLatLon(entered_txt);
+                        }
+                    } else {
+                        var converted_lat = dmsToDegree(dms_regex.exec(lat));
+                        var converted_lng = dmsToDegree(dms_regex.exec(lng));
+                        
+                        if(window.location.pathname.indexOf("wmap") > -1) {
+                            whiteMapClass.zoomToLonLat(String(converted_lat)+","+String(converted_lng));
+                        } else if(window.location.pathname.indexOf("gearth") > -1) {
+                            earth_instance.pointToLatLon(String(converted_lat)+","+String(converted_lng));
+                        } else {
+                            networkMapInstance.pointToLatLon(String(converted_lat)+","+String(converted_lng));
+                        }
+                    }
+                } else {
+                    alert("Please Enter Proper Lattitude,Longitude.");
+                    $("#lat_lon_search").val("");
+                }                
+            }                
+        } else {
+            alert("Please Enter Lattitude,Longitude.");
+        }
+    }
+}
+
+/**
+ * This function converts dms lat lon to decimal degree lat lon
+ * @method dmsToDegree
+ * @param {Array} latLng, It conatains the lat-lon array
+ */
+function dmsToDegree(latLng) {
+
+    var new_pt = NaN,degrees,minutes,seconds,hemisphere;
+
+    degrees = Number(latLng[1]);
+    minutes = typeof (latLng[2]) !== "undefined" ? Number(latLng[2]) / 60 : 0;
+    seconds = typeof (latLng[3]) !== "undefined" ? Number(latLng[3]) / 3600 : 0;
+    hemisphere = latLng[4] || null;
+    if (hemisphere !== null && /[SW]/i.test(hemisphere)) {
+        degrees = Math.abs(degrees) * -1;
+    }
+    if(degrees < 0) {
+        new_pt = degrees - minutes - seconds;
+    } else {
+        new_pt = degrees + minutes + seconds;
+    }
+
+    return new_pt;
+}
+
+/**
+ * This function shows tools panel to google map
+ * @method showToolsPanel
+ */
+function showToolsPanel() {
+    if(isFreeze == 1) {
+        $("#freeze_select").addClass("hide");
+        $("#freeze_remove").removeClass("hide");
+    } else {
+        $("#freeze_remove").addClass("hide");
+        $("#freeze_select").removeClass("hide");
+    }
+
+    if(tools_ruler && tools_ruler != 0) {
+        $("#ruler_select").addClass("hide");
+        $("#ruler_remove").removeClass("hide");
+    } else {
+        $("#ruler_select").removeClass("hide");
+        $("#ruler_remove").addClass("hide");
+    }
+
+    $("#showToolsBtn").addClass("hide");
+
+    $("#removeToolsBtn").removeClass("hide");
+
+    $("#toolsContainerBlock").removeClass("hide");
+
+    if(window.location.pathname.indexOf("gearth") > -1) {
+
+    } else if(window.location.pathname.indexOf("wmap") > -1) {
+    } else {
+        google.maps.event.clearListeners(mapInstance, 'click');
+    }
+}
+
+/**
+ * This function hide the tools panel
+ * @method removetoolsPanel
+ */
+function removetoolsPanel() {
+    pointAdded= -1;
+    is_line_active= -1;
+    is_ruler_active= -1;
+
+    if(window.location.pathname.indexOf("gearth") > -1) {
+        // pass
+    } else if(window.location.pathname.indexOf("wmap") > -1) {
+        // pass
+    } else {
+        google.maps.event.clearListeners(mapInstance, 'click');
+    }    
+
+    $("#showToolsBtn").removeClass("hide");
+
+    if(
+        isFreeze == 1
+        ||
+        (tools_ruler && tools_ruler != 0)
+        ||
+        (
+            $.cookie("isLabelChecked")
+            ||
+            $.cookie("isLabelChecked")=='true'
+        )
+    ) {
+        $("#showToolsBtn").removeClass("btn-info").addClass("btn-warning");
+    } else {
+        $("#showToolsBtn").removeClass("btn-warning").addClass("btn-info");
+    }
+
+    $("#removeToolsBtn").addClass("hide");
+
+    $("#toolsContainerBlock").addClass("hide");
+
+    get_page_status();
+}
+
+/**
+ * This function checks that the given point is in given polyon of not.
+ * @method isPointInPoly
+ * @param poly {Array}, It is the polygon data(lat-lon) array
+ * @param pt {Object}, It is point lat lon object
+ */
+function isPointInPoly(poly, pt) {
+    if(poly && poly.length > 0) {
+        for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+                ((poly[i].lat <= pt.lat && pt.lat < poly[j].lat) || (poly[j].lat <= pt.lat && pt.lat < poly[i].lat))
+                && (pt.lon < (poly[j].lon - poly[i].lon) * (pt.lat - poly[i].lat) / (poly[j].lat - poly[i].lat) + poly[i].lon)
+                && (c = !c);
+            return c;
+    } else {
+        return false;
+    }
+}
+
+/**
+ * This function get the current status & show it on gmap/google earth page.
+ * @method clearTools_gmap
+ */
+function clearTools_gmap() {
+    google.maps.event.clearListeners(mapInstance,'click');
+    networkMapInstance.clearRulerTool_gmap();
+    is_line_active = 0;
+    bootbox.confirm("Do you want to reset Maintenance Points too?", function(result) {
+        if(result) {
+            pointAdded = -1;            
+            hasTools = 0;
+            networkMapInstance.clearPointsTool_gmap();
+            $("#showToolsBtn").addClass("btn-info");
+            $("#showToolsBtn").removeClass("btn-warning");
+        }
+    });   
+}
+
+/**
+ * Function to bounds Google Earth
+ * @param  {Array} boundsObj Array of Lat and Lon Object
+ * @return {[type]}           [description]
+ */
+function showGoogleEarthInBounds(boundsArr, callback) {
+
+    gexInstance.dom.clearFeatures();
+
+    var boundPolygonArray= [];
+    for(var i=0;i< boundsArr.length; i++) {
+        (function(i) {
+            var point = gexInstance.dom.buildPointPlacemark([boundsArr[i].lat, boundsArr[i].lon]);
+            // Hide this placemark
+            point.setVisibility(false);
+            boundPolygonArray.push(point);
+        }(i));
+    }
+
+    var folder = gexInstance.dom.addFolder(boundPolygonArray);
+
+    gexInstance.util.flyToObject(folder);
+    isFromSearch = true;
+    callback();
+}
+
+/**
+ * This function checks object equality
+ * @method objectsAreSame
+ */
+function objectsAreSame(x, y) {
+   var objectsAreSame = true;
+   for(var propertyName in x) {
+      if(x[propertyName] !== y[propertyName]) {
+         objectsAreSame = false;
+         break;
+      }
+   }
+   return objectsAreSame;
+}
+
+/**
+ * This function checks array equality
+ * @method arraysEqual
+ */
+function arraysEqual(a, b) {
+  if (a == b) return true;
+  if (a == null || b == null) return false;
+  if (a.length != b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+
+  for (var i = 0; i < a.length; ++i) {
+    return objectsAreSame(a[i], b[i]);
+  }
+  return true;
+}
+
+/**
+ * This function checks that the marker is in states or not
+ * @method checkIfMarkerIsInState
+ */
+function checkIfMarkerIsInState(marker, array_state_name) {
+    var isMarkerPresent = false,
+        lower_array_state_name = array_state_name.map(function(x) {
+            return x.name.toLowerCase();
+        }),
+        i = 0;
+
+    for(i=0; i< lower_array_state_name.length; i++) {
+        if(!marker.state) {
+            return isMarkerPresent;
+        }
+        if(lower_array_state_name.indexOf(marker.state.toLowerCase()) > -1) {
+            return !isMarkerPresent;
+        }
+    }
+    return isMarkerPresent;
+}
+
+/**
+ * This function returns the current zoom level
+ * @method getEarthZoomLevel
+ */
+function getEarthZoomLevel() {
+    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+    return lookAt.getRange();
+}
+
+/**
+ * This function set the zoom level for google earth as per given altitude
+ * @method setEarthZoomLevel
+ * @param {Number} alt, It contains the altitude value
+ */
+function setEarthZoomLevel(alt) {
+    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+    return lookAt.setRange(alt);
+}
+
+/**
+ * This function updates placemark with new icon
+ * @method updateGoogleEarthPlacemark
+ * @param {Object} placemark, It contain the google earth placemark object
+ * @param {Object} newSize, It contain new icon url
+ */
+function updateGoogleEarthPlacemark(placemark, newIcon) {
+    // Define a custom icon.next_polling_btn
+    var icon = ge.createIcon('');
+    icon.setHref(newIcon);
+
+    var style = ge.createStyle('');
+    style.getIconStyle().setIcon(icon);
+
+    var place_mark_type = placemark["pointType"] ? placemark["pointType"] : 'other';
+
+    var current_scale = earth_self.getPlacemarkScale_earth(place_mark_type);    
+    style.getIconStyle().setScale(current_scale);
+
+    placemark.setStyleSelector(style);
+}
+
+/**
+ * This function updates the size of given placemark
+ * @method updateGoogleEarthPlacedmarkNewSize
+ * @param {Object} placemark, It contain the google earth placemark object
+ * @param {Object} newSize, It contain the scale object for new size
+ */
+function updateGoogleEarthPlacedmarkNewSize(placemark, newSize) {
+    // Define a custom icon.next_polling_btn
+    var icon = ge.createIcon('');
+    icon.setHref(placemark.icon);
+    var style = ge.createStyle('');
+    style.getIconStyle().setIcon(icon);
+    style.getIconStyle().setScale(newSize);
+    placemark.setStyleSelector(style);
+}
+
+/**
+ * This function return the current bound coordinates of google earth
+ * @method getCurrentEarthBoundPolygon
+ */
+function getCurrentEarthBoundPolygon() {
+    var poly = [];
+    var globeBounds = ge.getView().getViewportGlobeBounds();
+    poly = [ {lat: globeBounds.getNorth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getEast()}, {lat: globeBounds.getSouth(), lon: globeBounds.getEast()},{lat: globeBounds.getSouth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getWest()} ];
+    return poly;
+}
+
+/**
+ * This function shows the baloon(infowindow) on given feature
+ * @method openGoogleEarthBaloon
+ * @param {String} innerHtml, It contain the HTML string which has to be shown on baloon
+ * @param {Object} feature, It contain the google earth feature object
+ */
+function openGoogleEarthBaloon(innerHtml, feature) {
+    var balloon = ge.createHtmlDivBalloon('');
+    balloon.setFeature(feature);
+    var div = document.createElement('DIV');
+    div.innerHTML = innerHtml;
+    balloon.setContentDiv(div);
+    ge.setBalloon(balloon);
+}
+
+/**
+ * This function converts given zoom level to altitude
+ * @method ZoomToAlt
+ * @param {Number} zoom, It contain the zoom level value
+ */
+function ZoomToAlt(zoom) {
+    return altZoomList[zoom < 0 ? 0 : zoom > 21 ? 21 : zoom];
+}
+
+/**
+ * This function converts given altitude to zoom level
+ * @method AltToZoom
+ * @param {Number} alt, It contain the altitude value
+ */
+function AltToZoom(alt) {
+    for (var i = 0; i < 22; ++i) {
+        if (alt > altZoomList[i] - ((altZoomList[i] - altZoomList[i+1]) / 2)) return i;
+    }
+    return 10;
+}
+
+/**
+ * This function returns google earth range in zoom level as per the current altitude
+ * @method getRangeInZoom
+ */
+function getRangeInZoom() {
+    var earthRange = getEarthZoomLevel();
+    return AltToZoom(earthRange);
+}
+
+/**
+ * This function removes specific placemark from google earth
+ * @method deleteGoogleEarthPlacemarker
+ */
+function deleteGoogleEarthPlacemarker(uniqueID) {
+    var children = ge.getFeatures().getChildNodes();
+    for(var i = 0; i < children.getLength(); i++) { 
+        var child = children.item(i);
+        if(child.getType() == 'KmlPlacemark') {
+            if(child.getId()==uniqueID) {
+                ge.getFeatures().removeChild(child);
+            }
+        }
+    }
+}
+
+/**
+ * This function removes the ss param label & updated the button text & dropdown
+ * @method removeSSParamLabel
+ */
+function removeSSParamLabel() {
+    $("#static_label").val($("#static_label option:first").val());
+    // Save selected value to global variable
+    last_selected_label = "";
+    // Update cookie value with the selected value.
+    $.cookie("tooltipLabel", last_selected_label, {path: '/', secure : true});
+
+    if(window.location.pathname.indexOf("gearth") > -1) {
+        
+    } else if(window.location.pathname.indexOf("wmap") > -1) {
+        // Remove tooltip info label
+        for (key in tooltipInfoLabel) {
+            tooltipInfoLabel[key].destroy();
+        }
+    } else {
+        // Remove tooltip info label
+        for (key in tooltipInfoLabel) {
+            tooltipInfoLabel[key].close();
+        }
+    }
+    // Reset Variables
+    tooltipInfoLabel = {};
+
+    if(!$("#apply_label").hasClass("btn-success")) {
+        $("#apply_label").addClass("btn-success");
+        $("#apply_label").html("Apply Label")
+    }
+
+    if($("#apply_label").hasClass("btn-danger")) {
+        $("#apply_label").removeClass("btn-danger");
+    }
+}
+
+/**
+ * This function returns the in bound BS id's list
+ * @method getMarkerInCurrentBound
+ * @param only_bs_ids {Boolean}, If conatins the boolean flag, either to sent bs ids chunk or single array
+ * @return {Array}, List of in bound base stations id
+ */
+function getMarkerInCurrentBound(only_bs_ids) {
+
+    var bsMarkersInBound = [],
+        allBSObject = {};
+
+    if(window.location.pathname.indexOf("gearth") > -1) {
+        allBSObject = allMarkersObject_earth['base_station'];
+    } else if(window.location.pathname.indexOf("wmap") > -1) {
+        allBSObject = allMarkersObject_wmap['base_station'];
+    } else {
+        allBSObject = allMarkersObject_gmap['base_station'];
+    }
+
+    // Loop Bs markers to get which are in current bounds
+    for(var key in allBSObject) {
+        if(allBSObject.hasOwnProperty(key)) {
+            var markerVisible = "";
+            if(window.location.pathname.indexOf("gearth") > -1) {
+                var earthBounds = getCurrentEarthBoundPolygon();
+                markerVisible =  isPointInPoly(earthBounds, {lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
+            } else if(window.location.pathname.indexOf("wmap") > -1) {
+                markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
+            } else {
+                markerVisible = mapInstance.getBounds().contains(allBSObject[key].getPosition());
+                // If marker is present in bounds but not visible then set markerVisible to false
+                if(markerVisible && !allBSObject[key].map && !allBSObject[key].isActive) {
+                    markerVisible = false;
+                }
+            }
+            if(markerVisible) {
+                bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
+            }
+        }
+    }
+
+    if(search_element_bs_id.length > 0) {
+        // Update the array sequence to sent the search item call at first
+        var unsearched_bs_ids = gisPerformanceClass.get_intersection_bs(search_element_bs_id,bsMarkersInBound);
+        bsMarkersInBound = search_element_bs_id;
+        bsMarkersInBound = bsMarkersInBound.concat(unsearched_bs_ids);
+    }
+
+    var chunk_size = periodic_poll_process_count,
+        returned_bs_array  = [];
+
+    if(!only_bs_ids) {
+        returned_bs_array = createArrayChunks(bsMarkersInBound, chunk_size);
+    } else {
+        returned_bs_array = bsMarkersInBound;
+    }
+
+    return returned_bs_array;
+}
+
+/**
+ * This function creates chunks of given array as per given chunk size
+ * @method createArrayChunks
+ * @param data_array {Array}, It is the items array
+ * @param chunk_size {Number}, It is the size of chunks to be created
+ */
+function createArrayChunks(data_array, chunk_size) {
+
+    var chunks_array = [],
+        non_null_array = convertChunksToNormalArray(data_array);
+
+    if(non_null_array && non_null_array.length > 0) {
+        while (non_null_array.length > 0) {
+            chunks_array.push(non_null_array.splice(0, chunk_size));
+        }
+    }
+
+    return chunks_array;
+}
+
+/**
+ * This function creates non null normal array from given chunks or normal array
+ * @method convertChunksToNormalArray
+ * @param data_array {Array}, It is the items chunks array
+ * @param chunk_size {Number}, It is the size of chunks to be created
+ */
+function convertChunksToNormalArray(chunks_array) {
+    var simple_array = chunks_array.join(',').split(','),
+        non_null_array = [];
+
+    for(var i=0;i<simple_array.length;i++) {
+        if(simple_array[i] && non_null_array.indexOf(simple_array[i]) == -1)  {
+            non_null_array.push(simple_array[i]);
+        }
+    }
+
+    return non_null_array;
+}
+
+/**
+ * This function show the cursor coordinates on mouse move
+ * @method displayCoordinates
+ * @param {Object} pnt, It contains the current point object
+ */
+function displayCoordinates(pnt) {
+    var coordsLabel = $("#cursor_lat_long"),
+        lat = pnt.lat(),
+        lng = pnt.lng();
+        
+        lat = lat.toFixed(4);
+        lng = lng.toFixed(4);
+
+        coordsLabel.html("Latitude: " + lat + "  Longitude: " + lng);
+}
+
+/**
+ * This function remove sector markers from map & reset the variables
+ * @method clearPreviousSectorMarkers
+ */
+function clearPreviousSectorMarkers() {
+
+    for(var i=0; i< sectorMarkersInMap.length; i++) {
+        sectorMarkersInMap[i].setMap(null);
+    }
+    for(var i=0; i< sectorOmsMarkers.length; i++) {
+        oms.removeMarker(sectorOmsMarkers[i]);
+    }
+    sectorMarkersInMap= [];
+    sectorOmsMarkers= [];
+}
+
+/**
+ * This function prepares required oms(overlappingmarkerspiderfier) object
+ * @method clearPreviousSectorMarkers
+ */
+function prepare_oms_object(oms_instance) {
+    
+    oms_instance.addListener('click', function(marker,e) {
+
+        var image = base_url+'/'+point_icon_url;
+        if(pointAdded === 1) {
+            
+            connected_end_obj = {
+                "lat" : e.latLng.lat(),
+                "lon" : e.latLng.lng()
+            };
+
+            if(current_point_for_line) {
+                gmap_self.plot_point_line(marker);
+            }
+
+            return ;
+        }
+
+        if(is_line_active == 1) {
+            is_bs_clicked = 1;
+            line_pt_array.push(e.latLng);
+            return ;
+        }   
+
+        var sectorMarker,
+            sectorMarkerOms;
+        
+        if(marker.pointType === "base_station") {
+            //if marker is not spiderfied, stop event and add sector markers here and in oms
+            if(!marker.isMarkerSpiderfied) {
+                var sectorMarkersAtThePoint = sectorMarkersMasterObj[marker.name];
+                if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
+                    for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
+                        if(sectorMarkersAtThePoint[j].isActive == 1) {
+                            sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
+                            sectorMarkersInMap.push(sectorMarker);
+                            sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
+                            sectorOmsMarkers.push(sectorMarkerOms);
+                        }
+                    }
+                }
+                marker.isMarkerSpiderfied= true;
+                google.maps.event.trigger(marker, 'click');
+                return ;
+            }
+        }
+
+        /*Call the function to create info window content*/
+        var content = gmap_self.makeWindowContent(marker);
+        /*Set the content for infowindow*/
+        $("#infoWindowContainer").html(content);
+        $("#infoWindowContainer").removeClass('hide');
+    });
+
+    /*Event when the markers cluster expands or spiderify*/
+    oms_instance.addListener('spiderfy', function(e,markers) {
+        /*Change the markers icon from cluster icon to thrie own icon*/
+        for(var i=0;i<e.length;i++) {
+
+            if(isPollingActive) {
+                if(e[i].icon.url.indexOf('1x1.png') == -1) {
+                    /*Change the icon of marker*/
+                    e[i].setOptions({"icon":e[i].icon});
+                } else {
+                    /*Change the icon of marker*/
+                    e[i].setOptions({"icon":e[i].oldIcon});
+                }
+            } else {
+                /*Change the icon of marker*/
+                e[i].setOptions({"icon":e[i].oldIcon});
+            }
+
+            for(var j=0;j<ssLinkArray.length;j++) {
+
+                var pt_type = $.trim(e[i].pointType);
+                if(pt_type == "sub_station") {
+                    if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));                        
+                        pathArray.push(new google.maps.LatLng(e[i].position.lat(),e[i].position.lng()));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                } else if(pt_type == "base_station") {
+                    if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+
+                        pathArray.push(new google.maps.LatLng(e[i].position.lat(),e[i].position.lng()));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                } else if(pt_type == "sector_Marker") {
+                    if($.trim(ssLinkArray[j].sectorName) == $.trim(e[i].sectorName)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(e[i].position.lat(),e[i].position.lng()));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                }
+            }
+        }
+        infowindow.close();
+    });
+
+    /*Event when markers cluster is collapsed or unspiderify*/
+    oms_instance.addListener('unspiderfy', function(e,markers) {
+        //un freeze the map when in normal state
+        // isFreeze = 0;
+        var latArray = [],
+            lonArray = [];
+            
+        $.grep(e, function (elem) {
+            latArray.push(elem.ptLat);
+            lonArray.push(elem.ptLon);
+        });
+
+        /*Reset the marker icon to cluster icon*/
+        for(var i=0; i< e.length; i++) {
+            var latCount= $.grep(latArray, function(elem) {return elem=== e[i].ptLat;}).length;
+            var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
+            if(lonCount> 1 && latCount> 1) {
+                if(isPollingActive) {
+                    /*Change the icon of marker*/
+                    e[i].setOptions({"icon":e[i].icon});
+                } else {
+                    //change all to cluster icon
+                    e[i].setOptions({"icon": e[i].clusterIcon});
+                }
+            }
+            for(var j=0;j<ssLinkArray.length;j++) {
+                var pt_type = $.trim(e[i].pointType);
+
+
+                if(pt_type == "sub_station") {
+                    if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
+                        pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));                      
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                } else if(pt_type == "base_station") {
+                    if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                } else if(pt_type == "sector_Marker") {
+                    if($.trim(ssLinkArray[j].sectorName) == $.trim(e[i].sectorName)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].sector_lat,ssLinkArray[j].sector_lon));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                }
+            }
+        }
+
+        for(var i=0; i< e.length; i++) {
+            if(e[i].name==="base_station") {
+                clearPreviousSectorMarkers();
+                e[i].isMarkerSpiderfied = false;
+            }
+        }
+    });
+}
+
+/**
+ * This function manages the gmap full screen control feature
+ * @method FullScreenCustomControl
+ */
+function FullScreenCustomControl(controlDiv, map) {
+
+    // Set CSS styles for the DIV containing the control
+    // Setting padding to 5 px will offset the control
+    // from the edge of the map
+    controlDiv.style.padding = '5px';
+
+    $(controlDiv).addClass('custom_fullscreen');
+
+    // Set CSS for the control border
+    var controlUI = document.createElement('div');
+    controlUI.style.backgroundColor = 'white';
+    controlUI.style.borderStyle = 'solid';
+    controlUI.style.borderWidth = '1px';
+    controlUI.style.borderColor = '#717b87';
+    controlUI.style.cursor = 'pointer';
+    controlUI.style.textAlign = 'center';
+    controlUI.title = 'Click here to full screen';
+    controlDiv.appendChild(controlUI);
+
+    // Set CSS for the control interior
+    var controlText = document.createElement('div');
+
+    controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+    controlText.style.fontSize = '11px';
+    controlText.style.fontWeight = '400';
+    controlText.style.paddingTop = '1px';
+    controlText.style.paddingBottom = '1px';
+    controlText.style.paddingLeft = '6px';
+    controlText.style.paddingRight = '6px';
+    controlText.innerHTML = '<b>Full Screen</b>';
+    controlUI.appendChild(controlText);
+
+    // Setup the click event listeners: simply set the map to
+    google.maps.event.addDomListener(controlUI, 'click', function() {
+        var currentMode = $(this).find('b').html();
+        if(currentMode === "Full Screen") {
+            $(this).find('b').html("Exit Full Screen");
+        } else {
+            $(this).find('b').html("Full Screen");
+        }
+        $("#goFullScreen").trigger('click');
+    });
+}
+
+// "Object.key" prototyping for IE
+if (!Object.keys) {
+    Object.keys = (function () {
+        'use strict';
+
+        var hasOwnProperty = Object.prototype.hasOwnProperty,
+            hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+            dontEnums = [
+              'toString',
+              'toLocaleString',
+              'valueOf',
+              'hasOwnProperty',
+              'isPrototypeOf',
+              'propertyIsEnumerable',
+              'constructor'
+            ],
+            dontEnumsLength = dontEnums.length;
+
+        return function (obj) {
+            if (typeof obj !== 'object' && (typeof obj !== 'function' || obj == null)) {
+                throw new TypeError('Object.keys called on non-object');
+            }
+
+            var result = [], prop, i;
+
+            for (prop in obj) {
+                if (hasOwnProperty.call(obj, prop)) {
+                    result.push(prop);
+                }
+            }
+
+            if (hasDontEnumBug) {
+                for (i = 0; i < dontEnumsLength; i++) {
+                    if (hasOwnProperty.call(obj, dontEnums[i])) {
+                        result.push(dontEnums[i]);
+                    }
+                }
+            }
+            return result;
+        };
+  }());
+}
+
+// "indexOf" prototyping for IE
+if (!Array.prototype.indexOf) {
+  Array.prototype.indexOf = function(searchElement, fromIndex) {
+
+    var k;
+
+    // 1. Let O be the result of calling ToObject passing
+    //    the this value as the argument.
+    if (this == null) {
+      throw new TypeError('"this" is null or not defined');
+    }
+
+    var O = Object(this);
+
+    // 2. Let lenValue be the result of calling the Get
+    //    internal method of O with the argument "length".
+    // 3. Let len be ToUint32(lenValue).
+    var len = O.length >>> 0;
+
+    // 4. If len is 0, return -1.
+    if (len == 0) {
+      return -1;
+    }
+
+    // 5. If argument fromIndex was passed let n be
+    //    ToInteger(fromIndex); else let n be 0.
+    var n = +fromIndex || 0;
+
+    if (Math.abs(n) == Infinity) {
+      n = 0;
+    }
+
+    // 6. If n >= len, return -1.
+    if (n >= len) {
+      return -1;
+    }
+
+    // 7. If n >= 0, then Let k be n.
+    // 8. Else, n<0, Let k be len - abs(n).
+    //    If k is less than 0, then let k be 0.
+    k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+
+    // 9. Repeat, while k < len
+    while (k < len) {
+      var kValue;
+      // a. Let Pk be ToString(k).
+      //   This is implicit for LHS operands of the in operator
+      // b. Let kPresent be the result of calling the
+      //    HasProperty internal method of O with argument Pk.
+      //   This step can be combined with c
+      // c. If kPresent is true, then
+      //    i.  Let elementK be the result of calling the Get
+      //        internal method of O with the argument ToString(k).
+      //   ii.  Let same be the result of applying the
+      //        Strict Equality Comparison Algorithm to
+      //        searchElement and elementK.
+      //  iii.  If same is true, return k.
+      if (k in O && O[k] == searchElement) {
+        return k;
+      }
+      k++;
+    }
+    return -1;
+  };
+}

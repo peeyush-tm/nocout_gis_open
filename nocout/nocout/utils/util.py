@@ -28,6 +28,9 @@ log = logging.getLogger(__name__)
 
 # # commented because of goes package is not supported for python 2.7 on centos 6.5
 compare_geo = False
+# Cause of MEMORY EXCEPTION
+# TODO: Replace package
+"""
 try:
     import pyproj
     from shapely.geometry import Polygon, Point
@@ -39,6 +42,7 @@ try:
 except Exception as e:
     log.exception(e)
     compare_geo = False
+"""
 
 import random
 from django.core.cache import cache
@@ -302,6 +306,218 @@ class NocoutUtilsGateway:
         
         return param1
 
+    def time_it(self):
+
+        param1 = time_it()
+
+        return param1 
+
+    def fetch_ss_inventory(
+        self,
+        monitored_only=True,
+        technology=None,
+        device_name_list=None
+    ):
+        """
+        """
+        param1 = fetch_ss_inventory(
+            monitored_only=monitored_only,
+            technology=monitored_only,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def fetch_ptpbh_ss_inventory(
+        self,
+        monitored_only=True,
+        technology='P2P',
+        device_name_list=None
+    ):
+        """
+        """
+        param1 = fetch_ptpbh_ss_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def get_inventory_ss_query(
+        self,
+        monitored_only=True,
+        technology=None,
+        device_name_list=None,
+        is_ptpbh=False
+    ):
+        """
+        """
+        param1 = get_inventory_ss_query(
+            monitored_only=monitored_only,
+            technology=monitored_only,
+            device_name_list=device_name_list,
+            is_ptpbh=is_ptpbh
+        )
+
+        return param1
+
+    def fetch_sector_inventory(
+        self,
+        monitored_only=True,
+        technology=None,
+        device_name_list=None,
+        grouped_query=True
+    ):
+        """
+        """
+        param1 = fetch_sector_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list,
+            grouped_query=grouped_query
+        )
+
+        return param1
+
+    def fetch_dr_sector_inventory(
+        self,
+        monitored_only=True,
+        technology='WiMAX',
+        device_name_list=None,
+        grouped_query=True
+    ):
+        """
+        """
+        param1 = fetch_dr_sector_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list,
+            grouped_query=grouped_query
+        )
+
+        return param1
+
+    def fetch_mrc_sector_inventory(
+        self,
+        monitored_only=True,
+        technology='WiMAX',
+        device_name_list=None,
+        grouped_query=True
+    ):
+        """
+        """
+        param1 = fetch_mrc_sector_inventory(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list,
+            grouped_query=grouped_query
+        )
+
+        return param1
+
+    def get_inventory_sector_query(
+        self,
+        monitored_only=True,
+        technology=None,
+        device_name_list=None,
+        is_dr=False,
+        is_mrc=False,
+        grouped_query=True
+    ):
+        """
+        """
+        param1 = get_inventory_sector_query(
+            monitored_only=monitored_only,
+            technology=technology,
+            device_name_list=device_name_list,
+            is_dr=is_dr,
+            is_mrc=is_mrc,
+            grouped_query=grouped_query
+        )
+
+        return param1
+
+    def fetch_ptp_sector_inventory(self, monitored_only=True, device_name_list=None):
+        """
+        """
+        param1 = fetch_ptp_sector_inventory(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def fetch_ptpbh_sector_inventory(self, monitored_only=True, device_name_list=None):
+        """
+        """
+        param1 = fetch_ptpbh_sector_inventory(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list
+        )
+
+        return param1
+
+    def get_ptp_sector_query(
+        self,
+        monitored_only=True,
+        device_name_list=None,
+        is_ptpbh=False
+    ):
+        """
+        """
+        param1 = get_ptp_sector_query(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list,
+            is_ptpbh=is_ptpbh
+        )
+
+        return param1
+
+    def fetch_backhaul_inventory(
+        self,
+        monitored_only=True,
+        device_name_list=None,
+        type_rf='backhaul',
+        grouped_query=True
+    ):
+        """
+        """
+        param1 = fetch_backhaul_inventory(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list,
+            type_rf=type_rf,
+            grouped_query=grouped_query
+        )
+
+        return param1
+
+    def get_bh_other_query(
+        self,
+        monitored_only=True,
+        device_name_list=None,
+        type_rf='backhaul',
+        grouped_query=True
+    ):
+        """
+        """
+        param1 = get_bh_other_query(
+            monitored_only=monitored_only,
+            device_name_list=device_name_list,
+            type_rf=type_rf,
+            grouped_query=grouped_query
+        )
+
+        return param1
+
+    def create_specific_key_dict(self, data_list, key_str):
+        """
+        """
+        param1 = create_specific_key_dict(data_list, key_str)
+
+        return param1
+
+
 
 class DictDiffer(object):
     """
@@ -387,17 +603,26 @@ def time_it(debug=getattr(settings, 'PROFILE')):
                 profile_type = getattr(settings, 'PROFILE_TYPE')
                 if profile_type == 'line':
                     profiler = LLP()
-                    profiled_func = profiler(fn)
-                else:
+                elif profile_type == 'memory':
                     profiler = MLP()
-                    profiled_func = profiler(fn)
+                else:
+                    profiler = None
                 try:
-                    result = profiled_func(*args, **kwargs)
-                finally:
-                    if profile_type == 'line':
-                        profiler.print_stats()
+                    if profiler:
+                        profiled_func = profiler(fn)
+                        result = profiled_func(*args, **kwargs)
                     else:
-                        show_results(profiler)
+                        result = fn(*args, **kwargs)
+                finally:
+                    if profiler:
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        elif profile_type == 'memory':
+                            show_results(profiler)
+                        else:
+                            pass
+                    else:
+                        pass
             else:
                 result = fn(*args, **kwargs)
             end = datetime.datetime.now()
@@ -575,17 +800,26 @@ def cache_for(time):
                     profile_type = getattr(settings, 'PROFILE_TYPE')
                     if profile_type == 'line':
                         profiler = LLP()
-                        profiled_func = profiler(fn)
-                    else:
+                    elif profile_type == 'memory':
                         profiler = MLP()
-                        profiled_func = profiler(fn)
+                    else:
+                        profiler = None
                     try:
-                        result = profiled_func(*args, **kwargs)
-                    finally:
-                        if profile_type == 'line':
-                            profiler.print_stats()
+                        if profiler:
+                            profiled_func = profiler(fn)
+                            result = profiled_func(*args, **kwargs)
                         else:
-                            show_results(profiler)
+                            result = fn(*args, **kwargs)
+                    finally:
+                        if profiler:
+                            if profile_type == 'line':
+                                profiler.print_stats()
+                            elif profile_type == 'memory':
+                                show_results(profiler)
+                            else:
+                                pass
+                        else:
+                            pass
                     cache.set(key, result, time)
                 else:
                     result = fn(*args, **kwargs)
@@ -637,6 +871,7 @@ def cached_all_gis_inventory(monitored_only=False, technology=None, type_rf=None
     return fetch_raw_result(query)
 
 
+@time_it()
 def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None, bs_id=None, device_list=None):
     """
     Function to get complete GIS inventory raw query(sql)
@@ -651,29 +886,38 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
 
     tech = " "
 
-    rf_tech = " "
-
     if monitored_only:
         added_device = "where device.is_added_to_nms = 1 "
 
-        if technology:
-            tech = " and technology.name = '{0}'".format(technology)
-            if type_rf != 'bh':
-                rf_tech = " where SECTOR_TECH = '{0}' and SS_TECH = '{0}' ".format(technology)
-
-    elif not monitored_only:
-        if technology:
-            tech = " where technology.name = '{0}'".format(technology)
-            if type_rf != 'bh':
-                rf_tech = " where SECTOR_TECH = '{0}' ".format(technology)
-
-    else:
-        added_device = ""
-        tech = ""
-        rf_tech = " "
+    if technology:
+        tech = " and technology.name = '{0}'".format(technology)
 
     added_device += tech
 
+    # based on devices
+    get_these_devices = list()
+    where_these_devices = ''
+
+    # if device_list:
+    #     for device in device_list:
+    #         if device.get('id'):
+    #             where_these_devices = ' device.id in '
+    #             get_these_devices.append(device.get('id'))
+    #         elif device.get('device_name'):
+    #             where_these_devices = ' device.device_name in '
+    #             get_these_devices.append(device.get('device_name'))
+    #         elif device.get('name'):
+    #             where_these_devices = ' device.device_name in '
+    #             get_these_devices.append(device.get('name'))
+    #         else:
+    #             continue
+
+    # search_these_devices = ''
+    # if len(get_these_devices):
+    #     search_these_devices = where_these_devices + " ( " + ",".join(get_these_devices) + " ) "
+
+
+    # based on RF tech
     if type_rf == 'sector':
         rf_tech = " where SECTOR_TECH = '{0}' ".format(technology)
     elif type_rf == 'ss':
@@ -681,7 +925,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
     elif type_rf == 'bh':
         rf_tech = " where BHTECH = '{0}' ".format(technology)
     else:
-        pass
+        rf_tech = " "
 
     where_bs = ''
     if bs_id:
@@ -1173,7 +1417,8 @@ def is_lat_long_in_state(latitude, longitude, state):
     :param latitude:
     :param longitude:
     :param state:
-    :return:
+    :return: True
+    """
     """
     if compare_geo:
         # commented because of goes package is not supported for python 2.7 on centos 6.5
@@ -1210,6 +1455,8 @@ def is_lat_long_in_state(latitude, longitude, state):
                 return False
     else:
         return False
+    """
+    return True
 
 
 def disable_for_loaddata(signal_handler):
@@ -1360,16 +1607,15 @@ def html_to_text(html):
     return s.get_text()
 
 
-# http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
-# defining utility to exatly choose a database to query from
-# django routers are of no use
-# we will pass in the machine name
-# we will test the connection
-# and we will return the results of the database to be used
 @time_it()
 def nocout_db_router(db='default', levels=0):
     """
-
+    http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+    defining utility to exatly choose a database to query from
+    django routers are of no use
+    we will pass in the machine name
+    we will test the connection
+    and we will return the results of the database to be used
     :param db: pass the name for the database
     :param levels: number of slaves available
     :return:the database to be queried on
@@ -1409,4 +1655,691 @@ def nocout_query_results(query_set=None, using='default', levels=0):
             db = nocout_db_router(db=using, levels=levels)
             return query_set.using(alias=db)
     return None
+
+
+def fetch_ss_inventory(monitored_only=True, technology=None, device_name_list=None):
+    """
+    This function fetch SS inventory data except PTPBH SS.
+    If any technology is given then fetch data for specific technology.
+    """
+    ss_query = get_inventory_ss_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list
+    )
+
+    result_list = fetch_raw_result(ss_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SSDEVICENAME'
+    )
+
+
+def fetch_ptpbh_ss_inventory(monitored_only=True, technology='P2P', device_name_list=None):
+    """
+    This function fetch PTP BH SS inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    ss_query = get_inventory_ss_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list,
+        is_ptpbh=True
+    )
+
+    result_list = fetch_raw_result(ss_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SSDEVICENAME'
+    )
+
+
+def get_inventory_ss_query(monitored_only=True, technology=None, device_name_list=None, is_ptpbh=False):
+    """
+    This function return SQL query to get sub-station inventory 
+    as per the given params
+    """
+    technology_condition = ''
+    nms_device_condition = ''
+    device_name_condition = ''
+    circuit_type_condition = ''
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if technology:
+        # Check that the given technology name is exists or not
+        try:
+            is_correct_technology = DeviceTechnology.objects.get(name=technology)
+            technology_condition = ' AND technology.name = {0} '.format(technology)
+        except Exception, e:
+            technology_condition = ''
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if is_ptpbh:
+        circuit_type_condition = " AND circuit.circuit_type LIKE '%backhaul%' "
+    else:
+        circuit_type_condition = " AND ( isnull(circuit.circuit_type) OR \
+                                  circuit.circuit_type LIKE '%customer%' ) "
+
+    ss_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
+            IF(not isnull(city.city_name), city.city_name, 'NA') as BSCITY,
+            IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
+            bs.city_id as BSCITYID,
+            bs.state_id as BSSTATEID,
+            device_port.name as SECTOR_PORT,
+            IF(
+                not isnull(device_port.name),
+                concat(
+                    '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
+                ),
+                ss_info.SECTOR_SECTOR_ID
+            ) as SECTOR_PORT_SECTOR_ID,
+            ss_info.*
+        FROM (
+            SELECT 
+                sector.sector_id AS SECTOR_SECTOR_ID,
+                sector.id AS SECTOR_ID,
+                sector.sector_configured_on_port_id as sector_port_id,
+                sector.base_station_id as BSID,
+                sector_device.ip_address as SECTOR_CONF_ON_IP,
+                sector_device.device_name as SECTOR_CONF_ON,
+                sector_device.id as NEAR_DEVICE_ID,
+                only_ss_info.*
+            FROM (
+                SELECT
+                    circuit.sector_id AS SECT_ID,
+                    circuit.circuit_id AS CCID,
+                    circuit.id AS CID,
+                    IF(circuit.qos_bandwidth, circuit.qos_bandwidth/1000, 'NA') AS CKT_QOS,
+                    substation.alias AS SSALIAS,
+                    substation.id AS SSID,
+                    
+                    customer.alias AS CUST,
+                    customer.id AS CUSTID,
+
+                    device.ip_address AS SSIP,
+                    device.device_name AS SSDEVICENAME,
+                    device.id AS DEVICE_ID,
+                    device.id AS SS_DEVICE_ID,
+                    
+                    devicetype.name AS DEVICE_TYPE,
+                    devicetype.id AS TYPEID,
+                    
+                    technology.name AS DEVICE_TECH,
+                    technology.id AS TECHID
+                FROM
+                    inventory_circuit AS circuit
+                LEFT JOIN (
+                    inventory_substation AS substation,
+                    inventory_customer AS customer,
+                    device_device AS device,
+                    device_devicetechnology AS technology,
+                    device_devicetype AS devicetype
+                )
+                ON (
+                    substation.id = circuit.sub_station_id
+                    AND
+                    customer.id = circuit.customer_id
+                    AND
+                    {2}
+                    device.id = substation.device_id
+                    AND
+                    technology.id = device.device_technology
+                    AND
+                    devicetype.id = device.device_type
+                    {0}
+                )
+                where 
+                    device.is_deleted = 0
+                    {1}
+                    {3}
+            ) as only_ss_info
+            LEFT JOIN
+                inventory_sector AS sector
+            ON
+                sector.id = only_ss_info.SECT_ID
+            LEFT JOIN
+                device_device AS sector_device
+            ON
+                sector_device.id = sector.sector_configured_on_id
+        ) AS ss_info
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+          bs.id = ss_info.BSID
+        LEFT JOIN
+            device_state AS state
+        on 
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        on 
+            city.id = bs.city_id
+        LEFT JOIN
+            device_deviceport AS device_port
+        ON
+            device_port.id = ss_info.sector_port_id
+        and
+            not isnull(ss_info.sector_port_id);
+        '''.format(
+            technology_condition,
+            nms_device_condition,
+            device_name_condition,
+            circuit_type_condition
+        )
+
+    return ss_query
+
+
+def fetch_sector_inventory(monitored_only=True, technology=None, device_name_list=None, grouped_query=True):
+    """
+    This function fetch all the Sector inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    # Get the sector query as per the params
+    sector_query = get_inventory_sector_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list,
+        grouped_query=grouped_query
+    )
+
+    result_list = fetch_raw_result(sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def fetch_dr_sector_inventory(monitored_only=True, technology='WiMAX', device_name_list=None, grouped_query=True):
+    """
+    This function fetch all the DR Sector inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    # Get the sector query as per the params
+    dr_sector_query = get_inventory_sector_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list,
+        is_dr=True,
+        grouped_query=grouped_query
+    )
+
+    result_list = fetch_raw_result(dr_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def fetch_mrc_sector_inventory(monitored_only=True, technology='WiMAX', device_name_list=None, grouped_query=True):
+    """
+    This function fetch all the MRC enabled Sector inventory data.
+    If any technology is given then fetch data for specific technology.
+    """
+    # Get the sector query as per the params
+    mrc_sector_query = get_inventory_sector_query(
+        monitored_only=monitored_only,
+        technology=technology,
+        device_name_list=device_name_list,
+        is_mrc=True,
+        grouped_query=grouped_query
+    )
+
+    result_list = fetch_raw_result(mrc_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def get_inventory_sector_query(
+    monitored_only=True,
+    technology=None,
+    device_name_list=None,
+    is_dr=False,
+    is_mrc=False,
+    grouped_query=True
+):
+    """
+    This function returns query to fetch sectors inventory
+    """
+    technology_condition = ""
+    nms_device_condition = ""
+    device_name_condition = ""
+    dr_sector_id_prefix = " "
+    dr_device_condition = ""
+    device_condition = " device.id = sector.sector_configured_on_id "
+    grouping_condition = ""
+    concat_values = ""
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if technology:
+        # Check that the given technology name is exists or not
+        try:
+            is_correct_technology = DeviceTechnology.objects.get(name=technology)
+            technology_condition = ' AND technology.name = {0} '.format(technology)
+        except Exception, e:
+            technology_condition = ''
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if is_dr:
+        dr_sector_id_prefix = "DR: "
+        dr_device_condition = " AND sector.dr_site = 'yes' "
+        device_condition = " device.id = sector.dr_configured_on_id "
+
+    if is_mrc:
+        dr_sector_id_prefix = "MRC: "
+        dr_device_condition = " AND sector.mrc = 'yes' "
+
+    if grouped_query:
+        grouping_condition = " GROUP BY sector_info.SECTOR_CONF_ON_IP "
+        concat_values = " CONCAT(' {0} ', group_concat(IF( \
+                            not isnull(device_port.name), \
+                            concat( \
+                                '(', upper(device_port.name), ') ', sector_info.SECTOR_SECTOR_ID \
+                            ), \
+                            sector_info.SECTOR_SECTOR_ID \
+                        ) SEPARATOR ' ')) \
+                        as SECTOR_PORT_SECTOR_ID, ".format(dr_sector_id_prefix)
+    else:
+        grouping_condition = ''
+        concat_values = " sector_info.SECTOR_SECTOR_ID AS SECTOR_PORT_SECTOR_ID , \
+                         ".format(dr_sector_id_prefix)
+
+    sector_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias, 'NA') as BSALIAS,
+            IF(not isnull(city.city_name), city.city_name, 'NA') as BSCITY,
+            IF(not isnull(state.state_name), state.state_name, 'NA') as BSSTATE,
+            device_port.name as SECTOR_PORT,
+            {3}
+            bs.city_id as BSCITYID,
+            bs.state_id as BSSTATEID,
+            IF(not isnull(freq.value), freq.value, 'NA') AS FREQUENCY,
+            sector_info.* 
+        from
+            (
+                select
+                    device.ip_address as SECTOR_CONF_ON_IP,
+                    devicetype.name as DEVICE_TYPE,
+                    
+                    sector.base_station_id AS BSID,
+                    sector.sector_id as SECTOR_SECTOR_ID,
+                    sector.id as SECT_ID,
+                    sector.base_station_id as SECTOR_BS_ID,
+                    sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
+                    sector.sector_configured_on_port_id as sector_port_id,
+                    sector.frequency_id AS FREQ_ID,
+
+                    technology.name as DEVICE_TECH,
+                    technology.id as TECHID,
+                    devicetype.id as TYPEID,
+
+                    device.id as SECTOR_CONF_ON_ID,
+                    device.id AS DEVICE_ID,
+                    device.device_name as SECTOR_CONF_ON_NAME
+
+                from 
+                    inventory_sector as sector
+                join (
+                    device_device as device,
+                    device_devicetechnology as technology,
+                    device_devicetype as devicetype
+                )
+                on (
+                    {5}
+                    AND
+                    {2}
+                    technology.id = device.device_technology
+                    {0}
+                    AND
+                    devicetype.id = device.device_type
+                )
+                where 
+                    not isnull(sector.sector_configured_on_id)
+                    AND
+                    device.is_deleted = 0
+                    {1}
+                    {4}
+            ) as sector_info
+        LEFT JOIN
+            device_devicefrequency as freq
+        ON
+            freq.id = sector_info.FREQ_ID
+        LEFT JOIN
+            inventory_basestation as bs
+        ON
+            bs.id = sector_info.BSID
+        LEFT JOIN
+            device_state AS state
+        on 
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        on 
+            city.id = bs.city_id
+        LEFT JOIN
+            device_deviceport AS device_port
+        ON
+            device_port.id = sector_info.sector_port_id
+        and
+            not isnull(sector_info.sector_port_id)
+        {6};
+
+        '''.format(
+            technology_condition,
+            nms_device_condition,
+            device_name_condition,
+            concat_values,
+            dr_device_condition,
+            device_condition,
+            grouping_condition
+        )
+
+    return sector_query
+
+
+def fetch_ptp_sector_inventory(monitored_only=True, device_name_list=None):
+    """
+
+    """
+    ptp_sector_query = get_ptp_sector_query(
+        device_name_list=device_name_list
+    )
+    result_list = fetch_raw_result(ptp_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def fetch_ptpbh_sector_inventory(monitored_only=True, device_name_list=None):
+    """
+    This function returns PTPBH sectors inventory.
+    """
+    ptpbh_sector_query = get_ptp_sector_query(
+        device_name_list=device_name_list,
+        is_ptpbh=True
+    )
+    result_list = fetch_raw_result(ptpbh_sector_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'SECTOR_CONF_ON_NAME'
+    )
+
+
+def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=False):
+    """
+    This function return the SQL query to get PTP or PTP BH sectors
+    """
+
+    nms_device_condition = ''
+    device_name_condition = ''
+    ptp_condition = ''
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if is_ptpbh:
+        ptp_condition = " circuit.circuit_type LIKE '%backhaul%' AND "
+    else:
+        ptp_condition = " circuit.circuit_type NOT LIKE '%backhaul%' AND "
+
+    ptp_sector_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias, 'NA') AS BSALIAS,
+            IF(not isnull(bs.id), bs.id, '0') AS BSID,
+            IF(not isnull(city.city_name), city.city_name, 'NA') AS BSCITY,
+            IF(not isnull(state.state_name), state.state_name, 'NA') AS BSSTATE,
+            IF(not isnull(freq.value), freq.value, 'NA') AS FREQUENCY,
+            bs.city_id AS BSCITYID,
+            bs.state_id AS BSSTATEID,
+            sector_info.* 
+        FROM
+            (
+                SELECT
+                    IF(not isnull(circuit.circuit_id), circuit.circuit_id, 'NA') AS CCID,
+                    if(not isnull(customer.alias), customer.alias, 'NA') AS CUST,
+                    if(not isnull(substation.alias), substation.alias, 'NA') AS SSALIAS,
+                    customer.id AS CUSTID,
+                    circuit.id AS CID,
+                    IF(circuit.qos_bandwidth, circuit.qos_bandwidth/1000, 'NA') AS CKT_QOS,
+                    sector_device_info.*
+                FROM(
+                        SELECT
+                            device.ip_address AS SECTOR_CONF_ON_IP,
+                            devicetype.name AS DEVICE_TYPE,
+                            sector.id AS SECT_ID,
+                            sector.base_station_id AS BSID,
+                            sector.sector_id AS SECTOR_SECTOR_ID,
+                            sector.id AS SECTOR_ID,
+                            sector.frequency_id AS FREQ_ID,
+                            sector.base_station_id AS SECTOR_BS_ID,
+                            sector.planned_frequency AS SECTOR_PLANNED_FREQUENCY,
+                            sector.sector_configured_on_port_id AS sector_port_id,
+
+                            technology.name AS DEVICE_TECH,
+                            technology.id AS TECHID,
+                            devicetype.id AS TYPEID,
+
+                            device.id AS NEAR_DEVICE_ID,
+                            device.id AS DEVICE_ID,
+                            device.device_name AS SECTOR_CONF_ON_NAME
+                        FROM 
+                            inventory_sector AS sector
+                        JOIN (
+                            device_device AS device,
+                            device_devicetechnology AS technology,
+                            device_devicetype AS devicetype
+                        )
+                        ON (
+                            device.id = sector.sector_configured_on_id
+                        AND
+                            {1}
+                            technology.id = device.device_technology
+                        AND
+                            devicetype.id = device.device_type
+                        )
+                        where 
+                            device.is_deleted = 0
+                            {0}
+                ) as sector_device_info
+                LEFT JOIN
+                    inventory_circuit AS circuit
+                ON
+                    {2}
+                    circuit.sector_id = sector_device_info.SECT_ID
+                LEFT JOIN
+                    inventory_substation as substation
+                ON
+                    substation.id = circuit.sub_station_id
+                LEFT JOIN
+                    inventory_customer AS customer
+                ON
+                    customer.id = circuit.customer_id
+            ) as sector_info
+        LEFT JOIN
+            device_devicefrequency as freq
+        ON
+            freq.id = sector_info.FREQ_ID
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+            bs.id = sector_info.BSID
+        LEFT JOIN
+            device_state AS state
+        ON 
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        ON 
+            city.id = bs.city_id
+        GROUP BY 
+            sector_info.SECTOR_CONF_ON_IP;
+    '''.format(
+        nms_device_condition,
+        device_name_condition,
+        ptp_condition
+    )
+
+    return ptp_sector_query
+
+
+def fetch_backhaul_inventory(monitored_only=True, device_name_list=None, type_rf='backhaul', grouped_query=True):
+    """
+    This funtion return Backhaul inventory
+    """
+    bh_query = get_bh_other_query(
+        device_name_list=device_name_list,
+        type_rf=type_rf,
+        grouped_query=grouped_query
+    )
+
+    result_list = fetch_raw_result(bh_query)
+
+    return create_specific_key_dict(
+        result_list,
+        'BHDEVICENAME'
+    )
+
+
+def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='backhaul', grouped_query=True):
+    """
+    This function return SQL query to fetch BH or Other devices inventory
+    """
+    nms_device_condition = ""
+    device_name_condition = ""
+    is_bh_condition = " bh.bh_configured_on_id = device.id AND "
+    grouping_condition = " GROUP BY bh_info.BHIP "
+
+    if monitored_only:
+        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+
+    if device_name_list and len(device_name_list):
+        device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
+        device_name_condition = " device.device_name in (" + device_name_str + ") AND "
+
+    if type_rf != 'backhaul':
+        is_bh_condition = " ( bh.pop_id = device.id OR \
+                            bh.aggregator_id = device.id OR \
+                            bh.bh_switch_id = device.id ) AND \
+                        not isnull(bh.bh_configured_on_id) AND "
+
+    if not grouped_query:
+        grouping_condition = ""
+
+
+    bh_query = '''
+        SELECT 
+            IF(not isnull(bs.alias), bs.alias , 'NA') AS BSALIAS,
+            IF(not isnull(bs.id), bs.id , '0') AS BSID,
+            IF(not isnull(bs.bh_capacity), bs.bh_capacity , 'NA') AS BHCAPACITY,
+            IF(not isnull(bs.bh_port_name), bs.bh_port_name , 'NA') AS BHPORT,
+            IF(not isnull(bs.city_id), bs.city_id , '0') AS BSCITYID,
+            IF(not isnull(bs.state_id), bs.state_id , '0') AS BSSTATEID,
+            IF(not isnull(city.city_name), city.city_name , 'NA') AS BSCITY,
+            IF(not isnull(state.state_name), state.state_name , 'NA') AS BSSTATE,
+            bh_info.* 
+        FROM 
+            (
+                select
+                    device.ip_address AS BHIP,
+                    technology.name AS DEVICE_TECH,
+                    devicetype.name AS DEVICE_TYPE,
+                        
+                    bh.id AS BHID,
+                    bh.bh_connectivity AS BH_CONNECTIVITY,
+
+                    technology.id AS TECHID,
+                    devicetype.id AS TYPEID,
+                    device.id AS DEVICE_ID,
+                    device.device_name AS BHDEVICENAME
+                from
+                    inventory_backhaul AS bh
+                JOIN (
+                    device_device AS device,
+                    device_devicetechnology AS technology,
+                    device_devicetype AS devicetype
+                )
+                on (
+                    {2}
+                    {1}
+                    device.device_type = devicetype.id
+                    AND
+                    device.device_technology = technology.id
+                )
+                WHERE
+                    device.is_deleted = 0
+                    {0}
+            ) AS bh_info
+        LEFT JOIN
+            inventory_basestation AS bs
+        ON
+            bs.backhaul_id = bh_info.BHID
+        LEFT JOIN
+            device_state AS state
+        ON
+            state.id = bs.state_id
+        LEFT JOIN
+            device_city AS city
+        ON
+            city.id = bs.city_id
+        {3};
+    '''.format(
+        nms_device_condition,
+        device_name_condition,
+        is_bh_condition,
+        grouping_condition
+    )
+
+    return bh_query
+
+
+def create_specific_key_dict(data_list, key_str):
+    """
+    This function create dict from list with key 
+    as per given 'key_str' param
+    """
+
+    if not (data_list or len(data_list)):
+        return data_list
+
+    data_dict = dict()
+
+    for data in data_list:
+        try:
+            dict_key = data.get(key_str)
+
+            if dict_key and dict_key not in data_dict:
+                data_dict[dict_key] = list()
+
+            data_dict[dict_key].append(data)
+
+        except Exception, e:
+            continue
+
+    return data_dict
 

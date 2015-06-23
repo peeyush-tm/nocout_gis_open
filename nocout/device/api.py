@@ -455,11 +455,8 @@ class DeviceStatsApi(View):
                             }
     """
 
-    # Formatted inventory wrt the base stations.
-    raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
-
-    def get(self, request):
-
+    def __init__(self):
+        # Formatted inventory wrt the base stations.
         self.result = {
             "success": 0,
             "message": "Device Loading Completed",
@@ -468,6 +465,15 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
+        self.raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
+        super(DeviceStatsApi, self).__init__()
+
+    def get(self, request):
+        """
+        get http method
+
+        :param request: HTTP request
+        """
 
         organizations = nocout_utils.logged_in_user_organizations(self)
 

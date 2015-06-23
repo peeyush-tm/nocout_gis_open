@@ -20,6 +20,10 @@ SERVICE_DATA_SOURCE = service_utils.service_data_sources()
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 class AlertCenterUtilsGateway:
     """
     This class works as gateway between alert center utils & other apps
@@ -151,12 +155,69 @@ class AlertCenterUtilsGateway:
 
         return param1
 
+    def common_get_severity_icon(self, severity):
+
+        param1 = common_get_severity_icon(severity)
+
+        return param1
+
+    def polled_results(
+        self,
+        multi_proc=False,
+        machine_dict=None,
+        table_name=None,
+        data_sources=None,
+        columns=None,
+        condition=None
+    ):
+        """
+        """
+        param1 = polled_results(
+            multi_proc=multi_proc,
+            machine_dict=machine_dict,
+            table_name=table_name,
+            data_sources=data_sources,
+            columns=columns,
+            condition=condition
+        )
+
+        return param1
+
+    def get_multiprocessing_performance_data(self, q, machine_device_list, machine, data_sources, columns, condition, table_name):
+        """
+        """
+        param1 = get_multiprocessing_performance_data(
+            q,
+            machine_device_list,
+            machine,
+            data_sources,
+            columns,
+            condition,
+            table_name
+        )
+
+        return param1
+
+    def get_performance_data(self, machine_device_list, machine, data_sources, columns, condition, table_name):
+        """
+        """
+        param1 = get_performance_data(
+            machine_device_list,
+            machine,
+            data_sources,
+            columns,
+            condition,
+            table_name
+        )
+
+        return param1
+
 
 # misc utility functions
 def prepare_query(
     table_name=None, 
     devices=None, 
-    data_sources=["pl", "rta"], 
+    data_sources=None,
     columns=None, 
     condition=None, 
     offset=None, 
@@ -181,29 +242,24 @@ def prepare_query(
         return None
 
     if table_name and devices:
-        query = "SELECT {0} FROM {1} AS original_table " \
-                "LEFT OUTER JOIN ({1} AS derived_table) " \
-                "ON ( " \
-                "        original_table.data_source = derived_table.data_source " \
-                "    AND original_table.device_name = derived_table.device_name " \
-                "    AND original_table.id < derived_table.id" \
-                ") " \
-                "WHERE ( " \
-                "        derived_table.id IS NULL " \
-                "    AND original_table.device_name IN ( {2} ) " \
-                "    {3}" \
-                "    {4}" \
-                ")" \
-                "ORDER BY original_table.id DESC " \
-                "".format(
-            (',').join(["original_table.`" + col_name + "`" for col_name in columns]),
+        query = """
+        SELECT {0} FROM {1} AS original_table
+        WHERE (
+            original_table.device_name IN ( {2} )
+            {3}
+            {4}
+        )
+        ORDER BY original_table.id DESC
+        """.format(
+            ','.join(["original_table.`" + col_name + "`" for col_name in columns]),
             table_name,
             (",".join(map(in_string, devices))),
             "AND original_table.data_source in ( {0} )".format(
-                (',').join(map(in_string, data_sources))
+                ','.join(map(in_string, data_sources))
             ) if data_sources else "",
             condition.format("original_table") if condition else "",
         )
+
         if limit is not None and offset is not None:
             query += "LIMIT {0}, {1}".format(offset, limit)
 
@@ -324,6 +380,7 @@ def prepare_raw_alert_results(performance_data=None):
                 'device_name': device_name,
                 'severity': data['severity'],
                 'ip_address': data["ip_address"],
+                'data_source_key': data_source,
                 'data_source_name': sds_name,
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
@@ -416,26 +473,26 @@ def common_prepare_results(dct):
     except Exception, e:
         pass
 
-    if dct['severity'].upper() == 'DOWN' \
-            or "CRITICAL" in dct['description'].upper() \
-            or dct['severity'].upper() == 'CRITICAL':
+    if dct['severity'].strip().upper() == 'DOWN' \
+            or "CRITICAL" in dct['description'].strip().upper() \
+            or dct['severity'].strip().upper() == 'CRITICAL':
         dct[
             'severity'
         ] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">DOWN</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
-    elif dct['severity'].upper() == 'WARNING' \
-            or "WARNING" in dct['description'].upper() \
-            or "WARN" in dct['description'].upper():
+    elif dct['severity'].strip().upper() == 'WARNING' \
+            or "WARNING" in dct['description'].strip().upper() \
+            or "WARN" in dct['description'].strip().upper():
         dct[
             'severity'
         ] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">WARNING</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
 
-    elif dct['severity'].upper() == 'UP' \
-            or "OK" in dct['description'].upper():
+    elif dct['severity'].strip().upper() == 'UP' \
+            or "OK" in dct['description'].strip().upper():
         dct[
             'severity'
         ] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">UP</span></i>'
@@ -450,3 +507,124 @@ def common_prepare_results(dct):
         dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
     return dct
+
+
+def common_get_severity_icon(severity):
+    """
+    this function return the severity icon as per the given param
+    """
+
+    severity_icon = '<i class="fa fa-circle grey-dot" title="Unknown">\
+                     <span style="display:none">Unknown</span></i>'
+
+    if not severity or severity.lower() == 'unknown':
+        return severity_icon
+
+    severity = severity.lower()
+
+    if severity in ['down', 'critical', 'crit']:
+        severity_icon = '<i class="fa fa-circle red-dot" title="Critical">\
+                         <span style="display:none">DOWN</span></i>'
+    
+    elif severity in ['warning', 'warn']:
+        severity_icon = '<i class="fa fa-circle orange-dot" title="Warning">\
+                         <span style="display:none">WARNING</span></i>'
+
+    elif severity in ['up', 'ok']:
+        severity_icon = '<i class="fa fa-circle green-dot" title="Ok">\
+                         <span style="display:none">UP</span></i>'
+
+    return severity_icon
+
+# Introducing multiprocessing for Alert Center
+from nocout.utils.nqueue import NQueue
+from multiprocessing import Process
+
+@nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_ALERT', 300))
+def polled_results(
+                   multi_proc=False,
+                   machine_dict=None,
+                   table_name=None,
+                   data_sources=None,
+                   columns=None,
+                   condition=None
+                   ):
+    """
+    since the perfomance status data would be refreshed per 5 minutes## we will cache it
+    :param table_name: name of the table to query from RAW query
+    :param machine_dict:
+    :param multi_proc:
+    """
+    # Fetching the data for the device w.r.t to their machine.
+    # # multi processing module here
+    # # to fetch the deice results from corrosponding machines
+
+    perf_result = list()
+    q = NQueue()
+    if multi_proc and q.ping():
+
+        jobs = [
+            Process(
+                target=get_multiprocessing_performance_data,
+                args=(q, machine_device_list, machine, data_sources, columns, condition, table_name)
+            ) for machine, machine_device_list in machine_dict.items()
+        ]
+
+        for j in jobs:
+            j.start()
+        for k in jobs:
+            k.join()
+
+        while True:
+            if not q.empty():
+                perf_result.extend(q.get())
+            else:
+                break
+        q.clear()  # removing the queue after its emptied
+
+    else:
+        for machine, machine_device_list in machine_dict.items():
+            perf_result.extend(
+                get_performance_data(
+                    machine_device_list, machine, data_sources, columns, condition, table_name
+                )
+            )
+
+    return perf_result
+
+
+def get_multiprocessing_performance_data(q, machine_device_list, machine, data_sources, columns, condition, table_name):
+    """
+
+    :return:
+    """
+
+    query = prepare_query(
+        table_name=table_name,
+        devices=machine_device_list,
+        data_sources=data_sources,
+        columns=columns,
+        condition=condition
+    )
+
+    try:
+        q.put(prepare_raw_alert_results(nocout_utils.fetch_raw_result(query, machine)))
+
+    except Exception as e:
+        logger.exception(e.message)
+
+
+def get_performance_data(machine_device_list, machine, data_sources, columns, condition, table_name):
+    """
+
+    :return:
+    """
+    query = prepare_query(
+        table_name=table_name,
+        devices=machine_device_list,
+        data_sources=data_sources,
+        columns=columns,
+        condition=condition
+    )
+    return prepare_raw_alert_results(nocout_utils.fetch_raw_result(query, machine))
+

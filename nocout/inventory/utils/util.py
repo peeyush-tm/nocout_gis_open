@@ -120,6 +120,7 @@ class InventoryUtilsGateway:
         :param other_type:
         :param data_tab:
         """
+
         param1 = filter_devices(
             organizations, 
             data_tab=data_tab, 
@@ -568,14 +569,15 @@ def filter_devices(
             device_technology_id
         ).values(*device_value_list)
     elif page_type == "other":
-        if other_type == "backhaul":
-            device_list = organization_backhaul_devices(
-                organizations
-            ).values(*device_value_list)
-        else:
-            device_list = organization_backhaul_devices(
-                organizations
-            ).values(*device_value_list)
+        is_other = False
+        if other_type != "backhaul":
+            is_other = True
+        
+        device_list = organization_backhaul_devices(
+            organizations,
+            others=is_other
+        ).values(*device_value_list)
+
     else:
         device_list = []
     # get the devices in an organisation which are added for monitoring

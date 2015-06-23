@@ -15,6 +15,9 @@ from dashboard.config import dashboards
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 
+# replacement of Python queues
+from nocout.utils.nqueue import NQueue
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -175,12 +178,12 @@ def get_service_status_results(user_devices, model, service_name, data_source):
 
     service_status_results = []
     multi_qyery_list = []
-    if multi_proc:
-        queue = Queue()
+    q = NQueue()
+    if multi_proc and q.ping():
         jobs = [
             Process(
                 target=get_service_status_data,
-                args=(queue, machine_device_list),
+                args=(q, machine_device_list),
                 kwargs=dict(machine=machine, model=model, service_name=service_name, data_source=data_source)
             ) for machine, machine_device_list in machine_dict.items()
         ]
@@ -191,11 +194,11 @@ def get_service_status_results(user_devices, model, service_name, data_source):
             job.join()
 
         while True:
-            if not queue.empty():
+            if not q.empty():
                 if service_status_results:
-                    service_status_results |= queue.get()
+                    service_status_results |= q.get()
                 else:
-                    service_status_results = queue.get()
+                    service_status_results = q.get()
             else:
                 break
     else:

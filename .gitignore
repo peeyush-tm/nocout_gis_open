@@ -5,6 +5,8 @@ local_settings.py
 local_requirements.txt
 nout/
 nout/*
+nout*/
+nout*/*
 
 # vim.gitignore
 [._]*.s[a-w][a-z]
