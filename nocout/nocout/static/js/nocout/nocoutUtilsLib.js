@@ -46,10 +46,10 @@ function populateDeviceStatus_nocout(domElement,info) {
         age = info.age ? info.age : "Unknown",
         lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
         status = info.status ? info.status.toUpperCase() : "Unknown",
-        severity_up = info.severity && info.severity.ok ? Number(info.severity.ok) : 0,
-        severity_warn = info.severity && info.severity.warn ? Number(info.severity.warn) : 0,
-        severity_crit = info.severity && info.severity.crit ? Number(info.severity.crit) : 0,
-        severity_unknown = info.severity && info.severity.unknown ? Number(info.severity.unknown) : 0;
+        severity_up = info.severity && info.severity.ok ? info.severity.ok : 0,
+        severity_warn = info.severity && info.severity.warn ? info.severity.warn : 0,
+        severity_crit = info.severity && info.severity.crit ? info.severity.crit : 0,
+        severity_unknown = info.severity && info.severity.unknown ? info.severity.unknown : 0;
 
     var severity_style_obj = nocout_getSeverityColorIcon(status);
 

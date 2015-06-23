@@ -401,8 +401,6 @@ class GISInventoryBulkImport(models.Model):
         Device Ping Configuration object presentation
         """
         return self.original_filename
-
-
 #*********** L2 Reports Model *******************
 class CircuitL2Report(models.Model):
 
@@ -424,8 +422,9 @@ class CircuitL2Report(models.Model):
     file_name = models.FileField(max_length=512, upload_to=uploaded_report_name)
     added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
     user_id = models.ForeignKey(UserProfile)
-    circuit_id = models.ForeignKey(Circuit)
+    type_id = models.IntegerField('Type ID')
     is_public = models.BooleanField('Is Public', default=True)
+    report_type = models.CharField('Type', max_length=15)
 
 
 class PingThematicSettings(models.Model):

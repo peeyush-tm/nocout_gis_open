@@ -58,13 +58,19 @@ class UserStatusList(PermissionsRequiredMixin, ListView):
         context = super(UserStatusList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'auto', },
-            {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'auto', 'bSortable': False}, ]
+            {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'auto'},
+            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto'},
+            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'auto', 'bSortable': False}
+        ]
 
         # If the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '8%', 'bSortable': False})
+            datatable_headers.append({
+                'mData': 'actions',
+                'sTitle': 'Actions',
+                'sWidth': '8%',
+                'bSortable': False
+            })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -121,8 +127,10 @@ class UserStatusTable(BaseDatatableView):
 
         return UserProfile.objects.exclude(id=self.request.user.userprofile.id).filter(
             organization__in=organization_descendants_ids,
-            is_deleted=0).values(
-            *self.columns + ['id', 'is_active'])
+            is_deleted=0
+        ).values(
+            *self.columns + ['id', 'is_active']
+        )
 
     def prepare_results(self, qs):
         """
@@ -131,28 +139,28 @@ class UserStatusTable(BaseDatatableView):
         :return qs
         """
         if qs:
-            sanity_dicts_list = [
-                OrderedDict({
-                    'dict_final_key': 'full_name', 
-                    'dict_key1': 'first_name', 
-                    'dict_key2': 'last_name'
-                })
-            ]
-            qs, qs_headers = Datatable_Generation(qs, sanity_dicts_list).main()
+            # Init qs data list
+            resultant_data = list()
+            # make Visitor ids list
             logged_in_users_ids = [visitor.user_id for visitor in Visitor.objects.all()]
+
             for dct in qs:
                 dct.update(
                     actions='<h3 class="fa fa-lock text-danger" title="Lock User" \
                             onclick="change_user_status(this);"> &nbsp;</h3>'
                             if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
                             title="Unlock User" onclick="change_user_status(this);"> &nbsp;</h3>',
-                    logged_in_status='NO'
+                    logged_in_status='NO',
+                    full_name=str(dct['first_name']) + " " + str(dct['last_name'])
                 )
-                if dct.pop('id') in logged_in_users_ids:
+
+                if dct['id'] in logged_in_users_ids:
                     dct['actions'] += '<h3 class="fa fa-sign-out text-danger" title="Log-Off User" \
                                       onclick="logout_user(this);"> &nbsp;</h3>'
                     dct['logged_in_status'] = 'YES'
 
+                resultant_data.append(dct)
+            return resultant_data
         return qs
 
     def ordering(self, qs):

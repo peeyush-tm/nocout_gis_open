@@ -20,10 +20,7 @@ var splitted_url_list = window.location.pathname.split("/"),
         "ss_form_4" : "circuit_id",
         "ss_form_5" : "alias"
     };
-
-
-
-    
+ 
 // If formContainer class present then proceed
 // If gis wizard form, only then proceed
 if($(".formContainer").length > 0 && isGisWizard) {
@@ -78,7 +75,6 @@ $("form").submit(function(e) {
                 $("form button[type='submit']").addClass("disabled");
             }
         }
-
         if(isWizardFormSubmit === 0) {
             if(isNewWizardForm || isCreateWizardForm || isAddWizardForm) {
                 
@@ -135,9 +131,11 @@ $("form").submit(function(e) {
 
                 if(splitted_url_list[splitted_url_list.length-3] == 'sector' || splitted_url_list[splitted_url_list.length-5] == 'sector') {
 
-                    var newWizardFields = prepareWizardFormsData(true);
+                    var newWizardFields = prepareWizardFormsData(true),
+                        has_no_changes = false;
 
                     for(key in oldWizardFields) {
+                        has_no_changes = false;
                         if(oldWizardFields.hasOwnProperty(key)) {
                             var current_old_set = oldWizardFields[key],
                                 current_new_set = newWizardFields[key];
@@ -171,7 +169,7 @@ $("form").submit(function(e) {
 
                             /*If any changes done then save user action else return.*/
                             if($.trim(modifiedFieldsStr) != '[') {
-                                
+                                has_no_changes = true;
                                 modifiedFieldsStr += ']';
 
                                 var updated_module_name = $.trim(module_name)+" : "+current_old_set.title+" - "+sub_module_name;
@@ -197,6 +195,11 @@ $("form").submit(function(e) {
                             }
                         }
                     }
+                    // If their is no changes in any form then submit form
+                    if(!has_no_changes) {
+                        return true;
+                    }
+
                 } else {
                     var newWizardFields = prepareWizardFormsData(false);
 
@@ -238,6 +241,7 @@ $("form").submit(function(e) {
                                     $("form button[type='submit']").removeClass("disabled");
                                 }
                             }
+
                             /*Trigger Form Submit*/
                             $("form").trigger('submit');
                         });

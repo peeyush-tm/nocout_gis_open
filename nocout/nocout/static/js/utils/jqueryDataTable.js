@@ -88,7 +88,7 @@ function ourDataTableWidget() {
             aoColumns:tableheaders,
             sPaginationType: "full_numbers",
             aaSorting:[],
-            bStateSave:false
+            bStateSave:true
         });
 
         

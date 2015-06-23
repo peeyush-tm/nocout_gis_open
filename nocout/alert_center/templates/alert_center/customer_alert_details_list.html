@@ -99,9 +99,6 @@
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
-            /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-
             /*Ajax url to get grid data*/
             ajax_url_get_parameter = "";
 
@@ -116,36 +113,38 @@
             // Report Download Feature -- START
 
             var common_extra_param = "'download_excel': 'yes'",
+                common_get_params = "data_source=customer&page_type=customer",
+                common_dict_items = "'data_source' : 'customer', 'page_type' : 'customer'",
                 pmp_title = "Customer Alert Details: PMP",
                 wimax_title = "Customer Alert Details: WiMAX",
                 ptp_title = "Customer Alert Details: PTP",
-                pmp_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'PMP', 'report_title' : '"+pmp_title+"', "+common_extra_param+"}",
-                wimax_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'WiMAX', 'report_title' : '"+wimax_title+"', "+common_extra_param+"}",
-                ptp_extra_param = "{'data_source' : '"+ajax_url_get_parameter+"','data_tab' : 'P2P', 'report_title' : '"+ptp_title+"', "+common_extra_param+"}";
+                pmp_extra_param = "{" + common_dict_items + ",'data_tab' : 'PMP', 'report_title' : '"+pmp_title+"', "+common_extra_param+"}",
+                wimax_extra_param = "{" + common_dict_items + ",'data_tab' : 'WiMAX', 'report_title' : '"+wimax_title+"', "+common_extra_param+"}",
+                ptp_extra_param = "{" + common_dict_items + ",'data_tab' : 'P2P', 'report_title' : '"+ptp_title+"', "+common_extra_param+"}";
             
             tables_info = {
                 "customer_wifi_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : wimax_title,
-                    "header_class_name" : "CustomerAlertDetailHeaders",
+                    "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "GetCustomerAlertDetail",
-                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'pmp_wimax_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : wimax_extra_param
                 },
                 "customer_pmp_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : pmp_title,
-                    "header_class_name" : "CustomerAlertDetailHeaders",
+                    "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "GetCustomerAlertDetail",
-                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'pmp_wimax_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : pmp_extra_param
                 },
                 "customer_ptp_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : ptp_title,
-                    "header_class_name" : "CustomerAlertDetailHeaders",
+                    "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "GetCustomerAlertDetail",
-                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'ptp_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : ptp_extra_param,
                     "excluded" : "['sector_id']"
                 }
@@ -155,18 +154,18 @@
 
             // Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag. -- START
 
-            var ajax_url_wifi = '{% url "CustomerAlertDetails" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX',
-                ajax_url_pmp = '{% url "CustomerAlertDetails" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'PMP',
-                ajax_url_p2p = '{% url "CustomerAlertDetails" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P';
+            var ajax_url_wifi = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=WiMAX',
+                ajax_url_pmp = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=PMP',
+                ajax_url_p2p = '{% url "CustomerAlertDetails" %}' + '?' + common_get_params + '&data_tab=P2P';
 
             $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
-            $("#customer_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#customer_wifi_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
 
             $("#customer_pmp_tab").attr("data_url", ajax_url_pmp);
-            $("#customer_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#customer_pmp_tab").attr("data_header", '{{ pmp_wimax_datatable_headers|safe }}');
 
             $("#customer_ptp_tab").attr("data_url", ajax_url_p2p);
-            $("#customer_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#customer_ptp_tab").attr("data_header", '{{ ptp_datatable_headers|safe }}');
 
             // Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag. -- END
 

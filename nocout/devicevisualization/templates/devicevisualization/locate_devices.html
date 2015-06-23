@@ -472,132 +472,120 @@
     </div>
 </div>
 
-    <!-- Google Map Library-->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
-    <!--This library is used to draw label on google maps-->
-    <script type="text/javascript" src={% static "js/infobox.js" %}></script>
-    <!-- Script Library for COokies -->
-    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
-    <!--This library is used for marker clustering-->
-    <script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
-    <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
-    <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
-    <!-- Script for full screen google maps-->
-    <script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
-    <!--LOKIJS for Javascript Database-->
-    <script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>
-    <!--Flot Chart Library for Fresnel zone-->
-    <script src={% static "js/flot/jquery.flot.min.js" %}></script>
-    <!-- SPARKLINES -->
-    <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
-    <!-- Our Library to plot the devices on map & performs functionality accordingly-->
-    <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
-    <!-- State boundries Loki object Lib -->
-    <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
-    <!-- Custon Script for this template-->
-    <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
-    <!-- GIS Performancer Custom Library-->
-    <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>
-    <!-- Advance Filters Custom Library-->
-    <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
-    <!--Advance Search Custom Library-->
-    <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
-    <!--Highcharts Library-->
-    <script src={% static "js/highcharts.js" %}></script>
-    <script src={% static "js/highcharttheme.js" %}></script>
-    <script src={% static "js/highchartstable.js" %}></script>
-    <!--ToopTip info manipulation custom Library-->
-    <script type="text/javascript" src={% static "js/tooltipLib.js" %}></script>
-    <!--Our Common Utilities Script-->
-    <script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
-    <!-- Bootstrap switch lib for BS maintenance infowindow -->
-    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
-    <!-- JQUERY UI-->
-    <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %} ></script>
-    <!-- Custom script for data table-->
-    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<!-- Google Map Library-->
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+<!--This library is used to draw label on google maps-->
+<script type="text/javascript" src={% static "js/infobox.js" %}></script>
+<!-- Script Library for COokies -->
+<script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+<!--This library is used for marker clustering-->
+<script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
+<!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
+<script type="text/javascript" src={% static "js/oms.min.js" %}></script>
+<!-- Script for full screen google maps-->
+<script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
+<!--LOKIJS for Javascript Database-->
+<script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>
+<!--Flot Chart Library for Fresnel zone-->
+<script src={% static "js/flot/jquery.flot.min.js" %}></script>
+<!-- SPARKLINES -->
+<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+<!-- Our Library to plot the devices on map & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+<!-- State boundries Loki object Lib -->
+<script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
+<!-- Custon Script for this template-->
+<script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
+<!-- GIS Performancer Custom Library-->
+<script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>
+<!-- Advance Filters Custom Library-->
+<script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+<!--Advance Search Custom Library-->
+<script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
+<!--Highcharts Library-->
+<script src={% static "js/highcharts.js" %}></script>
+<script src={% static "js/highcharttheme.js" %}></script>
+<script src={% static "js/highchartstable.js" %}></script>
+<!--ToopTip info manipulation custom Library-->
+<script type="text/javascript" src={% static "js/tooltipLib.js" %}></script>
+<!--Our Common Utilities Script-->
+<script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
+<!-- Bootstrap switch lib for BS maintenance infowindow -->
+<script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+<!-- JQUERY UI-->
+<script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %} ></script>
+<!-- Custom script for data table-->
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 
-    <script type="text/javascript">
+<script type="text/javascript">
 
-        var networkMapInstance = "",
-            advSearch = "",
-            advJustSearch= "",
-            is_super_admin = "",
-            deviceName = "",
-            default_polling = true,
-            dataTableInstance = "";
+    var networkMapInstance = "",
+        advSearch = "",
+        advJustSearch= "",
+        is_super_admin = "",
+        deviceName = "",
+        default_polling = true,
+        dataTableInstance = "";
 
-        $(document).ready(function (e) {
-            
-            // Set 'isMapsPage' flag to true
-            isMapsPage = true;
+    $(document).ready(function (e) {
+        
+        // Set 'isMapsPage' flag to true
+        isMapsPage = true;
 
-            try {
-                deviceName = "{{ device_name }}";
-                // Is user super admin or admin
-                is_super_admin = '{{ is_admin }}';
-                // Live polling Configuration
-                live_poll_config = $.parseJSON('{{ live_poll_config|safe }}');
-                // Periodic polling parallel processes count
-                periodic_poll_process_count = '{{ periodic_poll_process_count }}';
-                periodic_poll_process_count = periodic_poll_process_count ? Number(periodic_poll_process_count) : 1;
+        try {
+            deviceName = "{{ device_name }}";
+            // Is user super admin or admin
+            is_super_admin = '{{ is_admin }}';
+            // Live polling Configuration
+            live_poll_config = $.parseJSON('{{ live_poll_config|safe }}');
+            // Periodic polling parallel processes count
+            periodic_poll_process_count = '{{ periodic_poll_process_count }}';
+            periodic_poll_process_count = periodic_poll_process_count ? Number(periodic_poll_process_count) : 1;
 
-                default_polling = live_poll_config['maps_default'] ? live_poll_config['maps_default'] : false;
+            default_polling = live_poll_config['maps_default'] ? live_poll_config['maps_default'] : false;
 
-                if(!default_polling) {
-                    $("#createPolygonBtn").parent().remove();
-                }
-
-            } catch(e) {
-                // pass
-                // console.error(e);
+            if(!default_polling) {
+                $("#createPolygonBtn").parent().remove();
             }
+        } catch(e) {
+            // pass
+            // console.error(e);
+        }
 
-            /*Make a instance of ourDataTableWidget class */
-            dataTableInstance = new ourDataTableWidget();
+        /*Make a instance of ourDataTableWidget class */
+        dataTableInstance = new ourDataTableWidget();
 
-            /*Show page controls page*/
-            $("#headerToggleBtn").trigger('click');
+        /*Show page controls page*/
+        $("#headerToggleBtn").trigger('click');
 
-            /*Create a instance of gmap_devicePlottingLib*/
-            networkMapInstance = new devicePlottingClass_gmap();
+        /*Create a instance of gmap_devicePlottingLib*/
+        networkMapInstance = new devicePlottingClass_gmap();
 
-            /*Create a instance of advanceSearchClass*/
-            advSearch = new advanceSearchClass();
-            advJustSearch= new advanceSearchMainClass();
-            /*Call the function to create map*/
-            networkMapInstance.createMap("deviceMap");
+        /*Create a instance of advanceSearchClass*/
+        advSearch = new advanceSearchClass();
+        advJustSearch= new advanceSearchMainClass();
+        /*Call the function to create map*/
+        networkMapInstance.createMap("deviceMap");
 
-            if ($.trim(deviceName) == "default_device_name") {
-                if (typeof google != "undefined") {
-                    /*Call the make network to create the BS-SS network on the google map*/
-                    networkMapInstance.getDevicesData_gmap();
-                }
-
-            } else {
-
-                // var searchString = JSON.stringify([{"field": "device_name", "value": [deviceName]}]);
-                // advSearch.setFilters(searchString, setFilterApi);
-
-                /*Hide Remove Filters button*/
-                if (!$("#removeFilterBtn").hasClass("hide")) {
-                    $("#removeFilterBtn").addClass("hide");
-                }
+        if (typeof google != "undefined") {
+            /*Call the make network to create the BS-SS network on the google map*/
+            networkMapInstance.getDevicesData_gmap();
+        } else {
+            /*Hide Remove Filters button*/
+            if (!$("#removeFilterBtn").hasClass("hide")) {
+                $("#removeFilterBtn").addClass("hide");
             }
-            /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
-            // networkMapInstance.getBasicFilters();
-        });
-    </script>
+        }
+    });
+</script>
 {% endblock %}
 
 {% block load_js %}
-    <!-- /JAVASCRIPTS -->
+<script>
+    jQuery(document).ready(function () {
 
-    <script>
-        jQuery(document).ready(function () {
-
-            App.setPage("");  //Set current page
-            App.init(); //Initialise plugins and elements
-        });
-    </script>
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
 {% endblock %}
