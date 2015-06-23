@@ -1478,10 +1478,10 @@ class BulkFetchLPDataApi(View):
             device_type = Device.objects.filter(device_name__in=devices).values_list('device_type', flat = True)
             # Device Type warn crit params corresponding to Device.
             ds_warn_crit_param = DeviceType.objects.filter(id__in=device_type).values('pl_warning', 'pl_critical', 'rta_warning', 'rta_critical')
-        
+
             if ds_name in ['pl']:
                 result['data']['meta']['warning'] = ds_warn_crit_param[0]['pl_warning']
-                result['data']['meta']['critical'] = ds_warn_crit_param[0]['pl_critical'] 
+                result['data']['meta']['critical'] = ds_warn_crit_param[0]['pl_critical']
             elif ds_name in ['pl'] and not (ds_warn_crit_param[0]['pl_warning'] and ds_warn_crit_param[0]['pl_critical']):
                 result['data']['meta']['warning'] = PING_PL_WARNING
                 result['data']['meta']['critical'] = PING_PL_CRITICAL
@@ -1735,7 +1735,8 @@ class BulkFetchLPDataApi(View):
                                 if type(device_value) == list:
                                     device_val = device_value[0]
 
-                                result['data']['devices'][device_name]['value'] = eval(str(ds_formula) + "(" + str(device_val) + ")" )
+                                result['data']['devices'][device_name]['value'] = eval(
+                                    str(ds_formula) + "(" + str(device_val) + ")")
                             except Exception as e:
                                 result['data']['devices'][device_name]['value'] = device_val
                                 pass
@@ -2964,12 +2965,13 @@ class AddDeviceToNMS(APIView):
             pass
 
         if device:
-            ping_levels = {"rta": (ping_data['rta_warning'] if ping_data['rta_warning'] else 1500,
-                                   ping_data['rta_critical'] if ping_data['rta_critical'] else 3000),
-                           "loss": (ping_data['pl_warning'] if ping_data['pl_warning'] else 80,
-                                    ping_data['pl_critical'] if ping_data['pl_critical'] else 100),
-                           "packets": ping_data['packets'] if ping_data['packets'] and ping_data['packets'] <= 20 else 6,
-                           "timeout": ping_data['timeout'] if ping_data['timeout'] else 20}
+            ping_levels = {
+                "rta": (ping_data['rta_warning'] if ping_data['rta_warning'] else 1500,
+                        ping_data['rta_critical'] if ping_data['rta_critical'] else 3000),
+                "loss": (ping_data['pl_warning'] if ping_data['pl_warning'] else 80,
+                         ping_data['pl_critical'] if ping_data['pl_critical'] else 100),
+                "packets": ping_data['packets'] if ping_data['packets'] and ping_data['packets'] <= 20 else 6,
+                "timeout": ping_data['timeout'] if ping_data['timeout'] else 20}
 
             if device.host_state != "Disable":
                 # Get 'agent_tag' from DeviceType model.
@@ -4089,46 +4091,6 @@ class ServiceEditOldConf(APIView):
                                         {
                                             "parameter_description": "cambium_snmp_performance_5_min",
                                             "id": 9
-                                        },
-                                        {
-                                            "parameter_description": "cambium_snmp_status_60_min",
-                                            "id": 10
-                                        },
-                                        {
-                                            "parameter_description": "wimax_snmp_performance_5_min",
-                                            "id": 11
-                                        },
-                                        {
-                                            "parameter_description": "wimax_snmp_inventory_1_day",
-                                            "id": 12
-                                        },
-                                        {
-                                            "parameter_description": "wimax_snmp_status_60_min",
-                                            "id": 13
-                                        },
-                                        {
-                                            "parameter_description": "mrotek_snmp_performance_5_min",
-                                            "id": 14
-                                        },
-                                        {
-                                            "parameter_description": "mrotek_snmp_inventory_1_day",
-                                            "id": 15
-                                        },
-                                        {
-                                            "parameter_description": "mrotek_snmp_status_60_min",
-                                            "id": 16
-                                        },
-                                        {
-                                            "parameter_description": "rici_snmp_performance_5_min",
-                                            "id": 17
-                                        },
-                                        {
-                                            "parameter_description": "rici_snmp_inventory_1_day",
-                                            "id": 18
-                                        },
-                                        {
-                                            "parameter_description": "rici_snmp_status_60_min",
-                                            "id": 19
                                         }
                                     ],
                                     "meta": {},
@@ -5444,5 +5406,204 @@ class AddServices(APIView):
 
         # Assign messages to result dict message key.
         result['message'] = messages
+
+        return Response(result)
+
+
+class DeviceServiceStatus(APIView):
+    """
+    Show current configuration/status of services corresponding to the device.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/device_service_status/11343/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (unicode): Device ID.
+
+        Returns:
+            result (dict): Dictionary of device and associated services information.
+                           For e.g.,
+                                {
+                                    'message': '',
+                                    'data': {
+                                        'meta': {
+
+                                        },
+                                        'objects': {
+                                            'site_instance': 'nocout_gis_slave',
+                                            'inactive_services': [
+                                                {
+                                                    'service': u'Receivedsignalstrength',
+                                                    'data_sources': 'Receivedsignalstrength,
+                                                    '
+                                                },
+                                                {
+                                                    'service': u'totaluplinkutilization',
+                                                    'data_sources': 'Management_Port_on_Odu,
+                                                    Radio_Interface,
+                                                    '
+                                                },
+                                                {
+                                                    'service': u'channelbandwidth',
+                                                    'data_sources': 'channelbandwidth,
+                                                    '
+                                                },
+                                                {
+                                                    'service': u'portspeedstatus',
+                                                    'data_sources': 'ethernet_port_1,
+                                                    ethernet_port_2,
+                                                    ethernet_port_3,
+                                                    ethernet_port_4,
+                                                    '
+                                                },
+                                                {
+                                                    'service': u'IDUserialnumber',
+                                                    'data_sources': 'IDUserialnumber,
+                                                    '
+                                                },
+                                                {
+                                                    'service': u'totaluptime',
+                                                    'data_sources': 'totaluptime,
+                                                    '
+                                                },
+                                                {
+                                                    'service': u'portautonegotiationstatus',
+                                                    'data_sources': 'ethernet_port_1,
+                                                    ethernet_port_2,
+                                                    ethernet_port_3,
+                                                    ethernet_port_4,
+                                                    '
+                                                }
+                                            ],
+                                            'active_services': [
+
+                                            ],
+                                            'device_name': '115.112.95.187',
+                                            'machine': 'default',
+                                            'device_type': 'Radwin2KBS',
+                                            'ip_address': '115.112.95.187'
+                                        }
+                                    },
+                                    'success': 1
+                                }
+
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        # Get device.
+        device = Device.objects.get(pk=pk)
+
+        # Fetching all services from 'service device configuration' table.
+        dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+
+        # Get device type.
+        device_type = DeviceType.objects.get(id=device.device_type)
+
+        # Get deleted services.
+        deleted_services_list = dsc.filter(operation="d").values_list("service_name", flat=True)
+        deleted_services = Service.objects.filter(name__in=list(set(deleted_services_list)))
+
+        # Get active services.
+        active_services = device_type.service.all().exclude(name__in=deleted_services_list)
+
+        result['data']['objects']['device_name'] = str(device.device_alias)
+        result['data']['objects']['machine'] = str(device.machine)
+        result['data']['objects']['site_instance'] = str(device.site_instance)
+        result['data']['objects']['ip_address'] = str(device.ip_address)
+        result['data']['objects']['device_type'] = str(DeviceType.objects.get(pk=device.device_type))
+        result['data']['objects']['active_services'] = []
+        result['data']['objects']['inactive_services'] = []
+
+        for svc in active_services:
+            temp_svc = dict()
+            temp_svc['service'] = svc.alias
+            temp_svc['data_sources'] = ""
+            for ds in svc.service_data_sources.all():
+                temp_svc['data_sources'] += "{}, ".format(ds.alias)
+            result['data']['objects']['active_services'].append(temp_svc)
+
+        for svc in deleted_services:
+            temp_svc = dict()
+            temp_svc['service'] = svc.alias
+            temp_svc['data_sources'] = ""
+            for ds in svc.service_data_sources.all():
+                temp_svc['data_sources'] += "{}, ".format(ds.alias)
+            result['data']['objects']['inactive_services'].append(temp_svc)
+
+        return Response(result)
+
+
+class ResetServiceConfiguration(APIView):
+    """
+    Reset device service configuration
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/reset_service_conf/"
+    """
+    def get(self, request):
+        """
+        Processing API request.
+
+        Returns:
+            result (dict): Dictionary containing device information.
+                           For e.g.,
+                                {
+                                    "message": "Successfully reset device service configuration.",
+                                    "data": {
+                                        "meta": ""
+                                    },
+                                    "success": 1
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to reset device service configuration."
+        result['data']['meta'] = ''
+
+        # Get last id of 'DeviceSyncHistory'.
+        try:
+            # Get all devices list from 'service_devicepingconfiguration'.
+            ping_devices = DevicePingConfiguration.objects.all().values_list('device_name', flat=True)
+
+            # Get list of sites associated with 'ping_devices'.
+            ping_sites = Device.objects.filter(device_name__in=list(set(ping_devices))).values_list('site_instance__id',
+                                                                                                    flat=True)
+
+            # Get all devices list from 'service_deviceserviceconfiguration'.
+            svc_devices = DeviceServiceConfiguration.objects.all().values_list('device_name', flat=True)
+
+            # Get list of sites associated with 'svc_devices'.
+            svc_sites = Device.objects.filter(device_name__in=list(set(svc_devices))).values_list('site_instance__id',
+                                                                                                  flat=True)
+
+            # Effected sites.
+            effected_sites = set(list(ping_sites) + list(svc_sites))
+
+            # Set 'is_device_change' bit of corresponding sites.
+            SiteInstance.objects.filter(id__in=effected_sites).update(is_device_change=1)
+
+            # Truncate 'service_deviceserviceconfiguration'.
+            DeviceServiceConfiguration.objects.all().delete()
+
+            # Truncate 'service_devicepingconfiguration'.
+            DevicePingConfiguration.objects.all().delete()
+
+            result['success'] = 1
+            result['message'] = "Successfully reset device service configuration."
+
+        except Exception as e:
+            logger.info(e.message)
 
         return Response(result)

@@ -41,4 +41,6 @@ urlpatterns = [
     url(r'^svc_add_new_conf/(?P<service_id>\d+)/(?P<template_id>\d+)/$',
         api.ServiceAddNewConf.as_view()),
     url(r'^add_services/(?P<device_id>\d+)/', api.AddServices.as_view()),
+    url(r'^device_service_status/(?P<pk>\d+)/$', api.DeviceServiceStatus.as_view()),
+    url(r'^reset_service_conf/$', api.ResetServiceConfiguration.as_view()),
 ]
