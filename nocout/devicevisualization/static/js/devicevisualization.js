@@ -962,8 +962,8 @@ $("#point_icons_container li").click(function(e) {
     $(this).addClass('selected_icon');
     
     /*Check that 'img' tag is present in li or not*/
-    if($("#point_icons_container li.selected_icon")[0].children[0].hasAttribute('src')) {
-        point_icon_url = $("#point_icons_container li.selected_icon")[0].children[0].attributes['src'].value.split("../../")[1];
+    if($("#point_icons_container li.selected_icon").children()[0].hasAttribute('src')) {
+        point_icon_url = $("#point_icons_container li.selected_icon").children()[0].attributes.src.value;
     }
 });
 

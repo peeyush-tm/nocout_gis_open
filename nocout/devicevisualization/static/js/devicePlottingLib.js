@@ -171,7 +171,7 @@ var is_line_active = 0,
     tools_line_array =[],
 	tools_line_marker_array= [],
 	distance_line_label= "",
-	point_icon_url = "static/img/icons/tools/point/caution.png",
+	point_icon_url = "/static/img/icons/tools/point/caution.png",
 	point_data_obj = {},
 	line_data_obj = {},
 	connected_end_obj = {},
@@ -7220,7 +7220,7 @@ function devicePlottingClass_gmap() {
 	 */
 	this.plotPoint_gmap = function(infoObj) {
 
-		var image = gmap_self.getMarkerImageBySize(base_url+"/"+infoObj.icon_url,"other");
+		var image = gmap_self.getMarkerImageBySize(base_url+""+infoObj.icon_url,"other");
 
 		var map_point = new google.maps.Marker({
 			position   	    	 : new google.maps.LatLng(infoObj.lat,infoObj.lon),
