@@ -608,6 +608,44 @@ class GetPerfomance(View):
         device = Device.objects.get(id=device_id)
         device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
         realdevice = device
+        bs_alias = None
+
+        try:
+            if device.sector_configured_on.exists():
+                bs_alias = device.sector_configured_on.filter()[0].base_station.alias
+            elif device.dr_configured_on.exists():
+                bs_alias = device.dr_configured_on.filter()[0].base_station.alias
+            elif device.substation_set.exists():
+                bs_alias = Sector.objects.get(
+                    id=Circuit.objects.get(
+                        sub_station=device.substation_set.get().id
+                    ).sector_id
+                ).base_station.alias
+            elif device.backhaul.exists() or device.backhaul_switch.exists() or device.backhaul_pop.exists() \
+                or device.backhaul_aggregator.exists():
+                bh_id = None
+                if device.backhaul.exists():
+                    bh_id = device.backhaul.get().id
+                elif device.backhaul_switch.exists():
+                    bh_id = device.backhaul_switch.get().id
+                elif device.backhaul_pop.exists():
+                    bh_id = device.backhaul_pop.get().id
+                elif device.backhaul_aggregator.exists():
+                    bh_id = device.backhaul_aggregator.get().id
+
+                bs_alias = ','.join(
+                    BaseStation.objects.filter(
+                        backhaul= bh_id
+                    ).values_list('alias', flat=True)
+                )
+            else:
+                pass
+        except Exception, e:
+            # log.info(e.message)
+            bs_alias = None
+
+        if not bs_alias:
+            bs_alias = realdevice.device_alias
 
         is_util_tab = request.GET.get('is_util', 0)
 
@@ -668,6 +706,7 @@ class GetPerfomance(View):
             'device_technology': device_technology,
             'device': device,
             'realdevice': realdevice,
+            'bs_alias' : bs_alias,
             'get_status_url': inventory_status_url,
             'get_services_url': service_ds_url,
             'inventory_page_url': inventory_page_url,
@@ -2833,7 +2872,7 @@ class GetServiceTypePerformanceData(View):
         ).annotate(
             dcount=Count('data_source')
         ).values(
-            'data_source', 'current_value', 'age', 'sys_timestamp'
+            'data_source', 'current_value', 'age', 'sys_timestamp', 'refer'
         ).using(alias=machine)
 
         processed = []
@@ -2851,10 +2890,18 @@ class GetServiceTypePerformanceData(View):
                         latency = pdata['current_value']
                 else:
                     continue
-                status_since = pdata['age']
-                status_since = datetime.datetime.fromtimestamp(
-                    float(status_since)
-                ).strftime(DATE_TIME_FORMAT)
+                if pdata['data_source'] == 'pl' and pdata['current_value'] != 100:
+                    status_since = pdata['age']
+                else:
+                    status_since = pdata['refer']
+
+                try:
+                    status_since = datetime.datetime.fromtimestamp(
+                        float(status_since)
+                    ).strftime(DATE_TIME_FORMAT)
+                except Exception, e:
+                    status_since = status_since
+
             else:
                 continue
 

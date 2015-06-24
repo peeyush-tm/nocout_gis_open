@@ -1,0 +1,63 @@
+<!-- GIS Page  -->
+<div class="date-range pull-right">
+    <div class="btn-group">
+        <ul class="list-unstyled list-inline gis_page_setting">
+            <li>
+                <input type="radio" name="thematic_type" style="vertical-align:sub;" value="ping" checked=""> Ping Thematics
+            </li>
+            <li>
+                <input type="radio" name="thematic_type" style="vertical-align:sub;" value="normal"> Service Thematics
+            </li>
+            <li>
+                <button type="button" id="advSearchBtn" class="btn btn-sm btn-default" data-complete-text="<i class='fa fa-search'></i> Advance Search"
+                            data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
+                    <i class="fa fa-search"></i> Advance Search
+                </button>
+                <button type="button" id="removeSearchBtn" class="btn btn-sm btn-danger hide" onclick="resetAdvanceSearch();"
+                        style="margin-left:10px;">
+                    <i class='fa fa-times'></i> Reset Search
+                </button>
+            </li>
+            <li>
+                <button type="button" id="advFilterBtn" class="btn btn-sm btn-default" onclick="showAdvFilters();"
+                        data-complete-text="<i class='fa fa-filter'></i> Advance Filter"
+                        data-loading-text="Please Wait...">
+                    <i class='fa fa-filter'></i> Advance Filter
+                </button>
+                <button type="button" id="removeFilterBtn" class="btn btn-sm btn-danger hide" onclick="removeAdvFilters();"
+                        style="margin-left:10px;" title="Click to Reset Advance Filter">
+                    <i class='fa fa-times'></i> Reset Filter
+                </button>
+            </li>
+            <li>
+                <button type="button" class="btn btn-sm btn-default" id="createPolygonBtn"
+                        data-complete-text="<i class='fa fa-location-arrow'></i> Live Poll"
+                        data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Live Poll
+                </button>
+                <button type="button" class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear
+                    Selection
+                </button>
+            </li>
+            <li>
+                <button type="button" class="btn btn-sm btn-default" id="export_data_gmap"
+                        data-complete-text="<i class='fa fa-download'></i> Export"
+                        data-loading-text="Please Wait...">
+                        <i class='fa fa-download'></i> Export
+                </button>
+                <button type="button" class="btn btn-xs btn-danger hide" id="clearExportDataBtn">
+                    <i class="fa fa-times"></i> Clear Selection
+                </button>
+            </li>
+            <li>
+                <button type="button" id="showToolsBtn" class="btn btn-sm btn-default" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                data-loading-text="Please Wait...">
+                    <i class='fa fa-cog'></i> Show Tools
+                </button>
+                <button type="button" id="removeToolsBtn" class="btn btn-sm btn-danger hide" onclick="removetoolsPanel();">
+                    <i class='fa fa-times'></i> Hide Tools
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
+<!-- /GIS Page -->
