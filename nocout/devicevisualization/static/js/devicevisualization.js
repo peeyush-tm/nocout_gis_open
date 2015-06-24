@@ -83,10 +83,10 @@ if(
         $.cookie("isLabelChecked")=='true'
     )
 ) {
-    $("#showToolsBtn").removeClass("btn-info");
+    $("#showToolsBtn").removeClass("btn-default");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
-    $("#showToolsBtn").addClass("btn-info");
+    $("#showToolsBtn").addClass("btn-default");
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
@@ -776,7 +776,7 @@ $("#point_select").click(function(e) {
     pointAdded= 1;
     is_line_active= -1;
     is_ruler_active= -1;
-    $(this).removeClass('btn-info').addClass('btn-warning');
+    $(this).removeClass('btn-default').addClass('btn-warning');
     $("#point_icons_container li:first-child").trigger('click');
     $("#point_icons_container").removeClass("hide");
 
@@ -805,7 +805,7 @@ $("#close_points_icon").click(function(e) {
     pointAdded= -1;
     is_line_active= -1;
     is_ruler_active= -1;
-    $("#point_select").removeClass('btn-warning').addClass('btn-info');
+    $("#point_select").removeClass('btn-warning').addClass('btn-default');
     $("#point_icons_container").addClass("hide");
     if(window.location.pathname.indexOf("gearth") > -1) {
         if(pointEventHandler) {
@@ -2022,9 +2022,9 @@ function removetoolsPanel() {
             $.cookie("isLabelChecked")=='true'
         )
     ) {
-        $("#showToolsBtn").removeClass("btn-info").addClass("btn-warning");
+        $("#showToolsBtn").removeClass("btn-default").addClass("btn-warning");
     } else {
-        $("#showToolsBtn").removeClass("btn-warning").addClass("btn-info");
+        $("#showToolsBtn").removeClass("btn-warning").addClass("btn-default");
     }
 
     $("#removeToolsBtn").addClass("hide");
@@ -2065,7 +2065,7 @@ function clearTools_gmap() {
             pointAdded = -1;            
             hasTools = 0;
             networkMapInstance.clearPointsTool_gmap();
-            $("#showToolsBtn").addClass("btn-info");
+            $("#showToolsBtn").addClass("btn-default");
             $("#showToolsBtn").removeClass("btn-warning");
         }
     });   

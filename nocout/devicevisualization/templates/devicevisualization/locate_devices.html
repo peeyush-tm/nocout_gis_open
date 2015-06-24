@@ -16,9 +16,6 @@
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
-    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
-    <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
     <!-- BOOTSTRAP SWITCH -->
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %} />
 
@@ -35,7 +32,7 @@
 
 {% block page_setting_block %}
     <!-- GIS Page  -->
-    <span class="date-range pull-right">
+    <div class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
                 <li>
@@ -45,28 +42,28 @@
                     <input type="radio" name="thematic_type" style="vertical-align:sub;" value="normal"> Service Thematics
                 </li>
                 <li>
-                    <button type="button" id="advSearchBtn" class="btn btn-sm btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
+                    <button type="button" id="advSearchBtn" class="btn btn-sm btn-default" data-complete-text="<i class='fa fa-search'></i> Advance Search"
                                 data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
-                        <i class="fa fa-filter"></i>Advance Search
+                        <i class="fa fa-search"></i> Advance Search
                     </button>
                     <button type="button" id="removeSearchBtn" class="btn btn-sm btn-danger hide" onclick="resetAdvanceSearch();"
                             style="margin-left:10px;">
-                        <i class='fa fa-times'></i> Remove Search
+                        <i class='fa fa-times'></i> Reset Search
                     </button>
                 </li>
                 <li>
-                    <button type="button" id="advFilterBtn" class="btn btn-sm btn-info" onclick="showAdvFilters();"
-                            data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
+                    <button type="button" id="advFilterBtn" class="btn btn-sm btn-default" onclick="showAdvFilters();"
+                            data-complete-text="<i class='fa fa-filter'></i> Advance Filter"
                             data-loading-text="Please Wait...">
-                        <i class='fa fa-filter'></i> Advance Filters
+                        <i class='fa fa-filter'></i> Advance Filter
                     </button>
                     <button type="button" id="removeFilterBtn" class="btn btn-sm btn-danger hide" onclick="removeAdvFilters();"
                             style="margin-left:10px;" title="Click to Reset Advance Filter">
-                        <i class='fa fa-times'></i> Remove Filters
+                        <i class='fa fa-times'></i> Reset Filter
                     </button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-sm btn-info" id="createPolygonBtn"
+                    <button type="button" class="btn btn-sm btn-default" id="createPolygonBtn"
                             data-complete-text="<i class='fa fa-location-arrow'></i> Live Poll"
                             data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Live Poll
                     </button>
@@ -75,15 +72,17 @@
                     </button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-sm btn-info" id="export_data_gmap"
-                            data-complete-text="<i class='fa fa-download'></i> Export Devices"
-                            data-loading-text="Please Wait..."><i class='fa fa-download'></i> Export Devices</button>
-                    <button type="button" class="btn btn-xs btn-danger hide" id="clearExportDataBtn"><i class="fa fa-times"></i> Clear
-                        Selection
+                    <button type="button" class="btn btn-sm btn-default" id="export_data_gmap"
+                            data-complete-text="<i class='fa fa-download'></i> Export"
+                            data-loading-text="Please Wait...">
+                            <i class='fa fa-download'></i> Export
+                    </button>
+                    <button type="button" class="btn btn-xs btn-danger hide" id="clearExportDataBtn">
+                        <i class="fa fa-times"></i> Clear Selection
                     </button>
                 </li>
                 <li>
-                    <button type="button" id="showToolsBtn" class="btn btn-sm btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                    <button type="button" id="showToolsBtn" class="btn btn-sm btn-default" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
                     data-loading-text="Please Wait...">
                         <i class='fa fa-cog'></i> Show Tools
                     </button>
@@ -93,13 +92,13 @@
                 </li>
             </ul>
         </div>
-    </span>
+    </div>
     <!-- /DATE RANGE PICKER -->
 {% endblock %}
 
 {% block content %}
 
-    <div class="col-md-12">
+    <div class="clearfix">
 
         <!-- Advance Search Division -->
         <div id="advSearchContainerBlock" class="hide">
@@ -143,12 +142,12 @@
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
-                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn">Cancel
+                <button type="button" class="pull-right btn btn-sm btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn">Cancel
                 </button>
-                <button type="button" class="pull-right btn btn-danger" id="resetSearchForm" style="margin-left:10px;">
+                <button type="button" class="pull-right btn btn-sm btn-danger" id="resetSearchForm" style="margin-left:10px;">
                         <i class="fa fa-times"></i> Reset Search
                     </button>
-                <button type="button" class="pull-right btn btn-success" id="setAdvSearchBtn">Search</button>
+                <button type="button" class="pull-right btn btn-sm btn-success" id="setAdvSearchBtn">Search</button>
             </div>
             <div class="clearfix"></div>
             <div class="divide-20"></div>
@@ -211,9 +210,9 @@
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
-                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel
+                <button type="button" class="pull-right btn btn-sm btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel
                 </button>
-                <button type="button" class="pull-right btn btn-success" id="setAdvFilterBtn">Filter</button>
+                <button type="button" class="pull-right btn btn-sm btn-success" id="setAdvFilterBtn">Filter</button>
             </div>
             <div class="clearfix"></div>
             <div class="divide-20"></div>
@@ -241,20 +240,20 @@
                         <!-- If loggedin user is super admin then only show maintainance icon -->
                         {% if user.is_superuser %}
                             <li class="selected_icon">
-                                <img src={% static "img/icons/tools/point/caution.png" %} />
+                                <img src= {% static "img/icons/tools/point/caution.png" %} />
                             </li>
                         {% endif %}
                         <li>
-                            <img src={% static "img/icons/tools/point/icon1.png" %} />
+                            <img src= {% static "img/icons/tools/point/icon1.png" %} />
                         </li>
                         <li>
-                            <img src={% static "img/icons/tools/point/icon2.png" %} />
+                            <img src= {% static "img/icons/tools/point/icon2.png" %} />
                         </li>
                         <li>
-                            <img src={% static "img/icons/tools/point/icon3.png" %} />
+                            <img src= {% static "img/icons/tools/point/icon3.png" %} />
                         </li>
                         <li>
-                            <img src={% static "img/icons/tools/point/icon4.png" %} />
+                            <img src= {% static "img/icons/tools/point/icon4.png" %} />
                         </li>
                         <li class="close_box">
                             <i class="fa fa-times" id="close_points_icon"> </i>
