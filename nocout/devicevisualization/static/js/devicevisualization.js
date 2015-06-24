@@ -48,7 +48,7 @@ current_icon_size = $.cookie("markerIconSize") ? $.cookie("markerIconSize") : "m
 isPollingActive = 0;
 
 // Clear click listener
-if(google && google.maps) {
+if(typeof google != 'undefined' && google.maps) {
     google.maps.event.clearListeners(mapInstance,'click');
 }
 
