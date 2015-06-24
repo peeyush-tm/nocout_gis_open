@@ -30,14 +30,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
         second_condition = false;
     }
 
-    /*Current Tab content id or anchor tab hyperlink*/
-    // new_url = e.currentTarget.href;
-
-
-    // if (!isFirst) {
-    //     window.location.href = new_url;
-    // }
-
     var destroy = false,
         div_id = e.currentTarget.href.split("#")[1],
         table_id = $("#" + div_id).find("table")[0].id,
