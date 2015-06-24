@@ -481,3 +481,20 @@ iframe {
 .selectDeviceContainerBlock .btn {
     padding: 5px;
 }
+#static_label{
+    max-width: 150px;
+}
+#static_label, #icon_Size_Select_In_Tools {
+    position: relative;
+    top: 2px;
+}
+#cursor_lat_long {
+    position: fixed;
+    display: block;
+    bottom:0;
+    right: 20px;
+    z-index:999;
+    background: #fff;
+    width: auto;
+    padding: 10px;
+}

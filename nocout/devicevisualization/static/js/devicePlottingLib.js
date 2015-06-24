@@ -2951,7 +2951,7 @@ function devicePlottingClass_gmap() {
 
 				var report_download_btn = "";
 				if(path_circuit_id) {
-					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" \
+					report_download_btn = '<li><button class="btn btn-sm btn-default download_report_btn" \
 										   data-complete-text="Download L2 Report"\
 									  	   data-loading-text="Please Wait..."\
 										   ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
@@ -2996,7 +2996,7 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  <button class='btn btn-sm btn-default fresnel_btn' \
 									  data-complete-text='Fresnel Zone'\
 									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
@@ -3015,7 +3015,7 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  <button class='btn btn-sm btn-default fresnel_btn' \
 									  data-complete-text='Fresnel Zone'\
 									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
@@ -9204,7 +9204,7 @@ function devicePlottingClass_gmap() {
 										<div>\
 											<input type="hidden" name="previous_maintenance_val" id="previous_maintenance_val" \
 											value="'+current_maintenance_status+'"/>\
-											<button class="btn btn-xs btn-info" id="change_maintenance_status_btn" \
+											<button class="btn btn-xs btn-default" id="change_maintenance_status_btn" \
 											title="Update Maintenance Status" onClick="gmap_self.updateBSMaintenanceStatus()"\
 											>Update</button>\
 										</div><div class="clearfix"></div>\
