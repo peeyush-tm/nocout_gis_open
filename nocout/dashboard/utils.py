@@ -380,7 +380,7 @@ def get_total_connected_device_per_sector(user_sector):
                                    topo.connected_device_ip AS ss_ip
                             FROM 
                                    inventory_sector AS sect
-                            JOIN 
+                            LEFT JOIN 
                                    performance_topology AS topo
                             on 
                                    sect.sector_id = topo.sector_id
