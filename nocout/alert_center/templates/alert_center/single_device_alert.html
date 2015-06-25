@@ -14,7 +14,7 @@
         {% if page_type == 'customer' and device_technology_name|upper == 'P2P'  %}
             {% breadcrumb_safe "PTP"  "init_alert_listing"  page_type data_source %}
         {% else %}
-            {% breadcrumb_safe device_technology_name|upper  "alert_list_with_tabname"  page_type data_source %}
+            {% breadcrumb_safe device_technology_name|upper  "init_alert_listing"  page_type data_source %}
         {% endif %}
     {% endif %}
 
@@ -24,10 +24,6 @@
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
 
-{% block content_title %}
-    {{ page_type | title }} Alert <span style="font-size: 25px;">{{ device_alias }}</span>
-{% endblock %}
-{% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
     <!-- JQUERY UI-->
