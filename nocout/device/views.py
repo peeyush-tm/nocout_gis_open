@@ -164,7 +164,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -371,7 +371,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -553,7 +553,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -732,7 +732,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -882,7 +882,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
