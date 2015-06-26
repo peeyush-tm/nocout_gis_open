@@ -1045,16 +1045,17 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
  * @event Click(Using Delegate)
  */
 $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
-    var ckt_id = e.currentTarget.attributes['ckt_id'] ? e.currentTarget.attributes['ckt_id'].value : "";
+    var item_id = e.currentTarget.attributes['item_id'] ? e.currentTarget.attributes['item_id'].value : "",
+        type_report = e.currentTarget.attributes['type'] ? e.currentTarget.attributes['type'].value : "";
     // If ckt id exist then fetch l2 report url
 
-    if(ckt_id) {
+    if(item_id) {
         
         // Disbale Download Report Button
         $(".download_report_btn").button("loading");
 
         $.ajax({
-            url: base_url+'/network_maps/l2_report/'+encodeURIComponent(ckt_id)+'/',
+            url: base_url+'/network_maps/l2_report/'+encodeURIComponent(item_id)+'/'+encodeURIComponent(type_report)+'/',
             type : "GET",
             success : function(response) {
 
