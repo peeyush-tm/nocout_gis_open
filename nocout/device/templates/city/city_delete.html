@@ -1,5 +1,17 @@
 {% extends "inventory/inventory.html" %}
 
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "City" "city_list" %}
+    {% breadcrumb_safe "Delete City " "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% block content_title %}Delete City{% endblock %}
 {% block content_description %}Delete city{% endblock %}
 {% block content %}
