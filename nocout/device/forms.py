@@ -63,8 +63,8 @@ class DeviceForm(forms.ModelForm):
             self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].empty_label = "Select"
-        self.fields['parent'].empty_label = "Select"
-        self.fields['parent'].widget.choices = self.fields['parent'].choices
+        # self.fields['parent'].empty_label = "Select"
+        # self.fields['parent'].widget.choices = self.fields['parent'].choices
         self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
         self.fields['machine'].empty_label = "Select"
@@ -127,7 +127,7 @@ class DeviceForm(forms.ModelForm):
         Meta Information
         """
         model = Device
-        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
+        exclude = ['device_name', 'is_deleted', 'is_added_to_nms', 'is_monitored_on_nms', 'parent']
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }

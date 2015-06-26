@@ -2,11 +2,11 @@ from django.conf.urls import url
 import api
 
 urlpatterns = [
-    url(r'^get_tech_vendors/(?P<pk>\d+)/$', api.GetVendorsForTech.as_view()),
-    url(r'^get_vendor_models/(?P<pk>\d+)/$', api.GetModelsForVendor.as_view()),
-    url(r'^get_model_types/(?P<pk>\d+)/$', api.GetModelsForVendor.as_view()),
+    url(r'^get_tech_vendors/(?P<pk>\d+)/$', api.GetVendorsForTech.as_view(), name='get_vendors_for_tech'),
+    url(r'^get_vendor_models/(?P<pk>\d+)/$', api.GetModelsForVendor.as_view(), name='get_models_for_vendor'),
+    url(r'^get_model_types/(?P<pk>\d+)/$', api.GetTypesForModel.as_view(), name='get_types_for_model'),
     url(r'^get_device_ports/(?P<pk>\d+)/$', api.GetDevicePorts.as_view()),
-    url(r'^get_machine_sites/(?P<pk>\d+)/$', api.GetSitesForMachine.as_view()),
+    url(r'^get_machine_sites/(?P<pk>\d+)/$', api.GetSitesForMachine.as_view(), name='get_sites_for_machine'),
     url(r'^get_extra_fields/(?P<pk>\d+)/$', api.GetDeviceTypeExtraFields.as_view()),
     url(r'^devices_for_menu/(?P<flag>\w+)/$', api.GetDevicesForSelectionMenu.as_view()),
     url(r'^device_inventory/(?P<flag>\w+)/$', api.GetDeviceInventory.as_view()),
