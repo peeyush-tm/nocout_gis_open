@@ -5,7 +5,8 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
-    {% breadcrumb_safe "SIA Alarms" "javascript:;" %}
+    {% breadcrumb_safe "SIA" traps %}
+    {% breadcrumb_safe "Current" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -22,7 +23,7 @@
 {% block content %}
     <div class="box border lite" style="background: #fff;">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell"></i>{{ page_type|upper }} ALARM </h4>
+            <h4><i class="fa fa-bell"></i>SIA </h4>
         </div>
 
         <div class="box-body">
