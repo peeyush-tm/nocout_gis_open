@@ -11,6 +11,7 @@ import re
 from datetime import datetime, timedelta
 import time
 from ast import literal_eval
+
 from celery import group
 
 from start import app
@@ -38,10 +39,10 @@ def calculate_refer_field_for_host(device_first_down_list, host_name, ds_values,
 			device_first_down['time'] = local_timestamp
 			device_first_down_list.append(device_first_down)
 		elif (device_first_down and host_name == device_first_down['host'] and
-				    ds_values['cur'] != '100'):
+				      ds_values['cur'] != '100'):
 			device_first_down['severity'] = "up"
 		elif (device_first_down and host_name == device_first_down['host'] and
-					device_first_down['severity'] == "up" and
+				      device_first_down['severity'] == "up" and
 				      ds_values['cur'] == '100'):
 			device_first_down['severity'] = "down"
 			device_first_down['time'] = local_timestamp
@@ -150,13 +151,23 @@ def build_export(site, perf_data):
 	topology_serv_data = []
 	# util services data
 	util_serv_data = []
-	kpi_serv_data = []
-	util_services = ['wimax_pmp1_dl_util_bgp', 'wimax_pmp2_dl_util_bgp',
-	                 'wimax_pmp1_ul_util_bgp', 'wimax_pmp2_ul_util_bgp']
-	# keep last 2 values for these services in Redis, kpi checks
+	kpi_helper_serv_data = []
+	ss_provis_helper_serv_data = []
+	dict_perf = {}
+
+	service_suffixes = ['_kpi', '_status', '_invent', '_topology']
+	# needed for mrc and dr manipulations
+	util_services = ['wimax_pmp1_dl_util_bgp', 'wimax_pmp2_dl_util_bgp', 
+					'wimax_pmp1_ul_util_bgp', 'wimax_pmp2_ul_util_bgp']
+	# keep last 2 values for severity these services in Redis, kpi checks
 	# need their values as input
-	kpi_services = ['wimax_ul_cinr', 'wimax_ul_intrf', 'cambium_ul_jitter',
+	kpi_helper_services = ['wimax_ul_cinr', 'wimax_ul_intrf', 'cambium_ul_jitter',
 	                'cambium_rereg_count']
+	# helper services for ss provisioning - keep last two values of field current_value
+	ss_provis_helper_service = ['cambium_ul_rssi', 'cambium_dl_rssi',
+					'cambium_dl_jitter', 'cambium_ul_jitter',
+					'cambium_rereg_count', 'wimax_ul_rssi',
+					'wimax_dl_rssi', 'wimax_dl_cinr', 'wimax_ss_ptx_invent']
 	for chk_val in perf_data:
 		if not chk_val:
 			continue
@@ -168,18 +179,32 @@ def build_export(site, perf_data):
 		service_name = str(chk_val['service_description'])
 		device_name = str(chk_val['host_name'])
 		# TODO: deliver to appropriate modules, using message queues [producer/consumer]
-		if service_name == 'wimax_topology':
+		if service_name.endswith('_topology'):
 			update_topology(topology_serv_data, chk_val, site)
 		elif service_name in util_services:
 			make_dicts_from_perf(util_serv_data, chk_val, site)
 		else:
 			make_dicts_from_perf(serv_data, chk_val, site)
-		if service_name in kpi_services:
-			kpi_serv_data.append({device_name: chk_val.get('severity')})
+			dict_perf = serv_data[-1]
+
+		# load values into redis
+		if service_name in kpi_helper_services:
+			kpi_helper_serv_data.append({
+				'severity': dict_perf.get('severity'),
+				'device_name': device_name,
+				'service_name': service_name
+			})
+		# load values into redis
+		if service_name in ss_provis_helper_service:
+			ss_provis_helper_serv_data.append({
+				'device_name': device_name,
+				'service_name': service_name,
+				'current_value': dict_perf.get('current_value')
+			})
 
 	# send insert/update tasks
-	send_db_tasks.s(serv_data, topology_serv_data, util_serv_data, kpi_serv_data, site
-	                ).apply_async()
+	send_db_tasks.s(serv_data, topology_serv_data, util_serv_data, kpi_helper_serv_data,
+	                ss_provis_helper_serv_data, site).apply_async()
 
 
 @app.task(name='make-dicts-from-perf')
@@ -254,7 +279,8 @@ def get_service_checks_output(site_name=None):
 
 
 @app.task(name='send-db-tasks-service', ignore_result=True)
-def send_db_tasks(serv_data, topology_serv_data, util_serv_data, kpi_serv_data, site):
+def send_db_tasks(serv_data, topology_serv_data, util_serv_data, kpi_serv_data,
+                  ss_provis_serv_data, site):
 	""" sends task messages into celery task broker"""
 
 	topology_data_fields = ('device_name', 'service_name', 'machine_name',
@@ -263,6 +289,7 @@ def send_db_tasks(serv_data, topology_serv_data, util_serv_data, kpi_serv_data, 
 	                        'mac_address')
 	# tasks to be sent
 	tasks = []
+	rds_cli = RedisInterface()
 	if serv_data:
 		# mongo/mysql inserts/updates for regular services
 		tasks.extend([
@@ -287,10 +314,13 @@ def send_db_tasks(serv_data, topology_serv_data, util_serv_data, kpi_serv_data, 
 			rds_cli.redis_update.s(util_serv_data, perf_type='util')
 		])
 	if kpi_serv_data:
-		rds_cli = RedisInterface()
 		tasks.extend([
 			rds_cli.redis_update.s(kpi_serv_data, update_queue=True,
-			                             perf_type='ul_issue')
+			                       perf_type='ul_issue')
+		])
+	if ss_provis_serv_data:
+		tasks.extend([
+			rds_cli.redis_insert.s(ss_provis_serv_data, perf_type='provis')
 		])
 
 	if tasks:
@@ -310,8 +340,8 @@ def get_or_update_mrc(host_value, util_values):
 	new_data_source = re.sub(repl, repl_with, data_source)
 	for val in util_values:
 		if (val.get('host_name') == device_name and
-			val.get('service_name') == new_service and
-			val.get('data_source') == new_data_source):
+				    val.get('service_name') == new_service and
+				    val.get('data_source') == new_data_source):
 			value = val
 			break
 	if value.get('current_value'):
@@ -334,7 +364,8 @@ def build_export_util(**kw):
 		p.hgetall('dr_hosts')
 		p.lrange('mrc_hosts', 0, -1)
 		dr_hosts, mrc_hosts = p.execute()
-		# TODO: use built-in library object loading instead of eval
+		dr_hosts, mrc_hosts = literal_eval(dr_hosts), literal_eval(mrc_hosts)
+		# TODO: use redispy built-in library object loading instead of eval
 		primary_dr, secondary_dr = dr_hosts.keys(), dr_hosts.values()
 		for entry in util_values:
 			# process dr enabled entries
@@ -375,11 +406,11 @@ def get_or_update_dr(matching_criteria, host_value, values):
 	""" updates current value of a given host entry based on 
 	its primary_dr/secondary_dr values
 	"""
-	value  = None
+	value = None
 	for val in values:
 		if (val.get('host_name') == matching_criteria[0] and
-			    val.get('service_name') == matching_criteria[1] and
-			    val.get('data_source') == matching_criteria[2]):
+				    val.get('service_name') == matching_criteria[1] and
+				    val.get('data_source') == matching_criteria[2]):
 			value = val
 			break
 	old = value.get('current_value')
