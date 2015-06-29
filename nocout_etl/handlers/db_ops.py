@@ -11,7 +11,12 @@ data manipulations, used in site-wide ETL operations.
 from redis import StrictRedis
 from pymongo import MongoClient
 from mysql.connector import connect
+
 from ConfigParser import ConfigParser
+from itertools import groupby
+from operator import itemgetter
+from ast import literal_eval
+
 from celery import Task
 from celery.contrib.methods import task_method
 from celery.utils.log import get_task_logger
@@ -83,35 +88,29 @@ class DatabaseTask(Task):
 
 class RedisInterface:
 	""" Implements various redis operations"""
-	
-	def __init__(self, perf_q=None):
+
+	def __init__(self, **kw):
+		self.custom_conf = kw.get('custom_conf')
 		self.redis_conn = None
 		# queue name to get check results data from 
-		self.perf_q = perf_q
-		# type of data, [whether host check or service check]
-		# used as redis keys
-		# for ex. 
-		# status:localhost:rssi:dl_rssi [hash]
-		# live:localhost:ping:pl [list]
-		#self.perf_type = {
-		#		'status': 'status:%s:%s:%s',
-		#		'live': 'live:%s:%s:%s', 
-    	#		}
-	
+		self.perf_q = kw.get('perf_q')
+
 	@property
 	def redis_cnx(self):
 		conf = ConfigParser()
 		conf.read(db_conf)
 		# redis connection config
 		re_conf = {
-				'port': int(conf.get('redis', 'port')),
-				'db': int(conf.get('redis', 'db'))
-				}
+			'port': int(conf.get('redis', 'port')),
+			'db': int(conf.get('redis', 'db'))
+		}
+		re_conf.update(self.custom_conf) if self.custom_conf else re_conf
+		try:
+			self.redis_conn = StrictRedis(**re_conf)
+		except Exception as exc:
+			error('Redis connection error... {0}'.format(exc))
 		if not self.redis_conn:
-			try:
-				self.redis_conn = StrictRedis(**re_conf)
-			except Exception as exc:
-				error('Redis connection error... {0}'.format(exc))
+			pass
 
 		return self.redis_conn
 
@@ -120,10 +119,10 @@ class RedisInterface:
 		info('Get data from queue: {0}'.format(self.perf_q))
 		output = self.redis_cnx.lrange(self.perf_q, start, end)
 		# keep only unread values in list
-		#self.redis_cnx.ltrim(self.perf_q, end+1, -1)
+		self.redis_cnx.ltrim(self.perf_q, end+1, -1)
 
 		return output
-	
+
 	@app.task(filter=task_method, name='redis-update')
 	def redis_update(self, data_values, update_queue=False, perf_type=''):
 		""" Updates multiple hashes in single operation using pipelining"""
@@ -132,9 +131,10 @@ class RedisInterface:
 		try:
 			# update the queue values
 			if update_queue:
+				KEY = '%s:%s:%s' % (perf_type, '%s', '%s')
 				devices = [d.get('device_name') for d in data_values]
 				# push the values into queues
-				[p.rpush(KEY % d.get('device_name'), d)
+				[p.rpush(KEY % (d.get('device_name'), d.get('service_name')), d.get('severity'))
 				 for d in data_values]
 				# perform all operations atomically
 				p.execute()
@@ -160,8 +160,8 @@ class RedisInterface:
 			Task.retry(args=(data_values), kwargs={'perf_type': perf_type},
 					max_retries=2, countdown=10, exc=exc)
 
-
 	def multi_get(self, key_prefix):
+		""" Returns list of values (mappings) having keys matching with key_prefix"""
 		out = []
 		if not key_prefix:
 			return out
@@ -170,28 +170,129 @@ class RedisInterface:
 		p = self.redis_cnx.pipeline()
 		try:
 			[p.hgetall(k) for k in keys]
-			out = p.execute()
+			out = literal_eval(p.execute())
 		except Exception as exc:
 			error('Redis pipe error in multi get... {0}'.format(exc))
-			
+
 		return out
 
 	@app.task(filter=task_method, name='redis-insert')
-	def redis_insert(self, data_values, perf_type=''):
-		KEY = self.perf_type[perf_type] if perf_type else ''
+	def multi_set(self, data_values, perf_type=''):
+		""" Sets multiple key values through pipeline"""
+		KEY = '%s:%s:%s' % (perf_type, '%s', '%s')
 		p = self.redis_cnx.pipeline(transaction=True)
-		try:
-			for d in data_values:
-				# TODO: we should remove old values from list based on some mechanism
-				p.rpush(KEY % 
-						(d.get('device_name'), d.get('service_name'), d.get('data_source')), 
-						d)
-			p.execute()
-		except Exception as exc:
-			error('Redis pipe error in insert... {0}, retrying...'.format(exc))
-			# send the task for retry
-			Task.retry(args=(data_values), kwargs={'perf_type': perf_type},
-					max_retries=2, countdown=10, exc=exc)
+		# keep the provis data keys with a timeout of 5 mins
+		[p.setex(KEY %
+		         (d.get('device_name'), d.get('service_name')),
+		         300, d.get('current_value')) for p in data_values
+		 ]
+
+
+@app.task(base=DatabaseTask, name='load-inventory', bind=True)
+def load_inventory(self):
+	"""
+	Loads inventory data into redis
+	"""
+	query = (
+		"SELECT DISTINCT D.device_name, site_instance_siteinstance.name, "
+		"D.ip_address, device_devicetype.name AS dev_type, "
+		"device_devicetechnology.name AS dev_tech "
+		"FROM device_device D "
+		"INNER JOIN "
+		"(device_devicetype, device_devicetechnology, machine_machine, "
+		"site_instance_siteinstance) "
+		"ON "
+		"( "
+		"device_devicetype.id = D.device_type AND "
+		"device_devicetechnology.id = D.device_technology AND "
+		"machine_machine.id = D.machine_id AND "
+		"site_instance_siteinstance.id = D.site_instance_id "
+		") "
+		"WHERE "
+		"D.is_deleted = 0 AND "
+		"D.host_state <> 'Disable' AND "
+		"device_devicetechnology.name IN ('WiMAX', 'P2P', 'PMP', 'Mrotek', 'RiCi')"
+	)
+	dr_query = (
+		"SELECT "
+		"inner_device.Sector_IP AS primary_ip, "
+		"outer_device.ip_address AS dr_ip "
+		"FROM ( "
+			"SELECT "
+				"ds.ip_address AS Sector_IP, "
+				"sector.dr_configured_on_id as dr_id "
+		"FROM "
+			"inventory_sector AS sector "
+		"INNER JOIN "
+			"device_device AS ds "
+		"ON "
+			"NOT ISNULL(sector.sector_configured_on_id) "
+		"AND "
+			"sector.sector_configured_on_id = ds.id "
+		"AND "
+			"sector.dr_site = 'yes' "
+		"AND "
+			"NOT ISNULL(sector.dr_configured_on_id) "
+		") AS inner_device "
+		"INNER JOIN "
+			"device_device as outer_device "
+		"ON "
+			"outer_device.id = inner_device.dr_id; "
+	)
+
+	cur = load_inventory.mysql_cnx('historical').cursor()
+	cur.execute(query)
+	out = cur.fetchall()
+	#info('out: {0}'.format(out))
+
+	# keeping invent data in database number 3
+	rds_cli = RedisInterface(custom_conf={'db': 3})
+	rds_cli.redis_cnx.flushdb()
+	rds_pipe = rds_cli.redis_cnx.pipeline(transaction=True)
+	wimax_bs_list = []
+	# group based on device technologies and load the devices info to redis
+	for grp, grp_vals in groupby(out, key=itemgetter(4)):
+		grouped_devices = list(grp_vals)
+		if grouped_devices[0][3] == 'StarmaxIDU':
+			[wimax_bs_list.append(list(x)) for x in grouped_devices]
+			# push wimax bs with its dr site info
+			cur.execute(dr_query)
+			dr_info = cur.fetchall()
+			load_devicetechno_wise(grp, wimax_bs_list, rds_pipe, extra=dr_info)
+		else:
+			load_devicetechno_wise(grp, grouped_devices, rds_pipe)
+	try:
+		rds_pipe.execute()
+	except Exception as exc:
+		error('Error in redis inventory loading... {0}'.format(exc))
+	cur.close()
+
+
+@app.task(name='load-devicetechno-wise')
+def load_devicetechno_wise(device_techno, data_values, p, extra=None):
+	"""
+	Loads specific device type data into redis
+	"""
+	t = data_values[0]
+	KEY = '%s:%s:%s' % (str(t[4]).lower(),
+					'ss' if t[3].endswith('SS') else 'bs',
+					'%s')
+	# entries needed from index 0 to last_index-1
+	last_index = 3
+	matched_dr = None
+	# TODO: need to improve the algo here
+	if extra:
+		last_index = 4
+		for outer in data_values:
+			del outer[3:]
+			for inner in extra:
+				if inner[0] == outer[2]:
+					matched_dr = inner[1]
+					break
+			if matched_dr:
+				outer.append(matched_dr)
+				matched_dr = None
+	[p.rpush(KEY % data[2], data[:last_index]) for data in data_values]
 
 
 @app.task(base=DatabaseTask, name='nw-mongo-update', bind=True)
