@@ -10,12 +10,16 @@ running on all configured devices for this poller.
 import re
 from datetime import datetime, timedelta
 import socket
+from sys import path
 from ast import literal_eval
 from itertools import izip_longest
+
 from celery import group
 
-from start import app
-from db_ops import *
+path.append('/omd/nocout_etl')
+
+from start.start import app
+from handlers.db_ops import *
 
 logger = get_task_logger(__name__)
 info , warning, error = logger.info, logger.warning, logger.error
@@ -93,8 +97,8 @@ def calculate_host_severity_for_letency(ds_values,host_severity):
 @app.task(base=DatabaseTask, name='build-export-host')
 def build_export(site, network_perf_data):
 	""" processes and prepares data for db insert"""
-	
-    # contains one dict value for each service data source
+
+	# contains one dict value for each service data source
 	data_array = []
 	# last down time for devices
 	rds_cli = RedisInterface()
@@ -106,7 +110,7 @@ def build_export(site, network_perf_data):
 		if not h_chk_val:
 			continue
 		try:
-		    h_chk_val = literal_eval(h_chk_val)
+			h_chk_val = literal_eval(h_chk_val)
 		except Exception as exc:
 			error('Error in json loading: %s' % exc)
 			continue
@@ -117,7 +121,7 @@ def build_export(site, network_perf_data):
 		refer = ''
 		device_name = str(h_chk_val['host_name'])
 		device_down_entry = None
-	    # Process network perf data
+		# Process network perf data
 		try:
 			threshold_values = get_threshold(h_chk_val.get('perf_data'))
 			# TODO: include rt_min, rt_max values if needed
@@ -309,7 +313,7 @@ def pivot_timestamp_fwd(timestamp):
 
 @app.task(name='network-main')
 def main(**opts):
-	opts = {'site_name': 'pardeep_slave_1'}
+	opts = {'site_name': 'pub_slave_1'}
 	get_host_checks_output.s(**opts).apply_async()
 
 

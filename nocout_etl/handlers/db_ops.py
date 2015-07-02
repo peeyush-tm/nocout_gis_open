@@ -21,12 +21,13 @@ from celery import Task
 from celery.contrib.methods import task_method
 from celery.utils.log import get_task_logger
 
-from start import app
+from start.start import app
 
 logger = get_task_logger(__name__)
 info , warning, error = logger.info, logger.warning, logger.error
 
 db_conf = app.conf.CNX_FROM_CONF
+INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
 class DatabaseTask(Task):
 	abstract = True
@@ -80,7 +81,7 @@ class DatabaseTask(Task):
 			try:
 				self.my_conn_pool[key] = connect(**my_conf)
 			except Exception as exc:
-				error('Mysql connection problem, retrying... {}'.format(exc))
+				error('Mysql connection problem, retrying... {0}'.format(exc))
 				#raise self.retry(max_retries=2, countdown=10, exc=exc)
 
 		return self.my_conn_pool.get(key)
@@ -116,8 +117,8 @@ class RedisInterface:
 
 	def get(self, start, end):
 		""" Get and remove values from redis list based on a range"""
-		info('Get data from queue: {0}'.format(self.perf_q))
 		output = self.redis_cnx.lrange(self.perf_q, start, end)
+		output = [literal_eval(x) for x in output]
 		# keep only unread values in list
 		self.redis_cnx.ltrim(self.perf_q, end+1, -1)
 
@@ -184,7 +185,7 @@ class RedisInterface:
 		# keep the provis data keys with a timeout of 5 mins
 		[p.setex(KEY %
 		         (d.get('device_name'), d.get('service_name')),
-		         300, d.get('current_value')) for p in data_values
+		         300, d.get('current_value')) for d in data_values
 		 ]
 
 
@@ -243,7 +244,7 @@ def load_inventory(self):
 	cur = load_inventory.mysql_cnx('historical').cursor()
 	cur.execute(query)
 	out = cur.fetchall()
-	#info('out: {0}'.format(out))
+	# info('out: {0}'.format(out))
 
 	# keeping invent data in database number 3
 	rds_cli = RedisInterface(custom_conf={'db': 3})
@@ -251,32 +252,35 @@ def load_inventory(self):
 	rds_pipe = rds_cli.redis_cnx.pipeline(transaction=True)
 	wimax_bs_list = []
 	# group based on device technologies and load the devices info to redis
-	for grp, grp_vals in groupby(out, key=itemgetter(4)):
+	out = sorted(out, key=itemgetter(3))
+	for grp, grp_vals in groupby(out, key=itemgetter(3)):
 		grouped_devices = list(grp_vals)
 		if grouped_devices[0][3] == 'StarmaxIDU':
 			[wimax_bs_list.append(list(x)) for x in grouped_devices]
 			# push wimax bs with its dr site info
 			cur.execute(dr_query)
 			dr_info = cur.fetchall()
-			load_devicetechno_wise(grp, wimax_bs_list, rds_pipe, extra=dr_info)
+			cur.close()
+			load_devicetechno_wise(wimax_bs_list, rds_pipe, extra=dr_info)
 		else:
-			load_devicetechno_wise(grp, grouped_devices, rds_pipe)
+			load_devicetechno_wise(grouped_devices, rds_pipe)
 	try:
 		rds_pipe.execute()
 	except Exception as exc:
 		error('Error in redis inventory loading... {0}'.format(exc))
-	cur.close()
 
 
 @app.task(name='load-devicetechno-wise')
-def load_devicetechno_wise(device_techno, data_values, p, extra=None):
+def load_devicetechno_wise(data_values, p, extra=None):
 	"""
-	Loads specific device type data into redis
+	Loads specific device technology data into redis
 	"""
 	t = data_values[0]
-	KEY = '%s:%s:%s' % (str(t[4]).lower(),
+	key = '%s:%s:%s' % (str(t[4]).lower(),
 					'ss' if t[3].endswith('SS') else 'bs',
 					'%s')
+	# keeping basic inventory info of a device, name --> ip mapping
+	invent_key = 'device_inventory:%s'
 	# entries needed from index 0 to last_index-1
 	last_index = 3
 	matched_dr = None
@@ -292,7 +296,10 @@ def load_devicetechno_wise(device_techno, data_values, p, extra=None):
 			if matched_dr:
 				outer.append(matched_dr)
 				matched_dr = None
-	[p.rpush(KEY % data[2], data[:last_index]) for data in data_values]
+	#[p.rpush(key % data[2], data[:last_index]) for data in data_values]
+	for data in data_values:
+		p.set(invent_key % data[0], data[2])
+		p.rpush(key % data[2], data[:last_index])
 
 
 @app.task(base=DatabaseTask, name='nw-mongo-update', bind=True)
@@ -305,7 +312,7 @@ def mongo_update(self, data_values, indexes, col, site):
 				[find_query.update({x: val.get(x)}) for x in indexes]
 				lcl_cnx.update(find_query, val, upsert=True)
 		except Exception as exc:
-			error('Mongo update problem, retrying... {}'.format(exc))
+			error('Mongo update problem, retrying... {0}'.format(exc))
 			raise self.retry(args=(data_values, indexes, col), max_retries=1,
 					countdown=10, exc=exc)
 	else:
@@ -319,7 +326,7 @@ def mongo_insert(self, data_values, col, site):
 		try:
 			mongo_insert.mongo_cnx(site)[col].insert(data_values)
 		except Exception as exc:
-			error('Mongo insert problem, retrying... {}'.format(exc))
+			error('Mongo insert problem, retrying... {0}'.format(exc))
 			raise self.retry(args=(data_values, col), max_retries=1,
 					exc=exc)
 	else:
@@ -346,7 +353,7 @@ def mysql_insert_handler(self, data_values, insert_table, update_table, mongo_co
 	except Exception as exc:
 		#lcl_cnx.rollback()
 		# may be retry
-		error('Mysql insert problem... {}'.format(exc))
+		error('Mysql insert problem... {0}'.format(exc))
 
 	else:
 		# timestamp of most latest insert made to mysql
@@ -354,8 +361,8 @@ def mysql_insert_handler(self, data_values, insert_table, update_table, mongo_co
 		# last timestamp for this insert
 		last_timestamp_local = float(data_values[-1].get('sys_timestamp'))
 		if (last_timestamp and ((last_timestamp + 900) < last_timestamp_local)):
-			warning('last_timestamp {}'.format(last_timestamp))
-			warning('last_timestamp_local {}'.format(last_timestamp_local))
+			warning('last_timestamp {0}'.format(last_timestamp))
+			warning('last_timestamp_local {0}'.format(last_timestamp_local))
 			# mysql is down for more than 15 minutes from now,
 			# import data from mongo
 			rds_cli = StrictRedis(port=app.conf.REDIS_PORT)
@@ -389,7 +396,7 @@ def mysql_update(self, table, data_values, site, columns=None):
 	p2 = ' , '.join(map(lambda x: ' %('+ x + ')s', columns))
 	p3 = ' , '.join(map(lambda x: x + ' = VALUES(' + x + ')', columns))
 	updt_qry = p0 + p1 + ' VALUES (' + p2 + ') ON DUPLICATE KEY UPDATE ' + p3
-	info('Update query: {0}'.format(updt_qry))
+	#info('Update query: {0}'.format(updt_qry))
 
 	#updt_qry += """
 	#		(
@@ -461,7 +468,7 @@ def mysql_update(self, table, data_values, site, columns=None):
 		raise self.retry(args=(table, data_values, site), max_retries=1, countdown=10, 
 				exc=exc)
 
-	warning('Len for status upserts {}\n'.format(len(data_values)))
+	warning('Len for status upserts {0}\n'.format(len(data_values)))
 
 
 @app.task(base=DatabaseTask, name='nw-mysql-insert', bind=True)
@@ -492,7 +499,7 @@ def mysql_insert(self, table, data_values, site):
 	except Exception as exc:
 		# rollback transaction
 		lcl_cnx.rollback()
-		error('Error in mysql_insert task, {}'.format(exc))
+		error('Error in mysql_insert task, {0}'.format(exc))
 
 
 @app.task(base=DatabaseTask, name='get-latest-entry', bind=True)

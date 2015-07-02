@@ -9,16 +9,21 @@ running on all configured devices for this poller.
 
 import re
 from datetime import datetime, timedelta
+from sys import path
 import time
 from ast import literal_eval
 
 from celery import group
 
-from start import app
-from db_ops import *
+path.append('/omd/nocout_etl')
+
+from start.start import app
+from handlers.db_ops import *
 
 logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
+
+INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
 
 def calculate_refer_field_for_host(device_first_down_list, host_name, ds_values,
@@ -151,6 +156,9 @@ def build_export(site, perf_data):
 	topology_serv_data = []
 	# util services data
 	util_serv_data = []
+	kpi_serv_data = []
+	interface_serv_data = []
+	invent_serv_data = []
 	kpi_helper_serv_data = []
 	ss_provis_helper_serv_data = []
 	dict_perf = {}
@@ -168,23 +176,48 @@ def build_export(site, perf_data):
 					'cambium_dl_jitter', 'cambium_ul_jitter',
 					'cambium_rereg_count', 'wimax_ul_rssi',
 					'wimax_dl_rssi', 'wimax_dl_cinr', 'wimax_ss_ptx_invent']
+
+	# get device_name --> ip mappings from redis
+	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
+	p = rds_cli.redis_cnx.pipeline()
+	keys = rds_cli.redis_cnx.keys(pattern='device_inventory:*')
+	[p.get(k) for k in keys]
+	name_ip_mapping = dict([t for t in zip(keys, p.execute())])
+
 	for chk_val in perf_data:
 		if not chk_val:
 			continue
-		try:
-			chk_val = literal_eval(chk_val)
-		except Exception as exc:
-			error('Error in json loading: %s' % exc)
-			continue
+		if not isinstance(chk_val, dict):
+			try:
+				chk_val = literal_eval(chk_val)
+			except Exception as exc:
+				error('Error in json loading: %s' % exc)
+				continue
 		service_name = str(chk_val['service_description'])
 		device_name = str(chk_val['host_name'])
 		# TODO: deliver to appropriate modules, using message queues [producer/consumer]
+		# topology services
 		if service_name.endswith('_topology'):
 			update_topology(topology_serv_data, chk_val, site)
+		# dr and mrc dependent services
 		elif service_name in util_services:
-			make_dicts_from_perf(util_serv_data, chk_val, site)
+			make_dicts_from_perf(util_serv_data, chk_val, 
+				name_ip_mapping, site)
+		# kpi services
+		elif service_name.endswith('_kpi'):
+			make_dicts_from_perf(kpi_serv_data, chk_val, 
+				name_ip_mapping, site)
+		# status services
+		elif service_name.endswith('_status'):
+			make_dicts_from_perf(interface_serv_data, chk_val, 
+				name_ip_mapping, site)
+		# invent services
+		elif service_name.endswith('_invent'):
+			make_dicts_from_perf(invent_serv_data, chk_val, 
+				name_ip_mapping, site)
 		else:
-			make_dicts_from_perf(serv_data, chk_val, site)
+			make_dicts_from_perf(serv_data, chk_val, 
+				name_ip_mapping, site)
 			dict_perf = serv_data[-1]
 
 		# load values into redis
@@ -203,17 +236,23 @@ def build_export(site, perf_data):
 			})
 
 	# send insert/update tasks
-	send_db_tasks.s(serv_data, topology_serv_data, util_serv_data, kpi_helper_serv_data,
+	send_db_tasks.s(serv_data, interface_serv_data, invent_serv_data, kpi_serv_data,
+	                topology_serv_data, util_serv_data, kpi_helper_serv_data,
 	                ss_provis_helper_serv_data, site).apply_async()
 
 
 @app.task(name='make-dicts-from-perf')
-def make_dicts_from_perf(outs, ins, site, multi=False):
-	ins = ins if multi else list(ins)
+def make_dicts_from_perf(outs, ins, name_ip_mapping,site, multi=False):
+	li = []
+	#info('name_ip_mapping: {0}'.format(name_ip_mapping))
+	if not multi:
+		li.append(ins)
+		ins = li
 	for chk_val in ins:
 		device_name = str(chk_val.get('host_name'))
 		service_name = str(chk_val.get('service_description'))
-		ip_address = str(chk_val.get('host_name'))
+		key = 'device_inventory:' + device_name
+		ip_address = name_ip_mapping.get(key)
 		data_dict = {}
 		threshold_values = {}
 		severity = chk_val['state'] if chk_val.get('state') else 'unknown'
@@ -258,15 +297,6 @@ def make_dicts_from_perf(outs, ins, site, multi=False):
 	return outs
 
 
-# class ServiceEtl(object):
-#	"""
-#	Base class that gets data for host and service checks and 
-#	sends celery tasks further
-#	"""
-#	def __init__(self):
-#		# initialize redis connection
-#		self.queue = RedisInterface(perf_q='queue:service')
-
 @app.task(name='get-service-checks', ignore_result=True)
 def get_service_checks_output(site_name=None):
 	# get check results from redis backed queue
@@ -279,8 +309,9 @@ def get_service_checks_output(site_name=None):
 
 
 @app.task(name='send-db-tasks-service', ignore_result=True)
-def send_db_tasks(serv_data, topology_serv_data, util_serv_data, kpi_serv_data,
-                  ss_provis_serv_data, site):
+def send_db_tasks(serv_data, interface_serv_data, invent_serv_data, kpi_serv_data,
+                  topology_serv_data, util_serv_data, kpi_helper_serv_data,
+                  ss_provis_helper_serv_data, site):
 	""" sends task messages into celery task broker"""
 
 	topology_data_fields = ('device_name', 'service_name', 'machine_name',
@@ -300,6 +331,36 @@ def send_db_tasks(serv_data, topology_serv_data, util_serv_data, kpi_serv_data,
 			mysql_insert_handler.s(serv_data, 'performance_performanceservice',
 			                       'performance_servicestatus', 'service_perf', site)])
 
+	if interface_serv_data:
+		# mongo/mysql inserts/updates for regular services
+		tasks.extend([
+			mongo_update.s(interface_serv_data,
+			               ('device_name', 'service_name', 'data_source'),
+			               'interface_status', site),
+			mongo_insert.s(interface_serv_data, 'interface_perf', site),
+			mysql_insert_handler.s(interface_serv_data, 'performance_performancestatus',
+			                       'performance_status', 'interface_perf', site)])
+
+	if invent_serv_data:
+		# mongo/mysql inserts/updates for regular services
+		tasks.extend([
+			mongo_update.s(invent_serv_data,
+			               ('device_name', 'service_name', 'data_source'),
+			               'inventory_status', site),
+			mongo_insert.s(invent_serv_data, 'inventory_perf', site),
+			mysql_insert_handler.s(invent_serv_data, 'performance_performanceinventory',
+			                       'performance_inventorystatus', 'inventory_perf', site)])
+
+	if kpi_serv_data:
+		# mongo/mysql inserts/updates for regular services
+		tasks.extend([
+			mongo_update.s(kpi_serv_data,
+			               ('device_name', 'service_name', 'data_source'),
+			               'kpi_status', site),
+			mongo_insert.s(kpi_serv_data, 'kpi_perf', site),
+			mysql_insert_handler.s(kpi_serv_data, 'performance_utilization',
+			                       'performance_utilizationstatus', 'kpi_perf', site)])
+
 	if topology_serv_data:
 		# topology specific tasks
 		tasks.extend([
@@ -313,14 +374,16 @@ def send_db_tasks(serv_data, topology_serv_data, util_serv_data, kpi_serv_data,
 		tasks.extend([
 			rds_cli.redis_update.s(util_serv_data, perf_type='util')
 		])
-	if kpi_serv_data:
+	# need to keep the data in redis for kpi checks
+	if kpi_helper_serv_data:
 		tasks.extend([
-			rds_cli.redis_update.s(kpi_serv_data, update_queue=True,
+			rds_cli.redis_update.s(kpi_helper_serv_data, update_queue=True,
 			                       perf_type='ul_issue')
 		])
-	if ss_provis_serv_data:
+	# need to keep the data in redis for provis checks
+	if ss_provis_helper_serv_data:
 		tasks.extend([
-			rds_cli.redis_insert.s(ss_provis_serv_data, perf_type='provis')
+			rds_cli.redis_insert.s(ss_provis_helper_serv_data, perf_type='provis')
 		])
 
 	if tasks:
@@ -473,7 +536,7 @@ def pivot_timestamp_fwd(timestamp):
 
 @app.task(name='service-main')
 def main(**opts):
-	opts = {'site_name': 'pardeep_slave_1'}
+	opts = {'site_name': 'pub_slave_1'}
 	# srv_etl = ServiceEtl()
 	get_service_checks_output.s(**opts).apply_async()
 
