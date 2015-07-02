@@ -136,7 +136,7 @@ class AlertCenterListing(ListView):
             'mData': 'current_value',
             'sTitle': '{0}'.format(data_source_title),
             'sWidth': 'auto',
-            'bSortable': True,
+            'bSortable': True
             "sSortDataType": "dom-text",
             "sType": "numeric"
         }]
@@ -147,7 +147,7 @@ class AlertCenterListing(ListView):
                     'mData': 'max_value',
                     'sTitle': 'Latency Max (ms)',
                     'sWidth': 'auto',
-                    'bSortable': True,
+                    'bSortable': True
                     "sSortDataType": "dom-text",
                     "sType": "numeric"
                 },
@@ -1209,6 +1209,18 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 'sys_timestamp',
                 'age'
             ]
+        elif data_source in ['Other_PD', 'Other_Down']:
+            self.order_columns = [
+                'severity',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'current_value',
+                'sys_timestamp',
+                'age'
+            ]
         elif data_source in ['Backhaul_RTA']:
             self.order_columns = [
                 'severity',
@@ -1218,6 +1230,20 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 'city',
                 'state',
                 'bh_connectivity',
+                'current_value',
+                'max_value',
+                'min_value',
+                'sys_timestamp',
+                'age'
+            ]
+        elif data_source in ['Other_RTA']:
+            self.order_columns = [
+                'severity',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
                 'current_value',
                 'max_value',
                 'min_value',
