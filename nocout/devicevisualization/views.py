@@ -3550,7 +3550,7 @@ def remove_duplicate_dict_from_list(input_list=None):
 
 
 ## This function returns the latest l2 report url for given circuit id.
-def getL2Report(request, ckt_id = 'no'):
+def getL2Report(request, item_id = None, type = None):
 
     result = {
         "message" : "No L2 Report",
@@ -3559,8 +3559,11 @@ def getL2Report(request, ckt_id = 'no'):
     }
 
     try:
-        circuit_instance = Circuit.objects.filter(alias=ckt_id)
-        report_list = CircuitL2Report.objects.filter(circuit_id=circuit_instance).values()[:1]
+        if item_id and type == 'circuit':            
+            circuit_instance = Circuit.objects.filter(alias=item_id)
+        else:
+            circuit_instance = item_id
+        report_list = CircuitL2Report.objects.filter(type_id=circuit_instance).values()[:1]
         if len(report_list) > 0:
             file_url = report_list[0]['file_name']
             file_url_dict = {

@@ -2950,11 +2950,13 @@ function devicePlottingClass_gmap() {
 				infoTable += "</tbody></table>";
 
 				var report_download_btn = "";
+				var report_type = "circuit";
 				if(path_circuit_id) {
 					report_download_btn = '<li><button class="btn btn-sm btn-default download_report_btn" \
 										   data-complete-text="Download L2 Report"\
 									  	   data-loading-text="Please Wait..."\
-										   ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
+										   item_id="'+path_circuit_id+'"\
+										   type="'+report_type+'">Download L2 Report</button></li>';
 				}
 				/*SS Info End*/
 				infoTable += '</div>';
@@ -3394,13 +3396,14 @@ function devicePlottingClass_gmap() {
 							  <div class='clearfix'></div><div class='pull-right'></div>\
 							  <div class='clearfix'></div></div></div></div>";
 		} else {
-			
 			/*Tab-content Start*/
 			infoTable += '<div class="tab-content">';
 
 			var startPtInfo = [],
 				item_index = contentObject.item_index > -1 ? contentObject.item_index : 0,
-				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase();
+				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
+				bs_id = contentObject.filter_data.bs_id;
+				report_type="base_station"
 
 			if(contentObject.bsInfo) {
 				// Rearrange BS tootip info as per actual sequence
@@ -3408,6 +3411,14 @@ function devicePlottingClass_gmap() {
 				startPtInfo = bs_actual_data;
 			}
 
+			var report_download_btn = "";
+				if(bs_id) {
+					report_download_btn = '<li><button class="btn btn-sm btn-default download_report_btn" \
+										   data-complete-text="Download L2 Report"\
+									  	   data-loading-text="Please Wait..."\
+										   item_id="'+bs_id+'"\
+										   type="'+report_type+'">Download L2 Report</button></li>';
+				}
 			/*Static Tab Content Start*/
 			infoTable += '<div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
 			infoTable += "<table class='table table-bordered table-hover'><tbody>";
@@ -3513,7 +3524,7 @@ function devicePlottingClass_gmap() {
 							  <i class='fa fa-times text-danger'></i></a></div></div>\
 							  <div class='box-body'><div align='center'>"+infoTable+"</div>\
 							  <div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'>\
-							  </div></div></div></div>";
+							  </div><ul class='list-unstyled'>"+report_download_btn+"</ul></div></div></div>";
 		}
 
 		if(isDebug) {
