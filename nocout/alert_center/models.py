@@ -16,6 +16,7 @@ class GenericAlarm(models.Model):
     uptime = models.CharField(max_length=20)
     traptime = models.CharField(max_length=30)
     component_name = models.CharField(max_length=50)
+    component_id = models.CharField('Component ID', default='NA', max_length=50, null=True, blank=True)
     description = models.CharField(max_length=256)
 
     class Meta:
