@@ -138,7 +138,7 @@ class AlertCenterListing(ListView):
             'mData': 'current_value',
             'sTitle': '{0}'.format(data_source_title),
             'sWidth': 'auto',
-            'bSortable': True
+            'bSortable': True,
             "sSortDataType": "dom-text",
             "sType": "numeric"
         }]
@@ -149,7 +149,7 @@ class AlertCenterListing(ListView):
                     'mData': 'max_value',
                     'sTitle': 'Latency Max (ms)',
                     'sWidth': 'auto',
-                    'bSortable': True
+                    'bSortable': True,
                     "sSortDataType": "dom-text",
                     "sType": "numeric"
                 },
