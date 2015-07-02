@@ -903,6 +903,10 @@ function devicePlottingClass_gmap() {
 				} else {
 					state_wise_device_counters[state] = 1;
 					if(state_lat_lon_obj) {
+						var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
+												 <p style='position:relative;padding-top:24px;font-weight:bold;' \
+												 title='Load "+state+" Data.'> \
+												 "+state_wise_device_counters[state]+"</p></div>";
 						var device_counter_label = new InfoBox({
 				            content: state_cluster_html,
 				            boxStyle: {
