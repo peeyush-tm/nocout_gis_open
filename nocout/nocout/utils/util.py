@@ -1736,11 +1736,21 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             bs.state_id as BSSTATEID,
             device_port.name as SECTOR_PORT,
             IF(
-                not isnull(device_port.name),
-                concat(
-                    '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
+                not isnull(IF(
+                    not isnull(device_port.name),
+                    concat(
+                        '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
+                    ),
+                    ss_info.SECTOR_SECTOR_ID
+                )),
+                IF(
+                    not isnull(device_port.name),
+                    concat(
+                        '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
+                    ),
+                    ss_info.SECTOR_SECTOR_ID
                 ),
-                ss_info.SECTOR_SECTOR_ID
+                'NA'
             ) as SECTOR_PORT_SECTOR_ID,
             ss_info.*
         FROM (
@@ -1749,7 +1759,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
                 sector.id AS SECTOR_ID,
                 sector.sector_configured_on_port_id as sector_port_id,
                 sector.base_station_id as BSID,
-                sector_device.ip_address as SECTOR_CONF_ON_IP,
+                IF(not isnull(sector_device.ip_address), sector_device.ip_address, 'NA') as SECTOR_CONF_ON_IP,
                 sector_device.device_name as SECTOR_CONF_ON,
                 sector_device.id as NEAR_DEVICE_ID,
                 only_ss_info.*
