@@ -126,13 +126,13 @@ function ourDataTableWidget() {
                 return;
             });
 
-        $("#page_content_div").delegate("#"+tableId+"_search_btn",'click',function() {
+        $("#page_content_div").undelegate("#"+tableId+"_search_btn",'click').delegate("#"+tableId+"_search_btn",'click',function() {
             var search_text = $("#"+tableId+"_filter label input").val();
             if(search_text.length >= 2) {
                 try {
                     dtable.fnFilter(search_text);
                 } catch(e) {
-                    // console.log(e);
+                    // console.error(e);
                 }
             }
         });
