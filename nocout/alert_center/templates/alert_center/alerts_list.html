@@ -248,20 +248,20 @@
                 "network_bh_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : converter_report_title,
-                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "GetNetworkAlertDetail",
-                    "header_extra_param" : "{'headers_data_key' : 'backhaul_headers', "+common_extra_param+"}",
+                    "header_extra_param" : "{'headers_data_key' : 'bh_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : converter_extra_param,
                     "excluded" : "['sector_id',"+common_hidden_columns+"]",
                 },
                 "network_other_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : other_report_title,
-                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "GetNetworkAlertDetail",
-                    "header_extra_param" : "{'headers_data_key' : 'backhaul_headers', "+common_extra_param+"}",
+                    "header_extra_param" : "{'headers_data_key' : 'other_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : other_extra_param,
-                    "excluded" : "['sector_id',"+common_hidden_columns+"]",
+                    "excluded" : "['sector_id','bh_connectivity',"+common_hidden_columns+"]",
                 }
             };
 
