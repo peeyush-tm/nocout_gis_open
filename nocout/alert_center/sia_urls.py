@@ -9,22 +9,14 @@ urlpatterns = patterns('',
                            views.SIAListing.as_view(),
                            name='traps'
                            ),
-                       # current alarms
                        url(
-                           r'^current$',
-                           views.CurrentAlarmsListingTable.as_view(),
-                           name='current-alarms'
+                           r'^listing/$',
+                           views.SIAListingTable.as_view(),
+                           name='snmp_alarms_listing'
                            ),
-                       # clear alarms
                        url(
-                           r'^clear$',
-                           views.ClearAlarmsListingTable.as_view(),
-                           name='clear-alarms'
-                           ),
-                       # history alarms
-                       url(
-                           r'^history$',
-                           views.HistoryAlarmsListingTable.as_view(),
-                           name='history-alarms'
-                           ),
+                           r'^advance_filtering/$',
+                           views.GetSiaFiltersData.as_view(),
+                           name='sia_advance_filters_data'
+                           )
 )
