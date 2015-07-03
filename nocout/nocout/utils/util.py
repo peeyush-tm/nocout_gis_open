@@ -1736,26 +1736,16 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             bs.state_id as BSSTATEID,
             device_port.name as SECTOR_PORT,
             IF(
-                not isnull(IF(
-                    not isnull(device_port.name),
-                    concat(
-                        '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
-                    ),
-                    ss_info.SECTOR_SECTOR_ID
-                )),
-                IF(
-                    not isnull(device_port.name),
-                    concat(
-                        '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
-                    ),
-                    ss_info.SECTOR_SECTOR_ID
+                lower(ss_info.DEVICE_TECH) = 'wimax' and not isnull(device_port.name),
+                concat(
+                    '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
                 ),
-                'NA'
+                ss_info.SECTOR_SECTOR_ID
             ) as SECTOR_PORT_SECTOR_ID,
             ss_info.*
         FROM (
             SELECT 
-                sector.sector_id AS SECTOR_SECTOR_ID,
+                IF(isnull(NULLIF(sector.sector_id, '')), 'NA', sector.sector_id) AS SECTOR_SECTOR_ID,
                 sector.id AS SECTOR_ID,
                 sector.sector_configured_on_port_id as sector_port_id,
                 sector.base_station_id as BSID,
