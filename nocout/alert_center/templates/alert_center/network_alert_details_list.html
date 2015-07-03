@@ -292,12 +292,11 @@
                 "network_bhUtil_tab" : {
                     "app_name" : "capacity_management",
                     "table_title" : network_bhUtil_title,
-                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "header_class_name" : "BackhaulAugmentationAlertsHeaders",
                     "data_class_name" : "BackhaulAugmentationAlertsListing",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : "{'report_title' : '"+network_bhUtil_title+"', "+common_extra_param+"}",
-                    // "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per']"
-                    "excluded" : "["+common_hidden_columns+"]"
+                    "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per', 'backhaul_capacity', 'backhaul__bh_type', 'backhaul__bh_connectivity']"
                 },
                 "network_sectorUtil_tab" : {
                     "app_name" : "capacity_management",
