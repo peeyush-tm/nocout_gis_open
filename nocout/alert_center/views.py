@@ -173,7 +173,6 @@ class AlertCenterListing(ListView):
         ptp_datatable_headers = []
         pmp_wimax_datatable_headers = []
         bh_datatable_headers = []
-        other_datatable_headers = []
 
         ptp_datatable_headers += severity_headers
         ptp_datatable_headers += ptp_starting_headers
@@ -195,18 +194,12 @@ class AlertCenterListing(ListView):
             bh_datatable_headers += polled_headers
             bh_datatable_headers += other_headers
 
-            other_datatable_headers += severity_headers
-            other_datatable_headers += common_headers
-            other_datatable_headers += polled_headers
-            other_datatable_headers += other_headers
-
         displayed_ds_name = " ".join(self.kwargs['data_source'].split('_')).title() \
                             if 'data_source' in self.kwargs else ''
 
         context['ptp_datatable_headers'] = json.dumps(ptp_datatable_headers)
         context['pmp_wimax_datatable_headers'] = json.dumps(pmp_wimax_datatable_headers)
         context['bh_datatable_headers'] = json.dumps(bh_datatable_headers)
-        context['other_datatable_headers'] = json.dumps(other_datatable_headers)
         context['data_source'] = displayed_ds_name
         context['url_data_source'] = data_source
         context['page_type'] = page_type
@@ -865,6 +858,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
             return []
 
         is_bh = False
+        is_other = False
         other_type = "backhaul"
 
         if tab_id:
@@ -899,7 +893,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 self.table_name = 'performance_utilizationstatus'
                 # Add 'refer column' in case of ULIssue
                 self.polled_columns.append('refer')
-            elif tab_id in ["Backhaul", "Backhaul_Down", "Backhaul_PD", "Backhaul_RTA"]:
+            elif tab_id in ["Backhaul"]:
                 technology = None
                 is_bh = True
                 page_type = "other"
@@ -907,15 +901,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 self.data_sources = ''
                 # Onnet/Offnet column added for Backhaul tab
                 self.columns.append("bh_connectivity")
-            elif tab_id in ["Other_Down", "Other_PD", "Other_RTA"]:
+            elif tab_id in ["Backhaul_Down", "Backhaul_PD", "Backhaul_RTA"]:
                 technology = None
                 is_bh = True
                 page_type = "other"
-                other_type = "other"
+                is_other = True
                 self.table_name = 'performance_networkstatus'
+                self.data_sources = ''
                 # Onnet/Offnet column added for Backhaul tab
-                # self.columns.append("bh_connectivity")
-                self.data_sources = ''    
+                self.columns.append("bh_connectivity")    
             else:
                 return []
 
@@ -929,6 +923,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
                     )
             else:
                 device_list += inventory_utils.filter_devices(
+                    organizations=organizations,
+                    data_tab=None,
+                    page_type=page_type,
+                    required_value_list=required_value_list,
+                    other_type=other_type
+                )
+                if is_other:
+                    other_type = "other"
+                    device_list += inventory_utils.filter_devices(
                     organizations=organizations,
                     data_tab=None,
                     page_type=page_type,
@@ -966,11 +969,11 @@ class GetNetworkAlertDetail(BaseDatatableView):
         get_param = self.request.GET.get("data_source")
 
         if get_param:
-            if get_param in ["Backhaul_Down", "Other_Down"]:
+            if get_param in ["Backhaul_Down"]:
                 extra_query_condition += " AND `{0}`.`current_value` = 100 AND `{0}`.`data_source` = 'pl'"
-            elif get_param in ["Backhaul_PD", "Other_PD"]:
+            elif get_param in ["Backhaul_PD"]:
                 extra_query_condition += " AND `{0}`.`current_value` != 100 AND `{0}`.`data_source` = 'pl'"
-            elif get_param in ["Backhaul_RTA", "Other_RTA"]:
+            elif get_param in ["Backhaul_RTA"]:
                 extra_query_condition += " AND `{0}`.`data_source` = 'rta'"
 
         sorted_device_list = list()
@@ -1008,10 +1011,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
             page_type = 'other'
             type_rf = "backhaul"
 
-        if data_source in ['Other_Down', 'Other_PD', 'Other_RTA']:
-            page_type = 'other'
-            type_rf = "other"
-
         # GET all device name list from the list
         try:
             map(lambda x: device_name_list.append(x['device_name']), qs)
@@ -1042,7 +1041,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if qs:
             service_tab_name = 'down'
             # In case of backhaul tab update page type to 'other'
-            if 'backhaul' in ds_param.lower() or 'other' in ds_param.lower():
+            if 'backhaul' in ds_param.lower():
                 perf_page_type = 'other'
                 try:
                     if ds_param.lower().split("_")[1] == 'rta':
@@ -1224,18 +1223,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 'sys_timestamp',
                 'age'
             ]
-        elif data_source in ['Other_PD', 'Other_Down']:
-            self.order_columns = [
-                'severity',
-                'ip_address',
-                'device_type',
-                'bs_name',
-                'city',
-                'state',
-                'current_value',
-                'sys_timestamp',
-                'age'
-            ]
         elif data_source in ['Backhaul_RTA']:
             self.order_columns = [
                 'severity',
@@ -1245,20 +1232,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 'city',
                 'state',
                 'bh_connectivity',
-                'current_value',
-                'max_value',
-                'min_value',
-                'sys_timestamp',
-                'age'
-            ]
-        elif data_source in ['Other_RTA']:
-            self.order_columns = [
-                'severity',
-                'ip_address',
-                'device_type',
-                'bs_name',
-                'city',
-                'state',
                 'current_value',
                 'max_value',
                 'min_value',
