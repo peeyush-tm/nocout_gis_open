@@ -209,10 +209,14 @@
             var ajax_url_other = '{% url "NetworkAlertDetails" %}' + '?data_source='+other_get_param_value;
 
             // Backhaul extra params
-            var converter_extra_param = "{'data_source' : '"+bh_get_param_value+"', 'report_title' : '"+converter_report_title+"', "+common_extra_param+"}";
+            var converter_header_extra_param = "{'headers_data_key' : 'bh_datatable_headers', 'data_source' : '"+ajax_url_get_parameter+"', 'page_type' : '{{ page_type }}', 'report_title' : '"+converter_report_title+"', "+common_extra_param+"}";
+
+            var converter_data_extra_param = "{'headers_data_key' : 'bh_datatable_headers', 'data_source' : '"+bh_get_param_value+"', 'page_type' : '{{ page_type }}', 'report_title' : '"+converter_report_title+"', "+common_extra_param+"}";
 
             // Other extra params
-            var other_extra_param = "{'data_source' : '"+other_get_param_value+"', 'report_title' : '"+other_report_title+"', "+common_extra_param+"}";
+            var other_header_extra_param = "{'headers_data_key' : 'other_datatable_headers', 'data_source' : '"+ajax_url_get_parameter+"', 'page_type' : '{{ page_type }}', 'report_title' : '"+other_report_title+"', "+common_extra_param+"}";
+
+            var other_data_extra_param = "{'headers_data_key' : 'other_datatable_headers', 'data_source' : '"+other_get_param_value+"', 'page_type' : '{{ page_type }}', 'report_title' : '"+other_report_title+"', "+common_extra_param+"}";
 
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
@@ -248,20 +252,20 @@
                 "network_bh_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : converter_report_title,
-                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "GetNetworkAlertDetail",
-                    "header_extra_param" : "{'headers_data_key' : 'backhaul_headers', "+common_extra_param+"}",
-                    "data_extra_param" : converter_extra_param,
+                    "header_extra_param" : converter_header_extra_param,
+                    "data_extra_param" : converter_data_extra_param,
                     "excluded" : "['sector_id',"+common_hidden_columns+"]",
                 },
                 "network_other_tab" : {
                     "app_name" : "alert_center",
                     "table_title" : other_report_title,
-                    "header_class_name" : "NetworkAlertDetailHeaders",
+                    "header_class_name" : "AlertCenterListing",
                     "data_class_name" : "GetNetworkAlertDetail",
-                    "header_extra_param" : "{'headers_data_key' : 'backhaul_headers', "+common_extra_param+"}",
-                    "data_extra_param" : other_extra_param,
-                    "excluded" : "['sector_id',"+common_hidden_columns+"]",
+                    "header_extra_param" : other_header_extra_param,
+                    "data_extra_param" : other_data_extra_param,
+                    "excluded" : "['sector_id','bh_connectivity',"+common_hidden_columns+"]",
                 }
             };
 
