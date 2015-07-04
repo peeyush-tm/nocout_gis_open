@@ -175,6 +175,8 @@ class SectorStatusListing(BaseDatatableView):
         'organization'
     ]
 
+    is_technology_searched = False
+
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
@@ -183,16 +185,27 @@ class SectorStatusListing(BaseDatatableView):
         :return qs:
         """
         sSearch = self.request.GET.get('sSearch', None)
+        self.is_technology_searched = False
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+            if sSearch.lower() in ['pmp', 'wimax']:
+                self.is_technology_searched = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns) + ")"
-            exec exec_query
+                for data in prepared_data:
+                    if sSearch.lower() in str(data).lower():
+                        filtered_result.append(data)
 
+                return filtered_result
+            else:
+                query = []
+                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+                for column in self.columns[:-1]:
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+                exec_query += " | ".join(query)
+                exec_query += ").values(*" + str(self.columns) + ")"
+                exec exec_query
         return qs
 
     def get_initial_queryset(self):
@@ -232,8 +245,7 @@ class SectorStatusListing(BaseDatatableView):
     def prepare_results(self, qs):
         """
         """
-        # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in qs]
         technology_object = DeviceTechnology.objects.all()
 
         for item in json_data:
@@ -257,12 +269,18 @@ class SectorStatusListing(BaseDatatableView):
 
                 item['actions'] = perf_page_link
                 item['sector__sector_configured_on__device_technology'] = techno_name
+                # Format DL Peak Time
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
-                ).strftime(DATE_TIME_FORMAT)
+                ).strftime(
+                    DATE_TIME_FORMAT
+                ) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
+                # Format UL Peak Time
                 item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_in_timestamp'])
-                ).strftime(DATE_TIME_FORMAT)
+                ).strftime(
+                    DATE_TIME_FORMAT
+                ) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
             except Exception, e:
                 logger.exception(e)
                 continue
@@ -281,38 +299,38 @@ class SectorStatusListing(BaseDatatableView):
 
         request = self.request
 
-
         self.initialize(*args, **kwargs)
         
-        self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
+        self.technology = request.GET.get('technology','ALL')
 
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.annotate(Count('sector_sector_id')).count()
+        if type(qs) == type(list()):
+            total_records = len(qs)
+        else:
+            total_records = qs.count()
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.annotate(Count('id')).count()
-
-
-        if total_display_records and total_records:
-
-            #check if this has just initialised
-            #if so : process the results
-
-            qs = self.ordering(qs)
-            qs = self.paging(qs)
-
-            # if the qs is empty then JSON is unable to serialize the empty
-            # ValuesQuerySet.Therefore changing its type to list.
-            if not qs and isinstance(qs, ValuesQuerySet):
-                qs = list(qs)
-
-            aaData = self.prepare_results(qs)
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
         else:
-            aaData = list()
+            total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        # if the qs is empty then JSON is unable to serialize the empty
+        # ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        if self.is_technology_searched:
+            aaData = qs
+        else:
+            aaData = self.prepare_results(qs)
 
         ret = {
             'sEcho': int(request.REQUEST.get('sEcho', 0)),
@@ -362,6 +380,7 @@ class SectorAugmentationAlertsHerders(ListView):
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
+
 
 # This class loads data for Sector Augmentation Alerts Listing Table
 class SectorAugmentationAlertsListing(SectorStatusListing):
@@ -491,7 +510,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         if type(qs) == type(list()):
             json_data = qs
         else:
-            json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+            json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in qs]
 
         technology_object = DeviceTechnology.objects.all()
 
