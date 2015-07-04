@@ -1001,8 +1001,11 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if data_source in ['PMP', 'P2P', 'WiMAX']:
             device_tab_technology = data_source
 
-        if data_source in ['Temperature']:
+        if data_source in ['Temperature', 'WiMAXULIssue']:
             device_tab_technology = 'WiMAX'
+
+        if data_source in ['PMPULIssue']:
+            device_tab_technology = 'PMP'
 
         if data_source in ['Backhaul', 'Temperature_BH', 'Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
             page_type = 'other'
