@@ -863,7 +863,7 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    "id" : 0,
+                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -888,7 +888,6 @@ def prepare_gis_devices_optimized(
                     "polled_frequency": "NA",
                     "freq_id": 0
                 })
-
 
                 device_name = data.get('device_name')
                 if not device_name or not len(inventory_resultset):
@@ -937,7 +936,7 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    "id" : 0,
+                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1020,7 +1019,7 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    "id" : 0,
+                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1131,7 +1130,7 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    "id" : 0,
+                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1209,7 +1208,7 @@ def prepare_gis_devices_optimized(
 
         for data in qs:
             data.update({
-                "id" : 0,
+                # "id" : 0,
                 "bs_name": "NA",
                 "city": "NA",
                 "state": "NA",
@@ -1258,7 +1257,7 @@ def prepare_gis_devices_optimized(
                 # append the deep copied dict
                 resultant_dataset.append(json.loads(json.dumps(data)))
 
-    return resultant_dataset
+    return qs
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))

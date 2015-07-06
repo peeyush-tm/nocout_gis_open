@@ -1724,8 +1724,10 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
     if is_ptpbh:
         circuit_type_condition = " AND circuit.circuit_type LIKE '%backhaul%' "
     else:
-        circuit_type_condition = " AND ( isnull(circuit.circuit_type) OR \
-                                  circuit.circuit_type LIKE '%customer%' ) "
+        circuit_type_condition = ""
+        circuit_type_condition += " AND ( isnull(circuit.circuit_type) OR "
+        circuit_type_condition += " circuit.circuit_type = '' OR "
+        circuit_type_condition += " circuit.circuit_type LIKE '%customer%' ) "
 
     ss_query = '''
         SELECT 
