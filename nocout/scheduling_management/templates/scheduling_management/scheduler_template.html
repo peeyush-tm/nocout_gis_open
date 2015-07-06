@@ -14,12 +14,6 @@
 {% load staticfiles %}
 
 {% block content %}
-
-    {% if perms.scheduling_management.add_event %}
-        <p>
-            <a href="/scheduling/new"><i class="fa fa-plus">&nbsp;</i> Create Event</a>
-        </p>
-    {% endif %}
 	<div class="box border lite">
         <div class="box-title">
             <h4><i class="fa fa-calendar"></i>SCHEDULING</h4>
@@ -32,7 +26,12 @@
     			<div class="clearfix"></div>
             </div>
             <div class="divide-20"></div>
-
+            {% if perms.scheduling_management.add_event %}
+                <p>
+                    <a href="/scheduling/new"><i class="fa fa-plus">&nbsp;</i> Create Event</a>
+                </p>
+            {% endif %}
+            <div class="divide-10"></div>
             <table class="datatable table table-striped table-bordered table-hover" id="EventsListingTable">
                 <thead></thead>
                 <tbody></tbody>
