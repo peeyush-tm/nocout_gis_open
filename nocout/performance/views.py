@@ -5,7 +5,7 @@ import ujson as json
 import datetime
 import time
 from operator import itemgetter
-
+import re
 from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
@@ -260,7 +260,19 @@ class LivePerformanceListing(BaseDatatableView):
             required_value_list=required_value_list
         )
 
-        return devices
+        # preparing machine list
+        machines = self.inventory_utils.prepare_machines(
+            devices, machine_key='machine_name'
+        )
+
+        #preparing the polled results
+        qs = self.prepare_polled_results(
+            devices,
+            multi_proc=MULTI_PROCESSING_ENABLED,
+            machine_dict=machines
+        )
+
+        return qs
 
     def filter_queryset(self, qs):
         """
@@ -375,39 +387,30 @@ class LivePerformanceListing(BaseDatatableView):
 
         self.is_initialised = False
         self.is_ordered = True
-        sort_data = self.prepare_devices(qs)
         try:
+            sort_data = self.prepare_devices(qs)
             sort_using = columns[i_sort_col]
-            if sort_using in self.polled_columns:
-                self.is_polled = True
-                # Now we need to poll the devices
-                # here we can limit the number of devices in query
-                # to get the data from
-                # that needs to be per machine basis
-                # once we have the results
-                # we can quickly call upon prepare_devices
-                machines = self.prepare_machines(sort_data)
-                #preparing the polled results
-                result_qs = self.prepare_polled_results(
+            if sort_using in ['ip_address', 'near_end_ip']:
+                sorted_qs = sorted(
                     sort_data,
-                    multi_proc=MULTI_PROCESSING_ENABLED,
-                    machine_dict=machines
+                    key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())),
+                    reverse=reverse
                 )
-                sort_data = result_qs
             else:
-                self.is_polled = False
-            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+                sorted_qs = sorted(
+                    sort_data,
+                    key=lambda item: item[sort_using].lower().strip() if type(item[sort_using]) == 'str' else item[sort_using],
+                    reverse=reverse
+                )
             return sorted_qs
 
         except Exception, e:
             self.is_initialised = True
             self.is_ordered = False
-            self.is_polled = False
             return qs
 
     def prepare_devices(self, qs):
         """
-
 
         :param qs:
         :return:
@@ -535,10 +538,6 @@ class LivePerformanceListing(BaseDatatableView):
 
         request = self.request
 
-        page_type = self.request.GET['page_type']
-
-        download_excel = self.request.GET.get('download_excel', None)
-
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
@@ -551,31 +550,12 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records after filtering
         total_display_records = len(qs)
 
-        #check if this has just initialised
-        #if so : process the results
         qs = self.ordering(qs)
-
-        # if download_excel != "yes":
         qs = self.paging(qs)
-        ##check if this has been searched
-        ## if this has been seached
-        ## dont call prepare_devices
 
-        if self.is_initialised and not (self.is_searched or self.is_ordered):
+        if not (self.is_searched or self.is_ordered):
             # prepare devices with GIS information
             qs = self.prepare_devices(qs=qs)
-            # end prepare devices with GIS information
-
-        if not self.is_polled:
-            # preparing machine list
-            machines = self.inventory_utils.prepare_machines(
-                qs, machine_key='machine_name'
-            )
-            #preparing the polled results
-            if download_excel == "yes":
-                qs = self.prepare_polled_results(qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict=machines)
-            else:
-                qs = self.prepare_polled_results(qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict=machines)
 
         # if the qs is empty then JSON is unable to serialize the empty
         # ValuesQuerySet.Therefore changing its type to list.

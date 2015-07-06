@@ -10,7 +10,6 @@ state_lat_lon_db.insert({"name" : "Assam","lat" : 26.14,"lon" : 91.77});
 state_lat_lon_db.insert({"name" : "Bihar","lat" : 25.37,"lon" : 85.13});
 state_lat_lon_db.insert({"name" : "Chhattisgarh","lat" : 21.27,"lon" : 81.60});
 state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.65,"lon" : 77.73});
-state_lat_lon_db.insert({"name" : "NCR","lat" : 28.57,"lon" : 76.42});
 state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
 state_lat_lon_db.insert({"name" : "Gujarat","lat" : 23.2167,"lon" : 72.6833});
 state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
@@ -35,9 +34,12 @@ state_lat_lon_db.insert({"name" : "Uttarakhand","lat" : 30.3300,"lon" : 78.0600}
 state_lat_lon_db.insert({"name" : "Uttar Pradesh","lat" : 26.8500,"lon" : 80.9100});
 state_lat_lon_db.insert({"name" : "West Bengal","lat" : 22.5667,"lon" : 88.3667});
 state_lat_lon_db.insert({"name" : "Andaman and Nicobar Islands","lat" : 11.6800,"lon" : 92.7700});
+state_lat_lon_db.insert({"name" : "NCR","lat" : 28.57,"lon" : 76.42});
 state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
 state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
 state_lat_lon_db.insert({"name" : "Dadra and Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
+state_lat_lon_db.insert({"name" : "Daman and Diu","lat" : 20.4200,"lon" : 72.8300});
+state_lat_lon_db.insert({"name" : "Telangana","lat" : 7.3660,"lon" : 78.4760});
 
 
 
