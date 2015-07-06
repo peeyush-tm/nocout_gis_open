@@ -56,6 +56,16 @@ function ourDataTableWidget() {
             fnInitComplete: function(oSettings) {
                 /*Hide the spinner*/
                 hideSpinner();
+                // Bind table auto refresh if tabs exists
+                if ($(".nav-tabs li a").length > 0 && $(".nav-tabs li.active a")[0].id) {
+                    if (typeof refreshAlertTab == 'function') {
+                        var tab_id = $(".nav-tabs li.active a")[0].id,
+                            refresh_time = typeof timer != 'undefined' ? timer : 300;
+
+                        refreshAlertTab(tab_id, refresh_time);
+                    }
+                }
+
                 var search_btn_html = '';
 
                 search_btn_html += '<button id="'+tableId+'_search_btn" class="btn btn-sm btn-default">\
@@ -116,13 +126,13 @@ function ourDataTableWidget() {
                 return;
             });
 
-        $("#page_content_div").delegate("#"+tableId+"_search_btn",'click',function() {
+        $("#page_content_div").undelegate("#"+tableId+"_search_btn",'click').delegate("#"+tableId+"_search_btn",'click',function() {
             var search_text = $("#"+tableId+"_filter label input").val();
             if(search_text.length >= 2) {
                 try {
                     dtable.fnFilter(search_text);
                 } catch(e) {
-                    // console.log(e);
+                    // console.error(e);
                 }
             }
         });

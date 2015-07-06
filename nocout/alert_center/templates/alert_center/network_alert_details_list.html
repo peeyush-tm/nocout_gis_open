@@ -7,6 +7,7 @@
     {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
     {% breadcrumb_safe "Alert Details" "javascript:;" %}
     {% breadcrumb_safe "Network Alert Details" "network_alert_details" %}
+    {% breadcrumb_safe "PTP BH" "network_alert_details" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -295,7 +296,7 @@
                     "data_class_name" : "BackhaulAugmentationAlertsListing",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : "{'report_title' : '"+network_bhUtil_title+"', "+common_extra_param+"}",
-                    "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per']"
+                    "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per', 'backhaul_capacity', 'backhaul__bh_type', 'backhaul__bh_connectivity']"
                 },
                 "network_sectorUtil_tab" : {
                     "app_name" : "capacity_management",

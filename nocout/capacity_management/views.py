@@ -175,6 +175,8 @@ class SectorStatusListing(BaseDatatableView):
         'organization'
     ]
 
+    is_technology_searched = False
+
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
@@ -183,16 +185,27 @@ class SectorStatusListing(BaseDatatableView):
         :return qs:
         """
         sSearch = self.request.GET.get('sSearch', None)
+        self.is_technology_searched = False
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+            if sSearch.lower() in ['pmp', 'wimax']:
+                self.is_technology_searched = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns) + ")"
-            exec exec_query
+                for data in prepared_data:
+                    if sSearch.lower() in str(data).lower():
+                        filtered_result.append(data)
 
+                return filtered_result
+            else:
+                query = []
+                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+                for column in self.columns[:-1]:
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+                exec_query += " | ".join(query)
+                exec_query += ").values(*" + str(self.columns) + ")"
+                exec exec_query
         return qs
 
     def get_initial_queryset(self):
@@ -232,8 +245,7 @@ class SectorStatusListing(BaseDatatableView):
     def prepare_results(self, qs):
         """
         """
-        # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in qs]
         technology_object = DeviceTechnology.objects.all()
 
         for item in json_data:
@@ -257,12 +269,18 @@ class SectorStatusListing(BaseDatatableView):
 
                 item['actions'] = perf_page_link
                 item['sector__sector_configured_on__device_technology'] = techno_name
+                # Format DL Peak Time
                 item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_out_timestamp'])
-                ).strftime(DATE_TIME_FORMAT)
+                ).strftime(
+                    DATE_TIME_FORMAT
+                ) if str(item['peak_out_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
+                # Format UL Peak Time
                 item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_in_timestamp'])
-                ).strftime(DATE_TIME_FORMAT)
+                ).strftime(
+                    DATE_TIME_FORMAT
+                ) if str(item['peak_in_timestamp']) not in ['', 'undefined', 'None', '0'] else 'NA'
             except Exception, e:
                 logger.exception(e)
                 continue
@@ -281,38 +299,38 @@ class SectorStatusListing(BaseDatatableView):
 
         request = self.request
 
-
         self.initialize(*args, **kwargs)
         
-        self.technology = request.GET['technology'] if 'technology' in request.GET else 'ALL'
+        self.technology = request.GET.get('technology','ALL')
 
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.annotate(Count('sector_sector_id')).count()
+        if type(qs) == type(list()):
+            total_records = len(qs)
+        else:
+            total_records = qs.count()
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.annotate(Count('id')).count()
-
-
-        if total_display_records and total_records:
-
-            #check if this has just initialised
-            #if so : process the results
-
-            qs = self.ordering(qs)
-            qs = self.paging(qs)
-
-            # if the qs is empty then JSON is unable to serialize the empty
-            # ValuesQuerySet.Therefore changing its type to list.
-            if not qs and isinstance(qs, ValuesQuerySet):
-                qs = list(qs)
-
-            aaData = self.prepare_results(qs)
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
         else:
-            aaData = list()
+            total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        # if the qs is empty then JSON is unable to serialize the empty
+        # ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        if self.is_technology_searched:
+            aaData = qs
+        else:
+            aaData = self.prepare_results(qs)
 
         ret = {
             'sEcho': int(request.REQUEST.get('sEcho', 0)),
@@ -355,13 +373,14 @@ class SectorAugmentationAlertsHerders(ListView):
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
-
+        # datatable_headers = list()
         datatable_headers = hidden_headers
 
         datatable_headers += common_headers
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
+
 
 # This class loads data for Sector Augmentation Alerts Listing Table
 class SectorAugmentationAlertsListing(SectorStatusListing):
@@ -378,18 +397,18 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     columns = [
         'id',
         'sector__sector_id',
-        'sector_sector_id',
+        'organization__alias',
         'sector__base_station__alias',
-        'sector__base_station__city__city_name',
         'sector__base_station__state__state_name',
+        'sector__base_station__city__city_name',
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
-        'organization__alias',
+        'sector_sector_id',
         'current_out_per',
         'current_in_per',
         'severity',
-        'sys_timestamp',
-        'age'
+        'age',
+        'sys_timestamp'
     ]
 
     order_columns = columns
@@ -401,6 +420,50 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         'sector__sector_configured_on',
         'organization'
     ]
+
+    is_technology_searched = False
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            # In case of severity search, update the search txt
+            if sSearch.lower() in 'needs augmentation':
+                sSearch = 'ok'
+            elif sSearch in 'stop provisioning':
+                sSearch = 'critical'
+            else:
+                pass
+
+            # In case of technology search, search the text in 
+            # prepared result instead of queryset because we have 
+            # technology id in queryset not the name
+            if sSearch.lower()  in ['pmp', 'wimax']:
+                self.is_technology_searched = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
+
+                for data in prepared_data:
+                    if sSearch.lower() in str(data).lower():
+                        filtered_result.append(data)
+
+                return filtered_result
+            else:
+                self.is_technology_searched = False
+                query = []
+                exec_query = "qs = qs.filter("
+                for column in self.columns[:-1]:
+                    # avoid search on 'added_on'
+                    if column == 'added_on':
+                        continue
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+                exec_query += " | ".join(query)
+                exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+                exec exec_query
+        return qs
 
     def get_initial_queryset(self):
         """
@@ -443,8 +506,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     def prepare_results(self, qs):
         """
         """
-        # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        # number of records after filtering
+        if type(qs) == type(list()):
+            json_data = qs
+        else:
+            json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in qs]
+
         technology_object = DeviceTechnology.objects.all()
 
         for item in json_data:
@@ -479,29 +546,32 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.annotate(Count('sector_sector_id')).count()
+        if type(qs) == type(list()):
+            total_records = len(qs)
+        else:
+            total_records = qs.annotate(Count('sector_sector_id')).count()
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.annotate(Count('id')).count()
-
-        if total_display_records and total_records:
-
-            #check if this has just initialised
-            #if so : process the results
-
-            qs = self.ordering(qs)
-            qs = self.paging(qs)
-
-            # if the qs is empty then JSON is unable to serialize the empty
-            # ValuesQuerySet.Therefore changing its type to list.
-            if not qs and isinstance(qs, ValuesQuerySet):
-                qs = list(qs)
-
-            aaData = self.prepare_results(qs)
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
         else:
-            aaData = list()
+            total_display_records = qs.annotate(Count('id')).count()
+
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        # if the qs is empty then JSON is unable to serialize the empty
+        # ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        if self.is_technology_searched:
+            aaData = qs
+        else:
+            aaData = self.prepare_results(qs)
 
         ret = {
             'sEcho': int(request.REQUEST.get('sEcho', 0)),
@@ -538,7 +608,7 @@ class BackhaulStatusHeaders(ListView):
             {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sClass': 'hidden-xs',  'sWidth': 'auto', 'bSortable': True},
@@ -780,10 +850,12 @@ class BackhaulAugmentationAlertsHeaders(ListView):
 
         common_headers = [
             {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'BH IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'backhaul__alias', 'sTitle': 'Backhaul', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'bh_port_name', 'sTitle': 'Configured On Port', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'backhaul__bh_connectivity', 'sTitle': 'Onnet/Offnet', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'backhaul__bh_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'backhaul_capacity', 'sTitle': 'BH Capacity (mbps)', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'backhaul__bh_type', 'sTitle': 'BH Type', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'basestation__city__city_name', 'sTitle': 'BS City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'basestation__state__state_name', 'sTitle': 'BS State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'current_out_per', 'sTitle': '% UL Utilization', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -814,10 +886,12 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
     columns = [
         'id',
         'backhaul__bh_configured_on__ip_address',
-        'backhaul__alias',
         'basestation__alias',
         'bh_port_name',
+        'backhaul__bh_connectivity',
         'backhaul__bh_configured_on__device_technology',
+        'backhaul_capacity',
+        'backhaul__bh_type',
         'basestation__city__city_name',
         'basestation__state__state_name',
         'organization__alias',

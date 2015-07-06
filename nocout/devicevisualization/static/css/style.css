@@ -23,25 +23,8 @@
     width: 100%;
     height: 100%;
     z-index: -10000;
-    /*background: black;*/
 }
-
-
-/*.windowContainer
-{
-    max-width: 500px;
-    width: 320px;
-    top: 25px;
-    right: 0px;
-    height: 500px !important;
-    position: fixed !important;
-    width: 320px;
-}
-.windowContainer tr td {
-    word-break: break-all;
-}*/
-.windowContainer .innerTable
-{
+.windowContainer .innerTable {
     width: 200px;
 }
 .windowContainer .windowInfo
@@ -332,11 +315,10 @@
     width: 120px;
 }
 
-/*Page Settings GMAP*/
-.gis_page_setting {
-    margin-bottom: 5px;
+/*Page Settings GMAP*/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+ul.gis_page_setting {
+    margin-bottom: 0px;
 }
-
 .gis_page_setting li.alert {
     
     width: 220px;
@@ -493,4 +475,26 @@ iframe {
 }
 #sideInfoContainer #sideInfo .panel-body {
     padding: 5px;
+}
+#advFilterContainerBlock .btn,
+#advSearchContainerBlock .btn, 
+.selectDeviceContainerBlock .btn {
+    padding: 5px;
+}
+#static_label{
+    max-width: 150px;
+}
+#static_label, #icon_Size_Select_In_Tools {
+    position: relative;
+    top: 2px;
+}
+#cursor_lat_long {
+    position: fixed;
+    display: block;
+    bottom:0;
+    right: 20px;
+    z-index:999;
+    background: #fff;
+    width: auto;
+    padding: 10px;
 }

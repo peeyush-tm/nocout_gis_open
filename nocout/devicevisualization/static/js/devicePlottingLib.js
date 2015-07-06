@@ -171,7 +171,7 @@ var is_line_active = 0,
     tools_line_array =[],
 	tools_line_marker_array= [],
 	distance_line_label= "",
-	point_icon_url = "static/img/icons/tools/point/caution.png",
+	point_icon_url = "/static/img/icons/tools/point/caution.png",
 	point_data_obj = {},
 	line_data_obj = {},
 	connected_end_obj = {},
@@ -903,6 +903,10 @@ function devicePlottingClass_gmap() {
 				} else {
 					state_wise_device_counters[state] = 1;
 					if(state_lat_lon_obj) {
+						var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
+												 <p style='position:relative;padding-top:24px;font-weight:bold;' \
+												 title='Load "+state+" Data.'> \
+												 "+state_wise_device_counters[state]+"</p></div>";
 						var device_counter_label = new InfoBox({
 				            content: state_cluster_html,
 				            boxStyle: {
@@ -2950,11 +2954,13 @@ function devicePlottingClass_gmap() {
 				infoTable += "</tbody></table>";
 
 				var report_download_btn = "";
+				var report_type = "circuit";
 				if(path_circuit_id) {
-					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" \
+					report_download_btn = '<li><button class="btn btn-sm btn-default download_report_btn" \
 										   data-complete-text="Download L2 Report"\
 									  	   data-loading-text="Please Wait..."\
-										   ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
+										   item_id="'+path_circuit_id+'"\
+										   type="'+report_type+'">Download L2 Report</button></li>';
 				}
 				/*SS Info End*/
 				infoTable += '</div>';
@@ -2996,7 +3002,7 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  <button class='btn btn-sm btn-default fresnel_btn' \
 									  data-complete-text='Fresnel Zone'\
 									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
@@ -3015,7 +3021,7 @@ function devicePlottingClass_gmap() {
 									  "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'>\
 									  <i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>\
 									  "+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li>\
-									  <button class='btn btn-sm btn-info fresnel_btn' \
+									  <button class='btn btn-sm btn-default fresnel_btn' \
 									  data-complete-text='Fresnel Zone'\
 									  data-loading-text='Please Wait...'\
 									  onClick='gmap_self.claculateFresnelZone(\
@@ -3394,13 +3400,14 @@ function devicePlottingClass_gmap() {
 							  <div class='clearfix'></div><div class='pull-right'></div>\
 							  <div class='clearfix'></div></div></div></div>";
 		} else {
-			
 			/*Tab-content Start*/
 			infoTable += '<div class="tab-content">';
 
 			var startPtInfo = [],
 				item_index = contentObject.item_index > -1 ? contentObject.item_index : 0,
-				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase();
+				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
+				bs_id = contentObject.filter_data.bs_id;
+				report_type="base_station"
 
 			if(contentObject.bsInfo) {
 				// Rearrange BS tootip info as per actual sequence
@@ -3408,6 +3415,14 @@ function devicePlottingClass_gmap() {
 				startPtInfo = bs_actual_data;
 			}
 
+			var report_download_btn = "";
+				if(bs_id) {
+					report_download_btn = '<li><button class="btn btn-sm btn-default download_report_btn" \
+										   data-complete-text="Download L2 Report"\
+									  	   data-loading-text="Please Wait..."\
+										   item_id="'+bs_id+'"\
+										   type="'+report_type+'">Download L2 Report</button></li>';
+				}
 			/*Static Tab Content Start*/
 			infoTable += '<div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
 			infoTable += "<table class='table table-bordered table-hover'><tbody>";
@@ -3513,7 +3528,7 @@ function devicePlottingClass_gmap() {
 							  <i class='fa fa-times text-danger'></i></a></div></div>\
 							  <div class='box-body'><div align='center'>"+infoTable+"</div>\
 							  <div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'>\
-							  </div></div></div></div>";
+							  </div><ul class='list-unstyled'>"+report_download_btn+"</ul></div></div></div>";
 		}
 
 		if(isDebug) {
@@ -7220,7 +7235,7 @@ function devicePlottingClass_gmap() {
 	 */
 	this.plotPoint_gmap = function(infoObj) {
 
-		var image = gmap_self.getMarkerImageBySize(base_url+"/"+infoObj.icon_url,"other");
+		var image = gmap_self.getMarkerImageBySize(base_url+""+infoObj.icon_url,"other");
 
 		var map_point = new google.maps.Marker({
 			position   	    	 : new google.maps.LatLng(infoObj.lat,infoObj.lon),
@@ -9204,7 +9219,7 @@ function devicePlottingClass_gmap() {
 										<div>\
 											<input type="hidden" name="previous_maintenance_val" id="previous_maintenance_val" \
 											value="'+current_maintenance_status+'"/>\
-											<button class="btn btn-xs btn-info" id="change_maintenance_status_btn" \
+											<button class="btn btn-xs btn-default" id="change_maintenance_status_btn" \
 											title="Update Maintenance Status" onClick="gmap_self.updateBSMaintenanceStatus()"\
 											>Update</button>\
 										</div><div class="clearfix"></div>\
