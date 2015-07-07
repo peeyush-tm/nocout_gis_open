@@ -55,7 +55,7 @@ class SectorStatusHeaders(ListView):
             {'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
-        
+
         common_headers = [
             {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -693,24 +693,30 @@ class BackhaulStatusListing(BaseDatatableView):
         'organization'
     ]
 
+    is_technology_searched = False
+
     def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
         sSearch = self.request.GET.get('sSearch', None)
+        self.is_technology_searched = False
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+            if sSearch.lower() in ['pmp', 'wimax']:
+                self.is_technology_searched = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns) + ")"
-            exec exec_query
+                for data in prepared_data:
+                    if sSearch.lower() in str(data).lower():
+                        filtered_result.append(data)
+                return filtered_result
+            else:
+                query = []
+                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+                for column in self.columns[:-1]:
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
+                exec_query += " | ".join(query)
+                exec_query += ").values(*" + str(self.columns) + ")"
+                exec exec_query
         return qs
 
     def get_initial_queryset(self):
@@ -782,9 +788,14 @@ class BackhaulStatusListing(BaseDatatableView):
 
         return json_data
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
+
     def get_context_data(self, *args, **kwargs):
         """
-        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
         """
 
         request = self.request
@@ -800,10 +811,12 @@ class BackhaulStatusListing(BaseDatatableView):
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.annotate(Count('id')).count()
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
+        else:
+            total_display_records = qs.annotate(Count('id')).count()
 
         if total_display_records and total_records:
-
             #check if this has just initialised
             #if so : process the results
 
@@ -815,7 +828,10 @@ class BackhaulStatusListing(BaseDatatableView):
             if not qs and isinstance(qs, ValuesQuerySet):
                 qs = list(qs)
 
-            aaData = self.prepare_results(qs)
+            if self.is_technology_searched:
+                    aaData = qs
+            else:
+                aaData = self.prepare_results(qs)
         else:
             aaData = list()
 
@@ -911,6 +927,50 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         'organization'
     ]
 
+    is_technology_searched = False
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            # In case of severity search, update the search txt
+            if sSearch.lower() in 'needs augmentation':
+                sSearch = 'ok'
+            elif sSearch in 'stop provisioning':
+                sSearch = 'critical'
+            else:
+                pass
+
+            # In case of technology search, search the text in
+            # prepared result instead of queryset because we have
+            # technology id in queryset not the name
+            if sSearch.lower() in ['pmp', 'wimax']:
+                self.is_technology_searched = True
+                prepared_data = self.prepare_results(qs)
+                filtered_result = list()
+
+                for data in prepared_data:
+                    if sSearch.lower() in str(data).lower():
+                        filtered_result.append(data)
+
+                return filtered_result
+            else:
+                self.is_technology_searched = False
+                query = []
+                exec_query = "qs = qs.filter("
+                for column in self.columns[:-1]:
+                    # avoid search on 'added_on'
+                    if column == 'added_on':
+                        continue
+                    query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+                exec_query += " | ".join(query)
+                exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+                exec exec_query
+        return qs
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -944,7 +1004,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         """
         """
         # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val not in ['', 'undefined', 'None'] else "" for key, val in dct.items()} for dct in qs]
         technology_object = DeviceTechnology.objects.all()
 
         for item in json_data:
@@ -977,13 +1037,18 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        # total_records = qs.annotate(Count('sector_sector_id')).count()
-        total_records = qs.annotate(Count('id')).count()
+        if type(qs) == type(list()):
+            total_records = len(qs)
+        else:
+            total_records = qs.annotate(Count('id')).count()
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.annotate(Count('id')).count()
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
+        else:
+            total_display_records = qs.annotate(Count('id')).count()
 
         if total_display_records and total_records:
 
@@ -998,7 +1063,10 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
             if not qs and isinstance(qs, ValuesQuerySet):
                 qs = list(qs)
 
-            aaData = self.prepare_results(qs)
+            if self.is_technology_searched:
+                aaData = qs
+            else:
+                aaData = self.prepare_results(qs)
         else:
             aaData = list()
 

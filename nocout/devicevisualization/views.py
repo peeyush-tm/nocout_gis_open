@@ -858,7 +858,7 @@ class PointListingTable(BaseDatatableView):
             report_object = {}
             report_object['name'] = data['name'].title()
             report_object['description'] = data['description'].title()
-            report_object['icon_url'] = "<img src='../../"+data['icon_url']+"' width='32px' height='37px'/>"
+            report_object['icon_url'] = "<img src='"+data['icon_url']+"' width='32px' height='37px'/>"
             report_object['latitude'] = data['latitude']
             report_object['longitude'] = data['longitude']
             report_object['connected_lat'] = data['connected_lat']
