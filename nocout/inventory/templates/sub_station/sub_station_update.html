@@ -62,10 +62,49 @@
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
-    <script>
+    <script type="text/javascript">
+        var parent_class = 'formContainer',
+            change_event_dom_ids = [
+                '#id_country',
+                '#id_state'
+            ],
+            element_relation_dict = {
+                '#id_country' : {
+                    "old_value" : $('#id_country').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_state',
+                            "url_name" : '{% url "get_states_for_country" 123 %}',
+                            "existing_value" : $('#id_state').val()
+                        }
+                    ],
+                    "reset" : ['#id_state', '#id_city']
+                },
+                '#id_state' : {
+                    "old_value" : $('#id_state').val(),
+                    "update" : [
+                        {
+                            "id" : '#id_city',
+                            "url_name" : '{% url "get_cities_for_state" 123 %}',
+                            "existing_value" : $('#id_city').val()
+                        }
+                    ],
+                    "reset" : ['#id_city']
+                }
+            };
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            // Loop to trigger change event on select boxes
+            for (var i=0;i<change_event_dom_ids.length;i++) {
+                if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
+                    // trigger change event
+                    $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            }
+
+            // Initialize the tooltip.
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
@@ -103,11 +142,15 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
-                            });
+                        });
                     }
                 },
-                formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(device) {
+                    return device.device_alias;
+                },
+                formatSelection: function(device) {
+                    return device.device_alias;
+                }
             });
 
             $("#id_antenna").select2({
@@ -142,29 +185,16 @@
                             data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
-                            });
+                        });
                     }
                 },
-                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(antenna) {
+                    return antenna.alias;
+                },
+                formatSelection: function(antenna) {
+                    return antenna.alias;
+                }
             });
         });
-
-        function repoDeviceFormatResult(device) {
-          return device.device_alias;
-        }
-
-        function repoDeviceFormatSelection(device) {
-          return device.device_alias;
-        }
-
-        function repoFormatResult(antenna) {
-          return antenna.alias;
-        }
-
-        function repoFormatSelection(antenna) {
-          return antenna.alias;
-        }
-
     </script>
 {% endblock %}

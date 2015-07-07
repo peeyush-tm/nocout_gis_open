@@ -104,14 +104,15 @@
                 '#id_machine',
                 '#id_country',
                 '#id_state'
-
             ],
             element_relation_dict = {
                 '#id_device_technology' : {
+                    "old_value" : $('#id_device_technology').val(),
                     "update" : [
                         {
                             "id" : '#id_device_vendor',
-                            "url_name" : "{% url 'get_vendors_for_tech' 123 %}"
+                            "url_name" : "{% url 'get_vendors_for_tech' 123 %}",
+                            "existing_value" : $('#id_device_vendor').val()
                         }
                     ],
                     "reset" : [
@@ -121,10 +122,12 @@
                     ]
                 },
                 '#id_device_vendor' : {
+                    "old_value" : $('#id_device_vendor').val(),
                     "update" : [
                         {
                             "id" : '#id_device_model',
-                            "url_name" : "{% url 'get_models_for_vendor' 123 %}"
+                            "url_name" : "{% url 'get_models_for_vendor' 123 %}",
+                            "existing_value" : $('#id_device_model').val()
                         }
                     ],
                     "reset" : [
@@ -133,10 +136,12 @@
                     ]
                 },
                 '#id_device_model' : {
+                    "old_value" : $('#id_device_model').val(),
                     "update" : [
                         {
                             "id" : '#id_device_type',
-                            "url_name" : "{% url 'get_types_for_model' 123 %}"
+                            "url_name" : "{% url 'get_types_for_model' 123 %}",
+                            "existing_value" : $('#id_device_type').val()
                         }
                     ],
                     "reset" : [
@@ -144,28 +149,34 @@
                     ]
                 },
                 '#id_machine' : {
+                    "old_value" : $('#id_machine').val(),
                     "update" : [
                         {
                             "id" : '#id_site_instance',
-                            "url_name" : '{% url "get_sites_for_machine" 123 %}'
+                            "url_name" : '{% url "get_sites_for_machine" 123 %}',
+                            "existing_value" : $('#id_site_instance').val()
                         }
                     ],
                     "reset" : ['#id_site_instance']
                 },
                 '#id_country' : {
+                    "old_value" : $('#id_country').val(),
                     "update" : [
                         {
                             "id" : '#id_state',
-                            "url_name" : '{% url "get_states_for_country" 123 %}'
+                            "url_name" : '{% url "get_states_for_country" 123 %}',
+                            "existing_value" : $('#id_state').val()
                         }
                     ],
                     "reset" : ['#id_state', '#id_city']
                 },
                 '#id_state' : {
+                    "old_value" : $('#id_state').val(),
                     "update" : [
                         {
                             "id" : '#id_city',
-                            "url_name" : '{% url "get_cities_for_state" 123 %}'
+                            "url_name" : '{% url "get_cities_for_state" 123 %}',
+                            "existing_value" : $('#id_city').val()
                         }
                     ],
                     "reset" : ['#id_city']
@@ -175,6 +186,14 @@
         $(document).ready(function () {
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            // Loop to trigger change event on select boxes if value exists
+            for (var i=0;i<change_event_dom_ids.length;i++) {
+                if (element_relation_dict[change_event_dom_ids[i]]['old_value']) {
+                    // trigger change event
+                    $(change_event_dom_ids[i]).trigger('change', true);
+                }
+            }
         });
     </script>
 {% endblock %}
