@@ -393,7 +393,7 @@ class LivePerformanceListing(BaseDatatableView):
             if sort_using in ['ip_address', 'near_end_ip']:
                 sorted_qs = sorted(
                     sort_data,
-                    key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())),
+                    key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
                     reverse=reverse
                 )
             else:
