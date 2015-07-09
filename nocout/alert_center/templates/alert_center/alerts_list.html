@@ -7,15 +7,7 @@
     {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
     {% breadcrumb_safe page_type|title|add:" Alert Center" "javascript:;" %}
     {% breadcrumb_safe data_source|title  alert_list_with_tabname  page_type url_data_source data_tab %}
-    {% if page_type == 'network' and data_tab|upper == 'P2P'  %}
-        {% breadcrumb_safe "PTP BH"  alert_list_with_tabname  page_type url_data_source data_tab %}
-    {% else %}
-        {% if page_type == 'customer' and data_tab|upper == 'P2P'  %}
-            {% breadcrumb_safe "PTP"  alert_list_with_tabname  page_type url_data_source data_tab %}
-        {% else %}
-            {% breadcrumb_safe data_tab|upper  alert_list_with_tabname  page_type url_data_source data_tab %}
-        {% endif %}
-    {% endif %}
+    {% breadcrumb_safe "PTP BH"  alert_list_with_tabname  page_type url_data_source data_tab %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
