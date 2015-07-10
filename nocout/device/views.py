@@ -293,8 +293,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
 
             # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
@@ -320,19 +319,15 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 pass
 
             try:
-                dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status\
-                                        (device_services_status_frame, {{\'device_id\': {0}}})">\
+                dct.update(nms_actions='<a href="javascript:;" class="nms_action view" pk="{0}">\
                                         <i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
-                                        <a href="javascript:;" onclick="modify_device_state({0});">\
+                                        <a href="javascript:;" class="nms_action disable" pk="{0}">\
                                         <i class="fa fa-ban {1}" title="Disable Device"></i></a>\
-                                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form\
-                                        (get_service_add_form, {{\'value\': {0}}})">\
+                                        <a href="javascript:;" class="nms_action add" pk="{0}">\
                                         <i class="fa fa-plus {1}" title="Add Services"></i></a>\
-                                        <a href="javascript:;" onclick="Dajaxice.device.edit_service_form\
-                                        (get_service_edit_form, {{\'value\': {0}}})">\
+                                        <a href="javascript:;" class="nms_action edit" pk="{0}">\
                                         <i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
-                                        <a href="javascript:;" onclick="Dajaxice.device.delete_service_form\
-                                        (get_service_delete_form, {{\'value\': {0}}})">\
+                                        <a href="javascript:;" class="nms_action delete" pk="{0}">\
                                         <i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
                     dct['id'], text_color))
             except Exception as e:
@@ -492,8 +487,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
             # view device delete action only if user has permissions
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
@@ -520,10 +514,11 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
             # update nms actions
             try:
-                dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form\
-                                        (add_device_form, {{\'device_id\': {0}}})">\
-                                        <i class="fa fa-plus-square {1}" title="Add device to NMS."></i></a>'.format(
-                    dct['id'], text_color))
+                dct.update(
+                    nms_actions='<a href="javascript:;" class="device_add_to_nms_form_btn" pk="{0}">\
+                                 <i class="fa fa-plus-square {1}" title="Add device to NMS."></i> \
+                                 </a>'.format(dct['id'], text_color)
+                )
             except Exception as e:
                 pass
 
@@ -671,8 +666,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
             # view device delete action only if user has permissions
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
@@ -828,8 +822,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                add_action = '<a href="javascript:;" onclick="Dajaxice.device.device_restore_form\
-                (get_restore_device_form, {{\'value\': {0}}})">\
+                add_action = '<a href="javascript:;" pk="{0}" class="nms_action restore">\
                 <i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
             else:
                 add_action = ''
@@ -1002,8 +995,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
 
             # view device delete action only if user has permissions
             if self.request.user.is_superuser:
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form\
-                                 (get_soft_delete_form, {{\'value\': {0}}})">\
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
                                  <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''

@@ -182,7 +182,7 @@ def get_datatable_response(payload):
         rows_list = []
 
         # headers for excel sheet
-        if result['aaData']:
+        if 'aaData' in result and result['aaData']:
             headers = headers_list
             if headers:
                 # Create instance of 'NocoutUtilsGateway' class

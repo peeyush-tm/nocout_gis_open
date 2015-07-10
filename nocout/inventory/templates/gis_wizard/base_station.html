@@ -96,6 +96,10 @@
     </div>
     <!-- IF NEW BS FORM THEN LOAD wizardNewBsLib.js SCRIPT  -->
     {% if form %}
+        <script type="text/javascript">
+            var fetch_city_url = '{% url "get_cities_for_state" 123 %}',
+                fetch_state_url = '{% url "get_states_for_country" 123 %}';
+        </script>
         <script type="text/javascript" src={% static "js/gis_wizard/wizardNewBsLib.js" %}></script>
     {% endif %}
 
