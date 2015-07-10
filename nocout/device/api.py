@@ -2583,6 +2583,7 @@ class GetEligibleParentDevices(APIView):
         result['data']['objects']['form_title'] = 'device'
         result['data']['objects']['id'] = device.id
         result['data']['objects']['name'] = device.device_name
+        result['data']['objects']['ip_address'] = device.ip_address
 
         # These are the devices which are associated with the device,
         # which needs to be deleted in parent-child relationship.
@@ -2768,6 +2769,7 @@ class DeviceRestoreDispalyData(APIView):
 
         if device:
             result['data']['objects']['id'] = device.id
+            result['data']['objects']['ip_address'] = device.ip_address
             result['data']['objects']['name'] = device.device_name
             result['data']['objects']['alias'] = device.device_alias
             result['success'] = 1
@@ -3310,7 +3312,7 @@ class SyncDevicesInNMS(APIView):
 
     URL: "http://127.0.0.1:8000/api/sync_devices_in_nms/"
     """
-    def get(self, request):
+    def get(self, request, pk):
         """
         Processing API request.
 
@@ -4056,7 +4058,7 @@ class ServiceEditOldConf(APIView):
 
     URL: "http://127.0.0.1:8000/api/svc_edit_old_conf/4/12/10585/"
     """
-    def get(self, request, option="", service_id="", device_id=""):
+    def get(self, request, service_id="", device_id=""):
         """
         Processing API request.
 
@@ -4117,8 +4119,7 @@ class ServiceEditOldConf(APIView):
         result['data'] = {}
         result['success'] = 0
         result['message'] = ""
-        result['data']['meta'] = {}
-        result['data']['objects'] = {}
+        result['data'] = {}
 
         # Get device.
         device = None
@@ -4148,7 +4149,7 @@ class ServiceEditOldConf(APIView):
         except Exception as e:
             pass
 
-        if option and option != "":
+        if service_id and service_id != "":
             svc_params = ServiceParameters.objects.all()
             if svc_params:
                 try:
@@ -4182,6 +4183,7 @@ class ServiceEditOldConf(APIView):
                                     ds_dict['warning'] = sds.warning
                                     ds_dict['critical'] = sds.critical
                                     result['data']['old_conf'].append(ds_dict)
+                                    result['success'] = 1
                                     result['message'] = "Successfully fetched service old configuration."
                                 except Exception as e:
                                     show_svc_templates = False
@@ -4193,15 +4195,18 @@ class ServiceEditOldConf(APIView):
                                     svc_param_dict['id'] = svc_param.id
                                     svc_param_dict['parameter_description'] = svc_param.parameter_description
                                     result['data']['svc_param'].append(svc_param_dict)
+                                    result['success'] = 1
                                     result['message'] = "Successfully fetched service old configuration."
                             else:
                                 result['message'] = "Data source parameters are not editable."
                     else:
                         result['message'] = "No data source associated."
+                        result['success'] = 0
                 except Exception as e:
                     logger.info("No data source available.")
         else:
             result['message'] = "No data source associated."
+            result['success'] = 0
 
         return Response(result)
 
@@ -4325,8 +4330,7 @@ class ServiceEditPingConf(APIView):
         result['data'] = {}
         result['success'] = 0
         result['message'] = ""
-        result['data']['meta'] = {}
-        result['data']['objects'] = {}
+        result['data']= {}
 
         # Get device.
         device = Device.objects.get(pk=pk)
@@ -4353,6 +4357,8 @@ class ServiceEditPingConf(APIView):
             pl_critical = settings.PING_PL_CRITICAL
             logger.info(e.message)
 
+        result['success'] = 1
+        result['message'] = 'Ping configuration fetched successfully.'
         result['data']['packets'] = packets
         result['data']['timeout'] = timeout
         result['data']['normal_check_interval'] = normal_check_interval
@@ -5125,24 +5131,24 @@ class ServiceAddOldConf(APIView):
         result['data']['objects'] = {}
         result['data']['objects']['svc_param'] = list()
 
-        if option and option != "":
+        if service_id and service_id != "":
             svc_params = ServiceParameters.objects.all()
             if svc_params:
                 try:
-                    if svc_params:
-                        result['data']['objects']['option'] = option
+                    result['data']['objects']['option'] = service_id
 
-                        for svc_param in svc_params:
-                            param_dict = dict()
-                            param_dict['id'] = svc_param.id
-                            param_dict['parameter_description'] = svc_param.parameter_description
-                            result['data']['objects']['svc_param'].append(param_dict)
-                        result['message'] = "<h5 class='text-red'>Fetched data successfully.</h5> "
-                    else:
-                        result['message'] = "<h5 class='text-red'>No data source associated.</h5>"
+                    for svc_param in svc_params:
+                        param_dict = dict()
+                        param_dict['id'] = svc_param.id
+                        param_dict['parameter_description'] = svc_param.parameter_description
+                        result['data']['objects']['svc_param'].append(param_dict)
+                    result['success'] = 1
+                    result['message'] = "<h5 class='text-red'>Fetched data successfully.</h5> "
                 except Exception as e:
                     logger.info("No data source available.")
                     logger.info(e.message)
+            else:
+                result['message'] = "<h5 class='text-red'>No data source associated.</h5>"
         else:
             pass
 
@@ -5213,13 +5219,15 @@ class ServiceAddNewConf(APIView):
             ds_dict = dict()
             try:
                 ds_dict['name'] = sds.name
-                ds_dict['state'] = 'Editable.'
+                ds_dict['title'] = 'Editable.'
+                ds_dict['state'] = 'true'
                 ds_dict['warning'] = sds.warning
                 ds_dict['critical'] = sds.critical
                 result['data']['objects']['data_sources'].append(ds_dict)
             except Exception as e:
                 ds_dict['name'] = sds.name
-                ds_dict['state'] = 'Non editable.'
+                ds_dict['title'] = 'Non editable.'
+                ds_dict['state'] = 'false'
                 ds_dict['warning'] = sds.warning
                 ds_dict['critical'] = sds.critical
                 result['data']['objects']['data_sources'].append(ds_dict)

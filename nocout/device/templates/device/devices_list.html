@@ -76,7 +76,7 @@
                     </a>
                 </li>
             </ul>
-            <div class="tab-content" style="overflow:auto;">
+            <div class="tab-content device_tab_content" style="overflow:auto;">
                 <div class="tab-pane" id="NonOperationalDeviceListing">
                     <table id="NonOperationalDeviceListingTable" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
@@ -121,14 +121,48 @@
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
 
-        var dataTableInstance = "";
+        var dataTableInstance = '',
+            add_service_url = '',
+            edit_service_url = '',
+            delete_service_url = '',
+            sync_device_url = '',
+            device_soft_delete_url = '',
+            add_device_to_nms_form_url = '',
+            add_device_to_nms_url = '',
+            svc_edit_ping_conf_url = '',
+            svc_edit_new_conf_url = '',
+            svc_edit_old_conf_url = '',
+            svc_add_old_conf_url = '',
+            svc_add_new_conf_url = '',
+            delete_device_from_nms_url = '',
+            modify_device_state_url = '',
+            remove_sync_deadlock_url = '',
+            restore_device_url = '';
 
         $(document).ready(function() {
 
-            /*Make a instance of ourDataTableWidget class */
+            // Update useful URL variables
+            add_service_url = '{% url "add_services" 123 %}';
+            edit_service_url = '{% url "edit_services" 123 %}';
+            delete_service_url = '{% url "delete_services" 123 %}';
+            sync_device_url = '{% url "sync_devices_in_nms" 123 %}';
+            device_soft_delete_url = '{% url "device_soft_delete" 123 %}';
+            add_device_to_nms_form_url = '{% url "add_device_to_nms_display_info" 123 %}';
+            add_device_to_nms_url = '{% url "add_device_to_nms" 123 %}';
+            svc_edit_ping_conf_url = '{% url "svc_edit_ping_conf" 123 %}';
+            svc_edit_new_conf_url = '{% url "svc_edit_new_conf" 123 11111111 %}';
+            svc_edit_old_conf_url = '{% url "svc_edit_old_conf" 123 11111111 %}';
+            svc_add_old_conf_url = '{% url "svc_add_old_conf" 123 11111111 %}';
+            svc_add_new_conf_url = '{% url "svc_add_new_conf" 123 11111111 %}';
+            delete_device_from_nms_url = '{% url "delete_device_from_nms" 123 %}';
+            modify_device_state_url = '{% url "modify_device_state" 123 %}';
+            remove_sync_deadlock_url = '{% url "remove_sync_deadlock" %}';
+            restore_device_url = '{% url "restore_device" 123 %}';
+
+            // Make a instance of ourDataTableWidget class
             dataTableInstance = new ourDataTableWidget();
 
-            /*Ajax url to get grid data*/
+            // Ajax url to get grid data
             var ajax_url_operational_listing = '{% url "OperationalDeviceListingTable" %}',
                 ajax_url_nonoperational_listing = '{% url "NonOperationalDeviceListingTable" %}',
                 ajax_url_disabled_listing = '{% url "DisabledDeviceListingTable" %}',
@@ -215,6 +249,134 @@
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
                 /*Trigger click event on active tab to load its data*/
                 $("#operationalDeviceListing_tab").trigger('click',true);
+            }
+        });
+        
+        /**
+         * This event triggers when any NMS actions icon on operational tab clicked
+         * @event click
+         */        
+        $('.device_tab_content').delegate('.nms_action', 'click', function(e) {
+            var device_id = $(this).attr('pk'),
+                classes = $(this).attr('class'),
+                ajax_url = '';
+
+            if (classes.indexOf('view') > -1) {
+                ajax_url = '{% url "device_service_status" 123 %}';
+            } else if (classes.indexOf('disable') > -1) {
+                ajax_url = '';
+                modify_device_state(device_id);
+            } else if (classes.indexOf('add') > -1) {
+                ajax_url = '{% url "add_svc_display_data" 123 %}';
+            } else if (classes.indexOf('edit') > -1) {
+                ajax_url = '{% url "edit_svc_display_data" 123 %}';
+            } else if (classes.indexOf('delete') > -1) {
+                ajax_url = '{% url "delete_svc_display_data" 123 %}';
+            } else if (classes.indexOf('restore') > -1) {
+                ajax_url = '{% url "device_restore_display_data" 123 %}';
+            } else {
+                return true;
+            }
+
+            if (ajax_url) {
+                // Replace the device id in url
+                ajax_url = ajax_url.replace('123', device_id);
+
+                // Make ajax call
+                $.ajax({
+                    url : ajax_url,
+                    type : "GET",
+                    success : function(response) {
+
+                        var result = "";
+                        // Type check of response
+                        if (typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        if (classes.indexOf('view') > -1) {
+                            device_services_status_frame(result);
+                        } else if (classes.indexOf('add') > -1) {
+                            get_service_add_form(result);
+                        } else if (classes.indexOf('edit') > -1) {
+                            get_service_edit_form(result);
+                        } else if (classes.indexOf('delete') > -1) {
+                            get_service_delete_form(result);
+                        } else if (classes.indexOf('restore') > -1) {
+                            get_restore_device_form(result);
+                        }
+                    },
+                    error : function(err) {
+                        console.log(err.statusText);
+                    }
+                });
+            }
+        });
+    
+        /**
+         * This event triggers when delete icon on operational tab in action columns clicked
+         * @event click
+         */        
+        $('.device_tab_content').delegate('.device_soft_delete_btn', 'click', function(e) {
+            var device_id = $(this).attr('pk'),
+                soft_delete_ajax_url = '{% url "get_eligible_parent" 123 %}';
+
+            if (device_id && soft_delete_ajax_url) {
+                var soft_delete_url = soft_delete_ajax_url.replace('123', device_id);
+
+                $.ajax({
+                    url : soft_delete_url,
+                    type : "GET",
+                    success : function(response) {
+                        var result = "";
+                        // Type check of response
+                        if (typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        get_soft_delete_form(result);
+                    },
+                    error : function(err) {
+                        // console.log(err.statusText);
+                    }
+                })
+            }
+        });
+
+        /**
+         * This event triggers when any NMS actions icon on non-operational tab clicked
+         * @event click
+         */        
+        $('.device_tab_content').delegate('.device_add_to_nms_form_btn', 'click', function(e) {
+            var device_id = $(this).attr('pk'),
+                nms_form_url = '';
+
+            if (device_id && add_device_to_nms_form_url) {
+                nms_form_url = add_device_to_nms_form_url.replace('123', device_id);
+
+                // Make ajax call
+                $.ajax({
+                    url : nms_form_url,
+                    type : "GET",
+                    success : function(response) {
+
+                        var result = "";
+                        // Type check of response
+                        if (typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+                        add_device_form(result);
+                    },
+                    error : function(err) {
+                        console.log(err.statusText);
+                    }
+                });
             }
         });
     </script>
