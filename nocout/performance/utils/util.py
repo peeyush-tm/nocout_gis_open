@@ -863,7 +863,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -900,7 +899,7 @@ def prepare_gis_devices_optimized(
 
                 for inventory_row in inventory_dataset:
                     data.update({
-                        # "id" : inventory_row.get('DEVICE_ID', 0),
+                        "id" : inventory_row.get('DEVICE_ID', 0),
                         "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                         "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                         "circuit_id": inventory_row.get('CCID', 'NA'),
@@ -936,7 +935,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -973,7 +971,7 @@ def prepare_gis_devices_optimized(
                 for inventory_row in inventory_dataset:
 
                     data.update({
-                        # "id" : inventory_row.get('DEVICE_ID', 0),
+                        "id" : inventory_row.get('DEVICE_ID', 0),
                         "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                         "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                         "circuit_id": inventory_row.get('CCID', 'NA'),
@@ -1019,7 +1017,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1059,7 +1056,7 @@ def prepare_gis_devices_optimized(
                 for inventory_row in inventory_dataset:
 
                     data.update({
-                        # "id" : inventory_row.get('DEVICE_ID', 0),
+                        "id" : inventory_row.get('DEVICE_ID', 0),
                         "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                         "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                         "circuit_id": inventory_row.get('CCID', 'NA'),
@@ -1130,7 +1127,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1166,7 +1162,7 @@ def prepare_gis_devices_optimized(
 
                 for inventory_row in inventory_dataset:
                     data.update({
-                        # "id" : inventory_row.get('DEVICE_ID', 0),
+                        "id" : inventory_row.get('DEVICE_ID', 0),
                         "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
                         "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
                         "sector_sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
@@ -1208,7 +1204,6 @@ def prepare_gis_devices_optimized(
 
         for data in qs:
             data.update({
-                # "id" : 0,
                 "bs_name": "NA",
                 "city": "NA",
                 "state": "NA",
@@ -1237,7 +1232,7 @@ def prepare_gis_devices_optimized(
 
             for inventory_row in inventory_dataset:
                 data.update({
-                    # "id" : inventory_row.get('DEVICE_ID', 0),
+                    "id" : inventory_row.get('DEVICE_ID', 0),
                     "bs_name": inventory_row.get('BSALIAS', 'NA'),
                     "city": inventory_row.get('BSCITY', 'NA'),
                     "state": inventory_row.get('BSSTATE', 'NA'),
