@@ -863,7 +863,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -936,7 +935,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1019,7 +1017,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1130,7 +1127,6 @@ def prepare_gis_devices_optimized(
 
             for data in qs:
                 data.update({
-                    # "id" : 0,
                     "near_end_ip": "NA",
                     "sector_id": "NA",
                     "circuit_id": "NA",
@@ -1208,7 +1204,6 @@ def prepare_gis_devices_optimized(
 
         for data in qs:
             data.update({
-                # "id" : 0,
                 "bs_name": "NA",
                 "city": "NA",
                 "state": "NA",

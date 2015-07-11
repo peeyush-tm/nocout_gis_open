@@ -5127,7 +5127,7 @@ def getAutoSuggestion(request, search_by="default", search_txt=""):
             query_result = search_model.objects.filter(
                 Q(**{condition : str(search_txt)}),
                 Q(organization__in=current_user_organizations),
-                Q(is_added_to_nms=1),
+                Q(is_added_to_nms__gt=0),
                 Q(is_deleted=0)
             )[:30] 
         else:
