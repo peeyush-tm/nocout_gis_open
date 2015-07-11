@@ -1,8 +1,8 @@
 """
-network_etl.py
+rrd_migration.py
 ================
 
-This script collects and stores data for host checks
+This script collects and stores data for all services 
 running on all configured devices for this poller.
 
 """
@@ -10,44 +10,41 @@ running on all configured devices for this poller.
 import re
 from datetime import datetime, timedelta
 import socket
-from sys import path
-from ast import literal_eval
 from itertools import izip_longest
-
 from celery import group
 
-path.append('/omd/nocout_etl')
-
-from start.start import app
-from handlers.db_ops import *
-
-logger = get_task_logger(__name__)
-info , warning, error = logger.info, logger.warning, logger.error
+from start_pub import app
+from db_ops import *
+#app = celery.app
 
 
 def calculate_refer_field_for_host(device_first_down, host_name, ds_values, 
-	check_timestamp):
+		local_timestamp):
 	refer = ''
 	try:
-		if (device_first_down is None and ds_values['cur'] == '100'):
-			device_first_down = {}
-			device_first_down['device_name'] = host_name
+		if (device_first_down == {} and ds_values['cur'] == '100'):
+			device_first_down['host'] = host_name
 			device_first_down['severity'] = "down"
-			device_first_down['check_timestamp'] = check_timestamp
-			#device_first_down_list.append(device_first_down)
-		elif (device_first_down and ds_values['cur'] != '100'):
+			device_first_down['time'] = local_timestamp
+			#device_first_down_map[host_name]=device_first_down
+		elif (device_first_down and host_name ==  device_first_down['host'] and 
+			ds_values['cur'] != '100'):
 			device_first_down['severity'] = "up"
-		elif (device_first_down and device_first_down['severity'] == "up" and 
+			#device_first_down_map[host_name]['severity'] = "up"
+			#device_first_down_list[]
+		elif (device_first_down and host_name == device_first_down['host'] and 
+			device_first_down['severity'] == "up" and 
 				ds_values['cur'] == '100'):
 			device_first_down['severity'] = "down"
-			device_first_down['check_timestamp'] = check_timestamp
-		if device_first_down and device_first_down.get('time'):
-			refer = device_first_down['check_timestamp']
+			device_first_down['time'] = local_timestamp
+			#device_first_down_map[host_name]['severity'] = "down"
+			#device_first_down_map[host_name]['time'] = local_timestamp
+		if len(device_first_down) > 0:
+			refer = device_first_down['time']
 	except Exception as exc:
 		# printing the exc for now
-		error('Exc in host refer field: {}'.format(exc))
-
-	return  refer, device_first_down
+		print 'Exc in host refer field: ', exc
+	return  refer,device_first_down	
 
 def calculate_host_severity_for_pl(ds_values,host_severity):
 	ds_values['cur'] = ds_values['cur'].strip('%')
@@ -94,75 +91,74 @@ def calculate_host_severity_for_letency(ds_values,host_severity):
 	return host_severity
 
 
-@app.task(base=DatabaseTask, name='build-export-host')
+@app.task(base=DatabaseTask, name='build-export')
 def build_export(site, network_perf_data):
 	""" processes and prepares data for db insert"""
-
-	# contains one dict value for each service data source
+	
+    # contains one dict value for each service data source
 	data_array = []
-	# last down time for devices
-	rds_cli = RedisInterface()
-	last_down_all = rds_cli.multi_get(key_prefix='last_down')
-	# values updated during current execution, only these
-	# values should be updated into redis
-	last_down_updated_all = []
+	device_first_down_map = {}
 	for h_chk_val in network_perf_data:
 		if not h_chk_val:
 			continue
-		try:
-			h_chk_val = literal_eval(h_chk_val)
-		except Exception as exc:
-			error('Error in json loading: %s' % exc)
-			continue
 		data_dict = {}
 		threshold_values = {}
-		host_severity = host_state = h_chk_val['state'] if h_chk_val.get('state') \
-				else 'unknown'
+		device_first_down = {}
+		host_severity = host_state = 'unknown'
 		refer = ''
-		device_name = str(h_chk_val['host_name'])
-		device_down_entry = None
 		# Process network perf data
+		device_first_down_list = list(build_export.mongo_cnx(site).device_first_down.find())
+		#print device_first_down_list
+		for e in device_first_down_list:
+			if e.get('host'):
+				device_first_down_map[e['host']] = e
 		try:
-			threshold_values = get_threshold(h_chk_val.get('perf_data'))
-			# TODO: include rt_min, rt_max values if needed
-			c_min, c_max = None, None
-			# rt_min and rt_max are not needed for perf calculations
+			threshold_values = get_threshold(h_chk_val[-1])
+			rt_min = threshold_values.get('rtmin').get('cur')
+			rt_max = threshold_values.get('rtmax').get('cur')
+			# rtmin, rtmax values are not used in perf calc
 			threshold_values.pop('rtmin', '')
 			threshold_values.pop('rtmax', '')
+			# TODO :: use `assert` to check for entry sanity
+			if h_chk_val[2] == 0:
+				host_state = 'up'
+			elif h_chk_val[2] == 1:
+				host_state = 'down'
 			# Age of last service state change
-			age = h_chk_val['last_state_change']
+			age = h_chk_val[-2]
 		except:
 			# TODO :: should not return empty values
 			pass
 
 		for ds, ds_values in threshold_values.items():
-			check_time = datetime.fromtimestamp(float(h_chk_val['last_chk']))
+			check_time = datetime.fromtimestamp(float(h_chk_val[3]))
 			# since we are processing data every minute,
 			# so pivot the time stamp to next minute time frame
 			local_timestamp = pivot_timestamp_fwd(check_time)
 			host_severity = host_state
 			if ds == 'pl':
 				host_severity = calculate_host_severity_for_pl(ds_values, host_severity)
-				for i, entry in enumerate(last_down_all):
-					if str(entry['host']) == device_name:
-						device_down_entry = entry
-						last_down_all.pop(i)
-						break
-				refer, device_down_entry = calculate_refer_field_for_host(device_down_entry, 
-						device_name, ds_values, local_timestamp)
-				if device_down_entry:
-					last_down_updated_all.append(device_down_entry)
+				try:
+					device_first_down = device_first_down_map[str(h_chk_val[0])]
+				except:
+					pass	
+				refer,device_first_down = calculate_refer_field_for_host(device_first_down, 
+						str(h_chk_val[0]), ds_values, local_timestamp)
+				device_first_down_map[str(h_chk_val[0])] = device_first_down
+				c_min, c_max = None, None
+				#print device_first_down	
 			if ds == 'rta':
 				host_severity = calculate_host_severity_for_letency(ds_values, host_severity)	
+				c_min, c_max = rt_min, rt_max
 			data_dict.update({
 				# since we are usig 'pyformat' style for string formatting 
 				# with executemany, for mysql insert, dict key names should 
 				# not be altered or else mysql insert will fail
-				'device_name': device_name,
+				'device_name': str(h_chk_val[0]),
 				'service_name': 'ping',
 				'machine_name': site[:-8], 
 				'site_name': site,
-				'ip_address': str(h_chk_val['address']),
+				'ip_address': str(h_chk_val[1]),
 				'data_source': ds,
 				'severity': host_severity,
 				'current_value': ds_values.get('cur'),
@@ -180,28 +176,21 @@ def build_export(site, network_perf_data):
 			data_dict = {}
 		
 	# send aggregator task
-	aggregator.s(data_array, last_down_updated_all, site).apply_async()
+	#print device_first_down_map
+	s= device_first_down_map.values()
+	s.append({"host":"nitin","severity":"NA","time":"86"})
+	aggregator.s(data_array,s, site).apply_async()
 
 
 @app.task(name='get-host-checks', ignore_result=True)
 def get_host_checks_output(site_name=None):
-	# initialize redis connection
-	queue = RedisInterface(perf_q='queue:host')
-	# get host check results from redis backed queue
-	# pulling 1000 values from queue, at a time
-	host_check_results = queue.get(0, 1000)
-	if host_check_results:
-		build_export.s(site_name, host_check_results).apply_async()
-
-
-#@app.task(name='get-host-checks', ignore_result=True)
-def get_host_checks_output_old(site_name=None):
 	"""Live query on `hosts` check_mk table"""
 
 	start_time = (datetime.now() - timedelta(minutes=1)
 		).replace(second=0, microsecond=0)
 	end_time = start_time + timedelta(minutes=1)
 	start_time, end_time = start_time.strftime('%s'), end_time.strftime('%s')
+	print datetime.fromtimestamp(float(start_time)), datetime.fromtimestamp(float(end_time))
 	network_live_query = "GET hosts\n"+\
 			"Columns: host_name host_address host_state last_check "+\
 			"host_last_state_change host_perf_data\n"+\
@@ -212,7 +201,7 @@ def get_host_checks_output_old(site_name=None):
 	try:
 		nw_qry_output = eval(get_from_socket(site_name, network_live_query))
 	except Exception as exc:
-		error('Exc in get socket: {}'.format(exc))
+		print 'Exc in get socket: ', exc
 		nw_qry_output = []
 	if nw_qry_output:
 		# send build_export with 1000 hosts data [configurable]
@@ -220,29 +209,19 @@ def get_host_checks_output_old(site_name=None):
 			build_export.s(site_name, club_data).apply_async()
 
 
-@app.task(base=DatabaseTask, name='aggregator-host')
-def aggregator(data_values, last_down_devices, site):
+@app.task(base=DatabaseTask, name='aggregator')
+def aggregator(data_values, device_first_down_list,site):
 	""" sends task messages"""
-
+	#print device_first_down_list
 	if data_values:
-		# redis/mysql inserts/updates
-		#group(
-		#		[rds_cli.redis_update.s(data_values, perf_type='status'),
-		#			rds_cli.redis_insert.s(data_values, perf_type='live'),
-		#			mysql_insert_handler.s(data_values, site)]
-		#		).apply_async()
-
 		# mongo/mysql inserts/updates
-		rds_cli = RedisInterface()
-		group([
-			rds_cli.redis_update.s(last_down_devices, perf_type='last_down'),
-			mongo_update.s(data_values, 
-				('device_name', 'service_name', 'data_source'), 'network_status', site), 
-			mongo_insert.s(data_values, 'network_perf', site),
-			mysql_insert_handler.s(data_values, 'performance_performancenetwork', 
-				'performance_networkstatus', 'network_perf', site)
-			]
-			).apply_async()
+		group(
+				[mongo_update.s(data_values, ('device_name', 'service_name', 'data_source'), 
+					'network_status', site),
+					mongo_update.s(device_first_down_list,('host',),'device_first_down',site), 
+					mongo_insert.s(data_values, 'network_perf', site),
+					mysql_insert_handler.s(data_values, site)]
+				).apply_async()
 
 
 def get_from_socket(site_name, query):
@@ -260,7 +239,7 @@ def get_from_socket(site_name, query):
 		try:
 	 		out = s.recv(100000000)
 		except socket.timeout:
-			error('socket timeout ..Exiting')
+			print 'socket timeout ..Exiting'
 			break
 		out.strip()
 		if not len(out):
@@ -313,7 +292,7 @@ def pivot_timestamp_fwd(timestamp):
 
 @app.task(name='network-main')
 def main(**opts):
-	opts = {'site_name': 'pub_slave_1'}
+	#opts = {'site_name': 'pub_slave_1'}
 	get_host_checks_output.s(**opts).apply_async()
 
 
