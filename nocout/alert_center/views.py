@@ -242,6 +242,8 @@ class AlertListingTable(BaseDatatableView):
         'avg_value'
     ]
 
+    main_qs = []
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -282,6 +284,8 @@ class AlertListingTable(BaseDatatableView):
             other_type=other_type,
             required_value_list=required_value_list
         )
+
+        self.main_qs = devices
 
         #machines dict
         machines = inventory_utils.prepare_machines(
@@ -325,6 +329,15 @@ class AlertListingTable(BaseDatatableView):
         except Exception, e:
             # logger.info(e.message)
             pass
+
+        device_indexed_info = perf_utils.indexed_polled_results(self.main_qs)
+        # Mapped device id with qs
+        for data in qs:
+            device_name = data['device_name']
+            device_info = device_indexed_info[device_name]
+            device_id = device_info.get('id')
+            if device_id:
+                data.update(id=device_id)
 
         return perf_utils.prepare_gis_devices_optimized(
             qs,
