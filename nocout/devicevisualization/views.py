@@ -159,7 +159,11 @@ class Gis_Map_Performance_Data(View):
                 'sector_info': sector_info
             }
             try:
-                device = Device.objects.get(device_name=device_name, is_added_to_nms=1, is_deleted=0)
+                device = Device.objects.get(
+                    device_name=device_name,
+                    is_added_to_nms__gt=0,
+                    is_deleted=0
+                )
 
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
                 user_obj = UserProfile.objects.get(id=self.request.user.id)
@@ -1403,13 +1407,14 @@ class GISPerfData(View):
 
                     # get all sectors associated with base station (bs)
                     # query for sectors and sector configured on
-                    sectors = bs.sector.prefetch_related('sector_configured_on',
-                                                         'circuit_set',
-                                                         'antenna',
-                                                         'sector_configured_on_port'
-                                                         ).filter(
+                    sectors = bs.sector.prefetch_related(
+                        'sector_configured_on',
+                        'circuit_set',
+                        'antenna',
+                        'sector_configured_on_port'
+                    ).filter(
                         sector_configured_on__isnull=False,
-                        sector_configured_on__is_added_to_nms=1
+                        sector_configured_on__is_added_to_nms__gt=0
                     )
 
                     if bs.backhaul and bs.backhaul.bh_configured_on_id:
@@ -1424,7 +1429,7 @@ class GISPerfData(View):
                                     sector__in=sectors
                                 ).values_list('sub_station_id',flat=True)
                             ).values_list('device', flat=True)),
-                            is_added_to_nms=1
+                            is_added_to_nms__gt=0
                         ).values('device_name', 'machine__name')
                     else:
                         device_list = Device.objects.filter(
@@ -1435,7 +1440,7 @@ class GISPerfData(View):
                                     sector__in=sectors
                                 ).values_list('sub_station_id',flat=True)
                             ).values_list('device', flat=True)),
-                            is_added_to_nms=1
+                            is_added_to_nms__gt=0
                         ).values('device_name', 'machine__name')
 
                     bs_devices = [
@@ -1508,7 +1513,7 @@ class GISPerfData(View):
                     # ############################## PERF DATA GATHERING END #################################
 
                     # backhaul data
-                    if backhaul_device and backhaul_device.is_added_to_nms == 1:
+                    if backhaul_device and backhaul_device.is_added_to_nms > 0:
                         backhaul_data = self.get_backhaul_info(backhaul_device, network_perf_data)
                         bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
                         bs_dict['bh_pl'] = backhaul_data['bh_pl'] if 'bh_pl' in backhaul_data else "NA"
@@ -1545,7 +1550,7 @@ class GISPerfData(View):
                         except Exception as e:
                             pass
 
-                        if sector_device and sector_device.is_added_to_nms == 1:
+                        if sector_device and sector_device.is_added_to_nms > 0:
 
                             subs = SubStation.objects.prefetch_related(
                                 'device',
@@ -1606,7 +1611,7 @@ class GISPerfData(View):
                                 substation_device = ss.device
 
                                 ss_dict = dict()
-                                if substation and (substation_device.is_added_to_nms == 1):
+                                if substation and (substation_device.is_added_to_nms > 0):
 
                                     ss_default_link_color = sector_performance_data['color']
                                     ss_dict['device_name'] = substation_device.device_name

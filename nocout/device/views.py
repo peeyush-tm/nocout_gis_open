@@ -3468,9 +3468,11 @@ def list_schedule_device(request):
 
     # Get the organization of logged in user.
     org = request.user.userprofile.organization
-    device_list = Device.objects.filter(organization__in=[org],
-                                        is_added_to_nms=1,
-                                        is_deleted=0, )
+    device_list = Device.objects.filter(
+        organization__in=[org],
+        is_added_to_nms__gt=0,
+        is_deleted=0
+    )
     technology_id = None
 
     # Create instance of 'InventoryUtilsGateway' class
