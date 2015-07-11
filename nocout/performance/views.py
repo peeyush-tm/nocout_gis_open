@@ -364,7 +364,7 @@ class LivePerformanceListing(BaseDatatableView):
                 'age'
             ]
 
-        i_sort_col = 0
+        i_sort_col = None
 
         # Number of columns that are used in sorting
         try:
@@ -384,29 +384,31 @@ class LivePerformanceListing(BaseDatatableView):
             s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
 
             reverse = True if s_sort_dir == 'desc' else False
+        if i_sort_col != None:
+            self.is_initialised = False
+            self.is_ordered = True
+            try:
+                sort_data = self.prepare_devices(qs)
+                sort_using = columns[i_sort_col]
+                if sort_using in ['ip_address', 'near_end_ip']:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
+                        reverse=reverse
+                    )
+                else:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda item: item[sort_using].lower().strip() if type(item[sort_using]) == 'str' else item[sort_using],
+                        reverse=reverse
+                    )
+                return sorted_qs
 
-        self.is_initialised = False
-        self.is_ordered = True
-        try:
-            sort_data = self.prepare_devices(qs)
-            sort_using = columns[i_sort_col]
-            if sort_using in ['ip_address', 'near_end_ip']:
-                sorted_qs = sorted(
-                    sort_data,
-                    key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
-                    reverse=reverse
-                )
-            else:
-                sorted_qs = sorted(
-                    sort_data,
-                    key=lambda item: item[sort_using].lower().strip() if type(item[sort_using]) == 'str' else item[sort_using],
-                    reverse=reverse
-                )
-            return sorted_qs
-
-        except Exception, e:
-            self.is_initialised = True
-            self.is_ordered = False
+            except Exception, e:
+                self.is_initialised = True
+                self.is_ordered = False
+                return qs
+        else:
             return qs
 
     def prepare_devices(self, qs):
