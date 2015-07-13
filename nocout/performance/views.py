@@ -1927,7 +1927,8 @@ class ServiceDataSourceListing(BaseDatatableView):
             item.update(
                 current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
-                    '%d-%m-%Y %H:%M'
+                    # '%d-%m-%Y %H:%M'
+                    DATE_TIME_FORMAT
                 ) if item['sys_timestamp'] != "" else ""
             )
 
