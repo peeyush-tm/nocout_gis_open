@@ -63,16 +63,6 @@ function get_soft_delete_form(content) {
 
                         soft_delete_api_url = user_soft_delete_url.replace('123', $('#id_user').val());
                         soft_delete_api_url = soft_delete_api_url.replace('1111111', parent_id);
-                        // Dajaxice.user_profile.user_soft_delete(
-                        //     show_response_message, 
-                        //     {
-                        //         'user_id': $('#id_user').val(),
-                        //         'new_parent_id': $('#id_parent').val(),
-                        //         'datatable_headers':content.datatable_headers,
-                        //         'userlistingtable':'/user/userlistingtable/',
-                        //         'userarchivelisting':'/user/userarchivedlistingtable/'
-                        //     }
-                        // );
                     }
 
                     if (soft_delete_api_url) {
@@ -141,10 +131,6 @@ function add_confirmation(id) {
                             // console.log(err.statusText);
                         }
                     });
-                    // Dajaxice.user_profile.user_add(
-                    //     show_response_message,
-                    //     { 'user_id': id }
-                    // )
                 }
             },
             danger: {
@@ -188,10 +174,6 @@ function hard_delete_confirmation(id) {
                             // console.log(err.statusText);
                         }
                     });
-                    // Dajaxice.user_profile.user_hard_delete(
-                    //     show_response_message,
-                    //     { 'user_id': id }
-                    // )
                 }
             },
             danger: {
@@ -280,14 +262,6 @@ function add_device_form(content) {
                                 // console.log(err.statusText);
                             }
                         });
-
-                        // Dajaxice.device.add_device_to_nms_core(
-                        //     device_add_message,
-                        //     {
-                        //         'device_id': $("#device_id").val(),
-                        //         'ping_data': ping_data
-                        //     }
-                        // );
                     }
                 }
             },
@@ -352,12 +326,6 @@ function delete_device(device_id) {
                                 // console.log(err.statusText);
                             }
                         });
-                        // Dajaxice.device.delete_device_from_nms_core(
-                        //     device_delete_message,
-                        //     {
-                        //         'device_id': device_id
-                        //     }
-                        // );
                     }
                 }
             },
@@ -413,12 +381,6 @@ function modify_device_state(device_id) {
                                 // console.log(err.statusText);
                             }
                         });
-                        // Dajaxice.device.modify_device_state(
-                        //     modify_device_state_message,
-                        //     {
-                        //         'device_id': device_id
-                        //     }
-                        // );
                     }
                 }
             },
@@ -476,12 +438,6 @@ function sync_devices(device_id) {
                             }
                         });
                     }
-                    // Dajaxice.device.sync_device_with_nms_core(
-                    //     sync_devices_message,
-                    //     {
-                    //         'device_id': device_id
-                    //     }
-                    // );
                 }
             },
             danger: {
@@ -532,7 +488,6 @@ function remove_sync_deadlock() {
                         });
 
                     }
-                    // Dajaxice.device.remove_sync_deadlock(sync_deadlock_message);
                 }
             },
             danger: {
@@ -704,11 +659,6 @@ function get_service_edit_form(content) {
                                     // console.log(err.statusText);
                                 }
                             });
-                            // Dajaxice.device.edit_services(edit_services_message, {
-                            //     'svc_data': service_data,
-                            //     'svc_ping': ping_data,
-                            //     'device_id': parseInt($("#device_id").val())
-                            // });
                         }
                     } else {
                         if ($("#ping_checkbox").is(":checked")) {
@@ -745,12 +695,6 @@ function get_service_edit_form(content) {
                                     // console.log(err.statusText);
                                 }
                             });
-
-                            // Dajaxice.device.edit_services(edit_services_message, {
-                            //     'svc_data': "",
-                            //     'svc_ping': ping_data,
-                            //     'device_id': parseInt($("#device_id").val())
-                            // });
                         }
                     }
                 }
@@ -822,12 +766,6 @@ function hide_and_show_ping() {
                         // console.log(err.statusText);
                     }
                 });
-                // Dajaxice.device.get_ping_configuration_for_svc_edit(
-                //     Dajax.process,
-                //     {
-                //         'device_id': $('#device_id').val()
-                //     }
-                // );
             }
             $("#ping_svc").show();
         } else{
@@ -922,14 +860,6 @@ function show_old_configuration_for_svc_edit(value) {
                     // console.log(err.statusText);
                 }
             });
-            // Dajaxice.device.get_old_configuration_for_svc_edit(
-            //     Dajax.process,
-            //     {
-            //         'option': value,
-            //         'service_id': value,
-            //         'device_id': $('#device_id').val()
-            //     }
-            // );
         }
     } else {
         $("#template_options_id_"+value+"").empty();
@@ -1006,15 +936,7 @@ function show_new_configuration_for_svc_edit(service_id) {
             error : function(err) {
                 // console.log(err.statusText);
             }
-        });        
-        
-        // Dajaxice.device.get_new_configuration_for_svc_edit(
-        //     Dajax.process,
-        //     {
-        //         'service_id': service_id,
-        //         'template_id': template_id
-        //     }
-        // );
+        });
     }
 
 }
@@ -1118,13 +1040,6 @@ function get_service_delete_form(content) {
                                     // console.log(err.statusText);
                                 }
                             });
-                            // Dajaxice.device.delete_services(
-                            //     delete_services_message,
-                            //     {
-                            //         'device_id': $("#device_id").val(),
-                            //         'service_data': service_data
-                            //     }
-                            // );
                         }
 
                     } else{
@@ -1262,13 +1177,6 @@ function get_service_add_form(content) {
                                     // console.log(err.statusText);
                                 }
                             });
-                            // Dajaxice.device.add_services(
-                            //     add_services_message,
-                            //     {
-                            //         'device_id': $("#device_id").val(),
-                            //         'svc_data': service_data
-                            //     }
-                            // );
                         }
                     } else{
                         $(".bootbox").modal("hide");
@@ -1325,15 +1233,6 @@ function show_old_configuration_for_svc_add(value) {
                     // console.log(err.statusText);
                 }
             });
-
-            // Dajaxice.device.get_old_configuration_for_svc_add(
-            //     Dajax.process,
-            //     {
-            //         'option': value,
-            //         'service_id': $(id).prop("value"),
-            //         'device_id': $('#device_id').val()
-            //     }
-            // );
         }
     }
     else {
@@ -1418,13 +1317,6 @@ function show_new_configuration_for_svc_add(value){
                 // console.log(err.statusText);
             }
         });
-        // Dajaxice.device.get_new_configuration_for_svc_add(
-        //     Dajax.process,
-        //     {
-        //         'service_id': service_id,
-        //         'template_id': template_id
-        //     }
-        // );
     }
 }
 
@@ -1584,13 +1476,6 @@ function get_restore_device_form(content) {
                                 // console.log(err.statusText);
                             }
                         });
-
-                        // Dajaxice.device.device_restore(
-                        //     device_restore_message,
-                        //     {
-                        //         'device_id': $("#device_id").val()
-                        //     }
-                        // );
                     }
                 }
             },
