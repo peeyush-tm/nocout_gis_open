@@ -1,4 +1,7 @@
+from device.models import DeviceTechnology, VendorModel, ModelType
 from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from serializers import (AntennaSerializer, BackhaulSerializer, SectorSerializer, SubStationSerializer,
                          BaseStationSerializer, CustomerSerializer, CircuitSerializer)
 from inventory.models import Antenna, Backhaul, Sector, BaseStation, SubStation, Customer, Circuit
@@ -8,7 +11,12 @@ from nocout import permissions
 from nocout.utils.util import NocoutUtilsGateway
 
 # Create instance of 'NocoutUtilsGateway' class
+from service.models import Service
+
 nocout_utils = NocoutUtilsGateway()
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AntennaViewSet(viewsets.ModelViewSet):
@@ -93,3 +101,141 @@ class CircuitViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Circuit.objects.filter(organization__in=nocout_utils.logged_in_user_organizations(self))
+
+
+class GetServicesForTechnology(APIView):
+    """
+    Fetch services corresponding to the selected technology.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_tech_services/2/"
+    """
+    def get(self, request, pk=""):
+        """
+        Processing API request.
+
+        Args:
+            pk (int): Selected technology ID.
+
+        Returns:
+            result (str): Result which needs to be returned.
+                          For e.g.,
+                                {
+                                    "message": "Successfully fetched services data.",
+                                    "data": {
+                                        "meta": {},
+                                        "objects": {
+                                            "services": [
+                                                {
+                                                    "alias": "Radwin UAS",
+                                                    "id": 5
+                                                },
+                                                {
+                                                    "alias": "Estimated Throughput",
+                                                    "id": 6
+                                                },
+                                                {
+                                                    "alias": "Total Downlink Utilization",
+                                                    "id": 7
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "success": 0
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to fetch services data."
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        if pk:
+            try:
+                # Get vendors for selected technology.
+                vendors = DeviceTechnology.objects.get(pk=pk).device_vendors
+                device_models = list()
+                for vendor in vendors.all():
+                    models = VendorModel.objects.filter(vendor=vendor)
+                    device_models.append(models)
+                services = list()
+                for model in device_models:
+                    # Get all device types associated with all models.
+                    types = ModelType.objects.filter(model=model)
+                    for dt in types:
+                        # Get all services associated with 'types'.
+                        for svc in dt.type.service.all():
+                            services.append(svc)
+                # Some devices have same services, so here we are making list of distinct services.
+                distinct_service = set(services)
+                result['data']['objects']['services'] = list()
+                for svc in distinct_service:
+                    svc_dict = dict()
+                    svc_dict['id'] = svc.id
+                    svc_dict['alias'] = svc.alias
+                    result['data']['objects']['services'].append(svc_dict)
+                result['message'] = "Successfully fetched services data."
+            except Exception as e:
+                logger.info(e)
+
+        return Response(result)
+
+
+class GetDSForService(APIView):
+    """
+    Fetch data sources corresponding to the selected service.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_service_data_sources/5/"
+    """
+    def get(self, request, pk=""):
+        """
+        Processing API request.
+
+        Args:
+            pk (int): Selected service ID.
+
+        Returns:
+            result (str): Result which needs to be returned.
+                          For e.g.,
+                                {
+                                    "message": "Successfully fetched data sources.",
+                                    "data": {
+                                        "meta": {},
+                                        "objects": {
+                                            "data_sources": [
+                                                {
+                                                    "alias": "Radwin UAS",
+                                                    "id": 3
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "success": 0
+                                }
+        """
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = "Failed to fetch data sources."
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        if pk:
+            try:
+                # Fetting data sources associated with the selected service.
+                data_sources = Service.objects.get(id=pk).service_data_sources.all()
+                result['data']['objects']['data_sources'] = list()
+                for data_source in data_sources:
+                    ds_dict = dict()
+                    ds_dict['id'] = data_source.id
+                    ds_dict['alias'] = data_source.alias
+                    result['data']['objects']['data_sources'].append(ds_dict)
+                result['message'] = "Successfully fetched data sources."
+            except Exception as e:
+                logger.info(e)
+
+        return Response(result)
