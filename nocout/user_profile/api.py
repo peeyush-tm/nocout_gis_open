@@ -137,6 +137,12 @@ class UserSoftDelete(APIView):
         result['data']['objects']['id'] = value
         result['data']['objects']['name'] = user.username
 
+        try:
+            new_parent_id = int(new_parent_id)
+        except Exception, e:
+            new_parent_id = 0
+            pass
+
         if new_parent_id:
             new_parent = UserProfile.objects.get(id=new_parent_id)
 

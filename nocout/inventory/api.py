@@ -145,12 +145,7 @@ class GetServicesForTechnology(APIView):
                                     "success": 0
                                 }
         """
-        result = dict()
-        result['data'] = {}
-        result['success'] = 0
-        result['message'] = "Failed to fetch services data."
-        result['data']['meta'] = {}
-        result['data']['objects'] = {}
+        result = list()
 
         if pk:
             try:
@@ -170,13 +165,11 @@ class GetServicesForTechnology(APIView):
                             services.append(svc)
                 # Some devices have same services, so here we are making list of distinct services.
                 distinct_service = set(services)
-                result['data']['objects']['services'] = list()
                 for svc in distinct_service:
                     svc_dict = dict()
                     svc_dict['id'] = svc.id
                     svc_dict['alias'] = svc.alias
-                    result['data']['objects']['services'].append(svc_dict)
-                result['message'] = "Successfully fetched services data."
+                    result.append(svc_dict)
             except Exception as e:
                 logger.info(e)
 
@@ -217,24 +210,17 @@ class GetDSForService(APIView):
                                     "success": 0
                                 }
         """
-        result = dict()
-        result['data'] = {}
-        result['success'] = 0
-        result['message'] = "Failed to fetch data sources."
-        result['data']['meta'] = {}
-        result['data']['objects'] = {}
+        result = list()
 
         if pk:
             try:
                 # Fetting data sources associated with the selected service.
                 data_sources = Service.objects.get(id=pk).service_data_sources.all()
-                result['data']['objects']['data_sources'] = list()
                 for data_source in data_sources:
                     ds_dict = dict()
                     ds_dict['id'] = data_source.id
                     ds_dict['alias'] = data_source.alias
-                    result['data']['objects']['data_sources'].append(ds_dict)
-                result['message'] = "Successfully fetched data sources."
+                    result.append(ds_dict)
             except Exception as e:
                 logger.info(e)
 
@@ -276,7 +262,7 @@ class GetServiceForDeviceType(APIView):
                                     ]
                                 }
         """
-        result = dict()
+        result = list()
 
         services = list()
         # Process if type_id is not empty.
@@ -287,13 +273,12 @@ class GetServiceForDeviceType(APIView):
                     services.append(svc)
                 # Some devices have same services, so here we are making list of distinct services.
                 distinct_service = set(services)
-
-                result['services'] = list()
+                
                 for svc in distinct_service:
                     svc_dict = dict()
                     svc_dict['id'] = svc.id
                     svc_dict['alias'] = svc.alias
-                    result['services'].append(svc_dict)
+                    result.append(svc_dict)
             except Exception as e:
                 logger.info(e)
 
