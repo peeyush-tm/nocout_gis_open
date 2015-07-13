@@ -16,4 +16,6 @@ router.register(r'circuits', api.CircuitViewSet, base_name='circuit')
 urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^get_tech_services/(?P<pk>\d+)/$', api.GetServicesForTechnology.as_view(), name='get_tech_services'),
+    url(r'^get_service_data_sources/(?P<pk>\d+)/$', api.GetDSForService.as_view(), name='get_service_data_sources'),
 ]
