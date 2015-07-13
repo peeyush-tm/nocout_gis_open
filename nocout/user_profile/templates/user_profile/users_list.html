@@ -38,7 +38,7 @@
                     </a>
                 </li>
             </ul>
-            <div class="tab-content">
+            <div class="tab-content user_tab_content">
                 <div class="tab-pane in active" id="UserListing">
                     <table id="UserListingTable" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
@@ -66,9 +66,16 @@
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
 
-        var dataTableInstance = "";
+        var dataTableInstance = '',
+            user_soft_delete_url = '',
+            restore_user_url = '',
+            delete_user_url = '';
 
         $(document).ready(function (e) {
+
+            user_soft_delete_url = "{% url 'user_soft_delete' 123 1111111 %}";
+            restore_user_url = "{% url 'restore_user' 123 %}";
+            delete_user_url = "{% url 'delete_user' 123 %}";
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
@@ -115,6 +122,37 @@
 
                 /*Trigger click event on active tab to load its data*/
                 $("#user_tab").trigger('click',true);
+            }
+        });
+
+        /**
+         * This event triggers when delete icon on operational tab in action columns clicked
+         * @event click
+         */        
+        $('.user_tab_content').delegate('.user_soft_delete_btn', 'click', function(e) {
+            var device_id = $(this).attr('pk'),
+                soft_delete_ajax_url = '{% url "user_soft_delete_display_data" 123 %}';
+
+            if (device_id && soft_delete_ajax_url) {
+                var soft_delete_url = soft_delete_ajax_url.replace('123', device_id);
+                $.ajax({
+                    url : soft_delete_url,
+                    type : "GET",
+                    success : function(response) {
+                        var result = "";
+                        // Type check of response
+                        if (typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        get_soft_delete_form(result);
+                    },
+                    error : function(err) {
+                        // console.log(err.statusText);
+                    }
+                });
             }
         });
     </script>

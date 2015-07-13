@@ -30,8 +30,9 @@ function get_soft_delete_form(content) {
         }
         soft_delete_html += '</select>';
     } else {
+        var display_name = content.ip_address ? content.ip_address : content.name;
         soft_delete_html = '<span class="text-danger">This '+$.trim(content.form_title)+' \
-                            (' + content.ip_address + ') is not associated with any other \
+                            (' + display_name + ') is not associated with any other \
                             '+$.trim(content.form_title)+'. <br />Click "Delete" button if you want to delete it.</span> \
                             <input type="hidden" id="id_'+$.trim(content.form_type)+'" \
                             name="'+$.trim(content.form_type)+'" value="' + content.id + '" /> \
@@ -57,19 +58,26 @@ function get_soft_delete_form(content) {
                             soft_delete_api_url += $('#id_parent').val() + '/'
                         }
                     } else if($.trim(content.form_type) == 'user') {
-                        Dajaxice.user_profile.user_soft_delete(
-                            show_response_message, 
-                            {
-                                'user_id': $('#id_user').val(),
-                                'new_parent_id': $('#id_parent').val(),
-                                'datatable_headers':content.datatable_headers,
-                                'userlistingtable':'/user/userlistingtable/',
-                                'userarchivelisting':'/user/userarchivedlistingtable/'
-                            }
-                        );
+
+                        var parent_id = $('#id_parent').val() ? $('#id_parent').val() : 0;
+
+                        soft_delete_api_url = user_soft_delete_url.replace('123', $('#id_user').val());
+                        soft_delete_api_url = soft_delete_api_url.replace('1111111', parent_id);
+                        // Dajaxice.user_profile.user_soft_delete(
+                        //     show_response_message, 
+                        //     {
+                        //         'user_id': $('#id_user').val(),
+                        //         'new_parent_id': $('#id_parent').val(),
+                        //         'datatable_headers':content.datatable_headers,
+                        //         'userlistingtable':'/user/userlistingtable/',
+                        //         'userarchivelisting':'/user/userarchivedlistingtable/'
+                        //     }
+                        // );
                     }
 
                     if (soft_delete_api_url) {
+                        // Show loading spinner
+                        showSpinner();
                         // Make Ajax Call
                         $.ajax({
                             url : soft_delete_api_url,
@@ -82,7 +90,6 @@ function get_soft_delete_form(content) {
                                 } else {
                                     result = response;
                                 }
-                                console.log(result);
                             },
                             error : function(err) {
                                 // console.log(err.statusText);
@@ -114,7 +121,30 @@ function add_confirmation(id) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    Dajaxice.user_profile.user_add(show_response_message, { 'user_id': id })
+                    var api_url = '';
+                    api_url = restore_user_url.replace('123', id);
+                    // Make Ajax Call
+                    $.ajax({
+                        url : api_url,
+                        type : "GET",
+                        success : function(response) {
+                            var result = "";
+                            // Type check of response
+                            if (typeof response == 'string') {
+                                result = JSON.parse(response);
+                            } else {
+                                result = response;
+                            }
+                            show_response_message(result);
+                        },
+                        error : function(err) {
+                            // console.log(err.statusText);
+                        }
+                    });
+                    // Dajaxice.user_profile.user_add(
+                    //     show_response_message,
+                    //     { 'user_id': id }
+                    // )
                 }
             },
             danger: {
@@ -131,14 +161,37 @@ function add_confirmation(id) {
 
 function hard_delete_confirmation(id) {
     bootbox.dialog({
-        message: "<span class='text-danger'>Permanently delete device from inventory. Can't roll this action back. <br />Are you sure want to add this user ?</span>",
-        title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
+        message: "<span class='text-danger'>Permanently delete user from inventory. Can't roll this action back. <br />Are you sure want to add this user ?</span>",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Confirmation </span>",
         buttons: {
             success: {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    Dajaxice.user_profile.user_hard_delete(show_response_message, { 'user_id': id })
+                    var api_url = '';
+                    api_url = delete_user_url.replace('123', id);
+                    // Make Ajax Call
+                    $.ajax({
+                        url : api_url,
+                        type : "GET",
+                        success : function(response) {
+                            var result = "";
+                            // Type check of response
+                            if (typeof response == 'string') {
+                                result = JSON.parse(response);
+                            } else {
+                                result = response;
+                            }
+                            show_response_message(result);
+                        },
+                        error : function(err) {
+                            // console.log(err.statusText);
+                        }
+                    });
+                    // Dajaxice.user_profile.user_hard_delete(
+                    //     show_response_message,
+                    //     { 'user_id': id }
+                    // )
                 }
             },
             danger: {
