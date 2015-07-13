@@ -1201,7 +1201,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 if sort_using in self.polled_value_columns:
                     qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
                 else:
-                    qs = sorted(sort_data, key=lambda data: data[sort_using].lower(), reverse=reverse)
+                    qs = sorted(sort_data, key=lambda data: data[sort_using].lower() if data[sort_using] not in [None] else data[sort_using], reverse=reverse)
             except Exception, e:
                 pass
         return qs
