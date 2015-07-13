@@ -1,4 +1,4 @@
-from device.models import DeviceTechnology, VendorModel, ModelType
+from device.models import DeviceTechnology, VendorModel, ModelType, DeviceType
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -221,6 +221,65 @@ class GetDSForService(APIView):
                     ds_dict['id'] = data_source.id
                     ds_dict['alias'] = data_source.alias
                     result.append(ds_dict)
+            except Exception as e:
+                logger.info(e)
+
+        return Response(result)
+
+
+class GetServiceForDeviceType(APIView):
+    """
+    Fetch services corresponding to the selected device type.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_device_type_services/4/"
+    """
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Args:
+            pk (int): Selected service ID.
+
+        Returns:
+            result (str): Result which needs to be returned.
+                          For e.g.,
+                                {
+                                    "services": [
+                                        {
+                                            "alias": "ss params from bs",
+                                            "id": 145
+                                        },
+                                        {
+                                            "alias": "aggregagte params from bs",
+                                            "id": 146
+                                        },
+                                        {
+                                            "alias": "ss vlantag from bs ",
+                                            "id": 147
+                                        }
+                                    ]
+                                }
+        """
+        result = dict()
+
+        services = list()
+        # Process if type_id is not empty.
+        if pk:
+            try:
+                dt = DeviceType.objects.get(id=pk)
+                for svc in dt.service.all():
+                    services.append(svc)
+                # Some devices have same services, so here we are making list of distinct services.
+                distinct_service = set(services)
+
+                result['services'] = list()
+                for svc in distinct_service:
+                    svc_dict = dict()
+                    svc_dict['id'] = svc.id
+                    svc_dict['alias'] = svc.alias
+                    result['services'].append(svc_dict)
             except Exception as e:
                 logger.info(e)
 
