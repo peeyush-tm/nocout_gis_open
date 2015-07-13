@@ -890,11 +890,15 @@ def prepare_gis_devices_optimized(
 
                 device_name = data.get('device_name')
                 if not device_name or not len(inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 inventory_dataset = inventory_resultset.get(device_name)
 
                 if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 for inventory_row in inventory_dataset:
@@ -961,11 +965,15 @@ def prepare_gis_devices_optimized(
 
                 device_name = data.get('device_name')
                 if not device_name or not len(inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 inventory_dataset = inventory_resultset.get(device_name)
 
                 if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 for inventory_row in inventory_dataset:
@@ -1046,11 +1054,15 @@ def prepare_gis_devices_optimized(
 
                 device_name = data.get('device_name')
                 if not device_name or not len(ptpbh_ss_inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 inventory_dataset = ptpbh_ss_inventory_resultset.get(device_name)
 
                 if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 for inventory_row in inventory_dataset:
@@ -1153,11 +1165,15 @@ def prepare_gis_devices_optimized(
 
                 device_name = data.get('device_name')
                 if not device_name or not len(sector_inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 inventory_dataset = sector_inventory_resultset.get(device_name)
 
                 if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
                     continue
 
                 for inventory_row in inventory_dataset:
@@ -1223,11 +1239,15 @@ def prepare_gis_devices_optimized(
 
             device_name = data.get('device_name')
             if not device_name or not len(backhaul_inventory_resultset):
+                # append the deep copied dict
+                resultant_dataset.append(json.loads(json.dumps(data)))
                 continue
 
             inventory_dataset = backhaul_inventory_resultset.get(device_name)
 
             if not inventory_dataset or not len(inventory_dataset):
+                # append the deep copied dict
+                resultant_dataset.append(json.loads(json.dumps(data)))
                 continue
 
             for inventory_row in inventory_dataset:
@@ -1252,7 +1272,7 @@ def prepare_gis_devices_optimized(
                 # append the deep copied dict
                 resultant_dataset.append(json.loads(json.dumps(data)))
 
-    return qs
+    return resultant_dataset
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
