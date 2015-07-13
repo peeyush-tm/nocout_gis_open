@@ -1027,9 +1027,13 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if data_source in ['PMPULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_BH', 'Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
+        if data_source in ['Backhaul', 'Temperature_BH']:
             page_type = 'other'
             type_rf = "backhaul"
+
+        if data_source in ['Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
+            page_type = 'other'
+            type_rf = "all"
 
         # GET all device name list from the list
         try:
