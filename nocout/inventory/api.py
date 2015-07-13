@@ -262,7 +262,7 @@ class GetServiceForDeviceType(APIView):
                                     ]
                                 }
         """
-        result = dict()
+        result = list()
 
         services = list()
         # Process if type_id is not empty.
@@ -273,13 +273,12 @@ class GetServiceForDeviceType(APIView):
                     services.append(svc)
                 # Some devices have same services, so here we are making list of distinct services.
                 distinct_service = set(services)
-
-                result['services'] = list()
+                
                 for svc in distinct_service:
                     svc_dict = dict()
                     svc_dict['id'] = svc.id
                     svc_dict['alias'] = svc.alias
-                    result['services'].append(svc_dict)
+                    result.append(svc_dict)
             except Exception as e:
                 logger.info(e)
 
