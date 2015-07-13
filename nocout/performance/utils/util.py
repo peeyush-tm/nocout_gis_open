@@ -1364,8 +1364,6 @@ def get_performance_data(device_list, machine, model):
             ).strftime(DATE_TIME_FORMAT) if data["age"] else ""
 
             device_result[device] = perf_result
-    # (device_result)
-    #  device_result
 
     return device_result
 
@@ -1653,10 +1651,13 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+            ).strftime(DATE_TIME_FORMAT)
+            # ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+                float(data["age"])
+            ).strftime(DATE_TIME_FORMAT) if data["age"] else ""
+            # ).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
 
             device_result[device] = perf_result
     # (device_result)
