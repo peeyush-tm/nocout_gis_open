@@ -237,7 +237,7 @@ def gather_backhaul_status():
     base_stations = BaseStation.objects.filter(
         backhaul__bh_configured_on__isnull=False,
         bh_port_name__isnull=False,
-        backhaul__bh_configured_on__is_added_to_nms=1,
+        backhaul__bh_configured_on__is_added_to_nms__gt=0,
         bh_capacity__isnull=False
     ).select_related(
         'backhaul',
@@ -251,7 +251,7 @@ def gather_backhaul_status():
     ).filter(
         id__in=base_stations.values_list('backhaul__id', flat=True),
         bh_configured_on__isnull=False,
-        bh_configured_on__is_added_to_nms=1
+        bh_configured_on__is_added_to_nms__gt=0
     )
 
     # get machines associated to all base station devices
@@ -374,7 +374,7 @@ def gather_sector_status(technology):
         if technology_low == 'wimax':
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
-                sector_configured_on__is_added_to_nms=1,
+                sector_configured_on__is_added_to_nms__gt=0,
                 sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=False
@@ -390,7 +390,7 @@ def gather_sector_status(technology):
         elif technology_low == 'pmp':
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
-                sector_configured_on__is_added_to_nms=1,
+                sector_configured_on__is_added_to_nms__gt=0,
                 sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=True

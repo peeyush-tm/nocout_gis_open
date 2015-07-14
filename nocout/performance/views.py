@@ -364,7 +364,7 @@ class LivePerformanceListing(BaseDatatableView):
                 'age'
             ]
 
-        i_sort_col = 0
+        i_sort_col = None
 
         # Number of columns that are used in sorting
         try:
@@ -384,29 +384,31 @@ class LivePerformanceListing(BaseDatatableView):
             s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
 
             reverse = True if s_sort_dir == 'desc' else False
+        if i_sort_col != None:
+            self.is_initialised = False
+            self.is_ordered = True
+            try:
+                sort_data = self.prepare_devices(qs)
+                sort_using = columns[i_sort_col]
+                if sort_using in ['ip_address', 'near_end_ip']:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
+                        reverse=reverse
+                    )
+                else:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda item: item[sort_using].lower().strip() if type(item[sort_using]) == 'str' else item[sort_using],
+                        reverse=reverse
+                    )
+                return sorted_qs
 
-        self.is_initialised = False
-        self.is_ordered = True
-        try:
-            sort_data = self.prepare_devices(qs)
-            sort_using = columns[i_sort_col]
-            if sort_using in ['ip_address', 'near_end_ip']:
-                sorted_qs = sorted(
-                    sort_data,
-                    key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
-                    reverse=reverse
-                )
-            else:
-                sorted_qs = sorted(
-                    sort_data,
-                    key=lambda item: item[sort_using].lower().strip() if type(item[sort_using]) == 'str' else item[sort_using],
-                    reverse=reverse
-                )
-            return sorted_qs
-
-        except Exception, e:
-            self.is_initialised = True
-            self.is_ordered = False
+            except Exception, e:
+                self.is_initialised = True
+                self.is_ordered = False
+                return qs
+        else:
             return qs
 
     def prepare_devices(self, qs):
@@ -2669,6 +2671,7 @@ class GetServiceTypePerformanceData(View):
                 packet_loss = 'NA'
                 latency = 'NA'
                 status_since = 'NA'
+                last_down = 'NA'
                 machine = 'default'
                 vlan = 'NA'
                 #now lets check if SS exists for a device
@@ -2697,7 +2700,7 @@ class GetServiceTypePerformanceData(View):
                             machine=machine
                         )
 
-                        packet_loss, latency, status_since = self.ss_network_performance_data_result(
+                        packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
                             ss_device_object=connected_device,
                             machine=machine
                         )
@@ -2724,7 +2727,8 @@ class GetServiceTypePerformanceData(View):
                     'customer_name': customer_name,
                     'packet_loss': packet_loss,
                     'latency': latency,
-                    'up_down_since': status_since,
+                    # 'up_down_since': status_since,
+                    'last_down_time': last_down,
                     'last_updated': last_updated,
                 })
 
@@ -2750,7 +2754,7 @@ class GetServiceTypePerformanceData(View):
                     ss_device_object=ss.device,
                     machine=ss.device.machine.name
                 )
-                packet_loss, latency, status_since = self.ss_network_performance_data_result(
+                packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
                     ss_device_object=ss.device,
                     machine=ss.device.machine.name
                 )
@@ -2780,7 +2784,8 @@ class GetServiceTypePerformanceData(View):
                         'customer_name': customer_name,
                         'packet_loss': packet_loss,
                         'latency': latency,
-                        'up_down_since': status_since,
+                        # 'up_down_since': status_since,
+                        'last_down_time': last_down,
                         'last_updated': last_updated,
                     })
 
@@ -2798,7 +2803,7 @@ class GetServiceTypePerformanceData(View):
             'customer_name',
             'packet_loss',
             'latency',
-            'up_down_since',
+            'last_down_time',
             'last_updated'
         ]
 
@@ -2846,6 +2851,7 @@ class GetServiceTypePerformanceData(View):
         packet_loss = None
         latency = None
         status_since = None
+        last_down = None
 
         perf_data = NetworkStatus.objects.filter(
             device_name=ss_device_object.device_name
@@ -2894,7 +2900,18 @@ class GetServiceTypePerformanceData(View):
                 float(age)
             ).strftime(DATE_TIME_FORMAT)
 
-        return packet_loss, latency, status_since
+        if down:
+            try:
+                last_down = datetime.datetime.fromtimestamp(
+                    float(down)
+                ).strftime(DATE_TIME_FORMAT)
+            except Exception, e:
+                last_down = down
+        # log.info(str(ss_device_object.ip_address) + "----------" + str(last_down))
+        if not last_down:
+            last_down = 'NA'
+
+        return packet_loss, latency, status_since, last_down
 
     def rf_performance_data_result(self, performance_data_ss, performance_data_bs):
         """
