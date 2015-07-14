@@ -32,7 +32,6 @@ class EventForm(forms.ModelForm):
     # select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
     #                 choices=((True, 'Add all device'),(False, 'Select specific devices')), required=False)
 
-
     def __init__(self, *args, **kwargs):
         # # removing help text for device 'select' field
         self.base_fields['device'].help_text = ''
@@ -123,6 +122,7 @@ class SNMPTrapSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = SNMPTrapSettings
+        fields = "__all__"
 
     def clean_name(self):
         """

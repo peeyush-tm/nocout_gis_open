@@ -36,6 +36,7 @@ class DashboardSettingForm(forms.ModelForm):
         Meta Information
         """
         model = DashboardSetting
+        fields = '__all__'
 
 
 class MFRDFRReportsForm(forms.ModelForm):

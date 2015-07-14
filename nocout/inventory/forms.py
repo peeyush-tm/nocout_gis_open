@@ -81,6 +81,7 @@ class InventoryForm(forms.ModelForm):
         Meta Information
         """
         model = Inventory
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -201,6 +202,7 @@ class AntennaForm(forms.ModelForm):
         Meta Information
         """
         model = Antenna
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -311,6 +313,7 @@ class BackhaulForm(forms.ModelForm):
         Meta Information
         """
         model = Backhaul
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -439,6 +442,7 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -559,6 +563,7 @@ class SectorForm(forms.ModelForm):
         Meta Information
         """
         model = Sector
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -635,6 +640,7 @@ class CustomerForm(forms.ModelForm):
         Meta Information
         """
         model = Customer
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -741,6 +747,7 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -844,6 +851,7 @@ class CircuitForm(forms.ModelForm):
         Meta Information
         """
         model = Circuit
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -978,6 +986,7 @@ class IconSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = IconSettings
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -1118,6 +1127,7 @@ class LivePollingSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = LivePollingSettings
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -1152,7 +1162,6 @@ class LivePollingSettingsForm(forms.ModelForm):
 
 # *********************************** LivePollingSettings ***************************************
 class ThresholdConfigurationForm(forms.ModelForm):
-
     """
     Class Based View Threshold Configuration Model form to update and create.
     """
@@ -1186,6 +1195,7 @@ class ThresholdConfigurationForm(forms.ModelForm):
         model = ThresholdConfiguration
         exclude =['range1_icon', 'range2_icon', 'range3_icon', 'range4_icon', 'range5_icon', 'range6_icon', 'range7_icon',\
                   'range8_icon','range9_icon','range10_icon']
+
     def clean_name(self):
         """
         Name unique validation
@@ -1740,7 +1750,9 @@ class WizardSectorForm(SectorForm):
         Meta Information
         """
         model = Sector
-        fields = ('alias', 'sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+        fields = ('alias', 'sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site',
+                  'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length',
+                  'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
 
     def clean_sector_id(self):
         """
@@ -1803,7 +1815,8 @@ class WizardAntennaForm(AntennaForm):
         Meta Information
         """
         model = Antenna
-        fields = ('organization', 'antenna_type', 'height', 'polarization', 'tilt', 'gain', 'mount_type', 'beam_width', 'azimuth_angle', 'reflector', 'splitter_installed', 'sync_splitter_used', 'make_of_antenna')
+        fields = ('organization', 'antenna_type', 'height', 'polarization', 'tilt', 'gain', 'mount_type', 'beam_width',
+                  'azimuth_angle', 'reflector', 'splitter_installed', 'sync_splitter_used', 'make_of_antenna')
 
 
 class RequestFormSet(forms.models.BaseModelFormSet):
@@ -1897,5 +1910,5 @@ class WizardCircuitForm(CircuitForm):
         if self.technology == 'P2P':
             self.fields.pop('dl_cinr_during_acceptance')
             self.fields.pop('jitter_value_during_acceptance')
-        else: # WiMAX & PMP
+        else:  # WiMAX & PMP
             self.fields.pop('throughput_during_acceptance')

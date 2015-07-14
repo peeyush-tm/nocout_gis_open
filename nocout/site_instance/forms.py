@@ -63,6 +63,7 @@ class SiteInstanceForm(forms.ModelForm):
         information required to render for the form.
         """
         model = SiteInstance
+        fields = "__all__"
 
     def clean_name(self):
         """

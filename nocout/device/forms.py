@@ -50,9 +50,7 @@ class DeviceForm(forms.ModelForm):
             logger.info(e.message)
         initial = kwargs.setdefault('initial', {})
 
-
         super(DeviceForm, self).__init__(*args, **kwargs)
-
 
         # setting select menus default values which is by default '---------'
         if not self.request is None:
@@ -655,6 +653,7 @@ class DevicePortForm(forms.ModelForm):
         Meta Information
         """
         model = DevicePort
+        fields = '__all__'
 
     def clean_name(self):
         """
@@ -713,6 +712,7 @@ class DeviceFrequencyForm(forms.ModelForm):
         Meta Information
         """
         model = DeviceFrequency
+        fields = '__all__'
 
     def clean_value(self):
         """
@@ -947,9 +947,9 @@ widgets = {
     }
 
 DeviceTypeServiceDataSourceCreateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
-    formset=BaseDTSDataSourceFormset, extra=1, widgets=widgets, can_delete=True)
+    formset=BaseDTSDataSourceFormset, extra=1, widgets=widgets, can_delete=True, fields="__all__")
 DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
-    formset=BaseDTSDataSourceFormset, extra=0, widgets=widgets, can_delete=True)
+    formset=BaseDTSDataSourceFormset, extra=0, widgets=widgets, can_delete=True, fields="__all__")
 
 
 # **************************** GIS Inventory Excel Download Update ******************************

@@ -47,9 +47,9 @@ class EscalationLevelForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
 
-
     class Meta:
         model = EscalationLevel
+        fields = "__all__"
 
     def clean_emails(self):
         if self.cleaned_data['emails'] != '':

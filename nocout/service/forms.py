@@ -98,19 +98,24 @@ class ServiceForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-widgets = {
-           'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
-           'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
-           'service_data_sources': forms.Select(attrs= {'class' : 'form-control'})
-    }
-ServiceDataSourceCreateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource, formset=BaseServiceDataSourceFormset,
-    extra=1, widgets=widgets, can_delete=True)
-ServiceDataSourceUpdateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource, formset=BaseServiceDataSourceFormset,
-    extra=0, widgets=widgets, can_delete=True)
-DTServiceDataSourceUpdateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource, formset=BaseDeviceTypeServiceFormset,
-    extra=0, widgets=widgets, can_delete=False)
 
-#************************************** Service Data Source ****************************************
+
+widgets = {
+    'critical': forms.TextInput(attrs={'class': 'form-control'}),
+    'warning': forms.TextInput(attrs={'class': 'form-control'}),
+    'service_data_sources': forms.Select(attrs={'class': 'form-control'})
+}
+ServiceDataSourceCreateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource,
+                                                       formset=BaseServiceDataSourceFormset,
+                                                       extra=1, widgets=widgets, can_delete=True, fields="__all__")
+ServiceDataSourceUpdateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource,
+                                                       formset=BaseServiceDataSourceFormset,
+                                                       extra=0, widgets=widgets, can_delete=True, fields="__all__")
+DTServiceDataSourceUpdateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource,
+                                                         formset=BaseDeviceTypeServiceFormset,
+                                                         extra=0, widgets=widgets, can_delete=False, fields="__all__")
+
+# ************************************** Service Data Source ****************************************
 class ServiceDataSourceForm(forms.ModelForm):
     """
     Class Based ServiceDataSource Model Form .
@@ -149,6 +154,7 @@ class ServiceDataSourceForm(forms.ModelForm):
         Meta Information.
         """
         model = ServiceDataSource
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -181,7 +187,7 @@ class ServiceDataSourceForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#************************************** Service Parameters *****************************************
+# ************************************** Service Parameters *****************************************
 class ServiceParametersForm(forms.ModelForm):
     """
     Class Based Service Parameters Model Form .
@@ -214,6 +220,7 @@ class ServiceParametersForm(forms.ModelForm):
         Meta information.
         """
         model = ServiceParameters
+        fields = "__all__"
 
     def clean_parameter_description(self):
         """
@@ -300,6 +307,7 @@ class ProtocolForm(forms.ModelForm):
         Meta Information.
         """
         model = Protocol
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -371,6 +379,7 @@ class DeviceServiceConfigurationForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information.

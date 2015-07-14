@@ -39,3 +39,4 @@ class CityCharterSettingsForm(forms.ModelForm):
         information required to render for the form.
         """
         model = CityCharterSettings
+        fields = "__all__"

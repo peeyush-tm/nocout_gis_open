@@ -4,10 +4,10 @@ from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic import RedirectView
 # Include dajaxice ajax module
-from dajaxice.core import dajaxice_autodiscover, dajaxice_config
+# from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 from nocout import api
 
-dajaxice_autodiscover()
+# dajaxice_autodiscover()
 
 from nocout.views import AuthView
 from dashboard.views import MainDashboard
@@ -75,7 +75,7 @@ urlpatterns = patterns('',
                        url(r'^dashboard/', include('dashboard.urls')),
                        url(r'^scheduling/', include('scheduling_management.urls')),
                        url(r'^snmp_trap_settings/', include('scheduling_management.snmp_trap_settings_urls')),
-                       url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
+                       # url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
                        url(r'^session_security/', include('session_security.urls')),
                        url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
                        url(r'^admin/', include(admin.site.urls)),
