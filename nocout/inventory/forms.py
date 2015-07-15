@@ -928,21 +928,21 @@ class L2ReportForm(forms.ModelForm):
         else:
             return input_excel
 
-    def clean_name(self):
-        """
-        Name unique validation
-        """
-        name = self.cleaned_data['name']
-        names = CircuitL2Report.objects.filter(name=name)
-        try:
-            if self.id:
-                names = names.exclude(pk=self.id)
-        except Exception as e:
-            logger.info(e.message)
-        if names.count() > 0:
-            raise ValidationError('This name is already in use.')
+    # def clean_name(self):
+    #     """
+    #     Name unique validation
+    #     """
+    #     name = self.cleaned_data['name']
+    #     names = CircuitL2Report.objects.filter(name=name)
+    #     try:
+    #         if self.id:
+    #             names = names.exclude(pk=self.id)
+    #     except Exception as e:
+    #         logger.info(e.message)
+    #     if names.count() > 0:
+    #         raise ValidationError('This name is already in use.')
 
-        return name
+    #     return name
 
 
 # *********************************** IconSettings ***************************************

@@ -242,6 +242,8 @@ class AlertListingTable(BaseDatatableView):
         'avg_value'
     ]
 
+    main_qs = []
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -282,6 +284,8 @@ class AlertListingTable(BaseDatatableView):
             other_type=other_type,
             required_value_list=required_value_list
         )
+
+        self.main_qs = devices
 
         #machines dict
         machines = inventory_utils.prepare_machines(
@@ -325,6 +329,15 @@ class AlertListingTable(BaseDatatableView):
         except Exception, e:
             # logger.info(e.message)
             pass
+
+        device_indexed_info = perf_utils.indexed_polled_results(self.main_qs)
+        # Mapped device id with qs
+        for data in qs:
+            device_name = data['device_name']
+            device_info = device_indexed_info[device_name]
+            device_id = device_info.get('id')
+            if device_id:
+                data.update(id=device_id)
 
         return perf_utils.prepare_gis_devices_optimized(
             qs,
@@ -516,7 +529,11 @@ class AlertListingTable(BaseDatatableView):
             if sort_using in self.polled_value_columns:
                 sorted_qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
             else:
-                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+                sorted_qs = sorted(
+                    sort_data,
+                    key=lambda data: data[sort_using].lower() if data[sort_using] not in [None] else data[sort_using],
+                    reverse=reverse
+                )
             return sorted_qs
 
         except Exception, e:
@@ -838,6 +855,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
         'avg_value'
     ]
 
+    main_qs = []
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -932,12 +951,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 if is_other:
                     other_type = "other"
                     device_list += inventory_utils.filter_devices(
-                    organizations=organizations,
-                    data_tab=None,
-                    page_type=page_type,
-                    required_value_list=required_value_list,
-                    other_type=other_type
-                )
+                        organizations=organizations,
+                        data_tab=None,
+                        page_type=page_type,
+                        required_value_list=required_value_list,
+                        other_type=other_type
+                    )
+
+            self.main_qs = device_list
 
             # machines dict
             machines = inventory_utils.prepare_machines(device_list, machine_key='machine_name')
@@ -1010,9 +1031,13 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if data_source in ['PMPULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_BH', 'Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
+        if data_source in ['Backhaul', 'Temperature_BH']:
             page_type = 'other'
             type_rf = "backhaul"
+
+        if data_source in ['Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
+            page_type = 'other'
+            type_rf = "all"
 
         # GET all device name list from the list
         try:
@@ -1023,6 +1048,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         # Create instance of 'PerformanceUtilsGateway' class
         perf_utils = PerformanceUtilsGateway()
+        device_indexed_info = perf_utils.indexed_polled_results(self.main_qs)
+        # Mapped device id with qs
+        for data in qs:
+            device_name = data['device_name']
+            device_info = device_indexed_info[device_name]
+            device_id = device_info.get('id')
+            if device_id:
+                data.update(id=device_id)
+
         return perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
@@ -1142,7 +1176,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         request = self.request      
  
-        i_sort_col = 0
+        i_sort_col = None
 
         # Number of columns that are used in sorting
         try:
@@ -1163,17 +1197,21 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
             reverse = True if s_sort_dir == 'desc' else False
 
-        sort_data = self.prepare_devices(qs)
-        sort_using = self.order_columns[i_sort_col]
-        try:
-            if sort_using in self.polled_value_columns:
-                qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
-            else:
-                qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-            # qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-        except Exception, e:
-            pass
-            # logger.info(e.message)
+        if i_sort_col != None:
+            sort_data = self.prepare_devices(qs)
+            self.is_ordered = True
+            sort_using = self.order_columns[i_sort_col]
+            try:
+                if sort_using in self.polled_value_columns:
+                    qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
+                else:
+                    qs = sorted(
+                        sort_data,
+                        key=lambda data: data[sort_using].lower() if data[sort_using] not in [None] else data[sort_using],
+                        reverse=reverse
+                    )
+            except Exception, e:
+                pass
         return qs
 
     def prepare_initial_params(self):
@@ -1305,8 +1343,9 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
 
-        # this function is for mapping to GIS inventory
-        qs = self.prepare_devices(qs)
+        if not (self.is_ordered or self.is_searched):
+            # this function is for mapping to GIS inventory
+            qs = self.prepare_devices(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
