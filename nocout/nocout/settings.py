@@ -643,7 +643,7 @@ SERVICES = {
 # Before
 # DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 # After - 29-April-15
-DATE_TIME_FORMAT = "%m/%d/%y %H:%M"
+DATE_TIME_FORMAT = "%d/%m/%y %H:%M"
 
 # ##################REPORT_PATH
 
