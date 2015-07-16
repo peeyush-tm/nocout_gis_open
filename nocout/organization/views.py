@@ -6,11 +6,9 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device_group.models import DeviceGroup
 from .forms import OrganizationForm
 from .models import Organization
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from user_group.models import UserGroup
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.user_action import UserLogDeleteMixin

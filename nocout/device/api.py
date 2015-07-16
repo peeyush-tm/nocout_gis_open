@@ -11,13 +11,51 @@ List of constructs:
 Classes
 =======
 * DeviceStatsApi
-* DeviceFilterApi
-* LPServicesApi
-* FetchLPDataApi
+* GetDeviceTypeExtraFields
+* DeviceSoftDelete
+* AddDeviceToNMSDisplayInfo
+* DeleteSingleServiceDisplayData
+* DeviceServiceStatus
+* ServiceAddOldConf
+* AddServices
+* AddServiceDisplayData
+* GetDeviceInventory
+* EditSingleServiceDisplayData
 * FetchLPSettingsApi
-* FetchThresholdConfigurationApi
+* ModifyDeviceState
+* RestoreDevice
+* EditSingleService
+* DeleteSingleService
+* GetEligibleParentDevices
+* GetDevicePorts
+* ServiceEditOldConf
 * FetchThematicSettingsApi
+* FetchLPDataApi
+* DeleteServices
+* ServiceEditPingConf
+* SyncDevicesInNMS
+* ServiceAddNewConf
+* DeleteServiceDisplayData
+* DeviceFilterApi
+* DeleteDeviceFromNMS
+* GetVendorsForTech
+* FetchThresholdConfigurationApi
+* LPServicesApi
+* DeviceRestoreDispalyData
+* ResetServiceConfiguration
+* ServiceEditNewConf
+* GetModelsForVendor
 * BulkFetchLPDataApi
+* GetServiceParaTableData
+* EditServiceDisplayData
+* DeviceStatsApi
+* GetDevicesForSelectionMenu
+* RemoveSyncDeadlock
+* GetSitesForMachine
+* GetTypesForModel
+* EditServices
+* EditDeviceInNMS
+* AddDeviceToNMS
 
 =======
 Methods

@@ -60,6 +60,7 @@ class MachineForm(forms.ModelForm):
         information required to render for the form.
         """
         model = Machine
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -96,4 +97,3 @@ class MachineForm(forms.ModelForm):
             logger.info(e.message)
 
         return self.cleaned_data
-

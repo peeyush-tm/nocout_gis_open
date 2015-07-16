@@ -21,10 +21,7 @@ from django.db.models.signals import post_save, pre_save, pre_delete
 
 from organization.models import Organization
 from user_profile.models import UserProfile
-from user_group.models import UserGroup
-
 from service.models import Service, ServiceDataSource
-from device_group.models import DeviceGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City
 
 from inventory import signals as inventory_signals
@@ -35,22 +32,6 @@ def get_default_org():
     :return: organisation ID = 1
     """
     return Organization.objects.get(id=1)
-
-
-# inventory model --> mapper of user_group & device groups
-class Inventory(models.Model):
-    """
-    Inventory Model Columns Declaration.
-    """
-    name = models.CharField('Name', max_length=200, unique=True)
-    alias = models.CharField('Alias', max_length=250)
-    organization = models.ForeignKey(Organization)
-    user_group = models.ForeignKey(UserGroup)
-    device_groups = models.ManyToManyField(DeviceGroup, null=True, blank=True)
-    description = models.TextField('Description', null=True, blank=True)
-
-    def __unicode__(self):
-        return self.name
 
 
 # gis antenna model
@@ -505,8 +486,7 @@ class GISExcelDownload(models.Model):
         return self.file_path
 
 
-#********************* Connect Inventory Signals *******************
-
+# ********************* Connect Inventory Signals *******************
 post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
 pre_save.connect(inventory_signals.resize_icon_size, sender=IconSettings)
 pre_delete.connect(inventory_signals.delete_antenna_of_sector, sender=Sector)

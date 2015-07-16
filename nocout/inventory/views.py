@@ -41,16 +41,14 @@ from nocout.mixins.select2 import Select2Mixin
 from nocout.utils.util import NocoutUtilsGateway
 from organization.models import Organization
 from user_profile.models import UserProfile
-from user_group.models import UserGroup
-from device_group.models import DeviceGroup
 from device.models import Country, State, City, Device, DeviceType, DeviceTechnology
 from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
 
-from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, Inventory,
+from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit,
         IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, GISInventoryBulkImport,
         UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings, GISExcelDownload)
 from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm,
-        CircuitForm, L2ReportForm, InventoryForm, IconSettingsForm, LivePollingSettingsForm,
+        CircuitForm, L2ReportForm, IconSettingsForm, LivePollingSettingsForm,
         ThresholdConfigurationForm, ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm,
         PingThematicSettingsForm,  ServiceThematicSettingsForm, ServiceThresholdConfigurationForm,
         ServiceLivePollingSettingsForm, WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm,
@@ -76,192 +74,7 @@ from inventory.utils.util import InventoryUtilsGateway
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
-
-# **************************************** Inventory *********************************************
-def inventory(request):
-    """
-    Render the inventory page.
-    """
-    return render(request, 'inventory/inventory.html')
-
-
-class InventoryListing(PermissionsRequiredMixin, ListView):
-    """
-    Class Based Inventory View to render list page.
-    """
-    model = Inventory
-    template_name = 'inventory/inventory_list.html'
-    required_permissions = ('inventory.view_inventory',)
-
-    def get_context_data(self, **kwargs):
-        """
-        Preparing the Context Variable required in the template rendering.
-        """
-        context = super(InventoryListing, self).get_context_data(**kwargs)
-        datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'auto', },
-            {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },]
-
-        # if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', })
-
-        context['datatable_headers'] = json.dumps(datatable_headers)
-        return context
-
-
-class InventoryListingTable(PermissionsRequiredMixin, BaseDatatableView):
-    """
-    Class based View to render Inventory Data table.
-    """
-
-    model = Inventory
-    required_permissions = ('inventory.view_inventory',)
-
-    # columns to display Inventory List Datatable columns.
-    columns = ['alias', 'user_group__name', 'organization__name', 'description']
-    # order columns is list of columns used for sorting the columns which is in this list.
-    order_columns = ['alias', 'user_group__name', 'organization__name', 'description']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids = self.request.user.userprofile.organization.get_descendants(
-            include_self=True).values_list('id', flat=True)
-        return Inventory.objects.filter(organization__in=organization_descendants_ids).values(*self.columns + ['id'])
-
-    def prepare_results(self, qs):
-        """
-        Preparing the final result after fetching from the data base to render on the data table.
-
-        :param qs:
-        :return qs
-
-        """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
-            dct.update(actions='<a href="/inventory/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                       <a href="/inventory/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
-                dct.pop('id')))
-
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
-
-
-class InventoryCreate(PermissionsRequiredMixin, CreateView):
-    """
-    Class based view to create new Inventory.
-    """
-
-    template_name = 'inventory/inventory_new.html'
-    model = Inventory
-    form_class = InventoryForm
-    success_url = reverse_lazy('InventoryList')
-    required_permissions = ('inventory.add_inventory',)
-
-
-class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
-    """
-    Class based view to update new Inventory.
-    """
-    template_name = 'inventory/inventory_update.html'
-    model = Inventory
-    form_class = InventoryForm
-    success_url = reverse_lazy('InventoryList')
-    required_permissions = ('inventory.change_inventory',)
-
-
-class InventoryDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
-    """
-    Class based View to delete the Inventory
-
-    """
-    model = Inventory
-    template_name = 'inventory/inventory_delete.html'
-    success_url = reverse_lazy('InventoryList')
-    required_permissions = ('inventory.delete_inventory',)
-
-
-def inventory_details_wrt_organization(request):
-    """
-    Inventory details organization as a get organization parameter.
-    """
-    organization_id = request.GET['organization']
-    organization_descendants_ids = Organization.objects.get(id=organization_id).get_descendants(
-        include_self=True).values_list('id', flat=True)
-    user_group = UserGroup.objects.filter(organization__in=organization_descendants_ids, is_deleted=0).values_list('id',
-                                                                                                                   'name')
-    device_groups = DeviceGroup.objects.filter(organization__in=organization_descendants_ids, is_deleted=0).values_list(
-        'id', 'name')
-    response_device_groups = response_user_group = ''
-    for index in range(len(device_groups)):
-        response_device_groups += '<option value={0}>{1}</option>'.format(*map(str, device_groups[index]))
-    for index in range(len(user_group)):
-        response_user_group += '<option value={0}>{1}</option>'.format(*map(str, user_group[index]))
-
-    return HttpResponse(
-        json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
-        content_type='application/json')
-
-
-#**************************************** Antenna *********************************************
+# **************************************** Antenna *********************************************
 class SelectAntennaListView(Select2Mixin, ListView):
     """
     Provide selector data for jquery select2 when loading data from Remote.

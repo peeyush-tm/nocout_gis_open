@@ -7,12 +7,10 @@ from django import forms
 from nocout.utils.util import NocoutUtilsGateway
 from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from device.models import Country, State, City, StateGeoInfo
-from device_group.models import DeviceGroup
-from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
+from models import IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
     GISInventoryBulkImport, PingThematicSettings, GISExcelDownload
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
-from user_group.models import UserGroup
 from django.forms.util import ErrorList
 from device.models import Device
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, CircuitL2Report
@@ -20,97 +18,6 @@ from django.utils.html import escape
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet, modelformset_factory
 import logging
 logger = logging.getLogger(__name__)
-
-
-# *************************************** Inventory ************************************
-class InventoryForm(forms.ModelForm):
-    """
-    Class Based View Inventory Model form to update and create.
-    """
-
-    def __init__(self, *args, **kwargs):
-        initial = kwargs.setdefault('initial',{})
-        if kwargs['instance']:
-            initial['organization']= kwargs['instance'].organization.id
-            initial['user_group']= kwargs['instance'].user_group.id
-            initial['device_groups']= kwargs['instance'].device_groups.values_list('id', flat=True)
-
-        elif Organization.objects.all():
-            initial['organization']=Organization.objects.all()[0].id
-        else:
-            initial['organization']=None
-
-        try:
-            if 'instance' in kwargs:
-                self.id = kwargs['instance'].id
-        except Exception as e:
-            logger.info(e.message)
-
-        # removing help text for device_groups 'select' field
-        self.base_fields['device_groups'].help_text = ''
-
-        super(InventoryForm, self).__init__(*args, **kwargs)
-        self.fields['user_group'].empty_label = 'Select'
-        self.fields['organization'].empty_label = 'Select'
-        for name, field in self.fields.items():
-            if field.widget.attrs.has_key('class'):
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs['class'] += ' col-md-12'
-                    field.widget.attrs['class'] += ' select2select'
-                else:
-                    field.widget.attrs['class'] += ' form-control'
-            else:
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
-                else:
-                    field.widget.attrs.update({'class': 'form-control'})
-
-        organization_id=None
-        if kwargs['instance']:
-            self.fields['name'].widget.attrs['readonly'] = True
-            organization_id = initial['organization']
-        elif Organization.objects.all():
-            organization_id = Organization.objects.all()[0].id
-        if organization_id:
-            organization_descendants_ids = Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
-            self.fields['device_groups'].queryset = DeviceGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
-            self.fields['user_group'].queryset = UserGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
-
-    class Meta:
-        """
-        Meta Information
-        """
-        model = Inventory
-
-    def clean_name(self):
-        """
-        Name unique validation
-        """
-        name = self.cleaned_data['name']
-        names = Inventory.objects.filter(name=name)
-        try:
-            if self.id:
-                names = names.exclude(pk=self.id)
-        except Exception as e:
-            logger.info(e.message)
-        if names.count() > 0:
-            raise ValidationError('This name is already in use.')
-        return name
-
-    def clean(self):
-        """
-        Validations for inventory form
-        """
-        name = self.cleaned_data.get('name')
-
-        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
-        try:
-            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
-                self._errors['name'] = ErrorList(
-                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
-        except Exception as e:
-            logger.info(e.message)
-        return self.cleaned_data
 
 
 # *************************************** Antenna **************************************
@@ -201,6 +108,7 @@ class AntennaForm(forms.ModelForm):
         Meta Information
         """
         model = Antenna
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -311,6 +219,7 @@ class BackhaulForm(forms.ModelForm):
         Meta Information
         """
         model = Backhaul
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -439,6 +348,7 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -559,6 +469,7 @@ class SectorForm(forms.ModelForm):
         Meta Information
         """
         model = Sector
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -635,6 +546,7 @@ class CustomerForm(forms.ModelForm):
         Meta Information
         """
         model = Customer
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -741,6 +653,7 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -844,6 +757,7 @@ class CircuitForm(forms.ModelForm):
         Meta Information
         """
         model = Circuit
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -978,6 +892,7 @@ class IconSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = IconSettings
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -1118,6 +1033,7 @@ class LivePollingSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = LivePollingSettings
+        fields = "__all__"
 
     def clean_name(self):
         """
@@ -1152,7 +1068,6 @@ class LivePollingSettingsForm(forms.ModelForm):
 
 # *********************************** LivePollingSettings ***************************************
 class ThresholdConfigurationForm(forms.ModelForm):
-
     """
     Class Based View Threshold Configuration Model form to update and create.
     """
@@ -1186,6 +1101,7 @@ class ThresholdConfigurationForm(forms.ModelForm):
         model = ThresholdConfiguration
         exclude =['range1_icon', 'range2_icon', 'range3_icon', 'range4_icon', 'range5_icon', 'range6_icon', 'range7_icon',\
                   'range8_icon','range9_icon','range10_icon']
+
     def clean_name(self):
         """
         Name unique validation
@@ -1740,7 +1656,9 @@ class WizardSectorForm(SectorForm):
         Meta Information
         """
         model = Sector
-        fields = ('alias', 'sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+        fields = ('alias', 'sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site',
+                  'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length',
+                  'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
 
     def clean_sector_id(self):
         """
@@ -1803,7 +1721,8 @@ class WizardAntennaForm(AntennaForm):
         Meta Information
         """
         model = Antenna
-        fields = ('organization', 'antenna_type', 'height', 'polarization', 'tilt', 'gain', 'mount_type', 'beam_width', 'azimuth_angle', 'reflector', 'splitter_installed', 'sync_splitter_used', 'make_of_antenna')
+        fields = ('organization', 'antenna_type', 'height', 'polarization', 'tilt', 'gain', 'mount_type', 'beam_width',
+                  'azimuth_angle', 'reflector', 'splitter_installed', 'sync_splitter_used', 'make_of_antenna')
 
 
 class RequestFormSet(forms.models.BaseModelFormSet):
@@ -1897,5 +1816,5 @@ class WizardCircuitForm(CircuitForm):
         if self.technology == 'P2P':
             self.fields.pop('dl_cinr_during_acceptance')
             self.fields.pop('jitter_value_during_acceptance')
-        else: # WiMAX & PMP
+        else:  # WiMAX & PMP
             self.fields.pop('throughput_during_acceptance')

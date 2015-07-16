@@ -3,7 +3,6 @@
 {% block header_block %}
 
     {% load staticfiles %}
-    {% load dajaxice_templatetags %}
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -67,9 +66,7 @@
             <script src={% static "js/html5/html5.js" %}></script>
             <script src={% static "js/media-ie/css3-mediaqueries.js" %}></script>
         <![endif]-->
-        
 
-        {% dajaxice_js_import %}
         {% block css %}{% endblock %}
     </head>
     <body>
