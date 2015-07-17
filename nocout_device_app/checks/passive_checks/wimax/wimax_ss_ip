@@ -25,15 +25,16 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 def extract_hostip_from_wimax_topology(ss_host_mac):
-        query = """
-        select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        #db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-	#db.close()
-        return data
+	from mysql_connection import db
+	query = """
+	select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+	#db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	cur.close()
+	db.close()
+	return data
 
 
 
@@ -84,11 +85,12 @@ def check_wimax_ss_ip(item, _no_params, info):
 				except:
 					ss_ip = None
 		if not ss_ip:
-			host_ip = extract_hostip_from_wimax_topology(ss_mac)
-			if host_ip[0][0]:
-				ss_ip = host_ip[0][0]
-				state = 0
-        			infotext = "%s" % ss_ip
+			#host_ip = extract_hostip_from_wimax_topology(ss_mac)
+			#if host_ip[0][0]:
+			#ss_ip = host_ip[0][0]
+			ss_ip = ipaddresses.get(g_hostname)
+			state = 0
+        		infotext = "%s" % ss_ip
     except ValueError:
         infotext = "type_mismatch_value"
     except:
