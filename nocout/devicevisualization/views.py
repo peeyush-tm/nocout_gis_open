@@ -695,11 +695,11 @@ class Kmzreport_listingtable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = len(qs)
+        total_records = qs.count()
 
         qs = self.filter_queryset(qs)
         # number of records after filtering
-        total_display_records = len(qs)
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -899,11 +899,11 @@ class PointListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = len(qs)
+        total_records = qs.count()
 
         qs = self.filter_queryset(qs)
         # number of records after filtering
-        total_display_records = len(qs)
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
