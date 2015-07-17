@@ -531,7 +531,7 @@ class AlertListingTable(BaseDatatableView):
             else:
                 sorted_qs = sorted(
                     sort_data,
-                    key=lambda data: data[sort_using].lower() if data[sort_using] not in [None] else data[sort_using],
+                    key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                     reverse=reverse
                 )
             return sorted_qs
@@ -1207,7 +1207,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 else:
                     qs = sorted(
                         sort_data,
-                        key=lambda data: data[sort_using].lower() if data[sort_using] not in [None] else data[sort_using],
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                         reverse=reverse
                     )
             except Exception, e:
