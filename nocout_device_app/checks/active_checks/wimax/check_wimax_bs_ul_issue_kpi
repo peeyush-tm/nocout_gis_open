@@ -183,16 +183,18 @@ def live_query_cam_ul_issue_kpi(host_name,site,war,crit,dr_slave):
     try:
 	pmp1_ul_issue,pmp2_ul_issue,pmp1_sect_id,pmp2_sect_id =extract_ss_ul_issue_state_from_live(host_name,site,dr_slave)
 	if pmp1_ul_issue != '':
-		if pmp1_ul_issue < war:
+		pmp1_ul_issue = "%.2f" % pmp1_ul_issue
+		if float(pmp1_ul_issue) < war:
                 	pmp1_state = 0
-		elif pmp1_ul_issue >= crit:
+		elif float(pmp1_ul_issue) >= crit:
 			pmp1_state = 2
 		else:
 			pmp1_state = 1
 	if pmp2_ul_issue != '':
-		if pmp2_ul_issue < war:
+		pmp2_ul_issue = "%.2f" % pmp2_ul_issue
+		if float(pmp2_ul_issue) < war:
                 	pmp2_state = 0
-		elif pmp2_ul_issue >= crit:
+		elif float(pmp2_ul_issue) >= crit:
 			pmp2_state = 2
 		else:
 			pmp2_state = 1

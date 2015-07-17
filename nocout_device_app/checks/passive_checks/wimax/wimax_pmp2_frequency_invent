@@ -59,7 +59,7 @@ def check_wimax_pmp2_frequency_invent(item, _no_params, info):
 		try:
 			if memc:
                                 key = ip + "_pmp2"
-                                memc.set(key,frequency,86520)
+                                memc.set(key,frequency,86820)
 		except:
 			pass
 	
