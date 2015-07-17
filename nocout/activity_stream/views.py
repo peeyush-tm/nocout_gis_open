@@ -90,7 +90,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         if sSearch:
             query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = %s.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
                 # Avoid search on 'added_on'.
                 if column == 'added_on':
@@ -132,7 +132,6 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-
         if qs:
             for dct in qs:
                 dct['logged_at'] = self.nocout_utils.convert_utc_to_local_timezone(dct['logged_at'])
@@ -156,11 +155,12 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # Number of records before filtering.
-        total_records = len(qs)
+        total_records = qs.count()
+
         qs = self.filter_queryset(qs)
 
         # Number of records after filtering.
-        total_display_records = len(qs)
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
