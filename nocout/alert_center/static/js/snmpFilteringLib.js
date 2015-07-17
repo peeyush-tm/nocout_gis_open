@@ -14,7 +14,6 @@ $(".snmp_filters").select2({
             query_string = 'search_txt=' + entered_text + '&item_type=' + element_type + "&alarm_type=" + alarm_type + "&tab_id="+ active_tab,
             ajax_url = filter_api_url + "?" + query_string,
             data = {results: []};
-            console.log(filter_api_url);
         // Make Ajax Call
         $.ajax({
             url : ajax_url,
