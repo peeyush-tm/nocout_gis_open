@@ -1,218 +1,382 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+import datetime
+import dashboard.models
+import inventory.models
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'DashboardSetting'
-        db.create_table(u'dashboard_dashboardsetting', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('dashboard_type', self.gf('django.db.models.fields.CharField')(max_length=3)),
-            ('page_name', self.gf('django.db.models.fields.CharField')(max_length=30)),
-            ('technology', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceTechnology'])),
-            ('range1_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range1_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range1_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range2_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range2_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range2_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range3_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range3_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range3_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range4_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range4_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range4_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range5_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range5_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range5_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range6_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range6_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range6_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range7_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range7_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range7_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range8_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range8_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range8_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range9_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range9_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range9_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('range10_start', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range10_end', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('range10_color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-        ))
-        db.send_create_signal(u'dashboard', ['DashboardSetting'])
+    dependencies = [
+        ('organization', '0001_initial'),
+        ('device', '0001_initial'),
+    ]
 
-        # Adding unique constraint on 'DashboardSetting', fields ['name', 'page_name', 'technology']
-        db.create_unique(u'dashboard_dashboardsetting', ['name', 'page_name', 'technology_id'])
-
-
-    def backwards(self, orm):
-        # Removing unique constraint on 'DashboardSetting', fields ['name', 'page_name', 'technology']
-        db.delete_unique(u'dashboard_dashboardsetting', ['name', 'page_name', 'technology_id'])
-
-        # Deleting model 'DashboardSetting'
-        db.delete_table(u'dashboard_dashboardsetting')
-
-
-    models = {
-        u'command.command': {
-            'Meta': {'object_name': 'Command'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'command_line': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
-        },
-        u'dashboard.dashboardsetting': {
-            'Meta': {'unique_together': "(('name', 'page_name', 'technology'),)", 'object_name': 'DashboardSetting'},
-            'dashboard_type': ('django.db.models.fields.CharField', [], {'max_length': '3'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'page_name': ('django.db.models.fields.CharField', [], {'max_length': '30'}),
-            'range10_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range10_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range10_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range1_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range1_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range1_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range2_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range2_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range2_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range3_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range3_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range3_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range4_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range4_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range4_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range5_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range5_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range5_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range6_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range6_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range6_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range7_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range7_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range7_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range8_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range8_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range8_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range9_color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'range9_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'range9_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'technology': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceTechnology']"})
-        },
-        u'device.devicemodel': {
-            'Meta': {'object_name': 'DeviceModel'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'device_types': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DeviceType']", 'null': 'True', 'through': u"orm['device.ModelType']", 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
-        },
-        u'device.deviceport': {
-            'Meta': {'object_name': 'DevicePort'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
-            'value': ('django.db.models.fields.IntegerField', [], {'default': '0'})
-        },
-        u'device.devicetechnology': {
-            'Meta': {'object_name': 'DeviceTechnology'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'device_vendors': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DeviceVendor']", 'null': 'True', 'through': u"orm['device.TechnologyVendor']", 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
-        },
-        u'device.devicetype': {
-            'Meta': {'object_name': 'DeviceType'},
-            'agent_tag': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'device_gmap_icon': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'device_icon': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'device_port': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DevicePort']", 'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'normal_check_interval': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'packets': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'pl_critical': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'pl_warning': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'rta_critical': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'rta_warning': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'service': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.Service']", 'null': 'True', 'blank': 'True'}),
-            'timeout': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
-        },
-        u'device.devicevendor': {
-            'Meta': {'object_name': 'DeviceVendor'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'device_models': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DeviceModel']", 'null': 'True', 'through': u"orm['device.VendorModel']", 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
-        },
-        u'device.modeltype': {
-            'Meta': {'object_name': 'ModelType'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'model': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceModel']"}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceType']"})
-        },
-        u'device.technologyvendor': {
-            'Meta': {'object_name': 'TechnologyVendor'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'technology': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceTechnology']"}),
-            'vendor': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceVendor']"})
-        },
-        u'device.vendormodel': {
-            'Meta': {'object_name': 'VendorModel'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'model': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceModel']"}),
-            'vendor': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceVendor']"})
-        },
-        u'service.protocol': {
-            'Meta': {'object_name': 'Protocol'},
-            'auth_password': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'auth_protocol': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'port': ('django.db.models.fields.IntegerField', [], {}),
-            'private_pass_phase': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'private_phase': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'protocol_name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'read_community': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'security_level': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'security_name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'version': ('django.db.models.fields.CharField', [], {'max_length': '10'}),
-            'write_community': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'})
-        },
-        u'service.service': {
-            'Meta': {'object_name': 'Service'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'command': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['command.Command']", 'null': 'True', 'blank': 'True'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'parameters': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.ServiceParameters']"}),
-            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['service.ServiceDataSource']", 'symmetrical': 'False'})
-        },
-        u'service.servicedatasource': {
-            'Meta': {'object_name': 'ServiceDataSource'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'critical': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'warning': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
-        },
-        u'service.serviceparameters': {
-            'Meta': {'object_name': 'ServiceParameters'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'max_check_attempts': ('django.db.models.fields.IntegerField', [], {}),
-            'normal_check_interval': ('django.db.models.fields.IntegerField', [], {}),
-            'parameter_description': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'protocol': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Protocol']"}),
-            'retry_check_interval': ('django.db.models.fields.IntegerField', [], {})
-        }
-    }
-
-    complete_apps = ['dashboard']
+    operations = [
+        migrations.CreateModel(
+            name='DashboardRangeStatusDaily',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('range1', models.IntegerField(default=0)),
+                ('range2', models.IntegerField(default=0)),
+                ('range3', models.IntegerField(default=0)),
+                ('range4', models.IntegerField(default=0)),
+                ('range5', models.IntegerField(default=0)),
+                ('range6', models.IntegerField(default=0)),
+                ('range7', models.IntegerField(default=0)),
+                ('range8', models.IntegerField(default=0)),
+                ('range9', models.IntegerField(default=0)),
+                ('range10', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardRangeStatusHourly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('range1', models.IntegerField(default=0)),
+                ('range2', models.IntegerField(default=0)),
+                ('range3', models.IntegerField(default=0)),
+                ('range4', models.IntegerField(default=0)),
+                ('range5', models.IntegerField(default=0)),
+                ('range6', models.IntegerField(default=0)),
+                ('range7', models.IntegerField(default=0)),
+                ('range8', models.IntegerField(default=0)),
+                ('range9', models.IntegerField(default=0)),
+                ('range10', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardRangeStatusMonthly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('range1', models.IntegerField(default=0)),
+                ('range2', models.IntegerField(default=0)),
+                ('range3', models.IntegerField(default=0)),
+                ('range4', models.IntegerField(default=0)),
+                ('range5', models.IntegerField(default=0)),
+                ('range6', models.IntegerField(default=0)),
+                ('range7', models.IntegerField(default=0)),
+                ('range8', models.IntegerField(default=0)),
+                ('range9', models.IntegerField(default=0)),
+                ('range10', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardRangeStatusTimely',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('range1', models.IntegerField(default=0)),
+                ('range2', models.IntegerField(default=0)),
+                ('range3', models.IntegerField(default=0)),
+                ('range4', models.IntegerField(default=0)),
+                ('range5', models.IntegerField(default=0)),
+                ('range6', models.IntegerField(default=0)),
+                ('range7', models.IntegerField(default=0)),
+                ('range8', models.IntegerField(default=0)),
+                ('range9', models.IntegerField(default=0)),
+                ('range10', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardRangeStatusWeekly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('range1', models.IntegerField(default=0)),
+                ('range2', models.IntegerField(default=0)),
+                ('range3', models.IntegerField(default=0)),
+                ('range4', models.IntegerField(default=0)),
+                ('range5', models.IntegerField(default=0)),
+                ('range6', models.IntegerField(default=0)),
+                ('range7', models.IntegerField(default=0)),
+                ('range8', models.IntegerField(default=0)),
+                ('range9', models.IntegerField(default=0)),
+                ('range10', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardRangeStatusYearly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('range1', models.IntegerField(default=0)),
+                ('range2', models.IntegerField(default=0)),
+                ('range3', models.IntegerField(default=0)),
+                ('range4', models.IntegerField(default=0)),
+                ('range5', models.IntegerField(default=0)),
+                ('range6', models.IntegerField(default=0)),
+                ('range7', models.IntegerField(default=0)),
+                ('range8', models.IntegerField(default=0)),
+                ('range9', models.IntegerField(default=0)),
+                ('range10', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardSetting',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('page_name', models.CharField(max_length=30, verbose_name=b'Page Name', choices=[(b'rf_dashboard', b'RF Performance Dashboard'), (b'main_dashboard', b'Main Dashboard')])),
+                ('is_bh', models.BooleanField(default=False)),
+                ('name', models.CharField(max_length=250, verbose_name=b'Dashboard Name', choices=[(b'latency-pmp', b'latency-pmp'), (b'packetloss-network', b'packetloss-network'), (b'down-wimax', b'down-wimax'), (b'uas', b'uas'), (b'packetloss-pmp', b'packetloss-pmp'), (b'modulation_ul_fec', b'modulation_ul_fec'), (b'down-pmp', b'down-pmp'), (b'down-network', b'down-network'), (b'availability', b'availability'), (b'latency-network', b'latency-network'), (b'ul_rssi', b'ul_rssi'), (b'topology-pmp', b'topology-pmp'), (b'temperature', b'temperature'), (b'topology-wimax', b'topology-wimax'), (b'ul_cinr', b'ul_cinr'), (b'packetloss-wimax', b'packetloss-wimax'), (b'latency-wimax', b'latency-wimax'), (b'dl_rssi', b'dl_rssi'), (b'dl_jitter', b'dl_jitter'), (b'modulation_dl_fec', b'modulation_dl_fec'), (b'ul_jitter', b'ul_jitter'), (b'latency-p2p-bh', b'latency-p2p-bh'), (b'rereg_count', b'rereg_count'), (b'dl_cinr', b'dl_cinr'), (b'rssi', b'rssi')])),
+                ('dashboard_type', models.CharField(max_length=3, verbose_name=b'Dashboard Type', choices=[(b'INT', b'Numeric'), (b'STR', b'String')])),
+                ('range1_start', models.CharField(max_length=20, null=True, verbose_name=b'Range1 Start', blank=True)),
+                ('range1_end', models.CharField(max_length=20, null=True, verbose_name=b'Range1 End', blank=True)),
+                ('range1_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-1 Color', blank=True)),
+                ('range2_start', models.CharField(max_length=20, null=True, verbose_name=b'Range2 Start', blank=True)),
+                ('range2_end', models.CharField(max_length=20, null=True, verbose_name=b'Range2 End', blank=True)),
+                ('range2_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-2 Color', blank=True)),
+                ('range3_start', models.CharField(max_length=20, null=True, verbose_name=b'Range3 Start', blank=True)),
+                ('range3_end', models.CharField(max_length=20, null=True, verbose_name=b'Range3 End', blank=True)),
+                ('range3_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-3 Color', blank=True)),
+                ('range4_start', models.CharField(max_length=20, null=True, verbose_name=b'Range4 Start', blank=True)),
+                ('range4_end', models.CharField(max_length=20, null=True, verbose_name=b'Range4 End', blank=True)),
+                ('range4_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-4 Color', blank=True)),
+                ('range5_start', models.CharField(max_length=20, null=True, verbose_name=b'Range5 Start', blank=True)),
+                ('range5_end', models.CharField(max_length=20, null=True, verbose_name=b'Range5 End', blank=True)),
+                ('range5_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-5 Color', blank=True)),
+                ('range6_start', models.CharField(max_length=20, null=True, verbose_name=b'Range6 Start', blank=True)),
+                ('range6_end', models.CharField(max_length=20, null=True, verbose_name=b'Range6 End', blank=True)),
+                ('range6_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-6 Color', blank=True)),
+                ('range7_start', models.CharField(max_length=20, null=True, verbose_name=b'Range7 Start', blank=True)),
+                ('range7_end', models.CharField(max_length=20, null=True, verbose_name=b'Range7 End', blank=True)),
+                ('range7_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-7 Color', blank=True)),
+                ('range8_start', models.CharField(max_length=20, null=True, verbose_name=b'Range8 Start', blank=True)),
+                ('range8_end', models.CharField(max_length=20, null=True, verbose_name=b'Range8 End', blank=True)),
+                ('range8_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-8 Color', blank=True)),
+                ('range9_start', models.CharField(max_length=20, null=True, verbose_name=b'Range9 Start', blank=True)),
+                ('range9_end', models.CharField(max_length=20, null=True, verbose_name=b'Range9 End', blank=True)),
+                ('range9_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-9 Color', blank=True)),
+                ('range10_start', models.CharField(max_length=20, null=True, verbose_name=b'Range10 Start', blank=True)),
+                ('range10_end', models.CharField(max_length=20, null=True, verbose_name=b'Range10 End', blank=True)),
+                ('range10_color_hex_value', models.CharField(max_length=100, null=True, verbose_name=b'Range-10 Color', blank=True)),
+                ('technology', models.ForeignKey(blank=True, to='device.DeviceTechnology', null=True)),
+            ],
+            options={
+                'verbose_name': 'dashboard setting',
+                'verbose_name_plural': 'dashboard settings',
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardSeverityStatusDaily',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('warning', models.IntegerField(default=0)),
+                ('critical', models.IntegerField(default=0)),
+                ('ok', models.IntegerField(default=0)),
+                ('down', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardSeverityStatusHourly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('warning', models.IntegerField(default=0)),
+                ('critical', models.IntegerField(default=0)),
+                ('ok', models.IntegerField(default=0)),
+                ('down', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardSeverityStatusMonthly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('warning', models.IntegerField(default=0)),
+                ('critical', models.IntegerField(default=0)),
+                ('ok', models.IntegerField(default=0)),
+                ('down', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardSeverityStatusTimely',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('warning', models.IntegerField(default=0)),
+                ('critical', models.IntegerField(default=0)),
+                ('ok', models.IntegerField(default=0)),
+                ('down', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardSeverityStatusWeekly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('warning', models.IntegerField(default=0)),
+                ('critical', models.IntegerField(default=0)),
+                ('ok', models.IntegerField(default=0)),
+                ('down', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DashboardSeverityStatusYearly',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('dashboard_name', models.CharField(max_length=100, db_index=True)),
+                ('device_name', models.CharField(max_length=100, db_index=True)),
+                ('reference_name', models.CharField(max_length=100, db_index=True)),
+                ('processed_for', models.DateTimeField()),
+                ('warning', models.IntegerField(default=0)),
+                ('critical', models.IntegerField(default=0)),
+                ('ok', models.IntegerField(default=0)),
+                ('down', models.IntegerField(default=0)),
+                ('unknown', models.IntegerField(default=0)),
+                ('organization', models.ForeignKey(default=inventory.models.get_default_org, to='organization.Organization')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DFRProcessed',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('processed_on', models.DateField(default=datetime.datetime.now, verbose_name=b'Processed Date and Time', blank=True)),
+                ('processed_key', models.CharField(max_length=128, verbose_name=b'Key for Processing')),
+                ('processed_value', models.CharField(max_length=64, verbose_name=b'Value of Processing')),
+                ('processed_report_path', models.TextField(verbose_name=b'Absolute File Path on OS')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='MFRCauseCode',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('processed_on', models.DateField(default=datetime.datetime.now, verbose_name=b'Processed Date and Time', blank=True)),
+                ('processed_key', models.CharField(max_length=128, verbose_name=b'Key for Processing')),
+                ('processed_value', models.CharField(max_length=64, verbose_name=b'Value of Processing')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='MFRDFRReports',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=128, verbose_name=b'Report Name')),
+                ('type', models.CharField(max_length=8, verbose_name=b'Report Type', choices=[(b'MFR', b'Monthly Fault Report'), (b'DFR', b'Daily Fault Report')])),
+                ('is_processed', models.IntegerField(default=0, verbose_name=b'Report Processing Details')),
+                ('process_for', models.DateField(default=datetime.datetime.now, verbose_name=b'User Tagged Report Date or Month', blank=True)),
+                ('upload_to', models.FileField(upload_to=dashboard.models.uploaded_file_name, max_length=512, verbose_name=b'Uploaded File')),
+                ('absolute_path', models.TextField(verbose_name=b'Absolute File Path on OS')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='MFRProcessed',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('processed_on', models.DateField(default=datetime.datetime.now, verbose_name=b'Processed Date and Time', blank=True)),
+                ('processed_key', models.CharField(max_length=128, verbose_name=b'Key for Processing')),
+                ('processed_value', models.CharField(max_length=64, verbose_name=b'Value of Processing')),
+                ('processed_for', models.ForeignKey(to='dashboard.MFRDFRReports')),
+            ],
+        ),
+        migrations.AddField(
+            model_name='mfrcausecode',
+            name='processed_for',
+            field=models.ForeignKey(to='dashboard.MFRDFRReports'),
+        ),
+        migrations.AddField(
+            model_name='dfrprocessed',
+            name='processed_for',
+            field=models.ForeignKey(to='dashboard.MFRDFRReports'),
+        ),
+        migrations.AlterUniqueTogether(
+            name='dashboardsetting',
+            unique_together=set([('name', 'page_name', 'technology', 'is_bh')]),
+        ),
+    ]
