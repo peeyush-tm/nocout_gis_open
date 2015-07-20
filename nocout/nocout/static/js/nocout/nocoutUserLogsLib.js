@@ -209,22 +209,92 @@ $("form").submit(function(e) {
 function prepareFormData() {
     var form_data = [];
 
-    var fieldsArray = $("form input:not([type='hidden']):not([type='checkbox'])").serializeArray(),
+    var input_boxes = $("form input:not([type='hidden']):not([type='checkbox'])"),//.serializeArray(),
         select_boxes = $("form select"),
         checkbox_boxes = $("form input[type='checkbox']"),
         text_area_fields = $("form textarea");
 
-    var select_boxes_data = prepareSelectBoxesData(select_boxes),
+    var input_boxes_data = prepareInputBoxesData(input_boxes),
+        select_boxes_data = prepareSelectBoxesData(select_boxes),
         text_areas_data = prepareTextareaData(text_area_fields),
         checkboxes_data = prepareCheckboxesData(checkbox_boxes);
 
     // Concat all Data
     form_data = form_data.concat(select_boxes_data);
-    form_data = form_data.concat(fieldsArray);
+    form_data = form_data.concat(input_boxes_data);
     form_data = form_data.concat(text_areas_data);
     form_data = form_data.concat(checkboxes_data);
 
     return form_data;
+}
+
+/**
+ * This function prepares input box(textbox) data dict array for user logs
+ * @method prepareInputBoxesData
+ * @param input_boxes {Array}, It contains the checkboxes object array.
+ * @return inputbox_data {Array}, It contains the checkbox data in format 
+   which is needed for user logs
+ */
+function prepareInputBoxesData(input_boxes) {
+
+    var inputbox_data = [],
+        label_count_dict = {},
+        labels_array = [];
+
+    if(!input_boxes) {
+        return inputbox_data;
+    }
+
+    // Loop checkboxes
+    for(var i=0;i<input_boxes.length;i++) {
+        if (input_boxes[i].attributes["name"]) {
+            var inputbox_name = input_boxes[i].attributes["name"].value,
+                inputbox_id = input_boxes[i].attributes["id"].value,
+                field_title = '';
+            
+            try {
+                // Field Label
+                field_title = $(input_boxes[i]).closest('.form-group').find('label').text();
+                // Remove mandatory icon if exists
+                if (field_title.indexOf('*') > -1) {
+                    field_title = $.trim(field_title.replace('*',''));
+                }
+                if (field_title.indexOf('( null )') > -1) {
+                    field_title = $.trim(field_title.replace('( null )',''));
+                }
+
+                var white_space = ' ',
+                    re = new RegExp(white_space, 'g'),
+                    title_key = field_title.replace(re, '');
+
+                // Counter for same label fields
+                if (label_count_dict[title_key]) {
+                    label_count_dict[title_key] += 1
+                } else {
+                    label_count_dict[title_key] = 1
+                }
+
+                if (labels_array.indexOf(field_title) == -1) {
+                    labels_array.push(field_title);
+                } else {
+                    field_title += ' ' + String(label_count_dict[title_key]);
+                }
+            } catch(e) {
+                field_title = inputbox_name;
+            }
+
+            if(field_title && inputbox_id) {
+                var data_obj = {
+                    "name" : field_title,
+                    "value" : $('#' + inputbox_id).val()
+                };
+
+                inputbox_data.push(data_obj);
+            }
+        }
+    }
+
+    return inputbox_data;
 }
 
 /**
@@ -236,7 +306,9 @@ function prepareFormData() {
  */
 function prepareCheckboxesData(checkbox_boxes) {
 
-    var checkbox_data = [];
+    var checkbox_data = [],
+        label_count_dict = {},
+        labels_array = [];
 
     if(!checkbox_boxes) {
         return checkbox_data;
@@ -247,11 +319,40 @@ function prepareCheckboxesData(checkbox_boxes) {
         var checkbox_name = checkbox_boxes[i].attributes["name"].value,
             checkbox_id = checkbox_boxes[i].attributes["id"].value,
             isChecked = $("#"+checkbox_id)[0].checked,
-            checkbox_val = isChecked ? $("#"+checkbox_id).val() : "off";
+            checkbox_val = isChecked ? $("#"+checkbox_id).val() : "off",
+            field_title = '';
+        
+        try {
+            // Field Label
+            field_title = $(checkbox_boxes[i]).closest('.form-group').find('label').text();
+            // Remove mandatory icon if exists
+            if (field_title.indexOf('*') > -1) {
+                field_title = $.trim(field_title.replace('*',''));
+            }
 
-        if(checkbox_name && checkbox_id) {
+            var white_space = ' ',
+                re = new RegExp(white_space, 'g'),
+                title_key = field_title.replace(re, '');
+
+            // Counter for same label fields
+            if (label_count_dict[title_key]) {
+                label_count_dict[title_key] += 1
+            } else {
+                label_count_dict[title_key] = 1
+            }
+
+            if (labels_array.indexOf(field_title) == -1) {
+                labels_array.push(field_title);
+            } else {
+                field_title += ' ' + String(label_count_dict[title_key]);
+            }
+        } catch(e) {
+            field_title = checkbox_name;
+        }
+
+        if(field_title && checkbox_id) {
             var data_obj = {
-                "name" : checkbox_name,
+                "name" : field_title,
                 "value" : checkbox_val
             };
 
@@ -277,13 +378,46 @@ function prepareTextareaData(text_area_fields) {
         return textarea_data;
     }
 
+    var label_count_dict = {},
+        labels_array = [];
+
     // Loop Textareas
     for(var i=0;i<text_area_fields.length;i++) {
         var textarea_name = text_area_fields[i].attributes["name"].value,
-            textarea_id = text_area_fields[i].attributes["id"].value;
-        if(textarea_name && textarea_id) {
+            textarea_id = text_area_fields[i].attributes["id"].value,
+            field_title = '';
+        
+        try {
+            // Field Label
+            field_title = $(text_area_fields[i]).closest('.form-group').find('label').text();
+            // Remove mandatory icon if exists
+            if (field_title.indexOf('*') > -1) {
+                field_title = $.trim(field_title.replace('*',''));
+            }
+
+            var white_space = ' ',
+                re = new RegExp(white_space, 'g'),
+                title_key = field_title.replace(re, '');
+
+            // Counter for same label fields
+            if (label_count_dict[title_key]) {
+                label_count_dict[title_key] += 1
+            } else {
+                label_count_dict[title_key] = 1
+            }
+
+            if (labels_array.indexOf(field_title) == -1) {
+                labels_array.push(field_title);
+            } else {
+                field_title += ' ' + String(label_count_dict[title_key]);
+            }
+        } catch(e) {
+            field_title = textarea_name;
+        }
+
+        if(field_title && textarea_id) {
             var data_obj = {
-                "name" : textarea_name,
+                "name" : field_title,
                 "value" : $("#"+textarea_id).val()
             };
 
@@ -308,12 +442,14 @@ function prepareSelectBoxesData(select_boxes) {
     if(!select_boxes) {
         return select_boxes_data;
     }
-
+    var labels_array = [],
+        label_count_dict = {};
     // Loop select boxes
     for(var i=0;i<select_boxes.length;i++) {
         var select_id = select_boxes[i].attributes["id"].value,
             isSelect2 = $("#"+select_id)[0].className.indexOf('select2') > -1,
             values_array = isSelect2 ? $("#"+select_id).select2("data") : $("#"+select_id+" option:selected").text(),
+            field_name = select_boxes[i].attributes["name"].value,
             selected_values = "";
 
         if(values_array && values_array.constructor == Array) {
@@ -337,9 +473,38 @@ function prepareSelectBoxesData(select_boxes) {
                 selected_values = values_array;
             }
         }
+        var field_title = '';
+        
+        try {
+            // Field Label
+            field_title = $(select_boxes[i]).closest('.form-group').find('label').text();
+            // Remove mandatory icon if exists
+            if (field_title.indexOf('*') > -1) {
+                field_title = $.trim(field_title.replace('*',''));
+            }
+
+            var white_space = ' ',
+                re = new RegExp(white_space, 'g'),
+                title_key = field_title.replace(re, '');
+
+            // Counter for same label fields
+            if (label_count_dict[title_key]) {
+                label_count_dict[title_key] += 1
+            } else {
+                label_count_dict[title_key] = 1
+            }
+
+            if (labels_array.indexOf(field_title) == -1) {
+                labels_array.push(field_title);
+            } else {
+                field_title += ' ' + String(label_count_dict[title_key]);
+            }
+        } catch(e) {
+            field_title = field_name;
+        }
 
         var data_obj = {
-            "name" : select_boxes[i].attributes["name"].value,
+            "name" : field_title,
             "value" : selected_values
         };
         select_boxes_data.push(data_obj);
