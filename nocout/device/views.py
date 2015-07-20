@@ -3398,7 +3398,7 @@ class GisWizardDeviceTypeServiceMixin(object):
             device_type_service = DeviceTypeService.objects.get(id=self.kwargs['pk'])
             skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.kwargs['dt_pk']})
             try:
-                service_alias = device_type_service.service.alias
+                service_alias = device_type_service.service.name
             except Exception, e:
                 service_alias = ''
             save_text = 'Update'
