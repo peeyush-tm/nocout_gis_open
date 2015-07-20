@@ -1,7 +1,16 @@
 {% extends "nocout/base.html" %}
+
+<!-- BREADCRUMBS -->
 {% block breadcrumb_title %}
-    <li>Error 404</li>
+    {% load django_bootstrap_breadcrumbs %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-home'></i> Home" "home" %}
+    {% breadcrumb_safe "Error 404" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
+<!-- /BREADCRUMBS -->
 
 {% block content_title %}404 Not Found{% endblock %}
 {% block content_description %} The requested moduled has not been found {% endblock %}
