@@ -619,7 +619,7 @@ class Kmzreport_listingtable(BaseDatatableView):
 
         if sSearch:
             query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 # avoid search on 'added_on'
                 if column == 'added_on':
@@ -715,7 +715,6 @@ class Kmzreport_listingtable(BaseDatatableView):
         }
 
         return ret
-
 
 
 class KmzDelete(DeleteView):
@@ -828,7 +827,7 @@ class PointListingTable(BaseDatatableView):
 
         if sSearch:
             query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 # avoid search on 'added_on'
                 if column == 'added_on':
@@ -838,8 +837,6 @@ class PointListingTable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-
-            qs = self.format_result(qs)
         return qs
 
     def get_initial_queryset(self):
@@ -853,23 +850,6 @@ class PointListingTable(BaseDatatableView):
         pointsresult = GISPointTool.objects.filter(user_id=self.request.user.id).values(*self.columns + ['id'])
         
         return pointsresult
-
-    def format_result(self,qs):
-
-        resultset = []
-        for data in qs:
-            report_object = {}
-            report_object['name'] = data['name'].title()
-            report_object['description'] = data['description'].title()
-            report_object['icon_url'] = "<img src='"+data['icon_url']+"' width='32px' height='37px'/>"
-            report_object['latitude'] = data['latitude']
-            report_object['longitude'] = data['longitude']
-            report_object['connected_lat'] = data['connected_lat']
-            report_object['connected_lon'] = data['connected_lon']
-            report_object['id'] = data['id']
-            #add data to resultset list
-            resultset.append(report_object)
-        return resultset
 
     def prepare_results(self, qs):
         """
