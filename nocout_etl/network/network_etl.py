@@ -92,12 +92,12 @@ def calculate_host_severity_for_letency(ds_values,host_severity):
 
 
 @app.task(base=DatabaseTask, name='build-export')
-def build_export(site, network_perf_data):
+def build_export(site, network_perf_data,device_first_down_map):
 	""" processes and prepares data for db insert"""
 	
     # contains one dict value for each service data source
 	data_array = []
-	device_first_down_map = {}
+	device_down = {}
 	for h_chk_val in network_perf_data:
 		if not h_chk_val:
 			continue
@@ -107,11 +107,6 @@ def build_export(site, network_perf_data):
 		host_severity = host_state = 'unknown'
 		refer = ''
 		# Process network perf data
-		device_first_down_list = list(build_export.mongo_cnx(site).device_first_down.find())
-		#print device_first_down_list
-		for e in device_first_down_list:
-			if e.get('host'):
-				device_first_down_map[e['host']] = e
 		try:
 			threshold_values = get_threshold(h_chk_val[-1])
 			rt_min = threshold_values.get('rtmin').get('cur')
@@ -139,12 +134,15 @@ def build_export(site, network_perf_data):
 			if ds == 'pl':
 				host_severity = calculate_host_severity_for_pl(ds_values, host_severity)
 				try:
-					device_first_down = device_first_down_map[str(h_chk_val[0])]
+					if device_first_down_map:
+						device_first_down = device_first_down_map[str(h_chk_val[0])]
+						refer,device_first_down = calculate_refer_field_for_host(device_first_down, 
+							str(h_chk_val[0]), ds_values, local_timestamp)
+						device_down[str(h_chk_val[0])] = device_first_down
+						#if str(h_chk_val[0]) == '11322':
+						#print device_first_down,ds_values
 				except:
-					pass	
-				refer,device_first_down = calculate_refer_field_for_host(device_first_down, 
-						str(h_chk_val[0]), ds_values, local_timestamp)
-				device_first_down_map[str(h_chk_val[0])] = device_first_down
+					refer = ''	
 				c_min, c_max = None, None
 				#print device_first_down	
 			if ds == 'rta':
@@ -177,15 +175,15 @@ def build_export(site, network_perf_data):
 		
 	# send aggregator task
 	#print device_first_down_map
-	s= device_first_down_map.values()
+	s= device_down.values()
 	s.append({"host":"nitin","severity":"NA","time":"86"})
 	aggregator.s(data_array,s, site).apply_async()
 
 
-@app.task(name='get-host-checks', ignore_result=True)
+@app.task(base=DatabaseTask,name='get-host-checks', ignore_result=True)
 def get_host_checks_output(site_name=None):
 	"""Live query on `hosts` check_mk table"""
-
+	device_first_down_map = {}
 	start_time = (datetime.now() - timedelta(minutes=1)
 		).replace(second=0, microsecond=0)
 	end_time = start_time + timedelta(minutes=1)
@@ -205,8 +203,17 @@ def get_host_checks_output(site_name=None):
 		nw_qry_output = []
 	if nw_qry_output:
 		# send build_export with 1000 hosts data [configurable]
+		try:
+			device_first_down_list = list(get_host_checks_output.mongo_cnx(site_name).device_first_down.find())
+			#print device_first_down_list
+			for e in device_first_down_list:
+				if e.get('host'):
+					device_first_down_map[e['host']] = e
+		except Exception,e:
+			print e
+			device_first_down_map = {}
 		for club_data in izip_longest(*[iter(nw_qry_output)] * 1000):
-			build_export.s(site_name, club_data).apply_async()
+			build_export.s(site_name, club_data,device_first_down_map).apply_async()
 
 
 @app.task(base=DatabaseTask, name='aggregator')
