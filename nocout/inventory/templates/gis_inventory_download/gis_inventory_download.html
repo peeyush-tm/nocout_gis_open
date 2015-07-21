@@ -72,6 +72,9 @@
         </div>
     </div>
     {% block content_js %}
+        <!-- Table Cloth -->
+        <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablecloth.js" %}></script>
+        <script type="text/javascript" src={% static "js/tablecloth/js/jquery.tablesorter.min.js" %}></script>
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
         <script type="text/javascript" src={% static "js/lodash/lodash.js" %}></script>
@@ -81,7 +84,7 @@
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx.js" %}></script>
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx-reader.js" %}></script>
     {% endblock %}
-    <script>
+    <script type="text/javascript">
         // dictionary containing all 'pts bs' fields
         var ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
                          'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
@@ -176,7 +179,6 @@
 
         // execute this everytime after uploading file
         $('#id_file_upload').on('change', function (e) {
-
             // if uploaded file extension is '.xls' or '.XLS' then execute this
             if (this.files[0].name.split('.').pop().toUpperCase() === 'XLS') {
                 readFile(this.files[0], function (e) {
