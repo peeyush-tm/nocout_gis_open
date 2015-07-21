@@ -500,46 +500,71 @@ class AlertListingTable(BaseDatatableView):
         sorting for the table
         :param qs:
         """
-        request = self.request
         # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-        order_columns = self.columns
-
-        for i in range(i_sorting_cols):
-            # sorting column
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            reverse = True if s_sort_dir == 'desc' else False
+        order = []
+        order_columns = self.get_order_columns()
+        sort_using = ''
+        reverse = ''
 
-        self.is_initialised = False
-        self.is_ordered = True
-        try:
-            sort_data = self.prepare_devices(qs)
-            sort_using = order_columns[i_sort_col]
-            if sort_using in self.polled_value_columns:
-                sorted_qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+            sort_using = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
             else:
-                sorted_qs = sorted(
-                    sort_data,
-                    key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
-                    reverse=reverse
-                )
-            return sorted_qs
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
 
-        except Exception, e:
-            self.is_initialised = True
-            self.is_ordered = False
-            self.is_polled = False
+        if order and sort_using:
+            self.is_initialised = False
+            self.is_ordered = True
+            try:
+                sort_data = self.prepare_devices(qs)
+                if sort_using in self.polled_value_columns:
+                    sorted_qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
+                else:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
+                        reverse=reverse
+                    )
+                return sorted_qs
+
+            except Exception, e:
+                self.is_initialised = True
+                self.is_ordered = False
+                self.is_polled = False
+                return qs
+        else:
             return qs
 
     def prepare_initial_params(self):
@@ -1174,33 +1199,53 @@ class GetNetworkAlertDetail(BaseDatatableView):
         # Initilize order columns variable
         self.prepare_initial_params()
 
-        request = self.request      
- 
-        i_sort_col = None
-
         # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-
-        for i in range(i_sorting_cols):
-            # sorting column
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            reverse = True if s_sort_dir == 'desc' else False
+        order = []
+        order_columns = self.get_order_columns()
+        sort_using = ''
+        reverse = ''
 
-        if i_sort_col != None:
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+            sort_using = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+            else:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+
+        if order and sort_using:
             sort_data = self.prepare_devices(qs)
             self.is_ordered = True
-            sort_using = self.order_columns[i_sort_col]
             try:
                 if sort_using in self.polled_value_columns:
                     qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)

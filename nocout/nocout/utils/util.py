@@ -1509,43 +1509,58 @@ def nocout_datatable_ordering(self_instance, qs, order_columns):
     :param self_instance:
     :param qs:
     """
-    request = self_instance.request
     # Number of columns that are used in sorting
-    try:
-        i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-    except Exception:
-        i_sorting_cols = 0
+    sorting_cols = 0
+    if self_instance.pre_camel_case_notation:
+        try:
+            sorting_cols = int(self_instance._querydict.get('iSortingCols', 0))
+        except ValueError:
+            sorting_cols = 0
+    else:
+        sort_key = 'order[{0}][column]'.format(sorting_cols)
+        while sort_key in self_instance._querydict:
+            sorting_cols += 1
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
 
     order = []
+    sort_using = ''
+    reverse = ''
 
-    for i in range(i_sorting_cols):
+    for i in range(sorting_cols):
         # sorting column
+        sort_dir = 'asc'
         try:
-            i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-        except Exception:
-            i_sort_col = 0
-        # sorting order
-        s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+            if self_instance.pre_camel_case_notation:
+                sort_col = int(self_instance._querydict.get('iSortCol_{0}'.format(i)))
+                # sorting order
+                sort_dir = self_instance._querydict.get('sSortDir_{0}'.format(i))
+            else:
+                sort_col = int(self_instance._querydict.get('order[{0}][column]'.format(i)))
+                # sorting order
+                sort_dir = self_instance._querydict.get('order[{0}][dir]'.format(i))
+        except ValueError:
+            sort_col = 0
 
-        sdir = '-' if s_sort_dir == 'desc' else ''
+        sdir = '-' if sort_dir == 'desc' else ''
+        reverse = True if sort_dir == 'desc' else False
+        sortcol = order_columns[sort_col]
+        sort_using = order_columns[sort_col]
 
-        sortcol = order_columns[i_sort_col]
         if isinstance(sortcol, list):
             for sc in sortcol:
-                order.append('%s%s' % (sdir, sc))
+                order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
         else:
-            order.append('%s%s' % (sdir, sortcol))
+            order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
     if order:
-        key_name = order[0][1:] if '-' in order[0] else order[0]
         # Try catch is added because in some cases 
-        # we receive instead of queryset
+        # we receive list instead of queryset
         try:
             sorted_device_data = qs.order_by(*order)
         except Exception, e:
             try:
                 sorted_device_data = sorted(
                     qs, 
-                    key=itemgetter(key_name), 
+                    key=itemgetter(sort_using),
                     reverse=True if '-' in order[0] else False
                 )
             except Exception, e:
