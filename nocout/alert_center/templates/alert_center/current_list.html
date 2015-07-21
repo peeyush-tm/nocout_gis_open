@@ -5,60 +5,100 @@
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
-    {% breadcrumb_safe "SIA Alarms" "javascript:;" %}
+    {% breadcrumb_safe "SIA" traps %}
+    {% breadcrumb_safe "All" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
 
 {% block content_title %}Alarms{% endblock %}
 {% block content_description %}{{ page_type|title }} Alarms List{% endblock %}
+
 {% load staticfiles %}
-{% block css %}
-    <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css"
-          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+
+{% block page_setting_block %}
+<div class="date-range pull-right">
+    <div class="btn-group">
+        <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
+            <li>
+                <input type="radio" name="alarm_type" style="vertical-align:sub;" value="current" checked=""> Current
+            </li>
+            <li>
+                <input type="radio" name="alarm_type" style="vertical-align:sub;" value="clear"> Clear
+            </li>
+            <li>
+                <input type="radio" name="alarm_type" style="vertical-align:sub;" value="history"> History
+            </li>
+            <li>
+                <button type="button" id="snmp_advFilterBtn" class="btn btn-sm btn-default">
+                    <i class='fa fa-filter'></i> Advance Filter
+                </button>
+                <button type="button" id="snmp_removeFilterBtn" class="btn btn-sm btn-danger hide" style="margin-left:10px;">
+                    <i class='fa fa-times'></i> Reset Filter
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
 {% endblock %}
 
 {% block content %}
-    <div class="box border lite" style="background: #fff;">
+    
+    <!-- Include advance filter block HTML Start -->
+    {% include 'alert_center/advance_filter_block.html' %}
+    <!-- Include advance filter block HTML End -->
+    <div class="clearfix"></div>
+
+    <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell"></i>{{ page_type|upper }} ALARM </h4>
+            <h4><i class="fa fa-bell"></i>SIA </h4>
         </div>
 
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
                     <li>
-                        <a href="#network_history_block" id="network_history_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">History</span>
+                        <a href="#snmp_converter_block" id="snmp_converter_tab" data-toggle="tab">
+                            Converter
                         </a>
                     </li>
                     <li>
-                        <a href="#network_clear_block" id="network_clear_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">Clear</span>
+                        <a href="#snmp_pmp_block" id="snmp_pmp_tab" data-toggle="tab">
+                            PMP
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#snmp_wimax_block" id="snmp_wimax_tab" data-toggle="tab">
+                            WiMAX
                         </a>
                     </li>
                     <li class="active">
-                        <a href="#network_current_block" id="network_current_tab" data-toggle="tab">
-                            <span class="hidden-inline-mobile">Current</span>
+                        <a href="#snmp_all_block" id="snmp_all_tab" data-toggle="tab">
+                            All
                         </a>
                     </li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
-                    <div class="tab-pane active" id="network_current_block">
-                        <table class="datatable table table-striped table-bordered table-hover" id="network_current_block_table">
+                    <div class="tab-pane active" id="snmp_all_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="snmp_all_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
-                    <div class="tab-pane" id="network_clear_block">
-                        <table id="network_clear_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
+                    <div class="tab-pane" id="snmp_wimax_block">
+                        <table class="datatable table table-striped table-bordered table-hover" id="snmp_wimax_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
-                    <div class="tab-pane" id="network_history_block">
-                        <table id="network_history_alertlistingtable" class="datatable table table-striped table-bordered table-hover">
+                    <div class="tab-pane" id="snmp_pmp_block">
+                        <table id="snmp_pmp_table" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="snmp_converter_block">
+                        <table id="snmp_converter_table" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -71,74 +111,101 @@
     </div>
 {% endblock %}
 {% block jquery %}
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
+    <!-- Custom library create jquery datatable -->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Custom library to load tab content on tab click-->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
-    <!-- Library to load tab content on tab click-->
+    <!-- Custom library for handling filtering functionality of this page -->
+    <script type="text/javascript" src={% static "js/snmpFilteringLib.js" %} ></script>
+
     <script type="text/javascript">
-        var dataTableInstance = "";
-        /*This is a temporary code which is replace when data for data table is provided*/
+        var dataTableInstance = '',
+            startDate = '',
+            endDate = '',
+            date_range_picker_html = '',
+            filter_api_url = '';
+
         $(document).ready(function (e) {
+
+            date_range_picker_html = '<input type="text" name="filter_date" id="filter_date" class="form-control" value=""/>';
+
+            alert_initDateRangePicker();
+
+            filter_api_url = '{% url "sia_advance_filters_data" %}'
 
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
             /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
-                ajax_url_history = '{% url "history-alarms" %}',
-                ajax_url_clear = '{% url "clear-alarms" %}',
-                ajax_url_current = '{% url "current-alarms" %}';
+            var alarm_type = $('input[name="alarm_type"]:checked').val(),
+                ajax_url_all = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=all',
+                ajax_url_pmp = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=pmp',
+                ajax_url_wimax = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=wimax',
+                ajax_url_converter = '{% url "snmp_alarms_listing" %}' + '?alarm_type='+alarm_type+'&tech_name=switch';
 
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- START
-
-            var common_extra_param = "'download_excel': 'yes'",
-                history_title = "SIA Alarms - History",
-                clear_title = "SIA Alarms - Clear",
-                current_title = "SIA Alarms - Current";
-
+            var common_extra_param = "'alarm_type' : '" + alarm_type + "', 'download_excel': 'yes'",
+                converter_title = "SIA Alarms - Converter (Current)",
+                pmp_title = "SIA Alarms - PMP (Current)",
+                wimax_title = "SIA Alarms - WiMAX (Current)",
+                all_title = "SIA Alarms - All (Current)",
+                fetch_data_class = "SIAListingTable",
+                converter_tab_param = "";
             // EXTRA PARAMS FOR REPORT DOWNLOAD FEATURE -- END
 
             tables_info = {
-                "network_history_tab" : {
+                "snmp_converter_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : history_title,
+                    "table_title" : converter_title,
                     "header_class_name" : "SIAListing",
-                    "data_class_name" : "HistoryAlarmsListingTable",
-                    "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+history_title+"', "+common_extra_param+"}"
+                    "data_class_name" : fetch_data_class,
+                    "header_extra_param" : "{'headers_data_key' : 'converter_datatable_headers', "+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+converter_title+"', "+common_extra_param+"}"
                 },
-                "network_clear_tab" : {
+                "snmp_pmp_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : clear_title,
+                    "table_title" : pmp_title,
                     "header_class_name" : "SIAListing",
-                    "data_class_name" : "ClearAlarmsListingTable",
+                    "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+clear_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+pmp_title+"', "+common_extra_param+"}"
                 },
-                "network_current_tab" : {
+                "snmp_wimax_tab" : {
                     "app_name" : "alert_center",
-                    "table_title" : current_title,
+                    "table_title" : wimax_title,
                     "header_class_name" : "SIAListing",
-                    "data_class_name" : "CurrentAlarmsListingTable",
+                    "data_class_name" : fetch_data_class,
                     "header_extra_param" : "{"+common_extra_param+"}",
-                    "data_extra_param" : "{'report_title' : '"+current_title+"', "+common_extra_param+"}"
+                    "data_extra_param" : "{'report_title' : '"+wimax_title+"', "+common_extra_param+"}"
+                },
+                "snmp_all_tab" : {
+                    "app_name" : "alert_center",
+                    "table_title" : all_title,
+                    "header_class_name" : "SIAListing",
+                    "data_class_name" : fetch_data_class,
+                    "header_extra_param" : "{"+common_extra_param+"}",
+                    "data_extra_param" : "{'report_title' : '"+all_title+"', "+common_extra_param+"}"
                 }
             };
 
-
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+            $("#snmp_converter_tab").attr("data_url", ajax_url_converter);
+            $("#snmp_converter_tab").attr("data_header", '{{ converter_datatable_headers|safe }}');
 
-            $("#network_history_tab").attr("data_url", ajax_url_history);
-            $("#network_history_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#snmp_pmp_tab").attr("data_url", ajax_url_pmp);
+            $("#snmp_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
-            $("#network_clear_tab").attr("data_url", ajax_url_clear);
-            $("#network_clear_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#snmp_wimax_tab").attr("data_url", ajax_url_wimax);
+            $("#snmp_wimax_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
-            $("#network_current_tab").attr("data_url", ajax_url_current);
-            $("#network_current_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#snmp_all_tab").attr("data_url", ajax_url_all);
+            $("#snmp_all_tab").attr("data_header", '{{ datatable_headers|safe }}');
             
             var current_href = window.location.href;
             if(current_href.indexOf("#") == -1 || current_href.split("#")[1] == "") {
-                $("#network_current_tab").trigger("click");
+                $("#snmp_all_tab").trigger("click");
             }
         });
     </script>
@@ -146,7 +213,6 @@
 
 {% block load_js %}
     <!-- /JAVASCRIPTS -->
-
     <script>
         jQuery(document).ready(function () {
             App.setPage("");  //Set current page

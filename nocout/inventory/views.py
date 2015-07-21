@@ -1179,10 +1179,11 @@ class L2ReportListingTable(BaseDatatableView):
     ]
     
     order_columns = columns
-
     ckt_id = 0
+    is_searched = False
+    is_ordered = False
+    # is_map = False
 
-    
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
@@ -1203,20 +1204,87 @@ class L2ReportListingTable(BaseDatatableView):
         """ Filter datatable as per requested value """
 
         sSearch = self.request.GET.get('sSearch', None)
-
         if sSearch:
-            search_condition = (
-                Q(name__icontains=sSearch)
-                |
-                Q(user_id__username__icontains=sSearch)
-                |
-                Q(type_id__icontains=sSearch)
-            )
+            self.is_searched = True
+            result = self.map_report_inventory(qs)
+            result_list = list()
+            
+            for item in result:
+                if sSearch.lower() in json.dumps(item).lower():
+                    result_list.append(item)
+            return result_list
+        return qs
+        
+    def ordering(self, qs):
+        """
+        sorting for the table
+        :param qs:
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
 
-            qs = qs.filter(search_condition).values(
-                *self.columns+['id']
-            )
+        reverse = True
+        order_columns = self.order_columns
 
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            reverse = True if s_sort_dir == 'desc' else False
+
+        self.is_ordered = True
+        try:
+            if not self.is_searched:
+                sort_data = self.map_report_inventory(qs)
+            else:
+                sort_data = qs
+            sort_using = order_columns[i_sort_col]
+            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+            return sorted_qs
+
+        except Exception, e:
+            self.is_ordered = False
+            return qs
+
+    def map_report_inventory(self, qs):
+        """
+        """
+        qs = self.datetimeupdate(qs)
+        if not int(self.ckt_id):
+            for dct in qs:
+                type_name = dct.get('type_id')
+                if type_name:
+                    try:
+                        ckt_obj = Circuit.objects.get(id=dct['type_id'])
+                        type_name = ckt_obj.circuit_id
+                    except Exception, e:
+                        logger.info(e.message)
+                    dct.update(
+                        type_id=type_name
+                        )
+        return qs
+
+    def datetimeupdate(self, qs):
+        """
+        """
+        for dct in qs:
+            added_on = dct.get('added_on')
+            try:
+                added_on = added_on.strftime("%Y-%m-%d  %H:%M:%S") if added_on != "" else ""
+            except Exception, e:
+                logger.info(e.message)
+            dct.update(
+                added_on=added_on
+            )
         return qs
 
     def prepare_results(self, qs):
@@ -1242,14 +1310,6 @@ class L2ReportListingTable(BaseDatatableView):
         other_icon = static("img/ms-office-icons/other_icon.png")
 
         for dct in qs:
-            if not int(self.ckt_id):
-                type_name = ''
-                try:
-                    type_name = Circuit.objects.get(id=dct['type_id']).circuit_id
-                except Exception, e:
-                    logger.info(e.message)
-                dct.update(type_id=type_name)
-
             file_type_icon = ''
             file_path = dct['file_name']
             splitted_name = file_path.split("/")
@@ -1277,7 +1337,6 @@ class L2ReportListingTable(BaseDatatableView):
                 file='<a href="{}" title="Download L2 Report" target="_blank">\
                       <img src="{}" style="width:25px;"></a>'.format(download_path, file_type_icon),
                 file_name=downloaded_file_name,
-                added_on=dct['added_on'].strftime("%Y-%m-%d  %H:%M:%S") if dct['added_on'] != "" else "",
                 actions=''
             )
 
@@ -1302,9 +1361,6 @@ class L2ReportListingTable(BaseDatatableView):
         if 'circuit_id' in self.kwargs:
             self.ckt_id = self.kwargs['circuit_id']
 
-        # if 'bs_id' in self.kwargs:
-        #     self.bs_id = self.kwargs['bs_id']
-
         qs = self.get_initial_queryset()
 
         # number of records before filtering
@@ -1313,11 +1369,16 @@ class L2ReportListingTable(BaseDatatableView):
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        if type(qs) == list:
+            total_display_records = len(qs)
+        else:
+            total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
 
+        if not (self.is_searched or self.is_ordered):
+            qs = self.map_report_inventory(qs)
 
         aaData = self.prepare_results(qs)
 
@@ -1351,8 +1412,9 @@ class BSL2ReportListingTable(BaseDatatableView):
     order_columns = columns
 
     bs_id = 0
+    is_searched = False
+    is_ordered = False
 
-    
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
@@ -1375,18 +1437,85 @@ class BSL2ReportListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
 
         if sSearch:
-            search_condition = (
-                Q(name__icontains=sSearch)
-                |
-                Q(user_id__username__icontains=sSearch)
-                |
-                Q(type_id__icontains=sSearch)
-            )
+            self.is_searched = True
+            result = self.map_report_inventory(qs)
+            result_list = list()
 
-            qs = qs.filter(search_condition).values(
-                *self.columns+['id']
-            )
+            for item in result:
+                if sSearch.lower() in json.dumps(item).lower():
+                    result_list.append(item)
+            return result_list
+        return qs
 
+    def ordering(self, qs):
+        """
+        sorting for the table
+        :param qs:
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        reverse = True
+        order_columns = self.order_columns
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            reverse = True if s_sort_dir == 'desc' else False
+
+        self.is_ordered = True
+        try:
+            if not self.is_searched:
+                sort_data = self.map_report_inventory(qs)
+            else:
+                sort_data = qs
+            sort_using = order_columns[i_sort_col]
+            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+            return sorted_qs
+
+        except Exception, e:
+            self.is_ordered = False
+            return qs
+
+    def map_report_inventory(self, qs):
+        """
+        """
+        qs = self.datetimeupdate(qs)
+        if not int(self.bs_id):
+            for dct in qs:
+                type_name = dct['type_id']
+                try:
+                    bs_obj = BaseStation.objects.get(id=dct['type_id'])
+                    type_name = bs_obj.alias
+                except Exception, e:
+                    logger.info(e.message)
+                dct.update(
+                    type_id=type_name
+                )
+        return qs
+
+    def datetimeupdate(self, qs):
+        """
+        """
+        for dct in qs:
+            added_on = dct.get('added_on')
+            try:
+                added_on = added_on.strftime("%Y-%m-%d  %H:%M:%S") if added_on != "" else ""
+            except Exception, e:
+                logger.info(e.message)
+            dct.update(
+                added_on=added_on
+            )
         return qs
 
     def prepare_results(self, qs):
@@ -1412,13 +1541,6 @@ class BSL2ReportListingTable(BaseDatatableView):
         other_icon = static("img/ms-office-icons/other_icon.png")
 
         for dct in qs:
-            if not int(self.bs_id):
-                type_name = ''
-                try:
-                    type_name = BaseStation.objects.get(id=dct['type_id']).alias
-                except Exception, e:
-                    logger.info(e.message)
-                dct.update(type_id=type_name)
             file_type_icon = ''
             file_path = dct['file_name']
             splitted_name = file_path.split("/")
@@ -1446,7 +1568,6 @@ class BSL2ReportListingTable(BaseDatatableView):
                 file='<a href="{}" title="Download L2 Report" target="_blank">\
                       <img src="{}" style="width:25px;"></a>'.format(download_path, file_type_icon),
                 file_name=downloaded_file_name,
-                added_on=dct['added_on'].strftime("%Y-%m-%d  %H:%M:%S") if dct['added_on'] != "" else "",
                 actions=''
             )
 
@@ -1472,18 +1593,22 @@ class BSL2ReportListingTable(BaseDatatableView):
             self.bs_id = self.kwargs['bs_id']
 
         qs = self.get_initial_queryset()
-
         # number of records before filtering
         total_records = qs.count()
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        if type(qs) == list:
+            total_display_records = len(qs)
+        else:
+            total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
 
+        if not (self.is_searched or self.is_ordered):
+            qs = self.map_report_inventory(qs)
 
         aaData = self.prepare_results(qs)
 
@@ -4940,7 +5065,7 @@ def getAutoSuggestion(request, search_by="default", search_txt=""):
             query_result = search_model.objects.filter(
                 Q(**{condition : str(search_txt)}),
                 Q(organization__in=current_user_organizations),
-                Q(is_added_to_nms=1),
+                Q(is_added_to_nms__gt=0),
                 Q(is_deleted=0)
             )[:30] 
         else:

@@ -48,7 +48,7 @@ current_icon_size = $.cookie("markerIconSize") ? $.cookie("markerIconSize") : "m
 isPollingActive = 0;
 
 // Clear click listener
-if(google && google.maps) {
+if(typeof google != 'undefined' && google.maps) {
     google.maps.event.clearListeners(mapInstance,'click');
 }
 
@@ -83,10 +83,10 @@ if(
         $.cookie("isLabelChecked")=='true'
     )
 ) {
-    $("#showToolsBtn").removeClass("btn-info");
+    $("#showToolsBtn").removeClass("btn-default");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
-    $("#showToolsBtn").addClass("btn-info");
+    $("#showToolsBtn").addClass("btn-default");
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
@@ -776,7 +776,7 @@ $("#point_select").click(function(e) {
     pointAdded= 1;
     is_line_active= -1;
     is_ruler_active= -1;
-    $(this).removeClass('btn-info').addClass('btn-warning');
+    $(this).removeClass('btn-default').addClass('btn-warning');
     $("#point_icons_container li:first-child").trigger('click');
     $("#point_icons_container").removeClass("hide");
 
@@ -805,7 +805,7 @@ $("#close_points_icon").click(function(e) {
     pointAdded= -1;
     is_line_active= -1;
     is_ruler_active= -1;
-    $("#point_select").removeClass('btn-warning').addClass('btn-info');
+    $("#point_select").removeClass('btn-warning').addClass('btn-default');
     $("#point_icons_container").addClass("hide");
     if(window.location.pathname.indexOf("gearth") > -1) {
         if(pointEventHandler) {
@@ -962,8 +962,8 @@ $("#point_icons_container li").click(function(e) {
     $(this).addClass('selected_icon');
     
     /*Check that 'img' tag is present in li or not*/
-    if($("#point_icons_container li.selected_icon")[0].children[0].hasAttribute('src')) {
-        point_icon_url = $("#point_icons_container li.selected_icon")[0].children[0].attributes['src'].value.split("../../")[1];
+    if($("#point_icons_container li.selected_icon").children()[0].hasAttribute('src')) {
+        point_icon_url = $("#point_icons_container li.selected_icon").children()[0].attributes.src.value;
     }
 });
 
@@ -1045,16 +1045,17 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
  * @event Click(Using Delegate)
  */
 $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
-    var ckt_id = e.currentTarget.attributes['ckt_id'] ? e.currentTarget.attributes['ckt_id'].value : "";
+    var item_id = e.currentTarget.attributes['item_id'] ? e.currentTarget.attributes['item_id'].value : "",
+        type_report = e.currentTarget.attributes['type'] ? e.currentTarget.attributes['type'].value : "";
     // If ckt id exist then fetch l2 report url
 
-    if(ckt_id) {
+    if(item_id) {
         
         // Disbale Download Report Button
         $(".download_report_btn").button("loading");
 
         $.ajax({
-            url: base_url+'/network_maps/l2_report/'+encodeURIComponent(ckt_id)+'/',
+            url: base_url+'/network_maps/l2_report/'+encodeURIComponent(item_id)+'/'+encodeURIComponent(type_report)+'/',
             type : "GET",
             success : function(response) {
 
@@ -2022,9 +2023,9 @@ function removetoolsPanel() {
             $.cookie("isLabelChecked")=='true'
         )
     ) {
-        $("#showToolsBtn").removeClass("btn-info").addClass("btn-warning");
+        $("#showToolsBtn").removeClass("btn-default").addClass("btn-warning");
     } else {
-        $("#showToolsBtn").removeClass("btn-warning").addClass("btn-info");
+        $("#showToolsBtn").removeClass("btn-warning").addClass("btn-default");
     }
 
     $("#removeToolsBtn").addClass("hide");
@@ -2065,7 +2066,7 @@ function clearTools_gmap() {
             pointAdded = -1;            
             hasTools = 0;
             networkMapInstance.clearPointsTool_gmap();
-            $("#showToolsBtn").addClass("btn-info");
+            $("#showToolsBtn").addClass("btn-default");
             $("#showToolsBtn").removeClass("btn-warning");
         }
     });   

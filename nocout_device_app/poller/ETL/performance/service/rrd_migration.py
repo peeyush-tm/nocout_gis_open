@@ -359,6 +359,10 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				dr_flag= 0
 				host_matched_row=filter(lambda x: re.match(str(entry[0]),x) ,dr_host_entry)
 				dr_host = host_matched_row[0].split('|')[3].split(':')[1].strip(' ')
+				if dr_host in s_device_down_list and str(entry[0]) in s_device_down_list:
+					data_dict = {}
+					matching_criteria = {}
+					continue
 				#print 'dr_host'
 				#print dr_host
 				#print (dr_host,str(entry[2]))

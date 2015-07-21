@@ -104,10 +104,10 @@
                                                 <label for="duration" class="col-sm-3 control-label"><span class="mandatory">* </span>Duration: </label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
-                                                        <div class="bootstrap-timepicker col-md-5">
+                                                        <div class="bootstrap-timepicker col-md-6 row">
                                                             From: {{ form.start_on_time }} {{ form.start_on_time.errors }}
                                                         </div>
-                                                        <div class="bootstrap-timepicker col-md-5">
+                                                        <div class="bootstrap-timepicker col-md-6 row pull-right">
                                                             To: {{ form.end_on_time }} {{ form.end_on_time.errors }}
                                                         </div>
                                                     </div>
@@ -180,13 +180,15 @@
                                     <div class="clearfix"></div>
                                     <div class="form-group">
                                         <div class="col-sm-offset-3 col-sm-9">
-                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/')"><i class="fa fa-times"></i>Skip</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/scheduling/')"><i class="fa fa-times"></i>Cancel</button>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-pencil"></i> Create
+                                            </button>
+                                            <button type="reset" class="btn btn-warning" onclick="resetForm();">
+                                                <i class="fa fa-refresh"></i> Reset
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="window.location.replace('/scheduling/')">
+                                                <i class="fa fa-times"></i> Cancel
+                                            </button>
                                         </div>
                                     </div>
                                 </form>
@@ -204,7 +206,7 @@
         <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-timepicker.js" %}></script>
     {% endblock %}
-    <script>
+    <script type="text/javascript">
         $(document).ready(function(){
             var title = '{{ title|safe }}'
             if (title != 'None'){
@@ -449,16 +451,14 @@
                             });
                     }
                 },
-                formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: function(device) {
+                    return device.device_alias;
+                },
+                formatSelection: function(device) {
+                    return device.device_alias;
+                }
             });
         });
-        function repoDeviceFormatResult(device) {
-          return device.device_alias;
-        }
-        function repoDeviceFormatSelection(device) {
-          return device.device_alias;
-        }
 
         setTimeout(function() {
             $("input[name='device_type']").select2({

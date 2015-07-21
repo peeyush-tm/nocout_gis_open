@@ -14,6 +14,8 @@ var tables_info = {},
     server_side_rendering = true;
 
 $(".nav-tabs li a").click(function (e, isFirst) {
+    // Update the breadcrumb as per clicked tab
+    $(".breadcrumb li.active").html($.trim($(this).text()));
 
     /*Initialize the timer in seconds.Right now its 1 year*/
     /*86400 is 24 hrs miliseconds*/

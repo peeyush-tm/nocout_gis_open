@@ -388,18 +388,19 @@ class CircuitL2Report(models.Model):
     # function to modify name and path of uploaded file
     def uploaded_report_name(instance, filename):
         timestamp = time.time()
-        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
         year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
 
-        # modified filename
-        filename = "{}_{}".format(full_time, filename)
+        filename = instance.file_name
+        if instance.report_type == 'base_station':
+            prefixreportname = BaseStation.objects.filter(id=instance.type_id).values('state__state_name', 'city__city_name')
+            filename = "{0}-{1}_{2}".format(prefixreportname[0]['state__state_name'], prefixreportname[0]['city__city_name'], instance.file_name)
 
         # modified path where file is uploaded
         path = "uploaded/l2"
 
         return '{}/{}/{}'.format(path, year_month_date, filename)
 
-    name = models.CharField('Name', max_length=250, unique=True)
+    name = models.CharField('Name', max_length=250, unique=False)
     file_name = models.FileField(max_length=512, upload_to=uploaded_report_name)
     added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
     user_id = models.ForeignKey(UserProfile)

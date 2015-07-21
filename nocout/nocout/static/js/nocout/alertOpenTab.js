@@ -5,21 +5,17 @@
  */
 
 var last_clicked_tab = "",
-    timeOutId = "",
+    alertTabTimeoutId = "",
     tech_list = ['PMP',"P2P","WiMAX", "Backhaul"];
 
+/*Initialize the timer in seconds.Right now its 1 year*/
+/*86400 is 24 hrs miliseconds*/
+// var timer = 86400 * 30 * 12; // 1 Year in seconds
+var timer = 300; // 5 Minutes in seconds
+
 $(".nav-tabs li a").click(function (e, isFirst) {
-
     // Update the breadcrumb as per clicked tab
-    $(".breadcrumb li.active").html(e.currentTarget.innerText);
-
-    /*Initialize the timer in seconds.Right now its 1 year*/
-    /*86400 is 24 hrs miliseconds*/
-    // var timer = 86400 * 30 * 12; // 1 Year in seconds
-    var timer = 300; // 5 Minutes in seconds
-
-    /*Clear or Reset Time out*/
-    clearTimeout(timeOutId);
+    $(".breadcrumb li.active").html($.trim($(this).text()));
 
     var anchor_id = e.currentTarget.id,
         second_condition = "";
@@ -29,14 +25,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     } else {
         second_condition = false;
     }
-
-    /*Current Tab content id or anchor tab hyperlink*/
-    // new_url = e.currentTarget.href;
-
-
-    // if (!isFirst) {
-    //     window.location.href = new_url;
-    // }
 
     var destroy = false,
         div_id = e.currentTarget.href.split("#")[1],
@@ -108,22 +96,26 @@ $(".nav-tabs li a").click(function (e, isFirst) {
 
     /*Save the last clicked tab id in global variable for condition checks*/
     last_clicked_tab = e.currentTarget.id;
+});
 
-    if (window.location.pathname.search('alert_center') > -1) {
-        var tab_name = "";
-        if (anchor_id.indexOf('pmp') > -1 || anchor_id.indexOf('network_PMP_block') > -1) {
-            tab_name = 'PMP';
-        } else if(anchor_id.indexOf('wifi') > -1 || anchor_id.indexOf('#network_WiMAX_block') > -1) {
-            tab_name = 'WiMAX';
-        } else if(anchor_id.indexOf('_bh_') > -1 || anchor_id.indexOf('backhaul') > -1) {
-            tab_name = 'Backhaul';
-        } else {
-            tab_name = 'P2P';
-        }
+
+/**
+ * This function trigger given tab id click event after specific time
+ * @method refreshAlertTab
+ * @param tab_id {String}, It contains the dom id of tab
+ * @param refresh_time {Number}, It contains the time to refresh tab in seconds
+ */
+function refreshAlertTab(tab_id, refresh_time) {
+
+    /*Clear or Reset Time out*/
+    try {
+        clearTimeout(alertTabTimeoutId);
+    } catch(e) {
+        alertTabTimeoutId = '';
     }
 
     /*Refresh the tab after every given timer. Right now it is 5 minutes*/
-    timeOutId = setTimeout(function () {
-        $("#" + anchor_id).trigger('click', true);
-    }, (+(timer) + "000"));
-});
+    alertTabTimeoutId = setTimeout(function () {
+        $("#" + tab_id).trigger('click', true);
+    }, (+(refresh_time) + "000"));
+}

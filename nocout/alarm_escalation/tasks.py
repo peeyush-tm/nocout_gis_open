@@ -471,9 +471,10 @@ def check_device_status():
             service_data_source_list = set(required_objects.values_list('service_data_source__name', flat=True))
 
             # exclude the devices which is in downtime scheduling today.
-            device_list_qs = Device.objects.filter(organization__in=[org],
-                                                   device_type__in=device_type_list,
-                                                   is_added_to_nms=1
+            device_list_qs = Device.objects.filter(
+                organization__in=[org],
+                device_type__in=device_type_list,
+                is_added_to_nms__gt=0
             ).exclude(id__in=device_id_list).values('device_name', 'machine__name')
 
             machine_dict = prepare_machines(device_list_qs)
