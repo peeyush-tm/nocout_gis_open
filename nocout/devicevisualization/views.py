@@ -619,7 +619,7 @@ class Kmzreport_listingtable(BaseDatatableView):
 
         if sSearch:
             query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 # avoid search on 'added_on'
                 if column == 'added_on':
@@ -643,19 +643,7 @@ class Kmzreport_listingtable(BaseDatatableView):
         # Query to fetch L2 reports data from db
         kmzreportresult = KMZReport.objects.filter(condition).values(*self.columns + ['id'])
 
-        report_resultset = []
-        for data in kmzreportresult:
-            report_object = {}
-            report_object['name'] = data['name'].title()
-            filename_str_array = data['filename'].split('/')
-            report_object['filename'] = filename_str_array[len(filename_str_array)-1]
-            report_object['added_on'] = data['added_on']
-            username = UserProfile.objects.filter(id=data['user']).values('username')
-            report_object['user'] = username[0]['username'].title()
-            report_object['id'] = data['id']
-            #add data to report_resultset list
-            report_resultset.append(report_object)
-        return report_resultset
+        return kmzreportresult
 
     def prepare_results(self, qs):
         """
@@ -663,19 +651,30 @@ class Kmzreport_listingtable(BaseDatatableView):
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        report_resultset = list()
         for dct in json_data:
-            dct.update(actions='<a style="cursor:pointer;" url="{0}" class="delete_kmzreport" title="Delete kmz" >\
-                <i class="fa fa-trash-o text-danger"></i></a>\
-                <a href="{0}/gmap/view/" title="view on google map">\
-                <i class="fa fa-globe"></i></a>\
-                <a href="{0}/google_earth/view/" title="view on google earth">\
-                <i class="fa fa-globe"></i></a>\
-                <a href="{0}/white_background/view/" title="view on white background">\
-                <i class="fa fa-globe"></i></a>\
-                '.format(dct.pop('id')),
-               added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
+            report_object = {}
+            report_object['name'] = dct['name'].title()
+            filename_str_array = dct['filename'].split('/')
+            report_object['filename'] = filename_str_array[len(filename_str_array)-1]
+            report_object['added_on'] = dct['added_on']
+            username = UserProfile.objects.filter(id=dct['user']).values('username')
+            report_object['user'] = username[0]['username'].title()
+            report_object['id'] = dct['id']
+            report_object['actions'] = '<a style="cursor:pointer;" url="{0}" class="delete_kmzreport" title="Delete kmz" >\
+                                        <i class="fa fa-trash-o text-danger"></i></a>\
+                                        <a href="{0}/gmap/view/" title="view on google map">\
+                                        <i class="fa fa-globe"></i></a>\
+                                        <a href="{0}/google_earth/view/" title="view on google earth">\
+                                        <i class="fa fa-globe"></i></a>\
+                                        <a href="{0}/white_background/view/" title="view on white background">\
+                                        <i class="fa fa-globe"></i></a>\
+                                        '.format(dct.pop('id'))
+            report_object['added_on'] = dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else ""
+            #add dct to report_resultset list
+            report_resultset.append(report_object)
 
-        return json_data
+        return report_resultset
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
@@ -690,7 +689,6 @@ class Kmzreport_listingtable(BaseDatatableView):
 
         request = self.request
         self.initialize(*args, **kwargs)
-
 
         qs = self.get_initial_queryset()
 
@@ -708,13 +706,15 @@ class Kmzreport_listingtable(BaseDatatableView):
             qs = list(qs)
 
         aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+        
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
-        return ret
 
+        return ret
 
 
 class KmzDelete(DeleteView):
@@ -827,7 +827,7 @@ class PointListingTable(BaseDatatableView):
 
         if sSearch:
             query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 # avoid search on 'added_on'
                 if column == 'added_on':
@@ -837,8 +837,6 @@ class PointListingTable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-
-            qs = self.format_result(qs)
         return qs
 
     def get_initial_queryset(self):
@@ -850,27 +848,8 @@ class PointListingTable(BaseDatatableView):
 
         # Query to fetch L2 reports data from db
         pointsresult = GISPointTool.objects.filter(user_id=self.request.user.id).values(*self.columns + ['id'])
-
-        report_resultset = self.format_result(pointsresult)
         
-        return report_resultset
-
-    def format_result(self,qs):
-
-        resultset = []
-        for data in qs:
-            report_object = {}
-            report_object['name'] = data['name'].title()
-            report_object['description'] = data['description'].title()
-            report_object['icon_url'] = "<img src='"+data['icon_url']+"' width='32px' height='37px'/>"
-            report_object['latitude'] = data['latitude']
-            report_object['longitude'] = data['longitude']
-            report_object['connected_lat'] = data['connected_lat']
-            report_object['connected_lon'] = data['connected_lon']
-            report_object['id'] = data['id']
-            #add data to resultset list
-            resultset.append(report_object)
-        return resultset
+        return pointsresult
 
     def prepare_results(self, qs):
         """
@@ -878,6 +857,22 @@ class PointListingTable(BaseDatatableView):
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+            resultset = []
+            for data in qs:
+                report_object = {}
+                report_object['name'] = data['name'].title()
+                report_object['description'] = data['description'].title()
+                report_object['icon_url'] = "<img src='"+data['icon_url']+"' width='25px' height='30px'/>"
+                report_object['latitude'] = data['latitude']
+                report_object['longitude'] = data['longitude']
+                report_object['connected_lat'] = data['connected_lat']
+                report_object['connected_lon'] = data['connected_lon']
+                report_object['id'] = data['id']
+                #add data to resultset list
+                resultset.append(report_object)
+
+            return resultset
 
         return qs
 
@@ -895,7 +890,6 @@ class PointListingTable(BaseDatatableView):
         request = self.request
         self.initialize(*args, **kwargs)
 
-
         qs = self.get_initial_queryset()
 
         # number of records before filtering
@@ -912,11 +906,13 @@ class PointListingTable(BaseDatatableView):
             qs = list(qs)
 
         aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
         }
+
         return ret
 
 
