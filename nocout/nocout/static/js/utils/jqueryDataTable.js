@@ -43,15 +43,15 @@ function ourDataTableWidget() {
             $("#"+tableId).dataTable().fnDestroy();
         }
 
-        $("#"+tableId).DataTable({
+        $("#"+tableId).dataTable({
             bAutoWidth: false,
             bDestroy : true,
             bPaginate: true,
-            bProcessing : true,
-            bServerSide: server_side_rendering,
+            processing : true,
+            serverSide: server_side_rendering,
             aLengthMenu: page_length_val,
             iDisplayLength : default_selected_page_length,
-            sAjaxSource: ajax_url,
+            ajax: ajax_url,
             /*This is the callback funtion for data ajax call*/
             fnInitComplete: function(oSettings) {
                 /*Hide the spinner*/
@@ -93,7 +93,7 @@ function ourDataTableWidget() {
 
         
 
-        var dtable = $("#"+tableId).DataTable();
+        var dtable = $("#"+tableId).dataTable();
 
         // Grab the datatables input box and alter how it is bound to events
         $("#"+tableId+"_wrapper .dataTables_filter input")
