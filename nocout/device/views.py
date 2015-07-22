@@ -203,10 +203,11 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         # If searched character is 3 or more than 3. Then search the entered text on the basis fields of search_columns.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -404,8 +405,9 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -584,8 +586,9 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -761,8 +764,9 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -910,8 +914,9 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -1382,8 +1387,9 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -1546,8 +1552,9 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -1785,8 +1792,9 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2025,8 +2033,9 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2249,8 +2258,9 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2488,8 +2498,9 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -2635,9 +2646,10 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
         # search if the entered text is atleast 3 characters long.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # If character '\' is in entered text then replace the character '\' from entered text. Because it will create an error in sql query execution.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -2792,10 +2804,11 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         #if entered text is atleast 3 characters long, then search.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # if character '\' is in entered text, then remove the character '\' from entered text. because '\' will raise the error in execution of sql query.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -2941,10 +2954,11 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         # if entered text is atleast 3 characters long, then search.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # if character '\' is in entered text, then replace '\' from entered text because it will raise the error in sql query execution.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -3090,8 +3104,9 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)

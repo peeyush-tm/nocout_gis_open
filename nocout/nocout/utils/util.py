@@ -6,6 +6,7 @@ import htmlentitydefs
 
 from dateutil import tz
 from django.db import connections
+from django.db.models import Q
 from operator import itemgetter
 from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME
 
@@ -239,6 +240,18 @@ class NocoutUtilsGateway:
         :return:
         """
         param1 = nocout_datatable_ordering(self_instance, qs, order_columns)
+        
+        return param1
+
+    def nocout_filter_queryset(self, self_instance, qs, search_txt):
+        """
+
+        :param self_instance:
+        :param qs:
+        :param order_columns:
+        :return:
+        """
+        param1 = nocout_filter_queryset(self_instance, qs, search_txt)
         
         return param1
 
@@ -1568,6 +1581,23 @@ def nocout_datatable_ordering(self_instance, qs, order_columns):
                 log.info(e.message)
         return sorted_device_data
     return qs 
+
+
+def nocout_filter_queryset(self_instance, qs, search_txt):
+    """
+    If the user role is admin then append its descendants organization as well, otherwise not
+
+    :param self_instance:
+    :params qs:
+    :return qs:
+    """
+    if search_txt and not self_instance.pre_camel_case_notation:
+        q = Q()
+        for col in self_instance.columns:
+            q |= Q(**{'{0}__icontains'.format(col): search_txt})
+
+        qs = qs.filter(q)
+    return qs
 
 
 class HTMLTextExtractor(HTMLParser):

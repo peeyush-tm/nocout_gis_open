@@ -282,7 +282,8 @@ class LivePerformanceListing(BaseDatatableView):
         :return result_list:
         """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_initialised = False
             self.is_searched = True
@@ -952,7 +953,8 @@ class SectorDashboardListing(BaseDatatableView):
         :param qs:
         """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             query = []
@@ -1963,7 +1965,8 @@ class ServiceDataSourceListing(BaseDatatableView):
         :param qs:
         """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
 

@@ -90,7 +90,8 @@ class DownloadCenterListing(BaseDatatableView):
         exclude_columns = ['created_on', 'report_date']
 
         # search keyword
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % self.model.__name__

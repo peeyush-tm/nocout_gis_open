@@ -473,24 +473,23 @@ class AlertListingTable(BaseDatatableView):
         :param qs:
         :return result_list:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
+        
         if sSearch:
             self.is_initialised = False
             self.is_searched = True
             result = self.prepare_devices(qs)
             result_list = list()
             for item in result:
-                for data in item:
-                    if item[data]:
-                        condition_1 = isinstance(item[data], unicode)
-                        condition_2 = isinstance(item[data], str)
-                        if (condition_1 or condition_2) and (item not in result_list):
-                            if sSearch.encode('utf-8').lower() in item[data].encode('utf-8').lower():
-                                result_list.append(item)
-                        else:
-                            if sSearch == item[data] and item not in result_list:
-                                result_list.append(item)
+                try:
+                    dict_values_str_list = [str(i) for i in item.values()]
+                    dict_values_string = ', '.join(dict_values_str_list).lower()
+                    sSearch = sSearch.lower()
+                except Exception, e:
+                    dict_values_string = item.values()
+                    sSearch = sSearch
+                if sSearch in dict_values_string :
+                    result_list.append(item)
 
             return result_list
         return qs
@@ -1165,28 +1164,36 @@ class GetNetworkAlertDetail(BaseDatatableView):
         :param qs:
         :return result_list:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_initialised = False
             self.is_searched = True
             result = self.prepare_devices(qs)
             result_list = list()
             for search_data in result:
-                temp_var = json.dumps(search_data)
-                search_data = json.loads(temp_var)
-                for data in search_data:
-                    if search_data[data]:
-                        if(
-                            (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
-                            and
-                            (search_data not in result_list)
-                        ):
-                            if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
-                                result_list.append(search_data)
-                        else:
-                            if sSearch == search_data[data] and search_data not in result_list:
-                                result_list.append(search_data)
+                try:
+                    dict_values_str_list = [str(i) for i in search_data.values()]
+                    dict_values_string = ', '.join(dict_values_str_list).lower()
+                    sSearch = sSearch.lower()
+                except Exception, e:
+                    dict_values_string = search_data.values()
+                    sSearch = sSearch
+                if sSearch in dict_values_string :
+                    result_list.append(search_data)
+                # temp_var = json.dumps(search_data)
+                # search_data = json.loads(temp_var)
+                # for data in search_data:
+                #     if search_data[data]:
+                #         if(
+                #             (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
+                #             and
+                #             (search_data not in result_list)
+                #         ):
+                #             if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
+                #                 result_list.append(search_data)
+                #         else:
+                #             if sSearch == search_data[data] and search_data not in result_list:
+                #                 result_list.append(search_data)
 
             return result_list
         return qs
@@ -1559,8 +1566,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         """ Filter datatable as per requested value
         :param qs:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
 
@@ -2013,8 +2019,7 @@ class SIAListingTable(BaseDatatableView):
         :param qs:
         :return result_list:
         """
-
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_searched = True
             if type(qs) == type(list()):
@@ -2025,8 +2030,14 @@ class SIAListingTable(BaseDatatableView):
             result_list = list()
             for search_data in result:
                 # Convert the dict to string & check the search text in that string
-                dict_str = str(search_data).lower()
-                if sSearch.lower() in dict_str :
+                try:
+                    dict_values_str_list = [str(i) for i in search_data.values()]
+                    dict_values_string = ', '.join(dict_values_str_list).lower()
+                    sSearch = sSearch.lower()
+                except Exception, e:
+                    dict_values_string = search_data.values()
+                    sSearch = sSearch
+                if sSearch in dict_values_string :
                     result_list.append(search_data)
 
             return result_list
@@ -2037,14 +2048,6 @@ class SIAListingTable(BaseDatatableView):
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
         """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        order = []
 
         if self.tech_name in ['pmp', 'wimax', 'all']:
             self.order_columns = [
@@ -2053,31 +2056,53 @@ class SIAListingTable(BaseDatatableView):
                 'component_name', 'eventname', 'traptime', 'uptime'
             ]
 
-        order_columns = self.order_columns
-        sorting_column = None
-        reverse = ''
-        for i in range(i_sorting_cols):
-            # sorting column
+        # Number of columns that are used in sorting
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-            reverse = True if s_sort_dir == 'desc' else False
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            sdir = '-' if s_sort_dir == 'desc' else ''
+        order = []
+        order_columns = self.order_columns
+        reverse = False
+        sort_using = ''
 
-            sortcol = order_columns[i_sort_col]
-            sorting_column = sortcol
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+
             if isinstance(sortcol, list):
                 for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+                    sort_using = sc
             else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+                sort_using = sortcol
+        if sort_using and sort_using in order_columns:
             # If sorting request is from other columns 
-            if sorting_column in self.other_columns or type(qs) == type(list()):
+            if type(qs) == type(list()) or sort_using in self.other_columns:
                 # Update the 'is_ordered' flag
                 self.is_ordered = True
                 # prepare result as per the complete queryset
@@ -2090,17 +2115,15 @@ class SIAListingTable(BaseDatatableView):
                     # Sort the prepared result list
                     sorted_qs = sorted(
                         prepared_result,
-                        key=itemgetter(sorting_column),
+                        key=itemgetter(sort_using),
                         reverse=reverse
                     )
                 except Exception, e:
                     sorted_qs = prepared_result
-
                 return sorted_qs
             else:
                 # Update the 'is_ordered' flag
                 self.is_ordered = False
-
                 return qs.order_by(*order)
         return qs
     

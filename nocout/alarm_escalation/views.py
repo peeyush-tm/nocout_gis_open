@@ -51,7 +51,7 @@ class LevelListingTable(PermissionsRequiredMixin,
     model = EscalationLevel
     columns = [ 'name', 'region_name', 'organization__alias', 'emails', 'phones', 'service__alias', 'device_type__alias', 'service_data_source__alias',
                 'alarm_age']
-    order_columns = [ 'name', 'region_name', 'organization__alias', 'emails', 'phones', 'service__alias', 'device_type__alias', 'service_data_source__alias',
+    order_columns = [ 'organization__alias', 'name', 'emails', 'phones', 'service__alias', 'device_type__alias', 'service_data_source__alias',
                 'alarm_age']
     required_permissions = ('alarm_escalation.view_escalationlevel',)
 

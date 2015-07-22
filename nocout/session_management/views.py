@@ -90,7 +90,8 @@ class UserStatusTable(BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             result_list = list()

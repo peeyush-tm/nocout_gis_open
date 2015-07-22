@@ -615,7 +615,8 @@ class Kmzreport_listingtable(BaseDatatableView):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             query = []
@@ -823,7 +824,8 @@ class PointListingTable(BaseDatatableView):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             query = []

@@ -208,7 +208,8 @@ class SectorStatusListing(BaseDatatableView):
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         self.is_technology_searched = False
         if sSearch:
             if sSearch.lower() in ['pmp', 'wimax']:
@@ -461,12 +462,13 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             # In case of severity search, update the search txt
             if sSearch.lower() in 'needs augmentation':
-                sSearch = 'ok'
+                sSearch = 'warning'
             elif sSearch in 'stop provisioning':
                 sSearch = 'critical'
             else:
@@ -785,7 +787,8 @@ class BackhaulStatusListing(BaseDatatableView):
     is_technology_ordered = False
 
     def filter_queryset(self, qs):
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         self.is_technology_searched = False
         if sSearch:
             if sSearch.lower() in ['pmp', 'wimax', 'tcl pop', 'pop']:
@@ -1110,12 +1113,13 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             # In case of severity search, update the search txt
             if sSearch.lower() in 'needs augmentation':
-                sSearch = 'ok'
+                sSearch = 'warning'
             elif sSearch in 'stop provisioning':
                 sSearch = 'critical'
             else:
