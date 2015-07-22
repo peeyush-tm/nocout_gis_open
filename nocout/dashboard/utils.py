@@ -24,6 +24,13 @@ log = logging.getLogger(__name__)
 
 def get_unused_dashboards(dashboard_setting_id=None):
     """
+    This function gives us the list of unused dashboards whose settings are not created.
+
+    :Args:
+        dashboard_setting_id : Default None/ id of dashboard settings (pk)
+
+    :return:
+        unused dashboards
     """
     dashboard_settings = DashboardSetting.objects.all()
     if dashboard_setting_id:
@@ -55,13 +62,21 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     """
     Consolidated Service Status Data from the Data base.
 
-    :param machine:
-    :param model:
-    :param service_name:
-    :param data_source:
-    :param device_list:
-    :param queue:
+    :Args: 
+        queue : True/False
+    :Args: 
+        machine_device_list : list of devices in particular machine
+    :Args: 
+        machine : name of machine (ospf1/osp2 etc)
+    :Args: 
+        model : Model name in which query will be executed
+    :Args: 
+        service_name : Name of service
+    :Args: 
+        data_source : Name of Data source 
+
     :return:
+        service_status_data : List of dictionaries of required data from particular model & from particular given conditions
     """
     required_severity = ['warning','critical']
     required_values = ['id',
@@ -123,6 +138,15 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
 
 # Below class is referenced from Link - https://djangosnippets.org/snippets/1253/
 class MultiQuerySet(object):
+    """
+    Class based view for combining Query sets from different Database.
+
+    :Args:
+        object : A List of query sets object
+
+    :return:
+        combination of these query sets
+    """
     def __init__(self, *args, **kwargs):
         self.querysets = args
         self._count = None
@@ -164,6 +188,18 @@ class MultiQuerySet(object):
                     continue
 
 def get_service_status_results(user_devices, model, service_name, data_source):
+    """
+    A function for extracting data from distributed database as per given parameters. 
+
+    :Args:
+       user_devices : list of devices
+       model : Nmae of model
+       service_name : Name of service
+       data_source  : Name of data source
+
+    :return:
+        service_status_results : list of dictionaries
+    """
 
     unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
 
@@ -210,23 +246,24 @@ def get_service_status_results(user_devices, model, service_name, data_source):
                                                               service_name=service_name,
                                                               data_source=data_source
                                                             )
+            # Appending in list
             multi_qyery_list.append(service_status_results_temp)
-        
+        # Calling function MultiQuerySet for combination of Query Sets on diffrent databases.
         service_status_results = MultiQuerySet(*multi_qyery_list)
     return service_status_results
 
 
 def get_range_status(dashboard_setting, result):
-    '''
+    """
     Method return the range name in which the result's current value falls.
 
-    :param:
-    dashboard_setting: dashboard_setting object.
-    result: dictionary (must contain 'current_value' as key)
+    :Args:
+        dashboard_setting: dashboard_setting object.
+        result: dictionary (must contain 'current_value' as key)
 
-    return: dictionary containing 'range_count' as key and range as value.
-                    i.e: { 'range_count': 'range_name' }
-    '''
+    :return:
+        dictionary containing 'range_count' as key and range as value i.e: { 'range_count': 'range_name' }
+    """
     range_count = 'unknown'
     for i in range(1, 11):
         # Get the start_range and end_range attribute of dashboard_setting.
@@ -256,16 +293,16 @@ def get_range_status(dashboard_setting, result):
     return {'range_count': range_count}
 
 def get_dashboard_status_range_counter(dashboard_setting, service_status_results):
-    '''
+    """
     Method return the count of ranges according to dashboard_setting.
 
-    :param:
-    dashboard_setting: dashboard_setting object.
-    service_status_results: list of dictionary.
+    :Args:
+        dashboard_setting: dashboard_setting object.
+        service_status_results: list of dictionary.
 
-    return: dictionary
-                    i.e: { 'unknown': 0, 'range1': 1, 'range2': 2,... }
-    '''
+    :return:
+        dictionary i.e: { 'unknown': 0, 'range1': 1, 'range2': 2,... }
+    """
     range_counter = dict()
     # initialize the ranges of range_counter to 0(zero)
     for i in range(1, 11):
@@ -298,16 +335,17 @@ def get_dashboard_status_range_counter(dashboard_setting, service_status_results
 
 
 def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter):
-    '''
+    """
     Method return the chart data used for the dashboard.
 
-    :param:
-    dashboard_setting: dashboard_setting object.
-    data_source: data source name.
-    range_counter: dictionary containing range name as key and value.
+    :Args:
+        dashboard_setting: dashboard_setting object.
+        data_source: data source name.
+        range_counter: dictionary containing range name as key and value.
 
-    return: dictionary in specific format.
-    '''
+    :return:
+        dictionary in specific format.
+    """
     display_name = data_source.replace('_', ' ')
 
     chart_data = []
@@ -354,19 +392,15 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
 # **************************** Sales Opportunity **********************#
 
 def get_total_connected_device_per_sector(user_sector):
-    '''
+    """
     Method return the total Count of connected devices to the sector.
 
-    :param:
-    user_sector: sector list.
+    :Args:
+        user_sector: sector list.
 
-    return: list of dictionary.
-                    i.e: [
-                        {'sector_id: sector_id1, 'current_value': 1},
-                        {'sector_id: sector_id2, 'current_value': 2},
-                        {'sector_id: sector_id3, ...},
-                        ]
-    '''
+    :return:
+        list of dictionary i.e: [{'sector_id: sector_id1, 'current_value': 1},]
+    """
 
     status_results = list()
     in_string = lambda x: "'" + str(x) + "'"
@@ -425,22 +459,23 @@ def get_total_connected_device_per_sector(user_sector):
 
 #**************************** Highchart Response *********************#
 def get_highchart_response(dictionary={}):
-    '''
+    """
     Method return the chart data used for the dashboard.
 
-    :param:
-    dictionary: containing the attributes which vary according to chart type:
-        - type: type of chart.
-        - name: dashboard name.
-        - title: title for chart.
-        - chart_series: list of data.
-        - color: list of color.
-        - count: integer.
-        - max: integer.
-        - stops: list containing range
+    :Args:
+        dictionary: containing the attributes which vary according to chart type:
+            - type: type of chart.
+            - name: dashboard name.
+            - title: title for chart.
+            - chart_series: list of data.
+            - color: list of color.
+            - count: integer.
+            - max: integer.
+            - stops: list containing range
 
-    return: dictionay in specific format.
-    '''
+    :return:
+        dictionay in specific format.
+    """
     if 'type' not in dictionary:
         return json.dumps({
             "message": "No Data To Display.",
@@ -540,18 +575,15 @@ def get_highchart_response(dictionary={}):
 
 
 def get_guege_chart_max_n_stops(dashboard_setting):
-    '''
+    """
     Method retunrs the max_range value and stops range calculated from the dashboard_setting:
 
-    dashboard_setting: dashboard_setting object.
+    :Args:
+        dashboard_setting: dashboard_setting object.
 
-    return: tuple of (integer, list of list)
-                    i.e: (7, [  [2, u'rgb(76, 17, 48)'],
-                                [4, u'rgb(0, 255, 255)'],
-                                [7, u'rgb(204, 0, 0)'],...
-                            ]
-                        )
-    '''
+    :return:
+        tuple of (integer, list of list) i.e: (7, [  [2, u'rgb(76, 17, 48)'],])
+    """
     max_range = 0
     stops = []
     for count in range(1, 11):
