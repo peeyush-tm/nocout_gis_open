@@ -86,43 +86,17 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-
-        '''
-
-        # sSearch = self.request.GET.get('sSearch', None)
+        # get global search value
         sSearch = self.request.GET.get('search[value]', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = qs.filter("
-            for column in self.columns[:-1]:
-                # Avoid search on 'added_on'.
-                if column == 'added_on':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-        '''
-
-        if not self.pre_camel_case_notation:
-            # get global search value
-            search = self.request.GET.get('search[value]', None)
-            col_data = self.extract_datatables_column_data()
+        if sSearch and not self.pre_camel_case_notation:
             q = Q()
-            for col_no, col in enumerate(col_data):
-                if self.columns[col_no] == 'logged_at':
+            for col in self.columns:
+                if col == 'logged_at':
                     continue
-                # apply global search to all searchable columns
-                if search and col['searchable']:
-                    q |= Q(**{'{0}__istartswith'.format(self.columns[col_no]): search})
 
-                # column specific filter
-                if col['search.value']:
-                    qs = qs.filter(**{'{0}__istartswith'.format(self.columns[col_no]): col['search.value']})
+                q |= Q(**{'%s__icontains' % col : sSearch})
+
             qs = qs.filter(q)
         return qs
 
