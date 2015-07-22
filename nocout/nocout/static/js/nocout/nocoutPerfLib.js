@@ -83,7 +83,7 @@ if (window.location.origin) {
 
 // Daterangepicker HTML String
 date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
-                          class="form-control input-large search-query" value=""/>';
+                          class="form-control input-large search-query" value="" readonly/>';
 
 
 $.urlParam = function (name) {
