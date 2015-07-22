@@ -23,7 +23,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS WIZARD: DEVICE TYPE SERVICE</h4>
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {{ service_alias }} (DEVICE TYPE SERVICE) </h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
@@ -95,8 +95,8 @@
         <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
         <script type="text/javascript" src={% static "js/jquery-validate/jquery.validate.min.js" %}></script>
     {% endblock %}
-    <script>
-        $(document).ready(function(){
+    <script type="text/javascript">
+        $(document).ready(function() {
             $("#id_update_and_show").on("click", function(e) {
 
                 e.preventDefault();

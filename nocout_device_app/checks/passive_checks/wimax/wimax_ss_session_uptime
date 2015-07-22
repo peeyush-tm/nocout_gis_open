@@ -84,6 +84,8 @@ def check_wimax_ss_session_uptime(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     ss_session_uptime =None
+    ss_params = None
+    host = None
     try:
 	mac_info = sum(info,[])
         mac_list=map(lambda x: convert(x),mac_info)
@@ -103,10 +105,24 @@ def check_wimax_ss_session_uptime(item, _no_params, info):
 					ss_session_uptime = value_list[4]
 				except:
 					ss_session_uptime = None
+			if not ss_session_uptime:
+				try:
+                                	key1 = ss_mac + "_topology"
+                                	ss_params = memc.get(key1)
+                        	except:
+                                	pass
+
+				
 		if not ss_session_uptime:
-			host_name = extract_host_from_wimax_topology(ss_mac)
-			if host_name[0][0]:
-				ss_session_uptime = live_query_for_session_uptime(host_name[0][0],ss_mac,host_name[0][1])
+			if not ss_params:
+				host_name = extract_host_from_wimax_topology(ss_mac)
+				host = host_name[0][0]
+				site = host_name[0][1]
+			else:
+				host = ss_params[0]
+				site = ss_params[1]
+			if host:
+				ss_session_uptime = live_query_for_session_uptime(host,ss_mac,site)
 		if ss_session_uptime:
 			infotext = "Device session uptime is %s " % ss_session_uptime
 			state = 0

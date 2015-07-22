@@ -902,7 +902,7 @@ class MFRCauseCodeView(View):
         for result in results:
             chart_series.append([
                 "%s : %s" % (result['processed_key'], result['processed_value']),
-                int(result['processed_value'])
+                float(result['processed_value'])
             ])
 
         # get the chart_data for the pie chart.
@@ -951,8 +951,13 @@ class MFRProcesedView(View):
         year_before = datetime.date.today() - datetime.timedelta(days=365)
         year_before = datetime.date(year_before.year, year_before.month, 1)
 
-        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
-            'processed_key', 'processed_value', 'processed_for__process_for')
+        mfr_processed_results = MFRProcessed.objects.filter(
+            processed_for__process_for__gte=year_before
+        ).values(
+            'processed_key',
+            'processed_value',
+            'processed_for__process_for'
+        )
 
         day = year_before
         # area_chart_categories = []
@@ -966,24 +971,20 @@ class MFRProcesedView(View):
                 result_date = result['processed_for__process_for']
                 if result_date.year == day.year and result_date.month == day.month:
                     processed_key_dict[result['processed_key']].append({
-                        # "color": processed_key_color[result['processed_key']],
                         "color": '',
-                        "y": int(result['processed_value']),
+                        "y": float(result['processed_value']),
                         "name": result['processed_key'],
-                        "x": calendar.timegm(day.timetuple()) * 1000,
-                        # Multiply by 1000 to return correct GMT+05:30 timestamp
+                        "x": calendar.timegm(day.timetuple()) * 1000,  # Multiply by 1000 to return correct GMT+05:30 timestamp
                     })
                     processed_keys.remove(result['processed_key'])
 
             # If no result is available for a processed_key put its value zero for (day.month, day.year)
             for key in processed_keys:
                 processed_key_dict[key].append({
-                    # "color": processed_key_color[key],
                     "color": '',
                     "y": 0,
                     "name": key,
-                    "x": calendar.timegm(day.timetuple()) * 1000,
-                    # Multiply by 1000 to return correct GMT+05:30 timestamp
+                    "x": calendar.timegm(day.timetuple()) * 1000  # Multiply by 1000 to return correct GMT+05:30 timestamp
                 })
 
             day += relativedelta.relativedelta(months=1)
@@ -993,7 +994,6 @@ class MFRProcesedView(View):
             area_chart_series.append({
                 'name': key,
                 'data': value,
-                # 'color': processed_key_color[key]
                 'color': ''
             })
 

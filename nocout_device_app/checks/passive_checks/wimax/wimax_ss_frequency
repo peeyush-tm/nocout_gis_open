@@ -136,12 +136,21 @@ def check_wimax_ss_frequency(item, _no_params, info):
 							key = bs_ip + "_pmp1"
 						elif int(pmp_port) == 2:
 							key = bs_ip + "_pmp2"
-			 			ss_freuency = memc.get(key)
+			 			ss_frequency = memc.get(key)
+					if not ss_frequency:
+						key1 = g_hostname + "_freq"
+						ss_frequency = memc.get(key1) 
 		except:
 			pass
-		if not ss_freuency:	 	
+		if not ss_frequency:	 	
 			ss_frequency = live_query_ss_frequency( ss_mac )
 		if ss_frequency:
+			if memc:
+				try:
+					key = g_hostname + "_freq"
+					memc.set(key ,ss_frequency,86520)
+				except:
+					pass
 			state = 0
         		infotext = "%s" % ss_frequency
     except ValueError:

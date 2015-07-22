@@ -295,9 +295,7 @@ function prepareWizardFormsData(isSector) {
         for(var i=0;i<sector_forms.length;i++) {
             var label_text = $(sector_forms[i]).prev('.form-group').children(),
                 label_id = "",
-                input_items = $(sector_forms[i]).children().find(
-                    "input:not([type='hidden']):not([type='checkbox'])"
-                ).serializeArray(),
+                input_boxes = $(sector_forms[i]).children().find("input:not([type='hidden']):not([type='checkbox'])"),//.serializeArray(),
                 select_boxes = $(sector_forms[i]).children().find("select").toArray(),
                 text_area_fields = $(sector_forms[i]).children().find("textarea"),
                 checkbox_boxes = $(sector_forms[i]).children().find("input[type='checkbox']"),
@@ -328,13 +326,14 @@ function prepareWizardFormsData(isSector) {
                 // Prepare useful format
                 var select_boxes_data = prepareSelectBoxesData(select_boxes);
                     text_areas_data = prepareTextareaData(text_area_fields);
-                    checkboxes_data = prepareCheckboxesData(checkbox_boxes);
+                    checkboxes_data = prepareCheckboxesData(checkbox_boxes),
+                    input_boxes_data = prepareInputBoxesData(input_boxes);
 
                 // Concat all Data
                 resultant_data = resultant_data.concat(select_boxes_data);
                 resultant_data = resultant_data.concat(text_areas_data);
                 resultant_data = resultant_data.concat(checkboxes_data);
-                resultant_data = resultant_data.concat(input_items);
+                resultant_data = resultant_data.concat(input_boxes_data);
 
                 final_data[label_id] = {
                     "title" : label_text,
@@ -347,25 +346,23 @@ function prepareWizardFormsData(isSector) {
 
         return final_data;
     } else {
-        var fieldsArray = $("form input:not([type='hidden']):not([type='checkbox'])").serializeArray(),
+        var input_boxes = $("form input:not([type='hidden']):not([type='checkbox'])"),//.serializeArray(),
             select_boxes = $("form select"),
             checkbox_boxes = $("form input[type='checkbox']"),
             text_area_fields = $("form textarea"),
-            select_boxes_data = [], 
-            text_areas_data = [],
-            checkboxes_data = [],
-            final_data = [];
-
-        select_boxes_data = prepareSelectBoxesData(select_boxes);
-        text_areas_data = prepareTextareaData(text_area_fields);
-        checkboxes_data = prepareCheckboxesData(checkbox_boxes);
+            final_data = [],
+            select_boxes_data = prepareSelectBoxesData(select_boxes),
+            text_areas_data = prepareTextareaData(text_area_fields),
+            checkboxes_data = prepareCheckboxesData(checkbox_boxes),
+            input_boxes_data = prepareInputBoxesData(input_boxes);
+            
         // Reset Variable
         final_data = []
         // Concat all Data
         final_data = final_data.concat(select_boxes_data);
         final_data = final_data.concat(text_areas_data);
         final_data = final_data.concat(checkboxes_data);
-        final_data = final_data.concat(fieldsArray);
+        final_data = final_data.concat(input_boxes_data);
 
         return final_data;
     }

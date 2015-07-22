@@ -2354,3 +2354,24 @@ def create_specific_key_dict(data_list, key_str):
 
     return data_dict
 
+
+def time_delta_calculator(timestamp, hours=0, minutes=0, seconds=0):
+    if timestamp:
+        time_difference = None
+        try:
+            timestamp = datetime.datetime.fromtimestamp(timestamp)
+            if USE_TZ:
+                timestamp = timestamp.replace(tzinfo=None)
+                time_difference = datetime.datetime.utcnow() - timestamp
+            else:
+                timestamp = timestamp
+                time_difference = datetime.datetime.now() - timestamp
+        except Exception as e:
+            pass
+        if time_difference < datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds):
+            return True
+        else:
+            return False
+    else:
+        return False
+

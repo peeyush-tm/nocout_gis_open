@@ -53,7 +53,12 @@
                                     <div class="breadcrumbs_container">
                                         <!-- BREADCRUMBS -->
                                         {% block breadcrumb_title %}
-                                            BREADCRUMBS
+                                            {% load django_bootstrap_breadcrumbs %}
+                                            {% clear_breadcrumbs %}
+                                            <!-- Create Breadcrumbs -->
+                                            {% breadcrumb_safe "<i class='fa fa-home'></i> Home" "javascript:;" %}
+                                            <!-- Render the created breadcrumbs -->
+                                            {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
                                         {% endblock %}
                                         <!-- /BREADCRUMBS -->
                                     </div>

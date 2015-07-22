@@ -37,6 +37,7 @@ def live_query_dl_intrf(mac):
         """
 	exit_value = 3
 	dl_intrf = None
+	ss_params = None
 	if memc:
 		value_list = memc.get(mac)
 		if value_list:
@@ -44,14 +45,39 @@ def live_query_dl_intrf(mac):
 				dl_intrf = value_list[5]
 			except:
 				dl_intrf = None
+		
+		if not dl_intrf:
+			try:
+				key1 = mac + "_topology"
+				ss_params = memc.get(key1)
+			except:
+				pass 
 	if not dl_intrf:
-		host_name = extract_host_from_wimax_topology(mac)
+		if not ss_params: 
+        		host_name = extract_host_from_wimax_topology(mac)
+			try:
+				bs_hostname = host_name[0][0]
+				bs_site = host_name[0][1]
+			except:
+				bs_hostname = None
+			if memc:
+				if bs_hostname:
+					try:
+						arg_list = []
+						arg_list.append(bs_hostname,bs_site)
+						key = mac + "_topology"
+						memc.set(key,arg_list,360)
+					except:
+						pass
+		else:
+			bs_hostname = ss_params[0]
+			bs_site = ss_params[1]
         	try:
-                	if host_name[0][0]:
+                	if bs_hostname:
                         	query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",host_name[0][0])
-				site = host_name[0][1]
-				machine_name = host_name[0][1].split('_')[0]
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",bs_site)
+				site = bs_site
+				machine_name = site.split('_')[0]
 				socket_ip = _LIVESTATUS[machine_name]['host']
 				socket_port = _LIVESTATUS[machine_name][site]['port']
 
