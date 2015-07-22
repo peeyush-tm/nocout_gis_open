@@ -1203,7 +1203,8 @@ class L2ReportListingTable(BaseDatatableView):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_searched = True
             result = self.map_report_inventory(qs)
@@ -1434,7 +1435,8 @@ class BSL2ReportListingTable(BaseDatatableView):
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             self.is_searched = True
