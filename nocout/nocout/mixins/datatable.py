@@ -77,12 +77,12 @@ class DatatableSearchMixin(object):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        # sSearch = self.request.GET.get('sSearch', None)
         sSearch = self.request.GET.get('search[value]', None)
         
         if sSearch and not self.pre_camel_case_notation:
+            search_columns = self.search_columns if self.search_columns else self.columns
             q = Q()
-            for col in self.columns:
+            for col in search_columns:
                 q |= Q(**{'{0}__icontains'.format(col): sSearch})
 
             qs = qs.filter(q)
