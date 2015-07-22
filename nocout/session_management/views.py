@@ -187,13 +187,20 @@ class UserStatusTable(BaseDatatableView):
 
         qs = self.get_initial_queryset()
 
+
         # Number of records before filtering.
-        total_records = qs.count()
+        if type(qs) == type(list()):
+            total_records = len(qs)
+        else:
+            total_records = qs.count()
 
         qs = self.filter_queryset(qs)
-
+        
         # Number of records after filtering.
-        total_display_records = qs.count()
+        if type(qs) == type(list()):
+            total_display_records = len(qs)
+        else:
+            total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
