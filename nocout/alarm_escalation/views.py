@@ -11,7 +11,12 @@ from nocout.mixins.generics import FormRequestMixin
 
 class LevelList(TemplateView):
     """
-    Class Based View to render Level List Page.
+    Class Based View for the Escalation data table rendering.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
+
+    :return:
+        context : list of dictionaries in which datatable headers are present for passing them to template.
     """
     model = EscalationLevel
     template_name = "level/level_list.html"
@@ -48,6 +53,7 @@ class LevelListingTable(PermissionsRequiredMixin,
     """
     Class based View to render Escalation Level Data table.
     """
+
     model = EscalationLevel
     columns = [ 'name', 'region_name', 'organization__alias', 'emails', 'phones', 'service__alias', 'device_type__alias', 'service_data_source__alias',
                 'alarm_age']
@@ -59,9 +65,11 @@ class LevelListingTable(PermissionsRequiredMixin,
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : QuerySet object
 
+        :return:
+            json_data : list of dictionaries 
         """
         level_choices = dict(LEVEL_CHOICES)
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -83,6 +91,9 @@ class LevelListingTable(PermissionsRequiredMixin,
 
 
 class LevelCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
+    """
+    Class based view to create new Escalation Level.
+    """
     model = EscalationLevel
     template_name = "level/level_new.html"
     form_class = EscalationLevelForm
@@ -91,6 +102,9 @@ class LevelCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
 
 
 class LevelUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
+    """
+    Class based view to update Escalation Level
+    """
     model = EscalationLevel
     template_name = "level/level_update.html"
     form_class = EscalationLevelForm
@@ -99,6 +113,9 @@ class LevelUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
 
 class LevelDelete(PermissionsRequiredMixin, DeleteView):
+    """
+    Class based view to Delete Escalation Level.
+    """
     model = EscalationLevel
     template_name = "level/level_delete.html"
     success_url = reverse_lazy('level_list')
