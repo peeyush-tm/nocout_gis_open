@@ -365,32 +365,56 @@ class LivePerformanceListing(BaseDatatableView):
                 'age'
             ]
 
-        i_sort_col = None
-
         # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-
-        for i in range(i_sorting_cols):
-            # sorting column
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            reverse = True if s_sort_dir == 'desc' else False
-        if i_sort_col != None:
+        order = []
+        order_columns = columns
+        reverse = ''
+        sort_using = ''
+
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+                    sort_using = sc
+            else:
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+                sort_using = sortcol
+
+        if order:
             self.is_initialised = False
             self.is_ordered = True
             try:
                 sort_data = self.prepare_devices(qs)
-                sort_using = columns[i_sort_col]
                 if sort_using in ['ip_address', 'near_end_ip']:
                     sorted_qs = sorted(
                         sort_data,
@@ -404,7 +428,6 @@ class LivePerformanceListing(BaseDatatableView):
                         reverse=reverse
                     )
                 return sorted_qs
-
             except Exception, e:
                 self.is_initialised = True
                 self.is_ordered = False
