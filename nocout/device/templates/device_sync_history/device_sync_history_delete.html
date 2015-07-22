@@ -1,10 +1,32 @@
 {% extends "inventory/inventory.html" %}
-
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Sync History" "device_sync_history_list" %}
+    {% breadcrumb_safe "Delete Sync History" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
 {% block content_title %}Device Sync History{% endblock %}
 {% block content_description %}Delete device sync history ....{% endblock %}
 {% block content %}
-    <form action="" method="post">{% csrf_token %}
-        <p>Are you sure you want to delete "{{ object }}" ?</p>
-        <input type="submit" value="Confirm"/>
-    </form>
+	<div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-times"></i>Delete Sync History</h4>
+        </div>
+	    <div class="box-body" style="overflow:auto;">
+	    	<form action="" method="post">{% csrf_token %}
+		        <p>
+		        	<strong>Are you sure you want to delete the following sync history?</strong>
+	        	</p>
+		        <p>
+		        	"{{ object.message }}"
+	        	</p>
+		        <input type="submit" class="btn btn-default" value="Confirm"/>
+		    </form>
+	    </div>
+	</div>
 {% endblock %}

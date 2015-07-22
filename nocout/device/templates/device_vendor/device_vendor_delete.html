@@ -1,10 +1,29 @@
 {% extends "inventory/inventory.html" %}
 
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Inventory" "javascript:;" %}
+    {% breadcrumb_safe "Device Vendor" "device_vendor_list" %}
+    {% breadcrumb_safe "Delete Vendor" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% block content_title %}Delete Device Vendor{% endblock %}
 {% block content_description %}Delete device vendor{% endblock %}
 {% block content %}
-    <form action="" method="post">{% csrf_token %}
-        <p>Are you sure you want to delete "{{ object }}" ?</p>
-        <input type="submit" value="Confirm"/>
-    </form>
+	<div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-times"></i>Delete Vendor</h4>
+        </div>
+	    <div class="box-body" style="overflow:auto;">
+	    	<form action="" method="post">{% csrf_token %}
+		        <p>Are you sure you want to delete "{{ object }}" ?</p>
+		        <input type="submit" class="btn btn-default" value="Confirm"/>
+		    </form>
+	    </div>
+	</div>
 {% endblock %}

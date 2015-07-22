@@ -1,10 +1,33 @@
 {% extends "inventory/inventory.html" %}
 
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumb_title %}
+    {% clear_breadcrumbs %}
+    <!-- Create Breadcrumbs -->
+    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "Service Thematic Settings" "javascript:;" %}
+    {% if is_admin %}
+        {% breadcrumb_safe "Admin Service Thematic" "service-admin-thematic-settings-list" %}
+    {% else %}
+        {% breadcrumb_safe "Global Service Thematic" "service_thematic_settings_list" %}
+    {% endif %}
+    {% breadcrumb_safe "Delete Service Thematic" "javascript:;" %}
+    <!-- Render the created breadcrumbs -->
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+{% endblock %}
+
 {% block content_title %}Delete Thematic Settings{% endblock %}
 {% block content_description %}Delete thematic settings{% endblock %}
 {% block content %}
-    <form action="" method="post">{% csrf_token %}
-        <p>Are you sure you want to delete "{{ object }}" ?</p>
-        <input type="submit" value="Confirm"/>
-    </form>
+	<div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-times"></i>Delete Antenna</h4>
+        </div>
+	    <div class="box-body" style="overflow:auto;">
+	    	<form action="" method="post">{% csrf_token %}
+		        <p>Are you sure you want to delete "{{ object }}" ?</p>
+		        <input type="submit" class="btn btn-default" value="Confirm"/>
+		    </form>
+	    </div>
+	</div>
 {% endblock %}

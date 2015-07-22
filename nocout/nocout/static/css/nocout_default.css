@@ -168,6 +168,10 @@ span.dept {
     color: #0066FF;
 }
 
+.purple-dot {
+    color: #df05fc;
+}
+
 .light-green-dot {
     color: #7DCA97;
 }
@@ -178,10 +182,7 @@ span.dept {
 
 
 #content .page-header {
-  margin: 0 -15px 5px;
-}
-#headerToggleBtn, #goFullScreen {
-  margin: 5px;
+  margin: 0 -15px 0px;
 }
 
 
@@ -363,6 +364,7 @@ iframe {
 /*Reduce padding for .btn class used in page control of maps*/
 .date-range .btn-group .btn {
   padding: 5px;
+  margin-top: 0px;
 }
 /*CSS To reduce size of search box*/
 #dfr_reports_table_length select {
@@ -380,4 +382,31 @@ iframe {
 }
 #page_content_div {
   position: relative;
+}
+/******************************* SPACING CSS *******************************/
+#content {
+  padding-left: 10px;
+  min-height: 700px;
+}
+#page_header_container {
+  margin-left: -10px;
+  margin-bottom: 10px;
+}
+#content .page-header {
+  min-height: 10px;
+  margin: 0px;
+}
+#content .breadcrumb {
+  padding-top: 8px !important;
+  padding-bottom: 10px !important;
+}
+#page_header_container .date-range, #content .breadcrumb {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin: 0px;
+}
+.controls_container {
+  position: absolute;
+  top: 5px;
+  right: 20px;
 }

@@ -319,7 +319,8 @@ class DownloaderListing(BaseDatatableView):
         exclude_columns = ['requested_on', 'request_completion_on']
 
         # search keyword
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % self.model.__name__
@@ -551,7 +552,8 @@ class DownloaderCompleteListing(BaseDatatableView):
         exclude_columns = ['downloaded_by', 'requested_on', 'request_completion_on']
 
         # search keyword
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % self.model.__name__

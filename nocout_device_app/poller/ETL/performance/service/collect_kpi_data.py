@@ -46,19 +46,25 @@ def calculate_avg_value(unknwn_state_svc_data,db):
 
 	host_svc_ds_dict ={}
 	svc_host_key={}
-	host_list = []
+	host_list = set()
 	avg = None
-	service_list = []
+	service_list = set()
 	for doc in unknwn_state_svc_data:
 		host_list.append(doc[0])
 		service_list.append(doc[3])
 	#print unknwn_state_svc_data
-	query_results = db.kpi_data.aggregate([
-	{
-	 "$match" :{"device_name": {"$in": host_list},"service_name":{"$in": service_list},"sys_timestamp":{"$gte":start_time,"$lte":end_time} }
+	try:
+		host_list = list(host_list)		
+		service_list = list(service_list)		
+		query_results = db.kpi_data.aggregate([
+		{
+	 	"$match" :{"device_name": {"$in": host_list},"service_name":{"$in": service_list},"sys_timestamp":{"$gte":start_time,
+		"$lte":end_time} }
 
-	}
-	])
+		}
+		])
+	except:
+		return host_svc_ds_dict
 	for key,entry in groupby(sorted(query_results['result'],key=itemgetter('device_name','service_name','data_source')),
 		key=itemgetter('device_name','service_name','data_source')):
 		doc_list = list(entry)
@@ -105,6 +111,7 @@ def format_kpi_data(site,output,output1,unknwn_state_svc_data,device_down_list,d
 	kpi_update =[]
 	kpi_services = ['wimax_bs_ul_issue_kpi','wimax_pmp1_dl_util_kpi','wimax_pmp1_ul_util_kpi','wimax_pmp2_dl_util_kpi',
 	'wimax_pmp2_ul_util_kpi','cambium_dl_util_kpi','cambium_ul_util_kpi','cambium_bs_ul_issue_kpi']
+        ul_issue_kpi = ['wimax_bs_ul_issue_kpi','check_rici_dl_util_kpi','check_rici_ul_util_kpi']
 	device_sector_id =""
 	pmp1_device_sector_id =""
 	pmp2_device_sector_id =""
@@ -213,6 +220,18 @@ def format_kpi_data(site,output,output1,unknwn_state_svc_data,device_down_list,d
 					except:
 						continue
 				utilization_ds = str(ds)
+				try:
+					if service in ul_issue_kpi:
+						war_value = ds_values.get('war')
+						crit_value = ds_values.get('cric')
+						if float(value) < float(war_value):
+							service_state = 'ok'
+						elif float(value) >= float(crit_value):
+    							service_state = 'critical'
+						else:
+    	 						service_state = 'warning'
+				except:
+        				pass
 				kpi_data_dict.update({
 						'sys_timestamp':local_timestamp,
 						'check_timestamp':check_time,

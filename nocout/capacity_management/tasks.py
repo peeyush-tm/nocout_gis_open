@@ -14,7 +14,7 @@ from service.models import ServiceDataSource
 from inventory.utils.util import InventoryUtilsGateway
 
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway
+from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
 from inventory.tasks import get_devices, bulk_update_create
 
@@ -237,7 +237,7 @@ def gather_backhaul_status():
     base_stations = BaseStation.objects.filter(
         backhaul__bh_configured_on__isnull=False,
         bh_port_name__isnull=False,
-        backhaul__bh_configured_on__is_added_to_nms=1,
+        backhaul__bh_configured_on__is_added_to_nms__gt=0,
         bh_capacity__isnull=False
     ).select_related(
         'backhaul',
@@ -251,7 +251,7 @@ def gather_backhaul_status():
     ).filter(
         id__in=base_stations.values_list('backhaul__id', flat=True),
         bh_configured_on__isnull=False,
-        bh_configured_on__is_added_to_nms=1
+        bh_configured_on__is_added_to_nms__gt=0
     )
 
     # get machines associated to all base station devices
@@ -374,7 +374,7 @@ def gather_sector_status(technology):
         if technology_low == 'wimax':
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
-                sector_configured_on__is_added_to_nms=1,
+                sector_configured_on__is_added_to_nms__gt=0,
                 sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=False
@@ -390,7 +390,7 @@ def gather_sector_status(technology):
         elif technology_low == 'pmp':
             sectors = Sector.objects.filter(
                 sector_configured_on__device_technology=technology_object.id,
-                sector_configured_on__is_added_to_nms=1,
+                sector_configured_on__is_added_to_nms__gt=0,
                 sector_configured_on__machine__name=machine,
                 sector_id__isnull=False,
                 sector_configured_on_port__isnull=True
@@ -1022,14 +1022,24 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
             severity_s = dict()
 
             try:
-                # current in/out %
-                current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
-                # current in/out %
-                current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
-                # current in/out values
-                current_in_val = float(indexed_val[in_val_index][0]['current_value'])
-                # current in/out values
-                current_out_val = float(indexed_val[out_val_index][0]['current_value'])
+                # time of update
+                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
+
+                if time_delta_calculator(sys_timestamp, minutes=7):
+                    # current in/out %
+                    current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
+                    # current in/out %
+                    current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
+                    # current in/out values
+                    current_in_val = float(indexed_val[in_val_index][0]['current_value'])
+                    # current in/out values
+                    current_out_val = float(indexed_val[out_val_index][0]['current_value'])
+                else:
+                    current_in_per = 0
+                    current_out_per = 0
+                    current_in_val = 0
+                    current_out_val = 0
+
                 # current in/out values # formula driven
                 # current_out_val = current_out_per * backhaul_capacity / 100.00
                 # current in/out values # formula driven
@@ -1041,10 +1051,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                 }
 
                 severity, age = get_higher_severity(severity_s)
-
-                # time of update
-                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
-
             except Exception as e:
                 logger.exception(e)
                 current_in_per = 0
@@ -1172,7 +1178,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     )
                 )
 
-
     g_jobs = list()
 
     if len(bulk_create_bhs):
@@ -1205,7 +1210,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
     :param avg_max_per: Values Query Set when it is required to calculate the average and max %
     :return:
     """
-
 
     bulk_update_scs = []
     bulk_create_scs = []
@@ -1360,12 +1364,18 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 continue
 
             try:
+                # time of update
+                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
-                # current in/out percentages
-                current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
+                if time_delta_calculator(sys_timestamp, minutes=7):
+                    # current in/out percentages
+                    current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
 
-                # current in/out percentages
-                current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
+                    # current in/out percentages
+                    current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
+                else:
+                    current_in_per = 0
+                    current_out_per = 0
 
                 # severity for KPI services
                 severity_s = {
@@ -1374,9 +1384,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 }
 
                 severity, age = get_higher_severity(severity_s)
-
-                # time of update
-                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
                 # current in/out values
                 current_in_val = current_in_per * sector_capacity_in / 100.00
@@ -1556,11 +1563,18 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 continue
 
             try:
-                # current in/out percentages
-                current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
+                # time of update
+                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
-                # current in/out percentages
-                current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
+                if time_delta_calculator(sys_timestamp, minutes=7):
+                    # current in/out percentages
+                    current_in_per = float(indexed_kpi[in_per_index][0]['current_value'])
+
+                    # current in/out percentages
+                    current_out_per = float(indexed_kpi[out_per_index][0]['current_value'])
+                else:
+                    current_in_per = 0
+                    current_out_per = 0
 
                 # severity for KPI services
                 severity_s = {
@@ -1569,9 +1583,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                 }
 
                 severity, age = get_higher_severity(severity_s)
-
-                # time of update
-                sys_timestamp = indexed_kpi[in_per_index][0]['sys_timestamp']
 
                 # current in/out values
                 current_in_val = current_in_per * sector_capacity_in / 100.00
