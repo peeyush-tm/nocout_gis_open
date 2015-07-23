@@ -53,9 +53,11 @@ nocout_utils = NocoutUtilsGateway()
 class DashbaordSettingsListView(TemplateView):
     """
     Class Based View for the Dashboard data table rendering.
-
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
+
+    :return:
+        context : list of dictionaries in which datatable headers are present for passing them to template.
     """
     template_name = 'dashboard/dashboard_settings_list.html'
 
@@ -91,6 +93,7 @@ class DashbaordSettingsListView(TemplateView):
 class DashbaordSettingsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render Dashboard Settings Data table.
+    This view inherit many properties from DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView.
     """
     model = DashboardSetting
     columns = ['page_name', 'name', 'technology__name', 'range1', 'range2', 'range3', 'range4', 'range5', 'range6',
@@ -113,8 +116,11 @@ class DashbaordSettingsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : ValuesQuerySet object
+
+        :return:
+            json_data : list of dictionaries 
 
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -187,6 +193,7 @@ class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
 class DashbaordSettingsDeleteView(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Dashboard Setting.
+    UserLogDeleteMixin class used for saving the deleted object in model. 
 
     """
     model = DashboardSetting
@@ -200,16 +207,19 @@ class DashbaordSettingsDeleteView(SuperUserRequiredMixin, UserLogDeleteMixin, De
 
 class PerformanceDashboardMixin(object):
     """
-    Provide common method get for Performance Dashboard.
+    Provide common method for getting Performance Dashboard for diffrent technologies. 
     """
 
     def get(self, request):
         """
         Handles the get request
 
-        :param request:
-        :return Http response object:
+        :Args:
+            request
+        :return:
+            Http response object:
         """
+        # Getting parameters from child class
         data_source_config, tech_name, is_bh = self.get_init_data()
         template_dict = {
             'data_sources': json.dumps(data_source_config.keys()),
@@ -361,10 +371,12 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
 
 class MFRDFRReportsListView(TemplateView):
     """
-    Class Based View for the MFR-DFR-Reports data table rendering.
-
+    Class Based View for the MFR report data table rendering.
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
+
+    :return:
+        context : list of dictionaries in which datatable headers are present for passing them to template.
     """
     template_name = 'mfrdfr/mfr_dfr_reports_list.html'
 
@@ -389,6 +401,10 @@ class MFRDFRReportsListView(TemplateView):
 
 
 class MFRDFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    Class based View to render MFR report Data table.
+    This view inherit many properties from DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView.
+    """
     model = MFRDFRReports
     columns = ['name', 'type', 'is_processed', 'process_for']
     search_columns = ['name', 'type', 'is_processed']
@@ -398,8 +414,11 @@ class MFRDFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseD
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : ValuesQuerySet object
+
+        :return:
+            json_data : list of dictionaries 
 
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -413,12 +432,21 @@ class MFRDFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseD
 
 
 class MFRDFRReportsCreateView(CreateView):
+    """
+    Class based view to create new upload MFRDFR Report form.
+    """
     model = MFRDFRReports
     form_class = MFRDFRReportsForm
     template_name = "mfrdfr/mfr_dfr_reports_upload.html"
     success_url = reverse_lazy('mfr-dfr-reports-list')
 
     def form_valid(self, form):
+        """
+        function for saing object if form is valid
+
+        :Args:
+            form : form object
+        """
         response = super(MFRDFRReportsCreateView, self).form_valid(form)
         self.object.absolute_path = self.object.upload_to.path
         self.object.save()
@@ -427,7 +455,7 @@ class MFRDFRReportsCreateView(CreateView):
 
 class MFRDFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
     """
-    Class based View to delete the Dashboard Setting.
+    Class based View to delete the MFRDFR Report entry.
 
     """
     model = MFRDFRReports
@@ -438,10 +466,12 @@ class MFRDFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
 
 class DFRProcessedListView(TemplateView):
     """
-    Class Based View for the DFR-Processed data table rendering.
-
+    Class Based View for the DFR report data table rendering.
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
+
+    :return:
+        context : list of dictionaries in which datatable headers are present for passing them to template.
     """
     template_name = 'mfrdfr/dfr_processed_list.html'
 
@@ -464,6 +494,10 @@ class DFRProcessedListView(TemplateView):
 
 
 class DFRProcessedListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    Class based View to render MFR report Data table.
+    This view inherit many properties from DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView.
+    """
     model = DFRProcessed
     columns = ['processed_for__name', 'processed_for__process_for', 'processed_on', 'processed_key', 'processed_value']
     search_columns = ['processed_for__name', 'processed_key', 'processed_value']
@@ -474,8 +508,11 @@ class DFRProcessedListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDa
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : ValuesQuerySet object
+
+        :return:
+            json_data : list of dictionaries 
 
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -488,6 +525,15 @@ class DFRProcessedListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDa
 
 
 def dfr_processed_report_download(request, pk):
+    """
+    A function for downloading DFR processed report.
+
+    :Args:
+        pk : primary key of DFR report which user wants to download.
+
+    :return:
+        response : response pattern from which report is downloaded.
+    """
     dfr_processed = DFRProcessed.objects.get(processed_for=pk)
     file_obj = None
     try:
@@ -508,6 +554,10 @@ def dfr_processed_report_download(request, pk):
 # ***************************************** DFR-REPORTS *******************************************************
 
 class DFRReportsListingTableMain(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    Class based View to render DFR report Data table on main dashboard Page.
+    This view inherit many properties from DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView.
+    """
     model = DFRProcessed
     columns = ['processed_for__name', 'processed_on', 'processed_report_path']
     order_columns = ['processed_for__name', 'processed_on']
@@ -517,8 +567,12 @@ class DFRReportsListingTableMain(DatatableSearchMixin, ValuesQuerySetMixin, Base
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : ValuesQuerySet object
+
+        :return:
+            json_data : list of dictionaries 
+
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for obj in json_data:
@@ -541,10 +595,12 @@ class DFRReportsListingTableMain(DatatableSearchMixin, ValuesQuerySetMixin, Base
 
 class DFRReportsListView(TemplateView):
     """
-    Class Based View for the DFR-Reports data table rendering.
-
+    Class Based View for the DFR report data table rendering.
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
+
+    :return:
+        context : list of dictionaries in which datatable headers are present for passing them to template.
     """
     template_name = 'dfr/dfr_reports_list.html'
 
@@ -568,12 +624,22 @@ class DFRReportsListView(TemplateView):
 
 
 class DFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    Class based View to render DFR report Data table on DFR page.
+    This view inherit many properties from DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView.
+    """
     model = MFRDFRReports
     columns = ['name', 'is_processed', 'process_for']
     search_columns = ['name', 'is_processed']
     order_columns = ['name', 'is_processed', 'process_for']
 
     def get_initial_queryset(self):
+        """
+        A function for overiding query set from BaseDatatableView.get_initial_queryset()
+
+        :return:
+            qs : Query set
+        """
         qs = super(DFRReportsListingTable, self).get_initial_queryset()
         qs = qs.filter(type='DFR')
         return qs
@@ -582,8 +648,11 @@ class DFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseData
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : ValuesQuerySet object
+
+        :return:
+            json_data : list of dictionaries 
 
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -602,7 +671,7 @@ class DFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseData
 
 class DFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
     """
-    Class based View to delete the Dashboard Setting.
+    Class based View to delete the DFR report. 
 
     """
     model = MFRDFRReports
@@ -615,10 +684,12 @@ class DFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
 
 class MFRReportsListView(TemplateView):
     """
-    Class Based View for the MFR-Reports data table rendering.
-
+    Class Based View for the MFR report data table rendering.
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
+
+    :return:
+        context : list of dictionaries in which datatable headers are present for passing them to template.
     """
     template_name = 'mfr/mfr_reports_list.html'
 
@@ -642,12 +713,22 @@ class MFRReportsListView(TemplateView):
 
 
 class MFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    Class based View to render MFR report Data table on MFR page.
+    This view inherit many properties from DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView.
+    """
     model = MFRDFRReports
     columns = ['name', 'is_processed', 'process_for']
     search_columns = ['name', 'is_processed']
     order_columns = ['name', 'is_processed', 'process_for']
 
     def get_initial_queryset(self):
+        """
+        A function for overiding query set from BaseDatatableView.get_initial_queryset()
+
+        :return:
+            qs : Query set
+        """
         qs = super(MFRReportsListingTable, self).get_initial_queryset()
         qs = qs.filter(type='MFR')
         return qs
@@ -656,8 +737,11 @@ class MFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseData
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : ValuesQuerySet object
+
+        :return:
+            json_data : list of dictionaries 
 
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
@@ -672,7 +756,7 @@ class MFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseData
 
 class MFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
     """
-    Class based View to delete the Dashboard Setting.
+    Class based View to delete the MFR report
 
     """
     model = MFRDFRReports
@@ -710,8 +794,11 @@ class MainDashboard(View):
         """
         Handles the get request
 
-        :param request:
-        :return Http response object:
+        :Args:
+            request:
+
+        :return:
+            Http response object:
         """
 
         # City Charter tables Columns list
@@ -782,8 +869,11 @@ class MFRCauseCodeView(View):
         '''
         Handles the get request
 
-        :param request:
-        :retun dictionary containing data used for main dashboard charts.
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
         '''
         mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
 
@@ -850,8 +940,11 @@ class MFRProcesedView(View):
         '''
         Handles the get request
 
-        :param request:
-        :retun dictionary containing data used for main dashboard charts.
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
         '''
         # Start Calculations for MFR Processed.
         # Last 12 Months
@@ -920,21 +1013,22 @@ class MFRProcesedView(View):
 # *********************** main dashboard sector capacity
 
 class SectorCapacityMixin(object):
-    '''
-    Provide common method get for Sector Capacity Dashboard.
-
+    """
+    Provide common method get for Sector Capacity Dashboard for both PMP/Wimax Technology.
     To use this Mixin provide following attributes:
-
-        - tech_name: name of the technology.
-    '''
+    tech_name: name of the technology
+    """
 
     def get(self, request):
-        '''
+        """
         Handles the get request
 
-        :param request:
-        :retun dictionary containing data used for main dashboard charts.
-        '''
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
+        """
         tech_name = self.tech_name
         organization = nocout_utils.logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
@@ -984,21 +1078,22 @@ class WiMAXSectorCapacity(SectorCapacityMixin, View):
 
 # *********************** main dashboard Backhaul Capacity
 class BackhaulCapacityMixin(object):
-    '''
-    Provide common method (Mixin) get for Backhaul Capacity Dashboard.
-
+    """
+    Provide common method (Mixin) get for Backhaul Capacity Dashboard for technologies PMP/WiMAX/TCLPOP
     To use this Mixin provide following attributes:
-
-        - tech_name: name of the technology.
-    '''
+    tech_name: name of the technology.
+    """
 
     def get(self, request):
-        '''
+        """
         Handles the get request
 
-        :param request:
-        :retun dictionary containing data used for main dashboard charts.
-        '''
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
+        """
         tech_name = self.tech_name
         organization = nocout_utils.logged_in_user_organizations(self)
         # Getting Technology ID
@@ -1061,7 +1156,7 @@ class WiMAXBackhaulCapacity(BackhaulCapacityMixin, View):
 
 class TCLPOPBackhaulCapacity(BackhaulCapacityMixin, View):
     """
-    Class Based View for the WiMAX Backhaul Capacity
+    Class Based View for the TCLPOP Backhaul Capacity
     """
     tech_name = 'TCLPOP'
 
@@ -1069,20 +1164,21 @@ class TCLPOPBackhaulCapacity(BackhaulCapacityMixin, View):
 
 class SalesOpportunityMixin(object):
     """
-    Provide common method get for Sales Opportunity Dashboard.
-
+    Provide common method get for Sales Opportunity Dashboard for both technology PMP/WiMAX.
     To use this Mixin provide following attributes:
-
-        - tech_name: name of the technology.
+    tech_name: name of the technology.
     """
 
     def get(self, request):
-        '''
+        """
         Handles the get request
 
-        :param request:
-        :retun dictionary containing data used for main dashboard charts.
-        '''
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
+        """
         is_bh = False
         tech_name = self.tech_name
 
@@ -1155,15 +1251,18 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
 # *************************** Dashboard Timely Data ***********************
 
 def view_severity_status(dashboard_name, organizations):
-    '''
+    """
     Method based view to get latest data from central database table.
     retun data for the severity based dashboard.
 
-    dashboard_name: name of the dashboard.
-    sector_devices_list: list of device.
+    :Args:
+        dashboard_name: name of the dashboard.
+        organizations: All organizations
 
-    return: dictionary
-    '''
+    :return:
+        dashboard_status_dict : list of dictionaries
+        processed_for_key_localtime : time in format %d-%m-%Y %H:%M
+    """
 
     dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
@@ -1189,11 +1288,18 @@ def view_severity_status(dashboard_name, organizations):
 
 def view_range_status(dashboard_name, organizations):
     """
+    Method based view to get latest data from central database table.
+    retun data for the range based dashboard.
 
-    :param dashboard_name:
-    :param organizations:
+    :Args:
+        dashboard_name: name of the dashboard.
+        organizations: All organizations
+
     :return:
+        dashboard_status_dict : list of dictionaries
+        processed_for_key_localtime : time in format %d-%m-%Y %H:%M
     """
+
     dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
         organization__in=organizations
@@ -1236,10 +1342,11 @@ class DashboardDeviceStatus(View):
         """
         Handles the get request
 
-        :param:
-            - dashboard_name: name of the dashboard.
+        :Args:
+            request
 
-        :retun dictionary containing data used for main dashboard charts.
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
         """
         dashboard_name = self.request.GET['dashboard_name']
         # remove '#' from the dashboard_name.
@@ -1316,10 +1423,15 @@ class DashboardDeviceStatus(View):
 
 def view_severity_status_monthly(dashboard_name, organizations):
     """
+    Method based view to get latest data from central database table.
+    retun data for the trends of severity based dashboard.
 
-    :param dashboard_name:
-    :param organizations:
+    :Args:
+        dashboard_name: name of the dashboard.
+        organizations: All organizations
+
     :return:
+        dashboard_status_dict : list of dictionaries
     """
     month_before = datetime.date.today() - datetime.timedelta(days=30)
 
@@ -1398,11 +1510,16 @@ def view_severity_status_monthly(dashboard_name, organizations):
 
 def view_range_status_dashboard_monthly(dashboard_name, organizations, dashboard_settings=None):
     """
+    Method based view to get latest data from central database table.
+    retun data for the trends of range based dashboard only Guage Chart dashboards.
 
-    :param dashboard_name:
-    :param organizations:
-    :param dashboard_settings:
+    :Args:
+        dashboard_name: name of the dashboard.
+        organizations: All organizations
+        dashboard_settings: None/object of settings of Dashboard
+
     :return:
+        dashboard_status_dict : list of dictionaries
     """
     month_before = datetime.date.today() - datetime.timedelta(days=30)
     dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
@@ -1463,11 +1580,15 @@ def view_range_status_dashboard_monthly(dashboard_name, organizations, dashboard
 
 def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=None):
     """
+    Method based view to get latest data from central database table.
+    retun data for the trends of range based dashboard (only sales opportunity)
 
-    :param dashboard_name:
-    :param organizations:
-    :param dashboard_settings:
+    :Args:
+        dashboard_name: name of the dashboard.
+        organizations: All organizations
+
     :return:
+        dashboard_status_dict : list of dictionaries
     """
     month_before = datetime.date.today() - datetime.timedelta(days=30)
     dashboard_status_dict = DashboardRangeStatusDaily.objects.extra(
@@ -1594,16 +1715,22 @@ def view_range_status_monthly(dashboard_name, organizations, dashboard_settings=
 #*************************** Monthly Trend Backhaul chart
 
 class MonthlyTrendBackhaulMixin(object):
-    '''
-    '''
+    """
+    Provide common method (Mixin) get for Trends of Backhaul Capacity Dashboard for technologies PMP/WiMAX/TCLPOP
+    To use this Mixin provide following attributes:
+    tech_name: name of the technology.
+    """
 
     def get(self, request):
-        '''
+        """
         Handles the get request
 
-        :param request:
-        :retun dictionary containing data used for main dashboard Monthly charts.
-        '''
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
+        """
         tech_name = self.tech_name
         y_axis_text = 'Number of Base Station'
         organization = nocout_utils.logged_in_user_organizations(self)
@@ -1643,18 +1770,21 @@ class MonthlyTrendBackhaulMixin(object):
 
 class MonthlyTrendBackhaulPMP(MonthlyTrendBackhaulMixin, View):
     """
+    Class Based View for the PMP Backhaul Capacity
     """
     tech_name = 'PMP'
 
 
 class MonthlyTrendBackhaulWiMAX(MonthlyTrendBackhaulMixin, View):
     """
+    Class Based View for the WiMAX Backhaul Capacity
     """
     tech_name = 'WiMAX'
 
 
 class MonthlyTrendBackhaulTCLPOP(MonthlyTrendBackhaulMixin, View):
     """
+    Class Based View for the TCLPOP Backhaul Capacity
     """
     tech_name = 'TCLPOP'
 
@@ -1662,10 +1792,22 @@ class MonthlyTrendBackhaulTCLPOP(MonthlyTrendBackhaulMixin, View):
 # ******************************* Monthly Trend Sector chart
 # Mixin which can work for both Technologies
 class MonthlyTrendSectorMixin(object):
-    '''
-    '''
+    """
+    Provide common method get for Trends for Sector Capacity Dashboard for both PMP/Wimax Technology.
+    To use this Mixin provide following attributes:
+    tech_name: name of the technology
+    """
 
     def get(self, request):
+        """
+        Handles the get request
+
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
+        """
         tech_name = self.tech_name
         y_axis_text = 'Number of Sectors'
         organization = nocout_utils.logged_in_user_organizations(self)
@@ -1693,25 +1835,37 @@ class MonthlyTrendSectorMixin(object):
 
 class MonthlyTrendSectorPMP(MonthlyTrendSectorMixin, View):
     """
+    Class Based View for the PMP Sector Capacity Dashboard Trends.
     """
     tech_name = 'PMP'
 
 
 class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
     """
+    Class Based View for the WiMAX Sector Capacity Dashboard Trends.
     """
     tech_name = 'WiMAX'
 
 
 # ********************************* Monthly Trend Sales chart
-# Sales MIXIN for both technologies
+
 class MonthlyTrendSalesMixin(object):
     """
+    Provide common method get for Trend of Sales Opportunity Dashboard for both technology PMP/WiMAX.
+    To use this Mixin provide following attributes:
+    tech_name: name of the technology.
     """
 
     def get(self, request):
-        '''
-        '''
+        """
+        Handles the get request
+
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
+        """
         is_bh = False
         tech_name = self.tech_name
         y_axis_text = 'Number of Sectors'
@@ -1758,12 +1912,14 @@ class MonthlyTrendSalesMixin(object):
 
 class MonthlyTrendSalesPMP(MonthlyTrendSalesMixin, View):
     """
+    Class Based View for the PMP Sales Opportunity Dashboard Trends.
     """
     tech_name = 'PMP'
 
 
 class MonthlyTrendSalesWIMAX(MonthlyTrendSalesMixin, View):
     """
+    Class Based View for the WiMAX Sales Opportunity Dashboard Trends
     """
     tech_name = 'WIMAX'
 
@@ -1779,10 +1935,11 @@ class GetMonthlyRFTrendData(View):
         """
         Handles the get request
 
-        :param:
-            - dashboard_name: name of the dashboard.
+        :Args:
+            dashboard_name: name of the dashboard.
 
-        :retun dictionary containing data used for main dashboard charts.
+        :retun:
+            dictionary containing data used for main dashboard charts.
         """
         # Get Request for getting url name passed in URL
         dashboard_name = self.request.GET.get('dashboard_name')
@@ -1835,10 +1992,11 @@ class MonthlyTrendDashboardDeviceStatus(View):
         """
         Handles the get request
 
-        :param:
-            - dashboard_name: name of the dashboard.
+        :Args:
+            dashboard_name: name of the dashboard.
 
-        :retun dictionary containing data used for main dashboard charts.
+        :retun:
+            dictionary containing data used for main dashboard charts.
         """
         # Get Request for getting url name passed in URL
         dashboard_name = self.request.GET['dashboard_name']
@@ -1899,11 +2057,19 @@ class MonthlyTrendDashboardDeviceStatus(View):
  
 class GetRfNetworkAvailData(View):
     """ 
-    :This class calculate rf network availability data from RfNetworkAvailability model
+    This class calculate rf network availability data from RfNetworkAvailability model
     """
 
     def get(self, request):
+        """
+        Handles the get request
 
+        :Args:
+            request
+
+        :retun:
+            HTTPresponse object : dictionary containing data used for main dashboard charts.
+        """
         result = {
             "success": 0,
             "message": "No data",
@@ -2016,7 +2182,7 @@ class GetRfNetworkAvailData(View):
 
 def get_technology_wise_data_dict(rf_avail_queryset):
     """
-    : This function return data dict per technology wise
+    This function return data dict per technology wise
     """
 
     updated_data_dict = {}
