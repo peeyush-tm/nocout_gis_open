@@ -164,7 +164,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -203,10 +203,11 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         # If searched character is 3 or more than 3. Then search the entered text on the basis fields of search_columns.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -366,7 +367,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -404,8 +405,9 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -548,7 +550,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -584,8 +586,9 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -726,7 +729,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -761,8 +764,9 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -875,7 +879,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -910,8 +914,9 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
 
             state_qs = State.objects.filter(state_name__icontains=sSearch)
             device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
@@ -1382,8 +1387,9 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -1546,8 +1552,9 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -1785,8 +1792,9 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2025,8 +2033,9 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2249,8 +2258,9 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             result_list = list()
             for dictionary in qs:
 
@@ -2488,8 +2498,9 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -2635,9 +2646,10 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
         # search if the entered text is atleast 3 characters long.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # If character '\' is in entered text then replace the character '\' from entered text. Because it will create an error in sql query execution.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -2792,10 +2804,11 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         #if entered text is atleast 3 characters long, then search.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # if character '\' is in entered text, then remove the character '\' from entered text. because '\' will raise the error in execution of sql query.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -2941,10 +2954,11 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        
+        sSearch = self.request.GET.get('search[value]', None)
 
         # if entered text is atleast 3 characters long, then search.
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        if sSearch:
             # if character '\' is in entered text, then replace '\' from entered text because it will raise the error in sql query execution.
             sSearch = sSearch.replace("\\", "")
             query = []
@@ -3090,13 +3104,14 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
         : param qs:
         : return qs:
         """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) >= 3:
+        
+        sSearch = self.request.GET.get('search[value]', None)
+        if sSearch:
             sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
@@ -3119,8 +3134,8 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/city/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/city/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/cities/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/cities/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
 
@@ -3389,9 +3404,13 @@ class GisWizardDeviceTypeServiceMixin(object):
 
             device_type_service = DeviceTypeService.objects.get(id=self.kwargs['pk'])
             skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.kwargs['dt_pk']})
-
+            try:
+                service_alias = device_type_service.service.name
+            except Exception, e:
+                service_alias = ''
             save_text = 'Update'
             context['skip_url'] = skip_url
+            context['service_alias'] = service_alias
         else:  # Create View
             save_text = 'Save'
 
@@ -3460,9 +3479,11 @@ def list_schedule_device(request):
 
     # Get the organization of logged in user.
     org = request.user.userprofile.organization
-    device_list = Device.objects.filter(organization__in=[org],
-                                        is_added_to_nms=1,
-                                        is_deleted=0, )
+    device_list = Device.objects.filter(
+        organization__in=[org],
+        is_added_to_nms__gt=0,
+        is_deleted=0
+    )
     technology_id = None
 
     # Create instance of 'InventoryUtilsGateway' class

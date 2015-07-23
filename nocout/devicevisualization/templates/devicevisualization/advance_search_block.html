@@ -1,0 +1,53 @@
+<!-- Advance Search Division -->
+<div id="advSearchContainerBlock" class="hide">
+    <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Search</h4>
+
+    <div id="advSearchFormContainer" class="col-md-8 col-md-offset-2">
+        <div id="gmap_search" class="advanceSearchContainer">
+            <form id="gmap_search_form" method="post">
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <label for="name" class="col-sm-4 control-label">BS Name</label>
+                        <div class="col-sm-8">
+                            <input type="hidden" class="multiSelectBox col-md-12" id="search_name" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sector_configured_on" class="col-sm-4 control-label">IP Address</label>
+                        <div class="col-sm-8">
+                            <input type="hidden" class="multiSelectBox col-md-12" id="search_sector_configured_on" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="circuit_ids" class="col-sm-4 control-label">Circut ID</label>
+                        <div class="col-sm-8">
+                            <input type="hidden" class="multiSelectBox col-md-12" id="search_circuit_ids" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="city" class="col-sm-4 control-label">BS City</label>
+                        <div class="col-sm-8">
+                            <input type="hidden" class="multiSelectBox col-md-12" id="search_city" style="width:100%;">
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="col-md-8 col-md-offset-2">
+        <button type="button" class="pull-right btn btn-sm btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn">Cancel
+        </button>
+        <button type="button" class="pull-right btn btn-sm btn-danger" id="resetSearchForm" style="margin-left:10px;">
+                <i class="fa fa-times"></i> Reset Search
+            </button>
+        <button type="button" class="pull-right btn btn-sm btn-success" id="setAdvSearchBtn">Search</button>
+    </div>
+    <div class="clearfix"></div>
+    <div class="divide-20"></div>
+</div>
+<!-- End of Advance Search Division -->

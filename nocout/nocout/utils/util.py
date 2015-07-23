@@ -6,6 +6,7 @@ import htmlentitydefs
 
 from dateutil import tz
 from django.db import connections
+from django.db.models import Q
 from operator import itemgetter
 from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME
 
@@ -239,6 +240,18 @@ class NocoutUtilsGateway:
         :return:
         """
         param1 = nocout_datatable_ordering(self_instance, qs, order_columns)
+        
+        return param1
+
+    def nocout_filter_queryset(self, self_instance, qs, search_txt):
+        """
+
+        :param self_instance:
+        :param qs:
+        :param order_columns:
+        :return:
+        """
+        param1 = nocout_filter_queryset(self_instance, qs, search_txt)
         
         return param1
 
@@ -1509,43 +1522,58 @@ def nocout_datatable_ordering(self_instance, qs, order_columns):
     :param self_instance:
     :param qs:
     """
-    request = self_instance.request
     # Number of columns that are used in sorting
-    try:
-        i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-    except Exception:
-        i_sorting_cols = 0
+    sorting_cols = 0
+    if self_instance.pre_camel_case_notation:
+        try:
+            sorting_cols = int(self_instance._querydict.get('iSortingCols', 0))
+        except ValueError:
+            sorting_cols = 0
+    else:
+        sort_key = 'order[{0}][column]'.format(sorting_cols)
+        while sort_key in self_instance._querydict:
+            sorting_cols += 1
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
 
     order = []
+    sort_using = ''
+    reverse = ''
 
-    for i in range(i_sorting_cols):
+    for i in range(sorting_cols):
         # sorting column
+        sort_dir = 'asc'
         try:
-            i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-        except Exception:
-            i_sort_col = 0
-        # sorting order
-        s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+            if self_instance.pre_camel_case_notation:
+                sort_col = int(self_instance._querydict.get('iSortCol_{0}'.format(i)))
+                # sorting order
+                sort_dir = self_instance._querydict.get('sSortDir_{0}'.format(i))
+            else:
+                sort_col = int(self_instance._querydict.get('order[{0}][column]'.format(i)))
+                # sorting order
+                sort_dir = self_instance._querydict.get('order[{0}][dir]'.format(i))
+        except ValueError:
+            sort_col = 0
 
-        sdir = '-' if s_sort_dir == 'desc' else ''
+        sdir = '-' if sort_dir == 'desc' else ''
+        reverse = True if sort_dir == 'desc' else False
+        sortcol = order_columns[sort_col]
+        sort_using = order_columns[sort_col]
 
-        sortcol = order_columns[i_sort_col]
         if isinstance(sortcol, list):
             for sc in sortcol:
-                order.append('%s%s' % (sdir, sc))
+                order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
         else:
-            order.append('%s%s' % (sdir, sortcol))
+            order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
     if order:
-        key_name = order[0][1:] if '-' in order[0] else order[0]
         # Try catch is added because in some cases 
-        # we receive instead of queryset
+        # we receive list instead of queryset
         try:
             sorted_device_data = qs.order_by(*order)
         except Exception, e:
             try:
                 sorted_device_data = sorted(
                     qs, 
-                    key=itemgetter(key_name), 
+                    key=itemgetter(sort_using),
                     reverse=True if '-' in order[0] else False
                 )
             except Exception, e:
@@ -1553,6 +1581,23 @@ def nocout_datatable_ordering(self_instance, qs, order_columns):
                 log.info(e.message)
         return sorted_device_data
     return qs 
+
+
+def nocout_filter_queryset(self_instance, qs, search_txt):
+    """
+    If the user role is admin then append its descendants organization as well, otherwise not
+
+    :param self_instance:
+    :params qs:
+    :return qs:
+    """
+    if search_txt and not self_instance.pre_camel_case_notation:
+        q = Q()
+        for col in self_instance.columns:
+            q |= Q(**{'{0}__icontains'.format(col): search_txt})
+
+        qs = qs.filter(q)
+    return qs
 
 
 class HTMLTextExtractor(HTMLParser):
@@ -1707,7 +1752,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
     circuit_type_condition = ''
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if technology:
         # Check that the given technology name is exists or not
@@ -1724,8 +1769,10 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
     if is_ptpbh:
         circuit_type_condition = " AND circuit.circuit_type LIKE '%backhaul%' "
     else:
-        circuit_type_condition = " AND ( isnull(circuit.circuit_type) OR \
-                                  circuit.circuit_type LIKE '%customer%' ) "
+        circuit_type_condition = ""
+        circuit_type_condition += " AND ( isnull(circuit.circuit_type) OR "
+        circuit_type_condition += " circuit.circuit_type = '' OR "
+        circuit_type_condition += " circuit.circuit_type LIKE '%customer%' ) "
 
     ss_query = '''
         SELECT 
@@ -1736,7 +1783,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             bs.state_id as BSSTATEID,
             device_port.name as SECTOR_PORT,
             IF(
-                not isnull(device_port.name),
+                lower(ss_info.DEVICE_TECH) = 'wimax' and not isnull(device_port.name),
                 concat(
                     '(', upper(device_port.name), ') ', ss_info.SECTOR_SECTOR_ID
                 ),
@@ -1745,11 +1792,11 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
             ss_info.*
         FROM (
             SELECT 
-                sector.sector_id AS SECTOR_SECTOR_ID,
+                IF(isnull(NULLIF(sector.sector_id, '')), 'NA', sector.sector_id) AS SECTOR_SECTOR_ID,
                 sector.id AS SECTOR_ID,
                 sector.sector_configured_on_port_id as sector_port_id,
                 sector.base_station_id as BSID,
-                sector_device.ip_address as SECTOR_CONF_ON_IP,
+                IF(not isnull(sector_device.ip_address), sector_device.ip_address, 'NA') as SECTOR_CONF_ON_IP,
                 sector_device.device_name as SECTOR_CONF_ON,
                 sector_device.id as NEAR_DEVICE_ID,
                 only_ss_info.*
@@ -1925,7 +1972,7 @@ def get_inventory_sector_query(
     concat_values = ""
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if technology:
         # Check that the given technology name is exists or not
@@ -2097,7 +2144,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
     ptp_condition = ''
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
@@ -2236,14 +2283,23 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
     grouping_condition = " GROUP BY bh_info.BHIP "
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
         device_name_condition = " device.device_name in (" + device_name_str + ") AND "
 
-    if type_rf != 'backhaul':
+    # In case of other devices which are not bh_configured_on
+    if type_rf == 'other':
         is_bh_condition = " ( bh.pop_id = device.id OR \
+                            bh.aggregator_id = device.id OR \
+                            bh.bh_switch_id = device.id ) AND \
+                        not isnull(bh.bh_configured_on_id) AND "
+
+    # In case of all other devices bh_configured_on & others
+    if type_rf == 'all':
+        is_bh_condition = " ( bh.bh_configured_on_id = device.id OR \
+                            bh.pop_id = device.id OR \
                             bh.aggregator_id = device.id OR \
                             bh.bh_switch_id = device.id ) AND \
                         not isnull(bh.bh_configured_on_id) AND "
@@ -2342,4 +2398,25 @@ def create_specific_key_dict(data_list, key_str):
             continue
 
     return data_dict
+
+
+def time_delta_calculator(timestamp, hours=0, minutes=0, seconds=0):
+    if timestamp:
+        time_difference = None
+        try:
+            timestamp = datetime.datetime.fromtimestamp(timestamp)
+            if USE_TZ:
+                timestamp = timestamp.replace(tzinfo=None)
+                time_difference = datetime.datetime.utcnow() - timestamp
+            else:
+                timestamp = timestamp
+                time_difference = datetime.datetime.now() - timestamp
+        except Exception as e:
+            pass
+        if time_difference < datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds):
+            return True
+        else:
+            return False
+    else:
+        return False
 

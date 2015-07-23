@@ -32,7 +32,7 @@
                                     <input type="hidden" id="global_search_txt"  style="min-width:140px;max-width:160px;">
                                 </li>
                                 <li>
-                                    <button class="btn btn-info btn-sm" id="global_search_btn" title="Search">
+                                    <button class="btn btn-default btn-sm" id="global_search_btn" title="Search">
                                         <i class='fa fa-search'> </i>
                                     </button>
                                 </li>
@@ -48,51 +48,37 @@
 
                         <div id="content" class="col-lg-12">
                             <!-- PAGE HEADER-->
-                            <div class="row" id="page_header_container" style="display:none;">
-                                <div class="col-sm-12">
-                                    <div class="page-header">
+                            <div class="row" id="page_header_container">
+                                <div class="page-header">
+                                    <div class="breadcrumbs_container">
                                         <!-- BREADCRUMBS -->
-                                        <!-- <ul class="breadcrumb"> -->
-                                            <!-- <li>
-                                                <i class="fa fa-home"></i>
-
-                                            </li> -->
-                                            {% block breadcrumb_title %}
-                                                <!-- BREADCRUMB -->
-                                                {% include 'nocout/breadcrumb.html' %}
-                                                <!-- /BREADCRUMB -->
-                                            {% endblock %}
-                                        <!-- </ul> -->
+                                        {% block breadcrumb_title %}
+                                            {% load django_bootstrap_breadcrumbs %}
+                                            {% clear_breadcrumbs %}
+                                            <!-- Create Breadcrumbs -->
+                                            {% breadcrumb_safe "<i class='fa fa-home'></i> Home" "javascript:;" %}
+                                            <!-- Render the created breadcrumbs -->
+                                            {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+                                        {% endblock %}
                                         <!-- /BREADCRUMBS -->
-                                        <div class="clearfix">
-                                            <h3 class="content-title pull-left toUpper">
-                                                {% block content_title %}Dashboard{% endblock %}
-                                            </h3>
-                                            {% block page_setting_block %}{% endblock %}
-                                        </div>
-                                        <div class="description">{% block content_description %}Overview, Statistics and more{% endblock %}</div>
-
+                                    </div>
+                                    <div class="page_settings_container" style="width: 100%;">
+                                        {% block page_setting_block %}{% endblock %}
+                                        <div class="clearfix"></div>
                                     </div>
                                 </div>
                             </div>
                             <!-- /PAGE HEADER -->
 
                             <!-- Page Control & Full Screen Buttons - START -->
-                            <div class="pull-right controls_container">
+                            <div class="controls_container">
                                 <ul class="list-unstyled list-inline control_btn_countainer">
                                     <li>
                                         <!-- Widget Full Screen Button-->
-                                        <button title="Go Fullscreen" type="button" class="btn btn-sm btn-info normal_screen" id="goFullScreen">
+                                        <button title="Go Fullscreen" type="button" class="btn btn-sm btn-default normal_screen" id="goFullScreen">
                                             <i class="fa fa-arrows-alt"></i>
                                         </button>
                                         <!-- /Widget Full Screen Button-->
-                                    </li>
-                                    <li>
-                                        <!-- Page Toggle Button-->
-                                        <button title="Show Page Controls" class="btn btn-info btn-sm show_ctrl" type="button" id="headerToggleBtn">
-                                            <i class="fa fa-eye"></i>
-                                        </button>
-                                        <!-- /Page Toggle Button-->
                                     </li>
                                 </ul>
                             </div>

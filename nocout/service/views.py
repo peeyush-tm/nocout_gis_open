@@ -637,7 +637,8 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Datatable
         exclude_columns = []
 
         # search keyword
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % self.model.__name__
@@ -715,7 +716,8 @@ class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Da
         exclude_columns = []
 
         # search keyword
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % self.model.__name__

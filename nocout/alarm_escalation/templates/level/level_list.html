@@ -15,15 +15,17 @@
 {% block content_title %}Level Management{% endblock %}
 {% block content_description %}List of level{% endblock %}
 {% block content %}
-            {% if perms.alarm_escalation.add_escalationlevel %}
-            <p><a href="/escalation/level/new/"><i class="fa fa-plus">&nbsp;</i> Create Level</a></p>
-            {% endif %}
+    {% if perms.alarm_escalation.add_escalationlevel %}
+        <p>
+            <a href="/escalation/level/new/"><i class="fa fa-plus">&nbsp;</i> Create Level</a>
+        </p>
+    {% endif %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>LEVEL LISTING</h4>
         </div>
-        <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="LevelListingTable">
+        <div id="tableContainer" class="box-body" style="overflow:auto;">
+            <table class="datatable table table-striped table-bordered table-hover" id="LevelListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>

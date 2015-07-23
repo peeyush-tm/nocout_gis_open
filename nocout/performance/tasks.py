@@ -52,13 +52,16 @@ def device_last_down_time_task(device_type=None):
     g_jobs = list()
     ret = False
 
-    # devices = Device.objects.filter(is_added_to_nms=1)
+    # devices = Device.objects.filter(is_added_to_nms__gt=0)
     #logger.debug(devices)
     devices = None
     try:
         if device_type:
             dtype = DeviceType.objects.filter(name=device_type).get().id
-            devices = Device.objects.filter(is_added_to_nms=1, device_type=dtype)
+            devices = Device.objects.filter(
+                is_added_to_nms__gt=0,
+                device_type=dtype
+            )
     except Exception as e:
         return ret
 

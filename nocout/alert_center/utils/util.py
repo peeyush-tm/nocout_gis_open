@@ -517,22 +517,34 @@ def common_get_severity_icon(severity):
     severity_icon = '<i class="fa fa-circle grey-dot" title="Unknown">\
                      <span style="display:none">Unknown</span></i>'
 
-    if not severity or severity.lower() == 'unknown':
+    if not severity:
         return severity_icon
 
     severity = severity.lower()
 
     if severity in ['down', 'critical', 'crit']:
-        severity_icon = '<i class="fa fa-circle red-dot" title="Critical">\
-                         <span style="display:none">DOWN</span></i>'
+        severity_icon = '<i class="fa fa-circle red-dot" title="{0}">\
+                         <span style="display:none">DOWN</span></i>'.format(severity.title())
     
-    elif severity in ['warning', 'warn']:
-        severity_icon = '<i class="fa fa-circle orange-dot" title="Warning">\
-                         <span style="display:none">WARNING</span></i>'
+    elif severity in ['warning', 'warn', 'major']:
+        severity_icon = '<i class="fa fa-circle orange-dot" title="{0}">\
+                         <span style="display:none">WARNING</span></i>'.format(severity.title())
 
-    elif severity in ['up', 'ok']:
-        severity_icon = '<i class="fa fa-circle green-dot" title="Ok">\
-                         <span style="display:none">UP</span></i>'
+    elif severity in ['up', 'ok', 'informational']:
+        severity_icon = '<i class="fa fa-circle green-dot" title="{0}">\
+                         <span style="display:none">UP</span></i>'.format(severity.title())
+
+    elif severity in ['minor']:
+        severity_icon = '<i class="fa fa-circle blue-dot" title="{0}">\
+                         <span style="display:none">Minor</span></i>'.format(severity.title())
+
+    elif severity in ['normal']:
+        severity_icon = '<i class="fa fa-circle purple-dot" title="{0}">\
+                         <span style="display:none">Normal</span></i>'.format(severity.title())
+
+    else:
+        severity_icon = '<i class="fa fa-circle grey-dot" title="{0}">\
+                         <span style="display:none">UP</span></i>'.format(severity.title())
 
     return severity_icon
 

@@ -191,7 +191,8 @@ def organization_monitored_devices(organizations, **kwargs):
         'machine',
         'site_instance'
     ).filter(
-        is_added_to_nms=1,
+        is_added_to_nms__gt=0,
+        # is_added_to_nms=1,
         is_deleted=0,
         organization__in=organizations
     )
@@ -321,7 +322,8 @@ def organization_customer_devices(organizations, technology=None, specify_ptp_ty
             Q(sector_configured_on__isnull=False) 
             | 
             Q(substation__isnull=False),
-            is_added_to_nms=1,
+            is_added_to_nms__gt=0,
+            # is_added_to_nms=1,
             is_deleted=0,
             organization__in=organizations
         )
@@ -336,7 +338,8 @@ def organization_customer_devices(organizations, technology=None, specify_ptp_ty
                 customer_devices = Device.objects.filter(
                     ~Q(id__in=ptp_device_circuit_backhaul(specify_type=specify_ptp_type)),
                     choose_ss_bs,  # calls the specific set of devices
-                    is_added_to_nms=1,
+                    is_added_to_nms__gt=0,
+                    # is_added_to_nms=1,
                     is_deleted=0,
                     organization__in=organizations,
                     device_technology=technology
@@ -347,14 +350,16 @@ def organization_customer_devices(organizations, technology=None, specify_ptp_ty
                     Q(substation__isnull=False)
                     |
                     Q(sector_configured_on__isnull=False),
-                    is_added_to_nms=1,
+                    is_added_to_nms__gt=0,
+                    # is_added_to_nms=1,
                     is_deleted=0,
                     organization__in=organizations,
                     device_technology=technology
                 )
         else:
             customer_devices = Device.objects.filter(
-                is_added_to_nms=1,
+                is_added_to_nms__gt=0,
+                # is_added_to_nms=1,
                 substation__isnull=False,
                 is_deleted=0,
                 organization__in=organizations,
@@ -392,7 +397,8 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
                     sector_configured_on__sector_id__isnull=False
                 )
             ),
-            is_added_to_nms=1,
+            is_added_to_nms__gt=0,
+            # is_added_to_nms=1,
             is_deleted=0,
             organization__in=organizations
         )
@@ -409,9 +415,9 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
                 device_technology=int(WiMAX.ID),
                 sector_configured_on__isnull=False,
                 sector_configured_on__sector_id__isnull=False
-            )
-            ,
-            is_added_to_nms=1,
+            ),
+            is_added_to_nms__gt=0,
+            # is_added_to_nms=1,
             is_deleted=0,
             organization__in=organizations
         )
@@ -425,7 +431,8 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
                             specify_type=specify_ptp_bh_type
                         )
                     ),
-                    is_added_to_nms=1,
+                    is_added_to_nms__gt=0,
+                    # is_added_to_nms=1,
                     is_deleted=0,
                     organization__in=organizations
                 )
@@ -434,7 +441,8 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
                     Q(
                         id__in=ptp_device_circuit_backhaul()
                     ),
-                    is_added_to_nms=1,
+                    is_added_to_nms__gt=0,
+                    # is_added_to_nms=1,
                     is_deleted=0,
                     organization__in=organizations
                 )
@@ -447,14 +455,16 @@ def organization_network_devices(organizations, technology=None, specify_ptp_bh_
                 |
                 Q(dr_configured_on__isnull=False),
                 device_technology=int(technology),
-                is_added_to_nms=1,  # sector id must be present for PMP and WiMAX
+                is_added_to_nms__gt=0,
+                # is_added_to_nms=1,  # sector id must be present for PMP and WiMAX
                 is_deleted=0,
                 organization__in=organizations
             ).annotate(dcount=Count('id'))
         else:
             devices = Device.objects.filter(
                 device_technology=int(technology),
-                is_added_to_nms=1,
+                is_added_to_nms__gt=0,
+                # is_added_to_nms=1,
                 sector_configured_on__isnull=False,
                 sector_configured_on__sector_id__isnull=False,  # sector id must be present for PMP and WiMAX
                 is_deleted=0,
@@ -478,7 +488,8 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
 
     backhaul_devices = Device.objects.filter(
         backhaul__isnull=False,
-        is_added_to_nms=1,
+        is_added_to_nms__gt=0,
+        # is_added_to_nms=1,
         is_deleted=0,
         organization__in=organizations
     ).prefetch_related('backhaul')
@@ -509,7 +520,8 @@ def organization_backhaul_devices(organizations, technology=None, others=False, 
                     ).values_list('bh_switch', flat=True)
                 )
             ),
-            is_added_to_nms=1,
+            is_added_to_nms__gt=0,
+            # is_added_to_nms=1,
             is_deleted=0,
             organization__in=organizations
         )
@@ -629,7 +641,8 @@ def organization_sectors(organization, technology=0):
         'sector_configured_on__site_instance',
         'organization'
     ).filter(
-        sector_configured_on__is_added_to_nms=1,
+        sector_configured_on__is_added_to_nms__gt=0,
+        # sector_configured_on__is_added_to_nms=1,
         sector_configured_on__isnull=False
     )
 

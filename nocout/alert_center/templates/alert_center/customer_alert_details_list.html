@@ -7,6 +7,7 @@
     {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
     {% breadcrumb_safe "Alert Details" "javascript:;" %}
     {% breadcrumb_safe "Customer Alert Details" "customer_alert_details" %}
+    {% breadcrumb_safe "PTP" "customer_alert_details" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -99,19 +100,7 @@
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
-            /*Ajax url to get grid data*/
-            ajax_url_get_parameter = "";
-
-            if (/latency/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'latency'
-            } else if (/packet_drop/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'packet_drop'
-            } else if (/down/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'down'
-            }
-
             // Report Download Feature -- START
-
             var common_extra_param = "'download_excel': 'yes'",
                 common_get_params = "data_source=customer&page_type=customer",
                 common_dict_items = "'data_source' : 'customer', 'page_type' : 'customer'",
@@ -127,7 +116,7 @@
                     "app_name" : "alert_center",
                     "table_title" : wimax_title,
                     "header_class_name" : "AlertCenterListing",
-                    "data_class_name" : "GetCustomerAlertDetail",
+                    "data_class_name" : "AlertListingTable",
                     "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'pmp_wimax_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : wimax_extra_param
                 },
@@ -135,7 +124,7 @@
                     "app_name" : "alert_center",
                     "table_title" : pmp_title,
                     "header_class_name" : "AlertCenterListing",
-                    "data_class_name" : "GetCustomerAlertDetail",
+                    "data_class_name" : "AlertListingTable",
                     "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'pmp_wimax_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : pmp_extra_param
                 },
@@ -143,7 +132,7 @@
                     "app_name" : "alert_center",
                     "table_title" : ptp_title,
                     "header_class_name" : "AlertCenterListing",
-                    "data_class_name" : "GetCustomerAlertDetail",
+                    "data_class_name" : "AlertListingTable",
                     "header_extra_param" : "{'page_type' : 'customer', 'headers_data_key' : 'ptp_datatable_headers', "+common_extra_param+"}",
                     "data_extra_param" : ptp_extra_param,
                     "excluded" : "['sector_id']"

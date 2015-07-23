@@ -271,6 +271,9 @@ class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
 
         return super(ModelFormMixin, self).form_valid(form)
 
+    def form_invalid(self, form):
+        return super(ModelFormMixin, self).form_invalid(form)
+
 
 class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -327,6 +330,9 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         form.save_m2m()
 
         return HttpResponseRedirect(UserCreate.success_url)
+
+    def form_invalid(self, form):
+        return super(UserUpdate, self).form_invalid(form)
 
 
 class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):

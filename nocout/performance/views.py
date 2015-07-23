@@ -5,7 +5,7 @@ import ujson as json
 import datetime
 import time
 from operator import itemgetter
-
+import re
 from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
@@ -260,7 +260,19 @@ class LivePerformanceListing(BaseDatatableView):
             required_value_list=required_value_list
         )
 
-        return devices
+        # preparing machine list
+        machines = self.inventory_utils.prepare_machines(
+            devices, machine_key='machine_name'
+        )
+
+        #preparing the polled results
+        qs = self.prepare_polled_results(
+            devices,
+            multi_proc=MULTI_PROCESSING_ENABLED,
+            machine_dict=machines
+        )
+
+        return qs
 
     def filter_queryset(self, qs):
         """
@@ -270,7 +282,8 @@ class LivePerformanceListing(BaseDatatableView):
         :return result_list:
         """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
         if sSearch:
             self.is_initialised = False
             self.is_searched = True
@@ -352,62 +365,78 @@ class LivePerformanceListing(BaseDatatableView):
                 'age'
             ]
 
-        i_sort_col = 0
-
         # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except ValueError:
-            i_sorting_cols = 0
-
-        reverse = True
-
-        for i in range(i_sorting_cols):
-            # sorting column
+        sorting_cols = 0
+        if self.pre_camel_case_notation:
             try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+                sorting_cols = int(self._querydict.get('iSortingCols', 0))
             except ValueError:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+                sorting_cols = 0
+        else:
+            sort_key = 'order[{0}][column]'.format(sorting_cols)
+            while sort_key in self._querydict:
+                sorting_cols += 1
+                sort_key = 'order[{0}][column]'.format(sorting_cols)
 
-            reverse = True if s_sort_dir == 'desc' else False
+        order = []
+        order_columns = columns
+        reverse = ''
+        sort_using = ''
 
-        self.is_initialised = False
-        self.is_ordered = True
-        sort_data = self.prepare_devices(qs)
-        try:
-            sort_using = columns[i_sort_col]
-            if sort_using in self.polled_columns:
-                self.is_polled = True
-                # Now we need to poll the devices
-                # here we can limit the number of devices in query
-                # to get the data from
-                # that needs to be per machine basis
-                # once we have the results
-                # we can quickly call upon prepare_devices
-                machines = self.prepare_machines(sort_data)
-                #preparing the polled results
-                result_qs = self.prepare_polled_results(
-                    sort_data,
-                    multi_proc=MULTI_PROCESSING_ENABLED,
-                    machine_dict=machines
-                )
-                sort_data = result_qs
+        for i in range(sorting_cols):
+            # sorting column
+            sort_dir = 'asc'
+            try:
+                if self.pre_camel_case_notation:
+                    sort_col = int(self._querydict.get('iSortCol_{0}'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('sSortDir_{0}'.format(i))
+                else:
+                    sort_col = int(self._querydict.get('order[{0}][column]'.format(i)))
+                    # sorting order
+                    sort_dir = self._querydict.get('order[{0}][dir]'.format(i))
+            except ValueError:
+                sort_col = 0
+
+            sdir = '-' if sort_dir == 'desc' else ''
+            reverse = True if sort_dir == 'desc' else False
+            sortcol = order_columns[sort_col]
+
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('{0}{1}'.format(sdir, sc.replace('.', '__')))
+                    sort_using = sc
             else:
-                self.is_polled = False
-            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-            return sorted_qs
+                order.append('{0}{1}'.format(sdir, sortcol.replace('.', '__')))
+                sort_using = sortcol
 
-        except Exception, e:
-            self.is_initialised = True
-            self.is_ordered = False
-            self.is_polled = False
+        if order:
+            self.is_initialised = False
+            self.is_ordered = True
+            try:
+                sort_data = self.prepare_devices(qs)
+                if sort_using in ['ip_address', 'near_end_ip']:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda item: int(re.sub(r'\W+', '', unicode(item[sort_using]).strip().lower())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
+                        reverse=reverse
+                    )
+                else:
+                    sorted_qs = sorted(
+                        sort_data,
+                        key=lambda item: unicode(item[sort_using]).strip().lower(),
+                        reverse=reverse
+                    )
+                return sorted_qs
+            except Exception, e:
+                self.is_initialised = True
+                self.is_ordered = False
+                return qs
+        else:
             return qs
 
     def prepare_devices(self, qs):
         """
-
 
         :param qs:
         :return:
@@ -535,10 +564,6 @@ class LivePerformanceListing(BaseDatatableView):
 
         request = self.request
 
-        page_type = self.request.GET['page_type']
-
-        download_excel = self.request.GET.get('download_excel', None)
-
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
@@ -551,31 +576,12 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records after filtering
         total_display_records = len(qs)
 
-        #check if this has just initialised
-        #if so : process the results
         qs = self.ordering(qs)
-
-        # if download_excel != "yes":
         qs = self.paging(qs)
-        ##check if this has been searched
-        ## if this has been seached
-        ## dont call prepare_devices
 
-        if self.is_initialised and not (self.is_searched or self.is_ordered):
+        if not (self.is_searched or self.is_ordered):
             # prepare devices with GIS information
             qs = self.prepare_devices(qs=qs)
-            # end prepare devices with GIS information
-
-        if not self.is_polled:
-            # preparing machine list
-            machines = self.inventory_utils.prepare_machines(
-                qs, machine_key='machine_name'
-            )
-            #preparing the polled results
-            if download_excel == "yes":
-                qs = self.prepare_polled_results(qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict=machines)
-            else:
-                qs = self.prepare_polled_results(qs, multi_proc=MULTI_PROCESSING_ENABLED, machine_dict=machines)
 
         # if the qs is empty then JSON is unable to serialize the empty
         # ValuesQuerySet.Therefore changing its type to list.
@@ -608,6 +614,44 @@ class GetPerfomance(View):
         device = Device.objects.get(id=device_id)
         device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
         realdevice = device
+        bs_alias = None
+
+        try:
+            if device.sector_configured_on.exists():
+                bs_alias = device.sector_configured_on.filter()[0].base_station.alias
+            elif device.dr_configured_on.exists():
+                bs_alias = device.dr_configured_on.filter()[0].base_station.alias
+            elif device.substation_set.exists():
+                bs_alias = Sector.objects.get(
+                    id=Circuit.objects.get(
+                        sub_station=device.substation_set.get().id
+                    ).sector_id
+                ).base_station.alias
+            elif device.backhaul.exists() or device.backhaul_switch.exists() or device.backhaul_pop.exists() \
+                or device.backhaul_aggregator.exists():
+                bh_id = None
+                if device.backhaul.exists():
+                    bh_id = device.backhaul.get().id
+                elif device.backhaul_switch.exists():
+                    bh_id = device.backhaul_switch.get().id
+                elif device.backhaul_pop.exists():
+                    bh_id = device.backhaul_pop.get().id
+                elif device.backhaul_aggregator.exists():
+                    bh_id = device.backhaul_aggregator.get().id
+
+                bs_alias = ','.join(
+                    BaseStation.objects.filter(
+                        backhaul= bh_id
+                    ).values_list('alias', flat=True)
+                )
+            else:
+                pass
+        except Exception, e:
+            # log.info(e.message)
+            bs_alias = None
+
+        if not bs_alias:
+            bs_alias = realdevice.device_alias
 
         is_util_tab = request.GET.get('is_util', 0)
 
@@ -668,6 +712,7 @@ class GetPerfomance(View):
             'device_technology': device_technology,
             'device': device,
             'realdevice': realdevice,
+            'bs_alias' : bs_alias,
             'get_status_url': inventory_status_url,
             'get_services_url': service_ds_url,
             'inventory_page_url': inventory_page_url,
@@ -931,7 +976,8 @@ class SectorDashboardListing(BaseDatatableView):
         :param qs:
         """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
             query = []
@@ -1906,7 +1952,8 @@ class ServiceDataSourceListing(BaseDatatableView):
             item.update(
                 current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
-                    '%d-%m-%Y %H:%M'
+                    # '%d-%m-%Y %H:%M'
+                    DATE_TIME_FORMAT
                 ) if item['sys_timestamp'] != "" else ""
             )
 
@@ -1941,7 +1988,8 @@ class ServiceDataSourceListing(BaseDatatableView):
         :param qs:
         """
 
-        sSearch = self.request.GET.get('sSearch', None)
+        # sSearch = self.request.GET.get('sSearch', None)
+        sSearch = self.request.GET.get('search[value]', None)
 
         if sSearch:
 
@@ -2650,6 +2698,7 @@ class GetServiceTypePerformanceData(View):
                 packet_loss = 'NA'
                 latency = 'NA'
                 status_since = 'NA'
+                last_down = 'NA'
                 machine = 'default'
                 vlan = 'NA'
                 #now lets check if SS exists for a device
@@ -2678,7 +2727,7 @@ class GetServiceTypePerformanceData(View):
                             machine=machine
                         )
 
-                        packet_loss, latency, status_since = self.ss_network_performance_data_result(
+                        packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
                             ss_device_object=connected_device,
                             machine=machine
                         )
@@ -2705,7 +2754,8 @@ class GetServiceTypePerformanceData(View):
                     'customer_name': customer_name,
                     'packet_loss': packet_loss,
                     'latency': latency,
-                    'up_down_since': status_since,
+                    # 'up_down_since': status_since,
+                    'last_down_time': last_down,
                     'last_updated': last_updated,
                 })
 
@@ -2731,7 +2781,7 @@ class GetServiceTypePerformanceData(View):
                     ss_device_object=ss.device,
                     machine=ss.device.machine.name
                 )
-                packet_loss, latency, status_since = self.ss_network_performance_data_result(
+                packet_loss, latency, status_since, last_down = self.ss_network_performance_data_result(
                     ss_device_object=ss.device,
                     machine=ss.device.machine.name
                 )
@@ -2761,7 +2811,8 @@ class GetServiceTypePerformanceData(View):
                         'customer_name': customer_name,
                         'packet_loss': packet_loss,
                         'latency': latency,
-                        'up_down_since': status_since,
+                        # 'up_down_since': status_since,
+                        'last_down_time': last_down,
                         'last_updated': last_updated,
                     })
 
@@ -2779,7 +2830,7 @@ class GetServiceTypePerformanceData(View):
             'customer_name',
             'packet_loss',
             'latency',
-            'up_down_since',
+            'last_down_time',
             'last_updated'
         ]
 
@@ -2827,13 +2878,14 @@ class GetServiceTypePerformanceData(View):
         packet_loss = None
         latency = None
         status_since = None
+        last_down = None
 
         perf_data = NetworkStatus.objects.filter(
             device_name=ss_device_object.device_name
         ).annotate(
             dcount=Count('data_source')
         ).values(
-            'data_source', 'current_value', 'age', 'sys_timestamp'
+            'data_source', 'current_value', 'age', 'sys_timestamp', 'refer'
         ).using(alias=machine)
 
         processed = []
@@ -2851,10 +2903,18 @@ class GetServiceTypePerformanceData(View):
                         latency = pdata['current_value']
                 else:
                     continue
-                status_since = pdata['age']
-                status_since = datetime.datetime.fromtimestamp(
-                    float(status_since)
-                ).strftime(DATE_TIME_FORMAT)
+                if pdata['data_source'] == 'pl' and pdata['current_value'] != 100:
+                    status_since = pdata['age']
+                else:
+                    status_since = pdata['refer']
+
+                try:
+                    status_since = datetime.datetime.fromtimestamp(
+                        float(status_since)
+                    ).strftime(DATE_TIME_FORMAT)
+                except Exception, e:
+                    status_since = status_since
+
             else:
                 continue
 
@@ -2867,7 +2927,18 @@ class GetServiceTypePerformanceData(View):
                 float(age)
             ).strftime(DATE_TIME_FORMAT)
 
-        return packet_loss, latency, status_since
+        if down:
+            try:
+                last_down = datetime.datetime.fromtimestamp(
+                    float(down)
+                ).strftime(DATE_TIME_FORMAT)
+            except Exception, e:
+                last_down = down
+        # log.info(str(ss_device_object.ip_address) + "----------" + str(last_down))
+        if not last_down:
+            last_down = 'NA'
+
+        return packet_loss, latency, status_since, last_down
 
     def rf_performance_data_result(self, performance_data_ss, performance_data_bs):
         """

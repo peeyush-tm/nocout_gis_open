@@ -86,21 +86,18 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        # get global search value
+        sSearch = self.request.GET.get('search[value]', None)
 
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                # Avoid search on 'added_on'.
-                if column == 'added_on':
+        if sSearch and not self.pre_camel_case_notation:
+            q = Q()
+            for col in self.columns:
+                if col == 'logged_at':
                     continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
+                q |= Q(**{'%s__icontains' % col : sSearch})
 
+            qs = qs.filter(q)
         return qs
 
     def get_initial_queryset(self):
@@ -132,7 +129,6 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-
         if qs:
             for dct in qs:
                 dct['logged_at'] = self.nocout_utils.convert_utc_to_local_timezone(dct['logged_at'])
@@ -156,11 +152,12 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # Number of records before filtering.
-        total_records = len(qs)
+        total_records = qs.count()
+
         qs = self.filter_queryset(qs)
 
         # Number of records after filtering.
-        total_display_records = len(qs)
+        total_display_records = qs.count()
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
