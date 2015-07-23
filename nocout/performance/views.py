@@ -4155,7 +4155,7 @@ def device_current_status(device_object):
     device_nms_uptime_query_set = NetworkStatus.objects.filter(
         device_name=inventory_device_name,
         service_name='ping',
-        data_source__in=['pl', 'rta']
+        data_source__in=['pl']# ['pl', 'rta']
     ).using(alias=inventory_device_machine_name).values(*required_fields)
 
     device_nms_uptime = device_nms_uptime_query_set

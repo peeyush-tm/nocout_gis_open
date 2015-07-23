@@ -410,3 +410,6 @@ iframe {
   top: 5px;
   right: 20px;
 }
+#reservationtime {
+  cursor: text;
+}
