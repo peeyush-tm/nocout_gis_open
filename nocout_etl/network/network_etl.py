@@ -174,10 +174,8 @@ def build_export(site, network_perf_data,device_first_down_map):
 			data_dict = {}
 		
 	# send aggregator task
-	#print device_first_down_map
-	s= device_down.values()
-	s.append({"host":"nitin","severity":"NA","time":"86"})
-	aggregator.s(data_array,s, site).apply_async()
+	device_down_list = device_down.values()
+	aggregator.s(data_array, device_down_list, site).apply_async()
 
 
 @app.task(base=DatabaseTask,name='get-host-checks', ignore_result=True)
