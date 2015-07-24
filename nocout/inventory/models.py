@@ -82,7 +82,7 @@ class Backhaul(models.Model):
     aggregator_port_name = models.CharField('Aggregator Port Name', max_length=40, null=True, blank=True)
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
     pe_hostname = models.CharField('PE Hostname', max_length=250, null=True, blank=True)
-    pe_ip = models.IPAddressField('PE IP Address', null=True, blank=True)
+    pe_ip = models.GenericIPAddressField('PE IP Address', null=True, blank=True)
     bh_connectivity = models.CharField('BH Connectivity', max_length=40, null=True, blank=True)
     bh_circuit_id = models.CharField('BH Circuit ID', max_length=250, null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
@@ -236,25 +236,26 @@ class Circuit(models.Model):
         return self.name
 
 
+# function to modify name and path of uploaded file
+def uploaded_file_name(instance, filename):
+    timestamp = time.time()
+    full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+    year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+    # modified filename
+    filename = "{}_{}".format(full_time, filename)
+
+    # modified path where file is uploaded
+    path = "uploaded/icons"
+
+    return '{}/{}/{}'.format(path, year_month_date, filename)
+
+
 # icon settings model
 class IconSettings(models.Model):
     """
     IconSettings Model Columns Declaration.
     """
-
-    # function to modify name and path of uploaded file
-    def uploaded_file_name(instance, filename):
-        timestamp = time.time()
-        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
-        year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
-
-        # modified filename
-        filename = "{}_{}".format(full_time, filename)
-
-        # modified path where file is uploaded
-        path = "uploaded/icons"
-
-        return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
@@ -382,23 +383,27 @@ class GISInventoryBulkImport(models.Model):
         Device Ping Configuration object presentation
         """
         return self.original_filename
-#*********** L2 Reports Model *******************
+
+
+
+# function to modify name and path of uploaded file
+def uploaded_report_name(instance, filename):
+    timestamp = time.time()
+    year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+    filename = instance.file_name
+    if instance.report_type == 'base_station':
+        prefixreportname = BaseStation.objects.filter(id=instance.type_id).values('state__state_name', 'city__city_name')
+        filename = "{0}-{1}_{2}".format(prefixreportname[0]['state__state_name'], prefixreportname[0]['city__city_name'], instance.file_name)
+
+    # modified path where file is uploaded
+    path = "uploaded/l2"
+
+    return '{}/{}/{}'.format(path, year_month_date, filename)
+
+
+# *********** L2 Reports Model *******************
 class CircuitL2Report(models.Model):
-
-    # function to modify name and path of uploaded file
-    def uploaded_report_name(instance, filename):
-        timestamp = time.time()
-        year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
-
-        filename = instance.file_name
-        if instance.report_type == 'base_station':
-            prefixreportname = BaseStation.objects.filter(id=instance.type_id).values('state__state_name', 'city__city_name')
-            filename = "{0}-{1}_{2}".format(prefixreportname[0]['state__state_name'], prefixreportname[0]['city__city_name'], instance.file_name)
-
-        # modified path where file is uploaded
-        path = "uploaded/l2"
-
-        return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Name', max_length=250, unique=False)
     file_name = models.FileField(max_length=512, upload_to=uploaded_report_name)

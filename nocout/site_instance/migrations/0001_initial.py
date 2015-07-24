@@ -1,55 +1,29 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'SiteInstance'
-        db.create_table(u'site_instance_siteinstance', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('machine', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['machine.Machine'], null=True, blank=True)),
-            ('live_status_tcp_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('web_service_port', self.gf('django.db.models.fields.IntegerField')(default=80)),
-            ('username', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('password', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'site_instance', ['SiteInstance'])
+    dependencies = [
+        ('machine', '0001_initial'),
+    ]
 
-
-    def backwards(self, orm):
-        # Deleting model 'SiteInstance'
-        db.delete_table(u'site_instance_siteinstance')
-
-
-    models = {
-        u'machine.machine': {
-            'Meta': {'object_name': 'Machine'},
-            'agent_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'machine_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
-        },
-        u'site_instance.siteinstance': {
-            'Meta': {'object_name': 'SiteInstance'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'live_status_tcp_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'password': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'username': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'web_service_port': ('django.db.models.fields.IntegerField', [], {'default': '80'})
-        }
-    }
-
-    complete_apps = ['site_instance']
+    operations = [
+        migrations.CreateModel(
+            name='SiteInstance',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=200, verbose_name=b'Name')),
+                ('alias', models.CharField(max_length=255, verbose_name=b'Alias')),
+                ('live_status_tcp_port', models.IntegerField(null=True, verbose_name=b'Live Status TCP Port', blank=True)),
+                ('web_service_port', models.IntegerField(default=80, verbose_name=b'Web Service Port')),
+                ('username', models.CharField(max_length=100, null=True, verbose_name=b'Username', blank=True)),
+                ('password', models.CharField(max_length=100, null=True, verbose_name=b'Password', blank=True)),
+                ('description', models.TextField(null=True, verbose_name=b'Description', blank=True)),
+                ('is_device_change', models.IntegerField(default=0, verbose_name=b'Is Device Change')),
+                ('machine', models.ForeignKey(blank=True, to='machine.Machine', null=True)),
+            ],
+        ),
+    ]

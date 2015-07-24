@@ -122,8 +122,8 @@ class DeviceType(models.Model):
     """
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Alias', max_length=200)
-    device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
-    service = models.ManyToManyField(Service, through="DeviceTypeService", blank=True, null=True)
+    device_port = models.ManyToManyField(DevicePort, blank=True)
+    service = models.ManyToManyField(Service, through="DeviceTypeService", blank=True)
     packets = models.IntegerField('Packets', blank=True, null=True)
     timeout = models.IntegerField('Timeout', blank=True, null=True)
     normal_check_interval = models.IntegerField('Normal Check Interval', blank=True, null=True)
@@ -174,7 +174,7 @@ class DeviceModel(models.Model):
     """
     name = models.CharField('Device Model', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
-    device_types = models.ManyToManyField(DeviceType, through="ModelType", blank=True, null=True)
+    device_types = models.ManyToManyField(DeviceType, through="ModelType", blank=True)
 
     def __unicode__(self):
         return self.name
@@ -186,7 +186,7 @@ class DeviceVendor(models.Model):
     """
     name = models.CharField('Device Vendor', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
-    device_models = models.ManyToManyField(DeviceModel, through="VendorModel", blank=True, null=True)
+    device_models = models.ManyToManyField(DeviceModel, through="VendorModel", blank=True)
 
     def __unicode__(self):
         return self.name
@@ -198,7 +198,7 @@ class DeviceTechnology(models.Model):
     """
     name = models.CharField('Device Technology', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
-    device_vendors = models.ManyToManyField(DeviceVendor, through="TechnologyVendor", blank=True, null=True)
+    device_vendors = models.ManyToManyField(DeviceVendor, through="TechnologyVendor", blank=True)
 
     def __unicode__(self):
         return self.name
@@ -248,12 +248,12 @@ class Device(MPTTModel, models.Model):
     device_vendor = models.IntegerField('Device Vendor')
     device_model = models.IntegerField('Device Model')
     device_type = models.IntegerField('Device Type')
-    ports = models.ManyToManyField(DevicePort, null=True, blank=True)
+    ports = models.ManyToManyField(DevicePort, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
-    ip_address = models.IPAddressField('IP Address', unique=True)
+    ip_address = models.GenericIPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
-    netmask = models.IPAddressField('Netmask', null=True, blank=True)
-    gateway = models.IPAddressField('Gateway', null=True, blank=True)
+    netmask = models.GenericIPAddressField(null=True, blank=True)
+    gateway = models.GenericIPAddressField('Gateway', null=True, blank=True)
     dhcp_state = models.CharField('DHCP State', max_length=200, choices=DHCP_STATE, default=disable)
     host_priority = models.CharField('Host Priority', max_length=200, choices=PRIORITY, default=normal)
     host_state = models.CharField('Host Monitoring State', max_length=200, choices=HOST_STATE, default=enable)
@@ -265,9 +265,9 @@ class Device(MPTTModel, models.Model):
     city = models.ForeignKey(City, null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
-    is_added_to_nms = models.IntegerField('Is Added', max_length=1, default=0)
-    is_monitored_on_nms = models.IntegerField('Is Monitored', max_length=1, default=0)
+    is_deleted = models.IntegerField('Is Deleted', default=0)
+    is_added_to_nms = models.IntegerField('Is Added', default=0)
+    is_monitored_on_nms = models.IntegerField('Is Monitored', default=0)
 
     class Meta:
         ordering = ['machine']
