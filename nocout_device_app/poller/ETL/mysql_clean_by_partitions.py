@@ -1,6 +1,6 @@
 """
-mysql_clean.py
-==============
+mysql_clean_by_partitions.py
+============================
 
 Clean the Live as well as Historical mysql data
 Usage ::
@@ -8,22 +8,18 @@ python mysql_clean.py -a live_data
 python mysql_clean.py -a historical_data
 """
 
-import optparse
 import sys
+from ConfigParser import ConfigParser
+from mysql.connector import connect
+from time import sleep
 from datetime import datetime, timedelta
-import imp
 
-from nocout_site_name import *
-config_mod = imp.load_source('configparser', \
-        '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-utility_module = imp.load_source('utility_functions', \
-        '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+from entry import app
 
 
-def get_site_configs(desired_config={}):
-    configs = config_mod.parse_config_obj(historical_conf=True)
-    desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
-    desired_config = configs.get(desired_site)
+def get_configs():
+    desired_config = ConfigParser()
+    desired_config.read('/data01/nocout/data_aggregation/mysql_db.ini')
 
     return desired_config
 
@@ -84,16 +80,16 @@ def pre_clean(line_args, live_mysql_configs=None, historical_mysql_configs=None)
             'performance_utilizationweekly': 0
             }
 
-    if line_args == 'live_data':
-        db = utility_module.mysql_conn(configs=live_mysql_configs) 
+    if line_args == 'live':
+	db = connect(**live_mysql_configs)
         # We have to perform clean operations for live mysql db
         # this will give partition names for `sys_timetimestamp` < `older_than`
         # we need to use sys_timestamp, bcz we have range partition on sys_timestamp field
         live_db_tables = get_partitions_names(db, live_db_tables, 1*30)
         clean_data(db, live_db_tables)
         db.close()
-    elif line_args == 'historical_data':
-        db = utility_module.mysql_conn(configs=historical_mysql_configs) 
+    elif line_args == 'historical':
+	db = connect(**historical_mysql_configs)
 
         # Clean the entries older than 1 month
         bihourly_db_tables = get_partitions_names(db, bihourly_db_tables, 1*30)
@@ -110,7 +106,6 @@ def pre_clean(line_args, live_mysql_configs=None, historical_mysql_configs=None)
         # Clean the entries older than 12 months
         weekly_db_tables = get_partitions_names(db, weekly_db_tables, 12*30)
         clean_data(db, weekly_db_tables)
-
         db.close()
 
 
@@ -130,36 +125,55 @@ def get_partitions_names(db, tables, older_than):
 
 # Live mysql db tables would contain data for last 30 days only
 # Historical db tables would contain entry for last 1, 3, 6, 12 months
-def clean_data(db, tables):
-    cursor = db.cursor()
-    for table, partitions in tables.items():
-        qry = "ALTER TABLE {0} TRUNCATE PARTITION {1}".format(table, partitions)
-        cursor.execute(qry)
-        #db.commit()
-        print "Truncated partitions for table - {0} : {1}".format(table, partitions)
-    cursor.close()
-    print '\n'
+@app.task(name='clean-data', ignore_result=True, bind=True)
+def clean_data(self, db, tables):
+    try:
+        cursor = db.cursor()
+        for table, partitions in tables.items():
+	    if partitions:
+                qry = "ALTER TABLE {0} TRUNCATE PARTITION {1}".format(table, partitions)
+	        print 'Delete query: %s', qry
+                cursor.execute(qry)
+                #db.commit()
+            print "Truncated partitions for table - {0} : {1}".format(table, partitions)
+        cursor.close()
+        print '\n'
+    except Exception as exc:
+	self.retry(args=(db, tables), max_retries=1, countdown=20)
 
 
-def main():
-    site_specific_configs = get_site_configs()
-    line_args = parse_args(sys.argv[1:])
-    live_mysql_configs = {
-            'ip': site_specific_configs.get('live_ip'),
-            'user': site_specific_configs.get('live_user'),
-            'sql_passwd': site_specific_configs.get('live_sql_passwd'),
-            'sql_port': site_specific_configs.get('live_sql_port'),
-            'sql_db': site_specific_configs.get('live_sql_db')
-            }
-    historical_mysql_configs = {
-            'ip': site_specific_configs.get('ip'),
-            'user': site_specific_configs.get('user'),
-            'sql_passwd': site_specific_configs.get('sql_passwd'),
-            'sql_port': site_specific_configs.get('sql_port'),
-            'sql_db': site_specific_configs.get('sql_db')
-            }
-    pre_clean(line_args, live_mysql_configs, historical_mysql_configs)
+@app.task(name='clean-main', ignore_result=True)
+def main(**opts):
+    configs = get_configs()
+    live_mysql_configs, historical_mysql_configs = {}, {}
+    if opts.get('type') == 'live':
+        # get machine name
+        m = opts.get('machine')
+        live_mysql_configs = {
+                'host': configs.get(m, 'host'),
+                'user': configs.get(m, 'user'),
+                'password': configs.get(m, 'password'),
+                'port': configs.get(m, 'port'),
+                'database': configs.get(m, 'database')
+        }
+    else:
+        historical_mysql_configs = {
+                'host': configs.get('historical', 'host'),
+                'user': configs.get('historical', 'user'),
+                'password': configs.get('historical', 'password'),
+                'port': configs.get('historical', 'port'),
+                'database': configs.get('historical', 'database')
+        }
+    pre_clean(
+        opts.get('type'),
+        live_mysql_configs,
+        historical_mysql_configs
+    )
 
 
 if __name__ == '__main__':
-    main()
+    opts = {
+        'type': 'historical',
+    }
+    main(**opts)
+
