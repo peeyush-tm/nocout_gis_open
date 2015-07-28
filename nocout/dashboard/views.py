@@ -982,7 +982,7 @@ class MFRProcesedView(View):
                         processed_val = result['processed_value']
                     processed_key_dict[result['processed_key']].append({
                         "color": '',
-                        "y": float(result['processed_value']),
+                        "y": processed_val,
                         "name": result['processed_key'],
                         "x": calendar.timegm(day.timetuple()) * 1000,  # Multiply by 1000 to return correct GMT+05:30 timestamp
                     })
