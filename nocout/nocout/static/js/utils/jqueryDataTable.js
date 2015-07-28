@@ -26,6 +26,9 @@ function ourDataTableWidget() {
         data_extra_param,
         excluded_columns
     ) {
+
+        nocout_createAdvanceFilter(tableheaders, tableId);
+
         /*Show the spinner*/
         showSpinner();
 
