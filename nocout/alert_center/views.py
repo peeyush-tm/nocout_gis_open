@@ -1057,13 +1057,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
             if device_id:
                 data.update(id=device_id)
 
-        return perf_utils.prepare_gis_devices_optimized(
+        result = perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
             technology=device_tab_technology,
             type_rf=type_rf,
             device_name_list=device_name_list
         )
+        return result
 
     def prepare_results(self, qs):
         """
@@ -1121,6 +1122,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
                     current_app='device'
                 )
 
+                if ds_param in ['Temperature_bh']:
+                    dct['alias'] = ""
+                    dct['bh_port_name'] = ""
+                    try:
+                        dct['alias'] = Device.objects.get(ip_address=dct['ip_address']).backhaul.all()[0].alias
+                        dct['bh_port_name'] = Device.objects.get(ip_address=dct['ip_address']).backhaul.all()[0].bh_port_name
+                    except Exception as e:
+                        logger.exception()
+
                 dct.update(
                     action='<a href="' + alert_url + '" title="Device Alerts">\
                             <i class="fa fa-warning text-warning"></i></a>\
@@ -1130,7 +1140,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                             <i class="fa fa-dropbox text-muted"></i>\
                             </a>'
                 )
-                
+
         return qs
 
     def filter_queryset(self, qs):
