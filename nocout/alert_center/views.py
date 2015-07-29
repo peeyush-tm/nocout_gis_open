@@ -531,7 +531,7 @@ class AlertListingTable(BaseDatatableView):
             else:
                 sorted_qs = sorted(
                     sort_data,
-                    key=lambda data: data[sort_using].lower() if data[sort_using] not in [None] else data[sort_using],
+                    key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                     reverse=reverse
                 )
             return sorted_qs
@@ -1217,7 +1217,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 else:
                     qs = sorted(
                         sort_data,
-                        key=lambda data: data[sort_using].lower() if data[sort_using] not in [None] else data[sort_using],
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
                         reverse=reverse
                     )
             except Exception, e:
@@ -2284,21 +2284,18 @@ class GetSiaFiltersData(View):
                         not_condition_sign = '~'
                         tech_name_list = ['pmp', 'wimax']
 
-                    where_condition = "{0}Q(device_technology__in={1}), Q({2}__istartswith={3})".format(
+                    where_condition = "{0}Q(device_technology__in={1}), Q({2}__istartswith='{3}')".format(
                         not_condition_sign,
                         tech_name_list,
                         item_type,
                         search_txt
                     )
                 else:
-                    where_condition = "Q({0}__istartswith={1})".format(item_type, search_txt)
+                    where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)
 
                 # Django ORM query as per the GET params
-                query = "resultset = model.objects.extra( \
-                            select={0} \
-                        ).filter( \
-                            {1} \
-                        ).values(*{2}).distinct()[:40]".format(
+                query = "resultset = {0}.objects.extra(select={1}).filter({2}).values(*{3}).distinct()[:40]".format(
+                            model.__name__,
                             column_alias,
                             where_condition,
                             fetched_columns

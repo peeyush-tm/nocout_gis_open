@@ -393,13 +393,13 @@ class LivePerformanceListing(BaseDatatableView):
                 if sort_using in ['ip_address', 'near_end_ip']:
                     sorted_qs = sorted(
                         sort_data,
-                        key=lambda item: int(re.sub(r'\W+', '', item[sort_using].lower().strip())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
+                        key=lambda item: int(re.sub(r'\W+', '', unicode(item[sort_using]).strip().lower())) if item[sort_using] and item[sort_using].lower() != 'na' else item[sort_using],
                         reverse=reverse
                     )
                 else:
                     sorted_qs = sorted(
                         sort_data,
-                        key=lambda item: item[sort_using].lower().strip() if type(item[sort_using]) == 'str' else item[sort_using],
+                        key=lambda item: unicode(item[sort_using]).strip().lower(),
                         reverse=reverse
                     )
                 return sorted_qs
@@ -1927,7 +1927,8 @@ class ServiceDataSourceListing(BaseDatatableView):
             item.update(
                 current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
-                    '%d-%m-%Y %H:%M'
+                    # '%d-%m-%Y %H:%M'
+                    DATE_TIME_FORMAT
                 ) if item['sys_timestamp'] != "" else ""
             )
 
@@ -4154,7 +4155,7 @@ def device_current_status(device_object):
     device_nms_uptime_query_set = NetworkStatus.objects.filter(
         device_name=inventory_device_name,
         service_name='ping',
-        data_source__in=['pl', 'rta']
+        data_source__in=['pl']# ['pl', 'rta']
     ).using(alias=inventory_device_machine_name).values(*required_fields)
 
     device_nms_uptime = device_nms_uptime_query_set
