@@ -1,9 +1,15 @@
 from __future__ import absolute_import
+
 import os
+from sys import path
+
 from celery.beat import PersistentScheduler
 from celery.schedules import crontab
 from kombu import Queue
+
 from celery import Celery
+
+path.append('/omd/nocout_etl')
 
 app = Celery()
 #app.control.purge()
@@ -22,10 +28,15 @@ class MyBeatScheduler(PersistentScheduler):
 class Config:
     BROKER_URL = 'amqp://guest:guest@localhost:5672//'
     REDIS_PORT = 6379
-    CELERY_RESULT_BACKEND = 'redis://localhost:' + str(REDIS_PORT)
-    CELERY_IMPORTS = ['task1', 'nocout.events.events_rrd_migration',
-            'nocout.performance.service.rrd_migration',
-            'nocout.performance.service.db_ops']
+    INVENTORY_DB = 3
+    BROKER_URL = 'redis://localhost:' + str(REDIS_PORT) + "/" + str(0)
+    CELERY_RESULT_BACKEND = 'redis://localhost:' + str(REDIS_PORT) + "/" + str(1)
+    CELERY_IMPORTS = [
+            'handlers.db_ops',
+            'network.network_etl',
+            'service.service_etl',
+	    'service.kpi_etl'
+	]
     #CELERY_QUEUES = (
     #        Queue('celery', routing_key='celery'),
     #        Queue('trans1', routing_key='trans1', delivery_mode=1),
@@ -35,17 +46,41 @@ class Config:
     CELERY_CHORD_PROPAGATES = False
     #CELERY_ALWAYS_EAGER = True
     #CELERY_IGNORE_RESULT = True
-    CNX_FROM_CONF = 'nocout/conf.d/db_conf.ini'
+    CNX_FROM_CONF = '/omd/nocout_etl/db_conf.ini'
     CELERYBEAT_SCHEDULE = {
             'network-5': {
                 'task': 'add',
                 'schedule': crontab(hour=1, minute=5),
                 'args': (2, 3),
                 },
+            #'network-main': {
+             #   'task': 'network-main',
+             #   'schedule': crontab(),
+             #   },
             'network-main': {
                 'task': 'network-main',
                 'schedule': crontab(),
+		'kwargs' : {'site_name':'pub_slave_1'},
                 },
+            'service-main': {
+                'task': 'service-main',
+                'schedule': crontab(),
+		'kwargs' : {'site_name':'pub_slave_1'},
+                },
+	     'get-ul-issue-service-checks':{
+		'task' : 'get-ul-issue-service-checks',
+		'schedule': crontab(minute='*/2'),
+		'kwargs' : {'site_name':'pub_slave_1'},
+	     },
+	     'build-export-dr-mrc':{
+		'task' : 'build-export-dr-mrc',
+		'schedule': crontab(minute='*/5'),
+		'kwargs' : {'site_name':'pub_slave_1'},
+	     },
+	     'call_kpi_services':{
+		'task' : 'call_kpi_services',
+		'schedule': crontab(minute='*/5'),
+	      }
             }
 
 app.config_from_object(Config)
