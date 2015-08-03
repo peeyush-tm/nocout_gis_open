@@ -1707,7 +1707,7 @@ def get_inventory_ss_query(monitored_only=True, technology=None, device_name_lis
     circuit_type_condition = ''
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if technology:
         # Check that the given technology name is exists or not
@@ -1927,7 +1927,7 @@ def get_inventory_sector_query(
     concat_values = ""
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if technology:
         # Check that the given technology name is exists or not
@@ -2099,7 +2099,7 @@ def get_ptp_sector_query(monitored_only=True, device_name_list=None, is_ptpbh=Fa
     ptp_condition = ''
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
@@ -2238,14 +2238,23 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
     grouping_condition = " GROUP BY bh_info.BHIP "
 
     if monitored_only:
-        nms_device_condition = ' AND device.is_added_to_nms = 1 '
+        nms_device_condition = ' AND device.is_added_to_nms > 0 '
 
     if device_name_list and len(device_name_list):
         device_name_str = ', '.join(str(d_name) for d_name in device_name_list)
         device_name_condition = " device.device_name in (" + device_name_str + ") AND "
 
-    if type_rf != 'backhaul':
+    # In case of other devices which are not bh_configured_on
+    if type_rf == 'other':
         is_bh_condition = " ( bh.pop_id = device.id OR \
+                            bh.aggregator_id = device.id OR \
+                            bh.bh_switch_id = device.id ) AND \
+                        not isnull(bh.bh_configured_on_id) AND "
+
+    # In case of all other devices bh_configured_on & others
+    if type_rf == 'all':
+        is_bh_condition = " ( bh.bh_configured_on_id = device.id OR \
+                            bh.pop_id = device.id OR \
                             bh.aggregator_id = device.id OR \
                             bh.bh_switch_id = device.id ) AND \
                         not isnull(bh.bh_configured_on_id) AND "
@@ -2274,8 +2283,8 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                         
                     bh.id AS BHID,
                     bh.bh_connectivity AS BH_CONNECTIVITY,
-
-                    technology.id AS TECHID,
+                    bh.alias AS BH_ALIAS,
+                    
                     devicetype.id AS TYPEID,
                     device.id AS DEVICE_ID,
                     device.device_name AS BHDEVICENAME
@@ -2344,4 +2353,25 @@ def create_specific_key_dict(data_list, key_str):
             continue
 
     return data_dict
+
+
+def time_delta_calculator(timestamp, hours=0, minutes=0, seconds=0):
+    if timestamp:
+        time_difference = None
+        try:
+            timestamp = datetime.datetime.fromtimestamp(timestamp)
+            if USE_TZ:
+                timestamp = timestamp.replace(tzinfo=None)
+                time_difference = datetime.datetime.utcnow() - timestamp
+            else:
+                timestamp = timestamp
+                time_difference = datetime.datetime.now() - timestamp
+        except Exception as e:
+            pass
+        if time_difference < datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds):
+            return True
+        else:
+            return False
+    else:
+        return False
 

@@ -23,7 +23,8 @@ log = logging.getLogger(__name__)
 # python logging
 
 from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
-    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, CACHE_TIME
+    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, \
+    CACHE_TIME, DATE_TIME_FORMAT
 
 from django.http import HttpRequest
 
@@ -1227,6 +1228,7 @@ def prepare_gis_devices_optimized(
                 "device_technology": "NA",
                 "bh_connectivity" : "NA",
                 "bh_capacity" : "NA",
+                "bh_alias" : "NA",
                 "bh_port" : 0,
                 "bs_id": 0,
                 "bh_id": 0,
@@ -1260,6 +1262,7 @@ def prepare_gis_devices_optimized(
                     "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
                     "bh_connectivity" : inventory_row.get('BH_CONNECTIVITY', 'NA'),
                     "bh_capacity" : inventory_row.get('BHCAPACITY', 'NA'),
+                    "bh_alias" : inventory_row.get('BH_ALIAS', 'NA'),
                     "bh_port" : inventory_row.get('BHPORT', 'NA'),
                     "bs_id": inventory_row.get('BSID', 0),
                     "bh_id": inventory_row.get('BHID', 0),
@@ -1356,14 +1359,13 @@ def get_performance_data(device_list, machine, model):
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+            ).strftime(DATE_TIME_FORMAT)
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+                float(data["age"])
+            ).strftime(DATE_TIME_FORMAT) if data["age"] else ""
 
             device_result[device] = perf_result
-    # (device_result)
-    #  device_result
 
     return device_result
 
@@ -1651,10 +1653,13 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+            ).strftime(DATE_TIME_FORMAT)
+            # ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+                float(data["age"])
+            ).strftime(DATE_TIME_FORMAT) if data["age"] else ""
+            # ).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
 
             device_result[device] = perf_result
     # (device_result)

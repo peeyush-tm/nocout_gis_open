@@ -34,7 +34,7 @@ def main(**configs):
 	        for table in service_tables:
 			if table in collections:
 				try:
-					db[table].remove({ "check_time" : {"$lt": end_time}})
+					db[table].remove({ "local_timestamp" : {"$lt": end_time}})
 				except Exception as e:
 					print e
 		for table in interface_tables:

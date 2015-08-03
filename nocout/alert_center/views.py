@@ -529,7 +529,11 @@ class AlertListingTable(BaseDatatableView):
             if sort_using in self.polled_value_columns:
                 sorted_qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
             else:
-                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+                sorted_qs = sorted(
+                    sort_data,
+                    key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
+                    reverse=reverse
+                )
             return sorted_qs
 
         except Exception, e:
@@ -687,8 +691,8 @@ class NetworkAlertDetailHeaders(ListView):
         ]
 
         bh_dt_specific_headers = [
-            {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'bh_alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_port', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         common_headers = [
@@ -1027,9 +1031,13 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if data_source in ['PMPULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_BH', 'Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
+        if data_source in ['Backhaul', 'Temperature_bh']:
             page_type = 'other'
             type_rf = "backhaul"
+
+        if data_source in ['Backhaul_PD', 'Backhaul_RTA', 'Backhaul_Down']:
+            page_type = 'other'
+            type_rf = "all"
 
         # GET all device name list from the list
         try:
@@ -1049,13 +1057,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
             if device_id:
                 data.update(id=device_id)
 
-        return perf_utils.prepare_gis_devices_optimized(
+        result = perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
             technology=device_tab_technology,
             type_rf=type_rf,
             device_name_list=device_name_list
         )
+        return result
 
     def prepare_results(self, qs):
         """
@@ -1122,7 +1131,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                             <i class="fa fa-dropbox text-muted"></i>\
                             </a>'
                 )
-                
+
         return qs
 
     def filter_queryset(self, qs):
@@ -1197,7 +1206,11 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 if sort_using in self.polled_value_columns:
                     qs = sorted(sort_data, key=lambda data: float(data[sort_using]), reverse=reverse)
                 else:
-                    qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+                    qs = sorted(
+                        sort_data,
+                        key=lambda data: unicode(data[sort_using]).strip().lower() if data[sort_using] not in [None] else data[sort_using],
+                        reverse=reverse
+                    )
             except Exception, e:
                 pass
         return qs
@@ -1270,8 +1283,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
         elif data_source in ['Temperature_bh']:
             self.order_columns = [
                 'severity',
-                'alias',
-                'bh_port_name',
+                'bh_alias',
+                'bh_port',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -2262,21 +2275,18 @@ class GetSiaFiltersData(View):
                         not_condition_sign = '~'
                         tech_name_list = ['pmp', 'wimax']
 
-                    where_condition = "{0}Q(device_technology__in={1}), Q({2}__istartswith={3})".format(
+                    where_condition = "{0}Q(device_technology__in={1}), Q({2}__istartswith='{3}')".format(
                         not_condition_sign,
                         tech_name_list,
                         item_type,
                         search_txt
                     )
                 else:
-                    where_condition = "Q({0}__istartswith={1})".format(item_type, search_txt)
+                    where_condition = "Q({0}__istartswith='{1}')".format(item_type, search_txt)
 
                 # Django ORM query as per the GET params
-                query = "resultset = model.objects.extra( \
-                            select={0} \
-                        ).filter( \
-                            {1} \
-                        ).values(*{2}).distinct()[:40]".format(
+                query = "resultset = {0}.objects.extra(select={1}).filter({2}).values(*{3}).distinct()[:40]".format(
+                            model.__name__,
                             column_alias,
                             where_condition,
                             fetched_columns
