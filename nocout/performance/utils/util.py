@@ -1,8 +1,4 @@
-# -*- encoding: utf-8; py-indent-offset: 4 -*-
-
-# python utilities
-# python utilities
-
+# -*- encoding: utf-8; py-indent-offset: 4 -*-e
 import ujson as json
 import os
 import datetime
@@ -14,7 +10,6 @@ from django.utils.dateformat import format
 
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
-# nocout utilities
 
 # Queue implementation using REDIS
 from nocout.utils.nqueue import NQueue
@@ -28,7 +23,8 @@ log = logging.getLogger(__name__)
 # python logging
 
 from nocout.settings import PHANTOM_PROTOCOL, PHANTOM_HOST, PHANTOM_PORT, \
-    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, CACHE_TIME
+    MEDIA_ROOT, CHART_WIDTH, CHART_HEIGHT, CHART_IMG_TYPE, HIGHCHARTS_CONVERT_JS, \
+    CACHE_TIME, DATE_TIME_FORMAT
 
 from django.http import HttpRequest
 
@@ -210,6 +206,29 @@ class PerformanceUtilsGateway:
         :param self_instance:
         """
         param1 = dataTableOrdering(self_instance, qs, order_columns)
+
+        return param1
+
+    def prepare_gis_devices_optimized(
+        self,
+        qs,
+        page_type='network',
+        monitored_only=True,
+        technology='',
+        type_rf='',
+        device_name_list=None,
+        is_single_call=False
+    ):
+
+        param1 = prepare_gis_devices_optimized(
+            qs,
+            page_type=page_type,
+            monitored_only=monitored_only,
+            technology=technology,
+            type_rf=type_rf,
+            device_name_list=device_name_list,
+            is_single_call=is_single_call
+        )
 
         return param1
 
@@ -552,8 +571,8 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
     for device in devices:
 
         device_name = device.get('device_name')
-        if not device_name:
-            continue
+        # if not device_name:
+        #     continue
 
         device.update({
             "id": 0,
@@ -803,11 +822,460 @@ def prepare_gis_devices(devices, page_type, monitored_only=True, technology=None
                 continue
 
         result_devices.append(device)
-        # if device.get('id'):
-        # else:
-        #     continue
 
     return result_devices
+
+
+@nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
+def prepare_gis_devices_optimized(
+    qs,
+    page_type='network',
+    monitored_only=True,
+    technology='',
+    type_rf='',
+    device_name_list=None,
+    is_single_call=False
+):
+    """
+    This function first fetch inventory data as per the params & then 
+    map the inventory data with given qs
+    """
+    if not qs:
+        return qs
+
+    resultant_dataset = list()
+
+    if page_type in ['customer']:
+
+        if technology.upper() in ['P2P', 'PTP', 'PTP-BH']:
+            inventory_resultset = nocout_utils.fetch_ss_inventory(
+                technology=technology,
+                device_name_list=device_name_list
+            )
+
+            sector_inventory_resultset = nocout_utils.fetch_ptp_sector_inventory(
+                device_name_list=device_name_list
+            )
+
+            if len(inventory_resultset):
+                inventory_resultset.update(sector_inventory_resultset)
+            else:
+                inventory_resultset = sector_inventory_resultset
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "ss_name": "NA",
+                    "ss_id": 0,
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA",
+                    "device_technology": "NA",
+                    "bs_id": 0,
+                    "city_id": 0,
+                    "state_id": 0,
+                    "tech_id": 0,
+                    "type_id": 0,
+                    "near_device_id" : 0,
+                    "ckt_pk": 0,
+                    "sect_pk": 0,
+                    "cust_id": 0,
+                    "qos_bw": "NA",
+                    "polled_frequency": "NA",
+                    "freq_id": 0
+                })
+
+                device_name = data.get('device_name')
+                if not device_name or not len(inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                inventory_dataset = inventory_resultset.get(device_name)
+
+                if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                for inventory_row in inventory_dataset:
+                    data.update({
+                        "id" : inventory_row.get('DEVICE_ID', 0),
+                        "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                        "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                        "circuit_id": inventory_row.get('CCID', 'NA'),
+                        "customer_name": inventory_row.get('CUST', 'NA'),
+                        "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                        "ss_name": inventory_row.get('SSALIAS', 'NA'),
+                        "ss_id": inventory_row.get('SSID', 0),
+                        "city": inventory_row.get('BSCITY', 'NA'),
+                        "state": inventory_row.get('BSSTATE', 'NA'),
+                        "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
+                        "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                        "bs_id": inventory_row.get('BSID', 0),
+                        "city_id": inventory_row.get('BSCITYID', 0),
+                        "state_id": inventory_row.get('BSSTATEID', 0),
+                        "tech_id": inventory_row.get('TECHID', 0),
+                        "type_id": inventory_row.get('TYPEID', 0),
+                        "near_device_id" : inventory_row.get('NEAR_DEVICE_ID', 0),
+                        "ckt_pk" : inventory_row.get('CID', 0),
+                        "sect_pk" : inventory_row.get('SECT_ID', 0),
+                        "cust_id" : inventory_row.get('CUSTID', 0),
+                        "qos_bw" : inventory_row.get('CKT_QOS', "NA"),
+                        "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
+                        "freq_id" : inventory_row.get('FREQ_ID', 0)
+                    })
+
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+        else:
+            inventory_resultset = nocout_utils.fetch_ss_inventory(
+                technology=technology,
+                device_name_list=device_name_list
+            )
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "ss_name": "NA",
+                    "ss_id": 0,
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA",
+                    "device_technology": "NA",
+                    "bs_id": 0,
+                    "city_id": 0,
+                    "state_id": 0,
+                    "tech_id": 0,
+                    "type_id": 0,
+                    "near_device_id" : 0,
+                    "ckt_pk" : 0,
+                    "sect_pk" : 0,
+                    "cust_id" : 0,
+                    "qos_bw" : "NA"
+                })
+
+
+                device_name = data.get('device_name')
+                if not device_name or not len(inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                inventory_dataset = inventory_resultset.get(device_name)
+
+                if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                for inventory_row in inventory_dataset:
+
+                    data.update({
+                        "id" : inventory_row.get('DEVICE_ID', 0),
+                        "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                        "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                        "circuit_id": inventory_row.get('CCID', 'NA'),
+                        "customer_name": inventory_row.get('CUST', 'NA'),
+                        "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                        "ss_name": inventory_row.get('SSALIAS', 'NA'),
+                        "ss_id": inventory_row.get('SSID', 'NA'),
+                        "city": inventory_row.get('BSCITY', 'NA'),
+                        "state": inventory_row.get('BSSTATE', 'NA'),
+                        "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
+                        "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                        "bs_id": inventory_row.get('BSID', 0),
+                        "city_id": inventory_row.get('BSCITYID', 0),
+                        "state_id": inventory_row.get('BSSTATEID', 0),
+                        "tech_id": inventory_row.get('TECHID', 0),
+                        "type_id": inventory_row.get('TYPEID', 0),
+                        "near_device_id" : inventory_row.get('NEAR_DEVICE_ID', 0),
+                        "ckt_pk" : inventory_row.get('CID', 0),
+                        "sect_pk" : inventory_row.get('SECT_ID', 0),
+                        "cust_id" : inventory_row.get('CUSTID', 0),
+                        "qos_bw" : inventory_row.get('CKT_QOS', 0)
+                    })
+
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+    elif page_type in ['network']:
+        if technology.upper() in ['P2P', 'PTP', 'PTP-BH']:
+            ptpbh_ss_inventory_resultset = nocout_utils.fetch_ptpbh_ss_inventory(
+                technology=technology,
+                device_name_list=device_name_list
+            )
+            
+
+            ptpbh_sector_inventory_resultset = nocout_utils.fetch_ptpbh_sector_inventory(
+                device_name_list=device_name_list
+            )
+            
+            if len(ptpbh_ss_inventory_resultset):
+                # Merge 'ptpbh_sector_inventory_resultset' dict with 'ptpbh_ss_inventory_resultset'
+                ptpbh_ss_inventory_resultset.update(ptpbh_sector_inventory_resultset)
+            else:
+                ptpbh_ss_inventory_resultset = ptpbh_sector_inventory_resultset
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "ss_name": "NA",
+                    "ss_id": "NA",
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA",
+                    "device_technology": "NA",
+                    "qos_bw" : "NA",
+                    "bs_id": 0,
+                    "city_id": 0,
+                    "state_id": 0,
+                    "tech_id": 0,
+                    "type_id": 0,
+                    "near_device_id" : 0,
+                    "ckt_pk" : 0,
+                    "sect_pk" : 0,
+                    "cust_id" : 0,
+                    "polled_frequency" : "NA",
+                    "freq_id" : 0,
+                    "planned_frequency": "NA"
+                })
+
+
+                device_name = data.get('device_name')
+                if not device_name or not len(ptpbh_ss_inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                inventory_dataset = ptpbh_ss_inventory_resultset.get(device_name)
+
+                if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                for inventory_row in inventory_dataset:
+
+                    data.update({
+                        "id" : inventory_row.get('DEVICE_ID', 0),
+                        "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                        "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                        "circuit_id": inventory_row.get('CCID', 'NA'),
+                        "customer_name": inventory_row.get('CUST', 'NA'),
+                        "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                        "ss_name": inventory_row.get('SSALIAS', 'NA'),
+                        "ss_id": inventory_row.get('SSID', 'NA'),
+                        "city": inventory_row.get('BSCITY', 'NA'),
+                        "state": inventory_row.get('BSSTATE', 'NA'),
+                        "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
+                        "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                        "qos_bw" : inventory_row.get('CKT_QOS', "NA"),
+                        "bs_id": inventory_row.get('BSID', 0),
+                        "city_id": inventory_row.get('BSCITYID', 0),
+                        "state_id": inventory_row.get('BSSTATEID', 0),
+                        "tech_id": inventory_row.get('TECHID', 0),
+                        "type_id": inventory_row.get('TYPEID', 0),
+                        "near_device_id" : inventory_row.get('NEAR_DEVICE_ID', 0),
+                        "ckt_pk" : inventory_row.get('CID', 0),
+                        "sect_pk" : inventory_row.get('SECT_ID', 0),
+                        "cust_id" : inventory_row.get('CUSTID', 0),
+                        "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
+                        "freq_id" : inventory_row.get('FREQ_ID', 0),
+                        "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA')
+                    })
+
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+        else:
+            if is_single_call and technology in ['WiMAX']:
+                grouped_query = False
+            else:
+                grouped_query = True
+
+            sector_inventory_resultset = nocout_utils.fetch_sector_inventory(
+                technology=technology,
+                device_name_list=device_name_list,
+                grouped_query=grouped_query
+            )
+
+            if technology in ['WiMAX']:
+
+                # Fetch DR devices
+                dr_inventory_resultset = nocout_utils.fetch_dr_sector_inventory(
+                    device_name_list=device_name_list,
+                    grouped_query=grouped_query
+                )
+
+                if len(sector_inventory_resultset):
+                    # Merge 'dr_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset.update(dr_inventory_resultset)
+                else:
+                    # Merge 'dr_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset = dr_inventory_resultset
+
+                # Fetch MRC devices
+                mrc_inventory_resultset = nocout_utils.fetch_mrc_sector_inventory(
+                    device_name_list=device_name_list,
+                    grouped_query=grouped_query
+                )
+
+                if len(sector_inventory_resultset):
+                    # Merge 'mrc_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset.update(mrc_inventory_resultset)
+                else:
+                    # Merge 'mrc_inventory_resultset' dict with sector_inventory_resultset
+                    sector_inventory_resultset = mrc_inventory_resultset
+
+            for data in qs:
+                data.update({
+                    "near_end_ip": "NA",
+                    "sector_id": "NA",
+                    "circuit_id": "NA",
+                    "customer_name": "NA",
+                    "bs_name": "NA",
+                    "city": "NA",
+                    "state": "NA",
+                    "device_type": "NA",
+                    "device_technology": "NA",
+                    "bs_id": 0,
+                    "city_id": 0,
+                    "state_id": 0,
+                    "tech_id": 0,
+                    "type_id": 0,
+                    "near_device_id" : 0,
+                    "ckt_pk" : 0,
+                    "sect_pk" : 0,
+                    "cust_id" : 0,
+                    "polled_frequency" : "NA",
+                    "freq_id" : 0,
+                    "planned_frequency": "NA"
+                })
+
+
+                device_name = data.get('device_name')
+                if not device_name or not len(sector_inventory_resultset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                inventory_dataset = sector_inventory_resultset.get(device_name)
+
+                if not inventory_dataset or not len(inventory_dataset):
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+                    continue
+
+                for inventory_row in inventory_dataset:
+                    data.update({
+                        "id" : inventory_row.get('DEVICE_ID', 0),
+                        "near_end_ip": inventory_row.get('SECTOR_CONF_ON_IP', 'NA'),
+                        "sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                        "sector_sector_id": inventory_row.get('SECTOR_PORT_SECTOR_ID', 'NA'),
+                        "pmp_port": inventory_row.get('SECTOR_PORT', 'NA'),
+                        "circuit_id": inventory_row.get('CCID', 'NA'),
+                        "customer_name": inventory_row.get('CUST', 'NA'),
+                        "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                        "city": inventory_row.get('BSCITY', 'NA'),
+                        "state": inventory_row.get('BSSTATE', 'NA'),
+                        "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
+                        "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                        "bs_id": inventory_row.get('BSID', 0),
+                        "city_id": inventory_row.get('BSCITYID', 0),
+                        "state_id": inventory_row.get('BSSTATEID', 0),
+                        "tech_id": inventory_row.get('TECHID', 0),
+                        "type_id": inventory_row.get('TYPEID', 0),
+                        "near_device_id" : inventory_row.get('NEAR_DEVICE_ID', 0),
+                        "ckt_pk" : inventory_row.get('CID', 0),
+                        "sect_pk" : inventory_row.get('SECT_ID', 0),
+                        "cust_id" : inventory_row.get('CUSTID', 0),
+                        "polled_frequency" : inventory_row.get('FREQUENCY', "NA"),
+                        "freq_id" : inventory_row.get('FREQ_ID', 0),
+                        "planned_frequency": inventory_row.get('SECTOR_PLANNED_FREQUENCY', 'NA')
+                    })
+                    
+                    # append the deep copied dict
+                    resultant_dataset.append(json.loads(json.dumps(data)))
+    else:
+        if is_single_call:
+            grouped_query = False
+        else:
+            grouped_query = True
+            
+        backhaul_inventory_resultset = nocout_utils.fetch_backhaul_inventory(
+            device_name_list=device_name_list,
+            type_rf=type_rf,
+            grouped_query=grouped_query
+        )
+
+        for data in qs:
+            data.update({
+                "bs_name": "NA",
+                "city": "NA",
+                "state": "NA",
+                "device_type": "NA",
+                "device_technology": "NA",
+                "bh_connectivity" : "NA",
+                "bh_capacity" : "NA",
+                "bh_alias" : "NA",
+                "bh_port" : 0,
+                "bs_id": 0,
+                "bh_id": 0,
+                "city_id": 0,
+                "state_id": 0,
+                "tech_id": 0,
+                "type_id": 0
+            })
+
+
+            device_name = data.get('device_name')
+            if not device_name or not len(backhaul_inventory_resultset):
+                # append the deep copied dict
+                resultant_dataset.append(json.loads(json.dumps(data)))
+                continue
+
+            inventory_dataset = backhaul_inventory_resultset.get(device_name)
+
+            if not inventory_dataset or not len(inventory_dataset):
+                # append the deep copied dict
+                resultant_dataset.append(json.loads(json.dumps(data)))
+                continue
+
+            for inventory_row in inventory_dataset:
+                data.update({
+                    "id" : inventory_row.get('DEVICE_ID', 0),
+                    "bs_name": inventory_row.get('BSALIAS', 'NA'),
+                    "city": inventory_row.get('BSCITY', 'NA'),
+                    "state": inventory_row.get('BSSTATE', 'NA'),
+                    "device_type": inventory_row.get('DEVICE_TYPE', 'NA'),
+                    "device_technology": inventory_row.get('DEVICE_TECH', 'NA'),
+                    "bh_connectivity" : inventory_row.get('BH_CONNECTIVITY', 'NA'),
+                    "bh_capacity" : inventory_row.get('BHCAPACITY', 'NA'),
+                    "bh_alias" : inventory_row.get('BH_ALIAS', 'NA'),
+                    "bh_port" : inventory_row.get('BHPORT', 'NA'),
+                    "bs_id": inventory_row.get('BSID', 0),
+                    "bh_id": inventory_row.get('BHID', 0),
+                    "city_id": inventory_row.get('BSCITYID', 0),
+                    "state_id": inventory_row.get('BSSTATEID', 0),
+                    "tech_id": inventory_row.get('TECHID', 0),
+                    "type_id": inventory_row.get('TYPEID', 0)
+                })
+                
+                # append the deep copied dict
+                resultant_dataset.append(json.loads(json.dumps(data)))
+
+    return resultant_dataset
 
 
 @nocout_utils.cache_for(CACHE_TIME.get('DEFAULT_PERFORMANCE', 300))
@@ -845,8 +1313,6 @@ def get_performance_data(device_list, machine, model):
     perf_result = {"packet_loss": "N/A",
                    "latency": "N/A",
                    "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A",
                    "age": "N/A"
                    }
 
@@ -870,8 +1336,6 @@ def get_performance_data(device_list, machine, model):
             perf_result = {"packet_loss": "N/A",
                            "latency": "N/A",
                            "last_updated": "N/A",
-                           "last_updated_date": "N/A",
-                           "last_updated_time": "N/A",
                            "device_name": "N/A",
                            "age": "N/A",
                            }
@@ -895,14 +1359,13 @@ def get_performance_data(device_list, machine, model):
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+            ).strftime(DATE_TIME_FORMAT)
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+                float(data["age"])
+            ).strftime(DATE_TIME_FORMAT) if data["age"] else ""
 
             device_result[device] = perf_result
-    # (device_result)
-    #  device_result
 
     return device_result
 
@@ -1056,7 +1519,7 @@ def create_perf_chart_img(device_name, service, data_source):
     phantom_url = PHANTOM_PROTOCOL + "://" + PHANTOM_HOST + ":" + PHANTOM_PORT + "/"
 
     # Start PhantomJS server in background
-    os.system("phantomjs " + HIGHCHARTS_CONVERT_JS + " -host " + PHANTOM_HOST + " -port " + PHANTOM_PORT + "&")
+    # os.system("phantomjs " + HIGHCHARTS_CONVERT_JS + " -host " + PHANTOM_HOST + " -port " + PHANTOM_PORT + "&")
 
     # Make POST request to phantom js host to create the chart image
     chart_img_request = requests.post(phantom_url, data=json.dumps(infile_str))
@@ -1143,8 +1606,6 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
     perf_result = {"packet_loss": "N/A",
                    "latency": "N/A",
                    "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A",
                    "age": "N/A"
                    }
 
@@ -1168,8 +1629,6 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
             perf_result = {"packet_loss": "N/A",
                            "latency": "N/A",
                            "last_updated": "N/A",
-                           "last_updated_date": "N/A",
-                           "last_updated_time": "N/A",
                            "device_name": "N/A",
                            "age": "N/A",
                            }
@@ -1194,10 +1653,13 @@ def get_multiprocessing_performance_data(q, device_list, machine, model):
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+            ).strftime(DATE_TIME_FORMAT)
+            # ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+                float(data["age"])
+            ).strftime(DATE_TIME_FORMAT) if data["age"] else ""
+            # ).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
 
             device_result[device] = perf_result
     # (device_result)

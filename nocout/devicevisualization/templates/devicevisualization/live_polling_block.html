@@ -1,0 +1,86 @@
+<!--SideInfo Panel Start-->
+<div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:199;">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a>
+            </h3>
+        </div>
+        <div id="sideInfo" class="panel-collapse in">
+            <div class="panel-body">
+                <div class="col-md-12">
+                    <select name="polling_tech" id="polling_tech" class="form-control">
+                        <option value="">Select Technology</option>
+                    </select>
+                    <div class="divide-10"></div>
+                    <button type="button" class="btn btn-default" data-complete-text="Send" data-loading-text="Please Wait..." id="tech_send">
+                        Send
+                    </button>
+                    <div class="pull-right">
+                        <input type="checkbox" name="isPing" id="isPing" value="1"> Poll Ping Service
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="divide-20 clearfix"></div>
+                    <div class="template_container"></div>
+                    <div class="divide-10"></div>
+                    <div id="timeInterval_container" class="hide">
+                        <select name="poll_interval" id="poll_interval" class="form-control">
+                            <option value="">Select Poll Interval</option>
+                            <option value="10">10 Seconds</option>
+                            <option value="20">20 Seconds</option>
+                            <option value="30">30 Seconds</option>
+                            <option value="60">60 Seconds</option>
+                        </select>
+                        <div class="divide-10"></div>
+                        <select name="poll_maxInterval" id="poll_maxInterval" class="form-control">
+                            <option value="">Select Maximum Interval</option>
+                            <option value="1">1 Minute</option>
+                            <option value="2">2 Minute</option>
+                            <option value="3">3 Minute</option>
+                            <option value="4">4 Minute</option>
+                        </select>
+                    </div>
+                    <div class="divide-10"></div>
+                    <div class="">
+                        <div class="pull-left">
+                            <button type="button" class="btn btn-default hide" data-complete-text="Poll Now" data-loading-text="Please Wait... <i class='fa fa-spinner fa fa-spin'> </i>" id="fetch_polling" title="Poll Now">
+                                Poll Now
+                            </button>
+                        </div>
+                        <div class="pull-right">
+                            <button class="btn btn-default play_pause_btns hide" data-complete-text="<i class='fa fa-play text-success'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Play" id="play_btn">
+                                <i class="fa fa-play text-success"> </i>
+                            </button>
+                            <button class="btn btn-default play_pause_btns hide" data-complete-text="<i class='fa fa-pause text-warning'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Pause" id="pause_btn">
+                                <i class="fa fa-pause text-warning"> </i>
+                            </button>
+                            <button class="btn btn-default play_pause_btns hide" data-complete-text="<i class='fa fa-stop text-danger'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Stop" id="stop_btn">
+                                <i class="fa fa-stop text-danger"> </i>
+                            </button>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="divide-20 clearfix"></div>
+                    <div>
+                        <button type="button" class="btn btn-default pull-right hide" data-complete-text="Tabular View" data-loading-text="Please Wait..." id="polling_tabular_view">
+                            <i class="fa fa-table"></i> Tabular View
+                        </button>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="divide-20 clearfix"></div>
+                    <div id="navigation_container" class="hide">
+                        <button title="Previous" id="previous_polling_btn" class="btn btn-default pull-left">
+                            <i class="fa fa-arrow-left text-primary"> </i>
+                        </button>
+                        <button title="Next" id="next_polling_btn" class="btn btn-default pull-right">
+                            <i class="fa fa-arrow-right text-primary"> </i>
+                        </button>
+                    </div>
+                    <div class="clearfix"></div>
+                    <div class="devices_container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--SideInfo Panel End-->

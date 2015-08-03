@@ -15,10 +15,10 @@
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
-    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
-    <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css"
-          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    <!-- BOOTSTRAP SWITCH for BS maintenance feature -->
+    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %} />
+    <!-- JQUERY UI for Fresnel chart height sliders -->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
     <style>
         select option[disabled] {
             display: none;
@@ -221,29 +221,6 @@
         <div id="toolsContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
             <ul class="list-unstyled list-inline">
-                <!-- <li>
-                    <button type="button" id="ruler_select" class="btn btn-sm btn-info">Select Ruler</button>
-                    <button type="button" id="ruler_remove" class="btn btn-sm btn-danger hide">Remove Ruler</button>
-                </li>
-                <li>
-                    <button type="button" id="point_select" class="btn btn-sm btn-info">Add Point</button> -->
-                    <!-- <button type="button" id="point_remove" class="btn btn-sm btn-danger hide">Remove Points</button> -->
-                    <!-- <ul class="list-unstyled list-inline hide" id="point_icons_container"> -->
-                    <!-- If loggedin user is super admin then only show maintainance icon -->
-                        <!-- {% if user.is_superuser %} -->
-                            <!-- <li class="selected_icon"><img src="../../static/img/icons/tools/point/caution.png"/></li> -->
-                        <!-- {% endif %} -->
-                        <!-- <li><img src="../../static/img/icons/tools/point/icon1.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon2.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon3.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon4.png"/></li>
-                        <li class="close_box"><i class="fa fa-times" id="close_points_icon"> </i> </li>
-                    </ul>
-                </li> -->
-                <!-- <li>
-                    <button type="button" id="line_select" class="btn btn-info">Select Line</button>
-                    <button type="button" id="line_remove" class="btn btn-danger hide">Remove Line</button>
-                </li> -->
                 <li>
                     <button type="button" id="freeze_select" class="btn btn-sm btn-info">Freeze</button>
                     <button type="button" id="freeze_remove" class="btn btn-sm btn-danger hide">Un-Freeze</button>
@@ -294,52 +271,46 @@
     <div class='box border lite mapContainerBlock'>
         <div class='box-title'>
             <!--Filters Block Start-->
-            <div class="row">
-                <div class="col-md-12">
-                    <ul class="list-unstyled list-inline">
-                        <li>
-                            <input type="text" name="google_loc_search" id="google_loc_search" class="form-control col-xs-1" style="width:278px;"
-                                   placeholder="Location Search">
-                        </li>
-                        <li>
-                            <input type="text" name="lat_lon_search" onkeypress="return isLatLon(event);" id="lat_lon_search" class="form-control col-xs-1" style="width:175px;"
-                                   placeholder="Latitude,Longitude">
-                        </li>
-                        <li>
-                            <!--technology Filter-->
-                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;">
-                                <option value="">Select Technology</option>
-                            </select>
-                        </li>
-                        <li>
-                            <!--vendor Filter-->
-                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;">
-                                <option value="">Select Vendor</option>
-                            </select>
-                        </li>
-                        <li>
-                            <!--State Filter-->
-                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;">
-                                <option value="">Select State</option>
-                            </select>
-                        </li>
-                        <li>
-                            <!--City Filter-->
-                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;">
-                                <option value="">Select City</option>
-                            </select>
-                        </li>
-                        <li>
-                            <!--Reset Button-->
-                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"
-                                    data-complete-text="<i class='fa fa-refresh'></i> Reset"
-                                    data-loading-text="Please Wait...">
-                                <i class="fa fa-refresh">&nbsp;</i> Reset
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+            <ul class="list-unstyled list-inline">
+                <li>
+                    <input type="text" name="google_loc_search" id="google_loc_search" class="form-control input-sm col-xs-1" style="width:278px;" placeholder="Location Search">
+                </li>
+                <li>
+                    <input type="text" name="lat_lon_search" onkeypress="return isLatLon(event);" id="lat_lon_search" class="form-control input-sm col-xs-1" style="width:175px;" placeholder="Latitude,Longitude">
+                </li>
+                <li>
+                    <!--technology Filter-->
+                    <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                        <option value="">Select Technology</option>
+                    </select>
+                </li>
+                <li>
+                    <!--vendor Filter-->
+                    <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                        <option value="">Select Vendor</option>
+                    </select>
+                </li>
+                <li>
+                    <!--State Filter-->
+                    <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                        <option value="">Select State</option>
+                    </select>
+                </li>
+                <li>
+                    <!--City Filter-->
+                    <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                        <option value="">Select City</option>
+                    </select>
+                </li>
+                <li>
+                    <!--Reset Button-->
+                    <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"
+                            data-complete-text="<i class='fa fa-refresh'></i> Reset"
+                            data-loading-text="Please Wait...">
+                        <i class="fa fa-refresh">&nbsp;</i> Reset
+                    </button>
+                </li>
+            </ul>
             <!--Filters Block End-->
             <div class="clearfix"></div>
         </div>
@@ -492,7 +463,7 @@
     <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
     <!-- State boundries Loki object Lib -->
     <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
-    <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
+    <!-- Advance Filters Custom Library-->
     <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
     <!-- Our Library to implement search functionality on gmap & earth-->
     <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>

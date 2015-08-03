@@ -16,15 +16,11 @@
             {% breadcrumb_safe device_technology|upper "performance_listing" page_type  %}
         {% endif %}
     {% endif %}
-    {% breadcrumb_safe realdevice.ip_address "javascript:;" %}
+    {% breadcrumb_safe bs_alias|add:" ("|add:realdevice.ip_address|add:")" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
 
-{% block content_title %}
-    {{ page_title }} Live <span style="font-size: 25px;">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</span>
-{% endblock %}
-{% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
     <!-- JQUERY UI-->
@@ -89,7 +85,7 @@
                         <span class="input-group-addon">
                             <i class="fa fa-calendar"></i>
                         </span>
-                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
+                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value="" readonly/>
                     </div>
                 </li>
                 <li>

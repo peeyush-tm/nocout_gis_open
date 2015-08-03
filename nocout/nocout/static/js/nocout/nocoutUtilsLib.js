@@ -46,10 +46,10 @@ function populateDeviceStatus_nocout(domElement,info) {
         age = info.age ? info.age : "Unknown",
         lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
         status = info.status ? info.status.toUpperCase() : "Unknown",
-        severity_up = info.severity && info.severity.ok ? Number(info.severity.ok) : 0,
-        severity_warn = info.severity && info.severity.warn ? Number(info.severity.warn) : 0,
-        severity_crit = info.severity && info.severity.crit ? Number(info.severity.crit) : 0,
-        severity_unknown = info.severity && info.severity.unknown ? Number(info.severity.unknown) : 0;
+        severity_up = info.severity && info.severity.ok ? info.severity.ok : 0,
+        severity_warn = info.severity && info.severity.warn ? info.severity.warn : 0,
+        severity_crit = info.severity && info.severity.crit ? info.severity.crit : 0,
+        severity_unknown = info.severity && info.severity.unknown ? info.severity.unknown : 0;
 
     var severity_style_obj = nocout_getSeverityColorIcon(status);
 
@@ -403,14 +403,13 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
     }
     
     if ($(".top_perf_tabs").length > 0) {
-        var top_tab_content_href = $(".top_perf_tabs > li.active a").attr('href'),
-            top_tab_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0],
-            left_tab_content_href = $("#" + top_tab_id + " .left_tabs_container li.active a").attr("href"),
-            left_tab_id = left_tab_content_href.split("#").length > 1 ? left_tab_content_href.split("#")[1] : left_tab_content_href.split("#")[0],
-            top_tab_text = $.trim($(".top_perf_tabs > li.active a").text()),
-            left_tab_txt = $.trim($("#" + top_tab_id + " .left_tabs_container > li.active a").text()),
+        var 
+            top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
+            left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
+            top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
+            left_tab_txt = $.trim($("#" +left_tab_id).text()),
             report_title = "";
-        
+
         if (show_historical_on_performance) {
             try {
                 var content_tab_text = $.trim($("#" + left_tab_id + " .inner_inner_tab li.active a").text());
@@ -641,10 +640,12 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         },
         plotOptions : {
             column : {
-                borderWidth : 0
+                borderWidth : 0,
+                borderColor : ''
             },
             bar : {
-                borderWidth : 0
+                borderWidth : 0,
+                borderColor : ''
             }
         },
         series: chartConfig.chart_data

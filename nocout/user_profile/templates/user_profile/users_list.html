@@ -6,6 +6,7 @@
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-user'></i> User Management" "javascript:;" %}
     {% breadcrumb_safe "Users" "user_list" %}
+    {% breadcrumb_safe "User Listing" "user_list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -38,7 +39,7 @@
                     </a>
                 </li>
             </ul>
-            <div class="tab-content">
+            <div class="tab-content" style="overflow: auto;">
                 <div class="tab-pane in active" id="UserListing">
                     <table id="UserListingTable" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>

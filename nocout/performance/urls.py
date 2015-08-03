@@ -29,7 +29,7 @@ urlpatterns = patterns('',
                           name='spotDashboardListing'
                        ),
                        url(r'^get_inventory_device_status/(?P<page_type>\w+)/device/(?P<device_id>\d+)/$',
-                           cache_page(60 * 60)(views.InventoryDeviceStatus.as_view()),
+                           views.InventoryDeviceStatus.as_view(),
                            name='DeviceStatusUrl'
                        ),
                        url(r'^get_inventory_service_data_sources/device/(?P<device_id>\d+)/$',

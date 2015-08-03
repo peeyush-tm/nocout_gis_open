@@ -50,7 +50,7 @@ GATEWAY_PARAMETERS = {
 }
 #### SMS GATEWAY SETTINGS
 
-
+# Dictionary for recognizing changing status of devices
 status_dict = {
     'changed_good': {
         'old': 0,
@@ -74,10 +74,13 @@ status_dict = {
 
 def status_change(old_status, new_status):
     """
+    A function for finding status of device is changed or unchanged & good or bad
+    :Args:
+        old_status: Integer Field (0 or 1)
+        new_status: Integer Field (0 or 1)
 
-    :param old_status:
-    :param new_status:
     :return:
+        status_dict : dictionary
     """
 
     if old_status == 0 and new_status == 0:
@@ -101,11 +104,20 @@ def status_change(old_status, new_status):
 @task
 def raise_alarms(dict_devices_invent_info, service_status_list, org, required_levels):
     """
-    Raise alarms for bad performance or good performance of device for a particular organization.
-    """
-    # bulky_update = list()  # list of escalation objects we want to update
-    # bulky_create = list()  # list of escalation objects we want to create
+    This is celery task function which raise alarms for bad performance or good performance of device for a particular organization 
+    and divide celery tasks into more tasks depends on service levels which requires escalation.
 
+    :Args:
+       dict_devices_invent_info : Indexed dict og GIS info key as device_name 
+       service_status_list : List of object of services and their parameters which have escalation levels.
+       org : Organizations
+       required_levels : Escalation levels of particular organization.
+
+    :return:
+        True/False
+    """
+
+    # Initialization of variables.
     g_jobs = list()
     ret = False
     s_sds = ServiceSpecificDataSource.objects.prefetch_related(
@@ -117,7 +129,6 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
     escalation_status_data = EscalationStatus.objects.all()
 
     for service_status in service_status_list:
-
         # Get EscalationStatus to process.
         # if severity of service_status is 'ok', set the old_status and new_status 'Good' for defaults.
         if service_status.severity == 'ok':
@@ -140,7 +151,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
 
         # Get relative levels to inform
         # Get the list of levels of EscalationStatus object after filtering the escalationLevel table
-        # on the basis of device_type, service and service_data_source.
+        # on the basis of service and service_data_source.
         service_level_list = required_levels.filter(
             service=service,
             service_data_source=service_data_source
@@ -149,8 +160,8 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
         time_now = float(format(datetime.datetime.now(), 'U'))  # in unixtime
         time_since = float(service_status.age)  # already in unixtime
         changed_time = time_now - time_since  # in seconds the time since the status has changed
-
-        if service_level_list.exists():  # if there are actually a level corrosponding to this alarm - lets talk
+        # if there are actually a level corrosponding to this alarm 
+        if service_level_list.exists():
             # get the device of service_status.
             device = Device.objects.get(device_name=service_status.device_name)
             # device, device_type, service(get from service_status) and service_data_source(get from service_status).
@@ -167,9 +178,10 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                     'organization': org
                 }
             )
-
+            # Getting complete GIS info corresponding to that device_name
             invent_obj = dict_devices_invent_info.get(service_status.device_name)
             if not invent_obj:
+                # If no gis info then iterate to next element of list
                 continue
 
             invent_obj.update({'current_value': service_status.current_value})
@@ -198,11 +210,12 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                             alarm_age__lte=changed_time
                         )  # this should exists to raise any alarm
                         if level_list.exists():
+                            # Appending Jobs
                             g_jobs.append(
                                 alarm_status_changed.s(alarm_object=obj, levels=level_list, alarm_invent_object=invent_obj)  # call for task
                             )
                     elif status_change(old_status, new_status) == status_dict['unchanged_good']:
-                        continue  # everything is fine # keep on going
+                        continue  # everything is fine keep on going
                     elif status_change(old_status, new_status) == status_dict['changed_bad']:
                         level_list = service_level_list.filter(
                             alarm_age__lte=changed_time
@@ -214,6 +227,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                     elif status_change(old_status, new_status) == status_dict['changed_good']:
                         level_list = service_level_list
                         if level_list.exists():
+                            # append the task 
                             g_jobs.append(
                                 alarm_status_changed.s(
                                     alarm_object=obj,
@@ -221,7 +235,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
                                     alarm_invent_object=invent_obj,
                                     is_bad=False
                                 )
-                            )  # append the task
+                            )
                     else:
                         continue  # don't know what just happened
 
@@ -253,6 +267,7 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
     elif len(g_jobs):
         job = group(g_jobs)
         try:
+            # Start the jobs
             result = job.apply_async()
             # for r in result.get():
             #     ret |= r
@@ -266,13 +281,20 @@ def raise_alarms(dict_devices_invent_info, service_status_list, org, required_le
 @task()
 def alarm_status_changed(alarm_object, levels, alarm_invent_object, is_bad=True):
     """
+    This is celery task which opens another celery tasks for sending Emails & SMS & 
+    also bulk update in Escalation status model that for particular whether Email, 
+    SMS is sent or not.
 
+    :Args:
+        alarm_object : Object of Escalation Status model
+        levels : All levels list
+        alarm_invent_object : GIS Info parameters
+        is_bad : Default True/False is a good alarm or a bad alarm ?
 
-    :param is_bad: is a good alarm or a bad alarm ?
-    :param alarm_object:
-    :param levels:
     :return:
+        True/False
     """
+    # Initialization of variables
     bulkyobject= list()
     g_jobs = list()
     ret = False
@@ -286,14 +308,14 @@ def alarm_status_changed(alarm_object, levels, alarm_invent_object, is_bad=True)
                 continue
             else:
                 method_to_call_email=alert_emails_for_good_performance
-                # alert_emails_for_good_performance.delay(alarm=alarm_object, level=level)
+                # Setting attribute that email status
                 setattr(alarm_object, 'l%d_email_status' % level.name, 0)
                 changed=True
         elif getattr(alarm_object, 'l%d_email_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
                 method_to_call_email=alert_emails_for_bad_performance
-                # alert_emails_for_bad_performance.delay(alarm=alarm_object, level=level)
+                # Setting attribute that email status
                 setattr(alarm_object, 'l%d_email_status' % level.name, 1)
                 changed=True
             else:
@@ -304,14 +326,14 @@ def alarm_status_changed(alarm_object, levels, alarm_invent_object, is_bad=True)
                 continue
             else:
                 method_to_call_phone=alert_phones_for_good_performance
-                # alert_phones_for_good_performance.delay(alarm=alarm_object, level=level)
+                # Setting attribute that SMS status
                 setattr(alarm_object, 'l%d_phone_status' % level.name, 0)
                 changed=True
         elif getattr(alarm_object, 'l%d_phone_status' % level.name) == 0:
             # this level is not notified
             if is_bad:
                 method_to_call_phone=alert_phones_for_bad_performance
-                # alert_phones_for_bad_performance.delay(alarm=alarm_object, level=level)
+                # Setting attribute that SMS status
                 setattr(alarm_object, 'l%d_phone_status' % level.name, 1)
                 changed=True
             else:
@@ -320,6 +342,7 @@ def alarm_status_changed(alarm_object, levels, alarm_invent_object, is_bad=True)
         #     continue
          
         if method_to_call_email and method_to_call_phone:
+            # Appending of Jobs
             g_jobs.append(method_to_call_email.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level ))
             g_jobs.append(method_to_call_phone.s(alarm=alarm_object, alarm_invent=alarm_invent_object, level=level ))
 
@@ -331,8 +354,10 @@ def alarm_status_changed(alarm_object, levels, alarm_invent_object, is_bad=True)
         return ret
     else:
         job = group(g_jobs)
+        # Start the Jobs
         result = job.apply_async()
         if len(bulkyobject):
+            # Bulk update the Escalation Status model
             bulk_update_create.delay(bulky=bulkyobject,
                                      action='update',
                                      model=EscalationStatus)                
@@ -343,10 +368,21 @@ def alarm_status_changed(alarm_object, levels, alarm_invent_object, is_bad=True)
 def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
     """
     Sends Emails for bad performance.
+
+    :Args:
+        alarm : Escalation status model object
+        alarm_invent : GIS info dictionary
+        level  : level object
+
+    :return:
+        True/False
     """
     context_dict = dict()
+    # Calling function for getting all emails in particular level
     emails = level.get_emails()
+    # Update the dictionary
     alarm_invent.update({'start_string': 'ALERT'})
+    # Creation of context dictionary for passing in template
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
@@ -364,16 +400,27 @@ def alert_emails_for_bad_performance(alarm, alarm_invent, level ):
 def alert_phones_for_bad_performance(alarm, alarm_invent, level):
     """
     Sends sms to phones for bad performance.
+
+    :Args:
+        alarm : Escalation status model object
+        alarm_invent : GIS info dictionary
+        level  : level object
+
+    :return:
+        True/False
+
     >>> payload = {'key1': 'value1', 'key2': 'value2'}
     >>> r = requests.get("http://httpbin.org/get", params=payload)
     """
     context_dict = dict()
     payload =  GATEWAY_PARAMETERS
     url = GATEWAY_SETTINGS['URL']
+    # calling function for gettings all phone numbers in particular level
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
         alarm_invent.update({'start_string': 'ALERT'})
+        # Creation of context dictionary for passing in template
         context_dict['alarm'] = alarm
         context_dict['alarm_invent'] = alarm_invent
         context_dict['level'] = level
@@ -392,14 +439,24 @@ def alert_phones_for_bad_performance(alarm, alarm_invent, level):
 @task
 def alert_emails_for_good_performance(alarm, alarm_invent, level ):
     """
-    Sends Emails for good performance.
+    Sends Emails for good performance. 
+
+    :Args:
+        alarm : Escalation status model object
+        alarm_invent : GIS info dictionary
+        level  : level object
+
+    :return:
+        True/False
     """
     #msg = EmailMessage(subject, html_content, from_email, [to])
     #msg.content_subtype = "html"  # Main content is now text/html
     #msg.send()
     context_dict = dict()
+    # Calling function for getting all emails in particular level
     emails = level.get_emails()
     alarm_invent.update({'start_string': 'RECOVERED'})
+    # Creation of context dictionary for passing in template
     context_dict['alarm'] = alarm
     context_dict['alarm_invent'] = alarm_invent
     context_dict['level'] = level
@@ -417,10 +474,19 @@ def alert_emails_for_good_performance(alarm, alarm_invent, level ):
 def alert_phones_for_good_performance(alarm, alarm_invent, level ):
     """
     Sends sms to phones for bad performance.
+
+    :Args:
+        alarm : Escalation status model object
+        alarm_invent : GIS info dictionary
+        level  : level object
+
+    :return:
+        True/False
     """
     context_dict = dict()
     payload =  GATEWAY_PARAMETERS
     url = GATEWAY_SETTINGS['URL']
+    # calling function for gettings all phone numbers in particular level
     phones = level.get_phones()
     if len(phones):
         send_to = ",".join(phones)
@@ -442,8 +508,18 @@ def alert_phones_for_good_performance(alarm, alarm_invent, level ):
 @task
 def check_device_status():
     """
-    Will check the status of devices of organizations.
+    This is celery task function calls from settings file of project in every 5 minutes. 
+    This function initializes the parameters for Escalation and brings out information of 
+    complete GIS inventory for all devices and finally divide this task other task depending 
+    on no. of organizations & status of devices on different database per organization.
+
+    :Args:
+        No inout Arguments.
+
+    :return:
+        True/False
     """
+    # Initialization of variables
     g_jobs = list()
     ret = False
     service_list = []
@@ -463,23 +539,28 @@ def check_device_status():
     for org in Organization.objects.all():
         # get the objects which require escalation
         required_objects = EscalationLevel.objects.filter(organization__in=[org])
+        # if there is actually an escalation object defined
+        # if there is none dont worry & return True & relax
         if required_objects.exists():
-            # if there is actually an escalation object defined
-            # if there is none dont worry & return True & relax
+            # Extract service list, service data source list, device type list from objects which requires escalation
             device_type_list = set(required_objects.values_list('device_type__id', flat=True))
             service_list = set(required_objects.values_list('service__name', flat=True))
             service_data_source_list = set(required_objects.values_list('service_data_source__name', flat=True))
 
-            # exclude the devices which is in downtime scheduling today.
-            device_list_qs = Device.objects.filter(organization__in=[org],
-                                                   device_type__in=device_type_list,
-                                                   is_added_to_nms=1
+            # exclude those devices which is in downtime scheduling today.
+            device_list_qs = Device.objects.filter(
+                organization__in=[org],
+                device_type__in=device_type_list,
+                is_added_to_nms__gt=0
             ).exclude(id__in=device_id_list).values('device_name', 'machine__name')
 
+            # Prepare list of dictionaries {key = machine_name : value = list of devices}
             machine_dict = prepare_machines(device_list_qs)
 
             # Call 'prepare_gis_devices' method of 'PerformanceUtilsGateway' class
+            # this class gives us complete information of GIS inventory related to all devices.
             list_devices_invent_info = perf_utils.prepare_gis_devices(device_list_qs, page_type=None)
+            # Conversion of list to indexed dict so that dict.get('device_name') gives us complete GIS info corresponding to that device name.
             dict_devices_invent_info = inventory_utils.list_to_indexed_dict(list_devices_invent_info, 'device_name')
 
             for machine_name, device_list in machine_dict.items():
@@ -491,6 +572,7 @@ def check_device_status():
                 ).using(alias=machine_name)
 
                 if service_status_list.exists():
+                    # Appending jobs
                     g_jobs.append(
                         raise_alarms.s(dict_devices_invent_info,
                                        service_status_list=service_status_list,
@@ -503,6 +585,7 @@ def check_device_status():
         return ret
 
     job = group(g_jobs)
+    # Start the jobs
     result = job.apply_async()
     # for r in result.get():
     #     ret |= r
@@ -513,8 +596,11 @@ def prepare_machines(device_list_qs):
     """
     Return dict of machine name keys containing values of related devices list.
 
-    :param device_list_qs:
-    :return machine_dict:
+    :Args:
+        device_list_qs : list of dictionaries of devices info 
+
+    :return:
+        machine_dict : dictionary {key = machine name : value = list of devices}
     """
     unique_device_machine_list = {device['machine__name']: True for device in device_list_qs}.keys()
 
@@ -528,8 +614,11 @@ def prepare_services(device_list_qs):
     """
     Return list of services of device types.
 
-    :param device_list_qs:
-    :return service_name_list:
+    :Args:
+        device_list_qs:
+
+    :return:
+        service_name_list:
     """
     device_type_list = DeviceType.objects.filter(id__in=device_list_qs.values_list('device_type', flat=True))
     return list(DeviceTypeService.objects.filter(
@@ -541,8 +630,11 @@ def prepare_service_data_sources(service_name_list):
     """
     Return list of service data sources of services.
 
-    :param service_name_list (List of service names):
-    :return data_source_name_list (List of service data sources):
+    :Args:
+        service_name_list : List of service names
+
+    :return:
+        data_source_name_list : List of service data sources
     """
     return list(DeviceTypeServiceDataSource.objects.filter(
         device_type_service__service__name__in=service_name_list).values_list('service_data_sources__name', flat=True)

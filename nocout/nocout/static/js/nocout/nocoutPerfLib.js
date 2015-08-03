@@ -83,7 +83,7 @@ if (window.location.origin) {
 
 // Daterangepicker HTML String
 date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
-                          class="form-control input-large search-query" value=""/>';
+                          class="form-control input-large search-query" value="" readonly/>';
 
 
 $.urlParam = function (name) {
@@ -971,13 +971,15 @@ function nocoutPerfLib() {
 
             $('#' + service_id+ '_chart').html("");
 
-            initChartDataTable_nocout(
-                "other_perf_table",
-                listing_headers,
-                service_id,
-                listing_ajax_url,
-                true
-            );
+            setTimeout(function() {
+                initChartDataTable_nocout(
+                    "other_perf_table",
+                    listing_headers,
+                    service_id,
+                    listing_ajax_url,
+                    true
+                );
+            }, 300);
         } else {
             // Send ajax call
             sendAjax(start_date, end_date);
@@ -1085,13 +1087,15 @@ function nocoutPerfLib() {
                                 // Checked the chart type radio
                                 $('#display_table')[0].checked = true;
 
-                                initChartDataTable_nocout(
-                                    "other_perf_table",
-                                    listing_headers,
-                                    service_id,
-                                    listing_ajax_url,
-                                    true
-                                );
+                                setTimeout(function() {
+                                    initChartDataTable_nocout(
+                                        "other_perf_table",
+                                        listing_headers,
+                                        service_id,
+                                        listing_ajax_url,
+                                        true
+                                    );
+                                },300)
                             }
                         } else {
                             var chart_config = result.data.objects;
@@ -1179,13 +1183,15 @@ function nocoutPerfLib() {
                                         // Checked the chart type radio
                                         $('#display_table')[0].checked = true;
 
-                                        initChartDataTable_nocout(
-                                            "other_perf_table",
-                                            listing_headers,
-                                            service_id,
-                                            listing_ajax_url,
-                                            true
-                                        );
+                                        setTimeout(function() {
+                                            initChartDataTable_nocout(
+                                                "other_perf_table",
+                                                listing_headers,
+                                                service_id,
+                                                listing_ajax_url,
+                                                true
+                                            );
+                                        }, 300)
                                     }
                                 }
                             } else {
@@ -1219,13 +1225,15 @@ function nocoutPerfLib() {
                                         // Checked the chart type radio
                                         $('#display_table')[0].checked = true;
 
-                                        initChartDataTable_nocout(
-                                            "other_perf_table",
-                                            listing_headers,
-                                            service_id,
-                                            listing_ajax_url,
-                                            true
-                                        );
+                                        setTimeout(function() {
+                                            initChartDataTable_nocout(
+                                                "other_perf_table",
+                                                listing_headers,
+                                                service_id,
+                                                listing_ajax_url,
+                                                true
+                                            );
+                                        }, 300);
                                     }
                                 }
                             }
@@ -1279,13 +1287,15 @@ function nocoutPerfLib() {
                             // Checked the chart type radio
                             $('#display_table')[0].checked = true;
 
-                            initChartDataTable_nocout(
-                                "other_perf_table",
-                                listing_headers,
-                                service_id,
-                                listing_ajax_url,
-                                true
-                            );
+                            setTimeout(function() {
+                                initChartDataTable_nocout(
+                                    "other_perf_table",
+                                    listing_headers,
+                                    service_id,
+                                    listing_ajax_url,
+                                    true
+                                );
+                            }, 300);
                         }
                     }
 

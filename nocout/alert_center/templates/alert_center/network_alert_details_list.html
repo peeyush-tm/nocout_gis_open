@@ -7,6 +7,7 @@
     {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
     {% breadcrumb_safe "Alert Details" "javascript:;" %}
     {% breadcrumb_safe "Network Alert Details" "network_alert_details" %}
+    {% breadcrumb_safe "PTP BH" "network_alert_details" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -233,6 +234,8 @@
 
         $(document).ready(function () {
 
+            refresh_time = 300;
+
             /*Set the base url of application for ajax calls*/
             if (window.location.origin) {
                 base_url = window.location.origin;
@@ -295,7 +298,7 @@
                     "data_class_name" : "BackhaulAugmentationAlertsListing",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : "{'report_title' : '"+network_bhUtil_title+"', "+common_extra_param+"}",
-                    "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per']"
+                    "excluded" : "['id','organization__alias', 'current_out_per', 'current_in_per', 'backhaul_capacity', 'backhaul__bh_type', 'backhaul__bh_connectivity']"
                 },
                 "network_sectorUtil_tab" : {
                     "app_name" : "capacity_management",
@@ -313,8 +316,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'headers_data_key' : 'ul_issue_headers',"+common_extra_param+"}",
                     "data_extra_param" : pmp_ulIssue_extra_param,
-                    "excluded" : "["+common_hidden_columns+"]",
-                    "serverside_rendering" : false
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "wimax_ulIssue_tab" : {
                     "app_name" : "alert_center",
@@ -323,8 +325,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'headers_data_key' : 'ul_issue_headers',"+common_extra_param+"}",
                     "data_extra_param" : wimax_ulIssue_extra_param,
-                    "excluded" : "["+common_hidden_columns+"]",
-                    "serverside_rendering" : false
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_converter_tab" : {
                     "app_name" : "alert_center",
@@ -333,8 +334,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'headers_data_key' : 'backhaul_headers', "+common_extra_param+"}",
                     "data_extra_param" : converter_extra_param,
-                    "excluded" : "['sector_id',"+common_hidden_columns+"]",
-                    "serverside_rendering" : false
+                    "excluded" : "['sector_id',"+common_hidden_columns+"]"
                 },
                 "network_bh_temp_tab" : {
                     "app_name" : "alert_center",
@@ -342,8 +342,7 @@
                     "header_class_name" : "NetworkAlertDetailHeaders",
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{'headers_data_key' : 'bh_headers',"+common_extra_param+"}",
-                    "data_extra_param" : bh_temp_extra_param,
-                    "serverside_rendering" : false
+                    "data_extra_param" : bh_temp_extra_param
                 },
                 "network_temp_tab" : {
                     "app_name" : "alert_center",
@@ -352,8 +351,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : temp_extra_param,
-                    "excluded" : "["+common_hidden_columns+"]",
-                    "serverside_rendering" : false
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_wimax_tab" : {
                     "app_name" : "alert_center",
@@ -362,8 +360,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : wimax_extra_param,
-                    "excluded" : "["+common_hidden_columns+"]",
-                    "serverside_rendering" : false
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_pmp_tab" : {
                     "app_name" : "alert_center",
@@ -372,8 +369,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : pmp_extra_param,
-                    "excluded" : "["+common_hidden_columns+"]",
-                    "serverside_rendering" : false
+                    "excluded" : "["+common_hidden_columns+"]"
                 },
                 "network_ptp_tab" : {
                     "app_name" : "alert_center",
@@ -382,8 +378,7 @@
                     "data_class_name" : "GetNetworkAlertDetail",
                     "header_extra_param" : "{"+common_extra_param+"}",
                     "data_extra_param" : ptp_extra_param,
-                    "excluded" : "['sector_id']",
-                    "serverside_rendering" : false
+                    "excluded" : "['sector_id']"
                 }
             };
 

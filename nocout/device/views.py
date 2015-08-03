@@ -164,7 +164,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -371,7 +371,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -553,7 +553,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -732,7 +732,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -882,7 +882,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
 
     # order_columns is used for list of fields which is used for sorting the data table.
     order_columns = [
-        'status_icon',
+        '',
         'organization__name', 
         'device_name', 
         'site_instance__name', 
@@ -3104,7 +3104,7 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
@@ -3127,8 +3127,8 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/city/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/city/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/cities/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/cities/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
 
@@ -3397,9 +3397,13 @@ class GisWizardDeviceTypeServiceMixin(object):
 
             device_type_service = DeviceTypeService.objects.get(id=self.kwargs['pk'])
             skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.kwargs['dt_pk']})
-
+            try:
+                service_alias = device_type_service.service.name
+            except Exception, e:
+                service_alias = ''
             save_text = 'Update'
             context['skip_url'] = skip_url
+            context['service_alias'] = service_alias
         else:  # Create View
             save_text = 'Save'
 
@@ -3468,9 +3472,11 @@ def list_schedule_device(request):
 
     # Get the organization of logged in user.
     org = request.user.userprofile.organization
-    device_list = Device.objects.filter(organization__in=[org],
-                                        is_added_to_nms=1,
-                                        is_deleted=0, )
+    device_list = Device.objects.filter(
+        organization__in=[org],
+        is_added_to_nms__gt=0,
+        is_deleted=0
+    )
     technology_id = None
 
     # Create instance of 'InventoryUtilsGateway' class

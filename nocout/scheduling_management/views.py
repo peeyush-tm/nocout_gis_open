@@ -30,18 +30,41 @@ class SchedulingViewsGateway:
     This class works as gateway between scheduling_management views & other apps
     """
     def last_day_of_the_month(self, any_day):
+        """
+        This function return the last day of month for given date.
 
+        :Args:
+            any_day
+
+        :return:
+            param1 :last day of month
+        """
         param1 = last_day_of_the_month(any_day)
 
         return param1
 
     def event_today_status(self, dic):
+        """
+        This function return the status of today's events.
+
+        :Args:
+            dic
+
+        :return:
+            param1 : dictionary containing the id of today event with execution dates of that event
+        """
 
         param1 = event_today_status(dic)
 
         return param1
 
     def get_today_event_list(self):
+        """
+        This function return the List of device id's which have scheduling event today.
+
+        :return:
+            param1 : List of device id's which have scheduling event today
+        """        
 
         param1 = get_today_event_list()
 
@@ -51,7 +74,6 @@ class SchedulingViewsGateway:
 class EventList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Event data table rendering.
-
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -98,6 +120,12 @@ class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseData
     required_permissions = ('scheduling_management.view_event',)
 
     def get_initial_queryset(self):
+        """
+        A function for preparing query set from model.
+
+        :return:
+            qs : Query set
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         org = self.request.user.userprofile.organization
@@ -108,8 +136,11 @@ class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseData
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
-        :param qs:
-        :return qs
+        :Args:
+            qs : QuerySet object
+
+        :return:
+            json_data : list of dictionaries 
 
         """
         repeat_choice = dict(Event.REPEAT)
@@ -156,9 +187,8 @@ class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseData
 
 class EventCreate(PermissionsRequiredMixin, CreateView):
     """
-    Render event create view
+    Class based view for Create Event
     """
-
     template_name = 'scheduling_management/event_new.html'
     model = Event
     form_class = EventForm
@@ -178,6 +208,10 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
             self.get_context_data(form=form, title=title))
 
     def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests and make instance of form class & 
+        if form is valid then save that object else return form
+        """
         self.object = None
         form_class = self.get_form_class()
         form = self.get_form(form_class)
@@ -214,7 +248,7 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
 
 class EventUpdate(PermissionsRequiredMixin, UpdateView):
     """
-    Render event create view
+    Class based view to update Event.
     """
     template_name = 'scheduling_management/event_update.html'
     model = Event
@@ -249,6 +283,10 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
             self.get_context_data(form=form))
 
     def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests and make instance of form class & 
+        if form is valid then save that object else return form
+        """
         self.object = self.get_object()
         form_class = self.get_form_class()
         form = self.get_form(form_class)
@@ -289,8 +327,8 @@ def last_day_of_the_month(any_day):
     """
     Return the last day of the month.
 
-    :param:
-    day: Example: datetime.today()
+    :Args:
+        any_day: Example: datetime.today()
     """
     next_month = any_day.replace(day=28) + timedelta(days=4)  # this will never fail
     return next_month - timedelta(days=next_month.day)
@@ -301,19 +339,17 @@ def event_today_status(dic):
     To check the status of event for today date.
     Note: in dateutil 0==Monday, while in python datetime 0==Sunday.
 
-    :param:
-    dic: dictionary as {'event': event_object, 'month': 02, 'year': 2015}  Note: event is must.
+    :Args:
+        dic: dictionary as {'event': event_object, 'month': 02, 'year': 2015}  Note: event is must.
 
-    :return the dictionary containing the event id, status for today date
-    		and the list of execution date of this month.
-            i.e: {  'status': False,
-                    'event_ids': 2,
-                    'execution_dates': [
-                                        datetime.datetime(2014, 12, 19, 0, 0),
-                                        datetime.datetime(2014, 12, 20, 0, 0),
-                                        datetime.datetime(2014, 12, 21, 0, 0),...
-                                    ]
-                }
+    :return:
+        the dictionary containing the event id, status for today date and the 
+        list of execution date of this month. i.e: {  'status': False, 'event_ids': 2, 
+                                        'execution_dates': [
+                                            datetime.datetime(2014, 12, 19, 0, 0),
+                                            datetime.datetime(2014, 12, 20, 0, 0),
+                                            ]
+                                        }
     """
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
     status = False  # initialize that there is no active event.
@@ -421,10 +457,11 @@ def get_today_event_list():
     To check status of event whether active for time now or not.
     Used in check_device_status method of alarm_escalation.tasks
 
-    :return dictionary containing list of events and their corresponding devices ids.
-                    i.e: {  'event_list': [eve_obj1, eve_obj2, eve_obj3,...],
-                            'device_ids': [1,2,3,4,...],
-                        }
+    :return:
+        dictionary containing list of events and their corresponding devices ids.
+            i.e: {  'event_list': [eve_obj1, eve_obj2, eve_obj3,...],
+                    'device_ids': [1,2,3,4,...],
+                }
     """
 
     event_list = []
@@ -460,18 +497,17 @@ def get_month_event_list(request):
     Method return the json format of the events execution date list
     using ajax call according to the month and year of scheduling_management fullcalendar.
 
-    :param:
-    month: integer
-    year: integer
+    :Args:
+        month: integer
+        year: integer
 
     :return dictionary containing list of dictionary of event detail.
-                    i.e: {[
-                            { 'id': 1, 'title': 'event_name1', 'start': datetime1, 'end': datetime1, 'allDay': False,}
-                            { 'id': 1, 'title': 'event_name1', 'start': datetime2, 'end': datetime2, 'allDay': False,}
-                            { 'id': 2, 'title': 'event2', 'start': datetime1,... },
-                            { 'id': 2, 'title': 'event2', 'start': datetime2,... },...,
-                            { 'id': 3, 'title': 'e3',... }, ...,
-                        ]}
+            i.e: {[
+                    { 'id': 1, 'title': 'event_name1', 'start': datetime1, 'end': datetime1, 'allDay': False,}
+                    { 'id': 1, 'title': 'event_name1', 'start': datetime2, 'end': datetime2, 'allDay': False,}
+                    { 'id': 2, 'title': 'event2', 'start': datetime1,... },
+                    { 'id': 2, 'title': 'event2', 'start': datetime2,... },...,
+                ]}
     """
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
     # Initialize the month and year.
