@@ -413,3 +413,13 @@ iframe {
 #reservationtime {
   cursor: text;
 }
+.filters_remove_container {
+  position: relative;
+}
+.filters_remove_container h4 {
+  position: absolute;
+  right: 0px;
+  z-index: 9999;
+  top: 0px;
+  cursor: pointer;
+}

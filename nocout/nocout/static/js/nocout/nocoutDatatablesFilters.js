@@ -11,15 +11,17 @@ var existing_pagesettings_html = '<div class="clearfix"></div>',
 	],
 	add_filter_btn_html = '<div class="form-group add_filter_btn_contianer"> \
 						   <div class="col-md-12 pull-right" align="right"> \
-						   <a href="javascript:;" title="Add Filter" onclick="addNewFilters();"> \
+						   <a href="javascript:;" title="Add Filter Block" onclick="addNewFilters();"> \
 						   <i class="fa fa-plus"></i></a></div></div>',
-	condition_block_html = '<hr/><div class="form-group"> \
+	condition_block_html = '<div class="filters_remove_container"> \
+							<h4 title="Remove Filter Block" pk="<1>"><i class="fa fa-times text-danger"></i></h4> \
+							</div><hr/><div class="form-group"> \
 							<label class="col-sm-3 control-label">Select Condition</label> \
-							<div class="col-sm-9"> \
+							<div class="col-sm-8"> \
 							<select class="form-control condition_box" id="{}"> \
 							<option value="">Select Condition</option> \
 							<option value="and">AND</option> \
-							<option value="or">OR</option> \
+							<option value="or" selected>OR</option> \
 							</select></div></div><hr/>',
 	global_table_id = '',
 	global_grid_headers = '',
@@ -54,7 +56,8 @@ function nocout_createAdvanceFilter (headers, tableId) {
         filter_block_html += '<button type="button" class="pull-right btn btn-sm btn-danger filter_cancel_btn" \
         					  style="margin-left:10px;" id="' + filter_container_id + '_cancel"> Cancel </button>';
         filter_block_html += '<button type="button" class="pull-right btn btn-sm btn-success \
-        					  filter_submit_btn" id="' + filter_container_id + '_submit"> Filter </button>';
+        					  filter_submit_btn" onclick="applyDatatableAdvanceFilter(this);" \
+        					  id="' + filter_container_id + '_submit"> Filter </button>';
 		filter_block_html += '</div><div class="clearfix"></div></div>';
 		filter_block_html += '<div class="divide-20"></div>';
 
@@ -95,13 +98,16 @@ function createFilterFieldsHtml(counter) {
 		inputbox_id = filter_container_id + '_input_' + String(counter);
 
 	if (counter > 1) {
-		var condition_block_id = filter_container_id + '_condition_' + String(counter);
-		field_block_html += condition_block_html.replace('{}', condition_block_id);
+		var condition_block_id = filter_container_id + '_condition_' + String(counter),
+			temp = condition_block_html;
+		temp = temp.replace('<1>', String(counter));
+		temp = temp.replace('{}', condition_block_id);
+		field_block_html += temp;
 	}
 
 	field_block_html += '<div class="form-group">';
 	field_block_html += '<label class="col-sm-3 control-label">Select Column</label>';
-	field_block_html += '<div class="col-sm-9">';
+	field_block_html += '<div class="col-sm-8">';
 	field_block_html += '<select class="form-control" id="' + selectbox_id + '">';
 	field_block_html += '<option value="">Select Column</option>';
 
@@ -134,10 +140,64 @@ function createFilterFieldsHtml(counter) {
 	field_block_html += '</select></div></div>';
 	field_block_html += '<div class="form-group">';
 	field_block_html += '<label class="col-sm-3 control-label">Enter Value</label>';
-	field_block_html += '<div class="col-sm-9">';
+	field_block_html += '<div class="col-sm-8">';
 	field_block_html += '<input type="text" class="form-control" id="' + inputbox_id + '" name="' + inputbox_id + '"/>';
 	field_block_html += '</div></div>';
 
 
 	return field_block_html;
 }
+
+/**
+ * This function remove the given counter filter block from dom
+ * @method removeFilterFieldsHtml
+ */
+function removeFilterFieldsHtml(counter) {
+	if (!counter) {
+		return ;
+	}
+
+	var filter_container_id = global_table_id + '_advance_filter',
+		selectbox_id = filter_container_id + '_select_' + String(counter),
+		inputbox_id = filter_container_id + '_input_' + String(counter),
+		condition_block_id = filter_container_id + '_condition_' + String(counter);
+
+	// Remove HTML blocks
+	$('#' + selectbox_id).closest('.form-group').remove();
+	$('#' + inputbox_id).closest('.form-group').remove();
+	$('#' + condition_block_id).closest('.form-group').prev('hr').remove();
+	$('#' + condition_block_id).closest('.form-group').next('hr').remove();
+	$('#' + condition_block_id).closest('.form-group').remove();
+	$('h4[pk=' + counter + ']').parent('.filters_remove_container').remove();
+
+	if($('.add_filter_btn_contianer').hasClass('hide')) {
+		$('.add_filter_btn_contianer').removeClass('hide');
+	}
+}
+
+/**
+ * This function called when 'Filter' button of advance filters form clicked
+ * @method applyDatatableAdvanceFilter
+ * @param current_object {Object}, It contains current object instance
+ */
+function applyDatatableAdvanceFilter(current_object) {
+	var button_id = current_object.id,
+		common_id = button_id ? button_id.split('_submit')[0] : '';
+	
+	if (!common_id) {
+		return;
+	}
+
+	var total_select_box = $('select[id^="' + common_id + '_select_"]'),
+		total_condition_box = $('select[id^="' + common_id + '_condition_"]'),
+		total_input_box = $('input[id^="' + common_id + '"]');
+	console.log(total_select_box);
+	console.log(total_condition_box);
+	console.log(total_input_box);
+}
+
+
+$('body').delegate('.filters_remove_container h4', 'click', function(e) {
+	var counter_val = $(this).attr('pk')
+	removeFilterFieldsHtml(counter_val);
+});

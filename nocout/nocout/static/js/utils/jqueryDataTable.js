@@ -1,5 +1,6 @@
 var downloader_api_call = "",
-    server_side_rendering = true;
+    server_side_rendering = true,
+    create_advance_filters = true;
 /**
  * This file creates the jquery data table as per given params
  * @for jqueryDataTable.js
@@ -27,7 +28,10 @@ function ourDataTableWidget() {
         excluded_columns
     ) {
 
-        nocout_createAdvanceFilter(tableheaders, tableId);
+        if (create_advance_filters) {
+            // Call nocout_createAdvanceFilter to create advance filters for grid
+            nocout_createAdvanceFilter(tableheaders, tableId);
+        }
 
         /*Show the spinner*/
         showSpinner();
