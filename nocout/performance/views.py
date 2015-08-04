@@ -1455,6 +1455,7 @@ class GetServiceStatus(View):
                 'objects': {
                     'perf': None,
                     'last_updated': None,
+                    'pl_status' : None,
                     'status': None,
                     'age': None,
                     'last_down_time': None,
@@ -1499,7 +1500,8 @@ class GetServiceStatus(View):
                 'objects': {
                     'perf': None,
                     'last_updated': None,
-                    'status': severity_status,
+                    'pl_status' : severity_status,
+                    'status': None,
                     'age': age,
                     'last_down_time': last_down_time
                 }
@@ -1571,13 +1573,18 @@ class GetServiceStatus(View):
             performance_data = performance_data_query_set
 
             try:
-                current_value = self.formulate_data(performance_data[0].current_value,
-                                                    service_data_source_type)
+                current_value = self.formulate_data(
+                    performance_data[0].current_value,
+                    service_data_source_type
+                )
                 last_updated = datetime.datetime.fromtimestamp(
                     float(performance_data[0].sys_timestamp)
                 ).strftime(DATE_TIME_FORMAT)
+                severity_val = performance_data[0].severity.lower().strip() if performance_data[0].severity else None
+
                 self.result['data']['objects']['perf'] = current_value
                 self.result['data']['objects']['last_updated'] = last_updated
+                self.result['data']['objects']['status'] = severity_val
             except Exception as e:
                 log.exception(e.message)
 
