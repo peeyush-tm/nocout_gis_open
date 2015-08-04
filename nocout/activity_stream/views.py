@@ -90,7 +90,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
         if sSearch:
             query = []
-            exec_query = "qs = %s.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 # Avoid search on 'added_on'.
                 if column == 'added_on':
