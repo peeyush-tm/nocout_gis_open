@@ -25,7 +25,8 @@ var existing_pagesettings_html = '<div class="clearfix"></div>',
 							</select></div></div><hr/>',
 	global_table_id = '',
 	global_grid_headers = '',
-	max_fields_length = 0;
+	max_fields_length = 0,
+	global_fields_counter = 0;
 
 /**
  * This function creates advance filters HTML as per the given headers
@@ -44,13 +45,15 @@ function nocout_createAdvanceFilter (headers, tableId) {
 		var filter_container_id = global_table_id + '_advance_filter',
 			form_block_id = filter_container_id + '_form',
 			filter_block_html = '';
+		// set global_fields_counter to 1
+		global_fields_counter = 1;
 
 		filter_block_html += '<div id="' + filter_container_id + '">';
 		filter_block_html += '<h4><i class="fa fa-arrow-circle-o-right"> </i> Advance Filter</h4>';
 		filter_block_html += '<div id="' + form_block_id + '" class="col-md-9 col-md-offset-1">';
 		filter_block_html += '<div class="form-group form-horizontal col-md-12" style="max-height: 300px;overflow: auto;">';
-		filter_block_html += createFilterFieldsHtml(1);
 		filter_block_html += add_filter_btn_html;
+		filter_block_html += createFilterFieldsHtml(global_fields_counter);
 		filter_block_html += '</div></div>';
 		filter_block_html += '<div class="col-md-8 col-md-offset-2">';
         filter_block_html += '<button type="button" class="pull-right btn btn-sm btn-danger filter_cancel_btn" \
@@ -73,11 +76,19 @@ function nocout_createAdvanceFilter (headers, tableId) {
 function addNewFilters() {
 	var form_id = global_table_id + '_advance_filter_form',
 		select_id_prefix = global_table_id + '_advance_filter_select_',
+		input_id_prefix = global_table_id + '_advance_filter_input_',
 		select_boxes = $('#' + form_id + ' select[id*="' + select_id_prefix + '"]'),
-		total_select_boxes = select_boxes.length,
-		field_html = createFilterFieldsHtml(Number(total_select_boxes) + 1);
+		last_selectbox = $('#' + form_id + ' .form-horizontal select[id^="' + select_id_prefix + '"]').last(),
+		last_id_counter_val = last_selectbox[0].id.split('_select_')[1],
+		prev_selectbox_val = $.trim($('#' + select_id_prefix +''+last_id_counter_val).val()),
+		prev_inputbox_val = $.trim($('#' + input_id_prefix +''+last_id_counter_val).val());
 
-	$(field_html).insertBefore($('.add_filter_btn_contianer'));
+	if (prev_selectbox_val && prev_inputbox_val) {
+		var field_html = createFilterFieldsHtml(global_fields_counter += 1);
+		$('#' + form_id + ' .form-horizontal').append(field_html);//.insertBefore($('.add_filter_btn_contianer'));
+	} else {
+		bootbox.alert('Please select the search criteria for the preceding field first.');
+	}
 }
 
 
@@ -88,14 +99,16 @@ function addNewFilters() {
  */
 function createFilterFieldsHtml(counter) {
 
-	if (max_fields_length == counter) {
-		$('.add_filter_btn_contianer').addClass('hide');
-	}
-
-	var field_block_html = '',
+	var select_id_prefix = global_table_id+'_advance_filter_select_',
+		total_column_selectbox = $('select[id^="'+select_id_prefix+'"]').length,
 		filter_container_id = global_table_id + '_advance_filter',
 		selectbox_id = filter_container_id + '_select_' + String(counter),
-		inputbox_id = filter_container_id + '_input_' + String(counter);
+		inputbox_id = filter_container_id + '_input_' + String(counter),
+		field_block_html = '';
+
+	if (max_fields_length <= total_column_selectbox + 1) {
+		$('.add_filter_btn_contianer').addClass('hide');
+	}
 
 	if (counter > 1) {
 		var condition_block_id = filter_container_id + '_condition_' + String(counter),
@@ -114,6 +127,16 @@ function createFilterFieldsHtml(counter) {
 	for (var i=0;i<global_grid_headers.length;i++) {
 		var columns_name = $.trim(global_grid_headers[i]['mData']),
 			columns_title = $.trim(global_grid_headers[i]['sTitle']);
+
+		// If columns_title is blank then set it to columns_name name
+		if (!columns_title) {
+			// Make columns_name to title case
+			try {
+				columns_title = columns_name[0].toUpperCase() + columns_name.slice(1);
+			} catch(e) {
+				columns_title = columns_name;
+			}
+		}
 
 		// If column contains hide class
 		if (global_grid_headers[i].hasOwnProperty('sClass') && global_grid_headers[i]['sClass'].indexOf('hide') > -1) {
@@ -190,13 +213,22 @@ function applyDatatableAdvanceFilter(current_object) {
 
 	var total_select_box = $('select[id^="' + common_id + '_select_"]'),
 		total_condition_box = $('select[id^="' + common_id + '_condition_"]'),
-		total_input_box = $('input[id^="' + common_id + '"]');
-	console.log(total_select_box);
-	console.log(total_condition_box);
-	console.log(total_input_box);
+		total_input_box = $('input[id^="' + common_id + '_input_"]'),
+		current_tab_url = $('.nav-tabs li.active a').attr('data_url'),
+		api_main_url = current_tab_url ? current_tab_url.split('advance_filter')[0] : '',
+		filtering_obj = {};
+	
+	for (var i=0;i<total_select_box.length;i++) {
+		var counter_val = total_select_box[i].id.split('_select_')[1],
+			columns_name = total_select_box[i].value,
+			columns_val = $('#' + common_id + '_input_' + String(counter_val)).val();
+	}
 }
 
-
+/**
+ * This event triggers when 'Remove Filter Block' icon clicked
+ * @event delegate('click')
+ */
 $('body').delegate('.filters_remove_container h4', 'click', function(e) {
 	var counter_val = $(this).attr('pk')
 	removeFilterFieldsHtml(counter_val);
