@@ -55,7 +55,7 @@ function nocout_createAdvanceFilter (headers, tableId) {
 		filter_block_html += add_filter_btn_html;
 		filter_block_html += createFilterFieldsHtml(global_fields_counter);
 		filter_block_html += '</div></div>';
-		filter_block_html += '<div class="col-md-8 col-md-offset-2">';
+		filter_block_html += '<div class="col-md-8 col-md-offset-1">';
         filter_block_html += '<button type="button" class="pull-right btn btn-sm btn-danger filter_cancel_btn" \
         					  style="margin-left:10px;" id="' + filter_container_id + '_cancel"> Cancel </button>';
         filter_block_html += '<button type="button" class="pull-right btn btn-sm btn-success \
