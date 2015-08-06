@@ -19,14 +19,19 @@ var existing_pagesettings_html = '<div class="clearfix"></div>',
 							<label class="col-sm-3 control-label">Select Condition</label> \
 							<div class="col-sm-8"> \
 							<select class="form-control condition_box" id="{}"> \
-							<option value="">Select Condition</option> \
 							<option value="and">AND</option> \
-							<option value="or" selected>OR</option> \
+							<option value="or">OR</option> \
 							</select></div></div><hr/>',
+	timestamp_columns = [
+		'added_on',
+		'updated_on',
+		'sys_timestamp'
+	],
 	global_table_id = '',
 	global_grid_headers = '',
 	max_fields_length = 0,
-	global_fields_counter = 0;
+	global_fields_counter = 0,
+	suggestions_api_url = '/advance_filters_auto_suggestions/?app_name={0}&class_name={1}&column={2}&get_params={3}&search_txt={4}';
 
 /**
  * This function creates advance filters HTML as per the given headers
@@ -65,6 +70,9 @@ function nocout_createAdvanceFilter (headers, tableId) {
 		filter_block_html += '<div class="divide-20"></div>';
 
 		$(filter_block_html).insertBefore($('#' + tableId).closest('.box')[0]);
+
+		// Initialize filter value select2
+		initFiltersSelect2(global_fields_counter);
 	}
 }
 
@@ -83,12 +91,16 @@ function addNewFilters() {
 		prev_selectbox_val = $.trim($('#' + select_id_prefix +''+last_id_counter_val).val()),
 		prev_inputbox_val = $.trim($('#' + input_id_prefix +''+last_id_counter_val).val());
 
-	if (prev_selectbox_val && prev_inputbox_val) {
+	// if (prev_selectbox_val && prev_inputbox_val) {
 		var field_html = createFilterFieldsHtml(global_fields_counter += 1);
 		$('#' + form_id + ' .form-horizontal').append(field_html);//.insertBefore($('.add_filter_btn_contianer'));
-	} else {
-		bootbox.alert('Please select the search criteria for the preceding field first.');
-	}
+
+		// Initialize filter value select2
+		initFiltersSelect2(global_fields_counter);
+
+	// } else {
+	// 	bootbox.alert('Please select the search criteria for the preceding field first.');
+	// }
 }
 
 
@@ -111,11 +123,7 @@ function createFilterFieldsHtml(counter) {
 	}
 
 	if (counter > 1) {
-		var condition_block_id = filter_container_id + '_condition_' + String(counter),
-			temp = condition_block_html;
-		temp = temp.replace('<1>', String(counter));
-		temp = temp.replace('{}', condition_block_id);
-		field_block_html += temp;
+		field_block_html += '<hr/>';
 	}
 
 	field_block_html += '<div class="form-group">';
@@ -136,6 +144,11 @@ function createFilterFieldsHtml(counter) {
 			} catch(e) {
 				columns_title = columns_name;
 			}
+		}
+
+		// If 'columns_name' is any timestamp column then skip it
+		if (timestamp_columns.indexOf(columns_name) > -1 || columns_name.indexOf('time') > -1) {
+			continue;
 		}
 
 		// If column contains hide class
@@ -164,7 +177,7 @@ function createFilterFieldsHtml(counter) {
 	field_block_html += '<div class="form-group">';
 	field_block_html += '<label class="col-sm-3 control-label">Enter Value</label>';
 	field_block_html += '<div class="col-sm-8">';
-	field_block_html += '<input type="text" class="form-control" id="' + inputbox_id + '" name="' + inputbox_id + '"/>';
+	field_block_html += '<input type="hidden" style="width:100%;" class="filters_select2" id="' + inputbox_id + '" name="' + inputbox_id + '"/>';
 	field_block_html += '</div></div>';
 
 
@@ -233,3 +246,56 @@ $('body').delegate('.filters_remove_container h4', 'click', function(e) {
 	var counter_val = $(this).attr('pk')
 	removeFilterFieldsHtml(counter_val);
 });
+
+
+function initFiltersSelect2(counter) {
+
+	var filter_container_id  = global_table_id + '_advance_filter',
+		input_id_prefix = filter_container_id +'_input_';
+
+	$('#' + input_id_prefix +counter).select2({
+		multiple: true,
+    	minimumInputLength: 2,
+    	query: function (query) {
+    		var search_txt = query.term,
+    			elem_id = this.element[0].id,
+    			counter_val = elem_id.split('_input_')[1],
+    			selectbox_id = global_table_id +'_advance_filter_select_' + counter_val,
+    			data = {results: []},
+    			current_tab_id = $('.nav-tabs li.active a').attr('id');
+			
+			if ($('#' + selectbox_id).length) {
+				if ($('#' + selectbox_id).val()) {
+					var columns_name = $('#' + selectbox_id).val();
+					if (tables_info[current_tab_id]) {
+						var app_name = tables_info[current_tab_id].app_name,
+							class_name = tables_info[current_tab_id].data_class_name,
+							get_params = tables_info[current_tab_id].data_extra_param,
+							api_url = suggestions_api_url;
+
+						api_url = api_url.replace('{0}', app_name);
+						api_url = api_url.replace('{1}', class_name);
+						api_url = api_url.replace('{2}', columns_name);
+						api_url = api_url.replace('{3}', get_params);
+						api_url = api_url.replace('{4}', search_txt);
+
+						$.ajax({
+							url : api_url,
+							type : 'GET',
+							success : function(response) {
+								data['results'] = response['data']
+								query.callback(data);
+							},
+							error : function(err) {
+								// console.log(err.statusText);
+							}
+						});
+					}
+				} else {
+					bootbox.alert('Please select any column first.')
+				}
+			}
+    		query.callback(data);
+		}
+	});	
+}

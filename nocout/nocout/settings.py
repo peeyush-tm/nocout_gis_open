@@ -792,6 +792,10 @@ CACHE_TIME = {
     'DEFAULT': 60
 }
 
+# Params for Advance filters feature
+MAX_SUGGESTION_COUNT = 40
+DATATABLE_SEARCHTXT_KEY = 'sSearch'
+
 try:
     from local_settings import *
 except ImportError:

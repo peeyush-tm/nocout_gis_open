@@ -90,7 +90,8 @@ urlpatterns = patterns('',
                        url(r'^city_charter_settings/', include('download_center.city_charter_settings_url')),
                        url(r'^wizard/', include('device.wizard_device_type_urls')),
                        url(r'^escalation/', include('alarm_escalation.urls')),
-                       url(r'^global_search/', include('inventory.global_search_urls'))
+                       url(r'^global_search/', include('inventory.global_search_urls')),
+                       url(r'^advance_filters_auto_suggestions/$', 'nocout.utils.util.getAdvanceFiltersSuggestions'),
                        )
 
 # if settings.DEBUG:
