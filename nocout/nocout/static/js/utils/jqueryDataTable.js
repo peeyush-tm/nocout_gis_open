@@ -88,7 +88,9 @@ function ourDataTableWidget() {
                 }
 
                 // Add search button near search txt box
-                $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
+                    $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                }
                 
                 // Update search txt box & row per pages dropdown style
                 $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
