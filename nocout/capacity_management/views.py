@@ -467,7 +467,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             # In case of severity search, update the search txt
             if sSearch.lower() in 'needs augmentation':
                 sSearch = 'warning'
-            elif sSearch in 'stop provisioning':
+            elif sSearch.lower() in 'stop provisioning':
                 sSearch = 'critical'
             else:
                 pass
@@ -1116,7 +1116,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
             # In case of severity search, update the search txt
             if sSearch.lower() in 'needs augmentation':
                 sSearch = 'warning'
-            elif sSearch in 'stop provisioning':
+            elif sSearch.lower() in 'stop provisioning':
                 sSearch = 'critical'
             else:
                 pass
