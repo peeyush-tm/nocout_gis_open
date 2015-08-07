@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response
 
 from django.template import RequestContext
 
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Max
 from django.db.models.query import ValuesQuerySet
 from django.utils.dateformat import format
 
@@ -520,11 +520,17 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         :param kwargs:
         :return: list of devices
         """
+        # current_epoch_timestamp = datetime.datetime.now().strftime('%s')
+
+        max_timestamp = self.model.objects.filter(
+            Q(organization__in=kwargs['organizations']),
+            Q(severity__in=['warning', 'critical'])).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
 
         if self.technology == 'ALL':
             sectors = self.model.objects.filter(
                 Q(organization__in=kwargs['organizations']),
                 Q(severity__in=['warning', 'critical']),
+                Q(sys_timestamp__gte=max_timestamp - 420)
                 # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
@@ -533,6 +539,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 Q(organization__in=kwargs['organizations']),
                 Q(sector__sector_configured_on__device_technology=tech_id),
                 Q(severity__in=['warning', 'critical']),
+                Q(sys_timestamp__gte=max_timestamp - 420)
                 # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
 
@@ -550,25 +557,21 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 
         technology_object = DeviceTechnology.objects.all()
 
-        result_list = list()
-
         for item in json_data:
-            if time_delta_calculator(item['sys_timestamp'], minutes=7):
-                try:
-                    techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
-                    item['sector__sector_configured_on__device_technology'] = techno_name
-                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
-                    if item['severity'].strip().lower() == 'warning':
-                        item['severity'] = "Needs Augmentation"
-                    elif item['severity'].strip().lower() == 'critical':
-                        item['severity'] = "Stop Provisioning"
-                    else:
-                        pass
-                    result_list.append(item)
-                except Exception as e:
-                    logger.exception(e)
+            try:
+                techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                item['sector__sector_configured_on__device_technology'] = techno_name
+                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                if item['severity'].strip().lower() == 'warning':
+                    item['severity'] = "Needs Augmentation"
+                elif item['severity'].strip().lower() == 'critical':
+                    item['severity'] = "Stop Provisioning"
+                else:
+                    continue
+            except Exception as e:
+                logger.exception(e)
 
-        return result_list
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1239,9 +1242,16 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         :return: list of devices
         """
 
+        # current_epoch_timestamp = datetime.datetime.now().strftime('%s')
+
+        max_timestamp = self.model.objects.filter(
+            Q(organization__in=kwargs['organizations']),
+            Q(severity__in=['warning', 'critical'])).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
+
         backhauls = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
             Q(severity__in=['warning', 'critical']),
+            Q(sys_timestamp__gte=max_timestamp - 420)
             # Q(age__lte=F('sys_timestamp') - 600)
         ).prefetch_related(*self.related_columns).values(*self.columns)
 
@@ -1255,26 +1265,22 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                      qs]
         technology_object = DeviceTechnology.objects.all()
 
-        result_list = list()
-
         for item in json_data:
-            if time_delta_calculator(item['sys_timestamp'], minutes=7):
-                try:
-                    techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
-                    item['backhaul__bh_configured_on__device_technology'] = techno_name
-                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+            try:
+                techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
+                item['backhaul__bh_configured_on__device_technology'] = techno_name
+                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
 
-                    if item['severity'].strip().lower() == 'warning':
-                        item['severity'] = "Needs Augmentation"
-                    elif item['severity'].strip().lower() == 'critical':
-                        item['severity'] = "Stop Provisioning"
-                    else:
-                        continue
-                    result_list.append(item)
-                except Exception as e:
-                    logger.exception(e)
+                if item['severity'].strip().lower() == 'warning':
+                    item['severity'] = "Needs Augmentation"
+                elif item['severity'].strip().lower() == 'critical':
+                    item['severity'] = "Stop Provisioning"
+                else:
+                    continue
+            except Exception as e:
+                logger.exception(e)
 
-        return result_list
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
