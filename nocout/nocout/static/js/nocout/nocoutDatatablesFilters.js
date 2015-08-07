@@ -29,24 +29,46 @@ var existing_pagesettings_html = '<div class="clearfix"></div>',
 	],
 	global_table_id = '',
 	global_grid_headers = '',
+	global_app_name = '',
+	global_class_name = '',
+	global_get_params = '',
 	max_fields_length = 0,
 	global_fields_counter = 0,
+	polled_columns_list = [
+		'current_value',
+		'severity',
+		'sys_timestamp',
+		'age',
+		'min_value',
+		'max_value',
+		'avg_value',
+		'refer',
+		'warning_threshold',
+		'critical_threshold'
+	],
 	suggestions_api_url = '/advance_filters_auto_suggestions/?app_name={0}&class_name={1}&column={2}&get_params={3}&search_txt={4}';
 
 /**
  * This function creates advance filters HTML as per the given headers
  * @method nocout_createAdvanceFilter
- * @param headers {Array}, It contains the listing headers array.
+ * @param table_info_object {Object}, It contains the required info of table.
  */
-function nocout_createAdvanceFilter (headers, tableId) {
-	if (!headers || $('#' + tableId + '_advance_filter').length > 0) {
+function nocout_createAdvanceFilter (table_info_object) {
+	// set table info in global variables
+	global_table_id = table_info_object['table_id'] ? table_info_object['table_id'] : "";
+	global_grid_headers = table_info_object['headers_list'] ? table_info_object['headers_list'] : "";
+
+	if (!global_grid_headers || $('#' + global_table_id + '_advance_filter').length > 0) {
 		return true;
 	}
 	var current_html = $.trim($('.page_settings_container').html());
 
 	if (current_html == existing_pagesettings_html) {
-		global_table_id = tableId;
-		global_grid_headers = headers;
+		// set table info in global variables
+		global_app_name = table_info_object['app_name'] ? table_info_object['app_name'] : "";
+		global_class_name = table_info_object['class_name'] ? table_info_object['class_name'] : "";
+		global_get_params = table_info_object['get_params'] ? table_info_object['get_params'] : "";
+
 		var filter_container_id = global_table_id + '_advance_filter',
 			form_block_id = filter_container_id + '_form',
 			filter_block_html = '';
@@ -69,7 +91,7 @@ function nocout_createAdvanceFilter (headers, tableId) {
 		filter_block_html += '</div><div class="clearfix"></div></div>';
 		filter_block_html += '<div class="divide-20"></div>';
 
-		$(filter_block_html).insertBefore($('#' + tableId).closest('.box')[0]);
+		$(filter_block_html).insertBefore($('#' + global_table_id).closest('.box')[0]);
 
 		// Initialize filter value select2
 		initFiltersSelect2(global_fields_counter);
@@ -267,10 +289,11 @@ function initFiltersSelect2(counter) {
 			if ($('#' + selectbox_id).length) {
 				if ($('#' + selectbox_id).val()) {
 					var columns_name = $('#' + selectbox_id).val();
-					if (tables_info[current_tab_id]) {
-						var app_name = tables_info[current_tab_id].app_name,
-							class_name = tables_info[current_tab_id].data_class_name,
-							get_params = tables_info[current_tab_id].data_extra_param,
+					if (global_app_name && global_class_name && global_get_params) {
+
+						var app_name = global_app_name,
+							class_name = global_class_name,
+							get_params = global_get_params,
 							api_url = suggestions_api_url;
 
 						api_url = api_url.replace('{0}', app_name);
@@ -288,6 +311,7 @@ function initFiltersSelect2(counter) {
 							},
 							error : function(err) {
 								// console.log(err.statusText);
+								query.callback(data);
 							}
 						});
 					}
@@ -295,7 +319,6 @@ function initFiltersSelect2(counter) {
 					bootbox.alert('Please select any column first.')
 				}
 			}
-    		query.callback(data);
 		}
 	});	
 }

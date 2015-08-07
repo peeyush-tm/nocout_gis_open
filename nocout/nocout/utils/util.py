@@ -2411,7 +2411,7 @@ def getAdvanceFiltersSuggestions(request):
         suggestion_req_obj.request.GET = get_params
         suggestion_req_obj.kwargs = get_params
         suggestion_req_obj.max_display_length = MAX_SUGGESTION_COUNT
-        # suggestion_req_obj.columns = [column]
+        suggestion_req_obj.columns = [column]
 
         suggestion_result = suggestion_req_obj.get_context_data()
         formatted_data = list()

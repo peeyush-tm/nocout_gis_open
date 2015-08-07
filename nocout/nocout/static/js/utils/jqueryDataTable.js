@@ -29,8 +29,15 @@ function ourDataTableWidget() {
     ) {
 
         if (create_advance_filters) {
+            var table_info_object = {
+                'headers_list' : tableheaders,
+                'table_id' : tableId,
+                'app_name' : app_name,
+                'class_name' : data_class_name,
+                'get_params' : data_extra_param
+            };
             // Call nocout_createAdvanceFilter to create advance filters for grid
-            nocout_createAdvanceFilter(tableheaders, tableId);
+            nocout_createAdvanceFilter(table_info_object);
         }
 
         /*Show the spinner*/
