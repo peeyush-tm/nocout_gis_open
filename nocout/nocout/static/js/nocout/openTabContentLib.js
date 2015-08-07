@@ -11,7 +11,8 @@ var tables_info = {},
     pmp_list = ['pmp'],
     wimax_list = ['wimax','wifi','temp','ulissue','sectorutil'],
     other_list = ['converter','bh','backhaul','bhutil'],
-    server_side_rendering = true;
+    server_side_rendering = true,
+    refresh_time = '';
 
 $(".nav-tabs li a").click(function (e, isFirst) {
     // Update the breadcrumb as per clicked tab
@@ -21,6 +22,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     /*86400 is 24 hrs miliseconds*/
     var timer = 86400 * 30 * 12; // 1 Year in seconds
     // var timer = 300; // 5 Minutes in seconds
+
+    timer = refresh_time ? refresh_time : timer;
 
     /*Clear or Reset Time out*/
     clearTimeout(timeOutId);

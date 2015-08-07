@@ -691,8 +691,8 @@ class NetworkAlertDetailHeaders(ListView):
         ]
 
         bh_dt_specific_headers = [
-            {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'bh_alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_port', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         common_headers = [
@@ -1031,7 +1031,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if data_source in ['PMPULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_BH']:
+        if data_source in ['Backhaul', 'Temperature_bh']:
             page_type = 'other'
             type_rf = "backhaul"
 
@@ -1121,15 +1121,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
                     },
                     current_app='device'
                 )
-
-                if ds_param in ['Temperature_bh']:
-                    dct['alias'] = ""
-                    dct['bh_port_name'] = ""
-                    try:
-                        dct['alias'] = Device.objects.get(ip_address=dct['ip_address']).backhaul.all()[0].alias
-                        dct['bh_port_name'] = Device.objects.get(ip_address=dct['ip_address']).backhaul.all()[0].bh_port_name
-                    except Exception as e:
-                        logger.exception()
 
                 dct.update(
                     action='<a href="' + alert_url + '" title="Device Alerts">\
@@ -1292,8 +1283,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
         elif data_source in ['Temperature_bh']:
             self.order_columns = [
                 'severity',
-                'alias',
-                'bh_port_name',
+                'bh_alias',
+                'bh_port',
                 'ip_address',
                 'device_type',
                 'bs_name',
