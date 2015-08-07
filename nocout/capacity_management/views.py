@@ -20,7 +20,7 @@ import ujson as json
 from device.models import DeviceTechnology, Device
 
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway
+from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
 from nocout.settings import DATE_TIME_FORMAT
 
@@ -472,8 +472,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             else:
                 pass
 
-            # In case of technology search, search the text in 
-            # prepared result instead of queryset because we have 
+            # In case of technology search, search the text in
+            # prepared result instead of queryset because we have
             # technology id in queryset not the name
             if sSearch.lower() in ['pmp', 'wimax']:
                 self.is_technology_searched = True
@@ -550,23 +550,25 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
 
         technology_object = DeviceTechnology.objects.all()
 
+        result_list = list()
+
         for item in json_data:
-            try:
-                techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
-                item['sector__sector_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+            if time_delta_calculator(item['sys_timestamp'], minutes=7):
+                try:
+                    techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                    item['sector__sector_configured_on__device_technology'] = techno_name
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+                    if item['severity'].strip().lower() == 'warning':
+                        item['severity'] = "Needs Augmentation"
+                    elif item['severity'].strip().lower() == 'critical':
+                        item['severity'] = "Stop Provisioning"
+                    else:
+                        pass
+                    result_list.append(item)
+                except Exception as e:
+                    logger.exception(e)
 
-                if item['severity'].strip().lower() == 'warning':
-                    item['severity'] = "Needs Augmentation"
-                elif item['severity'].strip().lower() == 'critical':
-                    item['severity'] = "Stop Provisioning"
-                else:
-                    continue
-
-            except Exception as e:
-                logger.exception(e)
-
-        return json_data
+        return result_list
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1253,23 +1255,26 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                      qs]
         technology_object = DeviceTechnology.objects.all()
 
+        result_list = list()
+
         for item in json_data:
-            try:
-                techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
-                item['backhaul__bh_configured_on__device_technology'] = techno_name
-                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
+            if time_delta_calculator(item['sys_timestamp'], minutes=7):
+                try:
+                    techno_name = technology_object.get(id=item['backhaul__bh_configured_on__device_technology']).alias
+                    item['backhaul__bh_configured_on__device_technology'] = techno_name
+                    item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
 
-                if item['severity'].strip().lower() == 'warning':
-                    item['severity'] = "Needs Augmentation"
-                elif item['severity'].strip().lower() == 'critical':
-                    item['severity'] = "Stop Provisioning"
-                else:
-                    continue
+                    if item['severity'].strip().lower() == 'warning':
+                        item['severity'] = "Needs Augmentation"
+                    elif item['severity'].strip().lower() == 'critical':
+                        item['severity'] = "Stop Provisioning"
+                    else:
+                        continue
+                    result_list.append(item)
+                except Exception as e:
+                    logger.exception(e)
 
-            except Exception as e:
-                logger.exception(e)
-
-        return json_data
+        return result_list
 
     def get_context_data(self, *args, **kwargs):
         """
