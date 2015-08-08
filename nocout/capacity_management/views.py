@@ -223,7 +223,7 @@ class SectorStatusListing(BaseDatatableView):
                 return filtered_result
             else:
                 query = []
-                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+                exec_query = "qs = qs.filter("
                 for column in self.columns[:-1]:
                     query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -804,7 +804,7 @@ class BackhaulStatusListing(BaseDatatableView):
                 return filtered_result
             else:
                 query = []
-                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+                exec_query = "qs = qs.filter("
                 for column in self.columns[:-1]:
                     query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
