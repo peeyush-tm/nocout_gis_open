@@ -1127,7 +1127,16 @@ function nocoutPerfLib() {
                                 if (draw_type == 'chart') {
                                     // Destroy 'perf_data_table'
                                     nocout_destroyDataTable('other_perf_table');
-                                    nocout_destroyDataTable('perf_data_table');
+
+                                    if (!(
+                                        listing_ajax_url.indexOf('service/rf/') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('servicedetail') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('availability') > -1
+                                    )) {
+                                            nocout_destroyDataTable('perf_data_table');
+                                    }
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
                                         createHighChart_nocout(chart_config,service_id, false, false, function(status) {
@@ -1145,34 +1154,39 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     ) {
-                                        var contentHtml = createChartDataTableHtml_nocout(
-                                            "perf_data_table",
-                                            chart_config.chart_data
-                                        );
-                                        // Update bottom table HTML
-                                        $('#' + service_id+ '_bottom_table').html(contentHtml);
+                                        if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                            addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
+                                        } else {
+                                            var contentHtml = createChartDataTableHtml_nocout(
+                                                "perf_data_table",
+                                                chart_config.chart_data
+                                            );
 
-                                        // Margin of 20px between the chart & table
-                                        $('#' + service_id+ '_bottom_table').css("margin-top","20px");
+                                            // Update bottom table HTML
+                                            $('#' + service_id+ '_bottom_table').html(contentHtml);
 
-                                        $("#perf_data_table").DataTable({
-                                            sDom: 'T<"clear">lfrtip',
-                                            oTableTools: {
-                                                sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                                                aButtons: [
-                                                    {
-                                                        sExtends: "xls",
-                                                        sButtonText: "Download Excel",
-                                                        sFileName: "*.xls",
-                                                        // mColumns: excel_columns
-                                                    }
-                                                ]
-                                            },
-                                            bPaginate: true,
-                                            bDestroy: true,
-                                            aaSorting : [[0,'desc']],
-                                            sPaginationType: "full_numbers"
-                                        });
+                                            // Margin of 20px between the chart & table
+                                            $('#' + service_id+ '_bottom_table').css("margin-top","20px");
+
+                                            $("#perf_data_table").DataTable({
+                                                sDom: 'T<"clear">lfrtip',
+                                                oTableTools: {
+                                                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                                                    aButtons: [
+                                                        {
+                                                            sExtends: "xls",
+                                                            sButtonText: "Download Excel",
+                                                            sFileName: "*.xls",
+                                                            // mColumns: excel_columns
+                                                        }
+                                                    ]
+                                                },
+                                                bPaginate: true,
+                                                bDestroy: true,
+                                                aaSorting : [[0,'desc']],
+                                                sPaginationType: "full_numbers"
+                                            });
+                                        }
                                     }
 
                                 } else {
@@ -1263,13 +1277,21 @@ function nocoutPerfLib() {
                                 $("#display_type_container").removeClass("hide")
                             }
                         }
-
+                        
                         if (draw_type == 'chart') {
-                            if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                $("#perf_data_table").dataTable().fnDestroy();
-                                $("#perf_data_table").remove();
-                            }
+                            if(!(
+                                listing_ajax_url.indexOf('service/rf/') > -1
+                                ||
+                                listing_ajax_url.indexOf('servicedetail') > -1
+                                ||
+                                listing_ajax_url.indexOf('availability') > -1
+                            )) {
+                                if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                    $("#perf_data_table").dataTable().fnDestroy();
+                                    $("#perf_data_table").remove();
+                                }
 
+                            }
                             if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
                                     $('#' + service_id+ '_chart').html(result.message);
