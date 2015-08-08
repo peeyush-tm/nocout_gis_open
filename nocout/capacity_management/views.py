@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response
 
 from django.template import RequestContext
 
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Max
 from django.db.models.query import ValuesQuerySet
 from django.utils.dateformat import format
 
@@ -20,7 +20,7 @@ import ujson as json
 from device.models import DeviceTechnology, Device
 
 # Import nocout utils gateway class
-from nocout.utils.util import NocoutUtilsGateway
+from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
 from nocout.settings import DATE_TIME_FORMAT
 
@@ -472,8 +472,8 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             else:
                 pass
 
-            # In case of technology search, search the text in 
-            # prepared result instead of queryset because we have 
+            # In case of technology search, search the text in
+            # prepared result instead of queryset because we have
             # technology id in queryset not the name
             if sSearch.lower() in ['pmp', 'wimax']:
                 self.is_technology_searched = True
@@ -520,11 +520,17 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         :param kwargs:
         :return: list of devices
         """
+        # current_epoch_timestamp = datetime.datetime.now().strftime('%s')
+
+        max_timestamp = self.model.objects.filter(
+            Q(organization__in=kwargs['organizations']),
+            Q(severity__in=['warning', 'critical'])).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
 
         if self.technology == 'ALL':
             sectors = self.model.objects.filter(
                 Q(organization__in=kwargs['organizations']),
                 Q(severity__in=['warning', 'critical']),
+                Q(sys_timestamp__gte=max_timestamp - 420)
                 # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
@@ -533,6 +539,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 Q(organization__in=kwargs['organizations']),
                 Q(sector__sector_configured_on__device_technology=tech_id),
                 Q(severity__in=['warning', 'critical']),
+                Q(sys_timestamp__gte=max_timestamp - 420)
                 # Q(age__lte = F('sys_timestamp') - 600)
             ).prefetch_related(*self.related_columns).values(*self.columns)
 
@@ -555,14 +562,12 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
                 item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
-
                 if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"
                 elif item['severity'].strip().lower() == 'critical':
                     item['severity'] = "Stop Provisioning"
                 else:
                     continue
-
             except Exception as e:
                 logger.exception(e)
 
@@ -1237,9 +1242,16 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         :return: list of devices
         """
 
+        # current_epoch_timestamp = datetime.datetime.now().strftime('%s')
+
+        max_timestamp = self.model.objects.filter(
+            Q(organization__in=kwargs['organizations']),
+            Q(severity__in=['warning', 'critical'])).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
+
         backhauls = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
             Q(severity__in=['warning', 'critical']),
+            Q(sys_timestamp__gte=max_timestamp - 420)
             # Q(age__lte=F('sys_timestamp') - 600)
         ).prefetch_related(*self.related_columns).values(*self.columns)
 
@@ -1265,7 +1277,6 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                     item['severity'] = "Stop Provisioning"
                 else:
                     continue
-
             except Exception as e:
                 logger.exception(e)
 

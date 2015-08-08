@@ -900,9 +900,14 @@ class MFRCauseCodeView(View):
 
         results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
         for result in results:
+            try:
+                processed_val = float(result['processed_value'].replace(',', ''))
+            except Exception, e:
+                logger.info(e)
+                processed_val = result['processed_value']
             chart_series.append([
                 "%s : %s" % (result['processed_key'], result['processed_value']),
-                float(result['processed_value'])
+                processed_val
             ])
 
         # get the chart_data for the pie chart.
@@ -970,9 +975,14 @@ class MFRProcesedView(View):
             for result in mfr_processed_results:
                 result_date = result['processed_for__process_for']
                 if result_date.year == day.year and result_date.month == day.month:
+                    try:
+                        processed_val = float(result['processed_value'].replace(',', ''))
+                    except Exception, e:
+                        logger.info(e)
+                        processed_val = result['processed_value']
                     processed_key_dict[result['processed_key']].append({
                         "color": '',
-                        "y": float(result['processed_value']),
+                        "y": processed_val,
                         "name": result['processed_key'],
                         "x": calendar.timegm(day.timetuple()) * 1000,  # Multiply by 1000 to return correct GMT+05:30 timestamp
                     })
