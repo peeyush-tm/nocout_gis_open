@@ -301,7 +301,7 @@ class LivePerformanceListing(BaseDatatableView):
                             if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
                                 result_list.append(search_data)
                         else:
-                            if sSearch == search_data[data] and search_data not in result_list:
+                            if sSearch == unicode(search_data[data]) and search_data not in result_list:
                                 result_list.append(search_data)
 
             return result_list
