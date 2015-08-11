@@ -2,14 +2,16 @@
 redis-enqueue-broker-module
 ============================
 
-Store host check results received from broker
-into a redis backed queue
+Shinken broker module to brok information of 
+services/hosts and events into redis backed queue
 """
 
 from redis import StrictRedis
 
 from shinken.basemodule import BaseModule
 from shinken.log import logger
+
+from logevent import LogEvent
 
 info, warning, error = logger.info, logger.warning, logger.error
 
@@ -72,9 +74,28 @@ class RedisEnqueueBroker(BaseModule):
 						error('[%s] Problem with brok: '
 						     	 	 '%s' % (self.name, exc))
 
+
+	# called by base module
+	def manage_log_brok(self, brok):
+		# we need only alerts
+		valid_event_type = ['ALERT']
+		log = brok.data['log']
+		event = LogEvent(log)
+		data = event.data
+		if data and data['event_type'] in valid_event_type:
+			#info('[%s] Data: %s' % (self.name, data))
+			alrt_type = data['alert_type']
+			if alrt_type == 'HOST':
+				data.update({'service_desc': 'ping'})
+				self.queue.put('host_event', data)
+			elif alrt_type == 'SERVICE':
+				pass
+				self.queue.put('service_event', data)
+
+
 	# called by base module
 	def manage_host_check_result_brok(self, brok):
-		info('[%s] Start manage_host_check_result_brok' % self.name)
+		#info('[%s] Start manage_host_check_result_brok' % self.name)
 		# get broks from queue broks
 		#broks = self.broks
 		if brok.type in self.host_valid_broks:
@@ -90,9 +111,9 @@ class RedisEnqueueBroker(BaseModule):
 	# called by base module
 	def manage_service_check_result_brok(self, brok):
 		service_valid_attrs = self.service_valid_attrs
-		info('[%s] Start manage_service_check_result_brok' % self.name)
+		#info('[%s] Start manage_service_check_result_brok' % self.name)
 		if brok.type in self.service_valid_broks:
-			info('[%s] brok: %s' % (self.name, brok))
+			#info('[%s] brok: %s' % (self.name, brok))
 			service = str(brok.data['service_description'])
 			if service == 'Check_MK':
 				return
