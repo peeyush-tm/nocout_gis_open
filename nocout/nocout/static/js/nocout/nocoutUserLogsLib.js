@@ -209,7 +209,7 @@ $("form").submit(function(e) {
 function prepareFormData() {
     var form_data = [];
 
-    var input_boxes = $("form input:not([type='hidden']):not([type='checkbox'])"),//.serializeArray(),
+    var input_boxes = $("form input:not([type='hidden']):not([type='checkbox']):not([type='password'])"),//.serializeArray(),
         select_boxes = $("form select"),
         checkbox_boxes = $("form input[type='checkbox']"),
         text_area_fields = $("form textarea");
