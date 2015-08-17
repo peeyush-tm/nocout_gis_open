@@ -13,14 +13,23 @@ var existing_pagesettings_html = '<div class="clearfix"></div>',
 						   <div class="col-md-12 pull-right" align="right"> \
 						   <a href="javascript:;" title="Add Filter Block" onclick="addNewFilters();"> \
 						   <i class="fa fa-plus"></i></a></div></div>',
+	string_column_options = '<option value="starts_with">Starts With</option> \
+							 <option value="contains">Contains</option> \
+							 <option value="not_contains">Does Not Contains</option> \
+							 <option value="ends_with">Ends With</option>',
+	number_column_options = '<option value="gt">Greater Than</option> \
+							 <option value="gte">Greater Than Equals To</option> \
+							 <option value="lt">Less Than</option> \
+							 <option value="lte">Less Than Equals To</option>',
 	condition_block_html = '<div class="filters_remove_container"> \
 							<h4 title="Remove Filter Block" pk="<1>"><i class="fa fa-times text-danger"></i></h4> \
 							</div><hr/><div class="form-group"> \
 							<label class="col-sm-3 control-label">Select Condition</label> \
 							<div class="col-sm-8"> \
 							<select class="form-control condition_box" id="{}"> \
-							<option value="and">AND</option> \
-							<option value="or">OR</option> \
+							<option value="equals">Is Equal To</option> \
+							<option value="not_equals">Is Not Equal To</option> \
+							{specific_columntype_option} \
 							</select></div></div><hr/>',
 	timestamp_columns = [
 		'added_on',
