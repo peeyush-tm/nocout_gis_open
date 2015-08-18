@@ -988,30 +988,30 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
             if dashboard == 'rssi' and technology == 'P2P' and is_bh == True:
                 devices_method_kwargs = dict(specify_ptp_bh_type='all')
             # Appending jobs for different organizations and for all services per organization
-            g_jobs.append(
-                prepare_Rf_dashboard_devices.s(
-                    organizations=organization,
-                    # user_devices=user_devices,
-                    dashboard_name=dashboard,
-                    processed_for=processed_for,
-                    dashboard_config=dashboards,
-                    devices_method_to_call = devices_method_to_call,
-                    devices_method_kwargs = devices_method_kwargs,
-                    technology=tech,
-                    is_bh=is_bh
-                )
+            # g_jobs.append(
+            prepare_Rf_dashboard_devices(
+                organizations=organization,
+                # user_devices=user_devices,
+                dashboard_name=dashboard,
+                processed_for=processed_for,
+                dashboard_config=dashboards,
+                devices_method_to_call = devices_method_to_call,
+                devices_method_kwargs = devices_method_kwargs,
+                technology=tech,
+                is_bh=is_bh
             )
+            # )
     # 
-    if not len(g_jobs):
-        return ret
+    # if not len(g_jobs):
+    #     return ret
 
-    job = group(g_jobs)
-    result = job.apply_async()  # start the jobs
+    # job = group(g_jobs)
+    # result = job.apply_async()  # start the jobs
     # for r in result.get():
     #     ret |= r
     return True
 
-@task()
+# @task()
 def prepare_Rf_dashboard_devices(organizations,
                                 dashboard_name,
                                 processed_for,
