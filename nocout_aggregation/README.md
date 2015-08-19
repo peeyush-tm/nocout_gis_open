@@ -1,9 +1,9 @@
 entry.py           --->  Celery app config
 
-aggregation_all.py --->  Main entry point function
+client.py --->  Calls and sends tasks into celery queues
 
-host_wise_aggr.py  --->  Handles aggregation
+tasks.py  --->  Aggregation tasks
 
-historical_mysql_export.py ---> Mysql helper functions
+db_tasks.py ---> Database related funtionalities
 
 extra ---> Contains sysconfig and init files
