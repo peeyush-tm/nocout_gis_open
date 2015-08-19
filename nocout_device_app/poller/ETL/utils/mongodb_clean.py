@@ -16,6 +16,7 @@ def main(**configs):
         interface_tables = ['status_perf']
 	inventory_tables = ['nocout_inventory_service_perf_data']
 	events_tables = ['nocout_service_event_log','nocout_host_event_log']
+	kpi_tables = ['kpi_data']
 	for i in range(len(configs.get('mongo_conf'))):
 		try:
 			db = mongo_module.mongo_conn(
@@ -53,6 +54,12 @@ def main(**configs):
 			if table in collections:
 				try:
 					db[table].remove({"check_timestamp": {"$lt": end_epoch}})
+				except Exception as e:
+					print e
+		for table in kpi_tables:
+			if table in collections:
+				try:
+					db[table].remove({"sys_timestamp": {"$lt": end_time}})
 				except Exception as e:
 					print e
 		# Requires extra 2 GB space to run... May block other operation on Mongodb and takes time ,so commented, space will be marked as deleted 

@@ -83,7 +83,7 @@ if (window.location.origin) {
 
 // Daterangepicker HTML String
 date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
-                          class="form-control input-large search-query" value=""/>';
+                          class="form-control input-large search-query" value="" readonly/>';
 
 
 $.urlParam = function (name) {
@@ -1032,7 +1032,7 @@ function nocoutPerfLib() {
                 urlDataStartDate = getDateInEpochFormat(ajax_start_date);
                 urlDataEndDate = getDateInEpochFormat(end_Date)
             }
-
+            is_normal_table = false;
             $.ajax({
                 url: get_url,
                 data: {
@@ -1057,6 +1057,12 @@ function nocoutPerfLib() {
                         var grid_headers = result.data.objects.table_data_header;
 
                         if (grid_headers && grid_headers.length > 0) {
+
+                            // update 'draw_type' variable
+                            draw_type = 'table';
+                            // Checked the chart type radio
+                            $('#display_table')[0].checked = true;
+
                             // Hide display type option from only table tabs
                             if (!$("#display_type_container").hasClass("hide")) {
                                 $("#display_type_container").addClass("hide")
@@ -1066,6 +1072,7 @@ function nocoutPerfLib() {
                             nocout_destroyHighcharts(service_id);
 
                             if (typeof(grid_headers[0]) == 'string') {
+                                is_normal_table = true;
                                 var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
                                 if ($("#other_perf_table").length == 0) {
                                     initNormalDataTable_nocout(
@@ -1082,11 +1089,6 @@ function nocoutPerfLib() {
                                     'other_perf_table'
                                 );
                             } else {
-
-                                draw_type = 'table';
-                                // Checked the chart type radio
-                                $('#display_table')[0].checked = true;
-
                                 setTimeout(function() {
                                     initChartDataTable_nocout(
                                         "other_perf_table",
@@ -1125,7 +1127,16 @@ function nocoutPerfLib() {
                                 if (draw_type == 'chart') {
                                     // Destroy 'perf_data_table'
                                     nocout_destroyDataTable('other_perf_table');
-                                    nocout_destroyDataTable('perf_data_table');
+
+                                    if (!(
+                                        listing_ajax_url.indexOf('service/rf/') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('servicedetail') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('availability') > -1
+                                    )) {
+                                            nocout_destroyDataTable('perf_data_table');
+                                    }
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
                                         createHighChart_nocout(chart_config,service_id, false, false, function(status) {
@@ -1143,34 +1154,39 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     ) {
-                                        var contentHtml = createChartDataTableHtml_nocout(
-                                            "perf_data_table",
-                                            chart_config.chart_data
-                                        );
-                                        // Update bottom table HTML
-                                        $('#' + service_id+ '_bottom_table').html(contentHtml);
+                                        if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                            addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
+                                        } else {
+                                            var contentHtml = createChartDataTableHtml_nocout(
+                                                "perf_data_table",
+                                                chart_config.chart_data
+                                            );
 
-                                        // Margin of 20px between the chart & table
-                                        $('#' + service_id+ '_bottom_table').css("margin-top","20px");
+                                            // Update bottom table HTML
+                                            $('#' + service_id+ '_bottom_table').html(contentHtml);
 
-                                        $("#perf_data_table").DataTable({
-                                            sDom: 'T<"clear">lfrtip',
-                                            oTableTools: {
-                                                sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                                                aButtons: [
-                                                    {
-                                                        sExtends: "xls",
-                                                        sButtonText: "Download Excel",
-                                                        sFileName: "*.xls",
-                                                        // mColumns: excel_columns
-                                                    }
-                                                ]
-                                            },
-                                            bPaginate: true,
-                                            bDestroy: true,
-                                            aaSorting : [[0,'desc']],
-                                            sPaginationType: "full_numbers"
-                                        });
+                                            // Margin of 20px between the chart & table
+                                            $('#' + service_id+ '_bottom_table').css("margin-top","20px");
+
+                                            $("#perf_data_table").DataTable({
+                                                sDom: 'T<"clear">lfrtip',
+                                                oTableTools: {
+                                                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                                                    aButtons: [
+                                                        {
+                                                            sExtends: "xls",
+                                                            sButtonText: "Download Excel",
+                                                            sFileName: "*.xls",
+                                                            // mColumns: excel_columns
+                                                        }
+                                                    ]
+                                                },
+                                                bPaginate: true,
+                                                bDestroy: true,
+                                                aaSorting : [[0,'desc']],
+                                                sPaginationType: "full_numbers"
+                                            });
+                                        }
                                     }
 
                                 } else {
@@ -1261,13 +1277,21 @@ function nocoutPerfLib() {
                                 $("#display_type_container").removeClass("hide")
                             }
                         }
-
+                        
                         if (draw_type == 'chart') {
-                            if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                $("#perf_data_table").dataTable().fnDestroy();
-                                $("#perf_data_table").remove();
-                            }
+                            if(!(
+                                listing_ajax_url.indexOf('service/rf/') > -1
+                                ||
+                                listing_ajax_url.indexOf('servicedetail') > -1
+                                ||
+                                listing_ajax_url.indexOf('availability') > -1
+                            )) {
+                                if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                    $("#perf_data_table").dataTable().fnDestroy();
+                                    $("#perf_data_table").remove();
+                                }
 
+                            }
                             if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
                                     $('#' + service_id+ '_chart').html(result.message);
@@ -1327,6 +1351,25 @@ function nocoutPerfLib() {
                             }
                         } else {
                             hideSpinner();
+                        }
+                    } else if(draw_type == 'table' && is_normal_table) {
+                        if ($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                            //if last date
+                            if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
+                                hideSpinner();
+                            //Else sendAjax request for next Date
+                            } else {
+
+                                var nextDay = moment(ajax_start_date).add(1, 'd');
+                                var ohayoo = nextDay.startOf('day');
+                                timeInterval = setTimeout(function () {
+                                    (function(ohayoo) {
+                                        sendAjax(ohayoo.toDate(), ajax_end_date);
+                                    })(ohayoo);
+                                }, 400);
+                            }
+                        } else {
+                            hideSpinner();    
                         }
                     } else {
                         hideSpinner();

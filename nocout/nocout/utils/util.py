@@ -2328,8 +2328,8 @@ def get_bh_other_query(monitored_only=True, device_name_list=None, type_rf='back
                         
                     bh.id AS BHID,
                     bh.bh_connectivity AS BH_CONNECTIVITY,
-
-                    technology.id AS TECHID,
+                    bh.alias AS BH_ALIAS,
+                    
                     devicetype.id AS TYPEID,
                     device.id AS DEVICE_ID,
                     device.device_name AS BHDEVICENAME

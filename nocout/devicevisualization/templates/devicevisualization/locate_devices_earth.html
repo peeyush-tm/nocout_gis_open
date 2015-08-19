@@ -445,7 +445,7 @@
 
 
     <!-- Gmaps Library API for Location Search -->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false"></script>
     <!-- Google Earth Library-->
     <script type="text/javascript" src="https://www.google.com/jsapi?key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
     <!-- Libray for google earth custom features-->
@@ -494,9 +494,14 @@
             deviceName = "",
             is_super_admin = "",
             default_polling = true,
-            dataTableInstance = "";
+            dataTableInstance = "",
+            config_params = {'other_params' : 'client=gme-teramatrixtechnologies'};
 
-        google.load("earth", "1");
+       try {
+           google.load("earth", "1", config_params);
+       } catch(e) {
+           google.load("earth", "1");
+       }
 
         $(document).ready(function (e) {
 

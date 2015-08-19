@@ -36,7 +36,7 @@ network_data_values = []
 service_data_values = []
 network_update_list = []
 service_update_list = []
-device_first_down_list = []
+device_first_down_map = {}
 
 def load_file(file_path):
     #Reset the global vars
@@ -53,6 +53,34 @@ def load_file(file_path):
         pass
     return host_vars
 
+def calculate_refer_field_for_host(device_first_down, host_name, ds_values, 
+		local_timestamp):
+	refer = ''
+	try:
+		if not device_first_down and ds_values['cur'] == '100':
+			device_first_down['host'] = host_name
+			device_first_down['severity'] = "down"
+			device_first_down['time'] = local_timestamp
+			#device_first_down_map[host_name]=device_first_down
+		elif (device_first_down and host_name ==  device_first_down['host'] and 
+			ds_values['cur'] != '100'):
+			device_first_down['severity'] = "up"
+			#device_first_down_map[host_name]['severity'] = "up"
+			#device_first_down_list[]
+		elif (device_first_down and host_name == device_first_down['host'] and 
+			device_first_down['severity'] == "up" and 
+				ds_values['cur'] == '100'):
+			device_first_down['severity'] = "down"
+			device_first_down['time'] = local_timestamp
+			#device_first_down_map[host_name]['severity'] = "down"
+			#device_first_down_map[host_name]['time'] = local_timestamp
+		if len(device_first_down) > 0:
+			refer = device_first_down['time']
+	except Exception as exc:
+		# printing the exc for now
+		print 'Exc in host refer field: ', exc
+	return  refer,device_first_down
+	
 def build_export(site, network_result, service_result,mrc_hosts,device_down_output,unknwn_state_svc_data, db):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
@@ -70,7 +98,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	global service_data_values
 	global network_update_list
 	global service_update_list
-	global device_first_down_list
+	global device_first_down_map
         age = None
 	rt_min, rt_max = None, None
 	rta_dict = {}
@@ -90,7 +118,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	severity = 'unknown'
 	first_down_crit = {}
 	host_severity = 'unknown'
-	device_first_down_entry =[]
 	host_state = "unknown"
 	device_first_down ={}
 #	db = mongo_module.mongo_conn(
@@ -103,10 +130,14 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
 	host_var = load_file(file_path)
 	host_list = [str(index[0]) for index in nw_qry_output]
-	if db:
-		cur = db.device_first_down.find()
-		for dict_entry in cur:
-			device_first_down_list.append(dict_entry)
+	try:
+		if db:
+			device_first_down_list = list(db.device_first_down.find())
+			for down_device_dict in device_first_down_list:
+				if down_device_dict.get('host'):
+					device_first_down_map[down_device_dict['host']] = down_device_dict
+	except Exception,e:
+		print e
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -138,9 +169,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 					pl_crit = ds_values['cric']
 					pl_cur = ds_values['cur']
 				except:
-					pl_war=None
-					pl_crit=None
-					pl_cur=None
+					pl_war = pl_crit = pl_cur= None
 					pass
 				if pl_cur and pl_war and pl_crit:
 					pl_cur = float(pl_cur)
@@ -152,29 +181,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 						host_severity = "warning"
 					else:
 						host_severity = "down"
-
 				try:
-					try:	
-						device_first_down_entry = filter(lambda x: str(entry[0]) == x['host'],device_first_down_list)
-					except Exception,e:
-						pass	
-					if device_first_down_entry:
-						device_first_down=device_first_down_entry[0]
-					if device_first_down == {} and ds_values['cur'] == '100':
-						device_first_down['host'] = str(entry[0])
-						device_first_down['severity']="down"
-						device_first_down['time']=local_timestamp
-						device_first_down_list.append(device_first_down)
-					elif device_first_down and str(entry[0]) ==  device_first_down['host'] and \
-						ds_values['cur'] != '100':
-						device_first_down['severity']="up"
-					elif device_first_down and str(entry[0]) == device_first_down['host'] and \
-						device_first_down['severity'] == "up" \
-						and ds_values['cur'] == '100':
-						device_first_down['severity']="down"
-						device_first_down['time']=local_timestamp
-					if device_first_down['time']:
-						refer = device_first_down['time']
+					if device_first_down_map:
+						device_first_down = device_first_down_map.get(str(entry[0]))
+						refer,device_first_down = calculate_refer_field_for_host(device_first_down, 
+							str(entry[0]), ds_values, local_timestamp)
+						device_first_down_map[str(entry[0])] = device_first_down
 				except Exception,e:
 					refer = ''
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
@@ -478,9 +490,13 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_f
 
 	try:
 		index3 =0
-		for index3 in range(len(device_first_down_list)):
-			match_dict = {'host':device_first_down_list[index3]['host']}
-			mongo_module.mongo_db_update(db,match_dict, device_first_down_list[index3], 
+		down_device = device_first_down_map.values()
+		for index3 in range(len(down_device)):
+			try:
+				match_dict = {'host':down_device[index3]['host']}
+			except:
+				continue
+			mongo_module.mongo_db_update(db,match_dict, down_device[index3], 
 			'device_first_down')
 			
 	except Exception,e:

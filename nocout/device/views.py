@@ -2652,12 +2652,16 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if sSearch:
             # If character '\' is in entered text then replace the character '\' from entered text. Because it will create an error in sql query execution.
             sSearch = sSearch.replace("\\", "")
+
+            # Replace the 'MHz' keyword from search txt
+            sSearch = sSearch.lower().replace("mhz", "")
+            sSearch = sSearch.strip()
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
 
             # filter the model on the basis of the fields present in columns list.
             for column in self.columns:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"  # returns the id of DeviceFrequency
