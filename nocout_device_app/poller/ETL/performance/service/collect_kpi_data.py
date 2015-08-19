@@ -38,6 +38,20 @@ class MKGeneralException(Exception):
     def __str__(self):
         return self.reason
 
+def load_file(file_path):
+    #Reset the global vars
+    host_vars = {
+        "all_hosts": [],
+        "ipaddresses": {},
+        "host_attributes": {},
+        "host_contactgroups": [],
+    }
+    try:
+        execfile(file_path, host_vars, host_vars)
+        del host_vars['__builtins__']
+    except IOError, e:
+        pass
+    return host_vars
 
 
 def calculate_avg_value(unknwn_state_svc_data,db):
@@ -89,7 +103,7 @@ def calculate_avg_value(unknwn_state_svc_data,db):
 	return host_svc_ds_dict
 
 
-def format_kpi_data(site,output,output1,unknwn_state_svc_data,device_down_list,db):
+def format_kpi_data(site,output,output1,unknwn_state_svc_data,device_down_list,original_dr_host_list,dr_dict,db):
 	"""
 	inventory_perf_data : Function for collecting the data for inventory serviecs.Service state is also retunred for those services
 	Args: site (site on poller on which devices are monitored)
@@ -119,7 +133,10 @@ def format_kpi_data(site,output,output1,unknwn_state_svc_data,device_down_list,d
 	for entry in output:
 		reverse= 0
 		device_sector_id =""
-		if str(entry[0]) in device_down_list:
+		dr_host = dr_dict.get(str(entry[0]))
+		if str(entry[0]) in device_down_list and str(entry[0]) not in original_dr_host_list:
+			continue
+		if dr_host and dr_host in device_down_list and str(entry[0]) in device_down_list:
 			continue
 		service_state = int(entry[4])
 		host = str(entry[0])
@@ -316,13 +333,24 @@ def kpi_data_data_main():
 		service_qry_output = eval(service_qry_output)
 		output1 =eval(output1)
 
+		file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
+		host_var = load_file(file_path)
+		dr_dict = {}
+		for host_row in host_var['all_hosts']:
+			if 'dr:'in host_row:
+				original_host = host_row.split('|')[0]
+				dr_host = host_row.split('|')[3].split(':')[1].strip(' ')
+				dr_dict[original_host] = dr_host
+				original_dr_host_list.append(original_host)		
+
+
 		unknown_svc_data = filter(lambda x: x[4] == 3,service_qry_output)
 		unknwn_state_svc_data = filter(lambda x: x[0] not in device_down_list and 'util' in str(x[3]) ,unknown_svc_data)
 		unknwn_state_svc_data  =  calculate_avg_value(unknwn_state_svc_data,db)
 
 		
 
-		format_kpi_data(site,service_qry_output,output1,unknwn_state_svc_data,device_down_list,db)
+		format_kpi_data(site,service_qry_output,output1,unknwn_state_svc_data,device_down_list,original_dr_host_list,dr_dict,db)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:
