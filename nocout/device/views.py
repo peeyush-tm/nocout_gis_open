@@ -1090,7 +1090,7 @@ class DeviceCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
         device.device_vendor = form.cleaned_data['device_vendor']
         device.device_model = form.cleaned_data['device_model']
         device.device_type = form.cleaned_data['device_type']
-        device.parent = form.cleaned_data['parent']
+        # device.parent = form.cleaned_data['parent']
         device.ip_address = form.cleaned_data['ip_address']
         device.mac_address = form.cleaned_data['mac_address']
         device.netmask = form.cleaned_data['netmask']
@@ -1183,7 +1183,7 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']
         self.object.device_type = form.cleaned_data['device_type']
-        self.object.parent = form.cleaned_data['parent']
+        # self.object.parent = form.cleaned_data['parent']
         self.object.ip_address = form.cleaned_data['ip_address']
         self.object.mac_address = form.cleaned_data['mac_address']
         self.object.netmask = form.cleaned_data['netmask']
@@ -1267,7 +1267,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
             """
             cleaned_data_field_dict = {}
             for field in form.cleaned_data.keys():
-                if field in ('parent', 'site_instance', 'organization'):
+                # if field in ('parent', 'site_instance', 'organization'):
+                if field in ('site_instance', 'organization'):
                     cleaned_data_field_dict[field] = form.cleaned_data[field].pk if form.cleaned_data[field] else None
                 elif field in ('device_model', 'device_type', 'device_vendor', 'device_technology') and \
                         form.cleaned_data[field]:
@@ -1282,8 +1283,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
         changed_fields_dict = nocout_utils.init_dict_differ_changed(initial_field_dict, cleaned_data_field_dict)
         try:
             if changed_fields_dict:
-                initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
-                    if initial_field_dict['parent'] else str(None)
+                # initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
+                #     if initial_field_dict['parent'] else str(None)
                 initial_field_dict['organization'] = Organization.objects.get(
                     pk=initial_field_dict['organization']).name \
                     if initial_field_dict['organization'] else str(None)
@@ -1301,8 +1302,8 @@ class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
                     pk=initial_field_dict['device_technology']).name \
                     if initial_field_dict['device_technology'] else str(None)
 
-                cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
-                    if cleaned_data_field_dict['parent'] else str(None)
+                # cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
+                #     if cleaned_data_field_dict['parent'] else str(None)
                 cleaned_data_field_dict['organization'] = Organization.objects.get(
                     pk=cleaned_data_field_dict['organization']).name \
                     if cleaned_data_field_dict['organization'] else str(None)
