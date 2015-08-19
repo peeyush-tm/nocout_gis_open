@@ -1814,7 +1814,7 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
             ]
         #if the user is superuser action column can be appeared in datatable.
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -1915,7 +1915,7 @@ class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
         user_id = self.request.user.id
         #if user is superadmin or gisadmin
         if user_id in [1,2]:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -2011,7 +2011,7 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
         user_id = self.request.user.id
         # if user is superadmin or gisadmin
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -3405,7 +3405,7 @@ class PingThematicSettingsList(ListView):
             {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto'}]
 
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 

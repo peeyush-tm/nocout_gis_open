@@ -19,8 +19,8 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     """
     If a new user is created auto assign rssi thematic settings for P2P, PMP and WiMAX technologies.
     """
-    UserThematicSettings = get_model('inventory', 'UserThematicSettings', seed_cache=True)
-    ThematicSettings = get_model('inventory', 'ThematicSettings', seed_cache=True)
+    UserThematicSettings = get_model('inventory', 'UserThematicSettings')
+    ThematicSettings = get_model('inventory', 'ThematicSettings')
 
     if not created:
         return

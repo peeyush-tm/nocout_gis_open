@@ -715,8 +715,8 @@ class NetworkAlertDetailHeaders(ListView):
         ]
 
         bh_dt_specific_headers = [
-            {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'bh_alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_port', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         common_headers = [
@@ -1055,7 +1055,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if data_source in ['PMPULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_BH']:
+        if data_source in ['Backhaul', 'Temperature_bh']:
             page_type = 'other'
             type_rf = "backhaul"
 
@@ -1081,13 +1081,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
             if device_id:
                 data.update(id=device_id)
 
-        return perf_utils.prepare_gis_devices_optimized(
+        result = perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
             technology=device_tab_technology,
             type_rf=type_rf,
             device_name_list=device_name_list
         )
+        return result
 
     def prepare_results(self, qs):
         """
@@ -1154,7 +1155,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                             <i class="fa fa-dropbox text-muted"></i>\
                             </a>'
                 )
-                
+
         return qs
 
     def filter_queryset(self, qs):
@@ -1334,8 +1335,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
         elif data_source in ['Temperature_bh']:
             self.order_columns = [
                 'severity',
-                'alias',
-                'bh_port_name',
+                'bh_alias',
+                'bh_port',
                 'ip_address',
                 'device_type',
                 'bs_name',

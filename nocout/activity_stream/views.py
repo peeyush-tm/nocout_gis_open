@@ -86,6 +86,7 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
+# <<<<<<< HEAD
         # get global search value
         sSearch = self.request.GET.get('search[value]', None)
 
@@ -93,6 +94,16 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             q = Q()
             for col in self.columns:
                 if col == 'logged_at':
+# =======
+#         sSearch = self.request.GET.get('sSearch', None)
+#
+#         if sSearch:
+#             query = []
+#             exec_query = "qs = qs.filter("
+#             for column in self.columns[:-1]:
+#                 # Avoid search on 'added_on'.
+#                 if column == 'added_on':
+# >>>>>>> 02c2afcb870ed36322e9ec12aa65c450e59f7ab6
                     continue
 
                 q |= Q(**{'%s__icontains' % col : sSearch})

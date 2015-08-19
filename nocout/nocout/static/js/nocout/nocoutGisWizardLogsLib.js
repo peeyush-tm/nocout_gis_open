@@ -295,7 +295,7 @@ function prepareWizardFormsData(isSector) {
         for(var i=0;i<sector_forms.length;i++) {
             var label_text = $(sector_forms[i]).prev('.form-group').children(),
                 label_id = "",
-                input_boxes = $(sector_forms[i]).children().find("input:not([type='hidden']):not([type='checkbox'])"),//.serializeArray(),
+                input_boxes = $(sector_forms[i]).children().find("input:not([type='hidden']):not([type='checkbox']):not([type='password'])"),//.serializeArray(),
                 select_boxes = $(sector_forms[i]).children().find("select").toArray(),
                 text_area_fields = $(sector_forms[i]).children().find("textarea"),
                 checkbox_boxes = $(sector_forms[i]).children().find("input[type='checkbox']"),
@@ -346,7 +346,7 @@ function prepareWizardFormsData(isSector) {
 
         return final_data;
     } else {
-        var input_boxes = $("form input:not([type='hidden']):not([type='checkbox'])"),//.serializeArray(),
+        var input_boxes = $("form input:not([type='hidden']):not([type='checkbox']):not([type='password'])"),//.serializeArray(),
             select_boxes = $("form select"),
             checkbox_boxes = $("form input[type='checkbox']"),
             text_area_fields = $("form textarea"),

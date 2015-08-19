@@ -1115,7 +1115,6 @@ def update_backhaul_status(basestations, kpi, val, avg_max_val, avg_max_per):
                     max_value=peak_out_per,
                     getit='per'
                 )
-
             if bhs:
                 # values that would be updated per 5 minutes
                 bhs.backhaul_capacity = float(backhaul_capacity) if backhaul_capacity else 0
@@ -1447,7 +1446,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_in_val = 0
                     avg_out_val = 0
                     peak_out_val = 0
-
             if scs:
                 # update the scs
                 # scs.sector = sector
@@ -1654,7 +1652,6 @@ def update_sector_status(sectors, cbw, kpi, val, technology, avg_max_val, avg_ma
                     peak_in_val = 0
                     avg_out_val = 0
                     peak_out_val = 0
-
             if scs:
                 # update the scs
                 # scs.sector = sector
