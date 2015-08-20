@@ -18,6 +18,8 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
 import logging
 from operator import itemgetter
 
@@ -268,7 +270,7 @@ class DownloaderHeaders(ListView):
         return context
 
 
-class DownloaderListing(BaseDatatableView):
+class DownloaderListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the reports data table rendering.
     """
@@ -337,7 +339,7 @@ class DownloaderListing(BaseDatatableView):
                 exec_query += ").filter(rows_view='"+str(download_type)+"').values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -518,7 +520,7 @@ class DownloaderCompleteHeaders(ListView):
         return context
 
 
-class DownloaderCompleteListing(BaseDatatableView):
+class DownloaderCompleteListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the reports data table rendering.
     """
@@ -566,7 +568,7 @@ class DownloaderCompleteListing(BaseDatatableView):
                           str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """ 

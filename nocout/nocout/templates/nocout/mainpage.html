@@ -71,6 +71,13 @@
     <script src={% static "js/actions_create.js" %}></script>
     <!-- Custom library for Global Search -->
     <script type="text/javascript" src={% static "js/nocout/globalSearchLib.js" %}></script>
+    <script type="text/javascript">
+        {% if settings.ENABLE_ADVANCE_FILTERS %}
+            advance_filters_enabled = true;
+        {% else %}
+            advance_filters_enabled = false;
+        {% endif %}
+        </script>
     <!-- Custom library for Datatables advance filtering -->
     <script type="text/javascript" src={% static "js/nocout/nocoutDatatablesFilters.js" %}></script>
     <!-- CUSTOM SCRIPT -->

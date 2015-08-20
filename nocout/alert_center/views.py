@@ -34,6 +34,9 @@ from django.utils.dateformat import format
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME
 
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -207,7 +210,7 @@ class AlertCenterListing(ListView):
         return context
 
 
-class AlertListingTable(BaseDatatableView):
+class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     Generic Class Based View for the Alert Center Network Listing Tables.
 
@@ -491,9 +494,9 @@ class AlertListingTable(BaseDatatableView):
                         else:
                             if sSearch == item[data] and item not in result_list:
                                 result_list.append(item)
-
-            return result_list
-        return qs
+            # advance filtering the query set
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -805,7 +808,7 @@ class NetworkAlertDetailHeaders(ListView):
         return context
 
 
-class GetNetworkAlertDetail(BaseDatatableView):
+class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     """
     
     Generic Class Based View for the Alert Center Network  Detail Listing Tables.
@@ -1162,9 +1165,9 @@ class GetNetworkAlertDetail(BaseDatatableView):
                         else:
                             if sSearch == search_data[data] and search_data not in result_list:
                                 result_list.append(search_data)
-
-            return result_list
-        return qs
+            # advance filtering the query set
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1493,7 +1496,7 @@ class SingleDeviceAlertsInit(ListView):
         return context
 
 
-class SingleDeviceAlertsListing(BaseDatatableView):
+class SingleDeviceAlertsListing(BaseDatatableView, AdvanceFilteringMixin):
 
     model = EventNetwork
     required_columns = [
@@ -1596,7 +1599,8 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 exec_query += ".using(alias='" + self.public_params['machine_name'] + "')"
 
                 exec exec_query
-        return qs
+        # advance filtering the query set
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1785,6 +1789,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         total_records = len(qs)
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = len(qs)
 
@@ -1867,7 +1872,7 @@ class SIAListing(ListView):
         return context
 
 
-class SIAListingTable(BaseDatatableView):
+class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     View to render service impacting alarms;
     namely history, current and clear alarms for all the devices.
@@ -1983,11 +1988,11 @@ class SIAListingTable(BaseDatatableView):
                 dict_str = str(search_data).lower()
                 if sSearch.lower() in dict_str :
                     result_list.append(search_data)
-
-            return result_list
+            # advance filtering the query set
+            return self.advance_filter_queryset(result_list)
         else:
             self.is_searched = False
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause

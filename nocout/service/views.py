@@ -11,7 +11,7 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet,\
                 DTServiceDataSourceUpdateFormSet, DeviceServiceConfigurationForm
 from device.forms import DeviceTypeServiceDataSourceUpdateFormset
@@ -54,7 +54,7 @@ class ServiceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Service Listing Table.
     """
@@ -274,7 +274,7 @@ class ServiceParametersList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render ServiceParameters Data table.
     """
@@ -370,7 +370,7 @@ class ServiceDataSourceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceDataSourceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceDataSourceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     model = ServiceDataSource
     required_permissions = ('service.view_servicedatasource',)
     columns = ['name', 'alias', 'warning', 'critical']
@@ -480,7 +480,7 @@ class ProtocolList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ProtocolListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ProtocolListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class Based View to render the protocol Data table.
     """
@@ -610,7 +610,7 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
 
 
 class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin,
-                                             BaseDatatableView):
+                                             BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View render the Device Service Configuration Table.
     """
@@ -688,7 +688,7 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Datatable
 
 
 class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin,
-                                                    BaseDatatableView):
+                                                    BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View render the Device Service Configuration Table.
     """

@@ -423,3 +423,45 @@ iframe {
   top: 0px;
   cursor: pointer;
 }
+.filters_form_container {
+  border-right: 1px solid #CCCCCC;
+}
+.applied_filter_container h4 {
+  margin-top: 0px;
+}
+.filter_cancel_btn {
+  margin-left:10px;
+}
+.remove_filter_block_link {
+  position: absolute;
+  right:20px;
+}
+/*.add_filter_btn_container {
+  margin-right: 5px !important;
+}*/
+.selected_filters_list li {
+  font-style: italic;
+}
+.single_filter_remove_btn {
+  cursor: pointer;
+}
+.add_filter_btn_container {
+  position: absolute;
+  right: 3.5%;
+  top: 30%;
+  font-size: 30px;
+}
+.advance_filters_wrapper {
+  max-height: 190px;
+  overflow: auto;
+}
+.selected_filters_list > thead > tr > th, 
+.selected_filters_list > tbody > tr > td {
+  padding: 4px !important;
+}
+.page_settings_container .date-range ul.list-unstyled {
+  margin-bottom: 0px;
+}
+.remove_advance_filters_btn {
+  margin-left: 10px !important;
+}

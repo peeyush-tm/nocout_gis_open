@@ -42,18 +42,17 @@
     <!-- Custom Script for soft delete-->
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
-
+        var dataTableInstance = '';
         $(document).ready(function (e) {
-                    /*Make a instance of ourDataTableWidget class */
-                    var dataTableInstance = new ourDataTableWidget();
-                    /*Grid headers object*/
-                    var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-                    /*Ajax url to get grid data*/
-                    var ajax_url = '{% url "DeviceGroupListingTable" %}'
-                    /*Call createDataTable function of ourDataTableWidget class*/
-                    var destroy=false;
-                    dataTableInstance.createDataTable("DeviceGroupTable", gridHeadersObj, ajax_url, destroy);
-                }
-        );
+            /*Make a instance of ourDataTableWidget class */
+            dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "DeviceGroupListingTable" %}'
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("DeviceGroupTable", gridHeadersObj, ajax_url, destroy);
+        });
     </script>
 {% endblock %}

@@ -30,6 +30,8 @@ from user_profile.models import UserProfile
 from activity_stream.models import UserAction
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
 
 from nocout.mixins.permissions import PermissionsRequiredMixin
 import logging
@@ -63,7 +65,7 @@ class ActionList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of user log activity in datatable.
         URL - 'http://127.0.0.1:8000/logs/actions/'
@@ -100,6 +102,9 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
+
+        # advance filtering the query set
+        qs = self.advance_filter_queryset(qs)
 
         return qs
 

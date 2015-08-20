@@ -43,6 +43,9 @@ from performance.utils.util import PerformanceUtilsGateway
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
 
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
+
 from nocout.settings import DATE_TIME_FORMAT, LIVE_POLLING_CONFIGURATION, \
     MIN_CHART_TYPE, MAX_CHART_TYPE, AVG_CHART_TYPE, MIN_CHART_COLOR, MAX_CHART_COLOR, \
     AVG_CHART_COLOR, CACHE_TIME, \
@@ -184,7 +187,7 @@ class LivePerformance(ListView):
         return context
 
 
-class LivePerformanceListing(BaseDatatableView):
+class LivePerformanceListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the performance data table rendering.
 
@@ -304,8 +307,8 @@ class LivePerformanceListing(BaseDatatableView):
                             if sSearch == search_data[data] and search_data not in result_list:
                                 result_list.append(search_data)
 
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -847,7 +850,7 @@ class SectorDashboard(ListView):
         return context
 
 
-class SectorDashboardListing(BaseDatatableView):
+class SectorDashboardListing(BaseDatatableView, AdvanceFilteringMixin):
     """ This class show sector spot dashboard listing """
 
     model = SpotDashboard
@@ -967,7 +970,7 @@ class SectorDashboardListing(BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """ 
@@ -994,6 +997,7 @@ class SectorDashboardListing(BaseDatatableView):
         total_records = len(qs)
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = len(qs)
 
@@ -1700,7 +1704,7 @@ class ServiceDataSourceHeaders(ListView):
         return context
 
 
-class ServiceDataSourceListing(BaseDatatableView):
+class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the single device page ServiceDataSourceListing rendering.
 
@@ -1991,7 +1995,7 @@ class ServiceDataSourceListing(BaseDatatableView):
             except Exception, e:
                 pass
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause

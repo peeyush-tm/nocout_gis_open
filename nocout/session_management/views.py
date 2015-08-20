@@ -40,6 +40,8 @@ from session_management.models import Visitor
 from user_profile.models import UserProfile
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
 
 
 class UserStatusList(PermissionsRequiredMixin, ListView):
@@ -77,7 +79,7 @@ class UserStatusList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class UserStatusTable(BaseDatatableView):
+class UserStatusTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of logged in user status in datatable.
         URL - 'http://127.0.0.1:8000/sm/'
@@ -107,9 +109,8 @@ class UserStatusTable(BaseDatatableView):
                         break
                 if 'logged_in_status' in dictionary:
                     dictionary.pop('logged_in_status')
-            return result_list
-
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """

@@ -27,7 +27,7 @@ from models import SiteInstance
 from forms import SiteInstanceForm
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 
 
 class SiteInstanceList(PermissionsRequiredMixin, ListView):
@@ -62,7 +62,7 @@ class SiteInstanceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of site instances in datatable.
         URL - 'http://127.0.0.1:8000/site/'

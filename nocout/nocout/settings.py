@@ -752,7 +752,8 @@ SETTINGS_EXPORT = [
     'WARN_COLOR',
     'CRIT_COLOR',
     'WARN_TYPE',
-    'CRIT_TYPE'
+    'CRIT_TYPE',
+    'ENABLE_ADVANCE_FILTERS'
 ]
 # #### Access Variables in Templates
 
@@ -795,6 +796,9 @@ CACHE_TIME = {
 # Params for Advance filters feature
 MAX_SUGGESTION_COUNT = 40
 DATATABLE_SEARCHTXT_KEY = 'sSearch'
+
+####################### Flag to enable/disable advance filters feature for datatables #######################
+ENABLE_ADVANCE_FILTERS = True
 
 try:
     from local_settings import *

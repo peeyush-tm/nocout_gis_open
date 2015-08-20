@@ -27,7 +27,7 @@ from machine.forms import MachineForm
 from models import Machine
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 
 
 class MachineList(PermissionsRequiredMixin, ListView):
@@ -61,7 +61,7 @@ class MachineList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class MachineListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class MachineListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of machines in datatable.
         URL - 'http://127.0.0.1:8000/machine'

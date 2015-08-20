@@ -1,6 +1,7 @@
 var downloader_api_call = "",
     server_side_rendering = true,
     create_advance_filters = true;
+    // advance_filters_enabled = false;
 /**
  * This file creates the jquery data table as per given params
  * @for jqueryDataTable.js
@@ -27,17 +28,26 @@ function ourDataTableWidget() {
         data_extra_param,
         excluded_columns
     ) {
-
-        if (create_advance_filters) {
+        // If advance filtering is enabled from settings then create advance filters
+        if (typeof advance_filters_enabled != 'undefined' && advance_filters_enabled && create_advance_filters) {
             var table_info_object = {
                 'headers_list' : tableheaders,
                 'table_id' : tableId,
-                'app_name' : app_name,
-                'class_name' : data_class_name,
-                'get_params' : data_extra_param
+                'ajax_url' : ajax_url
             };
             // Call nocout_createAdvanceFilter to create advance filters for grid
-            nocout_createAdvanceFilter(table_info_object);
+            nocout_createAdvanceFilter(tableId,
+                tableheaders,
+                ajax_url,
+                destroy,
+                current_table_title,
+                app_name,
+                header_class_name,
+                data_class_name,
+                header_extra_param,
+                data_extra_param,
+                excluded_columns
+            );
         }
 
         /*Show the spinner*/

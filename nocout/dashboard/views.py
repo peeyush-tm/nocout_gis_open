@@ -39,7 +39,7 @@ from dashboard.utils import get_service_status_results, get_dashboard_status_ran
 
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 
 # BEGIN: logging module
 import logging
@@ -88,7 +88,7 @@ class DashbaordSettingsListView(TemplateView):
         return context
 
 
-class DashbaordSettingsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DashbaordSettingsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Dashboard Settings Data table.
     """
@@ -388,7 +388,7 @@ class MFRDFRReportsListView(TemplateView):
         return context
 
 
-class MFRDFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class MFRDFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     model = MFRDFRReports
     columns = ['name', 'type', 'is_processed', 'process_for']
     search_columns = ['name', 'type', 'is_processed']
@@ -463,7 +463,7 @@ class DFRProcessedListView(TemplateView):
         return context
 
 
-class DFRProcessedListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DFRProcessedListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     model = DFRProcessed
     columns = ['processed_for__name', 'processed_for__process_for', 'processed_on', 'processed_key', 'processed_value']
     search_columns = ['processed_for__name', 'processed_key', 'processed_value']
@@ -507,7 +507,7 @@ def dfr_processed_report_download(request, pk):
 
 # ***************************************** DFR-REPORTS *******************************************************
 
-class DFRReportsListingTableMain(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DFRReportsListingTableMain(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     model = DFRProcessed
     columns = ['processed_for__name', 'processed_on', 'processed_report_path']
     order_columns = ['processed_for__name', 'processed_on']
@@ -567,7 +567,7 @@ class DFRReportsListView(TemplateView):
         return context
 
 
-class DFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     model = MFRDFRReports
     columns = ['name', 'is_processed', 'process_for']
     search_columns = ['name', 'is_processed']
@@ -641,7 +641,7 @@ class MFRReportsListView(TemplateView):
         return context
 
 
-class MFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class MFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     model = MFRDFRReports
     columns = ['name', 'is_processed', 'process_for']
     search_columns = ['name', 'is_processed']

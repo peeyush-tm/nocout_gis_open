@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse_lazy, reverse
 import json
 from alarm_escalation.models import EscalationStatus, EscalationLevel, LEVEL_CHOICES
 from alarm_escalation.forms import EscalationLevelForm
-from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
@@ -44,6 +44,7 @@ class LevelListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Escalation Level Data table.
