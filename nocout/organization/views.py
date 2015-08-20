@@ -13,7 +13,7 @@ from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
 from nocout.mixins.generics import FormRequestMixin
 
 
@@ -47,7 +47,7 @@ class OrganizationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView):
+class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Organization Data table.
     """
