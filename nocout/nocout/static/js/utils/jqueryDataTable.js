@@ -104,7 +104,6 @@ function ourDataTableWidget() {
 
                 // If download is enabled from settings then show download button else not
                 if(datatables_download_flag) {
-                    console.log(advance_filter);
                     if(app_name && header_class_name && data_class_name) {
                         search_btn_html += '<button id="'+tableId+'_download_btn" \
                                             current_table_title="'+current_table_title+'" \
