@@ -220,3 +220,4 @@ class AdvanceFilteringMixin(object):
                     except Exception, e:
                         pass
                         # logging.info(e.message)
+        return qs
