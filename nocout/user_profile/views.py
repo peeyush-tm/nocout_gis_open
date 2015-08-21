@@ -77,7 +77,9 @@ class UserList(PermissionsRequiredMixin, ListView):
             {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'manager_name', 'sTitle': 'Manager', 'sWidth': '10%', 'sClass': 'hidden-xs'},
             {'mData': 'phone_number', 'sTitle': 'Phone Number', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'last_login', 'sTitle': 'Last Login', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
+            {'mData': 'last_login', 'sTitle': 'Last Login', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'comment', 'sTitle': 'Comment', 'sWidth': 'auto', 'sClass': 'hidden-xs'}
+        ]
 
         # If the user role is 'admin' then the action column will appear on the datatable.
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -101,15 +103,15 @@ class UserListingTable(PermissionsRequiredMixin,
 
     # Columns that are going to be displayed.
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
-               'parent__last_name', 'organization__name', 'phone_number', 'last_login']
+               'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns on which sorting/ordering is allowed.
     order_columns = ['username', 'first_name', 'email', 'organization__name', 'role__role_name', 'parent__first_name',
-                     'phone_number', 'last_login']
+                     'phone_number', 'last_login', 'comment']
 
     # Columns based on which searching is done.
     search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
-                      'parent__last_name', 'organization__name', 'phone_number']
+                      'parent__last_name', 'organization__name', 'phone_number', 'comment']
 
     # Used in 'DatatableOrganizationFilterMixin' as extra parameters required to be passed during filtering queryset.
     extra_qs_kwargs = {
@@ -167,15 +169,15 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
 
     # Columns that are going to be displayed.
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
-               'parent__last_name', 'organization__name', 'phone_number', 'last_login']
+               'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns on which sorting/ordering is allowed.
     order_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
-                     'parent__last_name', 'organization__name', 'phone_number', 'last_login']
+                     'parent__last_name', 'organization__name', 'phone_number', 'last_login', 'comment']
 
     # Columns based on which searching is done.
     search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
-                      'parent__last_name', 'organization__name', 'phone_number']
+                      'parent__last_name', 'organization__name', 'phone_number', 'comment']
 
     # Used in 'DatatableOrganizationFilterMixin' as extra parameters required to be passed during filtering queryset.
     extra_qs_kwargs = {
