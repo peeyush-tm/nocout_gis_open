@@ -1,16 +1,9 @@
 #!/usr/bin/python
-import time
-import sys
-import os
-import socket
-import pymongo
-from celery import chord,group
-from ast import literal_eval
-from datetime import datetime,timedelta
-from sys import path
-path.append('/omd/nocout_etl')
 
+from ast import literal_eval
 from itertools import izip_longest
+import socket
+import time
 
 from start.start import app
 from handlers.db_ops import *
