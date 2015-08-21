@@ -67,7 +67,8 @@ function nocout_createAdvanceFilter (
     data_class_name,
     header_extra_param,
     data_extra_param,
-    excluded_columns
+    excluded_columns,
+    advance_filter
 ) {
 	// set table info in global variables
 	global_table_id = tableId ? tableId : "";
@@ -350,7 +351,8 @@ function createFilterFieldsHtml(counter) {
 function applyDatatableAdvanceFilter(current_object) {
 	var form_id = global_table_id + '_advance_filter_form',
 		button_id = current_object.id,
-		common_id = button_id ? button_id.split('_submit')[0] : '';
+		common_id = button_id ? button_id.split('_submit')[0] : '',
+		download_btn_id = global_table_id + '_download_btn';
 	
 	if (!common_id) {
 		return;
@@ -367,26 +369,27 @@ function applyDatatableAdvanceFilter(current_object) {
 	if (tr_list.length > 0) {
 		for(var i=0;i<tr_list.length;i++) {
 			var filter_obj = {
-				'column' : $.trim($(tr_list[i]).data('column')),
-				'condition' : $.trim($(tr_list[i]).data('condition')),
-				'values' : $.trim(String($(tr_list[i]).data('searchval')).toLowerCase()).split(',')
+				"column" : $.trim($(tr_list[i]).data("column")),
+				"condition" : $.trim($(tr_list[i]).data("condition")),
+				"values" : $.trim(String($(tr_list[i]).data("searchval")).toLowerCase()).split(',')
 
 			}
 			filters_list.push(filter_obj)
 		}
-		var updated_api_url = '';
+		var updated_api_url = '',
+			stringified_filters = JSON.stringify(filters_list);
 		// Add advance filters criteria with API url as GET param
 		if (api_main_url.indexOf('?') > -1) {
-			updated_api_url = api_main_url + '&advance_filter='+JSON.stringify(filters_list);
+			updated_api_url = api_main_url + '&advance_filter='+stringified_filters;
 		} else {
-			updated_api_url = api_main_url + '?advance_filter='+JSON.stringify(filters_list);
+			updated_api_url = api_main_url + '?advance_filter='+stringified_filters;
 		}
 
 		// Update URL in anchor tag 'data_url' attribute
 		$('.nav-tabs li.active a').attr('data_url', updated_api_url);
 
 		global_variables_obj[global_table_id]['is_filter_applied'] = true;
-		
+
 		dataTableInstance.createDataTable(
             global_table_id,
 			global_grid_headers,
@@ -398,7 +401,8 @@ function applyDatatableAdvanceFilter(current_object) {
 		    global_data_class_name,
 		    global_header_extra_param,
 		    global_data_extra_param,
-		    global_excluded_columns
+		    global_excluded_columns,
+		    stringified_filters
         );
 	}
 }
@@ -483,7 +487,8 @@ $('#content').delegate('.remove_advance_filters_btn', 'click', function(e, is_si
 
 	var api_main_url = global_api_url ? global_api_url.split('advance_filter')[0] : '',
 		form_id = global_table_id + '_advance_filter_form',
-		tr_list = $('#' + form_id + ' table.selected_filters_list tbody tr');
+		tr_list = $('#' + form_id + ' table.selected_filters_list tbody tr'),
+		download_btn_id = global_table_id + '_download_btn';
 
 	// Add advance filters criteria with API url as GET param
 	if (api_main_url.indexOf('?') > -1) {
@@ -509,6 +514,9 @@ $('#content').delegate('.remove_advance_filters_btn', 'click', function(e, is_si
 
 
 	$('#' + form_id + ' table.selected_filters_list tbody').html('');
+
+	// Update download button attribute for advance filters
+	$('#' + download_btn_id).attr('advance_filter', '');
 
 	// Update URL in anchor tag 'data_url' attribute
 	$('.nav-tabs li.active a').attr('data_url', updated_api_url);

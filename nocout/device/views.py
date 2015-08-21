@@ -221,7 +221,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -421,8 +421,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
-
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -602,7 +601,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -780,7 +779,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -930,7 +929,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """

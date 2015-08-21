@@ -26,8 +26,14 @@ function ourDataTableWidget() {
         data_class_name,
         header_extra_param,
         data_extra_param,
-        excluded_columns
+        excluded_columns,
+        advance_filter
     ) {
+
+        if (typeof advance_filter == 'undefined') {
+            advance_filter = '[]';
+        }
+
         // If advance filtering is enabled from settings then create advance filters
         if (typeof advance_filters_enabled != 'undefined' && advance_filters_enabled && create_advance_filters) {
             var table_info_object = {
@@ -46,7 +52,8 @@ function ourDataTableWidget() {
                 data_class_name,
                 header_extra_param,
                 data_extra_param,
-                excluded_columns
+                excluded_columns,
+                advance_filter
             );
         }
 
@@ -97,6 +104,7 @@ function ourDataTableWidget() {
 
                 // If download is enabled from settings then show download button else not
                 if(datatables_download_flag) {
+                    console.log(advance_filter);
                     if(app_name && header_class_name && data_class_name) {
                         search_btn_html += '<button id="'+tableId+'_download_btn" \
                                             current_table_title="'+current_table_title+'" \
@@ -106,6 +114,7 @@ function ourDataTableWidget() {
                                             header_extra_param="'+header_extra_param+'" \
                                             data_extra_param="'+data_extra_param+'" \
                                             excluded_columns="'+excluded_columns+'"\
+                                            advance_filter=""\
                                             class="btn btn-sm btn-default" title="Download">\
                                             <i class="fa fa-download"></i></button>';
                     }
@@ -115,6 +124,8 @@ function ourDataTableWidget() {
                 if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
                     $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
                 }
+                // Append the advance_filter stringified object to download btn
+                $('#' + tableId + '_download_btn').attr('advance_filter', advance_filter);
                 
                 // Update search txt box & row per pages dropdown style
                 $('#'+tableId+'_wrapper div.dataTables_length label select, #'+tableId+'_wrapper div.dataTables_filter label input').addClass("form-control");
@@ -175,12 +186,15 @@ function ourDataTableWidget() {
                     header_extra_param = attributes_dict.header_extra_param ? attributes_dict.header_extra_param.value : "",
                     data_extra_param = attributes_dict.data_extra_param ? attributes_dict.data_extra_param.value : "",
                     excluded_columns = attributes_dict.excluded_columns ? attributes_dict.excluded_columns.value : "",
+                    advance_filter = attributes_dict.advance_filter ? attributes_dict.advance_filter.value : "",
                     url_get_param = "";
-
+                console.log('advance_filter');    
+                console.log(advance_filter);
                 url_get_param += "app="+app_name;
                 url_get_param += "&rows="+data_class_name+"&rows_data="+data_extra_param;
                 url_get_param += "&headers="+header_class_name+"&headers_data="+header_extra_param;
                 url_get_param += "&excluded="+excluded_columns;
+                url_get_param += "&advance_filter="+advance_filter;
 
                 var download_url = main_url+""+url_get_param;
                 
