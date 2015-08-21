@@ -1479,6 +1479,14 @@ class SingleDeviceAlertsInit(ListView):
         
         is_dr_device = device_obj.dr_configured_on.exists()
 
+        is_backhaul = device_obj.backhaul.exists()
+        is_backhaul_switch = device_obj.backhaul_switch.exists()
+        is_backhaul_pop = device_obj.backhaul_pop.exists()
+        is_backhaul_aggregator = device_obj.backhaul_aggregator.exists()
+        # If device is backhaul or backhaul_switch or backhaul_pop or backhaul_aggregator
+        if is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator:
+            page_type = 'other'
+
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
         context['ping_table_headers'] = json.dumps(ping_table_headers)
