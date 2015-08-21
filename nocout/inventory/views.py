@@ -35,7 +35,7 @@ from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_T
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 from nocout.mixins.select2 import Select2Mixin
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
@@ -121,6 +121,7 @@ class AntennaListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Antenna Data table. Returns json data for data table.
@@ -254,6 +255,7 @@ class BaseStationListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Base Station Data table.
@@ -392,6 +394,7 @@ class BackhaulListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Backhaul Data table.
@@ -538,6 +541,7 @@ class SectorListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Sector Data Table.
@@ -691,6 +695,7 @@ class CustomerListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Customer Data table.
@@ -827,6 +832,7 @@ class SubStationListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Sub Station Data table.
@@ -992,6 +998,7 @@ class CircuitListingTable(PermissionsRequiredMixin,
         DatatableOrganizationFilterMixin,
         DatatableSearchMixin,
         BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render Circuit Data table.
@@ -1162,7 +1169,7 @@ class CircuitL2Report_Init(ListView):
         return context
 
 ## This class load L2 reports datatable for particular circuit_id
-class L2ReportListingTable(BaseDatatableView):
+class L2ReportListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Circuit Data table.
     """
@@ -1213,8 +1220,8 @@ class L2ReportListingTable(BaseDatatableView):
             for item in result:
                 if sSearch.lower() in json.dumps(item).lower():
                     result_list.append(item)
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
         
     def ordering(self, qs):
         """
@@ -1394,7 +1401,7 @@ class L2ReportListingTable(BaseDatatableView):
 
 
 ## This class load L2 reports datatable for particular Base Station
-class BSL2ReportListingTable(BaseDatatableView):
+class BSL2ReportListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Base Station Data table.
     """
@@ -1446,8 +1453,8 @@ class BSL2ReportListingTable(BaseDatatableView):
             for item in result:
                 if sSearch.lower() in json.dumps(item).lower():
                     result_list.append(item)
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1820,7 +1827,7 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render IconSettings Data table.
     """
@@ -1924,7 +1931,8 @@ class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
 class LivePollingSettingsListingTable(PermissionsRequiredMixin,
         ValuesQuerySetMixin,
         DatatableSearchMixin,
-        BaseDatatableView
+        BaseDatatableView,
+        AdvanceFilteringMixin
     ):
     """
     Class based View to render LivePollingSettings Data table.
@@ -2017,7 +2025,7 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
@@ -2122,7 +2130,7 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -2397,7 +2405,7 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -3011,7 +3019,7 @@ class GISInventoryBulkImportList(ListView):
         return context
 
 
-class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -3422,7 +3430,7 @@ class PingThematicSettingsList(ListView):
         return context
 
 
-class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -3705,7 +3713,7 @@ class DownloadSelectedBSInventoryList(ListView):
         return context
 
 
-class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 

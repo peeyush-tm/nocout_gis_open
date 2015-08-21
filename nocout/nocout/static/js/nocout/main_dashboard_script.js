@@ -189,6 +189,9 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
  */
 function initDashboard() {
 
+    // Disable 'create_advance_filters' flag to hide advance filters from dashboard
+    create_advance_filters = false;
+    
     // Initialize all speedometer(solid gauge) charts
     initSpeedometerCharts_dashboard(function(response) {
         // Initialize all pie charts

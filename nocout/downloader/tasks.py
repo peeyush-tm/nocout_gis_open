@@ -100,6 +100,7 @@ def get_datatable_response(payload):
         # create request attribute for http request
         rows_req.REQUEST = payload['rows_data']
         rows_req.REQUEST['iDisplayStart'] = 0
+        rows_req.REQUEST['start'] = 0
 
         # bind current user with http request
         rows_req.user = user
@@ -168,6 +169,7 @@ def get_datatable_response(payload):
             query_set_length = len(rows_req_obj.get_initial_queryset())
 
             rows_req.REQUEST['iDisplayLength'] = query_set_length
+            rows_req.REQUEST['length'] = query_set_length
 
             if payload['max_rows']:
                 rows_req_obj.max_display_length = int(payload['max_rows'])
@@ -181,15 +183,19 @@ def get_datatable_response(payload):
         # error rows list
         rows_list = []
 
+        data_key = 'aaData'
+        if 'data' in result and result['data']:
+            data_key = 'data'
+
         # headers for excel sheet
-        if 'aaData' in result and result['aaData']:
+        if data_key in result and result[data_key]:
             headers = headers_list
             if headers:
                 # Create instance of 'NocoutUtilsGateway' class
                 nocout_utils = NocoutUtilsGateway()
 
                 # create list of lists containing excel rows data (except header)
-                for val in result['aaData']:
+                for val in result[data_key]:
                     temp_list = list()
                     for key in headers:
                         try:

@@ -50,7 +50,7 @@ from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import NocoutUtilsGateway, project_group_role_dict_mapper
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
 from nocout.mixins.generics import FormRequestMixin
 
 
@@ -93,7 +93,8 @@ class UserList(PermissionsRequiredMixin, ListView):
 class UserListingTable(PermissionsRequiredMixin,
                        DatatableOrganizationFilterMixin,
                        DatatableSearchMixin,
-                       BaseDatatableView):
+                       BaseDatatableView,
+                       AdvanceFilteringMixin):
     """
     View to show list of users in datatable.
         URL - 'http://127.0.0.1:8000/user/#UserListing'
@@ -159,7 +160,7 @@ class UserListingTable(PermissionsRequiredMixin,
         return json_data
 
 
-class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
+class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of deleted users in datatable.
         URL - 'http://127.0.0.1:8000/user/#UserArchivedListing'

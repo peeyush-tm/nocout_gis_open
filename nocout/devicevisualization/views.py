@@ -37,6 +37,8 @@ from service.utils.util import ServiceUtilsGateway
 from nocout.utils.util import NocoutUtilsGateway
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
 
 logger = logging.getLogger(__name__)
 
@@ -606,7 +608,7 @@ class KmzListing(ListView):
         return context
 
 
-class Kmzreport_listingtable(BaseDatatableView):
+class Kmzreport_listingtable(BaseDatatableView, AdvanceFilteringMixin):
 
     model = KMZReport
     columns = ['name', 'filename', 'added_on', 'user']
@@ -630,7 +632,7 @@ class Kmzreport_listingtable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -697,6 +699,7 @@ class Kmzreport_listingtable(BaseDatatableView):
         total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = qs.count()
 
@@ -815,7 +818,7 @@ class PointListingInit(ListView):
         return context
 
 
-class PointListingTable(BaseDatatableView):
+class PointListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     model = GISPointTool
     columns = ['name', 'description', 'icon_url', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
@@ -839,7 +842,7 @@ class PointListingTable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -898,6 +901,7 @@ class PointListingTable(BaseDatatableView):
         total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = qs.count()
 

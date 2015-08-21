@@ -77,10 +77,11 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '';
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget(),
-                gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
+            dataTableInstance = new ourDataTableWidget();
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
                 bsgridHeadersObj = "",
                 ajax_url = "",
                 destroy = false;
