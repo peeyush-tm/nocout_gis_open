@@ -1846,7 +1846,7 @@ function devicePlottingClass_gmap() {
 							cktId 				: "",
 							zIndex 				: 200,
 							optimized 			: false,
-	                        antenna_height 		: sector_array[j].antenna_height,
+	                        antenna_height 		: sect_height,
 	                        isActive 			: 1,
 							windowTitle 	    : "Base Station Device"
 	                    }

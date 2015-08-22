@@ -485,7 +485,8 @@ function GisPerformance() {
                         beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
                         radius = fetched_radius && fetched_radius != 'NA' ? fetched_radius : 0.5,
                         sector_color = fetched_color && fetched_color != 'NA' ? fetched_color : 'rgba(74,72,94,0.58)',
-                        orientation = current_sector.orientation ? current_sector.orientation : sector_polygon.polarisation;
+                        orientation = current_sector.orientation ? current_sector.orientation : sector_polygon.polarisation,
+                        fetched_antenna_height = current_sector.antenna_height ? current_sector.antenna_height : '';
 
                     gmap_self.createSectorData(bs_lat,bs_lon,radius,azimuth_angle,beam_width,orientation,function(pointsArray) {
 
@@ -575,7 +576,8 @@ function GisPerformance() {
                                 azimuth      :  azimuth_angle,
                                 beam_width   :  beam_width,
                                 polarisation :  orientation,
-                                radius       :  radius
+                                radius       :  radius,
+                                antenna_height : fetched_antenna_height
                             });
                         }
 
@@ -593,6 +595,7 @@ function GisPerformance() {
                             sector_polygon['pl_timestamp'] = sector_pl_timestamp;
                             sector_polygon['deviceExtraInfo'] = sector_infoWindow_content;
                             sector_polygon['item_index'] = sector_item_index;
+                            sector_polygon['antenna_height'] = fetched_antenna_height;
                         } catch(e) {
                             // console.log(e);
                         }
@@ -941,7 +944,7 @@ function GisPerformance() {
                                     },
                                     base_info = {
                                         "info" : apiResponse.data.param.base_station ? apiResponse.data.param.base_station : [],
-                                        "antenna_height" : apiResponse.data.antenna_height,
+                                        // "antenna_height" : apiResponse.data.antenna_height,
                                         "bs_item_index" : 0
                                     },
                                     sect_height = sector_marker ? sector_marker.antenna_height : sector_polygon.antenna_height;
