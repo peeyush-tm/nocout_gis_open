@@ -30,6 +30,8 @@ from user_profile.models import UserProfile
 from activity_stream.models import UserAction
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
 
 from nocout.mixins.permissions import PermissionsRequiredMixin
 import logging
@@ -63,7 +65,7 @@ class ActionList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of user log activity in datatable.
         URL - 'http://127.0.0.1:8000/logs/actions/'
@@ -86,7 +88,6 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
         """
         The filtering of the queryset with respect to the search keyword entered.
         """
-# <<<<<<< HEAD
         # get global search value
         sSearch = self.request.GET.get('search[value]', None)
 
@@ -94,22 +95,12 @@ class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
             q = Q()
             for col in self.columns:
                 if col == 'logged_at':
-# =======
-#         sSearch = self.request.GET.get('sSearch', None)
-#
-#         if sSearch:
-#             query = []
-#             exec_query = "qs = qs.filter("
-#             for column in self.columns[:-1]:
-#                 # Avoid search on 'added_on'.
-#                 if column == 'added_on':
-# >>>>>>> 02c2afcb870ed36322e9ec12aa65c450e59f7ab6
                     continue
 
                 q |= Q(**{'%s__icontains' % col : sSearch})
 
             qs = qs.filter(q)
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """

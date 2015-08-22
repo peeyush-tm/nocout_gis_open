@@ -41,12 +41,10 @@
 {% block jquery %}
 <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %} ></script>
 <script type="text/javascript" >
-
-$(document).ready(function(e)
-
-	{
+    var dataTableInstance = '';
+    $(document).ready(function(e) {
         /*Make a instance of ourDataTableWidget class */
-        var dataTableInstance = new ourDataTableWidget();
+        dataTableInstance = new ourDataTableWidget();
 
         /*Call createDataTable function of ourDataTableWidget class*/
 		var tableObject = $.parseJSON('{{ datatable_headers|safe }}'),
@@ -73,8 +71,6 @@ $(document).ready(function(e)
             extra_param
         );
 	});
-
 </script>
 
 {% endblock %}
-

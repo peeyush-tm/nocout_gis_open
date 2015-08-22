@@ -20,7 +20,7 @@ from scheduling_management.forms import EventForm, SNMPTrapSettingsForm
 
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from device.models import Device, DeviceType
 
@@ -106,7 +106,7 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         return context
 
 
-class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class EventListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Event Data table.
     """
@@ -588,7 +588,8 @@ class SNMPTrapSettingsList(PermissionsRequiredMixin, TemplateView):
 class SNMPTrapSettingsListingTable(PermissionsRequiredMixin, 
     DatatableOrganizationFilterMixin, 
     DatatableSearchMixin, 
-    BaseDatatableView):
+    BaseDatatableView,
+    AdvanceFilteringMixin):
     """
     Class based View to render SNMPTrapSettings Data table. Returns json data for data table.
     :param Mixins- PermissionsRequiredMixin

@@ -22,6 +22,8 @@ from device.models import DeviceTechnology, Device
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway, time_delta_calculator
 
+from nocout.mixins.datatable import AdvanceFilteringMixin
+
 from nocout.settings import DATE_TIME_FORMAT
 
 from capacity_management.models import SectorCapacityStatus, BackhaulCapacityStatus
@@ -117,7 +119,7 @@ class SectorStatusHeaders(ListView):
         return context
 
 
-class SectorStatusListing(BaseDatatableView):
+class SectorStatusListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     Extend the Sector Status View
     """
@@ -220,8 +222,8 @@ class SectorStatusListing(BaseDatatableView):
                 for data in prepared_data:
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
-
-                return filtered_result
+                        
+                return self.advance_filter_queryset(filtered_result)
             else:
                 query = []
                 exec_query = "qs = qs.filter("
@@ -231,7 +233,7 @@ class SectorStatusListing(BaseDatatableView):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -485,7 +487,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
 
-                return filtered_result
+                return self.advance_filter_queryset(filtered_result)
             else:
                 self.is_technology_searched = False
                 query = []
@@ -499,7 +501,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns + ['id']) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -706,7 +708,7 @@ class BackhaulStatusHeaders(ListView):
         return context
 
 
-class BackhaulStatusListing(BaseDatatableView):
+class BackhaulStatusListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     Extend the Backhaul Status View
     """
@@ -803,7 +805,7 @@ class BackhaulStatusListing(BaseDatatableView):
                 for data in prepared_data:
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
-                return filtered_result
+                return self.advance_filter_queryset(filtered_result)
             else:
                 query = []
                 exec_query = "qs = qs.filter("
@@ -813,7 +815,7 @@ class BackhaulStatusListing(BaseDatatableView):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1153,7 +1155,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                     if sSearch.lower() in str(data).lower():
                         filtered_result.append(data)
 
-                return filtered_result
+                return self.advance_filter_queryset(filtered_result)
             else:
                 self.is_technology_searched = False
                 query = []
@@ -1167,7 +1169,7 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
                 exec_query += " | ".join(query)
                 exec_query += ").values(*" + str(self.columns + ['id']) + ")"
                 exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """

@@ -29,7 +29,7 @@ from nocout.utils.util import NocoutUtilsGateway
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin, SuperUserRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin, AdvanceFilteringMixin
 from nocout.mixins.select2 import Select2Mixin
 from django.db.models import Q
 # Import inventory utils gateway class
@@ -141,7 +141,7 @@ def create_device_tree(request):
     return render_to_response('device/devices_tree_view.html', templateData, context_instance=RequestContext(request))
 
 
-class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
+class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing operational devices only
     """
@@ -221,7 +221,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -345,7 +345,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
         return json_data
 
 
-class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing non-operational devices only
     """
@@ -421,8 +421,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
-
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -527,7 +526,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
         return json_data
 
 
-class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing disabled devices only
     """
@@ -602,7 +601,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -705,7 +704,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         return json_data
 
 
-class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing archived devices only
     """
@@ -780,7 +779,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -856,7 +855,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
         return json_data
 
 
-class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
+class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of all devices
     """
@@ -930,7 +929,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
                 device_technology__in=device_tech_qs)
             qs = qs.filter(query_object)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1375,7 +1374,7 @@ class DeviceTypeFieldsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device type fields
     """
@@ -1407,8 +1406,9 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-        return qs
+            # advance filtering the query set
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1540,7 +1540,7 @@ class DeviceTechnologyList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device technologies
     """
@@ -1572,8 +1572,8 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1780,7 +1780,7 @@ class DeviceVendorList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device vendors
     """
@@ -1812,9 +1812,8 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2021,7 +2020,7 @@ class DeviceModelList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device models
     """
@@ -2053,9 +2052,9 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
+            return self.advance_filter_queryset(result_list)
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2244,7 +2243,7 @@ class DeviceTypeList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device types
     """
@@ -2278,9 +2277,8 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
                         else:
                             if sSearch == dictionary[dict] and dictionary not in result_list:
                                 result_list.append(dictionary)
-            return result_list
-
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2486,7 +2484,7 @@ class DevicePortList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device ports
     """
@@ -2511,7 +2509,7 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2632,7 +2630,7 @@ class DeviceFrequencyListing(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of device frequencies
     """
@@ -2668,7 +2666,7 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"  # returns the id of DeviceFrequency
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2795,7 +2793,7 @@ class CountryListing(SuperUserRequiredMixin, ListView):
         return context
 
 
-class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
+class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of country
     """
@@ -2825,7 +2823,7 @@ class CountryListingTable(SuperUserRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -2945,7 +2943,7 @@ class StateListing(SuperUserRequiredMixin, ListView):
         return context
 
 
-class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
+class StateListingTable(SuperUserRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of state. Only SuperUser can see the state list for that SuperUserRequiredMixin is used.
     """
@@ -2975,7 +2973,7 @@ class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -3095,7 +3093,7 @@ class CityListing(SuperUserRequiredMixin, ListView):
         return context
 
 
-class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
+class CityListingTable(SuperUserRequiredMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Render JQuery datatables for listing of city. Only SuperUser can see the city list for that SuperUserRequiredMixin is used.
     """
@@ -3122,7 +3120,7 @@ class CityListingTable(SuperUserRequiredMixin, BaseDatatableView):
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -3306,7 +3304,7 @@ class GisWizardServiceListView(PermissionsRequiredMixin, ListView):
         return context
 
 
-class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     Class based View to render Service Listing Table.
     """
@@ -3660,7 +3658,7 @@ class DeviceSyncHistoryList(ListView):
         return context
 
 
-class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
