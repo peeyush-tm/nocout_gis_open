@@ -68,7 +68,11 @@
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
+        var thematic_api_url = '';
         $(document).ready(function (e) {
+
+            // Update thematic API url global variable
+            thematic_api_url = '{% url "ping_user_thematic_setting" %}';
 
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
@@ -100,64 +104,20 @@
 
 		/*Change event for PTP checkboxes*/
         $(document).on('change', '#PingThematicSettingsListingTable_ptp .check_class', function() {
-			select_theme("PingThematicSettingsListingTable_ptp", this);
+			var current_deviceType = $(this)[0].attributes['data-deviceType'].value;
+            updateThematicSelection("PingThematicSettingsListingTable_ptp", this, current_deviceType);
         });
 
         /*Change event for PMP checkboxes*/
         $(document).on('change', '#PingThematicSettingsListingTable_pmp .check_class', function() {
-			select_theme("PingThematicSettingsListingTable_pmp", this);
+			var current_deviceType = $(this)[0].attributes['data-deviceType'].value;
+            updateThematicSelection("PingThematicSettingsListingTable_pmp", this, current_deviceType);
         });
 
         /*Change event for Wimax checkboxes*/
         $(document).on('change', '#PingThematicSettingsListingTable_wimax .check_class', function() {
-			select_theme("PingThematicSettingsListingTable_wimax", this);
+			var current_deviceType = $(this)[0].attributes['data-deviceType'].value;
+            updateThematicSelection("PingThematicSettingsListingTable_wimax", this, current_deviceType);
         });
-
-        /*This function select the check theme*/
-        function select_theme(tab_id, current_checkbox) {
-        	if (current_checkbox.checked) {
-                $('#'+tab_id+' input.check_class').not(current_checkbox).prop('checked', false);
-                $.ajax({
-                    url:'{% url "ping_user_thematic_setting" %}',
-                    data:{ 'ts_template_id': current_checkbox.value },
-                    dataType:"json",
-                    success:function(result){
-                        if(result.success){
-                            dialog_box_message= "Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
-                            dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
-                            bootbox.dialog({
-                                message:dialog_box_message,
-                                title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
-                                buttons: {
-                                    success: {
-                                        label: "OK",
-                                        className: "btn-success",
-                                        callback: function () {
-                                            $(".bootbox").modal("hide");
-                                        }
-                                    }
-                                }
-                            });
-                    	}
-                	}
-                });//ajax ends
-            }
-            else{
-		        bootbox.dialog({
-                    message:"You can not Uncheck the Selected Settings, Please Select the other setting.",
-                    title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
-                    buttons: {
-                        success: {
-                            label: "OK",
-                            className: "btn-success",
-                            callback: function () {
-                                $(".bootbox").modal("hide");
-                            }
-                        }
-                    }
-                });
-                $(current_checkbox).prop('checked', true);
-            }
-        }
     </script>
 {% endblock %}

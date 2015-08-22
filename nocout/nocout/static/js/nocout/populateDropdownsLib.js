@@ -102,7 +102,6 @@ function makeFormAjaxCall(api_url, affected_element_id, existing_value) {
                 if (existing_value && existing_value == result[x].id) {
                     selected_txt = 'selected="selected"';
                 }
-                console.log(result[x][alias_key]);
                 option_html += '<option value="' + result[x].id + '" ' + selected_txt + '>' + result[x][alias_key] + '</option>';
             }
             // Update select box HTML
@@ -124,4 +123,74 @@ function makeFormAjaxCall(api_url, affected_element_id, existing_value) {
             $(affected_element_id).select2('enable');
         }
     });
+}
+
+
+/**
+ * This function select the given thematics for user
+ * @method updateThematicSelection
+ * @param tab_id {String}, It contains the dom id of listing
+ * @param current_checkbox {Object}, It contains the current changed checkbox object
+ * @param device_type {String}, It contains the device type of current thematics
+ */
+function updateThematicSelection(tab_id, current_checkbox, device_type) {
+    
+    var checked_flag = false;
+    if ($(current_checkbox).prop('checked')) {
+        $(current_checkbox).prop('checked', false);
+        checked_flag = true;
+    }
+
+    var is_same_checkbox = $('#'+tab_id+' .check_class:checked[data-deviceType="'+device_type+'"]').length;
+
+    if(is_same_checkbox > 0) {
+        $('#'+tab_id+' .check_class:checked[data-deviceType="'+device_type+'"]')[0].checked = false;
+    }
+
+    if (checked_flag) {
+        $(current_checkbox).prop('checked', true);
+        checked_flag = false;
+    }
+
+    if (current_checkbox.checked) {
+        $.ajax({
+            url:thematic_api_url,
+            data:{ 'threshold_template_id': current_checkbox.value },
+            dataType:"json",
+            success:function(result){
+                if(result.success){
+                    dialog_box_message= "Service Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
+                    dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
+                    bootbox.dialog({
+                        message:dialog_box_message,
+                        title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
+                        buttons: {
+                            success: {
+                                label: "OK",
+                                className: "btn-success",
+                                callback: function () {
+                                    $(".bootbox").modal("hide");
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });//ajax ends
+    } else {
+        bootbox.dialog({
+            message:"You can not Uncheck the Selected Settings, Please Select the other setting.",
+            title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
+            buttons: {
+                success: {
+                    label: "OK",
+                    className: "btn-success",
+                    callback: function () {
+                        $(".bootbox").modal("hide");
+                    }
+                }
+            }
+        });
+        $(current_checkbox).prop('checked', true);
+    }
 }

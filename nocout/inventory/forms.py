@@ -974,6 +974,7 @@ class ServiceLivePollingSettingsForm(forms.ModelForm):
 
         super(ServiceLivePollingSettingsForm, self).__init__(*args, **kwargs)
         self.fields['technology'].empty_label = 'Select'
+        self.fields['device_type'].empty_label = 'Select'
         self.fields['service'].empty_label = 'Select'
         self.fields['data_source'].empty_label = 'Select'
         for name, field in self.fields.items():
@@ -1441,6 +1442,8 @@ class PingThematicSettingsForm(forms.ModelForm):
 
         # modify technology field initial option
         self.fields['technology'].empty_label = 'Select'
+        # modify type field initial option
+        self.fields['type'].empty_label = 'Select'
 
         # fetch default options for icon setting fields
         icon_settings = ""
