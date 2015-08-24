@@ -729,22 +729,6 @@ class GetPerfomance(View):
         return render(request, 'performance/single_device_perf.html', page_data)
 
 
-class PerformanceDashboard(View):
-    """
-    The Class based View to get performance dashboard page requested.
-
-    """
-
-    def get(self, request):
-        """
-        Handles the get request
-
-        :param request:
-        :return Http response object:
-        """
-        return render_to_response('home/home.html')
-
-
 class SectorDashboard(ListView):
     """
     The Class based view to get sector dashboard page requested.
