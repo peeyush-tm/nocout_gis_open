@@ -170,8 +170,8 @@ def update_device_type_service(sender, instance=None, created=False, **kwargs):
     if not created:
         return
 
-    DeviceTypeServiceDataSource = get_model('device', 'DeviceTypeServiceDataSource', seed_cache=True)
-    ServiceSpecificDataSource = get_model('service', 'ServiceSpecificDataSource', seed_cache=True)
+    DeviceTypeServiceDataSource = get_model('device', 'DeviceTypeServiceDataSource')
+    ServiceSpecificDataSource = get_model('service', 'ServiceSpecificDataSource')
 
     dt_sds = list()
     service_ds = ServiceSpecificDataSource.objects.filter(service=instance.service)
