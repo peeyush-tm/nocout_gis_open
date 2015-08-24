@@ -1326,26 +1326,21 @@ class InventoryDeviceServiceDataSource(View):
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
 
-        # TODO:to remove this code as the services are getting multi added with their port.
-        # inventory_device_service_name = list(set(inventory_device_service_name))
+        result['data']['objects']['network_perf_tab']["info"].append({
+            'name': "pl",
+            'title': "Packet Drop",
+            'url': 'performance/service/ping/service_data_source/pl/device/' + str(device_id),
+            'active': 0,
+            'service_type_tab': 'network_perf_tab'
+        })
 
-        result['data']['objects']['network_perf_tab']["info"].append(
-            {
-                'name': "pl",
-                'title': "Packet Drop",
-                'url': 'performance/service/ping/service_data_source/pl/device/' + str(device_id),
-                'active': 0,
-                'service_type_tab': 'network_perf_tab'
-            })
-
-        result['data']['objects']['network_perf_tab']["info"].append(
-            {
-                'name': "rta",
-                'title': "Latency",
-                'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
-                'active': 0,
-                'service_type_tab': 'network_perf_tab'
-            })
+        result['data']['objects']['network_perf_tab']["info"].append({
+            'name': "rta",
+            'title': "Latency",
+            'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
+            'active': 0,
+            'service_type_tab': 'network_perf_tab'
+        })
 
         if device.substation_set.exists():
             result['data']['objects']['network_perf_tab']["info"].append({
@@ -1418,20 +1413,17 @@ class InventoryDeviceServiceDataSource(View):
                 else:
                     result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
-        result['data']['objects']['availability_tab']["info"].append(
-            {
-                'name': 'availability',
-                'title': 'Availability',
-                'url': 'performance/service/availability/service_data_source/availability/device/' +
-                       str(device_id),
-                'active': 0,
-            })
+        result['data']['objects']['availability_tab']["info"].append({
+            'name': 'availability',
+            'title': 'Availability',
+            'url': 'performance/service/availability/service_data_source/availability/device/' + str(device_id),
+            'active': 0,
+        })
 
         result['data']['objects']['topology_tab']["info"].append({
             'name': 'topology',
             'title': 'Topology',
-            'url': 'performance/service/topology/service_data_source/topology/device/' +
-                   str(device_id),
+            'url': 'performance/service/topology/service_data_source/topology/device/' + str(device_id),
             'active': 0,
         })
 
