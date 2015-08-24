@@ -652,7 +652,7 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Datatable
             exec_query += ").filter(operation__in=['c', 'e']).values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -731,7 +731,7 @@ class DeletedDeviceServiceConfigurationListingTable(PermissionsRequiredMixin, Da
             exec_query += ").filter(operation__in=['d']).values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """

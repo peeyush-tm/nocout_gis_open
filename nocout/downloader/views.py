@@ -116,9 +116,17 @@ class DataTableDownloader(View):
             # get rows and headers request data
             headers_data = ""
             rows_data = ""
+            advance_filter = ""
             try:
                 rows_data = eval(self.request.GET.get('rows_data', None))
                 headers_data = eval(self.request.GET.get('headers_data', None))
+                # get advance filtering object
+                try:
+                    advance_filter = self.request.GET.get('advance_filter', None)
+                    rows_data['advance_filter'] = advance_filter
+                except Exception, e:
+                    logger.info(e.message)
+                    pass
                 response['message'] = "Inventory download started. Please check status \
                 <a href='/downloader/' target='_blank'>Here</a>."
                 response['success'] = 1

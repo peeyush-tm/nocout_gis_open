@@ -92,7 +92,7 @@ class DatatableSearchMixin(object):
 
             qs = qs.filter(q)
         
-        return qs
+        return self.advance_filter_queryset(qs)
 
 
 class AdvanceFilteringMixin(object):
