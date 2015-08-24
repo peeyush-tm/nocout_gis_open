@@ -3396,6 +3396,13 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
             basestation = ""
             sector = ""
 
+            # BS device type
+            bs_device_type = 6
+
+            if 'Device Type' in row.keys():
+                if row['Device Type'] == 'Radwin5KBS':
+                    bs_device_type = 16
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -3469,7 +3476,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         'device_technology': 4,
                         'device_vendor': 4,
                         'device_model': 4,
-                        'device_type': 6,
+                        'device_type': bs_device_type,
                         'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -5112,7 +5119,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'antenna': sector_antenna,
                     'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'dr_site': dr_site,
-                    'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'mrc': row['MRC'].strip() if 'MRC' in row.keys() else "",
                     'dr_configured_on': slave_device,
                     'description': 'Sector created on {}.'.format(full_time)
@@ -5262,6 +5268,12 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
             customer = ""
             circuit = ""
 
+            # SS device type
+            ss_device_type = 5
+            if 'Device Type' in row.keys():
+                if row['Device Type'] == 'Radwin5KSS':
+                    ss_device_type = 17
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -5333,7 +5345,7 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                         'device_technology': 3,
                         'device_vendor': 3,
                         'device_model': 3,
-                        'device_type': 5,
+                        'device_type': ss_device_type,
                         'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                         'mac': row['MAC'] if 'MAC' in row.keys() else "",
                         'state': "",
