@@ -9,8 +9,6 @@ from kombu import Queue
 
 from celery import Celery
 
-path.append('/omd/nocout_etl')
-
 app = Celery()
 #app.control.purge()
 
@@ -26,27 +24,36 @@ class MyBeatScheduler(PersistentScheduler):
 
 
 class Config:
+    PROJ_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     BROKER_URL = 'amqp://guest:guest@localhost:5672//'
     REDIS_PORT = 6379
+    # redis db to store device inventory info
     INVENTORY_DB = 3
-    BROKER_URL = 'redis://localhost:' + str(REDIS_PORT) + "/" + str(0)
-    CELERY_RESULT_BACKEND = 'redis://localhost:' + str(REDIS_PORT) + "/" + str(1)
+    BROKER_URL = 'redis://localhost:' + str(REDIS_PORT) + "/" + str(11)
+    CELERY_RESULT_BACKEND = 'redis://localhost:' + str(REDIS_PORT) + "/" + str(12)
     CELERY_IMPORTS = [
             'handlers.db_ops',
             'network.network_etl',
             'service.service_etl',
 	    'service.kpi_etl'
 	]
+    d_route = {'queue': 'service', 'routing_key': 'service'}
     #CELERY_QUEUES = (
     #        Queue('celery', routing_key='celery'),
-    #        Queue('trans1', routing_key='trans1', delivery_mode=1),
+    #        Queue('service', routing_key='service'),
     #        )
+#    CELERY_ROUTES = {
+#		    'handlers.db_ops': d_route,
+#		    'network.network_etl': d_route,
+#		    'service.service_etl': d_route,
+#		    'service.kpi_etl': d_route,
+#		    }
     #CELERY_TRACK_STARTED = True
     CELERYD_LOG_COLOR = False
     CELERY_CHORD_PROPAGATES = False
     #CELERY_ALWAYS_EAGER = True
     #CELERY_IGNORE_RESULT = True
-    CNX_FROM_CONF = '/omd/nocout_etl/db_conf.ini'
+    CNX_FROM_CONF = os.path.join(PROJ_DIR, 'db_conf.ini')
     CELERYBEAT_SCHEDULE = {
             'network-5': {
                 'task': 'add',
@@ -60,7 +67,7 @@ class Config:
             'network-main': {
                 'task': 'network-main',
                 'schedule': crontab(),
-		'kwargs' : {'site_name':'pub_slave_1'},
+	     	'kwargs' : {'site_name':'pub_slave_1'},
                 },
             'service-main': {
                 'task': 'service-main',
