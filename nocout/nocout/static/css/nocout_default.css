@@ -452,8 +452,8 @@ iframe {
   top: 30%;
   font-size: 30px;
 }
-.advance_filters_wrapper {
-  max-height: 190px;
+.applied_filter_container {
+  height: 140px;
   overflow: auto;
 }
 .selected_filters_list > thead > tr > th, 
@@ -464,6 +464,5 @@ iframe {
   margin-bottom: 0px;
 }
 .remove_advance_filters_btn {
-  margin-left: 10px !important;
->>>>>>> datatable_filters
+  margin-left: 15px !important;
 }

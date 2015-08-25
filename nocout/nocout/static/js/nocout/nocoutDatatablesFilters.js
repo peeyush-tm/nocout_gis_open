@@ -47,9 +47,9 @@ var existing_pagesettings_html = '<div class="clearfix"></div>',
 	],
 	no_filters_txt = 'No filter applied yet.',
 	filter_btn_html = '<button class="btn btn-default btn-sm show_advance_filters_btn" \
-					  id="{}"><i class="fa fa-filter"> </i> Advance Filter</button>',
+					  id="{}"><i class="fa fa-filter"> </i> </button>',
 	remove_filter_btn_html = '<button class="btn btn-danger btn-sm hide remove_advance_filters_btn" \
-							  id="{}"><i class="fa fa-times"> </i> Remove Filter</button>';
+							  id="{}"><i class="fa fa-times"> </i> </button>';
 
 /**
  * This function creates advance filters HTML as per the given headers
@@ -88,40 +88,14 @@ function nocout_createAdvanceFilter (
 
 	btn_html = btn_html.replace('{}', global_table_id+'_advance_filter_btn')
 	remove_btn_html = remove_btn_html.replace('{}', global_table_id+'_remove_filter_btn')
+
 	// Remove the existing button
-	$('.show_advance_filters_btn').parent().remove();
+	if ($('.show_advance_filters_btn').length > 0) {
+		$('.show_advance_filters_btn').parent().remove();
+	}
 
 	// Add Advance Filter Button on GUI
-	if ($('.page_settings_container .date-range .btn-group').length > 0) {
-		if ($('.page_settings_container .date-range .btn-group').length > 0) {
-			if ($('.page_settings_container .date-range .btn-group ul.list-unstyled').length > 0) {
-				var advance_filter_btn = '<li> \
-										  '+ btn_html +' \
-										  '+ remove_btn_html +' \
-										  </li>';
-				$('.page_settings_container .date-range .btn-group ul.list-unstyled').append(advance_filter_btn);
-			} else {
-				var advance_filter_btn = '<ul class="list-unstyled list-inline"><li> \
-										  '+ btn_html +' \
-										  '+ remove_btn_html +' \
-										  </li></ul>';
-				$('.page_settings_container .date-range .btn-group').append(advance_filter_btn);
-			}
-		} else {
-			var advance_filter_btn = '<div class="btn-group"><ul class="list-unstyled list-inline"><li> \
-									  '+ btn_html +' \
-									  '+ remove_btn_html +' \
-									  </li></ul></div>';
-			$('.page_settings_container  .date-range').append(advance_filter_btn);
-		}
-	} else {
-		var advance_filter_btn = '<div class="date-range pull-right"><div class="btn-group"> \
-								  <ul class="list-unstyled list-inline"><li> \
-								  '+ btn_html +' \
-								  '+ remove_btn_html +' \
-								  </li></ul></div></div><div class="clearfix"></div>';
-		$('.page_settings_container').append(advance_filter_btn);
-	}
+	$('.control_btn_countainer').prepend('<li>'+btn_html+remove_btn_html+'</li>');
 
 	$('.advance_filters_container').hide();
 

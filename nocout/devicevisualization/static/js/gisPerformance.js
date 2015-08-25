@@ -389,8 +389,6 @@ function GisPerformance() {
                     bs_marker['bhSeverity'] = perf_bh_severity;
                     bs_marker['bhInfo'] = bhInfo;
                     bs_marker['pl'] = bh_pl;
-                    
-
 
                     // If we have BS maintenance status then update it in Bs marker
                     if(bs_maintenance_status) {
@@ -447,7 +445,8 @@ function GisPerformance() {
 
                 var sector_pl = current_sector.pl ? current_sector.pl : "",
                     sector_rta = current_sector.rta ? current_sector.rta : "",
-                    sector_pl_timestamp = current_sector.pl_timestamp ? current_sector.pl_timestamp : "";
+                    sector_pl_timestamp = current_sector.pl_timestamp ? current_sector.pl_timestamp : "",
+                    fetched_antenna_height = current_sector.antenna_height ? current_sector.antenna_height : '';
 
                 // If sector marker exist then update it with new icon
                 if(sector_marker) {
@@ -464,6 +463,7 @@ function GisPerformance() {
                         sector_marker['pl_timestamp'] = sector_pl_timestamp;
                         sector_marker['deviceExtraInfo'] = sector_infoWindow_content;
                         sector_marker['item_index'] = sector_item_index;
+                        sector_marker['antenna_height'] = fetched_antenna_height
                     } catch(e) {
                         // console.log(e);
                     }
@@ -485,8 +485,7 @@ function GisPerformance() {
                         beam_width = fetched_beamWidth && fetched_beamWidth != 'NA' ? fetched_beamWidth : 10,
                         radius = fetched_radius && fetched_radius != 'NA' ? fetched_radius : 0.5,
                         sector_color = fetched_color && fetched_color != 'NA' ? fetched_color : 'rgba(74,72,94,0.58)',
-                        orientation = current_sector.orientation ? current_sector.orientation : sector_polygon.polarisation,
-                        fetched_antenna_height = current_sector.antenna_height ? current_sector.antenna_height : '';
+                        orientation = current_sector.orientation ? current_sector.orientation : sector_polygon.polarisation;
 
                     gmap_self.createSectorData(bs_lat,bs_lon,radius,azimuth_angle,beam_width,orientation,function(pointsArray) {
 
