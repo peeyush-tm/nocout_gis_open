@@ -729,22 +729,6 @@ class GetPerfomance(View):
         return render(request, 'performance/single_device_perf.html', page_data)
 
 
-class PerformanceDashboard(View):
-    """
-    The Class based View to get performance dashboard page requested.
-
-    """
-
-    def get(self, request):
-        """
-        Handles the get request
-
-        :param request:
-        :return Http response object:
-        """
-        return render_to_response('home/home.html')
-
-
 class SectorDashboard(ListView):
     """
     The Class based view to get sector dashboard page requested.
@@ -1718,17 +1702,17 @@ class ServiceDataSourceHeaders(ListView):
         context = super(ServiceDataSourceHeaders, self).get_context_data(**kwargs)
 
         datatable_headers = [
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'},
-            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
-            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
-            {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto'},
-            {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
-            {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto'},
             {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
             {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto'},
             {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto'},
             {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto'},
-            {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'}
+            {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'},
+            {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
+            {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto'},
+            {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto'},
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'},
+            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
+            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'}
         ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1744,17 +1728,17 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
     model = PerformanceService
 
     columns = [
-        'ip_address',
-        'service_name',
-        'data_source',
         'current_value',
+        'severity',
+        'warning_threshold',
+        'critical_threshold',
+        'sys_timestamp',
         'min_value',
         'max_value',
         'avg_value',
-        'warning_threshold',
-        'critical_threshold',
-        'severity',
-        'sys_timestamp'
+        'ip_address',
+        'service_name',
+        'data_source'
     ]
 
     order_columns = columns
@@ -1785,8 +1769,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         resultset = self.perf_data_instance.get_performance_data(
             **self.parameters
         ).using(alias=self.inventory_device_machine_name)
-
-        # columns = str(self.columns)[1:-1]
 
         updated_resultset = resultset.values(*self.columns).order_by('-sys_timestamp')
 
@@ -1821,9 +1803,9 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             self.isHistorical = True
 
             # Append min, max & avg columns in case of historical tab
-            self.columns.append('min_value')
-            self.columns.append('max_value')
-            self.columns.append('avg_value')
+            # self.columns.append('min_value')
+            # self.columns.append('max_value')
+            # self.columns.append('avg_value')
             self.inventory_device_machine_name = 'default'
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
@@ -2034,7 +2016,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         """ Get parameters from the request and prepare order by clause
         :param qs:
         """
-        return nocout_utils.nocout_datatable_ordering(self, qs, self.order_columns)
+        return nocout_utils.nocout_datatable_ordering(self, qs, self.columns)
 
     def get_context_data(self, *args, **kwargs):
         """

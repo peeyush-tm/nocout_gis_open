@@ -150,8 +150,8 @@ class AdvanceFilteringMixin(object):
 
                                     if operator:
                                         if operator in [' > ', ' >= ', ' < ', ' <= ']:
-                                            val = int(val)
-                                            column_val = int(column_val)
+                                            val = float(val)
+                                            column_val = float(column_val)
                                             is_any_matched = eval('{0} {1} {2}'.format(column_val, operator, val))
                                         else:
                                             val = str(val)
