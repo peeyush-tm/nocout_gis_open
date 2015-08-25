@@ -1,9 +1,16 @@
 #!/usr/bin/python
-
-from ast import literal_eval
-from itertools import izip_longest
-import socket
 import time
+import sys
+import os
+import socket
+import pymongo
+from celery import chord,group
+from ast import literal_eval
+from datetime import datetime,timedelta
+from sys import path
+path.append('/omd/nocout_etl')
+
+from itertools import izip_longest
 
 from start.start import app
 from handlers.db_ops import *
@@ -531,9 +538,8 @@ def extract_wimax_util_data(host_params,**args):
 				state = 1
 				state_string = "warning"
 		
-		#warning('wimax util: {0} {1}'.format(util,sec_bw))
 		perf += '%s_%s_util_kpi' %(sec_type,util_type) + "=%s;%s;%s;%s" % (sec_kpi,args['war'],args['crit'],sec_id)
-		warning('wimax util: {0} {1} {2}'.format(util,sec_bw,perf))
+		#warning('wimax util: {0} {1} {2}'.format(util,sec_bw,perf))
     	except Exception as e:
 		perf = ';%s;%s' % (args['war'],args['crit']) 
 		warning('Error in wimax util: {0}'.format(e))
@@ -1034,12 +1040,10 @@ def extract_cambium_ul_issue_data(**args):
         conn_ss_ip = extract_cambium_connected_ss(host_name,memc_conn)
 	#warning('cambium conn_ss {0} '.format(conn_ss_ip))
 	#ss_key = rds_cli.redis_cnx.keys(pattern="pmp:ss:*:10.172.26.18")
-	ss_key = map(lambda x: rds_cli.redis_cnx.keys(pattern="pmp:ss:*:%s" %x) ,conn_ss_ip)
-	[p.lrange(k[0], 0 , -1) for k  in ss_key if k] 
-	ss_info = p.execute()
-	#ss_info = map(lambda x: args['redis'].get('cambium:ss:%s' % x) ,conn_ss_ip)
-	#warning('ss info: {0}'.format(ss_info))
+	if conn_ss_ip:
+		ss_key = map(lambda x: rds_cli.redis_cnx.keys(pattern="pmp:ss:*:%s" %x) ,conn_ss_ip)
+		[p.lrange(k[0], 0 , -1) for k  in ss_key if k] 
+		ss_info = p.execute()
 
-    	extract_ss_ul_issue_data.s(ss_info,host_name,site_name,ip_address,sect_id,None,redis_conn,**args).apply_async()
-    	#chord(extract_ss_ul_issue_data(host,site,ip,args) for host,site,ip in ss_info ) \
-	#	(extract_cambium_bs_ul_data(host_name,site_name,ip_address,sect_id,service_list,args))
+		extract_ss_ul_issue_data.s(ss_info,host_name,site_name,ip_address,
+				sect_id,None,redis_conn,**args).apply_async()

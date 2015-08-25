@@ -100,7 +100,7 @@ class DatabaseTask(Task):
     				#self.memc_conn_pool[key] =None
 		return self.memc_conn_pool.get(key)	
 
-class RedisInterface:
+class RedisInterface(object):
 	""" Implements various redis operations"""
 
 	def __init__(self, **kw):
@@ -161,15 +161,14 @@ class RedisInterface:
 					if x[1] > 2:
 						trim_hosts.append(x[0])
 				[p.ltrim(KEY % (x[0], x[1]), -2, -1) for x in trim_hosts]
-				p.execute()
-
 			# update the hash values
 			else:
 				[p.hmset(KEY %
 					(d.get('device_name'), d.get('service_name'), d.get('data_source')),
 					d) for d in data_values]
 				# perform all operations atomically
-				p.execute()
+
+			p.execute()
 		except Exception as exc:
 			error('Redis pipe error in update... {0}, retrying...'.format(exc))
 			# send the task for retry

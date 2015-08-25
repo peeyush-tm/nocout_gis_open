@@ -351,7 +351,7 @@ def get_service_checks_output(site_name=None):
 	# get check results from redis backed queue
 	# pulling 2000 values from queue, at a time
 	queue = RedisInterface(perf_q='queue:service')
-	check_results = queue.get(0, 2000)
+	check_results = queue.get(0, 12000)
 	info('Queue len: {0}'.format(len(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
@@ -361,7 +361,7 @@ def get_ul_issue_service_checks_output(site_name=None):
 	# get check results from redis backed queue
 	# pulling 2000 values from queue, at a time
 	queue = RedisInterface(perf_q='queue:ul_issue')
-	check_results = queue.get(0, 2000)
+	check_results = queue.get(0, 12000)
 	info('ul_issue Queue len: {0}'.format(len(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()

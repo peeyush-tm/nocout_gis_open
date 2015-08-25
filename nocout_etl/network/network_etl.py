@@ -190,7 +190,7 @@ def get_host_checks_output(site_name=None):
 	queue = RedisInterface(perf_q='queue:host')
 	# get host check results from redis backed queue
 	# pulling 1000 values from queue, at a time
-	host_check_results = queue.get(0, 1000)
+	host_check_results = queue.get(0, 2000)
 	if host_check_results:
 		build_export.s(site_name, host_check_results).apply_async()
 
