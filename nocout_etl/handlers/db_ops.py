@@ -10,6 +10,7 @@ data manipulations, used in site-wide ETL operations.
 
 from ast import literal_eval
 from ConfigParser import ConfigParser
+from datetime import datetime
 from itertools import groupby, izip_longest
 import memcache
 from mysql.connector import connect
@@ -28,7 +29,7 @@ from start.start import app
 logger = get_task_logger(__name__)
 info , warning, error = logger.info, logger.warning, logger.error
 
-db_conf = app.conf.CNX_FROM_CONF
+DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
 class DatabaseTask(Task):
@@ -44,7 +45,7 @@ class DatabaseTask(Task):
 	redis_conn = None
 
 	conf = ConfigParser()
-	conf.read(db_conf)
+	conf.read(DB_CONF)
 
 	def after_return(self, *args, **kwargs):
 		if self.name == 'mongo-export-mysql-handler':
@@ -103,16 +104,25 @@ class DatabaseTask(Task):
 class RedisInterface(object):
 	""" Implements various redis operations"""
 
+	#__slots__ = ['custom_conf', 'redis_conn', 'perf_q']
+
+
 	def __init__(self, **kw):
 		self.custom_conf = kw.get('custom_conf')
 		self.redis_conn = None
 		# queue name to get check results data from 
 		self.perf_q = kw.get('perf_q')
 
+	def conn_from_conf(self, custom_conf=None):
+		""" Method used to get redis connection without binding 
+		with any queue"""
+		self.custom_conf = custom_conf
+		return self.redis_cnx
+
 	@property
 	def redis_cnx(self):
 		conf = ConfigParser()
-		conf.read(db_conf)
+		conf.read(DB_CONF)
 		# redis connection config
 		re_conf = {
 			'port': int(conf.get('redis', 'port')),
@@ -131,7 +141,11 @@ class RedisInterface(object):
 		output = self.redis_cnx.lrange(self.perf_q, start, end)
 		output = [literal_eval(x) for x in output]
 		# keep only unread values in list
-		self.redis_cnx.ltrim(self.perf_q, end+1, -1)
+		if end == -1:
+			start, end = -1, 0
+		else:
+			start,  end = end+1, -1
+		#self.redis_cnx.ltrim(self.perf_q, start, end)
 
 		return output
 
@@ -167,7 +181,6 @@ class RedisInterface(object):
 					(d.get('device_name'), d.get('service_name'), d.get('data_source')),
 					d) for d in data_values]
 				# perform all operations atomically
-
 			p.execute()
 		except Exception as exc:
 			error('Redis pipe error in update... {0}, retrying...'.format(exc))
@@ -366,10 +379,11 @@ def mysql_insert_handler(self, data_values, insert_table, update_table, mongo_co
 	
 	# TODO: Every task should sub class db_ops and initialize table names, 
 	# instead of passing them as function args seperately
-	for entry in data_values:
-		entry.pop('_id', '')
-		entry['sys_timestamp'] = entry['sys_timestamp'].strftime('%s')
-		entry['check_timestamp'] = entry['check_timestamp'].strftime('%s')
+	if (data_values and 
+			isinstance(data_values[0].get('sys_timestamp'), datetime)):
+		for entry in data_values:
+			entry['sys_timestamp'] = entry['sys_timestamp'].strftime('%s')
+			entry['check_timestamp'] = entry['check_timestamp'].strftime('%s')
 
 	# handle the data deletion for toplogy table
 	if old_topology:
@@ -417,7 +431,7 @@ def mysql_update(self, table, data_values, site, columns=None):
 		# attempt task retry
 		raise self.retry(exc=exc)
 
-	warning('Len for status upserts {0}\n'.format(len(data_values)))
+	#warning('Len for status upserts {0}\n'.format(len(data_values)))
 
 
 @app.task(base=DatabaseTask, name='nw-mysql-insert', bind=True,

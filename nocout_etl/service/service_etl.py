@@ -11,12 +11,8 @@ running on all configured devices for this poller.
 from ast import literal_eval
 from datetime import datetime, timedelta
 import re
-from sys import path
-import time
 
 from celery import group
-
-path.append('/omd/nocout_etl')
 
 from handlers.db_ops import *
 from start.start import app
@@ -350,8 +346,8 @@ def make_dicts_from_perf(outs, ins, name_ip_mapping,site, multi=False):
 def get_service_checks_output(site_name=None):
 	# get check results from redis backed queue
 	# pulling 2000 values from queue, at a time
-	queue = RedisInterface(perf_q='queue:service')
-	check_results = queue.get(0, 12000)
+	queue = RedisInterface(perf_q='q:perf:service')
+	check_results = queue.get(0, 2000)
 	info('Queue len: {0}'.format(len(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
@@ -361,19 +357,20 @@ def get_ul_issue_service_checks_output(site_name=None):
 	# get check results from redis backed queue
 	# pulling 2000 values from queue, at a time
 	queue = RedisInterface(perf_q='queue:ul_issue')
-	check_results = queue.get(0, 12000)
+	check_results = queue.get(0, 2000)
 	info('ul_issue Queue len: {0}'.format(len(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
+
 
 @app.task(name='send-db-tasks-service', ignore_result=True)
 def send_db_tasks(**kw):
 	""" sends task messages into celery task broker"""
 
 	topology_data_fields = ('device_name', 'service_name', 'machine_name',
-	                        'site_name', 'sys_timestamp', 'check_timestamp', 'ip_address',
-	                        'sector_id', 'connected_device_ip', 'connected_device_mac',
-	                        'mac_address')
+	                        'site_name', 'sys_timestamp', 'check_timestamp', 
+	                        'ip_address', 'sector_id', 'connected_device_ip', 
+	                        'connected_device_mac', 'mac_address')
 	site = kw.get('site')
 	# tasks to be sent
 	tasks = []
@@ -434,7 +431,6 @@ def send_db_tasks(**kw):
 		util_serv_data = kw.get('util_serv_data')
 		if kw.get('util_processed'):
 			# export the data to mysql
-			#warning('util_data: {0}'.format(util_serv_data))
 			tasks.extend([
 			#mongo_update.s(util_serv_data,
 			#               ('device_name', 'service_name', 'data_source'),
