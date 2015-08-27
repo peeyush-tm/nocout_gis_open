@@ -1055,9 +1055,10 @@ class FetchLPDataApi(View):
                 if r:
                     result['data']['value'].append(response_dict.get('value')[0])
                     tech = DeviceTechnology.objects.get(pk=device.device_technology)
+                    device_type = DeviceType.objects.get(pk=device.device_type)
 
                     # Live polling settings for getting associates service and data sources.
-                    lps = LivePollingSettings.objects.get(technology=tech, service=service, data_source=data_source)
+                    lps = LivePollingSettings.objects.get(technology=tech,device_type=device_type, service=service, data_source=data_source)
 
                     # Threshold configuration for getting warning, critical comparison values.
                     tc = ThresholdConfiguration.objects.get(live_polling_template=lps)
@@ -1105,6 +1106,7 @@ class FetchLPSettingsApi(View):
 
         Args:
             technology (unicode): ID of technology.
+            device_type (unicode): ID of type.
 
         Returns:
             result (dict): Dictionary containing list of live polling settings.
@@ -1152,14 +1154,18 @@ class FetchLPSettingsApi(View):
 
         # Converting 'json' into python object.
         technology_id = int(self.request.GET.get('technology', None))
+        device_type_id = int(self.request.GET.get('device_type', None))
+
 
         # Technology object.
         technology = DeviceTechnology.objects.get(pk=technology_id)
+        # Type object.
+        device_type = DeviceType.objects.get(pk=device_type_id)
 
-        # Get live polling settings corresponding to the technology.
+        # Get live polling settings corresponding to the technology and type.
         lps = ""
         try:
-            lps = LivePollingSettings.objects.filter(technology=technology)
+            lps = LivePollingSettings.objects.filter(technology=technology,device_type=device_type)
         except Exception as e:
             logger.info(e.message)
 
@@ -1264,6 +1270,7 @@ class FetchThematicSettingsApi(View):
 
         Args:
             technology (unicode): ID of technology.
+            device_type (unicode): ID of device_type .
 
         Returns:
             result (dict): Dictionary containing list of threshold configurations.
@@ -1318,18 +1325,22 @@ class FetchThematicSettingsApi(View):
 
         # Converting 'json' into python object.
         technology_id = int(self.request.GET.get('technology', None))
+        device_type_id = int(self.request.GET.get('device_type', None))
 
         # Technology object.
         technology = DeviceTechnology.objects.get(pk=technology_id)
+        # Device Type object.
+        device_type = DeviceType.objects.get(pk=device_type_id)
+
 
         # Get live polling settings corresponding to the technology.
         lps = ""
         try:
-            lps = LivePollingSettings.objects.filter(technology=technology)
+            lps = LivePollingSettings.objects.filter(technology=technology,device_type=device_type)
         except Exception as e:
             logger.info(e.message)
         if service_type == 'ping':
-            thematic_settings = PingThematicSettings.objects.filter(technology=technology)
+            thematic_settings = PingThematicSettings.objects.filter(technology=technology,type=device_type)
             for ts in thematic_settings:
                 ts_temp = dict()
                 ts_temp['id'] = ts.id
@@ -1464,6 +1475,8 @@ class BulkFetchLPDataApi(View):
 
         # Fetch device technology if ts_type present.
         ts_technology = None
+        # Fetch device type if ts_type present.
+        ts_device_type = None
 
         if ts_type:
             try:
@@ -1472,12 +1485,18 @@ class BulkFetchLPDataApi(View):
             except Exception as e:
                 pass
 
+            try:
+                ts_device_type = DeviceType.objects.get(id=Device.objects.get(
+                    device_name=devices[0]).device_type)
+            except Exception as e:
+                pass
+
         if not all([service_name, ds_name]):
             # Get thematic settings corresponding to the 'service_type'.
             if service_type == 'ping' or ts_type == 'ping':
                 # Thematic settings (ping).
                 if ts_type:
-                    ts = self.get_thematic_settings(ts_type, ts_technology).thematic_template
+                    ts = self.get_thematic_settings(ts_type, ts_technology,ts_device_type).thematic_template
                 else:
                     ts = PingThematicSettings.objects.get(pk=ts_template_id)
                 service = ts.service
@@ -1492,7 +1511,7 @@ class BulkFetchLPDataApi(View):
             else:
                 # Thematic settings (normal).
                 if ts_type:
-                    ts = self.get_thematic_settings(ts_type, ts_technology).thematic_template
+                    ts = self.get_thematic_settings(ts_type, ts_technology,ts_device_type).thematic_template
                 else:
                     ts = ThematicSettings.objects.get(pk=ts_template_id)
 
@@ -1886,13 +1905,14 @@ class BulkFetchLPDataApi(View):
 
         return HttpResponse(json.dumps(result))
 
-    def get_thematic_settings(self, ts_type, device_technology):
+    def get_thematic_settings(self, ts_type, device_technology,device_type):
         """
             Get user thematic settings.
 
             Args:
                 ts_type (unicode): Thematic settings type i.e 'ping' or 'normal'.
                 device_technology (<class 'device.models.DeviceTechnology'>): Device technology object.
+                device_type (<class 'device.models.DeviceType'>): Device type object.
 
             Returns:
                 user_thematics (<class 'inventory.models.UserPingThematicSettings'>): Thematic settings object.
@@ -1906,19 +1926,22 @@ class BulkFetchLPDataApi(View):
             return None
 
         device_technology = device_technology
+        device_type = device_type
 
         # Fetch thematic settings for current user.
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
