@@ -67,6 +67,8 @@
 
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+     <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
         var dataTableInstance = '',
             thematic_api_url = '';
@@ -95,30 +97,59 @@
                 ajax_url_wimax = '{% url "PingThematicSettingsListingTable" technology="wimax" %}' + '?admin=1';
             }
 
-            var destroy = false;
+             var location_array = window.location.href.split("#");
 
-            /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("PingThematicSettingsListingTable_ptp", gridHeadersObj, ajax_url_ptp, destroy);
-            dataTableInstance.createDataTable("PingThematicSettingsListingTable_pmp", gridHeadersObj, ajax_url_pmp, destroy);
-            dataTableInstance.createDataTable("PingThematicSettingsListingTable_wimax", gridHeadersObj, ajax_url_wimax, destroy);
-        });
+          tables_info = {
+            "network_p2p_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Ping Thematic Settings Listing Table-PTP",
+                "header_class_name" : "PingThematicSettingsList",
+                "data_class_name" : "PingThematicSettingsListingTable"
+               
+            },
+            "network_pmp_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Ping Thematic Settings Listing Table-PMP",
+                "header_class_name" : "PingThematicSettingsList",
+                "data_class_name" : "PingThematicSettingsListingTable"
+                
+            },
+            "network_wifi_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Ping Thematic Settings Listing Table-Wimax",
+                "header_class_name" : "PingThematicSettingsList",
+                "data_class_name" : "PingThematicSettingsListingTable"
+                
+            }
+        };
 
-		/*Change event for PTP checkboxes*/
-        $(document).on('change', '#PingThematicSettingsListingTable_ptp .check_class', function() {
-			var current_deviceType = $(this)[0].attributes['data-deviceType'].value;
-            updateThematicSelection("PingThematicSettingsListingTable_ptp", this, current_deviceType);
-        });
 
-        /*Change event for PMP checkboxes*/
-        $(document).on('change', '#PingThematicSettingsListingTable_pmp .check_class', function() {
-			var current_deviceType = $(this)[0].attributes['data-deviceType'].value;
-            updateThematicSelection("PingThematicSettingsListingTable_pmp", this, current_deviceType);
-        });
+        $("#network_ptp_tab").attr("data_url", ajax_url_ptp);
+        $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
-        /*Change event for Wimax checkboxes*/
-        $(document).on('change', '#PingThematicSettingsListingTable_wimax .check_class', function() {
-			var current_deviceType = $(this)[0].attributes['data-deviceType'].value;
-            updateThematicSelection("PingThematicSettingsListingTable_wimax", this, current_deviceType);
+        $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
+        $("#network_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#network_wifi_tab").attr("data_url", ajax_url_wimax);
+        $("#network_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            /*Trigger click event on active tab to load its data*/
+            $("#network_ptp_tab").trigger('click', true);
+        }
+});
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+
         });
     </script>
 {% endblock %}
+
+
