@@ -2420,7 +2420,7 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
     model = ThematicSettings
     required_permissions = ('inventory.view_thematicsettings',)
     columns = ['alias', 'threshold_template','threshold_template__live_polling_template__device_type__name', 'icon_settings']
-    order_columns = ['alias', 'threshold_template','threshold_template__live_polling_template__device_type__name']
+    order_columns = ['alias', 'alias','threshold_template__live_polling_template__device_type__name']
     search_columns = ['alias', 'icon_settings','threshold_template__live_polling_template__device_type__name']
 
     tab_search = {
