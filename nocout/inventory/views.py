@@ -2354,6 +2354,7 @@ class Update_User_Thematic_Setting(View):
                 thematic_technology=tech_obj,
                 thematic_type=type_obj
             )
+
             if len(to_delete):
                 to_delete.delete()
 
@@ -2419,7 +2420,7 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
     """
     model = ThematicSettings
     required_permissions = ('inventory.view_thematicsettings',)
-    columns = ['alias', 'threshold_template','threshold_template__live_polling_template__device_type__name', 'icon_settings']
+    columns = ['alias', 'threshold_template','threshold_template__live_polling_template__device_type__name', 'icon_settings', 'threshold_template__live_polling_template__device_type']
     order_columns = ['alias', 'alias','threshold_template__live_polling_template__device_type__name']
     search_columns = ['alias', 'icon_settings','threshold_template__live_polling_template__device_type__name']
 
@@ -2446,6 +2447,7 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        device_type_key = 'threshold_template__live_polling_template__device_type'
         for dct in json_data:
             obj_id = dct.pop('id')
             if self.request.GET.get('admin'):
@@ -2477,13 +2479,23 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
                     full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
                 full_string='N/A'
-            device_type = dct['threshold_template__live_polling_template__device_type__name'] if 'threshold_template__live_polling_template__device_type__name' in dct else ''
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=obj_id).user_profile.values_list('id', flat=True)
+            device_type = dct[device_type_key + '__name'] if device_type_key + '__name' in dct else ''
+            # user_current_thematic_setting = self.request.user.id in ThematicSettings.objects.get(
+            #     id=obj_id
+            # ).user_profile.values_list('id', flat=True)
+            user_current_thematic_setting = UserThematicSettings.objects.filter(
+                                                thematic_template=obj_id,
+                                                user_profile=self.request.user.id,
+                                                thematic_type=dct[device_type_key]
+                                            ).exists()
+            
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
                 threshold_template=threshold_config.alias,
                 icon_settings= full_string,
-                user_selection='<input type="checkbox" data-deviceType="' + device_type + '" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(obj_id),
+                user_selection='<input type="checkbox" data-deviceType="' + device_type + '" \
+                                class="check_class" '+ checkbox_checked_true +' name="setting_selection" \
+                                value={0}><br>'.format(obj_id),
                 actions=actions)
         return json_data
 
@@ -3458,7 +3470,7 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
     Class based View to render Thematic Settings Data table.
     """
     model = PingThematicSettings
-    columns = ['alias', 'service', 'data_source','type__name', 'icon_settings']
+    columns = ['id', 'alias', 'service', 'data_source','type__name', 'icon_settings', 'type__id']
     order_columns = ['alias', 'service', 'data_source','type__name']
     tab_search = {
         "tab_kwarg": 'technology',
@@ -3482,6 +3494,7 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
         :return qs
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        
         for dct in json_data:
             # modify 'icon_setting' field for display in datatables i.e. format: "start_range > icon > end_range"
             icon_settings_display_field = ""
@@ -3527,10 +3540,18 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
                 # icon settings content to be displayed in datatable
                 icon_settings_display_field += " {} > {} > {} <br />".format(start_range, image_string, end_range)
 
-            user_current_thematic_setting = self.request.user.id in PingThematicSettings.objects.get(
-                id=dct['id']).user_profile.values_list('id', flat=True)
-            checkbox_checked_true = 'checked' if user_current_thematic_setting else ''
+            # user_current_thematic_setting = self.request.user.id in PingThematicSettings.objects.get(
+            #     id=dct['id']).user_profile.values_list('id', flat=True)
             device_type =dct['type__name'] if 'type__name' in dct else ''
+            
+            user_current_thematic_setting = UserPingThematicSettings.objects.filter(
+                                                thematic_template=dct['id'],
+                                                user_profile=self.request.user.id,
+                                                thematic_type=dct['type__id']
+                                            ).exists()
+
+            checkbox_checked_true = 'checked' if user_current_thematic_setting else ''
+            
             dct.update(
                 icon_settings=icon_settings_display_field,
                 user_selection='<input type="checkbox" data-deviceType="' + device_type + '" class="check_class" ' + checkbox_checked_true +

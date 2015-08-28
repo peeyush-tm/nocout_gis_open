@@ -138,6 +138,20 @@
             $("#network_ptp_tab").trigger('click', true);
         }
 });
+
+ /*Change event for PTP checkboxes*/
+    $(document).on('change', '#PingThematicSettingsListingTable_ptp .check_class', function() {
+        updateThematicSelection("PingThematicSettingsListingTable_ptp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for PMP checkboxes*/
+    $(document).on('change', '#PingThematicSettingsListingTable_pmp .check_class', function() {
+        updateThematicSelection("PingThematicSettingsListingTable_pmp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for Wimax checkboxes*/
+    $(document).on('change', '#PingThematicSettingsListingTable_wimax .check_class', function() {
+        updateThematicSelection("PingThematicSettingsListingTable_wimax", this, $(this).attr('data-devicetype'));
+    });
+
     </script>
 {% endblock %}
 

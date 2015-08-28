@@ -87,6 +87,8 @@
 
             var is_global = '{{ is_global }}';
 
+            
+
             var ajax_url_ptp = '{% url "ServiceThematicSettingsListingTable" technology="p2p" %}';
             var ajax_url_pmp = '{% url "ServiceThematicSettingsListingTable" technology="pmp" %}';
             var ajax_url_wimax = '{% url "ServiceThematicSettingsListingTable" technology="wimax" %}';
@@ -138,7 +140,21 @@
             /*Trigger click event on active tab to load its data*/
             $("#network_ptp_tab").trigger('click', true);
         }
-});
+    });
+
+    /*Change event for PTP checkboxes*/
+    $(document).on('change', '#ServiceThematicSettingsListingTable_ptp .check_class', function() {
+        updateThematicSelection("ServiceThematicSettingsListingTable_ptp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for PMP checkboxes*/
+    $(document).on('change', '#ServiceThematicSettingsListingTable_pmp .check_class', function() {
+        updateThematicSelection("ServiceThematicSettingsListingTable_pmp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for Wimax checkboxes*/
+    $(document).on('change', '#ServiceThematicSettingsListingTable_wimax .check_class', function() {
+        updateThematicSelection("ServiceThematicSettingsListingTable_wimax", this, $(this).attr('data-devicetype'));
+    });
+
     </script>
 {% endblock %}
 

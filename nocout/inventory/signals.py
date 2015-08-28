@@ -33,11 +33,6 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
 
     if len(thematic_setting_p2p)>0:
         added_type = list()
-        UserThematicSettings.objects.create(
-                thematic_template=thematic_setting_p2p[0],
-                thematic_technology=thematic_setting_p2p[0].threshold_template.live_polling_template.technology,
-                user_profile=instance,
-        )
         for obj in thematic_setting_p2p:
             if obj.threshold_template.live_polling_template.device_type.id not in added_type:
                 added_type.append(obj.threshold_template.live_polling_template.device_type.id)
@@ -57,11 +52,6 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
 
     if len(thematic_setting_pmp)>0:
         added_type = list()
-        UserThematicSettings.objects.create(
-                thematic_template=thematic_setting_pmp[0],
-                thematic_technology=thematic_setting_pmp[0].threshold_template.live_polling_template.technology,
-                user_profile=instance,
-        )
         for obj in thematic_setting_pmp:
             if obj.threshold_template.live_polling_template.device_type.id not in added_type:
                 added_type.append(obj.threshold_template.live_polling_template.device_type.id)

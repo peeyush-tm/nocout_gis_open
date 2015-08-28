@@ -134,17 +134,21 @@ function makeFormAjaxCall(api_url, affected_element_id, existing_value) {
  * @param device_type {String}, It contains the device type of current thematics
  */
 function updateThematicSelection(tab_id, current_checkbox, device_type) {
-    
+
+
     var checked_flag = false;
     if ($(current_checkbox).prop('checked')) {
         $(current_checkbox).prop('checked', false);
         checked_flag = true;
     }
 
-    var is_same_checkbox = $('#'+tab_id+' .check_class:checked[data-deviceType="'+device_type+'"]').length;
+     /*Check Device Type */
+    var check_device_type = $('#'+tab_id+' .check_class:checked[data-deviceType="'+device_type+'"]');
 
-    if(is_same_checkbox > 0) {
-        $('#'+tab_id+' .check_class:checked[data-deviceType="'+device_type+'"]')[0].checked = false;
+   /*More than one device type checked */
+    if(check_device_type.length > 0) {
+        $('#'+tab_id+' .check_class:checked[data-deviceType="'+device_type+'"]').prop('checked', false);
+        $('#'+tab_id+' .check_class:checked[data-deviceType="'+device_type+'"]').removeAttr('checked');
     }
 
     if (checked_flag) {
