@@ -22,7 +22,7 @@ from django.db.models.signals import post_save, pre_save, pre_delete
 from organization.models import Organization
 from user_profile.models import UserProfile
 from service.models import Service, ServiceDataSource
-from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City
+from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City, DeviceType
 
 from inventory import signals as inventory_signals
 
@@ -290,6 +290,7 @@ class LivePollingSettings(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     technology = models.ForeignKey(DeviceTechnology)
+    device_type = models.ForeignKey(DeviceType, null=True)
     service = models.ForeignKey(Service)
     data_source = models.ForeignKey(ServiceDataSource)
 
@@ -366,7 +367,7 @@ class UserThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(ThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
-
+    thematic_type = models.ForeignKey(DeviceType, null=True)
 
 class GISInventoryBulkImport(models.Model):
     original_filename = models.CharField('Inventory', max_length=250, null=True, blank=True)
@@ -432,6 +433,7 @@ class PingThematicSettings(models.Model):
     alias = models.CharField('Alias', max_length=250)
 
     technology = models.ForeignKey(DeviceTechnology)
+    type = models.ForeignKey(DeviceType,null=True)
     service = models.CharField('Service', max_length=250)
     data_source = models.CharField('Data Source', max_length=250)
 
@@ -480,6 +482,7 @@ class UserPingThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(PingThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
+    thematic_type = models.ForeignKey(DeviceType, null=True)
 
 
 class GISExcelDownload(models.Model):

@@ -21,6 +21,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from inventory.models import LivePollingSettings
+from device.models import DeviceTypeService
+
 
 
 ##error pages
@@ -334,3 +337,19 @@ def reset_cache(request):
 
     cache.clear()
     return HttpResponse(json.dumps({'code': 0, 'message': 'Cache has been cleared.'}), content_type='application/json')
+
+
+def updateThematicType(request):
+
+    ds_obj = DeviceTypeService.objects.all().values('service_id', 'device_type_id')
+
+    for obj in ds_obj:
+        service_id = obj.get('service_id')
+        device_type_id = obj.get('device_type_id')
+        lp_obj = LivePollingSettings.objects.filter(service_id=service_id)
+        if lp_obj.exists():
+            for lp in lp_obj:
+                lp.device_type_id = device_type_id
+                lp.save()
+
+    return HttpResponse(json.dumps({'success': 1, 'message': 'Thematics Updated.'}), content_type='application/json')
