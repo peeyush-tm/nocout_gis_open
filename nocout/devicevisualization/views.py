@@ -168,10 +168,12 @@ class Gis_Map_Performance_Data(View):
                 )
 
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
+                device_type = DeviceType.objects.get(id=device.device_type)
                 user_obj = UserProfile.objects.get(id=self.request.user.id)
 
                 uts = UserThematicSettings.objects.get(user_profile=user_obj,
-                                                       thematic_technology=device_technology)
+                                                       thematic_technology=device_technology,
+                                                       thematic_type =device_type)
 
                 thematic_settings = uts.thematic_template
                 threshold_template = thematic_settings.threshold_template
@@ -1536,8 +1538,17 @@ class GISPerfData(View):
                         except Exception as e:
                             device_technology = None
 
+                        # device technology
+                        try:
+                            device_type = DeviceType.objects.get(id=sector_device.device_type)
+                        except Exception as e:
+                            device_type = None
+
+
+
+
                         # thematic settings for current user
-                        user_thematics = self.get_thematic_settings(device_technology)
+                        user_thematics = self.get_thematic_settings(device_technology,device_type)
 
                         # service & data source
                         service = ""
@@ -2925,7 +2936,7 @@ class GISPerfData(View):
                                                                        is_static=False)
 
         # thematic settings for current user
-        user_thematics = self.get_thematic_settings(device_technology)
+        user_thematics = self.get_thematic_settings(device_technology,device_type)
 
         if not user_thematics:
             return substation_info
@@ -3196,7 +3207,7 @@ class GISPerfData(View):
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology):
+    def get_thematic_settings(self, device_technology, device_type):
         """ Get device pl
 
             Parameters:
@@ -3221,19 +3232,24 @@ class GISPerfData(View):
         # device technology
         device_technology = device_technology
 
+         # device type
+        device_technology = device_type
+
         # fetch thematic settings for current user
 
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
@@ -3946,7 +3962,7 @@ class GISStaticInfo(View):
                         sector_configured_on_tech = None
 
                     # thematic settings for current user
-                    user_thematics = self.get_thematic_settings(sector_configured_on_tech)
+                    user_thematics = self.get_thematic_settings(sector_configured_on_tech,sector_configured_on_type)
 
                     # service & data source
                     service = ""
@@ -4588,7 +4604,7 @@ class GISStaticInfo(View):
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology):
+    def get_thematic_settings(self, device_technology,device_type):
         """ Get device pl
 
             Parameters:
@@ -4612,20 +4628,27 @@ class GISStaticInfo(View):
 
         # device technology
         device_technology = device_technology
+        # device type
+        device_technology = device_type
 
         # fetch thematic settings for current user
 
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
+                print '**' * 20
+                print user_thematics
+                print '**' * 20
             except Exception as e:
                 return user_thematics
 
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 

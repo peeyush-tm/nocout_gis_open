@@ -2342,21 +2342,29 @@ class Update_User_Thematic_Setting(View):
 
         thematic_setting_id= self.request.GET.get('threshold_template_id',None)
         user_profile_id = self.request.user.id
+        
         if thematic_setting_id:
-
-
             ts_obj = ThematicSettings.objects.get(id= int(thematic_setting_id))
             user_obj = UserProfile.objects.get(id= user_profile_id)
             tech_obj = ts_obj.threshold_template.live_polling_template.technology
+            type_obj = ts_obj.threshold_template.live_polling_template.device_type
 
-            to_delete = UserThematicSettings.objects.filter(user_profile=user_obj, thematic_technology=tech_obj)
+            to_delete = UserThematicSettings.objects.filter(
+                user_profile=user_obj,
+                thematic_technology=tech_obj,
+                thematic_type=type_obj
+            )
+
             if len(to_delete):
                 to_delete.delete()
 
-            uts = UserThematicSettings(user_profile= user_obj,
-                                       thematic_template=ts_obj,
-                                       thematic_technology=tech_obj
+            uts = UserThematicSettings(
+                user_profile= user_obj,
+                thematic_template=ts_obj,
+                thematic_technology=tech_obj,
+                thematic_type=type_obj
             )
+
             uts.save()
             self.result['success']=1
             self.result['message']='Service Thematic Setting Bind to User Successfully'
@@ -2381,7 +2389,8 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         context = super(ServiceThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
-            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
+            {'mData': 'threshold_template','sTitle': 'Threshold Template','sWidth': 'auto'},
+            {'mData': 'threshold_template__live_polling_template__device_type__name',           'sTitle': 'Type',                     'sWidth': 'auto'},
             {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto',   'bSortable': False},
             {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto',   'bSortable': False},]
 
@@ -2411,9 +2420,9 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
     """
     model = ThematicSettings
     required_permissions = ('inventory.view_thematicsettings',)
-    columns = ['alias', 'threshold_template', 'icon_settings']
-    order_columns = ['alias', 'threshold_template']
-    search_columns = ['alias', 'icon_settings']
+    columns = ['alias', 'threshold_template','threshold_template__live_polling_template__device_type__name', 'icon_settings', 'threshold_template__live_polling_template__device_type']
+    order_columns = ['alias', 'alias','threshold_template__live_polling_template__device_type__name']
+    search_columns = ['alias', 'icon_settings','threshold_template__live_polling_template__device_type__name']
 
     tab_search = {
         "tab_kwarg": 'technology',
@@ -2438,6 +2447,7 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
         """
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        device_type_key = 'threshold_template__live_polling_template__device_type'
         for dct in json_data:
             obj_id = dct.pop('id')
             if self.request.GET.get('admin'):
@@ -2469,12 +2479,23 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
                     full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
                 full_string='N/A'
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=obj_id).user_profile.values_list('id', flat=True)
+            device_type = dct[device_type_key + '__name'] if device_type_key + '__name' in dct else ''
+            # user_current_thematic_setting = self.request.user.id in ThematicSettings.objects.get(
+            #     id=obj_id
+            # ).user_profile.values_list('id', flat=True)
+            user_current_thematic_setting = UserThematicSettings.objects.filter(
+                                                thematic_template=obj_id,
+                                                user_profile=self.request.user.id,
+                                                thematic_type=dct[device_type_key]
+                                            ).exists()
+            
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
                 threshold_template=threshold_config.alias,
                 icon_settings= full_string,
-                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(obj_id),
+                user_selection='<input type="checkbox" data-deviceType="' + device_type + '" \
+                                class="check_class" '+ checkbox_checked_true +' name="setting_selection" \
+                                value={0}><br>'.format(obj_id),
                 actions=actions)
         return json_data
 
@@ -2611,12 +2632,16 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         icon_details_selected = dict()
         if 'admin' in self.request.path:
             is_admin = True
+
         if form.instance.icon_settings!='NULL':
             form.instance.icon_settings
             form.instance.icon_settings = eval(form.instance.icon_settings)
             for icon_setting in form.instance.icon_settings:
                 icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
-        live_polling_settings_form = ServiceLivePollingSettingsForm(instance=self.object.threshold_template.live_polling_template)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(
+            instance=self.object.threshold_template.live_polling_template
+        )
+
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
@@ -2631,11 +2656,19 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         formsets with the passed POST variables and then checking them for
         validity.
         """
+
         self.object = self.get_object()
         form_class = self.get_form_class()
-        form = ServiceThematicSettingsForm(self.request.POST, instance=self.object)
+        form = ServiceThematicSettingsForm(
+            self.request.POST,
+            instance=self.object
+        )
         threshold_configuration_form = ServiceThresholdConfigurationForm(self.request.POST, instance=self.object.threshold_template)
-        live_polling_settings_form = ServiceLivePollingSettingsForm(self.request.POST, instance=self.object.threshold_template.live_polling_template)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(
+            self.request.POST,
+            instance=self.object.threshold_template.live_polling_template
+        )
+
         if (form.is_valid() and threshold_configuration_form.is_valid() and live_polling_settings_form.is_valid()):
             return self.form_valid(form, threshold_configuration_form, live_polling_settings_form)
         else:
@@ -2657,6 +2690,7 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         live_polling_settings_form.instance.name = name
         live_polling_settings_form.instance.alias = alias
         live_polling_settings_form.save()
+
         if 'admin' in self.request.path:
             return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
         return HttpResponseRedirect(self.get_success_url())
@@ -3409,11 +3443,12 @@ class PingThematicSettingsList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
             {'mData': 'service', 'sTitle': 'Service', 'sWidth': 'auto'},
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
-            {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto'},
-            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto'}]
+            {'mData': 'type__name', 'sTitle': 'Type', 'sWidth': 'auto'},
+            {'mData': 'icon_settings', 'sTitle': 'Icons Range', 'sWidth': 'auto','bSortable': False},
+            {'mData': 'user_selection', 'sTitle': 'Setting Selection', 'sWidth': 'auto','bSortable': False},]
 
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable' : False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -3435,8 +3470,8 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
     Class based View to render Thematic Settings Data table.
     """
     model = PingThematicSettings
-    columns = ['alias', 'service', 'data_source', 'icon_settings']
-    order_columns = ['alias', 'service', 'data_source']
+    columns = ['id', 'alias', 'service', 'data_source','type__name', 'icon_settings', 'type__id']
+    order_columns = ['alias', 'service', 'data_source','type__name']
     tab_search = {
         "tab_kwarg": 'technology',
         "tab_attr": "technology__name",
@@ -3459,6 +3494,7 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
         :return qs
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        
         for dct in json_data:
             # modify 'icon_setting' field for display in datatables i.e. format: "start_range > icon > end_range"
             icon_settings_display_field = ""
@@ -3504,12 +3540,21 @@ class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin
                 # icon settings content to be displayed in datatable
                 icon_settings_display_field += " {} > {} > {} <br />".format(start_range, image_string, end_range)
 
-            user_current_thematic_setting = self.request.user.id in PingThematicSettings.objects.get(
-                id=dct['id']).user_profile.values_list('id', flat=True)
+            # user_current_thematic_setting = self.request.user.id in PingThematicSettings.objects.get(
+            #     id=dct['id']).user_profile.values_list('id', flat=True)
+            device_type =dct['type__name'] if 'type__name' in dct else ''
+            
+            user_current_thematic_setting = UserPingThematicSettings.objects.filter(
+                                                thematic_template=dct['id'],
+                                                user_profile=self.request.user.id,
+                                                thematic_type=dct['type__id']
+                                            ).exists()
+
             checkbox_checked_true = 'checked' if user_current_thematic_setting else ''
+            
             dct.update(
                 icon_settings=icon_settings_display_field,
-                user_selection='<input type="checkbox" class="check_class" ' + checkbox_checked_true +
+                user_selection='<input type="checkbox" data-deviceType="' + device_type + '" class="check_class" ' + checkbox_checked_true +
                                ' name="setting_selection" value={0}><br>'.format(dct['id']),
                 actions='<a href="/ping_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/ping_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
@@ -3605,20 +3650,29 @@ class Ping_Update_User_Thematic_Setting(View):
             }
         }
 
-        thematic_setting_id = self.request.GET.get('ts_template_id', None)
+        thematic_setting_id = self.request.GET.get('threshold_template_id', None)
         user_profile_id = self.request.user.id
+        
         if thematic_setting_id:
             ts_obj = PingThematicSettings.objects.get(id=int(thematic_setting_id))
             user_obj = UserProfile.objects.get(id=user_profile_id)
             tech_obj = ts_obj.technology
-            to_delete = UserPingThematicSettings.objects.filter(user_profile=user_obj, thematic_technology=tech_obj)
+            type_obj = ts_obj.type
+                       
+            to_delete = UserPingThematicSettings.objects.filter(
+                user_profile=user_obj,
+                thematic_technology=tech_obj,
+                thematic_type = type_obj
+                )
 
             if len(to_delete):
                 to_delete.delete()
 
             uts = UserPingThematicSettings(user_profile=user_obj,
                                            thematic_template=ts_obj,
-                                           thematic_technology=tech_obj)
+                                           thematic_technology=tech_obj,
+                                           thematic_type=type_obj
+                                            )
             uts.save()
 
             result['success'] = 1

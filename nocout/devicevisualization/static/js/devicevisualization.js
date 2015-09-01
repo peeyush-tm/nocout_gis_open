@@ -2778,3 +2778,39 @@ if (!Array.prototype.indexOf) {
     return -1;
   };
 }
+
+$('select[name="polling_tech"]').change(function(e) {
+    var selected_tech = $.trim($(this).val());
+    if (selected_tech && typeof tech_type_api != 'undefined') {
+    	var api_url = tech_type_api;
+
+    	// Update the tech PK in api url
+    	api_url = api_url.replace('123', selected_tech);
+
+    	$.ajax({
+    		url : api_url,
+    		type : 'GET',
+    		success : function(response) {
+    			var result = response;
+
+    			if (typeof response == 'string') {
+    				result = JSON.parse(response);
+    			}
+
+    			var dType_html = '<option value="">Select Type</option>';
+
+    			for (var i=0;i<result.length;i++) {
+    				var title = result[i]['alias'],
+    					id = result[i]['id'];
+
+					dType_html += '<option value="' + id + '">' + title + '</option>'
+    			}
+
+    			$('select[name="polling_type"]').html(dType_html);
+    		},
+    		error : function(err) {
+    			// console.log(err.statusText);
+    		}
+    	})
+    }
+});
