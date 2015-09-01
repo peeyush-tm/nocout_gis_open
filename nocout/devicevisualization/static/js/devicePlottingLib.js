@@ -5947,7 +5947,7 @@ function devicePlottingClass_gmap() {
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&device_type="+selected_type+"&service_type="+service_type,
+    			url : base_url+"/"+"device/ts_templates/?technology="+selected_technology+"&device_type="+selected_type+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
     			success : function(response) {
 					
