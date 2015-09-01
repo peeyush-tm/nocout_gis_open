@@ -901,7 +901,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
     tech = " "
 
     if monitored_only:
-        added_device = "where device.is_added_to_nms = 1 "
+        added_device = "where device.is_added_to_nms > 0 "
 
     if technology:
         tech = " and technology.name = '{0}'".format(technology)
