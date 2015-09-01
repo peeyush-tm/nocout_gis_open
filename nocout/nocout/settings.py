@@ -570,8 +570,8 @@ SERVICE_DATA_SOURCE = {
         "valuesuffix": " ms",
         "valuetext": "ms",
         "formula": "rta_null",
-        "show_min": 0,
-        "show_max": 0,
+        "show_min": 1,
+        "show_max": 1,
         "show_gis": 1,
         "show_performance_center": 1,
         "is_inverted": 0,
@@ -746,7 +746,8 @@ SETTINGS_EXPORT = [
     'CRIT_COLOR',
     'WARN_TYPE',
     'CRIT_TYPE',
-    'ENABLE_ADVANCE_FILTERS'
+    'ENABLE_ADVANCE_FILTERS',
+    'ENABLE_UNIFIED_SERVICE_VIEW'
 ]
 # #### Access Variables in Templates
 
@@ -792,6 +793,9 @@ DATATABLE_SEARCHTXT_KEY = 'sSearch'
 
 ####################### Flag to enable/disable advance filters feature for datatables #######################
 ENABLE_ADVANCE_FILTERS = True
+
+####################### Flag to enable/disable unified service view on single performance page #######################
+ENABLE_UNIFIED_SERVICE_VIEW = True
 
 try:
     from local_settings import *

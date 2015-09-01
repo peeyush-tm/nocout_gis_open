@@ -466,3 +466,22 @@ iframe {
 .remove_advance_filters_btn {
   margin-left: 15px !important;
 }
+.unified_item_type {
+  border-left: 1px solid #CCC;
+  border-right: 1px solid #CCC;
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 5.5%;
+  margin-right: 5px;
+
+}
+.perfContainerBlock .checkbox-inline {
+  padding-left: 0px;
+}
+.perfContainerBlock input[type="radio"] {
+  vertical-align: text-top;
+}
+.unified_normal_li {
+  border-right: 1px solid #CCC;
+}

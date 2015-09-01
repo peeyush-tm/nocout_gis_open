@@ -37,13 +37,21 @@ var perf_that = "",
         {"id": "monthly", "title": "Monthly"},
         {"id": "yearly", "title": "Yearly"}
     ],
-    default_live_table_headers = [
+    default_live_table_headers_without_ds = [
         {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
     ],
+    default_live_table_headers_with_ds = [
+        {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true}
+    ]
     default_hist_table_headers = [
         {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
@@ -1595,4 +1603,14 @@ $(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
 
 $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
+});
+
+$('input[name="service_view_type"]').change(function(e) {
+    // selected value of 'service_view_type'
+    var service_view_type = $(this).val();
+    // Set the 'service_view_type'  cookie
+    $.cookie("service_view_type", service_view_type, {path: '/'});
+    // Reload the page
+    // window.location.reload();
+    initPerformancePage();
 });

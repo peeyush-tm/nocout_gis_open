@@ -90,15 +90,19 @@
                 </li>
                 <li>
                     <button id="apply_filter" class="btn  btn-default btn-sm">
-                        <i class="fa fa-filter"></i> Apply Filter
+                        <i class="fa fa-filter"></i>
                     </button>
                 </li>
                 <li>
-                    <button id="reset_filter" class="btn  btn-warning btn-sm">
-                        <i class="fa fa-times"></i> Reset Filter
+                    <button id="reset_filter" class="btn  btn-danger btn-sm">
+                        <i class="fa fa-times"></i>
                     </button>
                 </li>
+                {% if settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                <li id="display_type_container" class="unified_item_type">
+                {% else %}
                 <li id="display_type_container">
+                {% endif %}
                     <label class="checkbox-inline">
                         <input type="radio" id="display_chart" name="item_type" value="chart" checked="checked"/>  Display Chart
                     </label>
@@ -106,6 +110,16 @@
                         <input type="radio" id="display_table" name="item_type" value="table"/>  Display Table
                     </label>
                 </li>
+                {% if settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                    <li class="unified_normal_li">
+                        <label class="checkbox-inline">
+                            <input type="radio" id="normal_view" name="service_view_type" value="normal" checked="checked"/>  Normal View
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="radio" id="unified_view" name="service_view_type" value="unified"/>  Unified View
+                        </label>
+                    </li>
+                {% endif %}
                 <li class="pull-right">
                     <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
                         <i class="fa fa-dropbox text-primary"></i>
@@ -270,6 +284,7 @@
             ptp_tech_list = ['ptp','p2p','ptp bh'],
             is_perf_polling_enabled = false,
             show_historical_on_performance = false,
+            is_unified_enabled = false,
             base_url = "",
             startDate = "",
             endDate = "",
@@ -281,96 +296,129 @@
             warn_color = "",
             crit_color = "",
             warn_type = "",
-            crit_type = "";
+            crit_type = "",
+            default_live_table_headers = [];
 
 
         $(document).ready(function (e) {
 
-            var device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
-                get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "",
-                inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "",
-                alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "",
-                page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer",
-                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0,
-                current_device_technology = "",
-                statusUrl = "",
-                serviceUrl = "",
-                inventory_url = "",
-                alert_url = "";
+            service_view_type = $('input[name="service_view_type"]:checked').val();
+            device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "";
+            get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "";
+            inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "";
+            alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "";
+            page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
+            is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
+            current_device_technology = "";
+            statusUrl = "";
+            serviceUrl = "";
+            inventory_url = "";
+            alert_url = "";
 
-            statusUrl = getCompleteUrl(device_status_url);
-            serviceUrl = getCompleteUrl(get_services_url);
-            inventory_url = getCompleteUrl(inventory_page_url);
-            alert_url = getCompleteUrl(alert_page_url);
-
-            current_device = "{{ device.id }}";
-            device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
-            current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
-            current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
-            is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
-            is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
-            device_name = current_device;
-            warn_color = "{{ settings.WARN_COLOR}}";
-            warn_type = "{{ settings.WARN_TYPE}}";
-            crit_color = "{{ settings.CRIT_COLOR}}";
-            crit_type = "{{ settings.CRIT_TYPE}}";
-            // Update global variable as per context data
-            {% if is_dr_device %}
-                is_dr_device = true;
-                bold_class = 'text-bold';
+            {% if not settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                $.cookie("service_view_type", 'normal', {path: '/'});
             {% endif %}
 
-            /*Make a instance of ourDataTableWidget class */
-            dataTableInstance = new ourDataTableWidget();
+            initPerformancePage(true);
+        });
 
-            {% if settings.HISTORICAL_ON_PERFORMANCE %}
-                show_historical_on_performance = true;
-            {% endif %}
-            
-            // If call for utilization tab the reset tab cookie
-            if(is_util_tab) {
-                $.cookie('parent_tab_id', '', {path: '/', secure: true});
+        function initPerformancePage(is_first_triggered) {
+
+            if ($.cookie("service_view_type") == 'normal') {
+                default_live_table_headers = default_live_table_headers_without_ds;
+            } else {
+                default_live_table_headers = default_live_table_headers_with_ds;
             }
 
-
-            // Show/hide live polling button & chart container
-            live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
-            live_poll_condition2 = page_type_val == 'customer';
-            if(!live_poll_condition1 && !live_poll_condition2) {
-                $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
-            }
-
-            if(inventory_url) {
-                $("#inventory_link_tag").attr("href",inventory_url);
-                $("#inventory_link_tag").removeClass("hide");
-            }
-
-            if(alert_url) {
-                $("#alerts_link_tag").attr("href",alert_url);
-                $("#alerts_link_tag").removeClass("hide");
-            }
-
-            // SET utc false for highcharts to show time in GMT+5:30
-            Highcharts.setOptions({
-                global: {
-                    useUTC: false
+            if (is_first_triggered) {
+                
+                if ($.cookie("service_view_type")) {
+                    $('input[value="' + $.cookie("service_view_type") + '"]').prop('checked', true)
+                    $('input[value="' + $.cookie("service_view_type") + '"]').attr('checked', 'checked');
                 }
-            });
 
-            // Create nocoutPerfLib instance to access its functions
-            perfInstance = new nocoutPerfLib();
+                statusUrl = getCompleteUrl(device_status_url);
+                serviceUrl = getCompleteUrl(get_services_url);
+                inventory_url = getCompleteUrl(inventory_page_url);
+                alert_url = getCompleteUrl(alert_page_url);
 
-            perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
+                current_device = "{{ device.id }}";
+                device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
+                current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
+                current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
+                is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
+                is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
+                device_name = current_device;
+                warn_color = "{{ settings.WARN_COLOR}}";
+                warn_type = "{{ settings.WARN_TYPE}}";
+                crit_color = "{{ settings.CRIT_COLOR}}";
+                crit_type = "{{ settings.CRIT_TYPE}}";
+                // Update global variable as per context data
+                {% if is_dr_device %}
+                    is_dr_device = true;
+                    bold_class = 'text-bold';
+                {% endif %}
 
-            /*To initialize date range picker*/
-            perfInstance.initDateRangePicker(dateRangePicker_domId);
+                /*Make a instance of ourDataTableWidget class */
+                dataTableInstance = new ourDataTableWidget();
+
+                {% if settings.HISTORICAL_ON_PERFORMANCE %}
+                    show_historical_on_performance = true;
+                {% endif %}
+                
+                // If call for utilization tab the reset tab cookie
+                if(is_util_tab) {
+                    $.cookie('parent_tab_id', '', {path: '/', secure: true});
+                }
+
+
+                // Show/hide live polling button & chart container
+                live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
+                live_poll_condition2 = page_type_val == 'customer';
+                if(!live_poll_condition1 && !live_poll_condition2) {
+                    $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+                }
+
+                if(inventory_url) {
+                    $("#inventory_link_tag").attr("href",inventory_url);
+                    $("#inventory_link_tag").removeClass("hide");
+                }
+
+                if(alert_url) {
+                    $("#alerts_link_tag").attr("href",alert_url);
+                    $("#alerts_link_tag").removeClass("hide");
+                }
+
+                // SET utc false for highcharts to show time in GMT+5:30
+                Highcharts.setOptions({
+                    global: {
+                        useUTC: false
+                    }
+                });
+
+                // Create nocoutPerfLib instance to access its functions
+                perfInstance = new nocoutPerfLib();
+
+                perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
+
+                /*To initialize date range picker*/
+                perfInstance.initDateRangePicker(dateRangePicker_domId);
+            }
+
+            // Add 'service_view_type' GET param to API url
+            if (serviceUrl.indexOf('service_view_type') == -1) {
+                serviceUrl = serviceUrl.indexOf('?') > -1 ? serviceUrl + '&service_view_type='+$.cookie("service_view_type") : serviceUrl + '?service_view_type='+$.cookie("service_view_type");
+            } else {
+                serviceUrl = serviceUrl.split('&service_view_type=')[0];
+                serviceUrl = serviceUrl.indexOf('?') > -1 ? serviceUrl + '&service_view_type='+$.cookie("service_view_type") : serviceUrl + '?service_view_type='+$.cookie("service_view_type");
+            }
 
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
 
             /*To populate the services tabs*/
             perfInstance.getServices(serviceUrl, current_device);
-        });
+        }
     
         /**
          * This event triggers when apply filter button clicked
