@@ -433,7 +433,8 @@ function WhiteMapClass() {
 	     */
 		this.fetchPollingTemplate_wmap = function() {
 
-			var selected_technology = $("#polling_tech").val(),
+			var selected_technology = $.trim($("#polling_tech").val()),
+    			selected_type = $.trim($("#polling_type").val()),
 				pathArray = [],
 				polygon = "",
 				service_type = $("#isPing")[0].checked ? "ping" : "other";
@@ -446,11 +447,11 @@ function WhiteMapClass() {
 			polygonSelectedDevices = [];
 			pointsArray = [];
 
-			if(selected_technology != "") {
+			if(selected_technology && selected_type) {
 				$("#tech_send").button("loading");
 				/*ajax call for services & datasource*/
 				$.ajax({
-					url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
+					url : base_url+"/"+"device/ts_templates/?technology="+selected_technology+"&device_type="+selected_type+"&service_type="+service_type,
 					success: function (response) {
 
 		                var result = "";
@@ -558,7 +559,7 @@ function WhiteMapClass() {
 					}
 				});
 			} else {
-				alert("Please select technology.");
+				alert("Please select technology & type.");
 			}
 		}
 
