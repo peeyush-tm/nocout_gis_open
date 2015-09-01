@@ -1426,6 +1426,12 @@ class BulkFetchLPDataApi(View):
         # Devices list.
         devices = eval(str(self.request.GET.get('devices', None)))
 
+        # Is radwin 5k device
+        try:
+            is_radwin5 = int(self.request.GET.get('is_radwin5', 0))
+        except Exception, e:
+            is_radwin5 = 0
+
         # Thematic settings template ID.
         try:
             ts_template_id = int(self.request.GET.get('ts_template'))
@@ -1455,7 +1461,7 @@ class BulkFetchLPDataApi(View):
                                 'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
                                 'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
                                 'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
-                                'cambium_rereg_count']
+                                'cambium_rereg_count', 'rad5k_ul_rssi']
 
         # Service for which live polling runs.
         service = ""
@@ -1646,12 +1652,20 @@ class BulkFetchLPDataApi(View):
                         # If service is from 'exceptional_services' than get base station
                         # and it's device to which 'ss' device is connected from 'Topology'.
                         if str(service) in exceptional_services:
-                            # MAC address of device.
-                            mac_address = device.mac_address
-                            mac = mac_address.lower()
 
-                            # Base station device name to which 'ss' is connected.
-                            bs_device = Topology.objects.get(connected_device_mac=mac)
+                            if is_radwin5:
+                                # IP address of device.
+                                ip_address = device.ip_address
+
+                                # Base station device name to which 'ss' is connected.
+                                bs_device = Topology.objects.get(connected_device_ip=ip_address)
+                            else:
+                                # MAC address of device.
+                                mac_address = device.mac_address
+                                mac = mac_address.lower()
+
+                                # Base station device name to which 'ss' is connected.
+                                bs_device = Topology.objects.get(connected_device_mac=mac)
 
                             # Get base station device.
                             device = Device.objects.get(device_name=bs_device.device_name)
@@ -1689,14 +1703,25 @@ class BulkFetchLPDataApi(View):
                         try:
                             device = Device.objects.get(device_name=device_name)
                             if str(service) in exceptional_services:
-                                # SS device MAC address.
-                                device_ss_mac = device.mac_address
 
-                                # Insert data in 'ss_name_mac_mapping' dictionary.
-                                ss_name_mac_mapping[device.device_name] = device_ss_mac
+                                if is_radwin5:
+                                    # IP address of device.
+                                    device_ss_mac = device.ip_address
 
-                                # Get base station device name from 'Topology'.
-                                bs_device = Topology.objects.get(connected_device_mac=device_ss_mac.lower())
+                                    # Insert data in 'ss_name_mac_mapping' dictionary.
+                                    ss_name_mac_mapping[device.device_name] = device_ss_mac
+
+                                    # Base station device name to which 'ss' is connected.
+                                    bs_device = Topology.objects.get(connected_device_ip=device_ss_mac)
+                                else:
+                                    # SS device MAC address.
+                                    device_ss_mac = device.mac_address
+
+                                    # Insert data in 'ss_name_mac_mapping' dictionary.
+                                    ss_name_mac_mapping[device.device_name] = device_ss_mac
+
+                                    # Get base station device name from 'Topology'.
+                                    bs_device = Topology.objects.get(connected_device_mac=device_ss_mac.lower())
 
                                 # Get base station device.
                                 device = Device.objects.get(device_name=bs_device.device_name)
