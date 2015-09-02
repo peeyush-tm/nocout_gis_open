@@ -5947,7 +5947,7 @@ function devicePlottingClass_gmap() {
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&device_type="+selected_type+"&service_type="+service_type,
+    			url : base_url+"/"+"device/ts_templates/?technology="+selected_technology+"&device_type="+selected_type+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
     			success : function(response) {
 					
@@ -6231,7 +6231,9 @@ function devicePlottingClass_gmap() {
 	 */
     this.getPollingData_gmap = function(callback) {
 
-    	var service_type = $("#isPing")[0].checked ? "ping" : "normal";
+    	var service_type = $("#isPing")[0].checked ? "ping" : "normal",
+    		selected_device_type = $.trim($('#polling_type').val()),
+    		is_radwin5 = selected_device_type && selected_device_type.toLowerCase().indexOf('radwin5') > -1 ? 1 : 0;
 
 		/*Disable service templates dropdown*/
 		$("#lp_template_select").attr("disabled","disabled");
@@ -6239,7 +6241,7 @@ function devicePlottingClass_gmap() {
 		var selected_lp_template = $("#lp_template_select").val();
 
     	$.ajax({
-			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
+			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type+"&is_radwin5="+is_radwin5,
 			// url : base_url+"/"+"static/services.json?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 			success : function(response) {
 				
