@@ -223,7 +223,7 @@ class SectorStatusListing(BaseDatatableView):
                 return filtered_result
             else:
                 query = []
-                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+                exec_query = "qs = qs.filter("
                 for column in self.columns[:-1]:
                     query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -258,8 +258,7 @@ class SectorStatusListing(BaseDatatableView):
             ).prefetch_related(*self.related_columns).values(*self.columns)
         else:
             tech_id = DeviceTechnology.objects.get(name=self.technology).id
-            if tech_id:
-                sectors = self.model.objects.filter(
+            sectors = self.model.objects.filter(
                     Q(organization__in=kwargs['organizations']),
                     Q(sector__sector_configured_on__device_technology=tech_id)
                 ).prefetch_related(*self.related_columns).values(*self.columns)
@@ -520,29 +519,29 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         :param kwargs:
         :return: list of devices
         """
-        # current_epoch_timestamp = datetime.datetime.now().strftime('%s')
-
         max_timestamp = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
-            Q(severity__in=['warning', 'critical'])).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
+            Q(severity__in=['warning', 'critical'])
+        ).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
 
-        if self.technology == 'ALL':
-            sectors = self.model.objects.filter(
-                Q(organization__in=kwargs['organizations']),
-                Q(severity__in=['warning', 'critical']),
-                Q(sys_timestamp__gte=max_timestamp - 420)
-                # Q(age__lte = F('sys_timestamp') - 600)
-            ).prefetch_related(*self.related_columns).values(*self.columns)
-        else:
-            tech_id = DeviceTechnology.objects.get(name=self.technology).id
-            sectors = self.model.objects.filter(
-                Q(organization__in=kwargs['organizations']),
-                Q(sector__sector_configured_on__device_technology=tech_id),
-                Q(severity__in=['warning', 'critical']),
-                Q(sys_timestamp__gte=max_timestamp - 420)
-                # Q(age__lte = F('sys_timestamp') - 600)
-            ).prefetch_related(*self.related_columns).values(*self.columns)
-
+        sectors = list()
+        if max_timestamp:
+            if self.technology == 'ALL':
+                sectors = self.model.objects.filter(
+                    Q(organization__in=kwargs['organizations']),
+                    Q(severity__in=['warning', 'critical']),
+                    Q(sys_timestamp__gte=max_timestamp - 420)
+                    # Q(age__lte = F('sys_timestamp') - 600)
+                ).prefetch_related(*self.related_columns).values(*self.columns)
+            else:
+                tech_id = DeviceTechnology.objects.get(name=self.technology).id
+                sectors = self.model.objects.filter(
+                    Q(organization__in=kwargs['organizations']),
+                    Q(sector__sector_configured_on__device_technology=tech_id),
+                    Q(severity__in=['warning', 'critical']),
+                    Q(sys_timestamp__gte=max_timestamp - 420)
+                    # Q(age__lte = F('sys_timestamp') - 600)
+                ).prefetch_related(*self.related_columns).values(*self.columns)
         return sectors
 
     def prepare_results(self, qs):
@@ -804,7 +803,7 @@ class BackhaulStatusListing(BaseDatatableView):
                 return filtered_result
             else:
                 query = []
-                exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+                exec_query = "qs = qs.filter("
                 for column in self.columns[:-1]:
                     query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -1245,15 +1244,21 @@ class BackhaulAugmentationAlertsListing(BackhaulStatusListing):
         # current_epoch_timestamp = datetime.datetime.now().strftime('%s')
 
         max_timestamp = self.model.objects.filter(
-            Q(organization__in=kwargs['organizations']),
-            Q(severity__in=['warning', 'critical'])).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
 
-        backhauls = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
-            Q(severity__in=['warning', 'critical']),
-            Q(sys_timestamp__gte=max_timestamp - 420)
-            # Q(age__lte=F('sys_timestamp') - 600)
-        ).prefetch_related(*self.related_columns).values(*self.columns)
+            Q(severity__in=['warning', 'critical'])
+        ).aggregate(Max('sys_timestamp'))['sys_timestamp__max']
+        
+        backhauls = list()
+        
+        if max_timestamp:
+            backhauls = self.model.objects.filter(
+                Q(organization__in=kwargs['organizations']),
+                Q(severity__in=['warning', 'critical']),
+                Q(sys_timestamp__gte=max_timestamp - 420)
+                # Q(age__lte=F('sys_timestamp') - 600)
+            ).prefetch_related(*self.related_columns).values(*self.columns)
+
 
         return backhauls
 
