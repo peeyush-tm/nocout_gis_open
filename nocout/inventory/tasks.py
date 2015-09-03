@@ -13555,6 +13555,10 @@ def bulk_update_internal_no_save(bulky):
 
 @task
 def update_inventory():
+    """
+    Update mapping of sector, sub station in circuit using topology.
+    """
+
     # Sector ID's list.
     sector_ids = set(Sector.objects.values_list('sector_id', flat=True))
     topo_sector_ids = set(Topology.objects.values_list('sector_id', flat=True))
@@ -13567,13 +13571,15 @@ def update_inventory():
                                                                                'connected_device_mac', 'mac_address',
                                                                                'ip_address')
 
+    # ################################### MAPPERS START #####################################
+
     # Sectors from Inventory corressponding to sector_id's fetched from Topology.
     sectors = Sector.objects.filter(sector_id__in=common_sector_ids)
 
     # Sector ID's list.
     sector_ids = sectors.values_list('sector_id', flat=True)
 
-    # Sectors Mapper: {<sector_id>: <sector object>, ....} ******************************
+    # Sectors Mapper: {<sector_id>: <sector object>, ....}
     sectors_mapper = {}
     for s_id, obj in zip(sector_ids, sectors):
         sectors_mapper[s_id] = obj
@@ -13584,13 +13590,10 @@ def update_inventory():
     # BS devices IP's list.
     bs_devices_ips = bs_devices.values_list('ip_address', flat=True)
 
-    # BS Devices Mapper: {<sector_configured_on__ip_address>: <device object>, ....} *****************************
+    # BS Devices Mapper: {<sector_configured_on__ip_address>: <device object>, ....}
     bs_devices_mapper = {}
     for ip, bs_device in zip(bs_devices_ips, bs_devices):
         bs_devices_mapper[ip] = bs_device
-
-    # Serialized sectors & sub stations mapping from Topology.
-    serialized_topology = list(topology)
 
     # Sectors & sub stations mapping from Circuit.
     circuits = Circuit.objects.select_related('sub_station', 'sub_station__device__ip_address', 'sector__sector_id'
@@ -13599,10 +13602,15 @@ def update_inventory():
     # Sub Station devices IP's list corressponding to the connected_device_ip ip's.
     circuits_ss_ips = circuits.values_list('sub_station__device__ip_address', flat=True)
 
-    # Circuit Mapper: {<sub_station__device__ip_address>: <circuit object>, ....} **************************
+    # Circuit Mapper: {<sub_station__device__ip_address>: <circuit object>, ....}
     circuits_mapper = {}
     for ss_ip, circuit in zip(circuits_ss_ips, circuits):
         circuits_mapper[ss_ip] = circuit
+
+    # ################################### MAPPERS END #######################################
+
+    # Serialized sectors & sub stations mapping from Topology.
+    serialized_topology = list(topology)
 
     # List of sectors & sub stations mapping from Topology.
     sectors_list = circuits.values('sector__sector_id',
@@ -13624,7 +13632,6 @@ def update_inventory():
     # Lists containing objects needs to be updated in database.
     update_ss_list = []
     update_device_list = []
-    update_sector_list = []
     update_circuit_list = []
 
     # Update inventory from updated topology.
@@ -13638,29 +13645,35 @@ def update_inventory():
 
         if circuit:
             # Update sub station.
-            ss = circuit.sub_station
-            ss.mac_address = info['connected_device_mac']
-            update_ss_list.append(ss)
+            try:
+                ss = circuit.sub_station
+                ss.mac_address = info['connected_device_mac']
+                update_ss_list.append(ss)
+            except Exception as e:
+                logger.exception(e.message)
 
             # Update sub station device.
-            ss_device = circuit.sub_station.device
-            ss_device.ip_address = info['connected_device_ip']
-            ss_device.mac_address = info['connected_device_mac']
-            update_device_list.append(ss_device)
+            try:
+                ss_device = circuit.sub_station.device
+                ss_device.mac_address = info['connected_device_mac']
+                update_device_list.append(ss_device)
+            except Exception as e:
+                logger.exception(e.message)
 
             # Update sector device.
-            sector_device = bs_devices_mapper[info['ip_address']]
-            sector_device.mac_address = info['mac_address']
-            update_device_list.append(sector_device)
-
-            # Update sector.
-            sector = sectors_mapper[info['sector_id']]
-            sector.sector_configured_on = sector_device
-            update_sector_list.append(sector)
+            try:
+                sector_device = bs_devices_mapper[info['ip_address']]
+                sector_device.mac_address = info['mac_address']
+                update_device_list.append(sector_device)
+            except Exception as e:
+                logger.exception(e.message)
 
             # Update circuit.
-            circuit.sector = sector
-            update_circuit_list.append(circuit)
+            try:
+                circuit.sector = sectors_mapper[info['sector_id']]
+                update_circuit_list.append(circuit)
+            except Exception as e:
+                logger.exception(e.message)
 
     g_jobs = list()
 
@@ -13669,9 +13682,6 @@ def update_inventory():
 
     if len(update_device_list):
         g_jobs.append(bulk_update_create.s(bulky=update_device_list, action='update'))
-
-    if len(update_sector_list):
-        g_jobs.append(bulk_update_create.s(bulky=update_sector_list, action='update'))
 
     if len(update_circuit_list):
         g_jobs.append(bulk_update_create.s(bulky=update_circuit_list, action='update'))
