@@ -14,7 +14,7 @@ from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
 
-@task
+@task(time_limit=900)
 def get_datatable_response(payload):
     """
         Generating excel for datatable
@@ -93,7 +93,7 @@ def get_datatable_response(payload):
         # create http request for getting rows data (for accessing list view classes)
         rows_req = HttpRequest()
 
-        # binding data to rows request
+        # binding data to rows request0
         if payload:
             rows_req.GET = payload['rows_data']
 
