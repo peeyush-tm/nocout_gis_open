@@ -21,7 +21,7 @@ var perf_that = "",
         {"id": "live", "title": "Live"}
     ],
     poll_now_tab = [
-        { "id" : "live_poll_now", "title" : "Poll Now", disabled_url : true }
+        { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
     ],
     tabs_with_historical = [
         {"id": "bihourly", "title": "Bi-Hourly"},
@@ -384,22 +384,28 @@ function nocoutPerfLib() {
                             </div>';
         }
         if (tab_content_config.tab_id == 'live_poll_now') {
-            content_html += '<div class="col-md-3">\
-                                <button class="btn btn-primary perf_poll_now " title="Poll Now" \
+            content_html += '<div class="col-md-1">\
+                                <button class="btn btn-default btn-sm perf_poll_now " title="Poll Now" \
                                 data-complete-text="<i class=\'fa fa-flash\'></i>" data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
                                 <i class="fa fa-flash"></i></button>\
                             </div>\
-                            <div class="col-md-3">\
-                                <select name="poll_interval" class="form-control poll_interval">\
+                            <div class="col-md-2" align="center" style="padding-top:4px;">\
+                            <strong>OR</strong> \
+                            </div>\
+                            <div class="col-md-9 row">\
+                            <div class="col-md-4">\
+                                <select name="poll_interval" class="form-control input-sm poll_interval">\
                                 <option value="">Select Poll Interval</option>\
                                 <option value="10">10 Seconds</option>\
                                 <option value="20">20 Seconds</option>\
                                 <option value="30">30 Seconds</option>\
+                                <option value="40">40 Seconds</option>\
+                                <option value="50">50 Seconds</option>\
                                 <option value="60">60 Seconds</option>\
                                 </select>\
                             </div>\
-                            <div class="col-md-3">\
-                                <select name="poll_maxInterval" class="form-control poll_maxInterval">\
+                            <div class="col-md-4">\
+                                <select name="poll_maxInterval" class="form-control input-sm poll_maxInterval">\
                                 <option value="">Select Maximum Interval</option>\
                                 <option value="1">1 Minute</option>\
                                 <option value="2">2 Minute</option>\
@@ -407,17 +413,19 @@ function nocoutPerfLib() {
                                 <option value="4">4 Minute</option>\
                                 </select>\
                             </div>\
-                            <div class="col-md-3">\
-                                <button class="btn btn-success play_pause_btns poll_play_btn" data-complete-text="<i class=\'fa fa-play\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
-                                    <i class="fa fa-play"> </i>\
+                            <div class="col-md-4">\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_play_btn" data-complete-text="<i class=\'fa fa-play\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
+                                    <i class="fa fa-play text-success"> </i>\
                                 </button>\
-                                <button class="btn btn-warning play_pause_btns poll_pause_btn" data-complete-text="<i class=\'fa fa-pause\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
-                                    <i class="fa fa-pause"> </i>\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_pause_btn" data-complete-text="<i class=\'fa fa-pause\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
+                                    <i class="fa fa-pause text-warning"> </i>\
                                 </button>\
-                                <button class="btn btn-danger play_pause_btns poll_stop_btn" data-complete-text="<i class\'fa fa-stop\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
-                                    <i class="fa fa-stop"> </i>\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_stop_btn" data-complete-text="<i class\'fa fa-stop\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
+                                    <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
-                            </div><div class="clearfix"></div><div class="divide-20"></div>';
+                            </div>\
+                            <div class="clearfix"></div></div>\
+                            <div class="clearfix"></div><div class="divide-20"></div>';
 
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;"></div>\
@@ -589,8 +597,18 @@ function nocoutPerfLib() {
                                                         var current_item = inner_inner_tabs[x],
                                                             id = current_item.id,
                                                             title = current_item.title,
-                                                            data_url = !current_item["disabled_url"] ? value.url + "?data_for=" + id : "",
-                                                            inner_tab_info_obj = {
+                                                            data_url = "";
+
+                                                        if (!current_item["disabled_url"]) {
+                                                            if (value.url.indexOf('?') == -1) {
+                                                                data_url = value.url + "?data_for=" + id        
+                                                            } else {
+                                                                data_url = value.url + "&data_for=" + id
+                                                            }
+                                                        }
+
+
+                                                        var inner_tab_info_obj = {
                                                                 'active_class' : inner_active_class,
                                                                 'unique_key' : id + "_" + unique_item_key,
                                                                 'icon_class' : 'fa fa-caret-right',
@@ -975,7 +993,13 @@ function nocoutPerfLib() {
 
             draw_type = 'table';
             // Checked the chart type radio
-            $('#display_table')[0].checked = true;
+            // $('#display_table')[0].checked = true;
+            // Update radio button selection
+            $('#display_table').attr('checked', 'checked');
+            $('#display_table').prop('checked', true);
+
+            // Update dropdown button html
+            updateDropdownHtml();
 
             $('#' + service_id+ '_chart').html("");
 
@@ -1069,7 +1093,13 @@ function nocoutPerfLib() {
                             // update 'draw_type' variable
                             draw_type = 'table';
                             // Checked the chart type radio
-                            $('#display_table')[0].checked = true;
+                            // $('#display_table')[0].checked = true;
+                            // Update radio button selection
+                            $('#display_table').attr('checked', 'checked');
+                            $('#display_table').prop('checked', true);
+
+                            // Update dropdown button html
+                            updateDropdownHtml();
 
                             // Hide display type option from only table tabs
                             if (!$("#display_type_container").hasClass("hide")) {
@@ -1122,7 +1152,13 @@ function nocoutPerfLib() {
                                 }
                                 draw_type = 'chart';
                                 // Checked the chart type radio
-                                $('#display_chart')[0].checked = true
+                                // $('#display_chart')[0].checked = true
+                                // Update radio button selection
+                                $('#display_chart').attr('checked', 'checked');
+                                $('#display_chart').prop('checked', true);
+
+                                // Update dropdown button html
+                                updateDropdownHtml();
                             } else {
                                 // Show display type option from only table tabs
                                 if ($("#display_type_container").hasClass("hide")) {
@@ -1205,7 +1241,13 @@ function nocoutPerfLib() {
 
                                         draw_type = 'table';
                                         // Checked the chart type radio
-                                        $('#display_table')[0].checked = true;
+                                        // $('#display_table')[0].checked = true;
+                                        // Update radio button selection
+                                        $('#display_table').attr('checked', 'checked');
+                                        $('#display_table').prop('checked', true);
+
+                                        // Update dropdown button html
+                                        updateDropdownHtml();
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1247,7 +1289,13 @@ function nocoutPerfLib() {
 
                                         draw_type = 'table';
                                         // Checked the chart type radio
-                                        $('#display_table')[0].checked = true;
+                                        // $('#display_table')[0].checked = true;
+                                        // Update radio button selection
+                                        $('#display_table').attr('checked', 'checked');
+                                        $('#display_table').prop('checked', true);
+
+                                        // Update dropdown button html
+                                        updateDropdownHtml();
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1278,7 +1326,13 @@ function nocoutPerfLib() {
 
                             draw_type = 'chart';
                             // Checked the chart type radio
-                            $('#display_chart')[0].checked = true
+                            // $('#display_chart')[0].checked = true;
+                            // Update radio button selection
+                            $('#display_chart').attr('checked', 'checked');
+                            $('#display_chart').prop('checked', true);
+
+                            // Update dropdown button html
+                            updateDropdownHtml();
                         } else {
                             // Show display type option from only table tabs
                             if ($("#display_type_container").hasClass("hide")) {
@@ -1317,7 +1371,13 @@ function nocoutPerfLib() {
 
                             draw_type = 'table';
                             // Checked the chart type radio
-                            $('#display_table')[0].checked = true;
+                            // $('#display_table')[0].checked = true;
+                            // Update radio button selection
+                            $('#display_table').attr('checked', 'checked');
+                            $('#display_table').prop('checked', true);
+
+                            // Update dropdown button html
+                            updateDropdownHtml();
 
                             setTimeout(function() {
                                 initChartDataTable_nocout(
@@ -1380,7 +1440,7 @@ function nocoutPerfLib() {
                             hideSpinner();    
                         }
                     } else {
-                        hideSpinner();
+                        // hideSpinner();
                     }
 
                     // });
@@ -1442,21 +1502,10 @@ function nocoutPerfLib() {
             clearTimeout(timeInterval);
         }
 
-        // if ($('#' + service_id+ '_chart').highcharts()) {
-        //     $('#' + service_id+ '_chart').highcharts().destroy();
-        // }
-
-        // for(var i=0;i<Highcharts.charts.length;i++) {
-        //     if (Highcharts.charts[i]) {
-        //         Highcharts.charts[i].destroy();
-        //     }
-        // }
-        
-        // Highcharts.charts = [];
-
         nocout_destroyHighcharts(service_id);
         nocout_destroyDataTable('other_perf_table');
         nocout_destroyDataTable('perf_data_table');
+
         if(get_service_data_url && service_id && device_id) {
             /*Call getServiceData function to fetch the data for clicked service tab*/
             perfInstance.getServiceData(get_service_data_url, service_id, device_id);
@@ -1519,18 +1568,10 @@ $('input[name="item_type"]').change(function(e) {
             get_service_data_url = active_inner_tab.attr("url");
     }
 
+    // Update dropdown button html
+    updateDropdownHtml();
+
     if (get_service_data_url && service_id && current_device) {
-
-        // if ($("#other_perf_table").length > 0) {
-        //     $("#other_perf_table").dataTable().fnDestroy();
-        //     $("#other_perf_table").remove();
-        // }
-
-        // if ($("#perf_data_table").length > 0) {
-        //     $("#perf_data_table").dataTable().fnDestroy();
-        //     $("#perf_data_table").remove();
-        // }
-
         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
     } else if (is_perf_polling_enabled) {
         nocout_togglePollNowContent();
@@ -1608,9 +1649,95 @@ $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
 $('input[name="service_view_type"]').change(function(e) {
     // selected value of 'service_view_type'
     var service_view_type = $(this).val();
+
     // Set the 'service_view_type'  cookie
     $.cookie("service_view_type", service_view_type, {path: '/'});
+    
     // Reload the page
-    // window.location.reload();
     initPerformancePage();
 });
+
+
+$('#item_type_ul li a').click(function(e) {
+
+    // Prevent default functionality
+    e.preventDefault();
+
+    var radio_id = $(this).attr('radioId')
+
+    $('#' + radio_id)[0].checked = true;
+    $('#' + radio_id).trigger('change');
+});
+
+
+function updateDropdownHtml() {
+    var draw_type = $("input[name='item_type']:checked").val(),
+        icon_html = '';
+
+    if (draw_type == 'chart') {
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i> Display Chart';
+    } else {
+        icon_html = '<i class="text-primary fa fa-table"> </i> Display Table';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='item_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#item_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#item_type_btn').html(btn_html);
+}
+
+
+$('#service_view_type_ul li a').click(function(e) {
+
+    // Prevent default functionality
+    e.preventDefault();
+
+    var radio_id = $(this).attr('radioId')
+
+    // Update radio button selection
+    $('#' + radio_id).attr('checked', 'checked');
+    $('#' + radio_id).prop('checked', true);
+
+    // Update dropdown button html
+    updateServiceTypeDropdownHtml();
+
+    // Set the 'service_view_type'  cookie
+    $.cookie("service_view_type", $('#' + radio_id).val(), {path: '/'});
+
+    // Reload the page
+    initPerformancePage();
+});
+
+function updateServiceTypeDropdownHtml() {
+    var view_type = $("input[name='service_view_type']:checked").val(),
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
+
+    if (view_type == 'normal') {
+        icon_html += ' Datasource View';
+    } else {
+        icon_html += ' Service View';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='service_view_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#service_view_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#service_view_type_btn').html(btn_html);
+}

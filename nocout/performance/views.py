@@ -1738,12 +1738,12 @@ class ServiceDataSourceHeaders(ListView):
             {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto'},
             {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto'},
             {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'},
+            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
+            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
             {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
             {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto'},
             {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto'},
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'},
-            {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
-            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'}
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto'}
         ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1764,12 +1764,12 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         'warning_threshold',
         'critical_threshold',
         'sys_timestamp',
+        'data_source',
+        'service_name',
         'min_value',
         'max_value',
         'avg_value',
-        'ip_address',
-        'service_name',
-        'data_source'
+        'ip_address'
     ]
 
     order_columns = columns
@@ -1832,11 +1832,6 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
         if data_for != 'live':
             self.isHistorical = True
-
-            # Append min, max & avg columns in case of historical tab
-            # self.columns.append('min_value')
-            # self.columns.append('max_value')
-            # self.columns.append('avg_value')
             self.inventory_device_machine_name = 'default'
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
@@ -2172,10 +2167,28 @@ class GetServiceTypePerformanceData(View):
         else:
             sds_name = service_data_source_type.strip()
 
+        # print ' -- sds_name -- '
+        # print sds_name
+        # print sds_name in SERVICE_DATA_SOURCE
+        # print ' -- sds_name -- '
+
         # to check if data source would be displayed as a chart or as a table
         show_chart = True
-        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
-            show_chart = False
+
+        service_view_type = self.request.GET.get('service_view_type')
+        is_unified_view = service_view_type and service_view_type == 'unified'
+
+        # Chart type as per unified view. Show only table if anyone ds has table type.
+        if is_unified_view:
+            for sds in SERVICE_DATA_SOURCE:
+                if show_chart:
+                    if service_name.strip() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
+                        show_chart = False
+                else:
+                    break
+        else:
+            if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
+                show_chart = False
 
         # check for the formula
         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]['formula']:
@@ -2579,11 +2592,6 @@ class GetServiceTypePerformanceData(View):
         :param sds:
         :return:
         """
-        print ' -- params -- '
-        print model
-        print services
-        print sds
-        print ' -- params -- '
         if services:
             where_condition = ''
             if start_time and end_time:

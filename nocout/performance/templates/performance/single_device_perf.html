@@ -93,7 +93,7 @@
                         <i class="fa fa-filter"></i>
                     </button>
                 </li>
-                <li>
+                <li class="reset_filter_li">
                     <button id="reset_filter" class="btn  btn-danger btn-sm">
                         <i class="fa fa-times"></i>
                     </button>
@@ -103,23 +103,86 @@
                 {% else %}
                 <li id="display_type_container">
                 {% endif %}
-                    <label class="checkbox-inline">
+                    <label class="checkbox-inline hide">
                         <input type="radio" id="display_chart" name="item_type" value="chart" checked="checked"/>  Display Chart
                     </label>
-                    <label class="checkbox-inline">
+                    <label class="checkbox-inline hide">
                         <input type="radio" id="display_table" name="item_type" value="table"/>  Display Table
                     </label>
+
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="item_type_btn" title="Display Chart/Table">
+                            <i class="text-primary fa fa-bar-chart-o"> </i>  Display Chart
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context" id="item_type_ul">
+                            <li class="active">
+                                <a href="javascript:;" radioId="display_chart">
+                                    <i class="fa fa-bar-chart-o"> </i> Display Chart
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" radioId="display_table">
+                                    <i class="fa fa-table"> </i> Display Table
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
                 </li>
                 {% if settings.ENABLE_UNIFIED_SERVICE_VIEW %}
-                    <li class="unified_normal_li">
-                        <label class="checkbox-inline">
-                            <input type="radio" id="normal_view" name="service_view_type" value="normal" checked="checked"/>  Normal View
-                        </label>
-                        <label class="checkbox-inline">
-                            <input type="radio" id="unified_view" name="service_view_type" value="unified"/>  Unified View
-                        </label>
-                    </li>
+                <li class="unified_normal_li">
+                    <label class="checkbox-inline hide">
+                        <input type="radio" id="normal_view" name="service_view_type" value="normal" checked="checked"/> Datasource View
+                    </label>
+                    <label class="checkbox-inline hide">
+                        <input type="radio" id="unified_view" name="service_view_type" value="unified"/>  Service View
+                    </label>
+
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Datasource/Service View">
+                            <i class="text-primary fa fa-bar-chart-o"> </i> Datasource View
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context" id="service_view_type_ul">
+                            <li class="active">
+                                <a href="javascript:;" radioId="normal_view">
+                                    <i class="fa fa-bar-chart-o"> </i> Datasource View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" radioId="unified_view">
+                                    <i class="fa fa-bar-chart-o"> </i> Service View
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
                 {% endif %}
+
+                {% if settings.ENABLE_AGGREGATE_REPORT_DOWNLOAD %}
+                <li class="unified_normal_li">
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Download Reports">
+                            <i class="text-primary fa fa-download"> </i> Report
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context" id="service_view_type_ul">
+                            <li class="active">
+                                <a href="javascript:;">
+                                    <i class="fa fa-download"> </i> Single Service(Live + Historical)
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;">
+                                    <i class="fa fa-download"> </i> All Services(5 min data)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                {% endif %}
+
                 <li class="pull-right">
                     <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
                         <i class="fa fa-dropbox text-primary"></i>
@@ -335,6 +398,8 @@
                 if ($.cookie("service_view_type")) {
                     $('input[value="' + $.cookie("service_view_type") + '"]').prop('checked', true)
                     $('input[value="' + $.cookie("service_view_type") + '"]').attr('checked', 'checked');
+
+                    updateServiceTypeDropdownHtml();
                 }
 
                 statusUrl = getCompleteUrl(device_status_url);
