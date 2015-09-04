@@ -10,7 +10,7 @@ from nocout_site_name import *
 import socket,json
 import time
 import imp
-
+import ast
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -47,26 +47,26 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	service = "rad5k_topology_discover"
 
-	print "hostlist are ", hostlist
+	#print "hostlist are ", hostlist
 	for host in hostlist:
 		query_string = "GET services\nColumns: service_state plugin_output host_address\n" + \
-		"Filter: service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service,host[0])
-		query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+		"Filter: service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % (service,host[0])
+		query_output = ast.literal_eval(utility_module.get_from_socket(site,query_string).strip())
 	
-		print "query_output is", query_output	
+		#print "query_output is", query_output	
 		try:
 			if query_output[0][1]:
 				plugin_output = str(query_output[0][1].split('- ')[1])
 				
 				plugin_output =	[mac for mac in plugin_output.split(' ')]
 				
-				#print "plugin out", plugin_output
+				
 				ap_sector_id = plugin_output[2]
-				#print "sector_id", ap_sector_id
+				
 				ap_mac= plugin_output[0]
-				#print "ap mac is", ap_mac
+				
 				ss_ip_mac = plugin_output[3: len(plugin_output)]
-				#print "ss ip mac", ss_ip_mac
+				
 				ss_ip = []
 				ss_mac = []
 				for each in ss_ip_mac :
@@ -74,7 +74,7 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 					ss_ip.append( ss_per_list[-1])
 					ss_mac.append(ss_per_list[0])
 				ss_mac = map( lambda x: (x.split("=",1)[0]), ss_mac)  # to remove =- followed by digit 
-				#print "SS IP is ", ss_ip, " ss_mac ", ss_mac
+				
 				service_state = (query_output[0][0])
 				if service_state == 0:
 					service_state = "OK"
@@ -96,7 +96,7 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				connected_device_ip=ss_ip,
 				connected_device_mac=ss_mac,data_source=ds,site_name=site,ip_address=host_ip)
 		matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site})
-		#print topology_dict
+		
 		mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"rad5ktopology")
 		#mongo_module.mongo_db_insert(db,topology_dict,"inventory_services")
 		matching_criteria ={}
