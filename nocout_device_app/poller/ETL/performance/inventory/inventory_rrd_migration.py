@@ -165,19 +165,31 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				matching_criteria ={}
 				invent_service_dict = {}
 		elif ('rad5k' in service):
-			ds_value =entry[6]
-			ds_value = ds_value = ds_value.split("=")
-			ds = ds_value[0]
-			value = ds_value[1].split(";")[0]
+			warning_t=0
+			critical_t=0
+			perf_data1 =  get_threshold(entry[6])
+			ds_l=perf_data1.keys()
+			ds = ds_l[0]
+			perf_data2 = perf_data1[ds]
+			value = perf_data2.get('cur','')
+			if perf_data2['war'] == '':
+				warning_t=0
+			else :
+				warning_t= perf_data2.get('war',0)
+			if perf_data2['cric'] == '':
+				critical_t=0
+			else :
+				critical_t= perf_data2.get('cric',0)
 			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host,
                                         service_name=service,current_value=value,min_value=0,max_value=0,avg_value=0,
-                                        data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
-                                        critical_threshold=0,ip_address=host_ip)
+                                        data_source=ds,severity=service_state,site_name=site,warning_threshold=warning_t,
+                                        critical_threshold=critical_t,ip_address=host_ip)
 			matching_criteria.update({'device_name':host,'service_name':service,'data_source':ds})
 			mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 			invent_data_list.append(invent_service_dict)
 			matching_criteria ={}
 			invent_service_dict = {}
+			
 		else:
 			try:
 				if plugin_output[0] == '' or plugin_output[0] == 'unknown_value':
@@ -286,7 +298,32 @@ def calculate_avg_value(unknwn_state_svc_data,db):
         #print host_svc_ds_dict
         return host_svc_ds_dict
 
-
+def get_threshold(perf_data):
+	threshold_values = {}
+	if not len(perf_data):
+		return threshold_values
+	for param in perf_data.split(" "):
+		param = param.strip("['\n', ' ']")
+		if param.partition('=')[2]:
+			if ';' in param.split("=")[1]:
+				threshold_values[param.split("=")[0]] = {
+                	"war": re.sub('ms', '', param.split("=")[1].split(";")[1]),
+                	"cric": re.sub('ms', '', param.split("=")[1].split(";")[2]),
+                	"cur": re.sub('ms', '', param.split("=")[1].split(";")[0])
+            		}
+			else:
+				threshold_values[param.split("=")[0]] = {
+                	"war": None,
+                	"cric": None,
+                	"cur": re.sub('ms', '', param.split("=")[1].strip("\n"))
+            		}
+		else:
+			threshold_values[param.split("=")[0]] = {
+				"war": None,
+				"cric": None,
+				"cur": None
+                       		}
+	return threshold_values
 
 
 def inventory_perf_data_main():
