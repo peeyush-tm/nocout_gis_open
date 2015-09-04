@@ -747,7 +747,8 @@ SETTINGS_EXPORT = [
     'WARN_TYPE',
     'CRIT_TYPE',
     'ENABLE_ADVANCE_FILTERS',
-    'ENABLE_UNIFIED_SERVICE_VIEW'
+    'ENABLE_UNIFIED_SERVICE_VIEW',
+    'ENABLE_AGGREGATE_REPORT_DOWNLOAD'
 ]
 # #### Access Variables in Templates
 
@@ -796,6 +797,10 @@ ENABLE_ADVANCE_FILTERS = True
 
 ####################### Flag to enable/disable unified service view on single performance page #######################
 ENABLE_UNIFIED_SERVICE_VIEW = True
+
+
+####################### Flag to enable/disable aggregate report download on single performance page #######################
+ENABLE_AGGREGATE_REPORT_DOWNLOAD = True
 
 try:
     from local_settings import *
