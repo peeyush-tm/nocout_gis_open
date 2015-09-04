@@ -274,15 +274,19 @@ ALLOWED_APPS_TO_CLEAR_CACHE = [
 
 CELERYBEAT_SCHEDULE = {
     # BEGIN Topology Updates
-    'pmp-topology-site-wise': {
-        'task': 'inventory.tasks.topology_site_wise',
-        'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
-        'args': ['PMP']
-    },
-    'wimax-topology-site-wise': {
-        'task': 'inventory.tasks.topology_site_wise',
-        'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
-        'args': ['WiMAX']
+    # 'pmp-topology-site-wise': {
+    #     'task': 'inventory.tasks.topology_site_wise',
+    #     'schedule': crontab(minute='1,6,11,16,21,26,31,36,41,46,51,56'),  # timedelta(seconds=300),
+    #     'args': ['PMP']
+    # },
+    # 'wimax-topology-site-wise': {
+    #     'task': 'inventory.tasks.topology_site_wise',
+    #     'schedule': crontab(minute='3,8,13,18,23,28,33,38,43,48,53,58'),  # timedelta(seconds=300),
+    #     'args': ['WiMAX']
+    # },
+    'update-inventory-topology': {
+        'task': 'inventory.tasks.update_inventory',
+        'schedule': timedelta(seconds=300),
     },
     # END Topology Updates
     # updating the polled sector frequency
