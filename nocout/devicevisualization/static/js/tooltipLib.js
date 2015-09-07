@@ -1110,6 +1110,491 @@ var ptp_sector_toolTip_polled = [
 
 // PMP SS Tooltip static info object
 var pmp_ss_toolTip_static = [];
+// PMP SS Tooltip polled info object for radwin 5k
+var pmp_radwin5k_ss_toolTip_polled = [
+    {
+        'name'         : 'rad5k_ss_dl_utilization_dl_utilization',
+        'title'        : 'Downlink Utilization (Mbps)',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_dl_utilization',
+        'ds'           : 'dl_utilization'
+    },
+    {
+        'name'         : 'rad5k_ss_ul_utilization_ul_utilization',
+        'title'        : 'Uplink Utilization (Mbps)',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_ul_utilization',
+        'ds'           : 'ul_utilization'
+    },
+    {
+        'name'         : 'rad5k_dl_es_invent_dl_es',
+        'title'        : 'DL-ES',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_dl_es_invent',
+        'ds'           : 'dl_es'
+    },
+    {
+        'name'         : 'rad5k_ul_es_invent_ul_es',
+        'title'        : 'UL-ES',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_es_invent',
+        'ds'           : 'ul_es'
+    },
+    {
+        'name'         : 'rad5k_dl_bbe_invent_dl_bbe',
+        'title'        : 'DL-BBE',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_dl_bbe_invent',
+        'ds'           : 'dl_bbe'
+    },
+    {
+        'name'         : 'rad5k_ul_bbe_invent_ul_bbe',
+        'title'        : 'UL-BBE',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_bbe_invent',
+        'ds'           : 'ul_bbe'
+    },
+    {
+        'name'         : 'rad5k_dl_uas_invent_dl_uas',
+        'title'        : 'DL-UAS',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_dl_uas_invent',
+        'ds'           : 'dl_uas'
+    },
+    {
+        'name'         : 'rad5k_ul_uas_invent_ul_uas',
+        'title'        :'UL-UAS',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_uas_invent',
+        'ds'           : 'ul_uas'
+    },
+    {
+        'name'         : 'rad5k_dl_ses_invent_dl_ses',
+        'title'        : 'DL-SES',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_ses_invent',
+        'ds'           : 'dl_ses'
+    },
+    {
+        'name'         : 'rad5k_ul_ses_invent_ul_ses',
+        'title'        : 'UL-SES',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_ses_invent',
+        'ds'           : 'ul_ses'
+    },
+    {
+        'name'         : 'rad5k_man_vlan_invent_ss_vlan',
+        'title'        : 'VLAN',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_man_vlan_invent',
+        'ds'           : 'ss_vlan'
+
+    },
+    {
+        'name'         : 'rad5k_ss_device_uptime_uptime',
+        'title'        : 'Device Uptime',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_device_uptime',
+        'ds'           : 'uptime'
+
+    },
+    {
+        'name'         : 'rad5k_auto_neg_status_autonegotiation',
+        'title'        : 'Auto Negotiation',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_auto_neg_status',
+        'ds'           : 'autonegotiation'
+
+    },
+    {
+        'name'         : 'rad5k_duplex_status_duplex',
+        'title'        : 'Duplex',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_duplex_status',
+        'ds'           : 'duplex'
+    },
+    {
+        'name'         : 'rad5k_speed_status_ss_speed',
+        'title'        : 'Speed',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_speed_status',
+        'ds'           : 'ss_speed'
+    },
+    {
+        'name'         : 'rad5k_eth_link_status_link_state',
+        'title'        : 'Link Ethernet Status',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_eth_link_status',
+        'ds'           : 'link_state'
+    },
+    {
+        'name'         : 'rad5k_dl_rssi_dl_rssi',
+        'title'        : 'RSSI-DL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_dl_rssi',
+        'ds'           : 'dl_rssi'
+    },
+    {
+        'name'         : 'rad5k_ul_rssi_ul_rssi',
+        'title'        : 'RSSI-UL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_rssi',
+        'ds'           : 'ul_rssi'
+    },
+    {
+        'name'         : 'rad5k_ss_transmit_power_transmit_power',
+        'title'        : 'SM Transmit Power',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_transmit_power',
+        'ds'           : 'transmit_power'
+
+    },
+    {
+        'name'         : 'rad5k_ss_mac_invent_ss_mac',       
+        'title'        : 'HSU MAC',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_mac_invent',
+        'ds'           : 'ss_mac'
+
+    },
+    {
+        'name'         : 'rad5k_ss_sector_id_invent_sector_id',
+        'title'        : 'Sector ID',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_sector_id_invent',
+        'ds'           : 'sector_id'
+
+    },
+    {
+        'name'         : 'rad5k_ss_conn_bs_ip_invent_bs_ip',
+        'title'        : 'HBS IP',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_conn_bs_ip_invent',
+        'ds'           : 'bs_ip'
+    },
+    {
+        'name'         : 'rad5k_bs_frequency_invent_frequency',
+        'title'        : 'Frequency',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_frequency_invent',
+        'ds'           : 'frequency'
+    },
+    {
+        'name'         : 'rad5k_dl_estmd_throughput_invent_dl_estimated_throughput',
+        'title'        : 'Estimated throughput DL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_dl_estmd_throughput_invent',
+        'ds'           : 'dl_estimated_throughput'
+
+    },
+    {
+        'name'         : 'rad5k_ul_estmd_throughput_invent_ul_estimated_throughput',
+        'title'        : 'Estimated throughput UL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_estmd_throughput_invent',
+        'ds'           : 'ul_estimated_throughput'
+    },
+     {
+        'name'         : 'rad5k_ss_ip_invent_ss_ip',
+        'title'        : 'HSU IP',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_ip_invent',
+        'ds'           : 'ss_ip'
+    },
+     {
+        'name'         : 'rad5k_ss_link_dist_invent_link_distance',
+        'title'        : 'Link Distance',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_link_dist_invent',
+        'ds'           : 'link_distance'
+    },
+     {
+        'name'         : 'rad5k_ss_session_uptime_invent_session_uptime',
+        'title'        : 'Link/Session Uptime',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_session_uptime_invent',
+        'ds'           : 'session_uptime'
+    },
+    {
+        'name'         : 'rad5k_dl_mod_invent_dl_modulation_change',
+        'title'        : 'Modulation DL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_dl_mod_invent',
+        'ds'           : 'dl_modulation_change'
+    },
+    {
+        'name'         : 'rad5k_ss_serial_no_invent_serial_number',
+        'title'        : 'Serial Number',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_serial_no_invent',
+        'ds'           : 'serial_number'
+    },
+    {
+        'name'         : 'rad5k_dl_time_slot_alloted_invent_dl_time_slot_alloted',
+        'title'        : 'Time Slot Alloted DL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_dl_time_slot_alloted_invent',
+        'ds'           : 'dl_time_slot_alloted'
+    },
+    {
+        'name'         : 'rad5k_ul_time_slot_alloted_invent_ul_time_slot_alloted',
+        'title'        : 'Time Slot Alloted UL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ul_time_slot_alloted_invent',
+        'ds'           : 'ul_time_slot_alloted'
+    },
+    {
+        'name'         : 'pl',
+        'title'        : 'Packet Loss',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'ping',
+        'ds'           : 'pl'
+    },
+    {
+        'name'         : 'rta',
+        'title'        : 'Latency',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rta',
+        'ds'           : 'ping'
+    },
+    {
+        'name'         : 'rad5k_ss_transmit_power_transmit_power',
+        'title'        : 'Transmission Ratio/Data Rate',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_transmit_power',
+        'ds'           : 'transmit_power'
+    },
+    {
+        'name'         : 'rad5k_ss_cmd_rx_pwr_invent_cmd_rx_pwr',
+        'title'        : 'Commanded RX Power',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_cmd_rx_pwr_invent',
+        'ds'           : 'cmd_rx_pwr'
+    },
+    {
+        'name'         : 'rad5k_ss_cell_radius_invent_cell_radius',
+        'title'        : 'Cell Radius',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_ss_cell_radius_invent',
+        'ds'           : 'cell_radius'
+    }
+
+];
+var pmp_radwin5k_sector_toolTip_polled = [
+    {
+        'name'         : 'rad5k_bs_dl_utilization_dl_utilization',
+        'title'        : 'Utilisation DL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_dl_utilization',
+        'ds'           : 'dl_utilization'
+    },
+    {
+        'name'         : 'rad5k_bs_ul_utilization_ul_utilization',
+        'title'        : 'Utilisation UL',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_ul_utilization',
+        'ds'           : 'ul_utilization'
+    },
+    {
+        'name'         : 'rad5k_channel_bw_invent_cbw',
+        'title'        : 'Channel Bandwidth',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_channel_bw_invent',
+        'ds'           : 'cbw'
+    },
+    {
+        'name'         : '',
+        'title'        : 'Connected HSU  - Serial No',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : '',
+        'ds'           : ''
+    },
+    {
+        'name'         : 'rad5k_bs_crc_error_invent_crc_errors',
+        'title'        : 'CRC errors',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_crc_error_invent',
+        'ds'           : 'crc_errors'
+    },
+    {
+        'name'         : 'rad5k_bs_frequency_invent_frequency',
+        'title'        : 'Frequency',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_frequency_invent',
+        'ds'           : 'frequency'
+    },
+    {
+        'name'         : 'rad5k_bs_ip_invent_bs_ip',
+        'title'        : 'HBS IP',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_ip_invent',
+        'ds'           : 'bs_ip'
+    },
+    {
+        'name'         : 'rad5k_bs_mac_invent_bs_mac',
+        'title'        :'HBS MAC',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_mac_invent',
+        'ds'           : 'bs_mac'
+    },
+    {
+        'name'         : 'rad5k_gps_sync_invent_site_sync_state',
+        'title'        : 'Master-Slave (GPS sync)',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_gps_sync_invent',
+        'ds'           : 'site_sync_state'
+    },
+    {
+        'name'         : 'rad5k_mimo_diversity_invent_mimo_diversity',
+        'title'        : 'Mimo/Diversity',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_mimo_diversity_invent',
+        'ds'           : 'mimo_diversity'
+    },
+    {
+        'name'         : 'rad5k_odu_type_invent_odu_type',
+        'title'        : 'ODU Type',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_odu_type_invent',
+        'ds'           : 'odu_type'
+
+    },
+    {
+        'name'         : 'rad5k_bs_sector_invent_bs_sector_is',
+        'title'        : 'Sector ID',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_sector_invent',
+        'ds'           : 'bs_sector_is'
+
+    },
+    {
+        'name'         : 'rad5k_bs_serial_no_invent_serial_number',
+        'title'        : 'Serial Number',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_serial_no_invent',
+        'ds'           : 'serial_number'
+
+    },
+    {
+        'name'         : 'rad5k_bs_system_uptime_uptime',
+        'title'        : 'System Uptime',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_system_uptime',
+        'ds'           : 'uptime'
+    },
+    {
+        'name'         : 'rad5k_bs_transmit_power_transmit_power',
+        'title'        : 'Transmit power',
+        'show'         : 1,
+        'value'        : '',
+        'url'          : '',
+        'service_name' : 'rad5k_bs_transmit_power',
+        'ds'           : 'transmit_power'
+    }
+];
+
 
 // PMP SS Tooltip polled info object
 var pmp_ss_toolTip_polled = [
