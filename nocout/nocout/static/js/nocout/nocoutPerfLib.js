@@ -133,8 +133,6 @@ function nocoutPerfLib() {
      */
     this.initDateRangePicker = function(domElemet) {
 
-        // var saved_start_date = $.cookie('filter_start_date') ? $.cookie('filter_start_date') : "",
-        //     saved_end_date = $.cookie('filter_end_date') ? $.cookie('filter_end_date') : "",
         var saved_start_date = "",
             saved_end_date = "",
             oldStartDate = saved_start_date ? new Date(saved_start_date * 1000) : new Date(),
@@ -472,6 +470,13 @@ function nocoutPerfLib() {
                 }
 
                 if (result.success == 1) {
+                    var services_list = [];
+                    try {
+                        services_list = result.data.meta.services_list;
+                    } catch(e) {
+                        services_list = [];
+                    }
+                    $('#all_serv_live_report_btn').attr('data-services', JSON.stringify(services_list));
 
                     var first_loop = 0;
                     // If any data exists
@@ -1718,6 +1723,7 @@ $('#service_view_type_ul li a').click(function(e) {
 });
 
 function updateServiceTypeDropdownHtml() {
+
     var view_type = $("input[name='service_view_type']:checked").val(),
         icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
 
@@ -1741,3 +1747,177 @@ function updateServiceTypeDropdownHtml() {
     // Update dropdown button html
     $('#service_view_type_btn').html(btn_html);
 }
+
+
+$('#all_serv_live_report_btn').click(function(e) {
+    
+    // prevent default functionality
+    e.preventDefault();
+
+    var report_title = 'All Services(Live Data - 5 Min.)' + current_device_ip,
+        services_list = $(this).data('services');
+
+    if (services_list && typeof services_list == 'object') {
+        services_list = JSON.stringify(services_list);
+    }
+
+    var main_url = base_url+"/downloader/datatable/?",
+        url_get_param = '';
+        applied_start_date = '',
+        applied_end_date = '';
+
+    // If any datetime filter applied
+    if (startDate && endDate) {
+        applied_start_date = startDate.toDate().getTime() / 1000;
+        applied_end_date = endDate.toDate().getTime() / 1000;
+    }
+
+    var datetime_filter_param = " 'start_date' : '" + applied_start_date + "', 'end_date' : '" + applied_end_date + "' ",
+        device_id_param = " 'device_id' : '" + current_device + "' ",
+        service_list_param = " 'service_view_type' : '" + $('input[name="service_view_type"]:checked').val() + "', 'services_list' : "+services_list,
+        sds_param = " 'service_data_source_type' : 'all', 'service_name' : 'all', 'data_for' : 'live' ",
+        common_param = " 'download_excel' : 'yes', 'report_title' : '" + report_title + "' ",
+        specific_params = " 'is_multi_sheet' : 1, 'data_key' : 'services_list', 'change_key' : 'service_name' "
+        row_data_param = "";
+
+    // prepare row_data params
+    row_data_param += sds_param + "," + datetime_filter_param + ",";
+    row_data_param += device_id_param + "," + common_param + ",";
+    row_data_param += specific_params + "," + service_list_param ;
+
+    // prepare get params
+    url_get_param += "app=performance";
+    url_get_param += "&rows="+data_class_name;
+    url_get_param += "&rows_data={" + row_data_param + "}"
+    url_get_param += "&headers="+header_class_name;
+    url_get_param += "&headers_data={" + common_param + "}";
+
+    var api_url = main_url + url_get_param;
+
+    // Make Ajax Call
+    $.ajax({
+        url : api_url,
+        type : 'GET',
+        success : function(response) {
+            var result = response;
+            // parse response if stringified.
+            if(typeof response == 'string') {
+                result = JSON.parse(response);
+            }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: result.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        },
+        error : function(err) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        }
+    });
+});
+
+
+
+$('#live_hist_report_btn').click(function(e) {
+    
+    // prevent default functionality
+    e.preventDefault();
+
+    var main_url = base_url+"/downloader/datatable/?",
+        live_hist_obj = [],
+        url_get_param = '';
+        applied_start_date = '',
+        applied_end_date = '',
+        active_tab_obj = nocout_getPerfTabDomId(),
+        tab_text = $.trim($('#' + active_tab_obj.active_dom_id + '_tab').text()),
+        active_tab_api_url = active_tab_obj.active_tab_api_url,
+        service_name = active_tab_api_url.split('/service/')[1].split('/')[0],
+        ds_name = active_tab_api_url.split('/service_data_source/')[1].split('/')[0],
+        report_title = 'Single Service (Live + Historical) - ' + current_device_ip;
+
+    // If any datetime filter applied
+    if (startDate && endDate) {
+        applied_start_date = startDate.toDate().getTime() / 1000;
+        applied_end_date = endDate.toDate().getTime() / 1000;
+    }
+
+    if (service_name.indexOf('_status') > -1 || service_name.indexOf('_invent') > -1) {
+        live_hist_obj = live_data_tab.concat(inventory_status_inner_inner_tabs);
+    } else {
+        live_hist_obj = live_data_tab.concat(tabs_with_historical);
+    }
+
+    var datetime_filter_param = " 'start_date' : '" + applied_start_date + "', 'end_date' : '" + applied_end_date + "' ",
+        device_id_param = " 'device_id' : '" + current_device + "' ",
+        tabs_list_param = " 'tabs_list' : "+JSON.stringify(live_hist_obj),
+        sds_param = " 'service_data_source_type' : '" + ds_name + "', 'service_name' : '" + service_name + "', 'data_for' : 'live' ",
+        common_param = " 'download_excel' : 'yes', 'report_title' : '" + report_title + "' ",
+        specific_params = " 'is_multi_sheet' : 1, 'data_key' : 'tabs_list', 'change_key' : 'data_for' "
+        row_data_param = "";
+
+    // prepare row_data params
+    row_data_param += sds_param + "," + datetime_filter_param + ",";
+    row_data_param += device_id_param + "," + common_param + ",";
+    row_data_param += specific_params + "," + tabs_list_param + ",";
+    row_data_param += " 'service_view_type' : '" + $('input[name="service_view_type"]:checked').val() + "' ";
+
+    // prepare get params
+    url_get_param += "app=performance";
+    url_get_param += "&rows="+data_class_name;
+    url_get_param += "&rows_data={" + row_data_param + "}"
+    url_get_param += "&headers="+header_class_name;
+    url_get_param += "&headers_data={" + common_param + "}";
+
+    var api_url = main_url + url_get_param;
+
+    // Make Ajax Call
+    $.ajax({
+        url : api_url,
+        type : 'GET',
+        success : function(response) {
+            var result = response;
+            // parse response if stringified.
+            if(typeof response == 'string') {
+                result = JSON.parse(response);
+            }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: result.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        },
+        error : function(err) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        }
+    });
+});

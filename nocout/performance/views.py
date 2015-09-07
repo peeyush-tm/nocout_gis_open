@@ -1281,7 +1281,9 @@ class InventoryDeviceServiceDataSource(View):
             'success': 0,
             'message': 'Services Data Source Not Fetched Successfully.',
             'data': {
-                'meta': {},
+                'meta': {
+                    'services_list' : []
+                },
                 'objects': {
                     'network_perf_tab': {
                         "info": [],
@@ -1326,6 +1328,10 @@ class InventoryDeviceServiceDataSource(View):
 
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
+        services_list = [{
+            'id' : 'ping',
+            'title' : 'Ping'
+        }]
 
         if service_view_type == 'normal':
 
@@ -1385,6 +1391,10 @@ class InventoryDeviceServiceDataSource(View):
             for service in device_type_services:
                 service_name = service.name.strip().lower()
                 desired_sds = service.service_data_sources.filter()
+                services_list.append({
+                    'id' : service_name,
+                    'title' : service.alias.strip()
+                })
                 if is_bh:
                     desired_sds = service.service_data_sources.exclude(name__in=excluded_bh_data_sources).filter()
 
@@ -1429,7 +1439,10 @@ class InventoryDeviceServiceDataSource(View):
 
             for service in device_type_services:
                 service_name = service.name.strip().lower()
-
+                services_list.append({
+                    'id' : service_name,
+                    'title' : service.alias.strip()
+                })
                 sds_info = {
                     'name': service_name,
                     'title': service.alias.strip(),
@@ -1474,6 +1487,7 @@ class InventoryDeviceServiceDataSource(View):
         })
 
         result['success'] = 1
+        result['data']['meta']['services_list'] = services_list
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result), content_type="application/json")
 
@@ -1816,7 +1830,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         service = self.kwargs['service_name']
         data_source = self.kwargs['service_data_source_type']
         data_for = self.request.GET.get('data_for', 'live')
-        
+
         start_date = self.request.GET.get('start_date', '')
         end_date = self.request.GET.get('end_date', '')
         
@@ -1824,15 +1838,22 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
 
+        service_view_type = self.request.GET.get('service_view_type')
+        is_unified_view = service_view_type and service_view_type == 'unified'
+
         self.data_source = self.kwargs['service_data_source_type']
-        self.inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
         # Create instance of "GetServiceTypePerformanceData" class
         self.perf_data_instance = GetServiceTypePerformanceData()
 
         if data_for != 'live':
             self.isHistorical = True
+            # Device Machine Name required in Query to fetch data.
             self.inventory_device_machine_name = 'default'
+        else:
+            # Device Machine Name required in Query to fetch data.
+            self.inventory_device_machine_name = device.machine.name
+
 
         isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format, data_for)
 
@@ -1844,18 +1865,30 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         # Update the DS name when it is not in 'pl','rta' or 'availability' (<SERVICE_NAM>_<DS_NAME>)
         if self.data_source not in ['pl', 'rta', 'availability']:
             self.data_source = str(service)+"_"+str(self.data_source)
-        
-        # check for the formula
-        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
-            self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
 
-        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
-            if 'min_value' not in self.columns:
-                self.columns.append('min_value')
+        if is_unified_view:
+            for sds in SERVICE_DATA_SOURCE:
+                if not self.formula:
+                    if service.strip() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
+                        self.formula = SERVICE_DATA_SOURCE[sds]['formula']
+                else:
+                    break
 
-        if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
-            if 'max_value' not in self.columns:
-                self.columns.append('max_value')
+            self.columns.append('min_value')
+            self.columns.append('max_value')
+        else:
+            # check for the formula
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]['formula']:
+                self.formula = SERVICE_DATA_SOURCE[self.data_source]['formula']
+
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_min"]:
+                if 'min_value' not in self.columns:
+                    self.columns.append('min_value')
+
+            if self.data_source in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[self.data_source]["show_max"]:
+                if 'max_value' not in self.columns:
+                    self.columns.append('max_value')
+
 
         if data_for == 'bihourly':
             self.model = PerformanceServiceBiHourly
@@ -1954,6 +1987,9 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         """
         data = []
         
+        service_view_type = self.request.GET.get('service_view_type')
+        is_unified_view = service_view_type and service_view_type == 'unified'
+
         for item in qs:
             datetime_obj = ''
 
@@ -1968,6 +2004,9 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
 
             max_val = eval(str(self.formula) + "(" + str(item['max_value']) + ")") \
                 if self.formula else item['max_value']
+
+            avg_val = eval(str(self.formula) + "(" + str(item['avg_value']) + ")") \
+                if self.formula else item['avg_value']
 
             item.update(
                 current_value=current_val,
@@ -1987,10 +2026,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                     max_value=max_val
                 )
 
-            if self.isHistorical:
-
-                avg_val = eval(str(self.formula) + "(" + str(item['avg_value']) + ")") \
-                    if self.formula else item['avg_value']
+            if self.isHistorical or is_unified_view:
 
                 item.update(
                     min_value=min_val,
@@ -2166,11 +2202,6 @@ class GetServiceTypePerformanceData(View):
             sds_name = service_name.strip() + "_" + service_data_source_type.strip()
         else:
             sds_name = service_data_source_type.strip()
-
-        # print ' -- sds_name -- '
-        # print sds_name
-        # print sds_name in SERVICE_DATA_SOURCE
-        # print ' -- sds_name -- '
 
         # to check if data source would be displayed as a chart or as a table
         show_chart = True

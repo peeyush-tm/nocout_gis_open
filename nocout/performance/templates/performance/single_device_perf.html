@@ -161,21 +161,21 @@
                 {% endif %}
 
                 {% if settings.ENABLE_AGGREGATE_REPORT_DOWNLOAD %}
-                <li class="unified_normal_li">
+                <li>
                     <div class="btn-group dropdown">
                         <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Download Reports">
                             <i class="text-primary fa fa-download"> </i> Report
                             <span class="caret"></span>
                         </button>
-                        <ul class="dropdown-menu context" id="service_view_type_ul">
-                            <li class="active">
-                                <a href="javascript:;">
-                                    <i class="fa fa-download"> </i> Single Service(Live + Historical)
+                        <ul class="dropdown-menu context">
+                            <li>
+                                <a href="javascript:;" id="all_serv_live_report_btn">
+                                    <i class="fa fa-download"> </i> All Services(Live Data - 5 Min.)
                                 </a>
                             </li>
                             <li>
-                                <a href="javascript:;">
-                                    <i class="fa fa-download"> </i> All Services(5 min data)
+                                <a href="javascript:;" id="live_hist_report_btn">
+                                    <i class="fa fa-download"> </i> Single Service(Live + Historical)
                                 </a>
                             </li>
                         </ul>
@@ -361,7 +361,6 @@
             warn_type = "",
             crit_type = "",
             default_live_table_headers = [];
-
 
         $(document).ready(function (e) {
 
