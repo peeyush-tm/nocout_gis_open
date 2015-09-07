@@ -1422,8 +1422,8 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'rta',
-        'ds'           : 'ping'
+        'service_name' : 'ping',
+        'ds'           : 'rta'
     },
     {
         'name'         : 'rad5k_ss_transmit_power_transmit_power',

@@ -1788,7 +1788,6 @@ function devicePlottingClass_gmap() {
 							sector_color,
 							sector_child,
 							$.trim(sector_array[j].technology),
-							sector_array[j].device_type,
 							orientation,
 							rad,
 							azimuth,
@@ -2718,10 +2717,9 @@ function devicePlottingClass_gmap() {
 	 * @param bgColor {String}, It contains the RGBA format color code for sector.
 	 * @param sector_child [JSON object Array], It contains the connected SS data.
 	 * @param technology {String}, It contains the technology of sector device.
-	 * @param device_type {String}, It contains the type of sector device.
 	 * @param polarisation {String}, It contains the polarisation(horizontal or vertical) of sector device.
 	 */
-	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,device_type,polarisation,rad,azimuth,beam_width,antennaHeight) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation,rad,azimuth,beam_width,antennaHeight) {
 		if(isDebug) {
 			console.log("Plot Sector Polygon");
 			var start_date_plot_sector = new Date();
@@ -3118,11 +3116,13 @@ function devicePlottingClass_gmap() {
 					actual_polled_info = rearrangeTooltipArray(ptp_sector_toolTip_polled,backend_polled_info);
 				} else if(sector_tech == 'wimax') {
 					actual_polled_info = rearrangeTooltipArray(wimax_sector_toolTip_polled,backend_polled_info);
-				} else if(sector_tech == 'pmp' && sector_device_type == 'radwin5kbs') {
-					actual_polled_info = rearrangeTooltipArray(pmp_radwin5k_sector_toolTip_polled,backend_polled_info);
-				}else if(sector_tech == 'pmp' && sector_device_type != 'radwin5kbs') {
-					actual_polled_info = rearrangeTooltipArray(pmp_sector_toolTip_polled,backend_polled_info);
-				} else {
+				} else if(sector_tech == 'pmp') {
+					if(device_type == 'radwin5kbs') {
+                                    actual_polled_info = rearrangeTooltipArray(pmp_radwin5k_sector_toolTip_polled, backend_polled_info);
+                                } else {
+                                    actual_polled_info = rearrangeTooltipArray(pmp_sector_toolTip_polled, backend_polled_info);
+                                }					 
+				}else {
 					actual_polled_info = backend_polled_info;
 				}
 
@@ -3315,11 +3315,11 @@ function devicePlottingClass_gmap() {
 					actual_polled_info = rearrangeTooltipArray(ptp_ss_toolTip_polled,backend_polled_info);
 				} else if(ss_tech == 'wimax') {
 					actual_polled_info = rearrangeTooltipArray(wimax_ss_toolTip_polled,backend_polled_info);
-				} else if(ss_tech == 'pmp' && ss_device_type != 'radwin5kss' ) {
-					actual_polled_info = rearrangeTooltipArray(pmp_ss_toolTip_polled,backend_polled_info);
-				} 
-				else if(ss_tech == 'pmp' && ss_device_type == 'radwin5kss' ) {
-					actual_polled_info = rearrangeTooltipArray(pmp_radwin5k_ss_toolTip_polled,backend_polled_info);
+				} else if(ss_tech == 'pmp'){
+						if(ss_device_type == 'radwin5kss' ) {
+							actual_polled_info = rearrangeTooltipArray(pmp_radwin5k_ss_toolTip_polled,backend_polled_info);
+						} else {
+							actual_polled_info = rearrangeTooltipArray(pmp_ss_toolTip_polled,backend_polled_info);}
 				}else {
 					actual_polled_info = backend_polled_info;
 				}
