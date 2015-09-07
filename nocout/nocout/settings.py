@@ -796,11 +796,11 @@ DATATABLE_SEARCHTXT_KEY = 'sSearch'
 ENABLE_ADVANCE_FILTERS = True
 
 ####################### Flag to enable/disable unified service view on single performance page #######################
-ENABLE_UNIFIED_SERVICE_VIEW = True
+ENABLE_UNIFIED_SERVICE_VIEW = False
 
 
 ####################### Flag to enable/disable aggregate report download on single performance page #######################
-ENABLE_AGGREGATE_REPORT_DOWNLOAD = True
+ENABLE_AGGREGATE_REPORT_DOWNLOAD = False
 
 try:
     from local_settings import *
