@@ -300,7 +300,6 @@ def prepare_raw_sector(sectors=None,with_data=False):
 
     sector_ss_vendor = []
     sector_ss_technology = []
-    sector_ss_type = []
     sector_configured_on_devices = []
     sector_planned_frequencies = []
     circuit_ids = []
@@ -323,7 +322,6 @@ def prepare_raw_sector(sectors=None,with_data=False):
     all_sector_building_height = ""
     all_sector_tower_height = ""
     all_sector_technology = ""
-    all_sector_type = ""
     all_sector_lat_lon = ""
     all_sector_customer_address = ""
     all_sector_sector_alias = ""
@@ -355,12 +353,9 @@ def prepare_raw_sector(sectors=None,with_data=False):
                 sector_ss_vendor.append(nocout_utils.format_value(format_this=sector['SECTOR_VENDOR']))
                 #prepare Sector technology list
                 techno_to_append = nocout_utils.format_value(format_this=sector['SECTOR_TECH'])
-                #prepare Sector type list
-                type_to_append = nocout_utils.format_value(format_this=sector['SECTOR_TYPE'])
                 if sector['CIRCUIT_TYPE'] and sector['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
                     techno_to_append = 'PTP BH'
                 sector_ss_technology.append(techno_to_append)
-                sector_ss_type.append(type_to_append)
                 #prepare BH technology list
                 # sector_ss_technology.append(nocout_utils.format_value(format_this=sector['BHTECH']))
                 #prepare sector configured on device
@@ -430,7 +425,6 @@ def prepare_raw_sector(sectors=None,with_data=False):
                     all_sector_building_height += unicode(nocout_utils.format_value(format_this=sector['BSBUILDINGHGT']))+"|"
                     all_sector_tower_height += unicode(nocout_utils.format_value(format_this=sector['BSTOWERHEIGHT']))+"|"
                     all_sector_technology += unicode(techno_to_append)+"|"
-                    all_sector_type+= unicode(type_to_append)+"|"
                     all_sector_lat_lon += unicode(unicode(nocout_utils.format_value(format_this=sector['BSLAT']))+","+unicode(nocout_utils.format_value(sector['BSLONG'])))+"|"
                     all_sector_customer_address += unicode(nocout_utils.format_value(format_this=sector['SS_CUST_ADDR']))+"|"
                     all_sector_sector_alias += unicode(nocout_utils.format_value(format_this=sector['SECTOR_ALIAS']))+"|"
@@ -463,7 +457,6 @@ def prepare_raw_sector(sectors=None,with_data=False):
                         # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                         'orientation': nocout_utils.format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
                         'technology': techno_to_append,
-                        'device_type': type_to_append,
                         'vendor': nocout_utils.format_value(format_this=sector['SECTOR_VENDOR']),
                         'sector_configured_on': nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON_IP']),
                         'sector_configured_on_device': nocout_utils.format_value(format_this=sector['SECTOR_CONF_ON']),
@@ -606,12 +599,6 @@ def prepare_raw_sector(sectors=None,with_data=False):
               'value': all_sector_technology
             },
             {
-              'name': 'devicetype',
-              'title': 'Device-Type',
-              'show': 1,
-              'value': all_sector_technology
-            },
-            {
                 'name': 'lat_lon',
                 'title': 'Lat, Long',
                 'show':1,
@@ -732,7 +719,6 @@ def prepare_raw_sector(sectors=None,with_data=False):
         sector_info,
         sector_ss_vendor,
         sector_ss_technology,
-        sector_ss_type,
         sector_configured_on_devices,
         circuit_ids,
         sector_planned_frequencies,
@@ -769,7 +755,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
     all_building_height = ""
     all_tower_height = ""
     all_ss_technology = ""
-    all_ss_type = ""
     all_lat_lon = ""
     all_customer_address = ""
     all_alias = ""
@@ -794,8 +779,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
                         circuit_ids.append(circuit_id)
 
                     techno_to_append = circuit['SS_TECH']
-                    type_to_append = circuit['SS_TYPE']
-
 
                     if circuit['CIRCUIT_TYPE'] and circuit['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
                         techno_to_append = 'PTP BH'
@@ -846,7 +829,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
                         all_building_height +=  unicode(nocout_utils.format_value(circuit['SS_BUILDING_HGT']))+"|"
                         all_tower_height +=  unicode(nocout_utils.format_value(circuit['SS_TOWER_HGT']))+"|"
                         all_ss_technology +=  unicode(nocout_utils.format_value(techno_to_append))+"|"
-                        all_ss_type +=  unicode(nocout_utils.format_value(type_to_append))+"|"
                         all_lat_lon +=  unicode(unicode(nocout_utils.format_value(circuit['SS_LATITUDE']))+","+unicode(nocout_utils.format_value(circuit['SS_LONGITUDE'])))+"|"
                         all_customer_address +=  unicode(nocout_utils.format_value(circuit['SS_CUST_ADDR']))+"|"
                         all_alias +=  unicode(nocout_utils.format_value(circuit['SS_ALIAS']))+"|"
@@ -868,7 +850,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
                                 # "antenna_height": nocout_utils.format_value(circuit['SSHGT'], type_of='random'),
                                 "substation_device_ip_address": circuit['SSIP'],
                                 "technology": techno_to_append,
-                                "device_type" : type_to_append,
                                 "markerUrl": nocout_utils.format_value(format_this=circuit['SS_GMAP_ICON'], type_of='icon'),
                                 "show_link": 1,
                                 "link_color": frequency_color,
@@ -974,12 +955,6 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency, with_
                 'value': all_ss_technology
             },
             {
-                'name': 'ss_devicetype',
-                'title': 'Device Type',
-                'show': 1,
-                'value': all_ss_type
-            },
-            {
                 'name': 'lat_lon',
                 'title': 'Lat, Long',
                 'show': 1,
@@ -1023,7 +998,6 @@ def prepare_raw_bs_result(bs_result=None,with_data=False):
     bs_vendor_list = []
     sector_ss_vendor = []
     sector_ss_technology = []
-    sector_ss_type = []
     sector_configured_on_devices = []
     circuit_ids = []
     sector_planned_frequencies = []
@@ -1075,7 +1049,6 @@ def prepare_raw_bs_result(bs_result=None,with_data=False):
         sector_info, \
         sector_ss_vendor, \
         sector_ss_technology, \
-        sector_ss_type, \
         sector_configured_on_devices, \
         circuit_ids, \
         sector_planned_frequencies, \
@@ -1085,7 +1058,6 @@ def prepare_raw_bs_result(bs_result=None,with_data=False):
         base_station_info['data']['param']['sectors_info_list'] = sectors_info_list
         base_station_info['sector_ss_vendor'] = "|".join(sector_ss_vendor)
         base_station_info['sector_ss_technology'] = "|".join(sector_ss_technology)
-        base_station_info['sector_ss_type'] = "|".join(sector_ss_type)
         base_station_info['sector_configured_on_devices'] = "|".join(sector_configured_on_devices)
         base_station_info['circuit_ids'] = "|".join(circuit_ids)
         base_station_info['sector_planned_frequencies'] = "|".join(sector_planned_frequencies)
