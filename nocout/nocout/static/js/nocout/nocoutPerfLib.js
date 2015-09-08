@@ -814,9 +814,16 @@ function nocoutPerfLib() {
     this.getServiceStatus = function(service_status_url, is_exact_url, callback) {
 
         if(!is_exact_url) {
-            var splitted_status_url = service_status_url.split("/"),
-                updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
-                device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            
+            if (service_status_url.indexOf('?') == -1) {
+                var splitted_status_url = service_status_url.split("/"),
+                    updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            } else {
+                var splitted_status_url = service_status_url.split('?')[0].split("/");
+                var updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url.split('?')[0] + "/" + "?" + service_status_url.split('?')[1] : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            }
 
             if (updated_url.indexOf("/servicedetail/") > -1) {
                 if (updated_url.indexOf("rssi") > -1) {
