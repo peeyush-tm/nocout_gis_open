@@ -447,7 +447,7 @@ function WhiteMapClass() {
 			polygonSelectedDevices = [];
 			pointsArray = [];
 
-			if(selected_technology && selected_type) {
+			if(selected_technology && selected_type) {			
 				$("#tech_send").button("loading");
 				/*ajax call for services & datasource*/
 				$.ajax({
@@ -655,13 +655,16 @@ function WhiteMapClass() {
 			allSSIds = [];
 
 			var selected_polling_technology = $("#polling_tech option:selected").text(),
-				polling_technology_condition = $.trim(selected_polling_technology.toLowerCase());
+				polling_technology_condition = $.trim(selected_polling_technology.toLowerCase()),
+				selected_polling_type = $("#polling_type option:selected").text(),
+				polling_type_condition = $.trim(selected_polling_type.toLowerCase());
 
 			for(var k=0;k<allSS.length;k++) {
 				
 				if(allSS[k].ptLon && allSS[k].ptLat && polygon) {
 					if (displayBounds(polygon, allSS[k].ptLon, allSS[k].ptLat) == 'in') {
 						var point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
+						var point_type = allSS[k].device_type ? $.trim(allSS[k].device_type.toLowerCase()) : "";
 
 						// if point technology is PTP BH then use it as PTP
 						if(ptp_tech_list.indexOf(point_tech) > -1) {
@@ -674,7 +677,7 @@ function WhiteMapClass() {
 						}
 
 						if(point_tech) {
-							if(point_tech == polling_technology_condition) {
+							if(point_tech == polling_technology_condition && point_type == polling_type_condition) {
 								if(ptp_tech_list.indexOf(point_tech)  > -1) {
 									if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 										if(allSS[k].pointType == 'sub_station') {
@@ -714,8 +717,9 @@ function WhiteMapClass() {
 				/*Remove current polygon from map*/
 				global_this.initLivePolling();
 
-				/*Reset polling technology select box*/
+				/*Reset polling technology and polling Type select box*/
 				$("#polling_tech").val($("#polling_tech option:first").val());
+				$("#polling_type").val($("#polling_type option:first").val());
 
 				bootbox.alert("No SS found under the selected area.");
 
@@ -735,6 +739,7 @@ function WhiteMapClass() {
 
 				/*Reset polling technology select box*/
 				$("#polling_tech").val($("#polling_tech option:first").val());
+				$("#polling_type").val($("#polling_type option:first").val());
 
 				bootbox.alert("Max. limit for selecting devices is 200.");
 
@@ -2041,6 +2046,7 @@ function WhiteMapClass() {
 							"sector_id" : sector_array[j].sector_id,
 							"device_info" : sector_array[j].device_info,
 							"technology" : sector_array[j].technology,
+							"device_type":sector_array[j].device_type,
 							"vendor" : sector_array[j].vendor,
 							"device_name" : sector_array[j].sector_configured_on_device,
 							"sector_perf_url" : sector_perf_url,
@@ -2110,6 +2116,7 @@ function WhiteMapClass() {
 								clusterIcon 	 	: base_url+'/static/img/icons/1x1.png',
 								pointType 		 	: 'sector_Marker',
 								technology 		 	: sector_array[j].technology,
+								device_type         : sector_array[j].device_type,
 								vendor 				: sector_array[j].vendor,
 								deviceExtraInfo 	: sector_infoWindow_content,
 								deviceInfo 			: sector_array[j].device_info,
@@ -2202,6 +2209,7 @@ function WhiteMapClass() {
 					    	ptLat 			 	:  ss_marker_obj.data.lat,
 					    	ptLon 			 	:  ss_marker_obj.data.lon,
 					    	technology 		 	:  ss_marker_obj.data.technology,
+					    	device_type         :  ss_marker_obj.data.device_type,
 					    	map 			 	:  'current',
 					    	icon 			 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
 					    	oldIcon 		 	:  base_url+"/"+ss_marker_obj.data.markerUrl,
