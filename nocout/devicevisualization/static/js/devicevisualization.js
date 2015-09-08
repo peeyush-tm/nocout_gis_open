@@ -484,6 +484,7 @@ $("#createPolygonBtn").click(function(e) {
     $("#showToolsBtn").removeAttr("disabled");
 
     $("#polling_tech").val($("#polling_tech option:first").val());
+    $("#polling_type").val($("#polling_type option:first").val());
 
     if(window.location.pathname.indexOf("wmap") > -1) {
         whiteMapClass.initLivePolling();
@@ -1373,6 +1374,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
         point_type = evt.currentTarget.attributes.point_type ? evt.currentTarget.attributes.point_type.value : "",
         dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
         device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
+        device_type = evt.currentTarget.attributes.device_type ? evt.currentTarget.attributes.device_type.value : "",
         href_attr = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
         block_id = href_attr.length > 1 ? href_attr[1] : "",
         pl_attr = evt.currentTarget.attributes.pl_value,
@@ -1416,7 +1418,11 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                             } else if(device_tech == 'wimax') {
                                 tooltip_info_dict = rearrangeTooltipArray(wimax_sector_toolTip_polled,fetched_polled_info);
                             } else if(device_tech == 'pmp') {
-                                tooltip_info_dict = rearrangeTooltipArray(pmp_sector_toolTip_polled,fetched_polled_info);
+                                if(device_type == 'radwin5kbs') {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_radwin5k_sector_toolTip_polled, fetched_polled_info);
+                                } else {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_sector_toolTip_polled, fetched_polled_info);
+                                }
                             } else {
                                 // pass
                             }
@@ -1426,7 +1432,12 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                             } else if(device_tech == 'wimax') {
                                 tooltip_info_dict = rearrangeTooltipArray(wimax_ss_toolTip_polled,fetched_polled_info);
                             } else if(device_tech == 'pmp') {
-                                tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled,fetched_polled_info);
+                                console.log(device_type);
+                                if(device_type == 'radwin5kss') {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_radwin5k_ss_toolTip_polled, fetched_polled_info);
+                                } else {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled, fetched_polled_info);
+                                }                                
                             } else {
                                 // pass
                             }

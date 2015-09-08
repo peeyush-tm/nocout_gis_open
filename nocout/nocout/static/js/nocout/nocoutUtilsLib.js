@@ -325,6 +325,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         // Reset columns variable
         tableheaders = [];
         var has_severity_column = false;
+
         for(var i=0;i<headers_config.length;i++) {
             var header_key = headers_config[i].name.replace(/ /g, '_').toLowerCase(),
                 head_condition_1 = header_key.indexOf('warning_threshold') === -1,

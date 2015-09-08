@@ -643,6 +643,7 @@ function GisPerformance() {
                                     ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
                                     ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "",
                                     ss_antenna_height = perf_self.getKeyValue(ss_infoWindow_content, "antenna_height", true, ss_item_info_index);
+                                    ss_device_type = ss_marker_data.data.device_type?ss_marker_data.data.device_type: "";
 
                                 // var ss_marker_object = {};
                                 var ss_marker_object = {
@@ -659,6 +660,7 @@ function GisPerformance() {
                                     antenna_height   :  ss_marker_data.data.antenna_height,
                                     name             :  ss_marker_data.name,
                                     technology       :  sector_tech,
+                                    device_type      :  ss_device_type,
                                     perf_url         :  ss_perf_url,
                                     inventory_url    :  ss_inventory_url,
                                     bs_name          :  apiResponse.name,

@@ -187,8 +187,7 @@ function ourDataTableWidget() {
                     excluded_columns = attributes_dict.excluded_columns ? attributes_dict.excluded_columns.value : "",
                     advance_filter = attributes_dict.advance_filter ? attributes_dict.advance_filter.value : "",
                     url_get_param = "";
-                console.log('advance_filter');    
-                console.log(advance_filter);
+
                 url_get_param += "app="+app_name;
                 url_get_param += "&rows="+data_class_name+"&rows_data="+data_extra_param;
                 url_get_param += "&headers="+header_class_name+"&headers_data="+header_extra_param;

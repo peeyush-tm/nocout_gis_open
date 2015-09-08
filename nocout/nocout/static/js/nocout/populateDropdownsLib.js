@@ -102,6 +102,7 @@ function makeFormAjaxCall(api_url, affected_element_id, existing_value) {
                 if (existing_value && existing_value == result[x].id) {
                     selected_txt = 'selected="selected"';
                 }
+
                 option_html += '<option value="' + result[x].id + '" ' + selected_txt + '>' + result[x][alias_key] + '</option>';
             }
             // Update select box HTML
