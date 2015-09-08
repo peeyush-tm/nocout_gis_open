@@ -130,6 +130,11 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
         'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
      cambium_services = ['cambium_ul_rssi', 'cambium_ul_jitter',
 		     'cambium_reg_count', 'cambium_rereg_count']
+     rad5k_services = ['rad5k_ul_rssi' ,'rad5k_dl_rssi','rad5k_ss_dl_utilization' ,'rad5k_ss_ul_utilization',
+	'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent','rad5k_dl_estmd_throughput_invent',
+	'rad5k_ul_estmd_throughput_invent',
+	'rad5k_ul_uas_invent','rad5k_dl_es_invent','rad5k_ul_ses_invent','rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent',
+	'rad5k_ss_cmd_rx_pwr_invent']
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
@@ -155,6 +160,9 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	     if service in wimax_ss_port_service:
 		     old_service = service
 		     service = 'wimax_ss_port_params'
+	     if service in rad5k_services:
+		     old_service = service
+		     service = 'rad5k_topology_discover'
 	     # Getting result from compiled checks output
              cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
 	     # For host check [ping service]
@@ -247,14 +255,43 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				data_value = []
 				q.put(data_dict)
 				return	
+		elif str(old_service) in rad5k_services:
+			data_value = []
+			try:
+				check_output = filter(lambda t: 'rad5k_topology_discover' in t, check_output.split('\n'))
+				check_output = check_output[0].split('- ')[1].split(' ')
+				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
+					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t, check_output)
+					filtered_ss_data.extend(filtered_ss_output)
+				logger.info('filtered_ss_data: ' + pformat(filtered_ss_data))
+				index = rad5k_services.index(old_service)
+				for entry in filtered_ss_data:
+					data_entry = entry.split('=')[1]
+					data_value = data_entry.split('/')[index]
+					cal_ss_ip = data_entry.split('/')[-1]
+					for host_name,ss_ip_value in ss_name_mac_mapping.items():
+						if ss_ip_value ==  cal_ss_ip:
+							ss_host_name = host_name
+							break
+					data_dict = {ss_host_name:data_value}
+					q.put(data_dict)
+			except Exception, e:
+			 	logger.error('Empty check_output: ' + pformat(e))
+				for host_name,mac_value in ss_name_mac_mapping.items():
+					ss_host_name = host_name
+					data_dict = {ss_host_name: []}
+			 	        q.put(data_dict)
+			 	        return
 		elif old_service.lower() == 'ping':
 			check_output = check_output.split('\n')[-3:]
 			logger.debug('check_output after split: ' + pformat(check_output))
 			pl_info, rta_info = check_output[0], check_output[1]
 			if pl_info:
 			        pl = pl_info.split(',')[-2].split()[0]
+				pl = pl.strip('%')
 			if rta_info:
 			        rta = rta_info.split('=')[1].split('/')[1]
+				rta = rta.strip('ms')
 			if 'pl' in data_source_list:
 				data_dict = {device: [pl]}
 			if 'rta' in data_source_list:
