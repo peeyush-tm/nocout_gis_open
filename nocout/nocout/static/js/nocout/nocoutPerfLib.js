@@ -1237,6 +1237,14 @@ function nocoutPerfLib() {
                                                         }
                                                     ]
                                                 },
+                                                fnInitComplete: function(oSettings) {
+                                                    var row_per_pages_selectbox = '#perf_data_table_wrapper div.dataTables_length label select',
+                                                        search_box = '#perf_data_table_wrapper div.dataTables_filter label input';
+                                                    // Update search txt box & row per pages dropdown style
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).css("max-width","150px");
+                                                },
                                                 bPaginate: true,
                                                 bDestroy: true,
                                                 aaSorting : [[0,'desc']],
