@@ -1333,19 +1333,16 @@ function nocout_getPerfTabDomId() {
             "active_dom_id" : "",
             "active_tab_api_url" : ""
         },
-        top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
-        top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
+        top_tab_content_id = $(".top_perf_tabs > li.active a").attr("href");
 
     if(show_historical_on_performance || is_perf_polling_enabled) {
-        var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
-            left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
-
-        var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a");
+        var left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
+            active_inner_tab = $(left_tab_content_id + " .inner_inner_tab li.active a");
         
         response_dict["active_dom_id"] = active_inner_tab.attr("id").slice(0, -4);
         response_dict["active_tab_api_url"] = active_inner_tab.attr("url");
     } else {
-        var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
+        var left_active_tab_anchor = $(top_tab_content_id + " .left_tabs_container li.active a"),
             active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a');
 
         response_dict["active_dom_id"] = left_active_tab_anchor.attr("id").slice(0, -4);
@@ -1473,4 +1470,26 @@ function nocout_destroyHighcharts(domId) {
     } catch(e) {
         // console.log(e);
     }
+}
+
+/**
+ * This function find & returns the tab id as per the given help text
+ * @method getRequiredTabId
+ * @param help_txt {String}, It contains the help text whose matched id is to be returned
+ */
+function getRequiredTabId(help_txt) {
+    var top_tab_content_id = $(".top_perf_tabs > li.active a").attr("href"),
+        left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
+        inner_tabs = $(left_tab_content_id + ' ul.inner_inner_tab li'),
+        required_tab_id = "";
+
+    for (var i=0;i<inner_tabs.length;i++) {
+        var tab_id = $(inner_tabs[i]).children('a')[0].id;
+        if (tab_id.indexOf(help_txt) > -1) {
+            required_tab_id = tab_id;
+            break;
+        }
+    }
+
+    return required_tab_id;
 }

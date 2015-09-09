@@ -495,27 +495,89 @@
          */
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                var active_tab_obj = nocout_getPerfTabDomId();
 
-                if(
-                    service_id.indexOf('availability') > -1
-                    ||
-                    service_id.indexOf('utilization_top') > -1
-                    ||
-                    service_id.indexOf('topology') > -1
-                ) {
+                if (show_historical_on_performance) {
+                    var start = new Date(startDate),
+                        end   = new Date(),
+                        days_diff = (end-start)/(1000*60*60*24);
 
-                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                        service_id = active_inner_tab.attr("id").slice(0, -4),
-                        get_service_data_url = active_inner_tab.attr("url");
+                    if (days_diff <= 30) {
+                        // live
+                        if (active_tab_obj.active_dom_id.indexOf('live') > -1) {
+                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('live');
 
-                } 
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 30 && days_diff <= 35) {
+                        // bi-hourly
+                        if (active_tab_obj.active_dom_id.indexOf('bihourly') > -1) {
+                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('bihourly');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            } else {
+                                var my_tab_id = getRequiredTabId('daily');
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 35 && days_diff <= 180) {
+                        // hourly
+                        if (active_tab_obj.active_dom_id.indexOf('bihourly') == -1 && active_tab_obj.active_dom_id.indexOf('hourly') > -1) {
+                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('hourly');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            } else {
+                                var my_tab_id = getRequiredTabId('daily');
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 180) {
+                        var condition1 = active_tab_obj.active_dom_id.indexOf('daily') > -1,
+                            condition2 = active_tab_obj.active_dom_id.indexOf('weekly') > -1,
+                            condition3 = active_tab_obj.active_dom_id.indexOf('monthly') > -1,
+                            condition4 = active_tab_obj.active_dom_id.indexOf('yearly') > -1;
 
-                if(get_service_data_url && service_id && current_device) {
-                    perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                        // Daily, weekly, monthly or yearly
+                        if (condition1 || condition2 || condition3 || condition4) {
+                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('daily');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    }
+                } else {
+                    var service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+
+                    if(
+                        service_id.indexOf('availability') > -1
+                        ||
+                        service_id.indexOf('utilization_top') > -1
+                        ||
+                        service_id.indexOf('topology') > -1
+                    ) {
+
+                        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                            service_id = active_inner_tab.attr("id").slice(0, -4),
+                            get_service_data_url = active_inner_tab.attr("url");
+
+                    } 
+
+                    if(get_service_data_url && service_id && current_device) {
+                        perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                    }
                 }
+
             } else {
                 alert("Select Start & End Date");
             }

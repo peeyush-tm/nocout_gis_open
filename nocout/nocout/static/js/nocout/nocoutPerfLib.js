@@ -412,13 +412,19 @@ function nocoutPerfLib() {
                                 </select>\
                             </div>\
                             <div class="col-md-4">\
-                                <button class="btn btn-default btn-sm play_pause_btns poll_play_btn" data-complete-text="<i class=\'fa fa-play\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_play_btn" \
+                                    data-complete-text="<i class=\'fa fa-play text-success\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
                                     <i class="fa fa-play text-success"> </i>\
                                 </button>\
-                                <button class="btn btn-default btn-sm play_pause_btns poll_pause_btn" data-complete-text="<i class=\'fa fa-pause\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_pause_btn" \
+                                    data-complete-text="<i class=\'fa fa-pause text-warning\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
                                     <i class="fa fa-pause text-warning"> </i>\
                                 </button>\
-                                <button class="btn btn-default btn-sm play_pause_btns poll_stop_btn" data-complete-text="<i class\'fa fa-stop\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_stop_btn" \
+                                    data-complete-text="<i class\'fa fa-stop text-danger\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
                                     <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
                             </div>\
@@ -1606,15 +1612,15 @@ $(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
     var currentTarget = e.currentTarget;
     // Show button in loading view
     $(currentTarget).button('loading');
-    if(!$("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-        $("#" + tab_id + " .play_pause_btns").addClass("disabled");
+    if(!$("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + "_block .play_pause_btns").addClass("disabled");
     }
     initSingleDevicePolling(function(response) {
         
         $(currentTarget).button('complete');
         
-        if($("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-            $("#" + tab_id + " .play_pause_btns").removeClass("disabled");
+        if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+            $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");
         }
     });
 });
