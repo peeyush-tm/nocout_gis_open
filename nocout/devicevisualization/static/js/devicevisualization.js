@@ -1431,8 +1431,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                                 tooltip_info_dict = rearrangeTooltipArray(ptp_ss_toolTip_polled,fetched_polled_info);
                             } else if(device_tech == 'wimax') {
                                 tooltip_info_dict = rearrangeTooltipArray(wimax_ss_toolTip_polled,fetched_polled_info);
-                            } else if(device_tech == 'pmp') {
-                                console.log(device_type);
+                            } else if(device_tech == 'pmp') {                                
                                 if(device_type == 'radwin5kss') {
                                     tooltip_info_dict = rearrangeTooltipArray(pmp_radwin5k_ss_toolTip_polled, fetched_polled_info);
                                 } else {
@@ -2792,6 +2791,8 @@ if (!Array.prototype.indexOf) {
 
 $('select[name="polling_tech"]').change(function(e) {
     var selected_tech = $.trim($(this).val());
+    var selected_tech_name = $('select[name="polling_tech"] option:selected').text().toLowerCase();
+   
     if (selected_tech && typeof tech_type_api != 'undefined') {
     	var api_url = tech_type_api;
 
@@ -2811,11 +2812,21 @@ $('select[name="polling_tech"]').change(function(e) {
     			var dType_html = '<option value="">Select Type</option>';
 
     			for (var i=0;i<result.length;i++) {
-    				var title = result[i]['alias'],
+                    if(ptp_tech_list.indexOf(selected_tech_name) == 1){
+                        var title = result[i]['alias'],
     					id = result[i]['id'];
-
-					dType_html += '<option value="' + id + '">' + title + '</option>'
+                        dType_html += '<option value="' + id + '">' + title + '</option>'                        					   
     			}
+                    else{
+                        var title = result[i]['alias'],
+                        id = result[i]['id'];                       
+                       if(title.indexOf('SS') !== -1)
+                        {
+                            dType_html += '<option value="' + id + '">' + title + '</option>'
+                        }
+
+                    }
+            }
 
     			$('select[name="polling_type"]').html(dType_html);
     		},
