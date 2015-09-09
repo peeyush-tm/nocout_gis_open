@@ -505,7 +505,7 @@
                     if (days_diff <= 30) {
                         // live
                         if (active_tab_obj.active_dom_id.indexOf('live') > -1) {
-                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
                         } else {
                             var my_tab_id = getRequiredTabId('live');
 
@@ -516,7 +516,7 @@
                     } else if (days_diff > 30 && days_diff <= 35) {
                         // bi-hourly
                         if (active_tab_obj.active_dom_id.indexOf('bihourly') > -1) {
-                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
                         } else {
                             var my_tab_id = getRequiredTabId('bihourly');
                             if (my_tab_id) {
@@ -529,7 +529,7 @@
                     } else if (days_diff > 35 && days_diff <= 180) {
                         // hourly
                         if (active_tab_obj.active_dom_id.indexOf('bihourly') == -1 && active_tab_obj.active_dom_id.indexOf('hourly') > -1) {
-                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
                         } else {
                             var my_tab_id = getRequiredTabId('hourly');
                             if (my_tab_id) {
@@ -547,7 +547,7 @@
 
                         // Daily, weekly, monthly or yearly
                         if (condition1 || condition2 || condition3 || condition4) {
-                            $('#' + active_tab_obj.active_dom_id).trigger('click', true);
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
                         } else {
                             var my_tab_id = getRequiredTabId('daily');
                             if (my_tab_id) {
