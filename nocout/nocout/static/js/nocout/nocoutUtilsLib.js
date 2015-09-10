@@ -25,7 +25,16 @@ var green_color = "#468847",
     header_class_name = 'ServiceDataSourceHeaders',
     data_class_name = 'ServiceDataSourceListing',
     header_extra_param = "{'download_excel': 'yes' }",
-    na_list = ['NA', 'N/A', 'na', 'n/a'];
+    na_list = ['NA', 'N/A', 'na', 'n/a'],
+    legends_gradient_string = 'background: xxxx; \
+                               background: -moz-linear-gradient(left, xxxx 0%, yyyy 100%); \
+                               background: -webkit-gradient(linear, left top, right top, color-stop(0%,xxxx), color-stop(44%,yyyy), color-stop(100%,yyyy)); \
+                               background: -webkit-linear-gradient(left, xxxx 0%,yyyy 100%); \
+                               background: -o-linear-gradient(left, xxxx 0%,yyyy 100%); \
+                               background: -ms-linear-gradient(left, xxxx 0%,yyyy 100%); \
+                               background: linear-gradient(to right, xxxx 0%,yyyy 100%); \
+                               filter: progid:DXImageTransform.Microsoft.gradient( startColorstr="xxxx", endColorstr="yyyy",GradientType=1 );',
+    default_legends_bg = '#343435';
 
 
 /**
@@ -550,7 +559,43 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     var chart_options = {
         chart: {
             zoomType: 'x',
-            type: chartConfig.type
+            type: chartConfig.type,
+            events : {
+                load : function(evt) {
+                    // set the background color of custom legends panel as per chart background color.
+                    try {
+                        var background_color = evt.currentTarget.options.chart.backgroundColor;
+
+                        if (typeof background_color == 'string') {
+                            $('.custom_legends_container').css('background-color', background_color);
+                        } else {
+                            var color_list = background_color.stops,
+                                gradient_color = legends_gradient_string,
+                                first_color = 'xxxx',
+                                second_color = 'yyyy',
+                                first_color_re = new RegExp(first_color, 'g'),
+                                second_color_re = new RegExp(second_color, 'g');
+
+                            gradient_color = gradient_color.replace(first_color_re, color_list[0][1]);
+                            gradient_color = gradient_color.replace(second_color_re, color_list[1][1]);
+
+                            $('.custom_legends_container').attr('style', gradient_color);
+                        }
+                    } catch(e) {
+                        // console.error(e);
+                        $('.custom_legends_container').css('background-color', default_legends_bg);
+                    }
+
+                    prepareValueLegends(evt.currentTarget.series, dom_id);
+                },
+                selection : function(evt) {
+                    // Trigger after .5 second to get the exact values not the old one.
+                    setTimeout(function() {
+                        var is_zoom_in = evt.currentTarget.resetZoomButton;
+                        prepareValueLegends(evt.currentTarget.series, dom_id, is_zoom_in);
+                    }, 500);
+                }
+            }
         },
         title: {
             // text: chartConfig.name
@@ -574,8 +619,6 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         //     url:'http://localhost:8080/highcharts-export-web/'
         // },
         tooltip: {
-            // headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
-            // pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
             formatter: function () {
                 var this_date = new Date(this.x),
                     tooltip_string = "";
@@ -776,25 +819,26 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
  * @param service_name {String}, It is the name of current service
  * @param ds_name {String}, It is the name of current data source
  * @param device_name {Array}, It is the list of device names(right now we have only one device name)
- * @param container_dom_id {String}, It is the dom id in of last updated block div in which the chart is to be prepared.
- * @param sparkline_dom_id {String}, It is the dom id in which sparkline chart is to be created
- * @param hidden_input_dom_id {String}, It is the dom id(input element) in which sparkline chart data is to be saved
- * @param polled_val_shown_dom_id {String}, It is the dom id in which the latest polled value is to be shown.
+ * @param extra_info_obj {Object}, It contains the extra info required in further functionality.
  */
 function nocout_livePollCurrentDevice(
     service_name,
     ds_name,
     device_name,
-    container_dom_id,
-    sparkline_dom_id,
-    hidden_input_dom_id,
-    polled_val_shown_dom_id,
-    show_sparkline_chart,
+    extra_info_obj,
     callback
 ) {
+
+    var container_dom_id = extra_info_obj['container_dom_id'] ? extra_info_obj['container_dom_id'] : "",
+        sparkline_dom_id = extra_info_obj['sparkline_dom_id'] ? extra_info_obj['sparkline_dom_id'] : "",
+        hidden_input_dom_id = extra_info_obj['hidden_input_dom_id'] ? extra_info_obj['hidden_input_dom_id'] : "",
+        polled_val_shown_dom_id = extra_info_obj['polled_val_shown_dom_id'] ? extra_info_obj['polled_val_shown_dom_id'] : "",
+        show_sparkline_chart = extra_info_obj['show_sparkline_chart'] ? extra_info_obj['show_sparkline_chart'] : false,
+        is_first_call = typeof extra_info_obj['is_first_call'] != 'undefined' ? extra_info_obj['is_first_call'] : 1;
+
     // Make Ajax Call
     perf_page_live_polling_call = $.ajax({
-        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name,
+        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call,
         type : "GET",
         success : function(response) {
             
@@ -1058,16 +1102,29 @@ function initSingleDevicePolling(callback) {
         // Disable the "Poll Now" button
         $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
 
+        var active_tab_obj = nocout_getPerfTabDomId(),
+            dom_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+            is_first_call = 1;
+
+        if(poll_now_data_dict[dom_id] && poll_now_data_dict[dom_id].length > 0) {
+            is_first_call = 0;            
+        }
+
+        var extra_info_obj = {
+            'container_dom_id' : container_id,
+            'sparkline_dom_id' : sparkline_dom_id,
+            'hidden_input_dom_id' : hidden_input_dom_id,
+            'polled_val_shown_dom_id' : polled_val_shown_dom_id,
+            'show_sparkline_chart' : false,
+            'is_first_call' : is_first_call
+        };
+
         // Call function to fetch live polling data
         nocout_livePollCurrentDevice(
             service_name,
             ds_name,
             [device_name],
-            container_id,
-            sparkline_dom_id,
-            hidden_input_dom_id,
-            polled_val_shown_dom_id,
-            false,
+            extra_info_obj,
             function(response) {
                 
                 if (!(response instanceof Array)) {
@@ -1492,4 +1549,80 @@ function getRequiredTabId(help_txt) {
     }
 
     return required_tab_id;
+}
+
+
+/**
+ * This function prepares min, max & avg legends on highcharts
+ * @method prepareValueLegends
+ * @param dataset {Array}, It contains the series data plotted on chart
+ * @param dom_id {String}, It contains the dom id of parent container
+ * @param is_zoom_in {Undefined/Object}, It contains undefined if on zero zoom level else object.
+ */
+function prepareValueLegends(dataset, dom_id, is_zoom_in) {
+    var legends_block_id = dom_id + '_legends_block',
+        legends_html = '<ul class="list-unstyled list-inline">';
+
+    for(var i=0;i<dataset.length;i++) {
+        if (
+            dataset[i].name.toLowerCase().indexOf('critical') == -1
+            &&
+            dataset[i].name.toLowerCase().indexOf('warning') == -1
+            &&
+            dataset[i].name.toLowerCase().indexOf('threshold') == -1
+        ) {
+            var avg_val = calculateAverageValue(dataset[i].data, 'y'),
+                max_val = dataset[i].dataMax,
+                min_val = dataset[i].dataMin,
+                box_color = dataset[i].color,
+                name = dataset[i].name;
+            /****** If need to show (min + max) / 2 in avg legend then uncomment below code ******/
+            // If chart is on some zoom level then calculate avg from min & max values
+            // if (typeof is_zoom_in != 'undefined') {
+            //     avg_val = (max_val + min_val) / 2;
+            //     avg_val = avg_val.toFixed(2);
+            // } else {
+            //     avg_val = calculateAverageValue(dataset[i].data, 'y');
+            // }
+            
+            legends_html += '<li>\
+                             <span style="background:'+box_color+';">&nbsp;</span>\
+                             '+ name +'(Min Val) : '+min_val+' \
+                             </li> \
+                             <li>\
+                             <span style="background:'+box_color+';">&nbsp;</span>\
+                             '+ name +'(Max Val) : '+max_val+' \
+                             </li>';
+
+            if (typeof is_zoom_in == 'undefined') {
+                legends_html += '<li>\
+                             <span style="background:'+box_color+';">&nbsp;</span>\
+                             '+ name +'(Avg Val) : '+avg_val+' \
+                             </li>';
+            }
+        }
+    }
+
+    legends_html += '</ul>';
+
+    $('#' + legends_block_id + ' > .custom_legends_block').html(legends_html);
+
+    if ($('#' + legends_block_id).hasClass('hide')) {
+        $('#' + legends_block_id).removeClass('hide');
+    }
+}
+
+/**
+ * This function calculates & return the average value as per given params
+ * @method calculateAverageValue
+ * @param resultset {Array}, It contains the single series data plotted on chart
+ * @param key {String}, It contains the object key whose data is to be average.
+ */
+function calculateAverageValue(resultset, key) {
+    var total_val = 0;
+    for (var x=0;x<resultset.length;x++) {
+        total_val += resultset[x][key];
+    }
+
+    return (total_val/resultset.length).toFixed(2);
 }

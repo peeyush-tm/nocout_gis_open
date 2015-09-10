@@ -356,7 +356,7 @@ function nocoutPerfLib() {
     /**
      * This function make HTML for TAB content
      * @method make_tab_content_html
-     * @param tab_content_config "{Object}", It contains the configuration for creating tab content html
+     * @param tab_content_config {Object}, It contains the configuration for creating tab content html
      * @return content_html {String}, It contains the required HTML string
      */
     this.make_tab_content_html = function(tab_content_config) {
@@ -372,7 +372,8 @@ function nocoutPerfLib() {
             show_last_updated = tab_content_config.show_last_updated != undefined ? tab_content_config.show_last_updated : true,
             last_updated_id = unique_key ? "last_updated_" + unique_key + "_block" : "",
             chart_id = unique_key ? unique_key + "_chart" : "",
-            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "";
+            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "",
+            legends_block_id = unique_key ? unique_key + "_legends_block" : "";
 
         content_html += '<div class="tab-pane ' + active_class+ '" id="' + id+ '">';
 
@@ -433,11 +434,17 @@ function nocoutPerfLib() {
 
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;"></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
                             <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         }
 
@@ -905,6 +912,11 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        // Hide custom legends block if exists
+        if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
+            $('#' + service_id + '_legends_block').addClass('hide');
+        }
 
         if (!get_service_data_url || (service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1)) {
             if(service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1) {

@@ -163,7 +163,7 @@
                 {% if settings.ENABLE_AGGREGATE_REPORT_DOWNLOAD %}
                 <li>
                     <div class="btn-group dropdown">
-                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Download Reports">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="" title="Download Reports">
                             <i class="text-primary fa fa-download"> </i> Report
                             <span class="caret"></span>
                         </button>
@@ -417,7 +417,7 @@
                 current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
                 is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
                 is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
-                device_name = current_device;
+                device_name = "{{ device.device_name }}";
                 warn_color = "{{ settings.WARN_COLOR}}";
                 warn_type = "{{ settings.WARN_TYPE}}";
                 crit_color = "{{ settings.CRIT_COLOR}}";
@@ -588,6 +588,7 @@
          * @event click
          */
         $("#reset_filter").on('click', function () {
+
             if(startDate && endDate) {
 
                 startDate = "";

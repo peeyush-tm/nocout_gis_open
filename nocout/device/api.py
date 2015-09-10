@@ -1432,6 +1432,12 @@ class BulkFetchLPDataApi(View):
         except Exception, e:
             is_radwin5 = 0
 
+        # Is first call or not(used in case of utilization for calculation)
+        try:
+            is_first_call = int(self.request.GET.get('is_first_call', 1))
+        except Exception, e:
+            is_first_call = 1
+
         # Thematic settings template ID.
         try:
             ts_template_id = int(self.request.GET.get('ts_template'))
@@ -1762,6 +1768,7 @@ class BulkFetchLPDataApi(View):
                     lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
+                    lp_data['is_first_call'] = is_first_call
 
                     if not all([service_name, ds_name]):
                         if service_type == 'ping' or ts_type == "ping":
