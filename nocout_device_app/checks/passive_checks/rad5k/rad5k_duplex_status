@@ -1,0 +1,73 @@
+#!/usr/bin/python
+		
+# ######################################################################
+# Function: check_rad5k_duplex_status
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+value_duplex = { 
+		1 : 'notconnected',
+		10 : 'halfduplex',
+		11 : 'fullduplex',
+		15 : 'halfduplex',
+		16 : 'fullduplex',
+		20 : 'halfduplex',
+		21 : 'fullduplex',
+		65535 : 'unknown'}
+
+def check_rad5k_duplex_status(item, _no_params, info):
+
+	"""
+            check_rad5k_duplex_status function calculates the uplink utilization
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - Duplex : fullduplex 
+
+                    Raises:
+                            ValueError ,Exception
+
+	""" 
+
+	state = 3
+	infotext = "value is unknown"
+	duplex = ""
+	try:
+		if info:
+		    if info[0][0]:
+			x = int(info[0][0])
+			if value_duplex.get(x):					
+				duplex = value_duplex.get(x)
+				state = 0
+				infotext = "Duplex : %s " % duplex
+	except ValueError :
+		infotext = "type_mismatch_value"
+	except:
+		infotext = "unknown_value"
+	return(state,infotext,[("duplex",duplex)])
+
+check_info["rad5k_duplex_status"] = {
+	'check_function' : check_rad5k_duplex_status,
+	'service_description' : "rad5k_duplex_status",
+	'has_perfdata' : True
+}
+#########################################################################
+#       SNMP OID for the Duplex Status
+#########################################################################
+snmp_info["rad5k_duplex_status"] = (".1.3.6.1.4.1.4458.1000.1.3.2.1",["7.1"]) 
+
