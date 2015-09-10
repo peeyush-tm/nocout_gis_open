@@ -1537,6 +1537,13 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
         false_param = false,
         true_param = true;
 
+        var extra_info_obj = {
+            'container_dom_id' : false_param,
+            'sparkline_dom_id' : false_param,
+            'hidden_input_dom_id' : false_param,
+            'polled_val_shown_dom_id' : false_param,
+            'show_sparkline_chart' : true_param
+        };
 
         if(service_name && ds_name && device_name) {
             // Disable all poll now buttons
@@ -1547,11 +1554,7 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                 service_name,
                 ds_name,
                 device_name,
-                false_param,
-                false_param,
-                false_param,
-                false_param,
-                true_param,
+                extra_info_obj,
                 function(live_polled_dict) {
                     // Disable all poll now buttons
                     $(currentTarget).button('complete');
