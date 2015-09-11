@@ -304,6 +304,7 @@ def kpi_data_data_main():
 	Raises: No Exception
 	"""
 	try:
+		original_dr_host_list = []
 		configs = config_module.parse_config_obj()
 		desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
 		desired_config = configs.get(desired_site)
