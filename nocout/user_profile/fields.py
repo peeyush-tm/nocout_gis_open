@@ -14,7 +14,7 @@ Classes
 """
 
 from django.forms import CharField, PasswordInput
-from user_profile.validators import validate_length, complexity
+from user_profile.validators import validate_length, complexity, validate_dictionary_words
 
 
 class PasswordField(CharField):
@@ -25,10 +25,10 @@ class PasswordField(CharField):
       1. Minimum Length
       2. Complexity
     """
-    default_validators = [validate_length, complexity]
+    default_validators = [validate_length, complexity, validate_dictionary_words]
 
     def __init__(self, *args, **kwargs):
-        if not kwargs.has_key("widget"):
+        if "widget" not in kwargs:
             kwargs["widget"] = PasswordInput(render_value=False)
 
         super(PasswordField, self).__init__(*args, **kwargs)
