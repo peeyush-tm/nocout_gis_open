@@ -117,9 +117,6 @@ class UserForm(forms.ModelForm):
         password2 = self.cleaned_data.get("password2")
         password1 = self.cleaned_data.get("password1")
 
-        print "********************* password1 - ", password1
-        print "********************* password2 - ", password2
-
         if (password1 or password2) and password1 != password2:
             raise forms.ValidationError("Passwords do not match.")
 
