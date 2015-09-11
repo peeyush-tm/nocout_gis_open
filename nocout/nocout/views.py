@@ -21,7 +21,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from inventory.models import LivePollingSettings
+from inventory.models import LivePollingSettings, ThematicSettings, UserThematicSettings, ThresholdConfiguration
 from device.models import DeviceTypeService
 
 
@@ -343,6 +343,7 @@ def updateThematicType(request):
 
     ds_obj = DeviceTypeService.objects.all().values('service_id', 'device_type_id')
 
+    # Update device type in LivePollingSettings model
     for obj in ds_obj:
         service_id = obj.get('service_id')
         device_type_id = obj.get('device_type_id')
@@ -351,5 +352,30 @@ def updateThematicType(request):
             for lp in lp_obj:
                 lp.device_type_id = device_type_id
                 lp.save()
+
+    
+    thematic_settings_object = ThematicSettings.objects.filter(
+                                   id__in=UserThematicSettings.objects.values_list('thematic_template', flat=True)
+                               ).values(
+                                   'id',
+                                   'threshold_template__live_polling_template__technology__id',
+                                   'threshold_template__live_polling_template__device_type__id'
+                               )
+    # Update device type in UserThematicSettings model
+    for thematics in thematic_settings_object:
+        device_type = thematics.get('threshold_template__live_polling_template__device_type__id')
+        device_tech = thematics.get('threshold_template__live_polling_template__technology__id')
+        template_id = thematics.get('id')
+
+        user_thematics_obj = UserThematicSettings.objects.filter(
+            thematic_technology_id=device_tech,
+            thematic_template_id=template_id
+        )
+        if user_thematics_obj.exists():
+            for user_thematic in user_thematics_obj:
+                user_thematic.thematic_type_id = device_type
+                user_thematic.save()
+
+
 
     return HttpResponse(json.dumps({'success': 1, 'message': 'Thematics Updated.'}), content_type='application/json')

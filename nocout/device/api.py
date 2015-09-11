@@ -1464,14 +1464,14 @@ class BulkFetchLPDataApi(View):
 
         # Exceptional services, i.e. 'ss' services which get service data from 'bs' instead from 'ss'.
         exceptional_services = [
-            'wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi', 'wimax_ul_rssi', 
-            'wimax_ul_intrf', 'wimax_dl_intrf', 'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
-            'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 
+            'wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi', 'wimax_ul_rssi', 'wimax_ss_dl_utilization',
+            'wimax_ss_ul_utilization', 'wimax_ul_intrf', 'wimax_dl_intrf', 'wimax_modulation_dl_fec', 
+            'wimax_modulation_ul_fec', 'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 
             'rad5k_ul_rssi', 'rad5k_dl_rssi','rad5k_ss_dl_utilization' ,'rad5k_ss_ul_utilization',
-            'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent', 
-            'rad5k_dl_estmd_throughput_invent', 'rad5k_ul_estmd_throughput_invent', 'rad5k_ul_uas_invent', 
-            'rad5k_dl_es_invent', 'rad5k_ul_ses_invent', 'rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent', 
-            'rad5k_ss_cmd_rx_pwr_invent'
+            'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent',  'rad5k_dl_estmd_throughput_invent', 
+            'rad5k_ul_estmd_throughput_invent', 'rad5k_ul_uas_invent', 'rad5k_dl_es_invent', 'rad5k_ul_ses_invent', 
+            'rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent', 'rad5k_ss_cmd_rx_pwr_invent', 'rad5k_ss_dl_utilization', 
+            'rad5k_ss_ul_utilization'
         ]
 
         # Service for which live polling runs.
