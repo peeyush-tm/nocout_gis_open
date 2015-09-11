@@ -356,7 +356,7 @@ function nocoutPerfLib() {
     /**
      * This function make HTML for TAB content
      * @method make_tab_content_html
-     * @param tab_content_config "{Object}", It contains the configuration for creating tab content html
+     * @param tab_content_config {Object}, It contains the configuration for creating tab content html
      * @return content_html {String}, It contains the required HTML string
      */
     this.make_tab_content_html = function(tab_content_config) {
@@ -372,7 +372,8 @@ function nocoutPerfLib() {
             show_last_updated = tab_content_config.show_last_updated != undefined ? tab_content_config.show_last_updated : true,
             last_updated_id = unique_key ? "last_updated_" + unique_key + "_block" : "",
             chart_id = unique_key ? unique_key + "_chart" : "",
-            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "";
+            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "",
+            legends_block_id = unique_key ? unique_key + "_legends_block" : "";
 
         content_html += '<div class="tab-pane ' + active_class+ '" id="' + id+ '">';
 
@@ -412,13 +413,19 @@ function nocoutPerfLib() {
                                 </select>\
                             </div>\
                             <div class="col-md-4">\
-                                <button class="btn btn-default btn-sm play_pause_btns poll_play_btn" data-complete-text="<i class=\'fa fa-play\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_play_btn" \
+                                    data-complete-text="<i class=\'fa fa-play text-success\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
                                     <i class="fa fa-play text-success"> </i>\
                                 </button>\
-                                <button class="btn btn-default btn-sm play_pause_btns poll_pause_btn" data-complete-text="<i class=\'fa fa-pause\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_pause_btn" \
+                                    data-complete-text="<i class=\'fa fa-pause text-warning\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
                                     <i class="fa fa-pause text-warning"> </i>\
                                 </button>\
-                                <button class="btn btn-default btn-sm play_pause_btns poll_stop_btn" data-complete-text="<i class\'fa fa-stop\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_stop_btn" \
+                                    data-complete-text="<i class\'fa fa-stop text-danger\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
                                     <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
                             </div>\
@@ -427,11 +434,17 @@ function nocoutPerfLib() {
 
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;"></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
                             <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         }
 
@@ -814,9 +827,16 @@ function nocoutPerfLib() {
     this.getServiceStatus = function(service_status_url, is_exact_url, callback) {
 
         if(!is_exact_url) {
-            var splitted_status_url = service_status_url.split("/"),
-                updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
-                device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            
+            if (service_status_url.indexOf('?') == -1) {
+                var splitted_status_url = service_status_url.split("/"),
+                    updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            } else {
+                var splitted_status_url = service_status_url.split('?')[0].split("/");
+                var updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url.split('?')[0] + "/" + "?" + service_status_url.split('?')[1] : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            }
 
             if (updated_url.indexOf("/servicedetail/") > -1) {
                 if (updated_url.indexOf("rssi") > -1) {
@@ -892,6 +912,11 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        // Hide custom legends block if exists
+        if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
+            $('#' + service_id + '_legends_block').addClass('hide');
+        }
 
         if (!get_service_data_url || (service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1)) {
             if(service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1) {
@@ -1229,6 +1254,14 @@ function nocoutPerfLib() {
                                                             // mColumns: excel_columns
                                                         }
                                                     ]
+                                                },
+                                                fnInitComplete: function(oSettings) {
+                                                    var row_per_pages_selectbox = '#perf_data_table_wrapper div.dataTables_length label select',
+                                                        search_box = '#perf_data_table_wrapper div.dataTables_filter label input';
+                                                    // Update search txt box & row per pages dropdown style
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).css("max-width","150px");
                                                 },
                                                 bPaginate: true,
                                                 bDestroy: true,
@@ -1591,15 +1624,15 @@ $(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
     var currentTarget = e.currentTarget;
     // Show button in loading view
     $(currentTarget).button('loading');
-    if(!$("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-        $("#" + tab_id + " .play_pause_btns").addClass("disabled");
+    if(!$("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + "_block .play_pause_btns").addClass("disabled");
     }
     initSingleDevicePolling(function(response) {
         
         $(currentTarget).button('complete');
         
-        if($("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-            $("#" + tab_id + " .play_pause_btns").removeClass("disabled");
+        if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+            $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");
         }
     });
 });
