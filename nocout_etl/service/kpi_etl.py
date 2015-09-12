@@ -652,6 +652,7 @@ def extract_ss_ul_issue_data(ss_info,bs_host_name,bs_site_name,bs_ip_address,sec
 	service_dict_list.append(service_dict)
 	#redis_conn = str(args['redis'])
 	#arg['redis'] = ''
+    #warning(' info: {0}'.format(service_dict_list))
     if 'cambium' in args['service']:
 	extract_cambium_bs_ul_data.s(service_dict_list,bs_host_name,bs_site_name,bs_ip_address,sect_id,**args).apply_async()
     elif 'wimax' in args['service']:

@@ -11,6 +11,8 @@ running on all configured devices for this poller.
 from ast import literal_eval
 from datetime import datetime, timedelta
 import re
+from sys import path
+import sys
 
 from celery import group
 
@@ -19,6 +21,8 @@ from start.start import app
 
 logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
+
+path.append('/omd/nocout_etl')
 
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
@@ -347,8 +351,8 @@ def get_service_checks_output(site_name=None):
 	# get check results from redis backed queue
 	# pulling 2000 values from queue, at a time
 	queue = RedisInterface(perf_q='q:perf:service')
-	check_results = queue.get(0, 2000)
-	info('Queue len: {0}'.format(len(check_results)))
+	check_results = queue.get(0, -1)
+	warning('Queue len, size of obj: {0}, {1}'.format(len(check_results), sys.getsizeof(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
 
@@ -357,8 +361,8 @@ def get_ul_issue_service_checks_output(site_name=None):
 	# get check results from redis backed queue
 	# pulling 2000 values from queue, at a time
 	queue = RedisInterface(perf_q='queue:ul_issue')
-	check_results = queue.get(0, 2000)
-	info('ul_issue Queue len: {0}'.format(len(check_results)))
+	check_results = queue.get(0, -1)
+	warning('ul_issue Queue len: {0}'.format(len(check_results)))
 	if check_results:
 		build_export.s(site_name, check_results).apply_async()
 
@@ -371,12 +375,14 @@ def send_db_tasks(**kw):
 	                        'site_name', 'sys_timestamp', 'check_timestamp', 
 	                        'ip_address', 'sector_id', 'connected_device_ip', 
 	                        'connected_device_mac', 'mac_address')
+	#warning('send-db-send**********')
 	site = kw.get('site')
 	# tasks to be sent
 	tasks = []
 	rds_cli = RedisInterface()
 	if kw.get('serv_data'):
 		serv_data = kw.get('serv_data')
+		#warning(serv_data[:2])
 		# mongo/mysql inserts/updates for regular services
 		tasks.extend([
 			#mongo_update.s(serv_data,

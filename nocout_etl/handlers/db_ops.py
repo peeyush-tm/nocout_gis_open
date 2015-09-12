@@ -18,6 +18,7 @@ from mysql.connector.errors import (OperationalError, InterfaceError)
 from operator import itemgetter
 from pymongo import MongoClient
 from redis import StrictRedis
+from redis.sentinel import Sentinel
 from time import sleep
 
 from celery import Task
@@ -31,6 +32,7 @@ info , warning, error = logger.info, logger.warning, logger.error
 
 DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
+SENTINELS = getattr(app.conf, 'SENTINELS', None)
 
 class DatabaseTask(Task):
 	abstract = True
@@ -129,8 +131,11 @@ class RedisInterface(object):
 			'db': int(conf.get('redis', 'db'))
 		}
 		re_conf.update(self.custom_conf) if self.custom_conf else re_conf
+		service_name = conf.get('redis', 'service_name', 'mymaster')
 		try:
-			self.redis_conn = StrictRedis(**re_conf)
+			#self.redis_conn = StrictRedis(**re_conf)
+			sentinel = Sentinel(SENTINELS, **re_conf)
+			self.redis_conn = sentinel.master_for(service_name) 
 		except Exception as exc:
 			error('Redis connection error... {0}'.format(exc))
 
@@ -138,14 +143,21 @@ class RedisInterface(object):
 
 	def get(self, start, end):
 		""" Get and remove values from redis list based on a range"""
-		output = self.redis_cnx.lrange(self.perf_q, start, end)
-		output = [literal_eval(x) for x in output]
+		p = self.redis_cnx.pipeline(transaction=True)
+
+		p.lrange(self.perf_q, start, end)
 		# keep only unread values in list
 		if end == -1:
 			start, end = -1, 0
 		else:
 			start,  end = end+1, -1
-		#self.redis_cnx.ltrim(self.perf_q, start, end)
+
+		output = p.execute()
+		if output and output[0]:
+		    p.ltrim(self.perf_q, start, end)
+		    p.execute()
+		    output = output[0]
+		    output = [literal_eval(x) for x in output]
 
 		return output
 
