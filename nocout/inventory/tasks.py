@@ -3273,7 +3273,6 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                                        file_path,
                                        sheettype)
 
-
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
