@@ -1574,6 +1574,8 @@ function prepareValueLegends(dataset, dom_id, is_zoom_in) {
             dataset[i].name.toLowerCase().indexOf('min value') == -1
             &&
             dataset[i].name.toLowerCase().indexOf('max value') == -1
+            &&
+            dataset[i].name.toLowerCase().indexOf('avg value') == -1
         ) {
             var avg_val = calculateAverageValue(dataset[i].data, 'y'),
                 max_val = typeof dataset[i].dataMax != 'undefined' ? dataset[i].dataMax : 'NA',
