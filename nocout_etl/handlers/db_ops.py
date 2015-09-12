@@ -10,6 +10,7 @@ data manipulations, used in site-wide ETL operations.
 
 from ast import literal_eval
 from ConfigParser import ConfigParser
+from datetime import datetime
 from itertools import groupby, izip_longest
 import memcache
 from mysql.connector import connect
@@ -17,6 +18,7 @@ from mysql.connector.errors import (OperationalError, InterfaceError)
 from operator import itemgetter
 from pymongo import MongoClient
 from redis import StrictRedis
+from redis.sentinel import Sentinel
 from time import sleep
 
 from celery import Task
@@ -28,8 +30,9 @@ from start.start import app
 logger = get_task_logger(__name__)
 info , warning, error = logger.info, logger.warning, logger.error
 
-db_conf = app.conf.CNX_FROM_CONF
+DB_CONF = getattr(app.conf, 'CNX_FROM_CONF', None)
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
+SENTINELS = getattr(app.conf, 'SENTINELS', None)
 
 class DatabaseTask(Task):
 	abstract = True
@@ -44,7 +47,7 @@ class DatabaseTask(Task):
 	redis_conn = None
 
 	conf = ConfigParser()
-	conf.read(db_conf)
+	conf.read(DB_CONF)
 
 	def after_return(self, *args, **kwargs):
 		if self.name == 'mongo-export-mysql-handler':
@@ -100,8 +103,11 @@ class DatabaseTask(Task):
     				#self.memc_conn_pool[key] =None
 		return self.memc_conn_pool.get(key)	
 
-class RedisInterface:
+class RedisInterface(object):
 	""" Implements various redis operations"""
+
+	#__slots__ = ['custom_conf', 'redis_conn', 'perf_q']
+
 
 	def __init__(self, **kw):
 		self.custom_conf = kw.get('custom_conf')
@@ -109,18 +115,27 @@ class RedisInterface:
 		# queue name to get check results data from 
 		self.perf_q = kw.get('perf_q')
 
+	def conn_from_conf(self, custom_conf=None):
+		""" Method used to get redis connection without binding 
+		with any queue"""
+		self.custom_conf = custom_conf
+		return self.redis_cnx
+
 	@property
 	def redis_cnx(self):
 		conf = ConfigParser()
-		conf.read(db_conf)
+		conf.read(DB_CONF)
 		# redis connection config
 		re_conf = {
 			'port': int(conf.get('redis', 'port')),
 			'db': int(conf.get('redis', 'db'))
 		}
 		re_conf.update(self.custom_conf) if self.custom_conf else re_conf
+		service_name = conf.get('redis', 'service_name', 'mymaster')
 		try:
-			self.redis_conn = StrictRedis(**re_conf)
+			#self.redis_conn = StrictRedis(**re_conf)
+			sentinel = Sentinel(SENTINELS, **re_conf)
+			self.redis_conn = sentinel.master_for(service_name) 
 		except Exception as exc:
 			error('Redis connection error... {0}'.format(exc))
 
@@ -128,10 +143,21 @@ class RedisInterface:
 
 	def get(self, start, end):
 		""" Get and remove values from redis list based on a range"""
-		output = self.redis_cnx.lrange(self.perf_q, start, end)
-		output = [literal_eval(x) for x in output]
+		p = self.redis_cnx.pipeline(transaction=True)
+
+		p.lrange(self.perf_q, start, end)
 		# keep only unread values in list
-		self.redis_cnx.ltrim(self.perf_q, end+1, -1)
+		if end == -1:
+			start, end = -1, 0
+		else:
+			start,  end = end+1, -1
+
+		output = p.execute()
+		if output and output[0]:
+		    p.ltrim(self.perf_q, start, end)
+		    p.execute()
+		    output = output[0]
+		    output = [literal_eval(x) for x in output]
 
 		return output
 
@@ -161,15 +187,13 @@ class RedisInterface:
 					if x[1] > 2:
 						trim_hosts.append(x[0])
 				[p.ltrim(KEY % (x[0], x[1]), -2, -1) for x in trim_hosts]
-				p.execute()
-
 			# update the hash values
 			else:
 				[p.hmset(KEY %
 					(d.get('device_name'), d.get('service_name'), d.get('data_source')),
 					d) for d in data_values]
 				# perform all operations atomically
-				p.execute()
+			p.execute()
 		except Exception as exc:
 			error('Redis pipe error in update... {0}, retrying...'.format(exc))
 			# send the task for retry
@@ -367,10 +391,11 @@ def mysql_insert_handler(self, data_values, insert_table, update_table, mongo_co
 	
 	# TODO: Every task should sub class db_ops and initialize table names, 
 	# instead of passing them as function args seperately
-	for entry in data_values:
-		entry.pop('_id', '')
-		entry['sys_timestamp'] = entry['sys_timestamp'].strftime('%s')
-		entry['check_timestamp'] = entry['check_timestamp'].strftime('%s')
+	if (data_values and 
+			isinstance(data_values[0].get('sys_timestamp'), datetime)):
+		for entry in data_values:
+			entry['sys_timestamp'] = entry['sys_timestamp'].strftime('%s')
+			entry['check_timestamp'] = entry['check_timestamp'].strftime('%s')
 
 	# handle the data deletion for toplogy table
 	if old_topology:
@@ -418,7 +443,7 @@ def mysql_update(self, table, data_values, site, columns=None):
 		# attempt task retry
 		raise self.retry(exc=exc)
 
-	warning('Len for status upserts {0}\n'.format(len(data_values)))
+	#warning('Len for status upserts {0}\n'.format(len(data_values)))
 
 
 @app.task(base=DatabaseTask, name='nw-mysql-insert', bind=True,

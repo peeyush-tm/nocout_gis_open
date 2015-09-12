@@ -17,7 +17,7 @@ from sys import path
 
 from celery import group
 
-path.append('/omd/nocout_etl')
+#path.append('/omd/nocout_etl')
 
 from handlers.db_ops import *
 from start.start import app
@@ -187,10 +187,10 @@ def build_export(site, network_perf_data):
 @app.task(name='get-host-checks', ignore_result=True)
 def get_host_checks_output(site_name=None):
 	# initialize redis connection
-	queue = RedisInterface(perf_q='queue:host')
+	queue = RedisInterface(perf_q='q:perf:host')
 	# get host check results from redis backed queue
 	# pulling 1000 values from queue, at a time
-	host_check_results = queue.get(0, 1000)
+	host_check_results = queue.get(0, -1)
 	if host_check_results:
 		build_export.s(site_name, host_check_results).apply_async()
 
