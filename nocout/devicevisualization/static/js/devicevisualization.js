@@ -484,6 +484,7 @@ $("#createPolygonBtn").click(function(e) {
     $("#showToolsBtn").removeAttr("disabled");
 
     $("#polling_tech").val($("#polling_tech option:first").val());
+    $("#polling_type").val($("#polling_type option:first").val());
 
     if(window.location.pathname.indexOf("wmap") > -1) {
         whiteMapClass.initLivePolling();
@@ -1373,6 +1374,7 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
         point_type = evt.currentTarget.attributes.point_type ? evt.currentTarget.attributes.point_type.value : "",
         dom_id = evt.currentTarget.attributes.id ? evt.currentTarget.attributes.id.value : "",
         device_tech = evt.currentTarget.attributes.device_tech ? evt.currentTarget.attributes.device_tech.value : "",
+        device_type = evt.currentTarget.attributes.device_type ? evt.currentTarget.attributes.device_type.value : "",
         href_attr = evt.currentTarget.attributes.href ? evt.currentTarget.attributes.href.value.split("#") : "",
         block_id = href_attr.length > 1 ? href_attr[1] : "",
         pl_attr = evt.currentTarget.attributes.pl_value,
@@ -1416,7 +1418,11 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                             } else if(device_tech == 'wimax') {
                                 tooltip_info_dict = rearrangeTooltipArray(wimax_sector_toolTip_polled,fetched_polled_info);
                             } else if(device_tech == 'pmp') {
-                                tooltip_info_dict = rearrangeTooltipArray(pmp_sector_toolTip_polled,fetched_polled_info);
+                                if(device_type == 'radwin5kbs') {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_radwin5k_sector_toolTip_polled, fetched_polled_info);
+                                } else {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_sector_toolTip_polled, fetched_polled_info);
+                                }
                             } else {
                                 // pass
                             }
@@ -1425,8 +1431,12 @@ $("#infoWindowContainer").delegate(".nav-tabs li a",'click',function(evt) {
                                 tooltip_info_dict = rearrangeTooltipArray(ptp_ss_toolTip_polled,fetched_polled_info);
                             } else if(device_tech == 'wimax') {
                                 tooltip_info_dict = rearrangeTooltipArray(wimax_ss_toolTip_polled,fetched_polled_info);
-                            } else if(device_tech == 'pmp') {
-                                tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled,fetched_polled_info);
+                            } else if(device_tech == 'pmp') {                                
+                                if(device_type == 'radwin5kss') {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_radwin5k_ss_toolTip_polled, fetched_polled_info);
+                                } else {
+                                    tooltip_info_dict = rearrangeTooltipArray(pmp_ss_toolTip_polled, fetched_polled_info);
+                                }                                
                             } else {
                                 // pass
                             }
@@ -1527,6 +1537,13 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
         false_param = false,
         true_param = true;
 
+        var extra_info_obj = {
+            'container_dom_id' : false_param,
+            'sparkline_dom_id' : false_param,
+            'hidden_input_dom_id' : false_param,
+            'polled_val_shown_dom_id' : false_param,
+            'show_sparkline_chart' : true_param
+        };
 
         if(service_name && ds_name && device_name) {
             // Disable all poll now buttons
@@ -1537,11 +1554,7 @@ $('#infoWindowContainer').delegate('.perf_poll_now','click',function(e) {
                 service_name,
                 ds_name,
                 device_name,
-                false_param,
-                false_param,
-                false_param,
-                false_param,
-                true_param,
+                extra_info_obj,
                 function(live_polled_dict) {
                     // Disable all poll now buttons
                     $(currentTarget).button('complete');
@@ -2778,3 +2791,51 @@ if (!Array.prototype.indexOf) {
     return -1;
   };
 }
+
+$('select[name="polling_tech"]').change(function(e) {
+    var selected_tech = $.trim($(this).val());
+    var selected_tech_name = $('select[name="polling_tech"] option:selected').text().toLowerCase();
+   
+    if (selected_tech && typeof tech_type_api != 'undefined') {
+    	var api_url = tech_type_api;
+
+    	// Update the tech PK in api url
+    	api_url = api_url.replace('123', selected_tech);
+
+    	$.ajax({
+    		url : api_url,
+    		type : 'GET',
+    		success : function(response) {
+    			var result = response;
+
+    			if (typeof response == 'string') {
+    				result = JSON.parse(response);
+    			}
+
+    			var dType_html = '<option value="">Select Type</option>';
+
+    			for (var i=0;i<result.length;i++) {
+                    if(ptp_tech_list.indexOf(selected_tech_name) == 1){
+                        var title = result[i]['alias'],
+    					id = result[i]['id'];
+                        dType_html += '<option value="' + id + '">' + title + '</option>'                        					   
+    			}
+                    else{
+                        var title = result[i]['alias'],
+                        id = result[i]['id'];                       
+                       if(title.indexOf('SS') !== -1)
+                        {
+                            dType_html += '<option value="' + id + '">' + title + '</option>'
+                        }
+
+                    }
+            }
+
+    			$('select[name="polling_type"]').html(dType_html);
+    		},
+    		error : function(err) {
+    			// console.log(err.statusText);
+    		}
+    	})
+    }
+});

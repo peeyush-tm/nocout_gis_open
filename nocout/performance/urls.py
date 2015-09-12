@@ -17,9 +17,6 @@ urlpatterns = patterns('',
                            views.GetPerfomance.as_view(),
                            name='SingleDevicePerf'
                        ),
-                       url(r'^performance_dashboard/$',
-                           views.PerformanceDashboard.as_view()
-                       ),
                        url(r'^sector_dashboard/$',
                            views.SectorDashboard.as_view(),
                           name='spotDashboard'

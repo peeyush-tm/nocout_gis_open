@@ -4,8 +4,10 @@ from celery.schedules import crontab
 from datetime import timedelta
 from kombu import Queue
 from celery.beat import PersistentScheduler
-
 from celery import Celery
+
+# Replace a child worker process with a new one, every 20 minutes
+os.environ["AUTOSCALE_KEEPALIVE"] = "20"
 
 app = Celery('entry')
 
@@ -35,24 +37,25 @@ class Config:
         # celery broker configuration
         BROKER_URL = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB+1)
 
-	CELERY_IMPORTS = ['aggregation_all', 'host_wise_aggr', 'historical_mysql_export', 'mysql_clean']
-	CELERY_ALWAYS_EAGER = True
-	CELERY_TASK_RESULT_EXPIRES = timedelta(hours=1)
+	CELERY_IMPORTS = (
+			'tasks', 'db_tasks', 'client')
+	#CELERY_ALWAYS_EAGER = True
+	CELERY_TASK_RESULT_EXPIRES = timedelta(minutes=30)
+	CELERYD_MAX_TASKS_PER_CHILD = 200
 	CELERY_QUEUES = (
     		Queue('celery', routing_key='celery'),
     		Queue('transient', routing_key='transient', delivery_mode=1),
     		Queue('queue1', routing_key='queue1', delivery_mode=1),
 	)
 	CELERY_ROUTES = {
-		'host_wise_aggr.call_quantify_perf_data': {'queue': 'transient'},
-		'host_wise_aggr.collector': {'queue': 'transient'},
-		'host_wise_aggr.quantify_perf_data': {'queue': 'transient'},
-		'host_wise_aggr.calc_values': {'queue': 'transient'},
-		'host_wise_aggr.type_caste': {'queue': 'transient'},
-		'host_wise_aggr.find_existing_entry': {'queue': 'transient'},
-		'historical_mysql_export.mysql_export': {'queue': 'transient'},
-		'historical_mysql_export.read_data': {'queue': 'transient'},
-		'aggregation_all.demo_task': {'queue': 'transient'},
+		'client.main': {'queue': 'transient'},
+		'client.prepare_data': {'queue': 'transient'},
+		'tasks.quantify_perf_data': {'queue': 'transient'},
+		'tasks.calc_values': {'queue': 'transient'},
+		'tasks.type_caste': {'queue': 'transient'},
+		'tasks.find_existing_entry': {'queue': 'transient'},
+		'db_tasks.mysql_export': {'queue': 'transient'},
+		'db_tasks.read_data': {'queue': 'transient'},
 		'clean-main': {'queue': 'queue1', 'routing_key': 'queue1'},
 	}
 	
@@ -60,10 +63,6 @@ class Config:
 	CELERY_TIMEZONE = 'Asia/Calcutta'
 	#CELERYBEAT_SCHEDULE
 	CELERYBEAT_SCHEDULE = {
-		'demo-task': {
-        		'task': 'demo-task',
-        		'schedule': crontab(minute='*/32'),
-    		},
 		# hourly
 		'aggr-hourly-network': {
         		'task': 'aggregation-main',
@@ -118,10 +117,10 @@ class Config:
 				'all': True
 			}
     		},
-		# bihourly ospf1
+		## bihourly ospf1
 		'aggr-bihourly-network-ospf1': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/30'),
+        		'schedule': crontab(minute='*/31'),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -134,7 +133,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf1': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/30'),
+        		'schedule': crontab(minute='*/31'),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -148,7 +147,7 @@ class Config:
 		# bihourly, ospf2
 		'aggr-bihourly-network-ospf2': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/30'),
+        		'schedule': crontab(minute='*/31'),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -161,7 +160,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf2': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/30'),
+        		'schedule': crontab(minute='*/31'),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -175,7 +174,7 @@ class Config:
 		# bihourly, ospf3
 		'aggr-bihourly-network-ospf3': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/30'),
+        		'schedule': crontab(minute='*/31'),
         		'kwargs': {
 				'source_perf_table': 'performance_performancenetwork',
 				'destination_perf_table': 'performance_performancenetworkbihourly',
@@ -188,7 +187,7 @@ class Config:
     		},
 		'aggr-bihourly-service-ospf3': {
         		'task': 'aggregation-main',
-        		'schedule': crontab(minute='*/30'),
+        		'schedule': crontab(minute='*/31'),
         		'kwargs': {
 				'source_perf_table': 'performance_performanceservice',
 				'destination_perf_table': 'performance_performanceservicebihourly',
@@ -307,16 +306,18 @@ class Config:
 				'all': False
 			}
     		},
+		# historical clean
 		'hist-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=45, hour=1),
+        		'schedule': crontab(day_of_week='tue', minute=0, hour=7),
         		'kwargs': {
-			    'type': 'historical'
-			}
+			    'type': 'historical',
+			},
     		},
+		# poller clean
 		'ospf1-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=30, hour=0),
+        		'schedule': crontab(day_of_week='tue', minute=30, hour=7),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf1'
@@ -324,7 +325,7 @@ class Config:
     		},
 		'ospf2-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=40, hour=0),
+        		'schedule': crontab(day_of_week='tue', minute=0, hour=8),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf2'
@@ -332,7 +333,7 @@ class Config:
     		},
 		'ospf3-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=50, hour=0),
+        		'schedule': crontab(day_of_week='tue', minute=30, hour=8),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf3'
@@ -340,7 +341,7 @@ class Config:
     		},
 		'ospf4-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=0, hour=1),
+        		'schedule': crontab(day_of_week='tue', minute=45, hour=8),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf4'
@@ -348,7 +349,7 @@ class Config:
     		},
 		'ospf5-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=20, hour=1),
+        		'schedule': crontab(day_of_week='tue', minute=0, hour=9),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'ospf5'
@@ -356,7 +357,7 @@ class Config:
     		},
 		'vrfprv-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=40, hour=1),
+        		'schedule': crontab(day_of_week='tue', minute=30, hour=9),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'vrfprv'
@@ -364,7 +365,7 @@ class Config:
     		},
 		'pub-clean': {
         		'task': 'clean-main',
-        		'schedule': crontab(minute=0, hour=2),
+        		'schedule': crontab(day_of_week='tue', minute=45, hour=9),
         		'kwargs': {
 			    'type': 'live',
 			    'machine': 'pub'
@@ -374,5 +375,6 @@ class Config:
 
 	# application specific settings [not related to celery]
 	DEVICE_SET = 200
+	BATCH_SIZE = 10
 	
 app.config_from_object(Config)

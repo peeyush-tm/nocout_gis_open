@@ -2448,7 +2448,8 @@ var state_wise_device_label_text= {};
      */
     this.fetchPollingTemplate_earth = function() {
 		
-    	var selected_technology = $("#polling_tech").val(),
+    	var selected_technology = $.trim($("#polling_tech").val()),
+    		selected_type = $.trim($("#polling_type").val()),
     		pathArray = [],
 			polygon = "",
 			service_type = $("#isPing")[0].checked ? "ping" : "other";
@@ -2460,13 +2461,13 @@ var state_wise_device_label_text= {};
 		polygonSelectedDevices = [];
 		pointsArray = [];
 
-    	if(selected_technology != "") {
+    	if(selected_technology && selected_type) {
     		
     		$("#tech_send").button("loading");
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
+    			url : base_url+"/"+"device/ts_templates/?technology="+selected_technology+"&device_type="+selected_type+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
     			success : function(response) {
 
@@ -2770,6 +2771,8 @@ var state_wise_device_label_text= {};
 			        });
     			}
 			});
+		} else {
+			alert("Please select technology & type.");
 		}
 	}
 

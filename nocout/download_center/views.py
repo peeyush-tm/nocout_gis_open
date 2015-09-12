@@ -15,6 +15,8 @@ from django.conf import settings
 from nocout.mixins.permissions import SuperUserRequiredMixin
 # Import nocout utils gateway class
 from nocout.utils.util import NocoutUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin, DatatableSearchMixin
 
 import os
 import logging
@@ -61,7 +63,7 @@ class DownloadCenter(ListView):
         return context
 
 
-class DownloadCenterListing(BaseDatatableView):
+class DownloadCenterListing(BaseDatatableView, AdvanceFilteringMixin):
     """
     A generic class based view for the reports data table rendering.
     """
@@ -105,7 +107,7 @@ class DownloadCenterListing(BaseDatatableView):
             exec_query += ").filter(report_name='"+str(report_name)+"').values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -283,7 +285,7 @@ class CityCharterReportHeaders(ListView):
         return context
 
 
-class CityCharterReportListing(BaseDatatableView):
+class CityCharterReportListing(BaseDatatableView, AdvanceFilteringMixin, DatatableSearchMixin):
     """
     A generic class based view for City Charter Report datatable rendering.
     """
@@ -341,10 +343,6 @@ class CityCharterReportListing(BaseDatatableView):
         self.initialize(*args, **kwargs)
         # Is Data Limited
         is_limited_data_req = self.kwargs['is_data_limited'] if 'is_data_limited' in self.kwargs else 'no'
-
-        # if is_limited_data_req.lower() == 'yes':
-            # max limit of records returned
-            # self.max_display_length = 5
 
         qs = self.get_initial_queryset()
 

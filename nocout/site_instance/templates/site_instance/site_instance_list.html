@@ -40,9 +40,16 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '',
+            sync_device_url = '';
+
         $(document).ready(function (e) {
+
+             // Update useful URL variables
+             sync_device_url = '{% url "sync_devices_in_nms" 123 %}';
+
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
 
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
