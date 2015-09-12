@@ -3963,9 +3963,7 @@ class GISStaticInfo(View):
                         sector_configured_on_tech = None
 
                     # thematic settings for current user
-                    user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
-                    logger.exception("*********************** user_thematics - {}".format(user_thematics))
-
+                    user_thematics = self.get_thematic_settings(sector_configured_on_tech,sector_configured_on_type)
 
                     # service & data source
                     service = ""
@@ -4024,7 +4022,7 @@ class GISStaticInfo(View):
                                 substation_device_tech = None
 
                             # thematic settings for current user
-                            user_thematics = self.get_thematic_settings(substation_device_tech, substation_device_type)
+                            user_thematics = self.get_thematic_settings(substation_device_tech)
 
                             # service & data source
                             service = ""
@@ -4607,7 +4605,7 @@ class GISStaticInfo(View):
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology, device_type):
+    def get_thematic_settings(self, device_technology,device_type):
         """ Get device pl
 
             Parameters:
@@ -4631,46 +4629,26 @@ class GISStaticInfo(View):
 
         # device technology
         device_technology = device_technology
-
         # device type
         device_type = device_type
-
-        logger.exception("***************** device_technology - {}".format(device_technology))
-        logger.exception("***************** device_type - {}".format(device_type))
 
         # fetch thematic settings for current user
 
         if ts_type == "normal":
-            if device_technology:
-                if device_type:
-                    try:
-                        user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                          thematic_technology=device_technology,
-                                                                          thematic_type=device_type)
-                    except Exception as e:
-                        return user_thematics
-                else:
-                    try:
-                        user_thematics = UserThematicSettings.objects.filter(user_profile=current_user,
-                                                                             thematic_technology=device_technology)[0]
-                    except Exception as e:
-                        return user_thematics
+            try:
+                user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
+            except Exception as e:
+                return user_thematics
 
         elif ts_type == "ping":
-            if device_technology:
-                if device_type:
-                    try:
-                        user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                              thematic_technology=device_technology,
-                                                                              thematic_type=device_type)
-                    except Exception as e:
-                        return user_thematics
-                else:
-                    try:
-                        user_thematics = UserPingThematicSettings.objects.filter(user_profile=current_user,
-                                                                                 thematic_technology=device_technology)[0]
-                    except Exception as e:
-                        return user_thematics
+            try:
+                user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
+            except Exception as e:
+                return user_thematics
 
         return user_thematics
 
