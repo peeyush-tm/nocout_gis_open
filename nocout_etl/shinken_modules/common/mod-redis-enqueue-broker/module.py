@@ -6,7 +6,9 @@ Shinken broker module to brok information of
 services/hosts and events into redis backed queue
 """
 
+from ast import literal_eval
 from redis import StrictRedis
+from redis.sentinel import Sentinel
 
 from shinken.basemodule import BaseModule
 from shinken.log import logger
@@ -52,8 +54,19 @@ class RedisEnqueueBroker(BaseModule):
 		self.redis_conf = {
 				'host': getattr(mod_conf, 'host', 'localhost'),
 				'port': getattr(mod_conf, 'port', 6379),
-				'db': int(getattr(mod_conf, 'database', 0))
+				'db': int(getattr(mod_conf, 'db', 0))
 				}
+		sentinels = []
+		sentinels_conf = getattr(mod_conf, 'sentinels', None)
+		if sentinels_conf:
+			sentinels_conf = sentinels_conf.split(',')
+			while sentinels_conf:
+				sentinels.append(tuple(sentinels_conf[:2]))
+				sentinels_conf = sentinels_conf[2:]
+		sentinels_service_name = getattr(mod_conf, 'service_name', 'mymaster')
+		self.redis_conf.update({'sentinels': sentinels, 
+			'sentinels_service_name': sentinels_service_name})
+		min_other_sentinels = getattr(mod_conf, 'min_other_sentinels', 0)
 		# redis queue
 		self.queue = RedisQueue(**self.redis_conf)
 
@@ -64,7 +77,7 @@ class RedisEnqueueBroker(BaseModule):
 			broks = self.to_q.get()
 			for brok in broks:
 				brok = brok.prepare()
-				info('brok: %s' % brok)
+				#info('brok: %s' % brok)
 				if brok and brok.type in self.valid_broks:
 					try:
 						msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
@@ -87,10 +100,9 @@ class RedisEnqueueBroker(BaseModule):
 			alrt_type = data['alert_type']
 			if alrt_type == 'HOST':
 				data.update({'service_desc': 'ping'})
-				self.queue.put('host_event', data)
+				self.queue.put('event:host', data)
 			elif alrt_type == 'SERVICE':
-				pass
-				self.queue.put('service_event', data)
+				self.queue.put('event:service', data)
 
 
 	# called by base module
@@ -101,9 +113,11 @@ class RedisEnqueueBroker(BaseModule):
 		if brok.type in self.host_valid_broks:
 			try:
 				#info('[%s] brok: %s' % (self.name, brok.data.items()))
+				#if '10.165.178.12' == str(brok.data['address']):
+					#info('[%s] brok: %s' % (self.name, brok.data.items()))
 				msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
 					k in self.host_valid_attrs])
-				self.queue.put('host', msg)
+				self.queue.put('perf:host', msg)
 			except Exception as exc:
 				error('[%s] Problem with brok: '
 						     '%s' % (self.name, exc))
@@ -122,7 +136,10 @@ class RedisEnqueueBroker(BaseModule):
 			try:
 				msg = dict([(k, v) for  k, v in brok.data.iteritems() if 
 					k in service_valid_attrs])
-				self.queue.put('service', msg)
+				# for load testing purposes
+				li = []
+				[li.append(msg.copy()) for _ in range(1)]
+				self.queue.put('perf:service', *li)
 			except Exception as exc:
 				error('[%s] Problem with brok: '
 						     '%s' % (self.name, exc))
@@ -132,8 +149,14 @@ class RedisQueue:
 	""" Queue with redis backend"""
 
 	def __init__(self, **redis_conf):
-		self.prefix = 'queue'
-		self.db = StrictRedis(**redis_conf)
+		self.prefix = 'q'
+		sentinels = redis_conf.pop('sentinels', '()')
+		sentinels_service_name = redis_conf.pop('sentinels_service_name', 
+				'mymaster')
+		min_other_sentinels = redis_conf.pop('min_other_sentinels', 0)
+		s = Sentinel(sentinels, **redis_conf)
+		self.db = s.master_for(sentinels_service_name)
+		#self.db = StrictRedis(**redis_conf)
 		self.key = '%s:%s' % (self.prefix, '%s')
 
 	def put(self, suffix, *items):
