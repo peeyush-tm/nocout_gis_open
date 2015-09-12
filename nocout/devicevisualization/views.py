@@ -37,6 +37,8 @@ from service.utils.util import ServiceUtilsGateway
 from nocout.utils.util import NocoutUtilsGateway
 # Import inventory utils gateway class
 from inventory.utils.util import InventoryUtilsGateway
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
 
 logger = logging.getLogger(__name__)
 
@@ -166,10 +168,12 @@ class Gis_Map_Performance_Data(View):
                 )
 
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
+                device_type = DeviceType.objects.get(id=device.device_type)
                 user_obj = UserProfile.objects.get(id=self.request.user.id)
 
                 uts = UserThematicSettings.objects.get(user_profile=user_obj,
-                                                       thematic_technology=device_technology)
+                                                       thematic_technology=device_technology,
+                                                       thematic_type =device_type)
 
                 thematic_settings = uts.thematic_template
                 threshold_template = thematic_settings.threshold_template
@@ -203,7 +207,7 @@ class Gis_Map_Performance_Data(View):
                     'frequency':device_frequency
                     })
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     device_frequency=''
                     pass
@@ -232,7 +236,7 @@ class Gis_Map_Performance_Data(View):
                             device_pl = ''
 
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     device_pl=''
                     pass
@@ -246,8 +250,9 @@ class Gis_Map_Performance_Data(View):
                             if int(chek_dev_freq) > 10:
                                 corrected_dev_freq = chek_dev_freq
                         except Exception as e:
-                            logger.info(device)
-                            logger.exception("Frequency is Empty : %s" %(e.message))
+                            # logger.info(device)
+                            # logger.exception("Frequency is Empty : %s" %(e.message))
+                            pass
 
                         device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                         device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
@@ -290,7 +295,7 @@ class Gis_Map_Performance_Data(View):
 
                     else:
                         device_link_color=''
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -321,7 +326,7 @@ class Gis_Map_Performance_Data(View):
 
                 except Exception as e:
                     device_performance_value=''
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -345,7 +350,7 @@ class Gis_Map_Performance_Data(View):
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:
-                                logger.info(device)
+                                # logger.info(device)
                                 logger.exception(e.message)
                                 continue
 
@@ -407,7 +412,7 @@ class Gis_Map_Performance_Data(View):
                         device_info.append(perf_info)
 
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.exception(e.message)
                     pass
 
@@ -606,7 +611,7 @@ class KmzListing(ListView):
         return context
 
 
-class Kmzreport_listingtable(BaseDatatableView):
+class Kmzreport_listingtable(BaseDatatableView, AdvanceFilteringMixin):
 
     model = KMZReport
     columns = ['name', 'filename', 'added_on', 'user']
@@ -630,7 +635,7 @@ class Kmzreport_listingtable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -697,6 +702,7 @@ class Kmzreport_listingtable(BaseDatatableView):
         total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = qs.count()
 
@@ -815,7 +821,7 @@ class PointListingInit(ListView):
         return context
 
 
-class PointListingTable(BaseDatatableView):
+class PointListingTable(BaseDatatableView, AdvanceFilteringMixin):
 
     model = GISPointTool
     columns = ['name', 'description', 'icon_url', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
@@ -839,7 +845,7 @@ class PointListingTable(BaseDatatableView):
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -898,6 +904,7 @@ class PointListingTable(BaseDatatableView):
         total_records = qs.count()
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = qs.count()
 
@@ -1532,8 +1539,17 @@ class GISPerfData(View):
                         except Exception as e:
                             device_technology = None
 
+                        # device technology
+                        try:
+                            device_type = DeviceType.objects.get(id=sector_device.device_type)
+                        except Exception as e:
+                            device_type = None
+
+
+
+
                         # thematic settings for current user
-                        user_thematics = self.get_thematic_settings(device_technology)
+                        user_thematics = self.get_thematic_settings(device_technology,device_type)
 
                         # service & data source
                         service = ""
@@ -2921,7 +2937,7 @@ class GISPerfData(View):
                                                                        is_static=False)
 
         # thematic settings for current user
-        user_thematics = self.get_thematic_settings(device_technology)
+        user_thematics = self.get_thematic_settings(device_technology,device_type)
 
         if not user_thematics:
             return substation_info
@@ -3188,11 +3204,11 @@ class GISPerfData(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            logger.error("Frequency color not exist. Exception: ", e.message)
+            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology):
+    def get_thematic_settings(self, device_technology, device_type):
         """ Get device pl
 
             Parameters:
@@ -3217,19 +3233,24 @@ class GISPerfData(View):
         # device technology
         device_technology = device_technology
 
+         # device type
+        device_technology = device_type
+
         # fetch thematic settings for current user
 
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
@@ -3942,7 +3963,7 @@ class GISStaticInfo(View):
                         sector_configured_on_tech = None
 
                     # thematic settings for current user
-                    user_thematics = self.get_thematic_settings(sector_configured_on_tech)
+                    user_thematics = self.get_thematic_settings(sector_configured_on_tech,sector_configured_on_type)
 
                     # service & data source
                     service = ""
@@ -4580,11 +4601,11 @@ class GISStaticInfo(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            logger.error("Frequency color not exist. Exception: ", e.message)
+            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology):
+    def get_thematic_settings(self, device_technology,device_type):
         """ Get device pl
 
             Parameters:
@@ -4608,20 +4629,24 @@ class GISStaticInfo(View):
 
         # device technology
         device_technology = device_technology
+        # device type
+        device_type = device_type
 
         # fetch thematic settings for current user
 
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
@@ -4964,7 +4989,7 @@ class GISPerfInfo(View):
 
         device_info = list()
 
-        logger.info("************************ {} ".format(performance))
+        # logger.info("************************ {} ".format(performance))
 
         for perf in performance:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])

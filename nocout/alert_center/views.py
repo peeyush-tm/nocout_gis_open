@@ -34,6 +34,9 @@ from django.utils.dateformat import format
 # nocout project settings # TODO: Remove the HARDCODED technology IDs
 from nocout.settings import DATE_TIME_FORMAT, TRAPS_DATABASE, MULTI_PROCESSING_ENABLED, CACHE_TIME
 
+# Import advance filtering mixin for BaseDatatableView
+from nocout.mixins.datatable import AdvanceFilteringMixin
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -207,7 +210,7 @@ class AlertCenterListing(ListView):
         return context
 
 
-class AlertListingTable(BaseDatatableView):
+class AlertListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     Generic Class Based View for the Alert Center Network Listing Tables.
 
@@ -491,8 +494,8 @@ class AlertListingTable(BaseDatatableView):
                 if sSearch in dict_values_string :
                     result_list.append(item)
 
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -715,8 +718,8 @@ class NetworkAlertDetailHeaders(ListView):
         ]
 
         bh_dt_specific_headers = [
-            {'mData': 'alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'bh_port_name', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
+            {'mData': 'bh_alias', 'sTitle': 'BH Alias', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'bh_port', 'sTitle': 'BH Port Name', 'sWidth': 'auto', 'bSortable': True}
         ]
 
         common_headers = [
@@ -829,7 +832,7 @@ class NetworkAlertDetailHeaders(ListView):
         return context
 
 
-class GetNetworkAlertDetail(BaseDatatableView):
+class GetNetworkAlertDetail(BaseDatatableView, AdvanceFilteringMixin):
     """
     
     Generic Class Based View for the Alert Center Network  Detail Listing Tables.
@@ -1055,7 +1058,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if data_source in ['PMPULIssue']:
             device_tab_technology = 'PMP'
 
-        if data_source in ['Backhaul', 'Temperature_BH']:
+        if data_source in ['Backhaul', 'Temperature_bh']:
             page_type = 'other'
             type_rf = "backhaul"
 
@@ -1081,13 +1084,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
             if device_id:
                 data.update(id=device_id)
 
-        return perf_utils.prepare_gis_devices_optimized(
+        result = perf_utils.prepare_gis_devices_optimized(
             qs,
             page_type=page_type,
             technology=device_tab_technology,
             type_rf=type_rf,
             device_name_list=device_name_list
         )
+        return result
 
     def prepare_results(self, qs):
         """
@@ -1154,7 +1158,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                             <i class="fa fa-dropbox text-muted"></i>\
                             </a>'
                 )
-                
+
         return qs
 
     def filter_queryset(self, qs):
@@ -1180,23 +1184,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                     sSearch = sSearch
                 if sSearch in dict_values_string :
                     result_list.append(search_data)
-                # temp_var = json.dumps(search_data)
-                # search_data = json.loads(temp_var)
-                # for data in search_data:
-                #     if search_data[data]:
-                #         if(
-                #             (isinstance(search_data[data], unicode) or isinstance(search_data[data], str))
-                #             and
-                #             (search_data not in result_list)
-                #         ):
-                #             if sSearch.encode('utf-8').lower() in search_data[data].encode('utf-8').lower():
-                #                 result_list.append(search_data)
-                #         else:
-                #             if sSearch == search_data[data] and search_data not in result_list:
-                #                 result_list.append(search_data)
-
-            return result_list
-        return qs
+            return self.advance_filter_queryset(result_list)
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """
@@ -1334,8 +1323,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
         elif data_source in ['Temperature_bh']:
             self.order_columns = [
                 'severity',
-                'alias',
-                'bh_port_name',
+                'bh_alias',
+                'bh_port',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -1490,6 +1479,14 @@ class SingleDeviceAlertsInit(ListView):
         
         is_dr_device = device_obj.dr_configured_on.exists()
 
+        is_backhaul = device_obj.backhaul.exists()
+        is_backhaul_switch = device_obj.backhaul_switch.exists()
+        is_backhaul_pop = device_obj.backhaul_pop.exists()
+        is_backhaul_aggregator = device_obj.backhaul_aggregator.exists()
+        # If device is backhaul or backhaul_switch or backhaul_pop or backhaul_aggregator
+        if is_backhaul or is_backhaul_switch or is_backhaul_pop or is_backhaul_aggregator:
+            page_type = 'other'
+
         # Create Context Dict
         context['table_headers'] = json.dumps(table_headers)
         context['ping_table_headers'] = json.dumps(ping_table_headers)
@@ -1545,7 +1542,7 @@ class SingleDeviceAlertsInit(ListView):
         return context
 
 
-class SingleDeviceAlertsListing(BaseDatatableView):
+class SingleDeviceAlertsListing(BaseDatatableView, AdvanceFilteringMixin):
 
     model = EventNetwork
     required_columns = [
@@ -1647,7 +1644,8 @@ class SingleDeviceAlertsListing(BaseDatatableView):
                 exec_query += ".using(alias='" + self.public_params['machine_name'] + "')"
 
                 exec exec_query
-        return qs
+        # advance filtering the query set
+        return self.advance_filter_queryset(qs)
 
     def get_initial_queryset(self):
         """
@@ -1836,6 +1834,7 @@ class SingleDeviceAlertsListing(BaseDatatableView):
         total_records = len(qs)
 
         qs = self.filter_queryset(qs)
+
         # number of records after filtering
         total_display_records = len(qs)
 
@@ -1918,7 +1917,7 @@ class SIAListing(ListView):
         return context
 
 
-class SIAListingTable(BaseDatatableView):
+class SIAListingTable(BaseDatatableView, AdvanceFilteringMixin):
     """
     View to render service impacting alarms;
     namely history, current and clear alarms for all the devices.
@@ -2039,11 +2038,11 @@ class SIAListingTable(BaseDatatableView):
                     sSearch = sSearch
                 if sSearch in dict_values_string :
                     result_list.append(search_data)
-
-            return result_list
+            # advance filtering the query set
+            return self.advance_filter_queryset(result_list)
         else:
             self.is_searched = False
-        return qs
+        return self.advance_filter_queryset(qs)
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause

@@ -85,27 +85,104 @@
                         <span class="input-group-addon">
                             <i class="fa fa-calendar"></i>
                         </span>
-                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
+                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value="" readonly/>
                     </div>
                 </li>
                 <li>
                     <button id="apply_filter" class="btn  btn-default btn-sm">
-                        <i class="fa fa-filter"></i> Apply Filter
+                        <i class="fa fa-filter"></i>
                     </button>
                 </li>
-                <li>
-                    <button id="reset_filter" class="btn  btn-warning btn-sm">
-                        <i class="fa fa-times"></i> Reset Filter
+                <li class="reset_filter_li">
+                    <button id="reset_filter" class="btn  btn-danger btn-sm">
+                        <i class="fa fa-times"></i>
                     </button>
                 </li>
+                {% if settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                <li id="display_type_container" class="unified_item_type">
+                {% else %}
                 <li id="display_type_container">
-                    <label class="checkbox-inline">
+                {% endif %}
+                    <label class="checkbox-inline hide">
                         <input type="radio" id="display_chart" name="item_type" value="chart" checked="checked"/>  Display Chart
                     </label>
-                    <label class="checkbox-inline">
+                    <label class="checkbox-inline hide">
                         <input type="radio" id="display_table" name="item_type" value="table"/>  Display Table
                     </label>
+
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="item_type_btn" title="Display Chart/Table">
+                            <i class="text-primary fa fa-bar-chart-o"> </i>  Display Chart
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context" id="item_type_ul">
+                            <li class="active">
+                                <a href="javascript:;" radioId="display_chart">
+                                    <i class="fa fa-bar-chart-o"> </i> Display Chart
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" radioId="display_table">
+                                    <i class="fa fa-table"> </i> Display Table
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
                 </li>
+                {% if settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                <li class="unified_normal_li">
+                    <label class="checkbox-inline hide">
+                        <input type="radio" id="normal_view" name="service_view_type" value="normal" checked="checked"/> Datasource View
+                    </label>
+                    <label class="checkbox-inline hide">
+                        <input type="radio" id="unified_view" name="service_view_type" value="unified"/>  Service View
+                    </label>
+
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="service_view_type_btn" title="Datasource/Service View">
+                            <i class="text-primary fa fa-bar-chart-o"> </i> Datasource View
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context" id="service_view_type_ul">
+                            <li class="active">
+                                <a href="javascript:;" radioId="normal_view">
+                                    <i class="fa fa-bar-chart-o"> </i> Datasource View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" radioId="unified_view">
+                                    <i class="fa fa-bar-chart-o"> </i> Service View
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                {% endif %}
+
+                {% if settings.ENABLE_AGGREGATE_REPORT_DOWNLOAD %}
+                <li>
+                    <div class="btn-group dropdown">
+                        <button class="btn  btn-default dropdown-toggle" data-toggle="dropdown" id="" title="Download Reports">
+                            <i class="text-primary fa fa-download"> </i> Report
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context">
+                            <li>
+                                <a href="javascript:;" id="all_serv_live_report_btn">
+                                    <i class="fa fa-download"> </i> All Services(Live Data - 5 Min.)
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" id="live_hist_report_btn">
+                                    <i class="fa fa-download"> </i> Single Service(Live + Historical)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                {% endif %}
+
                 <li class="pull-right">
                     <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
                         <i class="fa fa-dropbox text-primary"></i>
@@ -270,6 +347,7 @@
             ptp_tech_list = ['ptp','p2p','ptp bh'],
             is_perf_polling_enabled = false,
             show_historical_on_performance = false,
+            is_unified_enabled = false,
             base_url = "",
             startDate = "",
             endDate = "",
@@ -281,96 +359,135 @@
             warn_color = "",
             crit_color = "",
             warn_type = "",
-            crit_type = "";
-
+            crit_type = "",
+            default_live_table_headers = [];
 
         $(document).ready(function (e) {
 
-            var device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "",
-                get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "",
-                inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "",
-                alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "",
-                page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer",
-                is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0,
-                current_device_technology = "",
-                statusUrl = "",
-                serviceUrl = "",
-                inventory_url = "",
-                alert_url = "";
+            service_view_type = $('input[name="service_view_type"]:checked').val();
+            device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "";
+            get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "";
+            inventory_page_url = "{{ inventory_page_url }}" ? $.trim("{{ inventory_page_url }}") : "";
+            alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "";
+            page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
+            is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
+            current_device_technology = "";
+            statusUrl = "";
+            serviceUrl = "";
+            inventory_url = "";
+            alert_url = "";
 
-            statusUrl = getCompleteUrl(device_status_url);
-            serviceUrl = getCompleteUrl(get_services_url);
-            inventory_url = getCompleteUrl(inventory_page_url);
-            alert_url = getCompleteUrl(alert_page_url);
+            if (!service_view_type || !$.cookie("service_view_type")) {
+                $.cookie("service_view_type", 'normal', {path: '/'})
+                service_view_type = 'normal';
+            }
 
-            current_device = "{{ device.id }}";
-            device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
-            current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
-            current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
-            is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
-            is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
-            device_name = current_device;
-            warn_color = "{{ settings.WARN_COLOR}}";
-            warn_type = "{{ settings.WARN_TYPE}}";
-            crit_color = "{{ settings.CRIT_COLOR}}";
-            crit_type = "{{ settings.CRIT_TYPE}}";
-            // Update global variable as per context data
-            {% if is_dr_device %}
-                is_dr_device = true;
-                bold_class = 'text-bold';
+            {% if not settings.ENABLE_UNIFIED_SERVICE_VIEW %}
+                $.cookie("service_view_type", 'normal', {path: '/'});
             {% endif %}
 
-            /*Make a instance of ourDataTableWidget class */
-            dataTableInstance = new ourDataTableWidget();
+            initPerformancePage(true);
+        });
 
-            {% if settings.HISTORICAL_ON_PERFORMANCE %}
-                show_historical_on_performance = true;
-            {% endif %}
-            
-            // If call for utilization tab the reset tab cookie
-            if(is_util_tab) {
-                $.cookie('parent_tab_id', '', {path: '/', secure: true});
+        function initPerformancePage(is_first_triggered) {
+
+            if ($.cookie("service_view_type") == 'normal') {
+                default_live_table_headers = default_live_table_headers_without_ds;
+            } else {
+                default_live_table_headers = default_live_table_headers_with_ds;
             }
 
+            if (is_first_triggered) {
+                
+                if ($.cookie("service_view_type")) {
+                    $('input[value="' + $.cookie("service_view_type") + '"]').prop('checked', true)
+                    $('input[value="' + $.cookie("service_view_type") + '"]').attr('checked', 'checked');
 
-            // Show/hide live polling button & chart container
-            live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
-            live_poll_condition2 = page_type_val == 'customer';
-            if(!live_poll_condition1 && !live_poll_condition2) {
-                $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
-            }
-
-            if(inventory_url) {
-                $("#inventory_link_tag").attr("href",inventory_url);
-                $("#inventory_link_tag").removeClass("hide");
-            }
-
-            if(alert_url) {
-                $("#alerts_link_tag").attr("href",alert_url);
-                $("#alerts_link_tag").removeClass("hide");
-            }
-
-            // SET utc false for highcharts to show time in GMT+5:30
-            Highcharts.setOptions({
-                global: {
-                    useUTC: false
+                    updateServiceTypeDropdownHtml();
                 }
-            });
 
-            // Create nocoutPerfLib instance to access its functions
-            perfInstance = new nocoutPerfLib();
+                statusUrl = getCompleteUrl(device_status_url);
+                serviceUrl = getCompleteUrl(get_services_url);
+                inventory_url = getCompleteUrl(inventory_page_url);
+                alert_url = getCompleteUrl(alert_page_url);
 
-            perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
+                current_device = "{{ device.id }}";
+                device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
+                current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
+                current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
+                is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
+                is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
+                device_name = "{{ device.device_name }}";
+                warn_color = "{{ settings.WARN_COLOR}}";
+                warn_type = "{{ settings.WARN_TYPE}}";
+                crit_color = "{{ settings.CRIT_COLOR}}";
+                crit_type = "{{ settings.CRIT_TYPE}}";
+                // Update global variable as per context data
+                {% if is_dr_device %}
+                    is_dr_device = true;
+                    bold_class = 'text-bold';
+                {% endif %}
 
-            /*To initialize date range picker*/
-            perfInstance.initDateRangePicker(dateRangePicker_domId);
+                /*Make a instance of ourDataTableWidget class */
+                dataTableInstance = new ourDataTableWidget();
+
+                {% if settings.HISTORICAL_ON_PERFORMANCE %}
+                    show_historical_on_performance = true;
+                {% endif %}
+                
+                // If call for utilization tab the reset tab cookie
+                if(is_util_tab) {
+                    $.cookie('parent_tab_id', '', {path: '/', secure: true});
+                }
+
+
+                // Show/hide live polling button & chart container
+                live_poll_condition1 = ptp_tech_list.indexOf(current_device_technology) > -1;
+                live_poll_condition2 = page_type_val == 'customer';
+                if(!live_poll_condition1 && !live_poll_condition2) {
+                    $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+                }
+
+                if(inventory_url) {
+                    $("#inventory_link_tag").attr("href",inventory_url);
+                    $("#inventory_link_tag").removeClass("hide");
+                }
+
+                if(alert_url) {
+                    $("#alerts_link_tag").attr("href",alert_url);
+                    $("#alerts_link_tag").removeClass("hide");
+                }
+
+                // SET utc false for highcharts to show time in GMT+5:30
+                Highcharts.setOptions({
+                    global: {
+                        useUTC: false
+                    }
+                });
+
+                // Create nocoutPerfLib instance to access its functions
+                perfInstance = new nocoutPerfLib();
+
+                perfInstance.togglePerfPageElements(page_type_val, current_device_technology);
+
+                /*To initialize date range picker*/
+                perfInstance.initDateRangePicker(dateRangePicker_domId);
+            }
+
+            // Add 'service_view_type' GET param to API url
+            if (serviceUrl.indexOf('service_view_type') == -1) {
+                serviceUrl = serviceUrl.indexOf('?') > -1 ? serviceUrl + '&service_view_type='+$.cookie("service_view_type") : serviceUrl + '?service_view_type='+$.cookie("service_view_type");
+            } else {
+                serviceUrl = serviceUrl.split('&service_view_type=')[0];
+                serviceUrl = serviceUrl.indexOf('?') > -1 ? serviceUrl + '&service_view_type='+$.cookie("service_view_type") : serviceUrl + '?service_view_type='+$.cookie("service_view_type");
+            }
 
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
 
             /*To populate the services tabs*/
             perfInstance.getServices(serviceUrl, current_device);
-        });
+        }
     
         /**
          * This event triggers when apply filter button clicked
@@ -378,27 +495,89 @@
          */
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                var active_tab_obj = nocout_getPerfTabDomId();
 
-                if(
-                    service_id.indexOf('availability') > -1
-                    ||
-                    service_id.indexOf('utilization_top') > -1
-                    ||
-                    service_id.indexOf('topology') > -1
-                ) {
+                if (show_historical_on_performance) {
+                    var start = new Date(startDate),
+                        end   = new Date(),
+                        days_diff = (end-start)/(1000*60*60*24);
 
-                    var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
-                        service_id = active_inner_tab.attr("id").slice(0, -4),
-                        get_service_data_url = active_inner_tab.attr("url");
+                    if (days_diff <= 30) {
+                        // live
+                        if (active_tab_obj.active_dom_id.indexOf('live') > -1) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('live');
 
-                } 
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 30 && days_diff <= 35) {
+                        // bi-hourly
+                        if (active_tab_obj.active_dom_id.indexOf('bihourly') > -1) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('bihourly');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            } else {
+                                var my_tab_id = getRequiredTabId('daily');
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 35 && days_diff <= 180) {
+                        // hourly
+                        if (active_tab_obj.active_dom_id.indexOf('bihourly') == -1 && active_tab_obj.active_dom_id.indexOf('hourly') > -1) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('hourly');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            } else {
+                                var my_tab_id = getRequiredTabId('daily');
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    } else if (days_diff > 180) {
+                        var condition1 = active_tab_obj.active_dom_id.indexOf('daily') > -1,
+                            condition2 = active_tab_obj.active_dom_id.indexOf('weekly') > -1,
+                            condition3 = active_tab_obj.active_dom_id.indexOf('monthly') > -1,
+                            condition4 = active_tab_obj.active_dom_id.indexOf('yearly') > -1;
 
-                if(get_service_data_url && service_id && current_device) {
-                    perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                        // Daily, weekly, monthly or yearly
+                        if (condition1 || condition2 || condition3 || condition4) {
+                            $('#' + active_tab_obj.active_dom_id + "_tab").trigger('click', true);
+                        } else {
+                            var my_tab_id = getRequiredTabId('daily');
+                            if (my_tab_id) {
+                                $('#' + my_tab_id).trigger('click', true);
+                            }
+                        }
+                    }
+                } else {
+                    var service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+
+                    if(
+                        service_id.indexOf('availability') > -1
+                        ||
+                        service_id.indexOf('utilization_top') > -1
+                        ||
+                        service_id.indexOf('topology') > -1
+                    ) {
+
+                        var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
+                            service_id = active_inner_tab.attr("id").slice(0, -4),
+                            get_service_data_url = active_inner_tab.attr("url");
+
+                    } 
+
+                    if(get_service_data_url && service_id && current_device) {
+                        perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
+                    }
                 }
+
             } else {
                 alert("Select Start & End Date");
             }
@@ -409,6 +588,7 @@
          * @event click
          */
         $("#reset_filter").on('click', function () {
+
             if(startDate && endDate) {
 
                 startDate = "";

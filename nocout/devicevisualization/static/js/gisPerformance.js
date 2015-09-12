@@ -389,8 +389,6 @@ function GisPerformance() {
                     bs_marker['bhSeverity'] = perf_bh_severity;
                     bs_marker['bhInfo'] = bhInfo;
                     bs_marker['pl'] = bh_pl;
-                    
-
 
                     // If we have BS maintenance status then update it in Bs marker
                     if(bs_maintenance_status) {
@@ -447,7 +445,8 @@ function GisPerformance() {
 
                 var sector_pl = current_sector.pl ? current_sector.pl : "",
                     sector_rta = current_sector.rta ? current_sector.rta : "",
-                    sector_pl_timestamp = current_sector.pl_timestamp ? current_sector.pl_timestamp : "";
+                    sector_pl_timestamp = current_sector.pl_timestamp ? current_sector.pl_timestamp : "",
+                    fetched_antenna_height = current_sector.antenna_height ? current_sector.antenna_height : '';
 
                 // If sector marker exist then update it with new icon
                 if(sector_marker) {
@@ -464,6 +463,7 @@ function GisPerformance() {
                         sector_marker['pl_timestamp'] = sector_pl_timestamp;
                         sector_marker['deviceExtraInfo'] = sector_infoWindow_content;
                         sector_marker['item_index'] = sector_item_index;
+                        sector_marker['antenna_height'] = fetched_antenna_height
                     } catch(e) {
                         // console.log(e);
                     }
@@ -575,7 +575,8 @@ function GisPerformance() {
                                 azimuth      :  azimuth_angle,
                                 beam_width   :  beam_width,
                                 polarisation :  orientation,
-                                radius       :  radius
+                                radius       :  radius,
+                                antenna_height : fetched_antenna_height
                             });
                         }
 
@@ -593,6 +594,7 @@ function GisPerformance() {
                             sector_polygon['pl_timestamp'] = sector_pl_timestamp;
                             sector_polygon['deviceExtraInfo'] = sector_infoWindow_content;
                             sector_polygon['item_index'] = sector_item_index;
+                            sector_polygon['antenna_height'] = fetched_antenna_height;
                         } catch(e) {
                             // console.log(e);
                         }
@@ -641,6 +643,7 @@ function GisPerformance() {
                                     ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
                                     ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "",
                                     ss_antenna_height = perf_self.getKeyValue(ss_infoWindow_content, "antenna_height", true, ss_item_info_index);
+                                    ss_device_type = ss_marker_data.data.device_type?ss_marker_data.data.device_type: "";
 
                                 // var ss_marker_object = {};
                                 var ss_marker_object = {
@@ -657,6 +660,7 @@ function GisPerformance() {
                                     antenna_height   :  ss_marker_data.data.antenna_height,
                                     name             :  ss_marker_data.name,
                                     technology       :  sector_tech,
+                                    device_type      :  ss_device_type,
                                     perf_url         :  ss_perf_url,
                                     inventory_url    :  ss_inventory_url,
                                     bs_name          :  apiResponse.name,
@@ -941,7 +945,7 @@ function GisPerformance() {
                                     },
                                     base_info = {
                                         "info" : apiResponse.data.param.base_station ? apiResponse.data.param.base_station : [],
-                                        "antenna_height" : apiResponse.data.antenna_height,
+                                        // "antenna_height" : apiResponse.data.antenna_height,
                                         "bs_item_index" : 0
                                     },
                                     sect_height = sector_marker ? sector_marker.antenna_height : sector_polygon.antenna_height;

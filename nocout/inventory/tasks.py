@@ -3396,6 +3396,21 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
             basestation = ""
             sector = ""
 
+            # BS device vendor.
+            bs_device_vendor = 4
+
+            # BS device model.
+            bs_device_model = 4
+
+            # BS device type
+            bs_device_type = 6
+
+            if 'Device Type' in row.keys():
+                if row['Device Type'] == 'Radwin5KBS':
+                    bs_device_vendor = 2
+                    bs_device_model = 13
+                    bs_device_type = 16
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -3467,9 +3482,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         'machine': machine,
                         'site': site,
                         'device_technology': 4,
-                        'device_vendor': 4,
-                        'device_model': 4,
-                        'device_type': 6,
+                        'device_vendor': bs_device_vendor,
+                        'device_model': bs_device_model,
+                        'device_type': bs_device_type,
                         'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -4050,6 +4065,21 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             customer = ""
             circuit = ""
 
+            # SS device vendor.
+            ss_device_vendor = 4
+
+            # SS device model.
+            ss_device_model = 5
+
+            # SS device type
+            ss_device_type = 5
+
+            if 'Device Type' in row.keys():
+                if row['Device Type'] == 'Radwin5KSS':
+                    ss_device_vendor = 2
+                    ss_device_model = 13
+                    ss_device_type = 17
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -4119,9 +4149,9 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                         'machine': machine,
                         'site': site,
                         'device_technology': 4,
-                        'device_vendor': 4,
-                        'device_model': 5,
-                        'device_type': 9,
+                        'device_vendor': ss_device_vendor,
+                        'device_model': ss_device_model,
+                        'device_type': ss_device_type,
                         'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                         'mac': row['MAC'] if 'MAC' in row.keys() else "",
                         'state': "",
@@ -5112,7 +5142,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'antenna': sector_antenna,
                     'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'dr_site': dr_site,
-                    'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'mrc': row['MRC'].strip() if 'MRC' in row.keys() else "",
                     'dr_configured_on': slave_device,
                     'description': 'Sector created on {}.'.format(full_time)
@@ -5262,6 +5291,9 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
             customer = ""
             circuit = ""
 
+            # SS device type
+            ss_device_type = 5
+
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
@@ -5333,7 +5365,7 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                         'device_technology': 3,
                         'device_vendor': 3,
                         'device_model': 3,
-                        'device_type': 5,
+                        'device_type': ss_device_type,
                         'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                         'mac': row['MAC'] if 'MAC' in row.keys() else "",
                         'state': "",
@@ -13519,3 +13551,161 @@ def bulk_update_internal_no_save(bulky):
         for update_this in bulky:
             update_this.save()
     return True
+
+
+@task
+def update_inventory():
+    """
+    Update mapping of sector, sub station in circuit using topology.
+    """
+
+    # Sector ID's list.
+    sector_ids = set(Sector.objects.values_list('sector_id', flat=True))
+    topo_sector_ids = set(Topology.objects.values_list('sector_id', flat=True))
+
+    # Sector ID's common in topology and inventory.
+    common_sector_ids = sector_ids.intersection(topo_sector_ids)
+
+    # Sectors & sub stations mapping from Topology.
+    topology = Topology.objects.filter(sector_id__in=common_sector_ids).values('connected_device_ip', 'sector_id',
+                                                                               'connected_device_mac', 'mac_address',
+                                                                               'ip_address')
+
+    # ################################### MAPPERS START #####################################
+
+    # Sectors from Inventory corressponding to sector_id's fetched from Topology.
+    sectors = Sector.objects.filter(sector_id__in=common_sector_ids)
+
+    # Sector ID's list.
+    sector_ids = sectors.values_list('sector_id', flat=True)
+
+    # Sectors Mapper: {<sector_id>: <sector object>, ....}
+    sectors_mapper = {}
+    for s_id, obj in zip(sector_ids, sectors):
+        sectors_mapper[s_id] = obj
+
+    # BS devices corressponding to the sector_configured_on ip's from Topology.
+    bs_devices = Device.objects.filter(ip_address__in=topology.values_list('ip_address', flat=True))
+
+    # BS devices IP's list.
+    bs_devices_ips = bs_devices.values_list('ip_address', flat=True)
+
+    # BS Devices Mapper: {<sector_configured_on__ip_address>: <device object>, ....}
+    bs_devices_mapper = {}
+    for ip, bs_device in zip(bs_devices_ips, bs_devices):
+        bs_devices_mapper[ip] = bs_device
+
+    # Sectors & sub stations mapping from Circuit.
+    circuits = Circuit.objects.select_related('sub_station', 'sub_station__device__ip_address', 'sector__sector_id'
+                                              ).filter(sector__sector_id__in=common_sector_ids)
+
+    # Sub Station devices IP's list corressponding to the connected_device_ip ip's.
+    circuits_ss_ips = circuits.values_list('sub_station__device__ip_address', flat=True)
+
+    # Circuit Mapper: {<sub_station__device__ip_address>: <circuit object>, ....}
+    circuits_mapper = {}
+    for ss_ip, circuit in zip(circuits_ss_ips, circuits):
+        circuits_mapper[ss_ip] = circuit
+
+    # ################################### MAPPERS END #######################################
+
+    # Serialized sectors & sub stations mapping from Topology.
+    serialized_topology = list(topology)
+
+    # List of sectors & sub stations mapping from Topology.
+    sectors_list = circuits.values('sector__sector_id',
+                                   'sub_station__device__ip_address',
+                                   'sub_station__device__mac_address',
+                                   'sector__sector_configured_on__ip_address',
+                                   'sector__sector_configured_on__mac_address')
+
+    # Serialized sectors & sub stations mapping from Circuit.
+    serialized_sectors_list = [{'connected_device_ip': a['sub_station__device__ip_address'],
+                                'sector_id': a['sector__sector_id'],
+                                'connected_device_mac': a['sub_station__device__mac_address'],
+                                'mac_address': a['sector__sector_configured_on__mac_address'],
+                                'ip_address': a['sector__sector_configured_on__ip_address']} for a in sectors_list]
+
+    # Updated mapping.
+    updated_mapping = compare_lists_of_dicts(serialized_sectors_list, serialized_topology)
+
+    # Lists containing objects needs to be updated in database.
+    update_ss_list = []
+    update_device_list = []
+    update_circuit_list = []
+
+    # Update inventory from updated topology.
+    for info in updated_mapping:
+        # Get circuit from inventory.
+        circuit = None
+        try:
+            circuit = circuits_mapper[info['connected_device_ip']]
+        except Exception as e:
+            logger.info(e.message)
+
+        if circuit:
+            # Update sub station.
+            try:
+                ss = circuit.sub_station
+                ss.mac_address = info['connected_device_mac']
+                update_ss_list.append(ss)
+            except Exception as e:
+                logger.exception(e.message)
+
+            # Update sub station device.
+            try:
+                ss_device = circuit.sub_station.device
+                ss_device.mac_address = info['connected_device_mac']
+                update_device_list.append(ss_device)
+            except Exception as e:
+                logger.exception(e.message)
+
+            # Update sector device.
+            try:
+                sector_device = bs_devices_mapper[info['ip_address']]
+                sector_device.mac_address = info['mac_address']
+                update_device_list.append(sector_device)
+            except Exception as e:
+                logger.exception(e.message)
+
+            # Update circuit.
+            try:
+                circuit.sector = sectors_mapper[info['sector_id']]
+                update_circuit_list.append(circuit)
+            except Exception as e:
+                logger.exception(e.message)
+
+    g_jobs = list()
+
+    if len(update_ss_list):
+        g_jobs.append(bulk_update_create.s(bulky=update_ss_list, action='update'))
+
+    if len(update_device_list):
+        g_jobs.append(bulk_update_create.s(bulky=update_device_list, action='update'))
+
+    if len(update_circuit_list):
+        g_jobs.append(bulk_update_create.s(bulky=update_circuit_list, action='update'))
+
+    if not len(g_jobs):
+        return False
+
+    job = group(g_jobs)
+    result = job.apply_async()
+
+    return result
+
+
+def compare_lists_of_dicts(list1, list2):
+    check = set([(d['connected_device_ip'] if d['connected_device_ip'] else '',
+                  d['sector_id'] if d['sector_id'] else '',
+                  d['connected_device_mac'] if d['connected_device_mac'] else '',
+                  d['mac_address'] if d['mac_address'] else '',
+                  d['ip_address'] if d['ip_address'] else ''
+                  ) for d in list1])
+
+    return [d for d in list2 if (d['connected_device_ip'] if d['connected_device_ip'] else '',
+                                 d['sector_id'] if d['sector_id'] else '',
+                                 d['connected_device_mac'] if d['connected_device_mac'] else '',
+                                 d['mac_address'] if d['mac_address'] else '',
+                                 d['ip_address'] if d['ip_address'] else ''
+                                 ) not in check]

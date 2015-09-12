@@ -94,8 +94,8 @@ from performance.formulae import display_time, rta_null
 # Import service utils gateway class
 from service.utils.util import ServiceUtilsGateway
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME,\
-    PING_RTA_WARNING, PING_RTA_CRITICAL,\
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, CACHE_TIME, \
+    PING_RTA_WARNING, PING_RTA_CRITICAL, \
     PING_PL_WARNING, PING_PL_CRITICAL, \
     SERVICE_DATA_SOURCE
 from user_profile.models import UserProfile
@@ -112,6 +112,7 @@ logger = logging.getLogger(__name__)
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
+
 
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_raw_result(bs_dict=None):
@@ -811,9 +812,9 @@ class DeviceFilterApi(View):
                 # Creating state data.
                 state_data.append({'id': state.id,
                                    'value': state.state_name})
-                
+
             state_list = []
-            
+
             for city in City.objects.all():
                 # Creating city data.
                 city_data.append({'id': city.id,
@@ -917,6 +918,7 @@ class LPServicesApi(View):
                                     }
                                 }
     """
+
     def get(self, request):
         """
         Returns json containing devices, services and data sources.
@@ -931,7 +933,7 @@ class LPServicesApi(View):
         # List of devices for which service and data sources needs to be fetched,
         # i.e. ['device1', 'device2'].
         try:
-            devices = eval(str(self.request.GET.get('devices',None)))
+            devices = eval(str(self.request.GET.get('devices', None)))
             if devices:
                 for dv in devices:
                     device = Device.objects.get(device_name=dv)
@@ -1001,6 +1003,7 @@ class FetchLPDataApi(View):
                                     }
                                 }
     """
+
     def get(self, request):
         """
         Returns json containing live polling value and icon url.
@@ -1043,7 +1046,7 @@ class FetchLPDataApi(View):
                 encoded_data = urllib.urlencode(lp_data)
 
                 # Sending post request to nocout device app to fetch service live polling value.
-                r = requests.post(url , data=encoded_data)
+                r = requests.post(url, data=encoded_data)
 
                 # Converting post response data into python dict expression.
                 response_dict = ast.literal_eval(r.text)
@@ -1052,9 +1055,10 @@ class FetchLPDataApi(View):
                 if r:
                     result['data']['value'].append(response_dict.get('value')[0])
                     tech = DeviceTechnology.objects.get(pk=device.device_technology)
+                    device_type = DeviceType.objects.get(pk=device.device_type)
 
                     # Live polling settings for getting associates service and data sources.
-                    lps = LivePollingSettings.objects.get(technology=tech, service=service, data_source=data_source)
+                    lps = LivePollingSettings.objects.get(technology=tech,device_type=device_type, service=service, data_source=data_source)
 
                     # Threshold configuration for getting warning, critical comparison values.
                     tc = ThresholdConfiguration.objects.get(live_polling_template=lps)
@@ -1102,6 +1106,7 @@ class FetchLPSettingsApi(View):
 
         Args:
             technology (unicode): ID of technology.
+            device_type (unicode): ID of type.
 
         Returns:
             result (dict): Dictionary containing list of live polling settings.
@@ -1131,6 +1136,7 @@ class FetchLPSettingsApi(View):
                                     "success": 1
                                 }
     """
+
     def get(self, request):
         """
         Returns json containing live polling values and icon urls for bulk devices.
@@ -1148,14 +1154,18 @@ class FetchLPSettingsApi(View):
 
         # Converting 'json' into python object.
         technology_id = int(self.request.GET.get('technology', None))
+        device_type_id = int(self.request.GET.get('device_type', None))
+
 
         # Technology object.
         technology = DeviceTechnology.objects.get(pk=technology_id)
+        # Type object.
+        device_type = DeviceType.objects.get(pk=device_type_id)
 
-        # Get live polling settings corresponding to the technology.
+        # Get live polling settings corresponding to the technology and type.
         lps = ""
         try:
-            lps = LivePollingSettings.objects.filter(technology=technology)
+            lps = LivePollingSettings.objects.filter(technology=technology,device_type=device_type)
         except Exception as e:
             logger.info(e.message)
 
@@ -1211,6 +1221,7 @@ class FetchThresholdConfigurationApi(View):
                                     "success": 1
                                 }
     """
+
     def get(self, request):
         """
         Returns json containing live polling values and icon urls for bulk devices.
@@ -1259,6 +1270,7 @@ class FetchThematicSettingsApi(View):
 
         Args:
             technology (unicode): ID of technology.
+            device_type (unicode): ID of device_type .
 
         Returns:
             result (dict): Dictionary containing list of threshold configurations.
@@ -1292,6 +1304,7 @@ class FetchThematicSettingsApi(View):
                                     "success": 1
                                 }
     """
+
     def get(self, request):
         """
         Returns json containing live polling values and icon urls for bulk devices.
@@ -1312,18 +1325,22 @@ class FetchThematicSettingsApi(View):
 
         # Converting 'json' into python object.
         technology_id = int(self.request.GET.get('technology', None))
+        device_type_id = int(self.request.GET.get('device_type', None))
 
         # Technology object.
         technology = DeviceTechnology.objects.get(pk=technology_id)
+        # Device Type object.
+        device_type = DeviceType.objects.get(pk=device_type_id)
+
 
         # Get live polling settings corresponding to the technology.
         lps = ""
         try:
-            lps = LivePollingSettings.objects.filter(technology=technology)
+            lps = LivePollingSettings.objects.filter(technology=technology,device_type=device_type)
         except Exception as e:
             logger.info(e.message)
         if service_type == 'ping':
-            thematic_settings = PingThematicSettings.objects.filter(technology=technology)
+            thematic_settings = PingThematicSettings.objects.filter(technology=technology,type=device_type)
             for ts in thematic_settings:
                 ts_temp = dict()
                 ts_temp['id'] = ts.id
@@ -1395,6 +1412,7 @@ class BulkFetchLPDataApi(View):
                                     "success": 1
                                 }
     """
+
     def get(self, request):
         """
         Returns json containing live polling values and icon urls for bulk devices.
@@ -1407,6 +1425,18 @@ class BulkFetchLPDataApi(View):
 
         # Devices list.
         devices = eval(str(self.request.GET.get('devices', None)))
+
+        # Is radwin 5k device
+        try:
+            is_radwin5 = int(self.request.GET.get('is_radwin5', 0))
+        except Exception, e:
+            is_radwin5 = 0
+
+        # Is first call or not(used in case of utilization for calculation)
+        try:
+            is_first_call = int(self.request.GET.get('is_first_call', 1))
+        except Exception, e:
+            is_first_call = 1
 
         # Thematic settings template ID.
         try:
@@ -1433,11 +1463,16 @@ class BulkFetchLPDataApi(View):
             ts_type = ""
 
         # Exceptional services, i.e. 'ss' services which get service data from 'bs' instead from 'ss'.
-        exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
-                                'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
-                                'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
-                                'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
-                                'cambium_rereg_count']
+        exceptional_services = [
+            'wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi', 'wimax_ul_rssi', 'wimax_ss_dl_utilization',
+            'wimax_ss_ul_utilization', 'wimax_ul_intrf', 'wimax_dl_intrf', 'wimax_modulation_dl_fec', 
+            'wimax_modulation_ul_fec', 'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 
+            'rad5k_ul_rssi', 'rad5k_dl_rssi','rad5k_ss_dl_utilization' ,'rad5k_ss_ul_utilization',
+            'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent',  'rad5k_dl_estmd_throughput_invent', 
+            'rad5k_ul_estmd_throughput_invent', 'rad5k_ul_uas_invent', 'rad5k_dl_es_invent', 'rad5k_ul_ses_invent', 
+            'rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent', 'rad5k_ss_cmd_rx_pwr_invent', 'rad5k_ss_dl_utilization', 
+            'rad5k_ss_ul_utilization'
+        ]
 
         # Service for which live polling runs.
         service = ""
@@ -1457,6 +1492,8 @@ class BulkFetchLPDataApi(View):
 
         # Fetch device technology if ts_type present.
         ts_technology = None
+        # Fetch device type if ts_type present.
+        ts_device_type = None
 
         if ts_type:
             try:
@@ -1465,12 +1502,18 @@ class BulkFetchLPDataApi(View):
             except Exception as e:
                 pass
 
+            try:
+                ts_device_type = DeviceType.objects.get(id=Device.objects.get(
+                    device_name=devices[0]).device_type)
+            except Exception as e:
+                pass
+
         if not all([service_name, ds_name]):
             # Get thematic settings corresponding to the 'service_type'.
             if service_type == 'ping' or ts_type == 'ping':
                 # Thematic settings (ping).
                 if ts_type:
-                    ts = self.get_thematic_settings(ts_type, ts_technology).thematic_template
+                    ts = self.get_thematic_settings(ts_type, ts_technology,ts_device_type).thematic_template
                 else:
                     ts = PingThematicSettings.objects.get(pk=ts_template_id)
                 service = ts.service
@@ -1485,7 +1528,7 @@ class BulkFetchLPDataApi(View):
             else:
                 # Thematic settings (normal).
                 if ts_type:
-                    ts = self.get_thematic_settings(ts_type, ts_technology).thematic_template
+                    ts = self.get_thematic_settings(ts_type, ts_technology,ts_device_type).thematic_template
                 else:
                     ts = ThematicSettings.objects.get(pk=ts_template_id)
 
@@ -1515,24 +1558,31 @@ class BulkFetchLPDataApi(View):
             ds_dict = SERVICE_DATA_SOURCE
             result['data']['meta'] = dict()
             result['data']['meta']['chart_type'] = ds_dict[ds_name]['type'] if 'type' in ds_dict[ds_name] else ""
-            result['data']['meta']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[ds_name] else ""
-            result['data']['meta']['data_source_type'] = ds_dict[ds_name]['data_source_type'] if 'data_source_type' in ds_dict[ds_name] else "Numeric"
-            result['data']['meta']['is_inverted'] = ds_dict[ds_name]['is_inverted'] if 'is_inverted' in ds_dict[ds_name] else ""
+            result['data']['meta']['chart_color'] = ds_dict[ds_name]['chart_color'] if 'chart_color' in ds_dict[
+                ds_name] else ""
+            result['data']['meta']['data_source_type'] = ds_dict[ds_name]['data_source_type'] if 'data_source_type' in \
+                                                                                                 ds_dict[
+                                                                                                     ds_name] else "Numeric"
+            result['data']['meta']['is_inverted'] = ds_dict[ds_name]['is_inverted'] if 'is_inverted' in ds_dict[
+                ds_name] else ""
             # Device Type Parameter of Device Name.
-            device_type = Device.objects.filter(device_name__in=devices).values_list('device_type', flat = True)
+            device_type = Device.objects.filter(device_name__in=devices).values_list('device_type', flat=True)
             # Device Type warn crit params corresponding to Device.
-            ds_warn_crit_param = DeviceType.objects.filter(id__in=device_type).values('pl_warning', 'pl_critical', 'rta_warning', 'rta_critical')
+            ds_warn_crit_param = DeviceType.objects.filter(id__in=device_type).values('pl_warning', 'pl_critical',
+                                                                                      'rta_warning', 'rta_critical')
 
             if ds_name in ['pl']:
                 result['data']['meta']['warning'] = ds_warn_crit_param[0]['pl_warning']
                 result['data']['meta']['critical'] = ds_warn_crit_param[0]['pl_critical']
-            elif ds_name in ['pl'] and not (ds_warn_crit_param[0]['pl_warning'] and ds_warn_crit_param[0]['pl_critical']):
+            elif ds_name in ['pl'] and not (
+                        ds_warn_crit_param[0]['pl_warning'] and ds_warn_crit_param[0]['pl_critical']):
                 result['data']['meta']['warning'] = PING_PL_WARNING
                 result['data']['meta']['critical'] = PING_PL_CRITICAL
             elif ds_name in ['rta']:
                 result['data']['meta']['warning'] = ds_warn_crit_param[0]['rta_warning']
                 result['data']['meta']['critical'] = ds_warn_crit_param[0]['rta_critical']
-            elif ds_name in ['rta'] and not (ds_warn_crit_param[0]['rta_warning'] and ds_warn_crit_param[0]['rta_critical']):
+            elif ds_name in ['rta'] and not (
+                        ds_warn_crit_param[0]['rta_warning'] and ds_warn_crit_param[0]['rta_critical']):
                 result['data']['meta']['warning'] = PING_RTA_WARNING
                 result['data']['meta']['critical'] = PING_RTA_CRITICAL
 
@@ -1554,7 +1604,7 @@ class BulkFetchLPDataApi(View):
                 result['data']['meta']['is_inverted'] = ds_obj.is_inverted
                 result['data']['meta']['data_source_type'] = ds_obj.ds_type_name()
                 try:
-                    result['data']['meta']['warning'] = ds_obj.warning 
+                    result['data']['meta']['warning'] = ds_obj.warning
                     result['data']['meta']['critical'] = ds_obj.critical
                 except Exception as e:
                     result['data']['meta']['warning'] = ''
@@ -1613,12 +1663,20 @@ class BulkFetchLPDataApi(View):
                         # If service is from 'exceptional_services' than get base station
                         # and it's device to which 'ss' device is connected from 'Topology'.
                         if str(service) in exceptional_services:
-                            # MAC address of device.
-                            mac_address = device.mac_address
-                            mac = mac_address.lower()
 
-                            # Base station device name to which 'ss' is connected.
-                            bs_device = Topology.objects.get(connected_device_mac=mac)
+                            if is_radwin5:
+                                # IP address of device.
+                                ip_address = device.ip_address
+
+                                # Base station device name to which 'ss' is connected.
+                                bs_device = Topology.objects.get(connected_device_ip=ip_address)
+                            else:
+                                # MAC address of device.
+                                mac_address = device.mac_address
+                                mac = mac_address.lower()
+
+                                # Base station device name to which 'ss' is connected.
+                                bs_device = Topology.objects.get(connected_device_mac=mac)
 
                             # Get base station device.
                             device = Device.objects.get(device_name=bs_device.device_name)
@@ -1656,14 +1714,25 @@ class BulkFetchLPDataApi(View):
                         try:
                             device = Device.objects.get(device_name=device_name)
                             if str(service) in exceptional_services:
-                                # SS device MAC address.
-                                device_ss_mac = device.mac_address
 
-                                # Insert data in 'ss_name_mac_mapping' dictionary.
-                                ss_name_mac_mapping[device.device_name] = device_ss_mac
+                                if is_radwin5:
+                                    # IP address of device.
+                                    device_ss_mac = device.ip_address
 
-                                # Get base station device name from 'Topology'.
-                                bs_device = Topology.objects.get(connected_device_mac=device_ss_mac.lower())
+                                    # Insert data in 'ss_name_mac_mapping' dictionary.
+                                    ss_name_mac_mapping[device.device_name] = device_ss_mac
+
+                                    # Base station device name to which 'ss' is connected.
+                                    bs_device = Topology.objects.get(connected_device_ip=device_ss_mac)
+                                else:
+                                    # SS device MAC address.
+                                    device_ss_mac = device.mac_address
+
+                                    # Insert data in 'ss_name_mac_mapping' dictionary.
+                                    ss_name_mac_mapping[device.device_name] = device_ss_mac
+
+                                    # Get base station device name from 'Topology'.
+                                    bs_device = Topology.objects.get(connected_device_mac=device_ss_mac.lower())
 
                                 # Get base station device.
                                 device = Device.objects.get(device_name=bs_device.device_name)
@@ -1704,6 +1773,7 @@ class BulkFetchLPDataApi(View):
                     lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
+                    lp_data['is_first_call'] = is_first_call
 
                     if not all([service_name, ds_name]):
                         if service_type == 'ping' or ts_type == "ping":
@@ -1733,7 +1803,7 @@ class BulkFetchLPDataApi(View):
                         target=nocout_live_polling,
                         args=(q, site,)
                     ) for site in site_list
-                ]
+                    ]
 
                 for j in jobs:
                     j.start()
@@ -1786,7 +1856,6 @@ class BulkFetchLPDataApi(View):
                                 pass
                         else:
                             result['data']['devices'][device_name]['value'] = device_value
-
 
                         if not all([service_name, ds_name]):
                             # Default icon.
@@ -1873,13 +1942,14 @@ class BulkFetchLPDataApi(View):
 
         return HttpResponse(json.dumps(result))
 
-    def get_thematic_settings(self, ts_type, device_technology):
+    def get_thematic_settings(self, ts_type, device_technology,device_type):
         """
             Get user thematic settings.
 
             Args:
                 ts_type (unicode): Thematic settings type i.e 'ping' or 'normal'.
                 device_technology (<class 'device.models.DeviceTechnology'>): Device technology object.
+                device_type (<class 'device.models.DeviceType'>): Device type object.
 
             Returns:
                 user_thematics (<class 'inventory.models.UserPingThematicSettings'>): Thematic settings object.
@@ -1893,19 +1963,22 @@ class BulkFetchLPDataApi(View):
             return None
 
         device_technology = device_technology
+        device_type = device_type
 
         # Fetch thematic settings for current user.
         if ts_type == "normal":
             try:
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology)
+                                                                  thematic_technology=device_technology,
+                                                                  thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                                                                      thematic_technology=device_technology,
+                                                                      thematic_type=device_type)
             except Exception as e:
                 return user_thematics
 
@@ -2213,6 +2286,70 @@ class GetTypesForModel(APIView):
         # Fetch types associated with the selected model.
         if model:
             types = model[0].device_types.all()
+            print "TYPE"
+            print type(types)
+
+            result = [{'id': value.id,
+                       'name': value.name,
+                       'alias': value.alias} for value in types]
+
+        return Response(result)
+
+
+class GetTypesForTech(APIView):
+    """
+    Fetch type corresponding to the selected technology.
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/get_tech_types/4/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+        Args:
+            pk (unicode): Selected option value.
+
+        Returns:
+            result (str): JSON formatted response.
+                         For e.g.,
+                            [
+                                {
+                                    "alias": "Cambium",
+                                    "id": 4,
+                                    "name": "Cambium"
+                                },
+                                {
+                                    "alias": "RAD",
+                                    "id": 7,
+                                    "name": "RAD"
+                                },
+                                {
+                                    "alias": "MROTek",
+                                    "id": 8,
+                                    "name": "MROtek"
+                                }
+                            ]
+        """
+        tech_id = pk
+
+        # Response of api.
+        result = list()
+
+        # Technology object.
+        tech = None
+        if tech_id:
+            tech = DeviceTechnology.objects.filter(id=tech_id)
+
+        if tech:
+            # Fetch types associated with the selected technology.
+            types = DeviceType.objects.filter(
+                id__in=DeviceModel.objects.filter(
+                    id__in=DeviceVendor.objects.filter(
+                        id__in=DeviceTechnology.objects.get(id=tech_id).technologyvendor_set.values_list('vendor_id', flat=True)
+                    ).values_list('vendormodel__model_id', flat=True)
+                ).values_list('modeltype__type_id', flat=True))
 
             result = [{'id': value.id,
                        'name': value.name,
@@ -2459,7 +2596,7 @@ class GetDevicesForSelectionMenu(APIView):
                                                                  'ip_address')
         else:
             pass
-        
+
         serializer = DeviceParentSerializer(devices, many=True)
 
         return Response(serializer.data)
@@ -2473,6 +2610,7 @@ class GetDeviceInventory(APIView):
 
     URL: "http://127.0.0.1:8000/api/device_inventory/m/"
     """
+
     def get(self, request, flag):
         """
         Processing API request.
@@ -2563,6 +2701,7 @@ class GetEligibleParentDevices(APIView):
 
     URL: "http://127.0.0.1:8000/api/get_eligible_parent/10244/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -2682,6 +2821,7 @@ class DeviceSoftDelete(APIView):
 
     URL: "http://127.0.0.1:8000/api/device_soft_delete/10244/1/"
     """
+
     def get(self, request, device_id, new_parent_id):
         """
         Processing API request.
@@ -2773,6 +2913,7 @@ class DeviceRestoreDispalyData(APIView):
 
     URL: "http://127.0.0.1:8000/api/device_restore_display_data/1/"
     """
+
     def get(self, request, value):
         """
         Processing API request.
@@ -2824,6 +2965,7 @@ class RestoreDevice(APIView):
 
     URL: "http://127.0.0.1:8000/api/device_restore/1/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -2885,6 +3027,7 @@ class AddDeviceToNMSDisplayInfo(APIView):
 
     URL: "http://127.0.0.1:8000/api/add_device_to_nms_display_info/10244/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -2966,6 +3109,7 @@ class AddDeviceToNMS(APIView):
 
     URL: "http://127.0.0.1:8000/api/add_device_to_nms/10244/?ping_data={}"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -3107,6 +3251,7 @@ class EditDeviceInNMS(APIView):
 
     URL: "http://127.0.0.1:8000/api/edit_device_in_nms/10244/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -3215,6 +3360,7 @@ class DeleteDeviceFromNMS(APIView):
 
     URL: "http://127.0.0.1:8000/api/delete_device_from_nms/10244/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -3290,6 +3436,7 @@ class ModifyDeviceState(APIView):
 
     URL: "http://127.0.0.1:8000/api/modify_device_state/11341/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -3342,6 +3489,7 @@ class ModifyDeviceState(APIView):
 
         return Response(result)
 
+
 class SyncDevicesInNMS(APIView):
     """
     Sync devices configuration with nms core.
@@ -3350,6 +3498,7 @@ class SyncDevicesInNMS(APIView):
 
     URL: "http://127.0.0.1:8000/api/sync_devices_in_nms/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -3456,6 +3605,7 @@ class RemoveSyncDeadlock(APIView):
 
     URL: "http://127.0.0.1:8000/api/remove_sync_deadlock/"
     """
+
     def get(self, request):
         """
         Processing API request.
@@ -3506,6 +3656,7 @@ class EditSingleServiceDisplayData(APIView):
 
     URL: "http://127.0.0.1:8000/api/edit_single_svc_display_data/"
     """
+
     def get(self, request, dsc_id):
         """
         Processing API request.
@@ -3610,6 +3761,7 @@ class GetServiceParaTableData(APIView):
 
     URL: "http://127.0.0.1:8000/api/get_svc_para_table_data/10582/radwin_uas/4/"
     """
+
     def get(self, request, device_name, service_name, template_id=""):
         """
         Processing API request.
@@ -3645,7 +3797,7 @@ class GetServiceParaTableData(APIView):
         result['data']['objects'] = {}
 
         if template_id:
-            svc_template= None
+            svc_template = None
             try:
                 svc_template = ServiceParameters.objects.get(id=template_id)
             except Exception as e:
@@ -3678,6 +3830,7 @@ class EditSingleService(APIView):
 
     URL: "http://127.0.0.1:8000/api/edit_single_service/1/4/?data_sources={}"
     """
+
     def get(self, request, dsc_id, svc_temp_id):
         """
         Processing API request.
@@ -3833,6 +3986,7 @@ class DeleteSingleServiceDisplayData(APIView):
 
     URL: "http://127.0.0.1:8000/api/delete_single_svc_display_data/1/"
     """
+
     def get(self, request, dsc_id):
         """
         Processing API request.
@@ -3901,6 +4055,7 @@ class DeleteSingleService(APIView):
 
     URL: "http://127.0.0.1:8000/api/delete_single_svc/1/"n
     """
+
     def get(self, request, device_name, service_name):
         """
         Processing API request.
@@ -3992,6 +4147,7 @@ class EditServiceDisplayData(APIView):
 
     URL: "http://127.0.0.1:8000/api/edit_svc_display_data/12452/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -4096,6 +4252,7 @@ class ServiceEditOldConf(APIView):
 
     URL: "http://127.0.0.1:8000/api/svc_edit_old_conf/4/12/10585/"
     """
+
     def get(self, request, service_id="", device_id=""):
         """
         Processing API request.
@@ -4257,6 +4414,7 @@ class ServiceEditNewConf(APIView):
 
     URL: "http://127.0.0.1:8000/api/svc_edit_new_conf/4/12/"
     """
+
     def get(self, request, service_id="", template_id=""):
         """
         Processing API request.
@@ -4338,6 +4496,7 @@ class ServiceEditPingConf(APIView):
 
     URL: "http://127.0.0.1:8000/api/svc_edit_ping_conf/10585/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -4368,7 +4527,7 @@ class ServiceEditPingConf(APIView):
         result['data'] = {}
         result['success'] = 0
         result['message'] = ""
-        result['data']= {}
+        result['data'] = {}
 
         # Get device.
         device = Device.objects.get(pk=pk)
@@ -4420,6 +4579,7 @@ class EditServices(APIView):
          &svc_ping={'rta_critical': 3000, 'packets': 60, 'timeout': 20, 'pl_critical': 100, 'normal_check_interval': 5,
          'pl_warning': 80, 'rta_warning': 1500}"
     """
+
     def get(self, request, device_id=""):
         """
         Processing API request.
@@ -4795,6 +4955,7 @@ class DeleteServiceDisplayData(APIView):
 
     URL: "http://127.0.0.1:8000/api/delete_svc_display_data/11343/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -4908,6 +5069,7 @@ class DeleteServices(APIView):
 
     URL: "http://127.0.0.1:8000/api/delete_services/11343/?service_data=["57","59","60"]"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -5004,6 +5166,7 @@ class AddServiceDisplayData(APIView):
 
     URL: "http://127.0.0.1:8000/api/add_svc_display_data/11343/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -5116,6 +5279,7 @@ class ServiceAddOldConf(APIView):
 
     URL: "http://127.0.0.1:8000/api/svc_add_old_conf/11343/14/4/"
     """
+
     def get(self, request, device_id="", service_id="", option=""):
         """
         Processing API request.
@@ -5201,6 +5365,7 @@ class ServiceAddNewConf(APIView):
 
     URL: "http://127.0.0.1:8000/api/svc_add_new_conf/14/4/"
     """
+
     def get(self, request, service_id="", template_id=""):
         """
         Processing API request.
@@ -5285,6 +5450,7 @@ class AddServices(APIView):
     URL: "http://127.0.0.1:8000/api/add_services/11343/?svc_data=[{'service_id': u'54',
          'data_source': [{'warning': u'15', 'critical': u'19', 'name': u'dl_cinr'}], 'template_id': u'9'}]"
     """
+
     def get(self, request, device_id):
         """
         Processing API request.
@@ -5470,6 +5636,7 @@ class DeviceServiceStatus(APIView):
 
     URL: "http://127.0.0.1:8000/api/device_service_status/11343/"
     """
+
     def get(self, request, pk):
         """
         Processing API request.
@@ -5603,6 +5770,7 @@ class ResetServiceConfiguration(APIView):
 
     URL: "http://127.0.0.1:8000/api/reset_service_conf/"
     """
+
     def get(self, request):
         """
         Processing API request.
@@ -5659,3 +5827,4 @@ class ResetServiceConfiguration(APIView):
             logger.info(e.message)
 
         return Response(result)
+

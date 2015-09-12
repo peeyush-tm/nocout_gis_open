@@ -21,7 +21,7 @@ var perf_that = "",
         {"id": "live", "title": "Live"}
     ],
     poll_now_tab = [
-        { "id" : "live_poll_now", "title" : "Poll Now", disabled_url : true }
+        { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
     ],
     tabs_with_historical = [
         {"id": "bihourly", "title": "Bi-Hourly"},
@@ -37,13 +37,21 @@ var perf_that = "",
         {"id": "monthly", "title": "Monthly"},
         {"id": "yearly", "title": "Yearly"}
     ],
-    default_live_table_headers = [
+    default_live_table_headers_without_ds = [
         {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
     ],
+    default_live_table_headers_with_ds = [
+        {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true}
+    ]
     default_hist_table_headers = [
         {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
@@ -83,7 +91,7 @@ if (window.location.origin) {
 
 // Daterangepicker HTML String
 date_range_picker_html = '<input type="text" name="reservation" id="reservationtime" \
-                          class="form-control input-large search-query" value=""/>';
+                          class="form-control input-large search-query" value="" readonly/>';
 
 
 $.urlParam = function (name) {
@@ -125,8 +133,6 @@ function nocoutPerfLib() {
      */
     this.initDateRangePicker = function(domElemet) {
 
-        // var saved_start_date = $.cookie('filter_start_date') ? $.cookie('filter_start_date') : "",
-        //     saved_end_date = $.cookie('filter_end_date') ? $.cookie('filter_end_date') : "",
         var saved_start_date = "",
             saved_end_date = "",
             oldStartDate = saved_start_date ? new Date(saved_start_date * 1000) : new Date(),
@@ -350,7 +356,7 @@ function nocoutPerfLib() {
     /**
      * This function make HTML for TAB content
      * @method make_tab_content_html
-     * @param tab_content_config "{Object}", It contains the configuration for creating tab content html
+     * @param tab_content_config {Object}, It contains the configuration for creating tab content html
      * @return content_html {String}, It contains the required HTML string
      */
     this.make_tab_content_html = function(tab_content_config) {
@@ -366,7 +372,8 @@ function nocoutPerfLib() {
             show_last_updated = tab_content_config.show_last_updated != undefined ? tab_content_config.show_last_updated : true,
             last_updated_id = unique_key ? "last_updated_" + unique_key + "_block" : "",
             chart_id = unique_key ? unique_key + "_chart" : "",
-            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "";
+            bottom_table_id = unique_key ? unique_key + "_bottom_table" : "",
+            legends_block_id = unique_key ? unique_key + "_legends_block" : "";
 
         content_html += '<div class="tab-pane ' + active_class+ '" id="' + id+ '">';
 
@@ -376,22 +383,28 @@ function nocoutPerfLib() {
                             </div>';
         }
         if (tab_content_config.tab_id == 'live_poll_now') {
-            content_html += '<div class="col-md-3">\
-                                <button class="btn btn-primary perf_poll_now " title="Poll Now" \
+            content_html += '<div class="col-md-1">\
+                                <button class="btn btn-default btn-sm perf_poll_now " title="Poll Now" \
                                 data-complete-text="<i class=\'fa fa-flash\'></i>" data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
                                 <i class="fa fa-flash"></i></button>\
                             </div>\
-                            <div class="col-md-3">\
-                                <select name="poll_interval" class="form-control poll_interval">\
+                            <div class="col-md-2" align="center" style="padding-top:4px;">\
+                            <strong>OR</strong> \
+                            </div>\
+                            <div class="col-md-9 row">\
+                            <div class="col-md-4">\
+                                <select name="poll_interval" class="form-control input-sm poll_interval">\
                                 <option value="">Select Poll Interval</option>\
                                 <option value="10">10 Seconds</option>\
                                 <option value="20">20 Seconds</option>\
                                 <option value="30">30 Seconds</option>\
+                                <option value="40">40 Seconds</option>\
+                                <option value="50">50 Seconds</option>\
                                 <option value="60">60 Seconds</option>\
                                 </select>\
                             </div>\
-                            <div class="col-md-3">\
-                                <select name="poll_maxInterval" class="form-control poll_maxInterval">\
+                            <div class="col-md-4">\
+                                <select name="poll_maxInterval" class="form-control input-sm poll_maxInterval">\
                                 <option value="">Select Maximum Interval</option>\
                                 <option value="1">1 Minute</option>\
                                 <option value="2">2 Minute</option>\
@@ -399,25 +412,39 @@ function nocoutPerfLib() {
                                 <option value="4">4 Minute</option>\
                                 </select>\
                             </div>\
-                            <div class="col-md-3">\
-                                <button class="btn btn-success play_pause_btns poll_play_btn" data-complete-text="<i class=\'fa fa-play\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
-                                    <i class="fa fa-play"> </i>\
+                            <div class="col-md-4">\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_play_btn" \
+                                    data-complete-text="<i class=\'fa fa-play text-success\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Play" >\
+                                    <i class="fa fa-play text-success"> </i>\
                                 </button>\
-                                <button class="btn btn-warning play_pause_btns poll_pause_btn" data-complete-text="<i class=\'fa fa-pause\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
-                                    <i class="fa fa-pause"> </i>\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_pause_btn" \
+                                    data-complete-text="<i class=\'fa fa-pause text-warning\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Pause" >\
+                                    <i class="fa fa-pause text-warning"> </i>\
                                 </button>\
-                                <button class="btn btn-danger play_pause_btns poll_stop_btn" data-complete-text="<i class\'fa fa-stop\'> </i>" data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
-                                    <i class="fa fa-stop"> </i>\
+                                <button class="btn btn-default btn-sm play_pause_btns poll_stop_btn" \
+                                    data-complete-text="<i class\'fa fa-stop text-danger\'> </i>" \
+                                    data-loading-text="<i class=\'fa fa-spinner fa-spin\'> </i>" title="Stop" >\
+                                    <i class="fa fa-stop text-danger"> </i>\
                                 </button>\
-                            </div><div class="clearfix"></div><div class="divide-20"></div>';
+                            </div>\
+                            <div class="clearfix"></div></div>\
+                            <div class="clearfix"></div><div class="divide-20"></div>';
 
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;"></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         } else {
             content_html += '<div class="chart_container">\
                             <div id="' + chart_id+ '" style="width:100%;">\
                             <h3><i class="fa fa-spinner fa-spin"></i></h3></div>\
+                            <div id="' + legends_block_id+ '" class="custom_legends_container hide"> \
+                            <div class="custom_legends_block"></div><div class="clearfix"></div> \
+                            </div> \
                             <div id="' + bottom_table_id+ '"></div></div></div>';
         }
 
@@ -456,6 +483,13 @@ function nocoutPerfLib() {
                 }
 
                 if (result.success == 1) {
+                    var services_list = [];
+                    try {
+                        services_list = result.data.meta.services_list;
+                    } catch(e) {
+                        services_list = [];
+                    }
+                    $('#all_serv_live_report_btn').attr('data-services', JSON.stringify(services_list));
 
                     var first_loop = 0;
                     // If any data exists
@@ -581,8 +615,18 @@ function nocoutPerfLib() {
                                                         var current_item = inner_inner_tabs[x],
                                                             id = current_item.id,
                                                             title = current_item.title,
-                                                            data_url = !current_item["disabled_url"] ? value.url + "?data_for=" + id : "",
-                                                            inner_tab_info_obj = {
+                                                            data_url = "";
+
+                                                        if (!current_item["disabled_url"]) {
+                                                            if (value.url.indexOf('?') == -1) {
+                                                                data_url = value.url + "?data_for=" + id        
+                                                            } else {
+                                                                data_url = value.url + "&data_for=" + id
+                                                            }
+                                                        }
+
+
+                                                        var inner_tab_info_obj = {
                                                                 'active_class' : inner_active_class,
                                                                 'unique_key' : id + "_" + unique_item_key,
                                                                 'icon_class' : 'fa fa-caret-right',
@@ -783,9 +827,16 @@ function nocoutPerfLib() {
     this.getServiceStatus = function(service_status_url, is_exact_url, callback) {
 
         if(!is_exact_url) {
-            var splitted_status_url = service_status_url.split("/"),
-                updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
-                device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            
+            if (service_status_url.indexOf('?') == -1) {
+                var splitted_status_url = service_status_url.split("/"),
+                    updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url + "/" : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            } else {
+                var splitted_status_url = service_status_url.split('?')[0].split("/");
+                var updated_url = splitted_status_url[splitted_status_url.length -1] != "" ? service_status_url.split('?')[0] + "/" + "?" + service_status_url.split('?')[1] : service_status_url,
+                    device_id = splitted_status_url[splitted_status_url.length -1] != "" ? splitted_status_url[splitted_status_url.length -1] : splitted_status_url[splitted_status_url.length -2];
+            }
 
             if (updated_url.indexOf("/servicedetail/") > -1) {
                 if (updated_url.indexOf("rssi") > -1) {
@@ -861,6 +912,11 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        // Hide custom legends block if exists
+        if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
+            $('#' + service_id + '_legends_block').addClass('hide');
+        }
 
         if (!get_service_data_url || (service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1)) {
             if(service_id.indexOf('live_poll_now') > -1 && get_service_data_url.indexOf('live_poll_now') > -1) {
@@ -967,7 +1023,13 @@ function nocoutPerfLib() {
 
             draw_type = 'table';
             // Checked the chart type radio
-            $('#display_table')[0].checked = true;
+            // $('#display_table')[0].checked = true;
+            // Update radio button selection
+            $('#display_table').attr('checked', 'checked');
+            $('#display_table').prop('checked', true);
+
+            // Update dropdown button html
+            updateDropdownHtml();
 
             $('#' + service_id+ '_chart').html("");
 
@@ -1032,7 +1094,7 @@ function nocoutPerfLib() {
                 urlDataStartDate = getDateInEpochFormat(ajax_start_date);
                 urlDataEndDate = getDateInEpochFormat(end_Date)
             }
-
+            is_normal_table = false;
             $.ajax({
                 url: get_url,
                 data: {
@@ -1057,6 +1119,18 @@ function nocoutPerfLib() {
                         var grid_headers = result.data.objects.table_data_header;
 
                         if (grid_headers && grid_headers.length > 0) {
+
+                            // update 'draw_type' variable
+                            draw_type = 'table';
+                            // Checked the chart type radio
+                            // $('#display_table')[0].checked = true;
+                            // Update radio button selection
+                            $('#display_table').attr('checked', 'checked');
+                            $('#display_table').prop('checked', true);
+
+                            // Update dropdown button html
+                            updateDropdownHtml();
+
                             // Hide display type option from only table tabs
                             if (!$("#display_type_container").hasClass("hide")) {
                                 $("#display_type_container").addClass("hide")
@@ -1066,6 +1140,7 @@ function nocoutPerfLib() {
                             nocout_destroyHighcharts(service_id);
 
                             if (typeof(grid_headers[0]) == 'string') {
+                                is_normal_table = true;
                                 var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
                                 if ($("#other_perf_table").length == 0) {
                                     initNormalDataTable_nocout(
@@ -1082,11 +1157,6 @@ function nocoutPerfLib() {
                                     'other_perf_table'
                                 );
                             } else {
-
-                                draw_type = 'table';
-                                // Checked the chart type radio
-                                $('#display_table')[0].checked = true;
-
                                 setTimeout(function() {
                                     initChartDataTable_nocout(
                                         "other_perf_table",
@@ -1112,7 +1182,13 @@ function nocoutPerfLib() {
                                 }
                                 draw_type = 'chart';
                                 // Checked the chart type radio
-                                $('#display_chart')[0].checked = true
+                                // $('#display_chart')[0].checked = true
+                                // Update radio button selection
+                                $('#display_chart').attr('checked', 'checked');
+                                $('#display_chart').prop('checked', true);
+
+                                // Update dropdown button html
+                                updateDropdownHtml();
                             } else {
                                 // Show display type option from only table tabs
                                 if ($("#display_type_container").hasClass("hide")) {
@@ -1125,7 +1201,16 @@ function nocoutPerfLib() {
                                 if (draw_type == 'chart') {
                                     // Destroy 'perf_data_table'
                                     nocout_destroyDataTable('other_perf_table');
-                                    nocout_destroyDataTable('perf_data_table');
+
+                                    if (!(
+                                        listing_ajax_url.indexOf('service/rf/') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('servicedetail') > -1
+                                        ||
+                                        listing_ajax_url.indexOf('availability') > -1
+                                    )) {
+                                            nocout_destroyDataTable('perf_data_table');
+                                    }
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
                                         createHighChart_nocout(chart_config,service_id, false, false, function(status) {
@@ -1143,34 +1228,47 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     ) {
-                                        var contentHtml = createChartDataTableHtml_nocout(
-                                            "perf_data_table",
-                                            chart_config.chart_data
-                                        );
-                                        // Update bottom table HTML
-                                        $('#' + service_id+ '_bottom_table').html(contentHtml);
+                                        if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                            addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table');
+                                        } else {
+                                            var contentHtml = createChartDataTableHtml_nocout(
+                                                "perf_data_table",
+                                                chart_config.chart_data
+                                            );
 
-                                        // Margin of 20px between the chart & table
-                                        $('#' + service_id+ '_bottom_table').css("margin-top","20px");
+                                            // Update bottom table HTML
+                                            $('#' + service_id+ '_bottom_table').html(contentHtml);
 
-                                        $("#perf_data_table").DataTable({
-                                            sDom: 'T<"clear">lfrtip',
-                                            oTableTools: {
-                                                sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                                                aButtons: [
-                                                    {
-                                                        sExtends: "xls",
-                                                        sButtonText: "Download Excel",
-                                                        sFileName: "*.xls",
-                                                        // mColumns: excel_columns
-                                                    }
-                                                ]
-                                            },
-                                            bPaginate: true,
-                                            bDestroy: true,
-                                            aaSorting : [[0,'desc']],
-                                            sPaginationType: "full_numbers"
-                                        });
+                                            // Margin of 20px between the chart & table
+                                            $('#' + service_id+ '_bottom_table').css("margin-top","20px");
+
+                                            $("#perf_data_table").DataTable({
+                                                sDom: 'T<"clear">lfrtip',
+                                                oTableTools: {
+                                                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                                                    aButtons: [
+                                                        {
+                                                            sExtends: "xls",
+                                                            sButtonText: "Download Excel",
+                                                            sFileName: "*.xls",
+                                                            // mColumns: excel_columns
+                                                        }
+                                                    ]
+                                                },
+                                                fnInitComplete: function(oSettings) {
+                                                    var row_per_pages_selectbox = '#perf_data_table_wrapper div.dataTables_length label select',
+                                                        search_box = '#perf_data_table_wrapper div.dataTables_filter label input';
+                                                    // Update search txt box & row per pages dropdown style
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");
+                                                    $(row_per_pages_selectbox + ' , ' + search_box).css("max-width","150px");
+                                                },
+                                                bPaginate: true,
+                                                bDestroy: true,
+                                                aaSorting : [[0,'desc']],
+                                                sPaginationType: "full_numbers"
+                                            });
+                                        }
                                     }
 
                                 } else {
@@ -1181,7 +1279,13 @@ function nocoutPerfLib() {
 
                                         draw_type = 'table';
                                         // Checked the chart type radio
-                                        $('#display_table')[0].checked = true;
+                                        // $('#display_table')[0].checked = true;
+                                        // Update radio button selection
+                                        $('#display_table').attr('checked', 'checked');
+                                        $('#display_table').prop('checked', true);
+
+                                        // Update dropdown button html
+                                        updateDropdownHtml();
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1223,7 +1327,13 @@ function nocoutPerfLib() {
 
                                         draw_type = 'table';
                                         // Checked the chart type radio
-                                        $('#display_table')[0].checked = true;
+                                        // $('#display_table')[0].checked = true;
+                                        // Update radio button selection
+                                        $('#display_table').attr('checked', 'checked');
+                                        $('#display_table').prop('checked', true);
+
+                                        // Update dropdown button html
+                                        updateDropdownHtml();
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1254,20 +1364,34 @@ function nocoutPerfLib() {
 
                             draw_type = 'chart';
                             // Checked the chart type radio
-                            $('#display_chart')[0].checked = true
+                            // $('#display_chart')[0].checked = true;
+                            // Update radio button selection
+                            $('#display_chart').attr('checked', 'checked');
+                            $('#display_chart').prop('checked', true);
+
+                            // Update dropdown button html
+                            updateDropdownHtml();
                         } else {
                             // Show display type option from only table tabs
                             if ($("#display_type_container").hasClass("hide")) {
                                 $("#display_type_container").removeClass("hide")
                             }
                         }
-
+                        
                         if (draw_type == 'chart') {
-                            if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
-                                $("#perf_data_table").dataTable().fnDestroy();
-                                $("#perf_data_table").remove();
-                            }
+                            if(!(
+                                listing_ajax_url.indexOf('service/rf/') > -1
+                                ||
+                                listing_ajax_url.indexOf('servicedetail') > -1
+                                ||
+                                listing_ajax_url.indexOf('availability') > -1
+                            )) {
+                                if ($("#perf_data_table").length > 0 && $("#perf_data_table").html()) {
+                                    $("#perf_data_table").dataTable().fnDestroy();
+                                    $("#perf_data_table").remove();
+                                }
 
+                            }
                             if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
                                     $('#' + service_id+ '_chart').html(result.message);
@@ -1285,7 +1409,13 @@ function nocoutPerfLib() {
 
                             draw_type = 'table';
                             // Checked the chart type radio
-                            $('#display_table')[0].checked = true;
+                            // $('#display_table')[0].checked = true;
+                            // Update radio button selection
+                            $('#display_table').attr('checked', 'checked');
+                            $('#display_table').prop('checked', true);
+
+                            // Update dropdown button html
+                            updateDropdownHtml();
 
                             setTimeout(function() {
                                 initChartDataTable_nocout(
@@ -1328,8 +1458,27 @@ function nocoutPerfLib() {
                         } else {
                             hideSpinner();
                         }
+                    } else if(draw_type == 'table' && is_normal_table) {
+                        if ($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                            //if last date
+                            if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
+                                hideSpinner();
+                            //Else sendAjax request for next Date
+                            } else {
+
+                                var nextDay = moment(ajax_start_date).add(1, 'd');
+                                var ohayoo = nextDay.startOf('day');
+                                timeInterval = setTimeout(function () {
+                                    (function(ohayoo) {
+                                        sendAjax(ohayoo.toDate(), ajax_end_date);
+                                    })(ohayoo);
+                                }, 400);
+                            }
+                        } else {
+                            hideSpinner();    
+                        }
                     } else {
-                        hideSpinner();
+                        // hideSpinner();
                     }
 
                     // });
@@ -1391,21 +1540,10 @@ function nocoutPerfLib() {
             clearTimeout(timeInterval);
         }
 
-        // if ($('#' + service_id+ '_chart').highcharts()) {
-        //     $('#' + service_id+ '_chart').highcharts().destroy();
-        // }
-
-        // for(var i=0;i<Highcharts.charts.length;i++) {
-        //     if (Highcharts.charts[i]) {
-        //         Highcharts.charts[i].destroy();
-        //     }
-        // }
-        
-        // Highcharts.charts = [];
-
         nocout_destroyHighcharts(service_id);
         nocout_destroyDataTable('other_perf_table');
         nocout_destroyDataTable('perf_data_table');
+
         if(get_service_data_url && service_id && device_id) {
             /*Call getServiceData function to fetch the data for clicked service tab*/
             perfInstance.getServiceData(get_service_data_url, service_id, device_id);
@@ -1468,18 +1606,10 @@ $('input[name="item_type"]').change(function(e) {
             get_service_data_url = active_inner_tab.attr("url");
     }
 
+    // Update dropdown button html
+    updateDropdownHtml();
+
     if (get_service_data_url && service_id && current_device) {
-
-        // if ($("#other_perf_table").length > 0) {
-        //     $("#other_perf_table").dataTable().fnDestroy();
-        //     $("#other_perf_table").remove();
-        // }
-
-        // if ($("#perf_data_table").length > 0) {
-        //     $("#perf_data_table").dataTable().fnDestroy();
-        //     $("#perf_data_table").remove();
-        // }
-
         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
     } else if (is_perf_polling_enabled) {
         nocout_togglePollNowContent();
@@ -1494,15 +1624,15 @@ $(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
     var currentTarget = e.currentTarget;
     // Show button in loading view
     $(currentTarget).button('loading');
-    if(!$("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-        $("#" + tab_id + " .play_pause_btns").addClass("disabled");
+    if(!$("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+        $("#" + tab_id + "_block .play_pause_btns").addClass("disabled");
     }
     initSingleDevicePolling(function(response) {
         
         $(currentTarget).button('complete');
         
-        if($("#" + tab_id + " .play_pause_btns").hasClass("disabled")) {
-            $("#" + tab_id + " .play_pause_btns").removeClass("disabled");
+        if($("#" + tab_id + "_block .play_pause_btns").hasClass("disabled")) {
+            $("#" + tab_id + "_block .play_pause_btns").removeClass("disabled");
         }
     });
 });
@@ -1552,4 +1682,275 @@ $(".perfContainerBlock").delegate('.poll_pause_btn', 'click', function(e) {
 
 $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
     nocout_stopPollNow();
+});
+
+$('input[name="service_view_type"]').change(function(e) {
+    // selected value of 'service_view_type'
+    var service_view_type = $(this).val();
+
+    // Set the 'service_view_type'  cookie
+    $.cookie("service_view_type", service_view_type, {path: '/'});
+    
+    // Reload the page
+    initPerformancePage();
+});
+
+
+$('#item_type_ul li a').click(function(e) {
+
+    // Prevent default functionality
+    e.preventDefault();
+
+    var radio_id = $(this).attr('radioId')
+
+    $('#' + radio_id)[0].checked = true;
+    $('#' + radio_id).trigger('change');
+});
+
+
+function updateDropdownHtml() {
+    var draw_type = $("input[name='item_type']:checked").val(),
+        icon_html = '';
+
+    if (draw_type == 'chart') {
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i> Display Chart';
+    } else {
+        icon_html = '<i class="text-primary fa fa-table"> </i> Display Table';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='item_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#item_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#item_type_btn').html(btn_html);
+}
+
+
+$('#service_view_type_ul li a').click(function(e) {
+
+    // Prevent default functionality
+    e.preventDefault();
+
+    var radio_id = $(this).attr('radioId')
+
+    // Update radio button selection
+    $('#' + radio_id).attr('checked', 'checked');
+    $('#' + radio_id).prop('checked', true);
+
+    // Update dropdown button html
+    updateServiceTypeDropdownHtml();
+
+    // Set the 'service_view_type'  cookie
+    $.cookie("service_view_type", $('#' + radio_id).val(), {path: '/'});
+
+    // Reload the page
+    initPerformancePage();
+});
+
+function updateServiceTypeDropdownHtml() {
+
+    var view_type = $("input[name='service_view_type']:checked").val(),
+        icon_html = '<i class="text-primary fa fa-bar-chart-o"> </i>';
+
+    if (view_type == 'normal') {
+        icon_html += ' Datasource View';
+    } else {
+        icon_html += ' Service View';
+    }
+
+    // Create button new html
+    var caret_html = ' <span class="caret"></span> ',
+        btn_html = icon_html + caret_html,
+        radioId = $("input[name='service_view_type']:checked").attr('id');
+
+    // Remove active class from all li
+    $('#service_view_type_ul li').removeClass('active');
+
+    // Add active class of current parent li
+    $('a[radioId="' + radioId + '"]').parent().addClass('active');
+
+    // Update dropdown button html
+    $('#service_view_type_btn').html(btn_html);
+}
+
+
+$('#all_serv_live_report_btn').click(function(e) {
+    
+    // prevent default functionality
+    e.preventDefault();
+
+    var report_title = 'All Services(Live Data - 5 Min.)' + current_device_ip,
+        services_list = $(this).data('services');
+
+    if (services_list && typeof services_list == 'object') {
+        services_list = JSON.stringify(services_list);
+    }
+
+    var main_url = base_url+"/downloader/datatable/?",
+        url_get_param = '';
+        applied_start_date = '',
+        applied_end_date = '';
+
+    // If any datetime filter applied
+    if (startDate && endDate) {
+        applied_start_date = startDate.toDate().getTime() / 1000;
+        applied_end_date = endDate.toDate().getTime() / 1000;
+    }
+
+    var datetime_filter_param = " 'start_date' : '" + applied_start_date + "', 'end_date' : '" + applied_end_date + "' ",
+        device_id_param = " 'device_id' : '" + current_device + "' ",
+        service_list_param = " 'service_view_type' : '" + $('input[name="service_view_type"]:checked').val() + "', 'services_list' : "+services_list,
+        sds_param = " 'service_data_source_type' : 'all', 'service_name' : 'all', 'data_for' : 'live' ",
+        common_param = " 'download_excel' : 'yes', 'report_title' : '" + report_title + "' ",
+        specific_params = " 'is_multi_sheet' : 1, 'data_key' : 'services_list', 'change_key' : 'service_name' "
+        row_data_param = "";
+
+    // prepare row_data params
+    row_data_param += sds_param + "," + datetime_filter_param + ",";
+    row_data_param += device_id_param + "," + common_param + ",";
+    row_data_param += specific_params + "," + service_list_param ;
+
+    // prepare get params
+    url_get_param += "app=performance";
+    url_get_param += "&rows="+data_class_name;
+    url_get_param += "&rows_data={" + row_data_param + "}"
+    url_get_param += "&headers="+header_class_name;
+    url_get_param += "&headers_data={" + common_param + "}";
+
+    var api_url = main_url + url_get_param;
+
+    // Make Ajax Call
+    $.ajax({
+        url : api_url,
+        type : 'GET',
+        success : function(response) {
+            var result = response;
+            // parse response if stringified.
+            if(typeof response == 'string') {
+                result = JSON.parse(response);
+            }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: result.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        },
+        error : function(err) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        }
+    });
+});
+
+
+
+$('#live_hist_report_btn').click(function(e) {
+    
+    // prevent default functionality
+    e.preventDefault();
+
+    var main_url = base_url+"/downloader/datatable/?",
+        live_hist_obj = [],
+        url_get_param = '';
+        applied_start_date = '',
+        applied_end_date = '',
+        active_tab_obj = nocout_getPerfTabDomId(),
+        tab_text = $.trim($('#' + active_tab_obj.active_dom_id + '_tab').text()),
+        active_tab_api_url = active_tab_obj.active_tab_api_url,
+        service_name = active_tab_api_url.split('/service/')[1].split('/')[0],
+        ds_name = active_tab_api_url.split('/service_data_source/')[1].split('/')[0],
+        report_title = 'Single Service (Live + Historical) - ' + current_device_ip;
+
+    // If any datetime filter applied
+    if (startDate && endDate) {
+        applied_start_date = startDate.toDate().getTime() / 1000;
+        applied_end_date = endDate.toDate().getTime() / 1000;
+    }
+
+    if (service_name.indexOf('_status') > -1 || service_name.indexOf('_invent') > -1) {
+        live_hist_obj = live_data_tab.concat(inventory_status_inner_inner_tabs);
+    } else {
+        live_hist_obj = live_data_tab.concat(tabs_with_historical);
+    }
+
+    var datetime_filter_param = " 'start_date' : '" + applied_start_date + "', 'end_date' : '" + applied_end_date + "' ",
+        device_id_param = " 'device_id' : '" + current_device + "' ",
+        tabs_list_param = " 'tabs_list' : "+JSON.stringify(live_hist_obj),
+        sds_param = " 'service_data_source_type' : '" + ds_name + "', 'service_name' : '" + service_name + "', 'data_for' : 'live' ",
+        common_param = " 'download_excel' : 'yes', 'report_title' : '" + report_title + "' ",
+        specific_params = " 'is_multi_sheet' : 1, 'data_key' : 'tabs_list', 'change_key' : 'data_for' "
+        row_data_param = "";
+
+    // prepare row_data params
+    row_data_param += sds_param + "," + datetime_filter_param + ",";
+    row_data_param += device_id_param + "," + common_param + ",";
+    row_data_param += specific_params + "," + tabs_list_param + ",";
+    row_data_param += " 'service_view_type' : '" + $('input[name="service_view_type"]:checked').val() + "' ";
+
+    // prepare get params
+    url_get_param += "app=performance";
+    url_get_param += "&rows="+data_class_name;
+    url_get_param += "&rows_data={" + row_data_param + "}"
+    url_get_param += "&headers="+header_class_name;
+    url_get_param += "&headers_data={" + common_param + "}";
+
+    var api_url = main_url + url_get_param;
+
+    // Make Ajax Call
+    $.ajax({
+        url : api_url,
+        type : 'GET',
+        success : function(response) {
+            var result = response;
+            // parse response if stringified.
+            if(typeof response == 'string') {
+                result = JSON.parse(response);
+            }
+
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: result.message,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        },
+        error : function(err) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: report_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1000
+            });
+        }
+    });
 });

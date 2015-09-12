@@ -19,8 +19,8 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     """
     If a new user is created auto assign rssi thematic settings for P2P, PMP and WiMAX technologies.
     """
-    UserThematicSettings = get_model('inventory', 'UserThematicSettings', seed_cache=True)
-    ThematicSettings = get_model('inventory', 'ThematicSettings', seed_cache=True)
+    UserThematicSettings = get_model('inventory', 'UserThematicSettings')
+    ThematicSettings = get_model('inventory', 'ThematicSettings')
 
     if not created:
         return
@@ -29,40 +29,57 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     thematic_setting_p2p = ThematicSettings.objects.filter(
             threshold_template__live_polling_template__technology__name='P2P',
             name__icontains="RSSI",
-    )[:1]
+    )
 
     if len(thematic_setting_p2p)>0:
-        UserThematicSettings.objects.create(
-                thematic_template=thematic_setting_p2p[0],
-                thematic_technology=thematic_setting_p2p[0].threshold_template.live_polling_template.technology,
-                user_profile=instance,
-        )
+        added_type = list()
+        for obj in thematic_setting_p2p:
+            if obj.threshold_template.live_polling_template.device_type.id not in added_type:
+                added_type.append(obj.threshold_template.live_polling_template.device_type.id)
+                UserThematicSettings.objects.create(
+                        thematic_template=obj,
+                        thematic_technology=obj.threshold_template.live_polling_template.technology,
+                        thematic_type=obj.threshold_template.live_polling_template.device_type,
+                        user_profile=instance,
+                )
+
 
     # Technology PMP
     thematic_setting_pmp = ThematicSettings.objects.filter(
             threshold_template__live_polling_template__technology__name='PMP',
             name__icontains="RSSI",
-    )[:1]
+    )
 
     if len(thematic_setting_pmp)>0:
-        UserThematicSettings.objects.create(
-                thematic_template=thematic_setting_pmp[0],
-                thematic_technology=thematic_setting_pmp[0].threshold_template.live_polling_template.technology,
-                user_profile=instance,
-        )
+        added_type = list()
+        for obj in thematic_setting_pmp:
+            if obj.threshold_template.live_polling_template.device_type.id not in added_type:
+                added_type.append(obj.threshold_template.live_polling_template.device_type.id)
+                UserThematicSettings.objects.create(
+                        thematic_template=obj,
+                        thematic_technology=obj.threshold_template.live_polling_template.technology,
+                        thematic_type=obj.threshold_template.live_polling_template.device_type,
+                        user_profile=instance,
+                )
+
 
     # Technology WiMAX
     thematic_setting_wimax = ThematicSettings.objects.filter(
             threshold_template__live_polling_template__technology__name='WIMAX',
             name__icontains="RSSI",
-    )[:1]
+    )
 
-    if len(thematic_setting_wimax)>0:
-        UserThematicSettings.objects.create(
-                thematic_template=thematic_setting_wimax[0],
-                thematic_technology=thematic_setting_wimax[0].threshold_template.live_polling_template.technology,
-                user_profile=instance,
-        )
+    if len(thematic_setting_wimax) > 0:
+        added_type = list()
+        for obj in thematic_setting_wimax:
+            if obj.threshold_template.live_polling_template.device_type.id not in added_type:
+                added_type.append(obj.threshold_template.live_polling_template.device_type.id)
+                UserThematicSettings.objects.create(
+                        thematic_template=obj,
+                        thematic_technology=obj.threshold_template.live_polling_template.technology,
+                        thematic_type=obj.threshold_template.live_polling_template.device_type,
+                        user_profile=instance,
+                )
 
 
 @nocout_utils.disable_for_loaddata
