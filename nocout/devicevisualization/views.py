@@ -3964,8 +3964,6 @@ class GISStaticInfo(View):
 
                     # thematic settings for current user
                     user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
-                    logger.exception("*********************** user_thematics - {}".format(user_thematics))
-
 
                     # service & data source
                     service = ""
@@ -4635,11 +4633,7 @@ class GISStaticInfo(View):
         # device type
         device_type = device_type
 
-        logger.exception("***************** device_technology - {}".format(device_technology))
-        logger.exception("***************** device_type - {}".format(device_type))
-
         # fetch thematic settings for current user
-
         if ts_type == "normal":
             if device_technology:
                 if device_type:
