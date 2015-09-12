@@ -225,6 +225,16 @@ var App = function () {
 					e.stopPropagation();
 				});
 			}
+
+            // Highcharts reflow event as per width change
+            if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+                var active_tab_obj = nocout_getPerfTabDomId(),
+                    active_dom_id = active_tab_obj.active_dom_id;
+
+                if ($('#' + active_dom_id + '_chart').highcharts()) {
+                    $('#' + active_dom_id + '_chart').highcharts().reflow();
+                }
+            }
         });
 	}
 	/*-----------------------------------------------------------------------------------*/
