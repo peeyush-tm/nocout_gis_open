@@ -1435,9 +1435,9 @@ function nocoutPerfLib() {
                             //if last date
                             if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
-                                if ($('#' + service_id+ '_chart').highcharts()) {
-                                    $('#' + service_id + '_chart').highcharts().redraw();
-                                }
+                                // if ($('#' + service_id+ '_chart').highcharts()) {
+                                //     $('#' + service_id + '_chart').highcharts().redraw();
+                                // }
 
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
                                     $('#' + service_id+ '_chart').html(result.message);

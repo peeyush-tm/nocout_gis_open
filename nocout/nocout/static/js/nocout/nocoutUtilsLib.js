@@ -539,6 +539,13 @@ function addPointsToChart_nocout(pointArray, dom_id) {
             $('#'+dom_id+'_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
         }
     }
+
+    if (pointArray && pointArray.length) {
+        // Redraw the chart
+        $('#'+dom_id+'_chart').highcharts().redraw();
+        // Update legends
+        prepareValueLegends($('#'+dom_id+'_chart').highcharts().series, dom_id);
+    }
 }
 
 /**
