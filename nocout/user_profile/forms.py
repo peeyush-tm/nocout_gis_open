@@ -20,6 +20,7 @@ from django.contrib.auth.hashers import check_password
 from nocout.widgets import MultipleToSingleSelectionWidget
 from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
+from fields import PasswordField
 
 
 class UserForm(forms.ModelForm):
@@ -29,7 +30,7 @@ class UserForm(forms.ModelForm):
     first_name = forms.CharField(required=True)
     email = forms.CharField(label='Email', required=True)
 
-    password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
+    password1 = PasswordField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
     def __init__(self, *args, **kwargs):
@@ -190,17 +191,17 @@ class UserForm(forms.ModelForm):
                 raise forms.ValidationError("Username and password should not be identical.")
 
             if password1:
-                # Special character validator.
-                if not set(password1).intersection(set(string.punctuation)):
-                    raise forms.ValidationError("Password must contain atleast one special character.")
-
-                # Uppercase character validator.
-                if not set(password1).intersection(set(string.uppercase)):
-                    raise forms.ValidationError("Password must contain atleast one uppercase letter.")
-
-                # Digit/number validator.
-                if not set(password1).intersection(set(string.digits)):
-                    raise forms.ValidationError("Password must contain atleast one digit.")
+                # # Special character validator.
+                # if not set(password1).intersection(set(string.punctuation)):
+                #     raise forms.ValidationError("Password must contain atleast one special character.")
+                #
+                # # Uppercase character validator.
+                # if not set(password1).intersection(set(string.uppercase)):
+                #     raise forms.ValidationError("Password must contain atleast one uppercase letter.")
+                #
+                # # Digit/number validator.
+                # if not set(password1).intersection(set(string.digits)):
+                #     raise forms.ValidationError("Password must contain atleast one digit.")
 
                 # Last five password match validator.
                 user = UserProfile.objects.filter(username=username)
