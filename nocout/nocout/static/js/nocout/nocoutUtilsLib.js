@@ -1571,18 +1571,19 @@ function prepareValueLegends(dataset, dom_id, is_zoom_in) {
         legends_html = '<ul class="list-unstyled list-inline">';
 
     for(var i=0;i<dataset.length;i++) {
+        var lowered_name = $.trim(dataset[i].name.toLowerCase());
         if (
-            dataset[i].name.toLowerCase().indexOf('critical') == -1
+            lowered_name.indexOf('critical') == -1
             &&
-            dataset[i].name.toLowerCase().indexOf('warning') == -1
+            lowered_name.indexOf('warning') == -1
             &&
-            dataset[i].name.toLowerCase().indexOf('threshold') == -1
+            lowered_name.indexOf('threshold') == -1
             &&
-            dataset[i].name.toLowerCase().indexOf('min value') == -1
+            lowered_name.indexOf('min value') == -1
             &&
-            dataset[i].name.toLowerCase().indexOf('max value') == -1
+            lowered_name.indexOf('max value') == -1
             &&
-            dataset[i].name.toLowerCase().indexOf('avg value') == -1
+            lowered_name.indexOf('avg value') == -1
         ) {
             var avg_val = calculateAverageValue(dataset[i].data, 'y'),
                 max_val = typeof dataset[i].dataMax != 'undefined' ? dataset[i].dataMax : 'NA',
