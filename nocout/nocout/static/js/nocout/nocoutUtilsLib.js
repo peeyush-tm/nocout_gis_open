@@ -539,6 +539,13 @@ function addPointsToChart_nocout(pointArray, dom_id) {
             $('#'+dom_id+'_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
         }
     }
+
+    if (pointArray && pointArray.length) {
+        // Redraw the chart
+        $('#'+dom_id+'_chart').highcharts().redraw();
+        // Update legends
+        prepareValueLegends($('#'+dom_id+'_chart').highcharts().series, dom_id);
+    }
 }
 
 /**
@@ -1570,12 +1577,20 @@ function prepareValueLegends(dataset, dom_id, is_zoom_in) {
             dataset[i].name.toLowerCase().indexOf('warning') == -1
             &&
             dataset[i].name.toLowerCase().indexOf('threshold') == -1
+            &&
+            dataset[i].name.toLowerCase().indexOf('min value') == -1
+            &&
+            dataset[i].name.toLowerCase().indexOf('max value') == -1
+            &&
+            dataset[i].name.toLowerCase().indexOf('avg value') == -1
         ) {
             var avg_val = calculateAverageValue(dataset[i].data, 'y'),
-                max_val = dataset[i].dataMax,
-                min_val = dataset[i].dataMin,
+                max_val = typeof dataset[i].dataMax != 'undefined' ? dataset[i].dataMax : 'NA',
+                min_val = typeof dataset[i].dataMin != 'undefined' ? dataset[i].dataMin : 'NA',
                 box_color = dataset[i].color,
                 name = dataset[i].name;
+
+            avg_val = typeof avg_val != 'undefined' ? avg_val : 'NA';
             /****** If need to show (min + max) / 2 in avg legend then uncomment below code ******/
             // If chart is on some zoom level then calculate avg from min & max values
             // if (typeof is_zoom_in != 'undefined') {
