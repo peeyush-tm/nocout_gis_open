@@ -6252,9 +6252,12 @@ function devicePlottingClass_gmap() {
 
     	var service_type = $("#isPing")[0].checked ? "ping" : "normal",
     		selected_device_type = $.trim($('#polling_type option:selected').text()),
-    		is_radwin5 = selected_device_type && selected_device_type.toLowerCase().indexOf('radwin5') > -1 ? 1 : 0;
+    		is_radwin5 = selected_device_type && selected_device_type.toLowerCase().indexOf('radwin5') > -1 ? 1 : 0,
+    		is_first_call = 0;
 
-    	// var service_type = $("#isPing")[0].checked ? "ping" : "normal";
+    	if($(".deviceWellContainer div.well div ul li").length == 0) {
+    		is_first_call = 1;
+		}
 
 		/*Disable service templates dropdown*/
 		$("#lp_template_select").attr("disabled","disabled");
@@ -6262,7 +6265,7 @@ function devicePlottingClass_gmap() {
 		var selected_lp_template = $("#lp_template_select").val();
 
     	$.ajax({
-			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type+"&is_radwin5="+is_radwin5,
+			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type+"&is_radwin5="+is_radwin5+"&is_first_call="+is_first_call,
 			// url : base_url+"/"+"static/services.json?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 			success : function(response) {
 				

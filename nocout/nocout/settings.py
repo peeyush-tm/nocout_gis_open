@@ -828,6 +828,22 @@ ENABLE_UNIFIED_SERVICE_VIEW = False
 # Flag to enable/disable aggregate report download on single performance page.
 ENABLE_AGGREGATE_REPORT_DOWNLOAD = False
 
+# Password complexity settings.
+# ===============================
+PASSWORD_MIN_LENGTH = 6
+PASSWORD_MAX_LENGTH = 44
+PASSWORD_DICTIONARY = {
+    'PATH': os.path.join(BASE_DIR, 'user_profile', 'files', 'dictionary.txt'),
+    'CHECK': False
+}
+PASSWORD_COMPLEXITY = {
+    'UPPER': 1,
+    'LOWER': 1,
+    'PUNCTUATION': 1,
+    'DIGITS': 1
+}
+# ===============================
+
 # Import the local_settings.py file to override global settings
 try:
     from local_settings import *
