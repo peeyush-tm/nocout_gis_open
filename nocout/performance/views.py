@@ -3128,7 +3128,7 @@ class GetServiceTypePerformanceData(View):
         dr_performance_data = performance_data.filter(device_name=dr_device.device_name)
 
         sector_result = self.performance_data_result(performance_data=sector_performance_data)
-        dr_result = self.performance_data_result(performance_data=dr_performance_data)
+        dr_result = self.perforxmance_data_result(performance_data=dr_performance_data)
         try:
             sector_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(sector_device.ip_address)
             if availability:
@@ -3588,15 +3588,15 @@ class GetServiceTypePerformanceData(View):
                                         'marker': {
                                             'enabled': False
                                         }
-                                    },
-                                    {  # Current Value
-                                        'name': self.result['data']['objects']['display_name']+"(Current Value)",
-                                        'data': data_list,
-                                        'type': self.result['data']['objects']['type'],
-                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                        'valuetext': self.result['data']['objects']['valuetext'],
-                                        'is_inverted': self.result['data']['objects']['is_inverted']
-                                    }
+                                    }#,
+                                    # {  # Current Value
+                                    #     'name': self.result['data']['objects']['display_name']+"(Current Value)",
+                                    #     'data': data_list,
+                                    #     'type': self.result['data']['objects']['type'],
+                                    #     'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                    #     'valuetext': self.result['data']['objects']['valuetext'],
+                                    #     'is_inverted': self.result['data']['objects']['is_inverted']
+                                    # }
                                 ]
 
                             else:
