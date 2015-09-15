@@ -1432,6 +1432,12 @@ class BulkFetchLPDataApi(View):
         except Exception, e:
             is_radwin5 = 0
 
+        # Is first call or not(used in case of utilization for calculation)
+        try:
+            is_first_call = int(self.request.GET.get('is_first_call', 1))
+        except Exception, e:
+            is_first_call = 1
+
         # Thematic settings template ID.
         try:
             ts_template_id = int(self.request.GET.get('ts_template'))
@@ -1457,11 +1463,16 @@ class BulkFetchLPDataApi(View):
             ts_type = ""
 
         # Exceptional services, i.e. 'ss' services which get service data from 'bs' instead from 'ss'.
-        exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
-                                'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
-                                'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
-                                'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
-                                'cambium_rereg_count', 'rad5k_ul_rssi']
+        exceptional_services = [
+            'wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi', 'wimax_ul_rssi', 'wimax_ss_dl_utilization',
+            'wimax_ss_ul_utilization', 'wimax_ul_intrf', 'wimax_dl_intrf', 'wimax_modulation_dl_fec', 
+            'wimax_modulation_ul_fec', 'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 
+            'rad5k_ul_rssi', 'rad5k_dl_rssi','rad5k_ss_dl_utilization' ,'rad5k_ss_ul_utilization',
+            'rad5k_dl_time_slot_alloted_invent','rad5k_ul_time_slot_alloted_invent',  'rad5k_dl_estmd_throughput_invent', 
+            'rad5k_ul_estmd_throughput_invent', 'rad5k_ul_uas_invent', 'rad5k_dl_es_invent', 'rad5k_ul_ses_invent', 
+            'rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent', 'rad5k_ss_cmd_rx_pwr_invent', 'rad5k_ss_dl_utilization', 
+            'rad5k_ss_ul_utilization'
+        ]
 
         # Service for which live polling runs.
         service = ""
@@ -1762,6 +1773,7 @@ class BulkFetchLPDataApi(View):
                     lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
+                    lp_data['is_first_call'] = is_first_call
 
                     if not all([service_name, ds_name]):
                         if service_type == 'ping' or ts_type == "ping":

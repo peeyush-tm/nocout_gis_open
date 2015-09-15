@@ -436,7 +436,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	#	print e.message
 
 
-def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_first_down_list,db):
+def insert_bulk_perf(net_values, serv_values,net_update,service_update ,device_first_down_map,db):
 	#db = mongo_module.mongo_conn(
 	#    host=mongo_host,
 	#    port=int(mongo_port),
@@ -1157,5 +1157,5 @@ if __name__ == '__main__':
     get_host_services_name(
     site_name=site,db=db
     )
-    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_list,db)
+    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,device_first_down_map,db)
 

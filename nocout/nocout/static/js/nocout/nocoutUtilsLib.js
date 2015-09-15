@@ -25,7 +25,16 @@ var green_color = "#468847",
     header_class_name = 'ServiceDataSourceHeaders',
     data_class_name = 'ServiceDataSourceListing',
     header_extra_param = "{'download_excel': 'yes' }",
-    na_list = ['NA', 'N/A', 'na', 'n/a'];
+    na_list = ['NA', 'N/A', 'na', 'n/a'],
+    legends_gradient_string = 'background: xxxx; \
+                               background: -moz-linear-gradient(left, xxxx 0%, yyyy 100%); \
+                               background: -webkit-gradient(linear, left top, right top, color-stop(0%,xxxx), color-stop(44%,yyyy), color-stop(100%,yyyy)); \
+                               background: -webkit-linear-gradient(left, xxxx 0%,yyyy 100%); \
+                               background: -o-linear-gradient(left, xxxx 0%,yyyy 100%); \
+                               background: -ms-linear-gradient(left, xxxx 0%,yyyy 100%); \
+                               background: linear-gradient(to right, xxxx 0%,yyyy 100%); \
+                               filter: progid:DXImageTransform.Microsoft.gradient( startColorstr="xxxx", endColorstr="yyyy",GradientType=1 );',
+    default_legends_bg = '#343435';
 
 
 /**
@@ -252,7 +261,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     nocout_destroyDataTable('other_perf_table');
     nocout_destroyDataTable('perf_data_table');
 
-    table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
+    table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
         table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
@@ -266,7 +275,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         $('#' + service_id + '_chart').html(table_string);
     }
 
-    $("#" + table_id).DataTable({
+    $("#" + service_id + '_'+ table_id).DataTable({
         sDom: 'T<"clear">lfrtip',
         oTableTools: {
             sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
@@ -280,8 +289,8 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
             ]
         },
         fnInitComplete: function(oSettings) {
-            var row_per_pages_selectbox = '#' + table_id + '_wrapper div.dataTables_length label select',
-                search_box = '#' + table_id + '_wrapper div.dataTables_filter label input';
+            var row_per_pages_selectbox = '#' + service_id + '_'+ table_id + '_wrapper div.dataTables_length label select',
+                search_box = '#' + service_id + '_'+ table_id + '_wrapper div.dataTables_filter label input';
             // Update search txt box & row per pages dropdown style
             $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
             $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");
@@ -303,7 +312,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
-    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
+    var data_in_table = "<table id='" + service_id + '_' + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
 
     // Destroy Datatable
     nocout_destroyDataTable('other_perf_table');
@@ -391,7 +400,24 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         get_param_string = updated_url.split("?")[1].split("&"),
         data_for = 'live',
         get_param_data = "",
-        data_extra_param = "";
+        data_extra_param = "",
+        applied_adv_filter = '[]';
+
+    // append 'advance_filter' GET param to url if exists.
+    if ($('#'+service_id+'_tab').attr('data_url')) {
+        var filtering_url = $('#'+service_id+'_tab').attr('data_url');
+        applied_adv_filter = filtering_url.indexOf('advance_filter=') ? filtering_url.split('advance_filter=')[1] : '[]';
+        
+        if (updated_url.indexOf('advance_filter=') > -1) {
+            updated_url = updated_url.split('advance_filter=')[0];
+        }
+
+        if (updated_url.indexOf('?') > -1) {
+            updated_url += '&advance_filter=' + applied_adv_filter
+        } else {
+            updated_url += '?advance_filter=' + applied_adv_filter
+        }
+    }
 
     for(var i=0;i<get_param_string.length;i++) {
         var splitted_string = get_param_string[i].split("=");
@@ -445,7 +471,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
         /*Call createDataTable function to create the data table for specified dom element with given data*/
         dataTableInstance.createDataTable(
-            table_id,
+            service_id + '_' + table_id,
             tableheaders,
             updated_url,
             false,
@@ -454,13 +480,15 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             header_class_name,
             data_class_name,
             header_extra_param,
-            data_extra_param
+            data_extra_param,
+            [],
+            applied_adv_filter
         );
 
     } else {
         /*Call createDataTable function to create the data table for specified dom element with given data*/
         dataTableInstance.createDataTable(
-            table_id,
+            service_id + '_' + table_id,
             tableheaders,
             updated_url,
             false
@@ -530,6 +558,13 @@ function addPointsToChart_nocout(pointArray, dom_id) {
             $('#'+dom_id+'_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
         }
     }
+
+    if (pointArray && pointArray.length) {
+        // Redraw the chart
+        $('#'+dom_id+'_chart').highcharts().redraw();
+        // Update legends
+        prepareValueLegends($('#'+dom_id+'_chart').highcharts().series, dom_id);
+    }
 }
 
 /**
@@ -550,7 +585,43 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     var chart_options = {
         chart: {
             zoomType: 'x',
-            type: chartConfig.type
+            type: chartConfig.type,
+            events : {
+                load : function(evt) {
+                    // set the background color of custom legends panel as per chart background color.
+                    try {
+                        var background_color = evt.currentTarget.options.chart.backgroundColor;
+
+                        if (typeof background_color == 'string') {
+                            $('.custom_legends_container').css('background-color', background_color);
+                        } else {
+                            var color_list = background_color.stops,
+                                gradient_color = legends_gradient_string,
+                                first_color = 'xxxx',
+                                second_color = 'yyyy',
+                                first_color_re = new RegExp(first_color, 'g'),
+                                second_color_re = new RegExp(second_color, 'g');
+
+                            gradient_color = gradient_color.replace(first_color_re, color_list[0][1]);
+                            gradient_color = gradient_color.replace(second_color_re, color_list[1][1]);
+
+                            $('.custom_legends_container').attr('style', gradient_color);
+                        }
+                    } catch(e) {
+                        // console.error(e);
+                        $('.custom_legends_container').css('background-color', default_legends_bg);
+                    }
+
+                    prepareValueLegends(evt.currentTarget.series, dom_id);
+                },
+                selection : function(evt) {
+                    // Trigger after .5 second to get the exact values not the old one.
+                    setTimeout(function() {
+                        var is_zoom_in = evt.currentTarget.resetZoomButton;
+                        prepareValueLegends(evt.currentTarget.series, dom_id, is_zoom_in);
+                    }, 500);
+                }
+            }
         },
         title: {
             // text: chartConfig.name
@@ -574,8 +645,6 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         //     url:'http://localhost:8080/highcharts-export-web/'
         // },
         tooltip: {
-            // headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
-            // pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
             formatter: function () {
                 var this_date = new Date(this.x),
                     tooltip_string = "";
@@ -776,25 +845,26 @@ function createChartDataTableHtml_nocout(dom_id, chartObj) {
  * @param service_name {String}, It is the name of current service
  * @param ds_name {String}, It is the name of current data source
  * @param device_name {Array}, It is the list of device names(right now we have only one device name)
- * @param container_dom_id {String}, It is the dom id in of last updated block div in which the chart is to be prepared.
- * @param sparkline_dom_id {String}, It is the dom id in which sparkline chart is to be created
- * @param hidden_input_dom_id {String}, It is the dom id(input element) in which sparkline chart data is to be saved
- * @param polled_val_shown_dom_id {String}, It is the dom id in which the latest polled value is to be shown.
+ * @param extra_info_obj {Object}, It contains the extra info required in further functionality.
  */
 function nocout_livePollCurrentDevice(
     service_name,
     ds_name,
     device_name,
-    container_dom_id,
-    sparkline_dom_id,
-    hidden_input_dom_id,
-    polled_val_shown_dom_id,
-    show_sparkline_chart,
+    extra_info_obj,
     callback
 ) {
+
+    var container_dom_id = extra_info_obj['container_dom_id'] ? extra_info_obj['container_dom_id'] : "",
+        sparkline_dom_id = extra_info_obj['sparkline_dom_id'] ? extra_info_obj['sparkline_dom_id'] : "",
+        hidden_input_dom_id = extra_info_obj['hidden_input_dom_id'] ? extra_info_obj['hidden_input_dom_id'] : "",
+        polled_val_shown_dom_id = extra_info_obj['polled_val_shown_dom_id'] ? extra_info_obj['polled_val_shown_dom_id'] : "",
+        show_sparkline_chart = extra_info_obj['show_sparkline_chart'] ? extra_info_obj['show_sparkline_chart'] : false,
+        is_first_call = typeof extra_info_obj['is_first_call'] != 'undefined' ? extra_info_obj['is_first_call'] : 1;
+
     // Make Ajax Call
     perf_page_live_polling_call = $.ajax({
-        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name,
+        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call,
         type : "GET",
         success : function(response) {
             
@@ -1058,16 +1128,29 @@ function initSingleDevicePolling(callback) {
         // Disable the "Poll Now" button
         $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
 
+        var active_tab_obj = nocout_getPerfTabDomId(),
+            dom_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+            is_first_call = 1;
+
+        if(poll_now_data_dict[dom_id] && poll_now_data_dict[dom_id].length > 0) {
+            is_first_call = 0;            
+        }
+
+        var extra_info_obj = {
+            'container_dom_id' : container_id,
+            'sparkline_dom_id' : sparkline_dom_id,
+            'hidden_input_dom_id' : hidden_input_dom_id,
+            'polled_val_shown_dom_id' : polled_val_shown_dom_id,
+            'show_sparkline_chart' : false,
+            'is_first_call' : is_first_call
+        };
+
         // Call function to fetch live polling data
         nocout_livePollCurrentDevice(
             service_name,
             ds_name,
             [device_name],
-            container_id,
-            sparkline_dom_id,
-            hidden_input_dom_id,
-            polled_val_shown_dom_id,
-            false,
+            extra_info_obj,
             function(response) {
                 
                 if (!(response instanceof Array)) {
@@ -1309,10 +1392,7 @@ function nocout_togglePollNowContent() {
                 $("#" + tab_id + "_bottom_table").html("");
             }
 
-            if ($("#other_perf_table").length > 0) {
-                $("#other_perf_table").dataTable().fnDestroy();
-                $("#other_perf_table").remove();
-            }
+            nocout_destroyDataTable('other_perf_table');
         } catch(e) {
             // console.log(e);
         }
@@ -1333,19 +1413,16 @@ function nocout_getPerfTabDomId() {
             "active_dom_id" : "",
             "active_tab_api_url" : ""
         },
-        top_tab_content_href = $(".top_perf_tabs > li.active a").attr("href"),
-        top_tab_content_id = top_tab_content_href.split("#").length > 1 ? top_tab_content_href.split("#")[1] : top_tab_content_href.split("#")[0];
+        top_tab_content_id = $(".top_perf_tabs > li.active a").attr("href");
 
     if(show_historical_on_performance || is_perf_polling_enabled) {
-        var left_active_tab_href = $("#"+top_tab_content_id+" .left_tabs_container li.active a").attr("href"),
-            left_tab_content_id = left_active_tab_href.split("#").length > 1 ? left_active_tab_href.split("#")[1] : left_active_tab_href.split("#")[0];
-
-        var active_inner_tab = $("#"+left_tab_content_id+" .inner_inner_tab li.active a");
+        var left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
+            active_inner_tab = $(left_tab_content_id + " .inner_inner_tab li.active a");
         
         response_dict["active_dom_id"] = active_inner_tab.attr("id").slice(0, -4);
         response_dict["active_tab_api_url"] = active_inner_tab.attr("url");
     } else {
-        var left_active_tab_anchor = $("#"+top_tab_content_id+" .left_tabs_container li.active a"),
+        var left_active_tab_anchor = $(top_tab_content_id + " .left_tabs_container li.active a"),
             active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a');
 
         response_dict["active_dom_id"] = left_active_tab_anchor.attr("id").slice(0, -4);
@@ -1437,9 +1514,41 @@ function nocout_pausePollNow() {
  */
 function nocout_destroyDataTable(domId) {
 
-    if (domId && $('#' + domId).length > 0) {
-        $("#" + domId).dataTable().fnDestroy();
+    if (!domId) {
+        return true;
+    }
+
+    if ($('table[id*="' + domId + '"]').length > 0) {
+        var all_tables = $('table[id*="' + domId + '"]');
+        for (var i=0;i<all_tables.length;i++) {
+            try {
+                $(all_tables[i]).dataTable().fnDestroy();
+            } catch(e) {
+                // console.error(e);
+            }
+            $(all_tables[i]).remove();
+        }
+    } else if($('#' + domId).length > 0) {
+        try {
+            $("#" + domId).dataTable().fnDestroy();
+        } catch(e) {
+            // console.error(e);
+        }
         $("#" + domId).remove();
+    }
+
+    // Remove advance filter button
+    if($('button[id*="_advance_filter_btn"]').length) {
+        $('button[id*="_advance_filter_btn"]').addClass('hide');
+    }
+
+    if($('div.remove_advance_filters_btn').length) {
+        $('div.remove_advance_filters_btn').hide();
+    }
+
+    // Remove advance filter form container
+    if($('div.advance_filters_container').length) {
+        $('div.advance_filters_container').hide();
     }
 }
 
@@ -1473,4 +1582,111 @@ function nocout_destroyHighcharts(domId) {
     } catch(e) {
         // console.log(e);
     }
+}
+
+/**
+ * This function find & returns the tab id as per the given help text
+ * @method getRequiredTabId
+ * @param help_txt {String}, It contains the help text whose matched id is to be returned
+ */
+function getRequiredTabId(help_txt) {
+    var top_tab_content_id = $(".top_perf_tabs > li.active a").attr("href"),
+        left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
+        inner_tabs = $(left_tab_content_id + ' ul.inner_inner_tab li'),
+        required_tab_id = "";
+
+    for (var i=0;i<inner_tabs.length;i++) {
+        var tab_id = $(inner_tabs[i]).children('a')[0].id;
+        if (tab_id.indexOf(help_txt) > -1) {
+            required_tab_id = tab_id;
+            break;
+        }
+    }
+
+    return required_tab_id;
+}
+
+
+/**
+ * This function prepares min, max & avg legends on highcharts
+ * @method prepareValueLegends
+ * @param dataset {Array}, It contains the series data plotted on chart
+ * @param dom_id {String}, It contains the dom id of parent container
+ * @param is_zoom_in {Undefined/Object}, It contains undefined if on zero zoom level else object.
+ */
+function prepareValueLegends(dataset, dom_id, is_zoom_in) {
+    var legends_block_id = dom_id + '_legends_block',
+        legends_html = '<ul class="list-unstyled list-inline">';
+
+    for(var i=0;i<dataset.length;i++) {
+        var lowered_name = $.trim(dataset[i].name.toLowerCase());
+        if (
+            lowered_name.indexOf('critical') == -1
+            &&
+            lowered_name.indexOf('warning') == -1
+            &&
+            lowered_name.indexOf('threshold') == -1
+            &&
+            lowered_name.indexOf('min value') == -1
+            &&
+            lowered_name.indexOf('max value') == -1
+            &&
+            lowered_name.indexOf('avg value') == -1
+        ) {
+            var avg_val = calculateAverageValue(dataset[i].data, 'y'),
+                max_val = typeof dataset[i].dataMax != 'undefined' ? dataset[i].dataMax : 'NA',
+                min_val = typeof dataset[i].dataMin != 'undefined' ? dataset[i].dataMin : 'NA',
+                box_color = dataset[i].color,
+                name = dataset[i].name;
+
+            avg_val = typeof avg_val != 'undefined' ? avg_val : 'NA';
+            /****** If need to show (min + max) / 2 in avg legend then uncomment below code ******/
+            // If chart is on some zoom level then calculate avg from min & max values
+            // if (typeof is_zoom_in != 'undefined') {
+            //     avg_val = (max_val + min_val) / 2;
+            //     avg_val = avg_val.toFixed(2);
+            // } else {
+            //     avg_val = calculateAverageValue(dataset[i].data, 'y');
+            // }
+            
+            legends_html += '<li>\
+                             <span style="background:'+box_color+';">&nbsp;</span>\
+                             '+ name +'(Min Val) : '+min_val+' \
+                             </li> \
+                             <li>\
+                             <span style="background:'+box_color+';">&nbsp;</span>\
+                             '+ name +'(Max Val) : '+max_val+' \
+                             </li>';
+
+            if (typeof is_zoom_in == 'undefined') {
+                legends_html += '<li>\
+                             <span style="background:'+box_color+';">&nbsp;</span>\
+                             '+ name +'(Avg Val) : '+avg_val+' \
+                             </li>';
+            }
+        }
+    }
+
+    legends_html += '</ul>';
+
+    $('#' + legends_block_id + ' > .custom_legends_block').html(legends_html);
+
+    if ($('#' + legends_block_id).hasClass('hide')) {
+        $('#' + legends_block_id).removeClass('hide');
+    }
+}
+
+/**
+ * This function calculates & return the average value as per given params
+ * @method calculateAverageValue
+ * @param resultset {Array}, It contains the single series data plotted on chart
+ * @param key {String}, It contains the object key whose data is to be average.
+ */
+function calculateAverageValue(resultset, key) {
+    var total_val = 0;
+    for (var x=0;x<resultset.length;x++) {
+        total_val += resultset[x][key];
+    }
+
+    return (total_val/resultset.length).toFixed(2);
 }

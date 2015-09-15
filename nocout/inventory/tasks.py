@@ -3273,7 +3273,6 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                                        file_path,
                                        sheettype)
 
-
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
@@ -3407,8 +3406,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
             if 'Device Type' in row.keys():
                 if row['Device Type'] == 'Radwin5KBS':
-                    bs_device_vendor = 2
-                    bs_device_model = 13
+                    bs_device_vendor = 11
+                    bs_device_model = 14
                     bs_device_type = 16
 
             # insert row no. in row dictionary to identify error row number
@@ -4076,8 +4075,8 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
             if 'Device Type' in row.keys():
                 if row['Device Type'] == 'Radwin5KSS':
-                    ss_device_vendor = 2
-                    ss_device_model = 13
+                    ss_device_vendor = 11
+                    ss_device_model = 14
                     ss_device_type = 17
 
             # insert row no. in row dictionary to identify error row number

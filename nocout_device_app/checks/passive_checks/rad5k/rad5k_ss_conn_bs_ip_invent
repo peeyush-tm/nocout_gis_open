@@ -1,0 +1,64 @@
+#!/usr/bin/python
+# ######################################################################
+# Function: check_rad5k_bs_crc_error_invnet
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+def check_rad5k_ss_conn_bs_ip_invent(item, _no_params, info):
+    """
+            check_rad5k_ss_conn_bs_ip_invent function calculates the uplink utilization
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter results
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                                    3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK -  ip: 10.169.241.2
+
+                    Raises:
+                            ValueError ,Exception
+
+    """ 
+    state = 3
+    infotext = "unknown_value"
+    ip = ""        
+    try:
+        if info:
+            if info[0][0]:
+		string = info[0][0]
+		string=  string.split(",")
+		string = string[1]
+		string = [string[i:i+2] for i in range(0,len(string),2)]
+		for j in range(len(string)):
+			string[j] = int(string[j],16)
+		ip = '.'.join(map(str, string))
+                state = 0
+                infotext = "ip: %s" % ip                                
+    except ValueError :
+	infotext = "type_mismatch_value"
+    except:
+	infotext = "unknown_value"
+		
+    return (state,infotext,[("bs_ip",ip)])
+                
+check_info["rad5k_ss_conn_bs_ip_invent"] = {
+    'check_function' :  check_rad5k_ss_conn_bs_ip_invent,
+    'service_description' : "rad5k_ss_conn_bs_ip_invent",
+    'has_perfdata': True
+}
+#########################################################################
+#       SNMP OID for the HBS ip connected to HSU
+#########################################################################
+snmp_info['rad5k_ss_conn_bs_ip_invent'] = (".1.3.6.1.4.1.4458.1000.4.1",["7.0"])

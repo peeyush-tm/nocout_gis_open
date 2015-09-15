@@ -497,9 +497,39 @@ iframe {
   padding: 5px 10px;
 }
 .left_tabs_container li {
-  width: 185px;
+  width: 200px;
 }
-
+.custom_legends_container {
+  padding-bottom: 15px;
+  padding-top: 2px;
+}
+.custom_legends_block {
+  max-width: 90%;
+  margin: 0px auto;
+  border: 1px solid #FFF;
+  border-radius: 8px;
+  color: #FFF;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+}
+.custom_legends_block ul {
+  padding: 5px;
+  margin-bottom: 0px;
+}
+.custom_legends_block ul li {
+  text-align: left;
+  color: #FFF;
+  vertical-align: middle;
+}
+.custom_legends_block ul li span {
+  width: 16px;
+  height: 12px;
+  float: left;
+  margin-right: 5px;
+  margin-top: 2.5px;
+}
 
 
 /*New theme changes*/
@@ -534,5 +564,4 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6f7f7f7', e
 b, strong {
   font-weight: normal;
  font-size: 16px;
-
 }

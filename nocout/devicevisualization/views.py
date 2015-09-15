@@ -207,7 +207,7 @@ class Gis_Map_Performance_Data(View):
                     'frequency':device_frequency
                     })
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     device_frequency=''
                     pass
@@ -236,7 +236,7 @@ class Gis_Map_Performance_Data(View):
                             device_pl = ''
 
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     device_pl=''
                     pass
@@ -250,8 +250,9 @@ class Gis_Map_Performance_Data(View):
                             if int(chek_dev_freq) > 10:
                                 corrected_dev_freq = chek_dev_freq
                         except Exception as e:
-                            logger.info(device)
-                            logger.exception("Frequency is Empty : %s" %(e.message))
+                            # logger.info(device)
+                            # logger.exception("Frequency is Empty : %s" %(e.message))
+                            pass
 
                         device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                         device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
@@ -294,7 +295,7 @@ class Gis_Map_Performance_Data(View):
 
                     else:
                         device_link_color=''
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -325,7 +326,7 @@ class Gis_Map_Performance_Data(View):
 
                 except Exception as e:
                     device_performance_value=''
-                    logger.info(device)
+                    # logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -349,7 +350,7 @@ class Gis_Map_Performance_Data(View):
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:
-                                logger.info(device)
+                                # logger.info(device)
                                 logger.exception(e.message)
                                 continue
 
@@ -411,7 +412,7 @@ class Gis_Map_Performance_Data(View):
                         device_info.append(perf_info)
 
                 except Exception as e:
-                    logger.info(device)
+                    # logger.info(device)
                     logger.exception(e.message)
                     pass
 
@@ -3203,7 +3204,7 @@ class GISPerfData(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            logger.error("Frequency color not exist. Exception: ", e.message)
+            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
@@ -3962,7 +3963,7 @@ class GISStaticInfo(View):
                         sector_configured_on_tech = None
 
                     # thematic settings for current user
-                    user_thematics = self.get_thematic_settings(sector_configured_on_tech,sector_configured_on_type)
+                    user_thematics = self.get_thematic_settings(sector_configured_on_tech, None)
 
                     # service & data source
                     service = ""
@@ -4021,7 +4022,7 @@ class GISStaticInfo(View):
                                 substation_device_tech = None
 
                             # thematic settings for current user
-                            user_thematics = self.get_thematic_settings(substation_device_tech)
+                            user_thematics = self.get_thematic_settings(substation_device_tech, substation_device_type)
 
                             # service & data source
                             service = ""
@@ -4600,11 +4601,11 @@ class GISStaticInfo(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            logger.error("Frequency color not exist. Exception: ", e.message)
+            # logger.error("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
-    def get_thematic_settings(self, device_technology,device_type):
+    def get_thematic_settings(self, device_technology, device_type):
         """ Get device pl
 
             Parameters:
@@ -4628,29 +4629,42 @@ class GISStaticInfo(View):
 
         # device technology
         device_technology = device_technology
+
         # device type
-        device_technology = device_type
+        device_type = device_type
 
         # fetch thematic settings for current user
-
         if ts_type == "normal":
-            try:
-                user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
-                                                                  thematic_technology=device_technology,
-                                                                  thematic_type=device_type)
-                print '**' * 20
-                print user_thematics
-                print '**' * 20
-            except Exception as e:
-                return user_thematics
+            if device_technology:
+                if device_type:
+                    try:
+                        user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
+                                                                          thematic_technology=device_technology,
+                                                                          thematic_type=device_type)
+                    except Exception as e:
+                        return user_thematics
+                else:
+                    try:
+                        user_thematics = UserThematicSettings.objects.filter(user_profile=current_user,
+                                                                             thematic_technology=device_technology)[0]
+                    except Exception as e:
+                        return user_thematics
 
         elif ts_type == "ping":
-            try:
-                user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology,
-                                                                      thematic_type=device_type)
-            except Exception as e:
-                return user_thematics
+            if device_technology:
+                if device_type:
+                    try:
+                        user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
+                                                                              thematic_technology=device_technology,
+                                                                              thematic_type=device_type)
+                    except Exception as e:
+                        return user_thematics
+                else:
+                    try:
+                        user_thematics = UserPingThematicSettings.objects.filter(user_profile=current_user,
+                                                                                 thematic_technology=device_technology)[0]
+                    except Exception as e:
+                        return user_thematics
 
         return user_thematics
 
@@ -4991,7 +5005,7 @@ class GISPerfInfo(View):
 
         device_info = list()
 
-        logger.info("************************ {} ".format(performance))
+        # logger.info("************************ {} ".format(performance))
 
         for perf in performance:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
