@@ -752,7 +752,8 @@ SETTINGS_EXPORT = [
     'CRIT_TYPE',
     'ENABLE_ADVANCE_FILTERS',
     'ENABLE_UNIFIED_SERVICE_VIEW',
-    'ENABLE_AGGREGATE_REPORT_DOWNLOAD'
+    'ENABLE_AGGREGATE_REPORT_DOWNLOAD',
+    'ENABLE_WHITE_THEME'
 ]
 # #### Access Variables in Templates
 
@@ -805,6 +806,9 @@ ENABLE_UNIFIED_SERVICE_VIEW = False
 
 ####################### Flag to enable/disable aggregate report download on single performance page #######################
 ENABLE_AGGREGATE_REPORT_DOWNLOAD = False
+
+####################### Flag to enable/disable new Theme #######################
+ENABLE_WHITE_THEME = True
 
 try:
     from local_settings import *

@@ -20,12 +20,11 @@
         <meta name="author" content="">
         
         <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %}>
-        <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
         <link rel="stylesheet" type="text/css" href={% static "css/responsive.css" %}>
 
         <link href={% static "font-awesome/css/font-awesome.min.css" %} rel="stylesheet">
         <!-- NOCOUT DEFAULT CSS -->
-        <link rel="stylesheet" type="text/css" href={% static "css/nocout_default.css" %} />
+        <link rel="stylesheet" type="text/css" href={% static "css/nocout_default.css" %} />        
         <!-- ANIMATE -->
         <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %} />
         <!-- DATE RANGE PICKER -->
@@ -67,6 +66,12 @@
             <script src={% static "js/media-ie/css3-mediaqueries.js" %}></script>
         <![endif]-->
 
+        {% if settings.ENABLE_WHITE_THEME %}
+            <link rel="stylesheet" type="text/css" href={% static "css/themes/nocout.css" %}>
+        {% else %}
+            <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
+        {% endif %}
+
         {% block css %}{% endblock %}
     </head>
     <body>
@@ -78,7 +83,14 @@
                 <!-- /TEAM STATUS FOR MOBILE -->
                 <!-- SIDEBAR COLLAPSE -->
                 <div id="sidebar-collapse" class="sidebar-collapse btn">
-                    <i class="fa fa-bars" data-icon1="fa fa-bars" data-icon2="fa fa-bars"></i>
+                    <span class = "fa-bar logo" data-icon1="fa fa-bars" data-icon2="fa fa-bars">
+                        {% if settings.ENABLE_WHITE_THEME %}
+                            <img class="fa fa-barsd" src="/static/img/logo/Teramatrix-Logo-300x300.png"></img>
+                        {% else %}
+                            <i class="fa fa-bars" data-icon1="fa fa-bars" data-icon2="fa fa-bars"></i>
+                        {% endif %}
+                    </span>
+                    <!-- <i class="fa fa-bars" data-icon1="fa fa-bars" data-icon2="fa fa-bars"></i> -->
                 </div>
                 <!-- /SIDEBAR COLLAPSE -->
             </div>
