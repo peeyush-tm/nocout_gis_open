@@ -261,7 +261,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     nocout_destroyDataTable('other_perf_table');
     nocout_destroyDataTable('perf_data_table');
 
-    table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
+    table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
         table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
@@ -275,7 +275,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         $('#' + service_id + '_chart').html(table_string);
     }
 
-    $("#" + table_id).DataTable({
+    $("#" + service_id + '_'+ table_id).DataTable({
         sDom: 'T<"clear">lfrtip',
         oTableTools: {
             sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
@@ -289,8 +289,8 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
             ]
         },
         fnInitComplete: function(oSettings) {
-            var row_per_pages_selectbox = '#' + table_id + '_wrapper div.dataTables_length label select',
-                search_box = '#' + table_id + '_wrapper div.dataTables_filter label input';
+            var row_per_pages_selectbox = '#' + service_id + '_'+ table_id + '_wrapper div.dataTables_length label select',
+                search_box = '#' + service_id + '_'+ table_id + '_wrapper div.dataTables_filter label input';
             // Update search txt box & row per pages dropdown style
             $(row_per_pages_selectbox + ' , ' + search_box).addClass("form-control");
             $(row_per_pages_selectbox + ' , ' + search_box).addClass("input-sm");
@@ -312,7 +312,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
-    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
+    var data_in_table = "<table id='" + service_id + '_' + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
 
     // Destroy Datatable
     nocout_destroyDataTable('other_perf_table');
@@ -400,7 +400,24 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         get_param_string = updated_url.split("?")[1].split("&"),
         data_for = 'live',
         get_param_data = "",
-        data_extra_param = "";
+        data_extra_param = "",
+        applied_adv_filter = '[]';
+
+    // append 'advance_filter' GET param to url if exists.
+    if ($('#'+service_id+'_tab').attr('data_url')) {
+        var filtering_url = $('#'+service_id+'_tab').attr('data_url');
+        applied_adv_filter = filtering_url.indexOf('advance_filter=') ? filtering_url.split('advance_filter=')[1] : '[]';
+        
+        if (updated_url.indexOf('advance_filter=') > -1) {
+            updated_url = updated_url.split('advance_filter=')[0];
+        }
+
+        if (updated_url.indexOf('?') > -1) {
+            updated_url += '&advance_filter=' + applied_adv_filter
+        } else {
+            updated_url += '?advance_filter=' + applied_adv_filter
+        }
+    }
 
     for(var i=0;i<get_param_string.length;i++) {
         var splitted_string = get_param_string[i].split("=");
@@ -454,7 +471,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
         /*Call createDataTable function to create the data table for specified dom element with given data*/
         dataTableInstance.createDataTable(
-            table_id,
+            service_id + '_' + table_id,
             tableheaders,
             updated_url,
             false,
@@ -463,13 +480,15 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
             header_class_name,
             data_class_name,
             header_extra_param,
-            data_extra_param
+            data_extra_param,
+            [],
+            applied_adv_filter
         );
 
     } else {
         /*Call createDataTable function to create the data table for specified dom element with given data*/
         dataTableInstance.createDataTable(
-            table_id,
+            service_id + '_' + table_id,
             tableheaders,
             updated_url,
             false
@@ -538,6 +557,13 @@ function addPointsToChart_nocout(pointArray, dom_id) {
         for (var j = 0; j < pointArray[i].data.length; j++) {
             $('#'+dom_id+'_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
         }
+    }
+
+    if (pointArray && pointArray.length) {
+        // Redraw the chart
+        $('#'+dom_id+'_chart').highcharts().redraw();
+        // Update legends
+        prepareValueLegends($('#'+dom_id+'_chart').highcharts().series, dom_id);
     }
 }
 
@@ -1366,10 +1392,7 @@ function nocout_togglePollNowContent() {
                 $("#" + tab_id + "_bottom_table").html("");
             }
 
-            if ($("#other_perf_table").length > 0) {
-                $("#other_perf_table").dataTable().fnDestroy();
-                $("#other_perf_table").remove();
-            }
+            nocout_destroyDataTable('other_perf_table');
         } catch(e) {
             // console.log(e);
         }
@@ -1491,9 +1514,41 @@ function nocout_pausePollNow() {
  */
 function nocout_destroyDataTable(domId) {
 
-    if (domId && $('#' + domId).length > 0) {
-        $("#" + domId).dataTable().fnDestroy();
+    if (!domId) {
+        return true;
+    }
+
+    if ($('table[id*="' + domId + '"]').length > 0) {
+        var all_tables = $('table[id*="' + domId + '"]');
+        for (var i=0;i<all_tables.length;i++) {
+            try {
+                $(all_tables[i]).dataTable().fnDestroy();
+            } catch(e) {
+                // console.error(e);
+            }
+            $(all_tables[i]).remove();
+        }
+    } else if($('#' + domId).length > 0) {
+        try {
+            $("#" + domId).dataTable().fnDestroy();
+        } catch(e) {
+            // console.error(e);
+        }
         $("#" + domId).remove();
+    }
+
+    // Remove advance filter button
+    if($('button[id*="_advance_filter_btn"]').length) {
+        $('button[id*="_advance_filter_btn"]').addClass('hide');
+    }
+
+    if($('div.remove_advance_filters_btn').length) {
+        $('div.remove_advance_filters_btn').hide();
+    }
+
+    // Remove advance filter form container
+    if($('div.advance_filters_container').length) {
+        $('div.advance_filters_container').hide();
     }
 }
 
@@ -1564,18 +1619,27 @@ function prepareValueLegends(dataset, dom_id, is_zoom_in) {
         legends_html = '<ul class="list-unstyled list-inline">';
 
     for(var i=0;i<dataset.length;i++) {
+        var lowered_name = $.trim(dataset[i].name.toLowerCase());
         if (
-            dataset[i].name.toLowerCase().indexOf('critical') == -1
+            lowered_name.indexOf('critical') == -1
             &&
-            dataset[i].name.toLowerCase().indexOf('warning') == -1
+            lowered_name.indexOf('warning') == -1
             &&
-            dataset[i].name.toLowerCase().indexOf('threshold') == -1
+            lowered_name.indexOf('threshold') == -1
+            &&
+            lowered_name.indexOf('min value') == -1
+            &&
+            lowered_name.indexOf('max value') == -1
+            &&
+            lowered_name.indexOf('avg value') == -1
         ) {
             var avg_val = calculateAverageValue(dataset[i].data, 'y'),
-                max_val = dataset[i].dataMax,
-                min_val = dataset[i].dataMin,
+                max_val = typeof dataset[i].dataMax != 'undefined' ? dataset[i].dataMax : 'NA',
+                min_val = typeof dataset[i].dataMin != 'undefined' ? dataset[i].dataMin : 'NA',
                 box_color = dataset[i].color,
                 name = dataset[i].name;
+
+            avg_val = typeof avg_val != 'undefined' ? avg_val : 'NA';
             /****** If need to show (min + max) / 2 in avg legend then uncomment below code ******/
             // If chart is on some zoom level then calculate avg from min & max values
             // if (typeof is_zoom_in != 'undefined') {

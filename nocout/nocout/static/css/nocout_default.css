@@ -501,6 +501,7 @@ iframe {
 }
 .custom_legends_container {
   padding-bottom: 15px;
+  padding-top: 2px;
 }
 .custom_legends_block {
   max-width: 90%;
