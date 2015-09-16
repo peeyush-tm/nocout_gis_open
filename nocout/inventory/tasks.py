@@ -14,6 +14,7 @@ from nocout.tasks import cache_clear_task
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Status
 from performance.formulae import display_time
 from django.http import HttpRequest
+from django.db.models import Q
 from IPy import IP
 import ipaddr
 from decimal import *
@@ -13480,6 +13481,7 @@ def bulk_update_create(bulky, action='update', model=None):
     """
     logger.debug(bulky)
     if bulky and len(bulky):
+
         if action == 'update':
             try:
                 bulk_update_internal_no_save(bulky)
@@ -13553,35 +13555,64 @@ def bulk_update_internal_no_save(bulky):
 
 
 @task
-def update_inventory():
+def update_topology():
     """
     Update mapping of sector, sub station in circuit using topology.
     """
-
-    # Sector ID's list.
+    # Sector ID's from inventory.
     sector_ids = set(Sector.objects.values_list('sector_id', flat=True))
+
+    # Sector ID's from topology.
     topo_sector_ids = set(Topology.objects.values_list('sector_id', flat=True))
 
     # Sector ID's common in topology and inventory.
     common_sector_ids = sector_ids.intersection(topo_sector_ids)
 
+    # Radwin5K: Special case where sector id cannot be considered.
+    radwin5k_topology = Topology.objects.filter(service_name="rad5k_topology_discover").values('connected_device_ip',
+                                                                                               'sector_id',
+                                                                                               'connected_device_mac',
+                                                                                               'mac_address',
+                                                                                               'ip_address')
+
+    # Radwin 5K: Sector configured on ip's.
+    radwin5k_sector_ips = set(radwin5k_topology.values_list('ip_address', flat=True))
+
+    # Radwin 5K: Sub station ip's.
+    radwin5k_ss_ips = set(radwin5k_topology.values_list('connected_device_ip', flat=True))
+
     # Sectors & sub stations mapping from Topology.
-    topology = Topology.objects.filter(sector_id__in=common_sector_ids).values('connected_device_ip', 'sector_id',
-                                                                               'connected_device_mac', 'mac_address',
-                                                                               'ip_address')
+    topology = Topology.objects.filter(
+        Q(sector_id__in=common_sector_ids) | Q(connected_device_ip__in=radwin5k_ss_ips)).values(
+        'connected_device_ip',
+        'sector_id',
+        'connected_device_mac',
+        'mac_address',
+        'ip_address')
 
     # ################################### MAPPERS START #####################################
 
     # Sectors from Inventory corressponding to sector_id's fetched from Topology.
-    sectors = Sector.objects.filter(sector_id__in=common_sector_ids)
+    sectors = Sector.objects.filter(Q(
+        sector_id__in=common_sector_ids) | Q(
+        sector_configured_on__ip_address__in=radwin5k_sector_ips) | Q(
+        dr_configured_on__ip_address__in=radwin5k_sector_ips))
 
     # Sector ID's list.
-    sector_ids = sectors.values_list('sector_id', flat=True)
+    sector_ids = set(sectors.values_list('sector_id', flat=True))
+
+    # Sector configured on ip's list.
+    sector_ips = set(sectors.values_list('sector_configured_on__ip_address', flat=True))
 
     # Sectors Mapper: {<sector_id>: <sector object>, ....}
     sectors_mapper = {}
     for s_id, obj in zip(sector_ids, sectors):
         sectors_mapper[s_id] = obj
+
+    # Sectors Configured On Mapper: {<ip_address>: <sector object>, ....}
+    sector_configured_on_mapper = {}
+    for ip_address, obj in zip(sector_ips, sectors):
+        sector_configured_on_mapper[ip_address] = obj
 
     # BS devices corressponding to the sector_configured_on ip's from Topology.
     bs_devices = Device.objects.filter(ip_address__in=topology.values_list('ip_address', flat=True))
@@ -13595,8 +13626,10 @@ def update_inventory():
         bs_devices_mapper[ip] = bs_device
 
     # Sectors & sub stations mapping from Circuit.
-    circuits = Circuit.objects.select_related('sub_station', 'sub_station__device__ip_address', 'sector__sector_id'
-                                              ).filter(sector__sector_id__in=common_sector_ids)
+    circuits = Circuit.objects.select_related('sub_station',
+                                              'sub_station__device__ip_address',
+                                              'sector__sector_id').filter(
+        Q(sector__sector_id__in=common_sector_ids) | Q(sub_station__device__ip_address__in=radwin5k_ss_ips))
 
     # Sub Station devices IP's list corressponding to the connected_device_ip ip's.
     circuits_ss_ips = circuits.values_list('sub_station__device__ip_address', flat=True)
@@ -13669,7 +13702,10 @@ def update_inventory():
 
             # Update circuit.
             try:
-                circuit.sector = sectors_mapper[info['sector_id']]
+                if info['connected_device_ip'] in radwin5k_ss_ips:
+                    circuit.sector = sector_configured_on_mapper[info['ip_address']]
+                else:
+                    circuit.sector = sectors_mapper[info['sector_id']]
                 update_circuit_list.append(circuit)
             except Exception as e:
                 logger.exception(e.message)
