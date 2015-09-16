@@ -36,13 +36,9 @@ function ourDataTableWidget() {
 
         // If advance filtering is enabled from settings then create advance filters
         if (typeof advance_filters_enabled != 'undefined' && advance_filters_enabled && create_advance_filters) {
-            var table_info_object = {
-                'headers_list' : tableheaders,
-                'table_id' : tableId,
-                'ajax_url' : ajax_url
-            };
             // Call nocout_createAdvanceFilter to create advance filters for grid
-            nocout_createAdvanceFilter(tableId,
+            nocout_createAdvanceFilter(
+                tableId,
                 tableheaders,
                 ajax_url,
                 destroy,

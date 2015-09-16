@@ -107,8 +107,6 @@ function nocout_createAdvanceFilter (
 		return true;
 	}
 
-	// var current_html = $.trim($('.page_settings_container').html());
-	// if (current_html == existing_pagesettings_html) {
 	if (!global_variables_obj.hasOwnProperty(global_table_id)) {
 
 		global_variables_obj[global_table_id] = {
@@ -359,8 +357,17 @@ function applyDatatableAdvanceFilter(current_object) {
 			updated_api_url = api_main_url + '?advance_filter='+stringified_filters;
 		}
 
-		// Update URL in anchor tag 'data_url' attribute
-		$('.nav-tabs li.active a').attr('data_url', updated_api_url);
+		// Update URL in anchor tag 'data_url' attribute(Special case handled for single performance page)
+		if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+	        var active_tab_obj = nocout_getPerfTabDomId(),
+	            active_dom_id = active_tab_obj.active_dom_id;
+	            
+	        if ($('#' + active_dom_id + '_tab').length) {
+	            $('#' + active_dom_id + '_tab').attr('data_url', updated_api_url);
+	        }
+	    } else {
+			$('.nav-tabs li.active a').attr('data_url', updated_api_url);
+	    }
 
 		global_variables_obj[global_table_id]['is_filter_applied'] = true;
 
@@ -492,8 +499,18 @@ $('#content').delegate('.remove_advance_filters_btn', 'click', function(e, is_si
 	// Update download button attribute for advance filters
 	$('#' + download_btn_id).attr('advance_filter', '');
 
-	// Update URL in anchor tag 'data_url' attribute
-	$('.nav-tabs li.active a').attr('data_url', updated_api_url);
+	// Update URL in anchor tag 'data_url' attribute(Special case handled for single performance page)
+	if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+        var active_tab_obj = nocout_getPerfTabDomId(),
+            active_dom_id = active_tab_obj.active_dom_id;
+
+        if ($('#' + active_dom_id + '_tab').length) {
+            $('#' + active_dom_id + '_tab').attr('data_url', updated_api_url);
+        }
+    } else {
+		$('.nav-tabs li.active a').attr('data_url', updated_api_url);
+    }
+
 	global_variables_obj[global_table_id]['used_columns_list'] = [];
 	global_variables_obj[global_table_id]['is_filter_applied'] = false;
 
