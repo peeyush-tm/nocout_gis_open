@@ -232,7 +232,7 @@ function populateServiceStatus_nocout(domElement,info) {
  * @param table_headers {Array}, It contains the headers object array for table
  * @param table_id {String}, It contains the table dom element ID
  */
-function addDataToNormalTable_nocout(table_data, table_headers, table_id) {
+function addDataToNormalTable_nocout(table_data, table_headers, table_id, service_id) {
 
     for (var j = 0; j < table_data.length; j++) {
         var row_val = [];
@@ -240,7 +240,7 @@ function addDataToNormalTable_nocout(table_data, table_headers, table_id) {
             var insert_val = table_data[j][table_headers[i]] ? table_data[j][table_headers[i]] : "";
             row_val.push(insert_val);
         }
-        $('#' + table_id).dataTable().fnAddData(row_val);
+        $('#'+ service_id +  '_' + table_id).dataTable().fnAddData(row_val);
     }
 }
 
@@ -252,6 +252,10 @@ function addDataToNormalTable_nocout(table_data, table_headers, table_id) {
  * @param service_id {String}, It contains the service dom id in which the table is to be populate.
  */
 function initNormalDataTable_nocout(table_id, headers, service_id) {
+
+    if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
+        $('#' + service_id + '_legends_block').addClass('hide');
+    }
 
     var table_string = "",
         grid_headers = headers,
@@ -1328,7 +1332,7 @@ function checkpollvalues(result, is_new_data, callback) {
                     "critical_threshold": fetch_critical_threshold
                 }];
 
-            if ($("#other_perf_table").length == 0) {
+            if ($("#" + dom_id + "_other_perf_table").length == 0) {
                 initNormalDataTable_nocout(
                     'other_perf_table',
                     grid_headers,
@@ -1340,7 +1344,8 @@ function checkpollvalues(result, is_new_data, callback) {
             addDataToNormalTable_nocout(
                 table_data,
                 grid_headers,
-                'other_perf_table'
+                'other_perf_table',
+                dom_id
             );
         }
     }
