@@ -1154,7 +1154,8 @@ function nocoutPerfLib() {
                                 addDataToNormalTable_nocout(
                                     table_data,
                                     grid_headers,
-                                    'other_perf_table'
+                                    'other_perf_table',
+                                    service_id
                                 );
                             } else {
                                 setTimeout(function() {
