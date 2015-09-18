@@ -360,7 +360,8 @@
             crit_color = "",
             warn_type = "",
             crit_type = "",
-            default_live_table_headers = [];
+            default_live_table_headers = [],
+            is_radwin5 = 0;
 
         $(document).ready(function (e) {
 
@@ -371,6 +372,7 @@
             alert_page_url = "{{ alert_page_url }}" ? $.trim("{{ alert_page_url }}") : "";
             page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
+            is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
             current_device_technology = "";
             statusUrl = "";
             serviceUrl = "";

@@ -240,7 +240,7 @@ function addDataToNormalTable_nocout(table_data, table_headers, table_id, servic
             var insert_val = table_data[j][table_headers[i]] ? table_data[j][table_headers[i]] : "";
             row_val.push(insert_val);
         }
-        $('#'+service_id+'_' + table_id).dataTable().fnAddData(row_val);
+        $('#'+ service_id +  '_' + table_id).dataTable().fnAddData(row_val);
     }
 }
 
@@ -252,6 +252,10 @@ function addDataToNormalTable_nocout(table_data, table_headers, table_id, servic
  * @param service_id {String}, It contains the service dom id in which the table is to be populate.
  */
 function initNormalDataTable_nocout(table_id, headers, service_id) {
+
+    if(!$('#' + service_id + '_legends_block').hasClass('hide')) {
+        $('#' + service_id + '_legends_block').addClass('hide');
+    }
 
     var table_string = "",
         grid_headers = headers,
@@ -862,9 +866,13 @@ function nocout_livePollCurrentDevice(
         show_sparkline_chart = extra_info_obj['show_sparkline_chart'] ? extra_info_obj['show_sparkline_chart'] : false,
         is_first_call = typeof extra_info_obj['is_first_call'] != 'undefined' ? extra_info_obj['is_first_call'] : 1;
 
+    if (typeof is_radwin5 == 'undefined') {
+        is_radwin5 = 0;
+    }
+
     // Make Ajax Call
     perf_page_live_polling_call = $.ajax({
-        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call,
+        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call+"&is_radwin5="+is_radwin5,
         type : "GET",
         success : function(response) {
             
@@ -1324,7 +1332,7 @@ function checkpollvalues(result, is_new_data, callback) {
                     "critical_threshold": fetch_critical_threshold
                 }];
 
-            if ($("#other_perf_table").length == 0) {
+            if ($("#" + dom_id + "_other_perf_table").length == 0) {
                 initNormalDataTable_nocout(
                     'other_perf_table',
                     grid_headers,
