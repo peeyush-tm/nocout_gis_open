@@ -20,6 +20,7 @@ from celery import group
 #path.append('/omd/nocout_etl')
 
 from handlers.db_ops import *
+from handlers.send_db_tasks import send_db_tasks
 from start.start import app
 
 logger = get_task_logger(__name__)
@@ -180,8 +181,12 @@ def build_export(site, network_perf_data):
 			data_array.append(data_dict)
 			data_dict = {}
 		
-	# send aggregator task
-	aggregator.s(data_array, last_down_updated_all, site).apply_async()
+	# send the data export task
+	send_db_tasks.s(
+			network_data=data_array, 
+			last_down_devices=last_down_updated_all, 
+			site=site
+			).apply_async()
 
 
 @app.task(name='get-host-checks', ignore_result=True)
@@ -226,20 +231,10 @@ def aggregator(data_values, last_down_devices, site):
 	""" sends task messages"""
 
 	if data_values:
-		# redis/mysql inserts/updates
-		#group(
-		#		[rds_cli.redis_update.s(data_values, perf_type='status'),
-		#			rds_cli.redis_insert.s(data_values, perf_type='live'),
-		#			mysql_insert_handler.s(data_values, site)]
-		#		).apply_async()
-
 		# mongo/mysql inserts/updates
 		rds_cli = RedisInterface()
 		group([
 			rds_cli.redis_update.s(last_down_devices, perf_type='last_down'),
-			#mongo_update.s(data_values, 
-			#	('device_name', 'service_name', 'data_source'), 'network_status', site), 
-			#mongo_insert.s(data_values, 'network_perf', site),
 			mysql_insert_handler.s(data_values, 'performance_performancenetwork', 
 				'performance_networkstatus', 'network_perf', site)
 			]

@@ -375,7 +375,6 @@ def send_db_tasks(**kw):
 	                        'site_name', 'sys_timestamp', 'check_timestamp', 
 	                        'ip_address', 'sector_id', 'connected_device_ip', 
 	                        'connected_device_mac', 'mac_address')
-	#warning('send-db-send**********')
 	site = kw.get('site')
 	# tasks to be sent
 	tasks = []
