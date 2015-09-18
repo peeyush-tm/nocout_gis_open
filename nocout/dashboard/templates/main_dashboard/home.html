@@ -38,11 +38,11 @@
     </div>
     <div class="box-body">
         <!-- ********** FIRST ROW START **********-->
-
         <!-- Speedometers (Gauge) Charts Start -->
-        <div class="col-md-3" align="center">
+        <div class="col-md-3">
             <div class="custom_seperator">&nbsp;</div>
-            <div class="col-md-10 col-md-offset-1">
+            
+            <div class="col-md-12">
                 <div class="pull-left">
                     <h5>
                         <strong>Down </strong><small id="down-all_timestamp"></small>
@@ -50,66 +50,71 @@
                 </div>
                 <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
                 <div class="pull-right">
-                    <i class="fa fa-signal text-success" id="down-all_trend" title="Down Trends"> </i> 
+                    <i class="fa fa-signal text-success" id="down-all_trend" title="Down Trends"></i> 
                 </div>
                 <div class="clearfix"></div>
             </div>
-            <div id="down-all" style="height: 165px;"></div>
+            <div class="col-md-12" style="float:left">
+                <div id="down-all" style="height: 165px;"></div>
+            </div>
         </div>
 
-        <div class="col-md-3" align="center">
+        <div class="col-md-3">
             <div class="custom_seperator">&nbsp;</div>
-            <div class="col-md-10 col-md-offset-1">
+            
+            <div class="col-md-12">
                 <div class="pull-left">
                     <h5>
-                        <strong>Latency </strong><small id="latency-all_timestamp"></small>
+                        <strong>Latency</strong> <small id="latency-all_timestamp"></small>
                     </h5>       
                 </div>
                 <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
                 <div class="pull-right">
-                    <i class="fa fa-signal text-success" id="latency-all_trend" title="Latency Trends"> </i>
+                    <i class="fa fa-signal text-success" id="latency-all_trend" title="Latency Trends"></i>
                 </div>
                 <div class="clearfix"></div>
             </div>
-
+        <div class="col-md-12" style="float:left">
             <div id="latency-all" style="height: 165px;"></div>
-            
         </div>
-        <div class="col-md-3" align="center">
+        </div>
+        <div class="col-md-3">
             <div class="custom_seperator">&nbsp;</div>
-            <div class="col-md-10 col-md-offset-1">
+           
+            <div class="col-md-12">
                 <div class="pull-left">
                     <h5>
-                        <strong>Packet Drop </strong><small id="packetloss-all_timestamp"></small>
+                        <strong>Packet Drop</strong><small id="packetloss-all_timestamp"></small>
                     </h5>       
                 </div>
                 <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
                 <div class="pull-right">
-                    <i class="fa fa-signal text-success" id="packetloss-all_trend" title="Packet Drop Trends"> </i>
+                    <i class="fa fa-signal text-success" id="packetloss-all_trend" title="Packet Drop Trends"></i>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+            <div class="col-md-12" style="float:left">
+            <div id="packetloss-all" style="height: 165px;"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <!--    <div class="custom_seperator">&nbsp;</div>
+            -->
+            <div class="col-md-12">
+                <div class="pull-left">
+                    <h5>
+                        <strong>Temperature</strong><small id="temperature-idu-wimax_timestamp"></small>
+                    </h5>
+                </div>
+                <div class="pull-right">
+                    <i class="fa fa-signal text-success" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends"></i>
                 </div>
                 <div class="clearfix"></div>
             </div>
 
-            <div id="packetloss-all" style="height: 165px;"></div>
-            
-        </div>
-        <div class="col-md-3" align="center">
-             <div class="">
-                <div class="pull-left">
-                    <h5>
-                        <strong>Temperature Wimax </strong><small id="temperature-idu-wimax_timestamp"></small>
-                    </h5>       
-                </div>
-                <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
-                <div class="pull-right">
-                    <i class="fa fa-signal text-success" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends"> </i>
-                </div>
-                <div class="clearfix"></div>
+            <div class="col-md-12" style="float:left">
+                <div id="temperature-idu-wimax" style="height: 165px;"></div>
             </div>
-            <!--CHART BLOCK - START -->
-            <div id="temperature-idu-wimax" style="height: 165px;"></div>
-            <!--CHART BLOCK - END -->
-           
         </div>
         <!-- Speedometers (Gauge) Charts End -->
         <div class="clearfix"></div>
@@ -137,7 +142,7 @@
         <hr/>
 
         <div class="col-md-6 border_right" align="center">
-            <h4><strong>- Sales Opportunity</strong></h4>
+            <h4><strong>- Sales Opportunity</strong></h4><br/>
 
              <!-- Capacity pie Charts & city table Start -->
             <div class="row col-md-6" align="center">
@@ -185,7 +190,7 @@
         </div>
 
         <div class="col-md-6" align="center">
-            <h4><strong>- Sector Capacity</strong></h4>
+            <h4><strong>- Sector Capacity</strong></h4><br/>
 
             <div class="row col-md-6" align="center">
             <div class="custom_seperator">&nbsp;</div>
@@ -236,7 +241,7 @@
         <hr/>
 
         <div class="col-md-9 border_right" align="center">
-            <h4><strong>- Backhaul Capacity</strong></h4>
+            <h4><strong>- Backhaul Capacity</strong></h4><br/>
 
             <div class="col-md-4 row" align="center">
                 <div class="custom_seperator">&nbsp;</div>
@@ -311,7 +316,7 @@
                     <strong>
                         DFR Processed Reports
                     </strong>
-                </h5>
+                </h5><br/>
                 <!--TITLE BLOCK - END -->
                 <table class="datatable table table-striped table-bordered table-hover" id="dfr_reports_table">
                     <thead></thead>

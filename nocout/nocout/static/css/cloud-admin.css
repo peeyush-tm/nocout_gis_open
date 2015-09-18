@@ -8876,8 +8876,8 @@ div[data-role="editor-toolbar"] {
   right: 12px;
 }
 .form-actions {
-  background-color: #F5F5F5;
-  border-top: 1px solid #E5E5E5;
+  /*background-color: #F5F5F5;
+  border-top: 1px solid #E5E5E5;*/
   margin-bottom: 20px;
   margin-top: 10px;
   padding: 19px 20px 20px;
