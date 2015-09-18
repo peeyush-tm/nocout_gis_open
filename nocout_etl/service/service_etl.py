@@ -2,13 +2,12 @@
 service_etl.py
 ================
 
-This script collects and stores data for host checks
-running on all configured devices for this poller.
-
+Module to process data input from redis backed queue.
+Outputs data to module which exports tha data to
+databases, further.
 """
 
 
-from ast import literal_eval
 from datetime import datetime, timedelta
 import re
 from sys import path
@@ -24,6 +23,7 @@ info, warning, error = logger.info, logger.warning, logger.error
 
 path.append('/omd/nocout_etl')
 
+# redis db no for inventory devices
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
 
