@@ -36,8 +36,15 @@
         .perfContainerBlock .box-title .pull-right .list-inline > li {
             max-width: 200px !important;
         }
-        .perfContainerBlock .left_tabs_container {
-            /*padding: 0px !important;*/
+        .perfContainerBlock .header-tabs {
+            overflow: hidden;
+            margin: 0px;
+        }
+        .top_perf_tabs {
+            width: 2000px;
+        }
+        .top_perf_tabs li {
+            float: left !important;
         }
         .inner_tab_container .panel-body {
             padding: 10px !important;
@@ -52,13 +59,29 @@
             margin-right: 0px !important;
         }
         .box .header-tabs .top_perf_tabs > li > a {
-            padding: 7px 5px !important;
+            padding: 6px 2px !important;
         }
         .top_perf_tab_content, .top_perf_tab_content .panel .panel-body {
             overflow: auto;
         }
         .chart_container h3, .last_updated_container h3, #latestStatusContainer h3 {
             margin-top: 0px;
+        }
+        .paging_arrow {
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 9999;
+        }
+        .right_arrow {
+            right: 0px;
+            top: 0px;
+        }
+        #perf_topo_map_container {
+            height: 400px;
+            margin: 0px auto;
         }
     </style>
     <!--Device Status Block Start-->
@@ -199,51 +222,71 @@
         </div>
         <div class='box-body'>
             <!-- <div id="tableContainer" class="box-body"> -->
-            <div class="tabbable header-tabs">
+            <div class="tabbable header-tabs" style="position: relative;">
+                <!-- <i class="fa fa-arrow-circle-left text-primary paging_arrow">&nbsp;</i> -->
                 <ul class="nav nav-tabs top_perf_tabs">
+                    <li>
+                        <a href="#custom_dashboard_tab" title="Custom Dashboards" id="custom_dashboard" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Custom Dashboards &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
+                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Utilization</span>
+                            <span class="hidden-inline-mobile">Utilization &nbsp;</span>
                         </a>
                     </li>
                     <li>
                         <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">IA Table</span>
+                            <span class="hidden-inline-mobile">IA Table &nbsp;</span>
                         </a>
                     </li>
                     <li>
                         <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Availability</span>
+                            <span class="hidden-inline-mobile">Availability &nbsp;</span>
                         </a>
                     </li>
                     <li>
                         <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Inventory Status</span>
+                            <span class="hidden-inline-mobile">Inventory Status &nbsp;</span>
                         </a>
                     </li>
                     <li>
                         <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Status</span>
+                            <span class="hidden-inline-mobile">Service Status &nbsp;</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#service_perf_tab" id="service_perf" title="Service Performance" data-toggle="tab">
+                        <a href="#service_perf_tab" id="service_perf" title="Service Perf" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Performance</span>
+                            <span class="hidden-inline-mobile">Service Perf &nbsp;</span>
                         </a>
                     </li>
                     <li class="active">
-                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
+                        <a href="#network_perf_tab" id="network_perf" title="Network Perf" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Network Performance</span>
+                            <span class="hidden-inline-mobile">Network Perf &nbsp;</span>
                         </a>
                     </li>
                 </ul>
+                <!-- <i class="fa fa-arrow-circle-right text-primary right_arrow paging_arrow">&nbsp;</i> -->
                 <div class="clearfix"></div>
             </div>
             <div class="tab-content top_perf_tab_content">
@@ -314,6 +357,27 @@
                         </div>
                     </div>
                 </div>
+                <div class="tab-pane" id="topo_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div id="perf_topo_map_container"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="birdeye_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            BirdEye Container
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="custom_dashboard_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            Custom Dashboard Container
+                        </div>
+                    </div>
+                </div>
                 <div class="clearfix"></div>
             </div>
         </div>
@@ -336,6 +400,33 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <!-- Bootstrap switch lib for BS maintenance infowindow -->
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <!-- Google Map Library-->
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false"></script>
+    <!--LOKIJS for Javascript Database-->
+    <script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>
+    <!--Flot Chart Library for Fresnel zone-->
+    <script src={% static "js/flot/jquery.flot.min.js" %}></script>
+    <!-- SPARKLINES -->
+    <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+    <!-- Bootstrap switch lib for BS maintenance infowindow -->
+    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
+    <!-- GIS Performancer Custom Library-->
+    <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>
+    <!-- State boundries Loki object Lib -->
+    <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
+    <!--This library is used to draw label on google maps-->
+    <script type="text/javascript" src={% static "js/infobox.js" %}></script>
+    <!--This library is used for marker clustering-->
+    <script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
+    <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
+    <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
+    <!-- Script for full screen google maps-->
+    <script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
+    <!-- Script Library for COokies -->
+    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+    <!-- Custom script to handle topo view -->
+    <script src={% static "js/devicePlottingLib.js" %}></script>
+    <script src={% static "js/devicevisualization.js" %}></script>
     <script type="text/javascript">
         /*Global Variables*/
         var perfInstance = "",
@@ -361,7 +452,8 @@
             warn_type = "",
             crit_type = "",
             default_live_table_headers = [],
-            is_radwin5 = 0;
+            is_radwin5 = 0,
+            bs_id = "";
 
         $(document).ready(function (e) {
 
@@ -373,11 +465,16 @@
             page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
+            bs_id = "{{ bs_id }}" ? "{{ bs_id }}" : [];
             current_device_technology = "";
             statusUrl = "";
             serviceUrl = "";
             inventory_url = "";
             alert_url = "";
+
+            // if (typeof bs_id == 'string') {
+            //     bs_id = JSON.parse(bs_id);
+            // }
 
             if (!service_view_type || !$.cookie("service_view_type")) {
                 $.cookie("service_view_type", 'normal', {path: '/'})
@@ -646,6 +743,14 @@
             fetchFirstTabContent(this);
         });
 
+        // Populate device topology on tab click
+        $("#topo_view").click(function (e) {
+            // Show loading spinner
+            showSpinner();
+            // Call function to populate device api
+            populateDeviceTopology();
+        });
+
         /**
          * This function load the first inner tab content when any parent tab is clicked.
          * @method fetchFirstTabContent
@@ -661,15 +766,8 @@
 
             if (li_count > 0) {
 
-                if($("#other_perf_table").length > 0) {
-                    $("#other_perf_table").dataTable().fnDestroy();
-                    $("#other_perf_table").remove();
-                }
-
-                if($("#perf_data_table").length > 0) {
-                    $("#perf_data_table").dataTable().fnDestroy();
-                    $("#perf_data_table").remove();
-                }
+                nocout_destroyDataTable('other_perf_table');
+                nocout_destroyDataTable('perf_data_table');
 
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
@@ -690,15 +788,8 @@
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
 
-                if($("#other_perf_table").length > 0) {
-                    $("#other_perf_table").dataTable().fnDestroy();
-                    $("#other_perf_table").remove();
-                }
-
-                if($("#perf_data_table").length > 0) {
-                    $("#perf_data_table").dataTable().fnDestroy();
-                    $("#perf_data_table").remove();
-                }
+                nocout_destroyDataTable('other_perf_table');
+                nocout_destroyDataTable('perf_data_table');
 
                 $(".inner_tab_container #"+tab_content_id+"_block .inner_inner_tab li:first-child a").trigger('click');
             }

@@ -619,6 +619,7 @@ class GetPerfomance(View):
         device_type = DeviceType.objects.get(id=device.device_type).name
         realdevice = device
         bs_alias = None
+        bs_id = list()
         is_radwin5 = 0
 
         try:
@@ -629,15 +630,21 @@ class GetPerfomance(View):
 
         try:
             if device.sector_configured_on.exists():
-                bs_alias = device.sector_configured_on.filter()[0].base_station.alias
+                bs_obj = device.sector_configured_on.filter()[0].base_station
+                bs_alias = bs_obj.alias
+                bs_id = [bs_obj.id]
             elif device.dr_configured_on.exists():
-                bs_alias = device.dr_configured_on.filter()[0].base_station.alias
+                bs_obj = device.dr_configured_on.filter()[0].base_station
+                bs_alias = bs_obj.alias
+                bs_id = [bs_obj.id]
             elif device.substation_set.exists():
-                bs_alias = Sector.objects.get(
+                bh_obj = Sector.objects.get(
                     id=Circuit.objects.get(
                         sub_station=device.substation_set.get().id
                     ).sector_id
-                ).base_station.alias
+                ).base_station
+                bs_alias = bs_obj.alias
+                bs_id = [bs_obj.id]
             elif device.backhaul.exists() or device.backhaul_switch.exists() or device.backhaul_pop.exists() \
                 or device.backhaul_aggregator.exists():
                 bh_id = None
@@ -654,6 +661,11 @@ class GetPerfomance(View):
                     BaseStation.objects.filter(
                         backhaul= bh_id
                     ).values_list('alias', flat=True)
+                )
+                bs_id = ','.join(
+                    BaseStation.objects.filter(
+                        backhaul= bh_id
+                    ).values_list('id', flat=True)
                 )
             else:
                 pass
@@ -724,6 +736,7 @@ class GetPerfomance(View):
             'device': device,
             'realdevice': realdevice,
             'bs_alias' : bs_alias,
+            'bs_id' : json.dumps(bs_id),
             'get_status_url': inventory_status_url,
             'get_services_url': service_ds_url,
             'inventory_page_url': inventory_page_url,

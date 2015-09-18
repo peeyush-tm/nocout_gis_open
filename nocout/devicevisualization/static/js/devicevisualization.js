@@ -1850,41 +1850,65 @@ function get_page_status() {
  * @param {String} status , It contains the info either to enable/disable buttons
  */
 function disableAdvanceButton(status) {
-    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'];
-    var selectBoxes = ['technology', 'vendor', 'state', 'city'];
-    var textBoxes = ['google_loc_search','lat_lon_search'];
-    var disablingBit = false;
+    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'],
+        selectBoxes = ['technology', 'vendor', 'state', 'city'],
+        textBoxes = ['google_loc_search','lat_lon_search'],
+        disablingBit = false;
+
     if(!status) {
         disablingBit= true;
         for(var i=0; i< buttonEls.length; i++) {
-            $('#'+buttonEls[i]).button('loading');
+            try {
+                $('#'+buttonEls[i]).button('loading');
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< selectBoxes.length; i++) {
-            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+            try {
+                document.getElementById(selectBoxes[i]).disabled = disablingBit;
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            var el = document.getElementById(textBoxes[i]);
-            if(el) {
-                document.getElementById(textBoxes[i]).disabled = disablingBit;    
-            }            
+            try {
+                var el = document.getElementById(textBoxes[i]);
+                if(el) {
+                    document.getElementById(textBoxes[i]).disabled = disablingBit;    
+                }
+            } catch(e) {
+                // console.error(e);
+            }
         }
     } else {
         disablingBit= false;
         for(var i=0; i< buttonEls.length; i++) {
-            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
-            $('#'+buttonEls[i]).button('complete');
+            try {
+                $('#'+buttonEls[i]).button('complete');
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< selectBoxes.length; i++) {
-            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+            try {
+                document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            var el = document.getElementById(textBoxes[i]);
-            if(el) {
-                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            try {
+                var el = document.getElementById(textBoxes[i]);
+                if(el) {
+                    document.getElementById(textBoxes[i]).disabled = disablingBit;    
+                }
+            } catch(e) {
+                // console.error(e);
             }
         }
     }

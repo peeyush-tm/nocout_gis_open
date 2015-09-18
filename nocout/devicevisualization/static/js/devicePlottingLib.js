@@ -240,7 +240,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[1],
+					styles 	  : typeof gmap_styles_array != 'undefined' ? gmap_styles_array[1] : {},
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
@@ -252,7 +252,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[1],
+					styles 	  : typeof gmap_styles_array != 'undefined' ? gmap_styles_array[1] : {},
 					mapTypeControlOptions: {
 						mapTypeIds: [
 							google.maps.MapTypeId.ROADMAP,
@@ -1637,7 +1637,11 @@ function devicePlottingClass_gmap() {
 			var start_date_plot = new Date();
 		}
 
-		var hide_flag = !$("#show_hide_label")[0].checked;
+		try {
+			var hide_flag = !$("#show_hide_label")[0].checked;
+		} catch(e) {
+			var hide_flag = false;
+		}
 
 		for(var i=bs_ss_devices.length;i--;) {
 

@@ -1699,3 +1699,35 @@ function calculateAverageValue(resultset, key) {
 
     return (total_val/resultset.length).toFixed(2);
 }
+
+function populateDeviceTopology() {
+    
+    $.ajax({
+        url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
+        type : 'GET',
+        success : function(response) {
+            var result = response;
+
+            if (typeof result == 'string') {
+                result = JSON.parse(result);
+            }
+
+            if (!$.trim($('#perf_topo_map_container').html())) {
+                /*Create a instance of gmap_devicePlottingLib*/
+                networkMapInstance = new devicePlottingClass_gmap();
+                /*Call the function to create map*/
+                networkMapInstance.createMap("perf_topo_map_container");
+            }
+
+            // Call function to plot devices on gmap
+            networkMapInstance.plotDevices_gmap([result],"base_station");
+        },
+        error : function(err) {
+            console.log(err.statusText);
+        },
+        complete : function() {
+            // Hide loading spinner
+            hideSpinner();
+        }
+    });
+}
