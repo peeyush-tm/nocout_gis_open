@@ -707,12 +707,14 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 year: '%Y'
             }
         },
-        yAxis: {
-            title : {
-                text : chartConfig.valuetext
-            },
-            reversed : is_y_inverted
-        },
+        yAxis: [
+            {
+                title : {
+                    text : chartConfig.valuetext
+                },
+                reversed : is_y_inverted
+            }
+        ],
         plotOptions : {
             column : {
                 borderWidth : 0,
@@ -1702,6 +1704,27 @@ function calculateAverageValue(resultset, key) {
 
 function populateDeviceTopology() {
     
+    var mapObject = {
+        center    : new google.maps.LatLng(india_center_lat,india_center_lon),
+        zoom      : 5,
+        mapTypeId : google.maps.MapTypeId.ROADMAP,
+        mapTypeControl : true,
+        styles    : typeof gmap_styles_array != 'undefined' ? gmap_styles_array[1] : {},
+        mapTypeControlOptions: {
+            mapTypeIds: [
+                google.maps.MapTypeId.ROADMAP,
+                google.maps.MapTypeId.TERRAIN,
+                google.maps.MapTypeId.SATELLITE,
+                google.maps.MapTypeId.HYBRID
+            ],
+            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+        },
+        draggableCursor : ''
+    };
+
+    /*Create Map Type Object*/
+    mapInstance = new google.maps.Map(document.getElementById('perf_topo_map_container'),mapObject);
+
     $.ajax({
         url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
         type : 'GET',
@@ -1712,7 +1735,7 @@ function populateDeviceTopology() {
                 result = JSON.parse(result);
             }
 
-            if (!$.trim($('#perf_topo_map_container').html())) {
+            if (!$.trim($('#perf_topo_map_container').html()) && !mapInstance) {
                 /*Create a instance of gmap_devicePlottingLib*/
                 networkMapInstance = new devicePlottingClass_gmap();
                 /*Call the function to create map*/

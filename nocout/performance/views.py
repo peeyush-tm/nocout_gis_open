@@ -638,7 +638,7 @@ class GetPerfomance(View):
                 bs_alias = bs_obj.alias
                 bs_id = [bs_obj.id]
             elif device.substation_set.exists():
-                bh_obj = Sector.objects.get(
+                bs_obj = Sector.objects.get(
                     id=Circuit.objects.get(
                         sub_station=device.substation_set.get().id
                     ).sector_id
@@ -670,6 +670,9 @@ class GetPerfomance(View):
             else:
                 pass
         except Exception, e:
+            print ' -- Exception -- '
+            print e
+            print ' -- Exception -- '
             # log.info(e.message)
             bs_alias = None
 
