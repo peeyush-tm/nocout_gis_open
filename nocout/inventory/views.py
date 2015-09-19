@@ -4651,8 +4651,6 @@ class GisWizardSubStationListing(SubStationListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-
-
             #if dct['device__device_technology']: Always is 3 and 4 as in self.kwargs['selected_technology']
             dct['device__device_technology'] = DeviceTechnology.objects.get(pk=int(dct['device__device_technology'])).alias
 
@@ -4672,17 +4670,19 @@ class GisWizardSubStationListing(SubStationListingTable):
 def gis_wizard_sub_station_select(request, bs_pk, selected_technology, sector_pk):
     technologies = DeviceTechnology.objects.order_by('-name').filter(name__in=['WiMAX', 'PMP'])
     base_station = BaseStation.objects.get(id=bs_pk)
+    sector = Sector.objects.get(id=sector_pk)
     return render(request, 'gis_wizard/sub_station.html',
-        {
-            'select_view': True,
-            'bs_pk': bs_pk,
-            'base_station' : base_station,
-            'selected_technology': selected_technology,
-            'sector_pk': sector_pk,
-            'technologies': technologies,
-            'organization': base_station.organization
-        }
-    )
+                  {
+                      'select_view': True,
+                      'bs_pk': bs_pk,
+                      'base_station': base_station,
+                      'selected_technology': selected_technology,
+                      'sector_pk': sector_pk,
+                      'technologies': technologies,
+                      'organization': base_station.organization,
+                      'sector': sector
+                  }
+                  )
 
 
 class GisWizardSubStationDetailView(SubStationDetail):

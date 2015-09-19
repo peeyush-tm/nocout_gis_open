@@ -83,20 +83,31 @@ def assign_default_thematics_to_user(sender, instance=None, created=False, **kwa
         # ********************* ASSIGN PING THEMATIC SETTINGS ***********************
 
         # Get ping thematic settings for PTP, PMP, WiMAX.
-        ping_thematics_ptp = PingThematicSettings.objects.filter(Q(is_global=True), Q(name__icontains="ptp"), Q(
-            name__icontains="PL") | Q(name__icontains="Packet"))
+        ping_thematics_ptp = PingThematicSettings.objects.filter(
+            Q(is_global=True),
+            Q(technology__name__iexact="P2P"),
+            (Q(data_source__icontains="pl") | Q(name__icontains="Packet"))
+        )
 
-        ping_thematics_pmp = PingThematicSettings.objects.filter(Q(is_global=True), Q(name__icontains="pmp"), Q(
-            name__icontains="PL") | Q(name__icontains="Packet"))
+        ping_thematics_pmp = PingThematicSettings.objects.filter(
+            Q(is_global=True),
+            Q(technology__name__iexact="PMP"),
+            (Q(data_source__icontains="pl") | Q(name__icontains="Packet"))
+        )
 
-        ping_thematics_wimax = PingThematicSettings.objects.filter(Q(is_global=True), Q(name__icontains="wimax"), Q(
-            name__icontains="PL") | Q(name__icontains="Packet"))
+        ping_thematics_wimax = PingThematicSettings.objects.filter(
+            Q(is_global=True),
+            Q(technology__name__iexact="WiMAX"),
+            (Q(data_source__icontains="pl") | Q(name__icontains="Packet"))
+        )
 
         # Assign user ping thematics for PTP, PMP, WiMAX.
         for tech in ['ptp', 'pmp', 'wimax']:
             if eval("ping_thematics_{}".format(tech)):
-                UserPingThematicSettings.objects.create(
-                    user_profile=user_profile,
-                    thematic_template=eval("ping_thematics_{}[0]".format(tech)),
-                    thematic_technology=eval("tech_{}".format(tech))
-                )
+                for thematic in eval("ping_thematics_{}".format(tech)):
+                    UserPingThematicSettings.objects.create(
+                        user_profile=user_profile,
+                        thematic_template=thematic,
+                        thematic_technology=thematic.technology,
+                        thematic_type=thematic.type
+                    )
