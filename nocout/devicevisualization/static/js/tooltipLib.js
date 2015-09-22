@@ -1278,12 +1278,12 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'ds'           : 'ul_rssi'
     },
     {
-        'name'         : 'rad5k_ss_transmit_power_transmit_power',
+        'name'         : 'rad5k_ss_transmit_power_invent_transmit_power',
         'title'        : 'SM Transmit Power',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'rad5k_ss_transmit_power',
+        'service_name' : 'rad5k_ss_transmit_power_invent',
         'ds'           : 'transmit_power'
 
     },
@@ -1317,12 +1317,12 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'ds'           : 'bs_ip'
     },
     {
-        'name'         : 'rad5k_bs_frequency_invent_frequency',
+        'name'         : 'rad5k_ss_frequency_invent_frequency',
         'title'        : 'Frequency',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'rad5k_bs_frequency_invent',
+        'service_name' : 'rad5k_ss_frequency_invent',
         'ds'           : 'frequency'
     },
     {
@@ -1426,12 +1426,12 @@ var pmp_radwin5k_ss_toolTip_polled = [
         'ds'           : 'rta'
     },
     {
-        'name'         : 'rad5k_ss_transmit_power_transmit_power',
+        'name'         : 'rad5k_ss_transmit_power_invent_transmit_power',
         'title'        : 'Transmission Ratio/Data Rate',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'rad5k_ss_transmit_power',
+        'service_name' : 'rad5k_ss_transmit_power_invent',
         'ds'           : 'transmit_power'
     },
     {
