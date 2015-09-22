@@ -26,6 +26,7 @@
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
 
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
@@ -80,8 +81,14 @@
             top: 0px;
         }
         #perf_topo_map_container {
-            height: 400px;
+            height: 450px;
             margin: 0px auto;
+        }
+        #topo_view_tab .sideInfoContainer {
+            max-height: 425px !important;
+        }
+        #topo_view_tab {
+            position: relative;
         }
     </style>
     <!--Device Status Block Start-->
@@ -225,24 +232,33 @@
             <div class="tabbable header-tabs" style="position: relative;">
                 <!-- <i class="fa fa-arrow-circle-left text-primary paging_arrow">&nbsp;</i> -->
                 <ul class="nav nav-tabs top_perf_tabs">
+                    {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
                     <li>
                         <a href="#custom_dashboard_tab" title="Custom Dashboards" id="custom_dashboard" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Custom Dashboards &nbsp;</span>
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_BIRDEYE_VIEW %}
                     <li>
                         <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_TOPO_VIEW %}
                     <li>
                         <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Topo View &nbsp;</span>
                         </a>
                     </li>
+                    {% endif %}
+
                     <li>
                         <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
                             <i class="fa fa-angle-double-right">&nbsp;</i>
@@ -357,20 +373,52 @@
                         </div>
                     </div>
                 </div>
+                {% if settings.ENABLE_TOPO_VIEW %}
+
                 <div class="tab-pane" id="topo_view_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
                             <div id="perf_topo_map_container"></div>
+                            <!--Info Window Content Container START-->
+                            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:200;"></div>
+                            <!--Info Window Content Container END-->
                         </div>
                     </div>
                 </div>
+                {% endif %}
+                
+                {% if settings.ENABLE_BIRDEYE_VIEW %}                
                 <div class="tab-pane" id="birdeye_view_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
-                            BirdEye Container
+                            <div id="birdeye_container"></div>
+                            <!-- <div class="col-md-12 row">
+                                <h1>Ping</h1>
+                            </div>
+                            <div>
+                                <div class="col-md-6 row">
+                                    <h1>SRV 1</h1>
+                                </div>
+                                <div class="col-md-6 pull-right row">
+                                    <h1>SRV 2</h1>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div>
+                                <div class="col-md-6 row">
+                                    <h1>SRV 3</h1>
+                                </div>
+                                <div class="col-md-6 pull-right row">
+                                    <h1>SRV 4</h1>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
+                {% endif %}
+
+                {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
                 <div class="tab-pane" id="custom_dashboard_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
@@ -378,6 +426,8 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
+
                 <div class="clearfix"></div>
             </div>
         </div>
@@ -412,6 +462,8 @@
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %} ></script>
     <!-- GIS Performancer Custom Library-->
     <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>
+    <!-- Tooltip/Infowindow handling Custom Library-->
+    <script type="text/javascript" src={% static "js/tooltipLib.js" %}></script>
     <!-- State boundries Loki object Lib -->
     <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
     <!--This library is used to draw label on google maps-->
@@ -453,7 +505,10 @@
             crit_type = "",
             default_live_table_headers = [],
             is_radwin5 = 0,
-            bs_id = "";
+            bs_id = "",
+            all_services_list = [],
+            perf_base_url = '',
+            clicked_tab_id = '';
 
         $(document).ready(function (e) {
 
@@ -466,15 +521,12 @@
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
             bs_id = "{{ bs_id }}" ? "{{ bs_id }}" : [];
+            perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
             current_device_technology = "";
             statusUrl = "";
             serviceUrl = "";
             inventory_url = "";
             alert_url = "";
-
-            // if (typeof bs_id == 'string') {
-            //     bs_id = JSON.parse(bs_id);
-            // }
 
             if (!service_view_type || !$.cookie("service_view_type")) {
                 $.cookie("service_view_type", 'normal', {path: '/'})
@@ -509,6 +561,7 @@
                 serviceUrl = getCompleteUrl(get_services_url);
                 inventory_url = getCompleteUrl(inventory_page_url);
                 alert_url = getCompleteUrl(alert_page_url);
+                // perf_base_url = getCompleteUrl(perf_base_url);
 
                 current_device = "{{ device.id }}";
                 device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
@@ -740,15 +793,41 @@
            #topology,\
            #utilization_top"
         ).click(function (e) {
+            // Show li panel
+            $('.perfContainerBlock .box-title ul li:not(.pull-right)').removeClass('hide');
+
+            clicked_tab_id = $(this).attr('id');
+
             fetchFirstTabContent(this);
         });
 
         // Populate device topology on tab click
         $("#topo_view").click(function (e) {
+            
+            // Hide li panel
+            $('.perfContainerBlock .box-title ul li:not(.pull-right)').addClass('hide');
+
+            clicked_tab_id = 'topo_view';
+
+            if (typeof networkMapInstance == 'undefined') {
+                // Show loading spinner
+                showSpinner();
+                // Call function to populate device api
+                populateDeviceTopology();
+            }
+        });
+
+        // Fetch & Draw birdeye view on tab click
+        $("#birdeye_view").click(function (e) {
+
+            // Hide li panel
+            $('.perfContainerBlock .box-title ul li:not(.pull-right)').addClass('hide');
+
+            clicked_tab_id = 'birdeye_view';
             // Show loading spinner
             showSpinner();
-            // Call function to populate device api
-            populateDeviceTopology();
+            // Call function to Fetch & Draw birdeye
+            initBirdEyeView('birdeye_container');
         });
 
         /**
@@ -794,16 +873,6 @@
                 $(".inner_tab_container #"+tab_content_id+"_block .inner_inner_tab li:first-child a").trigger('click');
             }
         });
-
-        /**
-         * This event triggers when poll now button clicked
-         * @event click
-         */
-        // $(".perfContainerBlock").delegate('.perf_poll_now, .poll_play_btn','click',function(e) {
-        //     initSingleDevicePolling(function(response) {
-        //         // pass
-        //     });
-        // });
     </script>
 
 {% endblock %}

@@ -363,7 +363,7 @@ function GisPerformance() {
                 perf_bh_info = apiResponse.data.param.bh_polled_info ? apiResponse.data.param.bh_polled_info : [],
                 perf_bh_severity = apiResponse.data.param.bhSeverity ? apiResponse.data.param.bhSeverity : "",
                 bh_pl = apiResponse.data.param.bh_pl ? apiResponse.data.param.bh_pl : "",
-                show_ss_len = $("#showAllSS:checked").length,
+                show_ss_len = $("#showAllSS").length > 0 ? $("#showAllSS:checked").length : 1,
                 bs_lat = apiResponse.data.lat,
                 bs_lon = apiResponse.data.lon,
                 bsInfo = apiResponse.data.param.base_station,
@@ -965,7 +965,7 @@ function GisPerformance() {
                                 var line_color = ss_marker_data.data.link_color;
                                 linkColor = line_color && line_color != 'NA' ? line_color : 'rgba(74,72,94,0.58)';
 
-                                var isLineChecked = $("#showConnLines:checked").length;
+                                var isLineChecked = $("#showConnLines").length > 0 ? $("#showConnLines:checked").length : 1;
 
                                 if(window.location.pathname.indexOf("gearth") > -1) {
                                     /*Create the link between BS & SS or Sector & SS*/

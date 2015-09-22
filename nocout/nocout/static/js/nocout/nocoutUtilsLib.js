@@ -34,7 +34,10 @@ var green_color = "#468847",
                                background: -ms-linear-gradient(left, xxxx 0%,yyyy 100%); \
                                background: linear-gradient(to right, xxxx 0%,yyyy 100%); \
                                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr="xxxx", endColorstr="yyyy",GradientType=1 );',
-    default_legends_bg = '#343435';
+    default_legends_bg = '#343435',
+    parallel_calling_len = 3,
+    birdeye_start_counter = 0,
+    birdeye_end_counter = parallel_calling_len;
 
 
 /**
@@ -262,8 +265,10 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         excel_columns = [];
 
     // Destroy Datatable
-    nocout_destroyDataTable('other_perf_table');
-    nocout_destroyDataTable('perf_data_table');
+    if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') == -1) {
+        nocout_destroyDataTable('other_perf_table');
+        nocout_destroyDataTable('perf_data_table');
+    }
 
     table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
@@ -273,7 +278,6 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     }
     table_string += '</thead></table>';
     /*Table header creation end*/
-
 
     if (service_id) {
         $('#' + service_id + '_chart').html(table_string);
@@ -316,11 +320,15 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
-    var data_in_table = "<table id='" + service_id + '_' + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
+    var data_in_table = "<table id='" + service_id + '_' + table_id + "' \
+                         class='datatable table table-striped table-bordered table-hover'><thead>",
+        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
 
-    // Destroy Datatable
-    nocout_destroyDataTable('other_perf_table');
-    nocout_destroyDataTable('perf_data_table');
+    if (!is_birdeye_view) {
+        // Destroy Datatable
+        nocout_destroyDataTable('other_perf_table');
+        nocout_destroyDataTable('perf_data_table');
+    }
 
     /*Table header creation end*/
     if (service_id) {
@@ -408,7 +416,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         applied_adv_filter = '[]';
 
     // append 'advance_filter' GET param to url if exists.
-    if ($('#'+service_id+'_tab').attr('data_url')) {
+    if ($('#'+service_id+'_tab').attr('data_url') && !is_birdeye_view) {
         var filtering_url = $('#'+service_id+'_tab').attr('data_url');
         applied_adv_filter = filtering_url.indexOf('advance_filter=') ? filtering_url.split('advance_filter=')[1] : '[]';
         
@@ -425,7 +433,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
     for(var i=0;i<get_param_string.length;i++) {
         var splitted_string = get_param_string[i].split("=");
-        if (splitted_string[1] != undefined) {
+        if (splitted_string[1] != 'undefined') {
             if (i == get_param_string.length-1) {
                 get_param_data += "'" + splitted_string[0] + "':'" + splitted_string[1] + "'";
             } else {
@@ -434,9 +442,8 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         }
     }
     
-    if ($(".top_perf_tabs").length > 0) {
-        var 
-            top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
+    if ($(".top_perf_tabs").length > 0 && !is_birdeye_view) {
+        var top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
             left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
             top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
             left_tab_txt = $.trim($("#" +left_tab_id).text()),
@@ -733,8 +740,18 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             chart_options["yAxis"]["max"] = 100;
             chart_options["plotOptions"]["series"] = {stacking: 'normal'};
         }
+
+        if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1) {
+            chart_options["exporting"] = {};
+            chart_options["exporting"]["enabled"] = false;
+        }
     } catch(e) {
         // pass
+        // console.error(e);
+    }
+
+    if ($('#'+dom_id+'_chart').hasClass('charts_block')) {
+        $('#'+dom_id+'_chart').attr('style', 'height:250px;');
     }
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
@@ -1703,54 +1720,128 @@ function calculateAverageValue(resultset, key) {
 }
 
 function populateDeviceTopology() {
-    
-    var mapObject = {
-        center    : new google.maps.LatLng(india_center_lat,india_center_lon),
-        zoom      : 5,
-        mapTypeId : google.maps.MapTypeId.ROADMAP,
-        mapTypeControl : true,
-        styles    : typeof gmap_styles_array != 'undefined' ? gmap_styles_array[1] : {},
-        mapTypeControlOptions: {
-            mapTypeIds: [
-                google.maps.MapTypeId.ROADMAP,
-                google.maps.MapTypeId.TERRAIN,
-                google.maps.MapTypeId.SATELLITE,
-                google.maps.MapTypeId.HYBRID
-            ],
-            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-        },
-        draggableCursor : ''
-    };
-
-    /*Create Map Type Object*/
-    mapInstance = new google.maps.Map(document.getElementById('perf_topo_map_container'),mapObject);
 
     $.ajax({
         url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
         type : 'GET',
         success : function(response) {
-            var result = response;
-
-            if (typeof result == 'string') {
-                result = JSON.parse(result);
-            }
-
-            if (!$.trim($('#perf_topo_map_container').html()) && !mapInstance) {
+            if (typeof networkMapInstance != 'undefined') {
+                networkMapInstance.clearStateCounters();
+                /*Reset markers & polyline*/
+                networkMapInstance.clearGmapElements();
+                /*Reset all elements global variables */
+                networkMapInstance.clearMapMarkers()
+                /*Reset Global Variables & Filters*/
+                networkMapInstance.resetVariables_gmap();
+            } else {
                 /*Create a instance of gmap_devicePlottingLib*/
                 networkMapInstance = new devicePlottingClass_gmap();
                 /*Call the function to create map*/
                 networkMapInstance.createMap("perf_topo_map_container");
             }
 
-            // Call function to plot devices on gmap
-            networkMapInstance.plotDevices_gmap([result],"base_station");
+            var result = response;
+
+            if (typeof result == 'string') {
+                result = JSON.parse(result);
+            }
+            // 
+            networkMapInstance.showStateWiseData_gmap([result]);
+
+            // fit gmap bounds to base station position
+            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(result.data.lat,result.data.lon)));
+
+            var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
+            
+                // set the zoom level to 14 if it is greater
+                if (mapInstance.getZoom() > 14) {
+                    mapInstance.setZoom(14);
+                }
+                
+                google.maps.event.removeListener(listener);
+                searchResultData = [result];
+            });
+            
         },
         error : function(err) {
-            console.log(err.statusText);
+            // console.log(err.statusText);
         },
         complete : function() {
             // Hide loading spinner
             hideSpinner();
         }
     });
+}
+
+function initBirdEyeView(container_id) {
+
+    if (typeof all_services_list != 'undefined' && all_services_list.length) {
+        // if birdeye view HTML is not created then first create it.
+        if($.trim($('#birdeye_container').html()).length == 0) {
+            createBirdEyeViewHTML(container_id);
+        }
+
+        populateBirdViewCharts(birdeye_start_counter, birdeye_end_counter);
+    } else {
+        return true;
+    }
+
+    hideSpinner();
+}
+
+function populateBirdViewCharts(start, end) {
+    for (var i=start;i<end;i++) {
+        if (all_services_list[i]) {
+            var api_url = perf_base_url,
+                srv_name = all_services_list[i].id;
+            
+            // Update url with actual service name
+            api_url = api_url.replace('srv_name', srv_name);
+
+            // call function to fetch perf data for this service
+            perfInstance.getServiceData(api_url, srv_name, current_device);
+            if (!$('#' + srv_name + '_heading .fa-spinner').hasClass('hide')) {
+                $('#' + srv_name + '_heading .fa-spinner').addClass('hide');
+            }
+        }
+    }
+
+    if (end < all_services_list.length - 1) {
+        populateBirdViewCharts(end, end * 2)
+    }
+}
+
+
+function createBirdEyeViewHTML(container_id) {
+
+    var birdeye_html = '';
+
+    for(var i=0;i<all_services_list.length;i++) {
+
+        if (all_services_list[i]['id'] == 'ping') {
+            birdeye_html += '<div class="col-md-12 row">';
+        } else {
+            var float_class = '';
+            if (i % 2 == 0) {
+                float_class = 'pull-right';
+            }
+
+            birdeye_html += '<div class="col-md-6 ' + float_class + ' row">';
+        }
+        birdeye_html += '<h4 class="zero_top_margin" id="' + all_services_list[i]['id'] + '_heading"> \
+                         ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>'
+                         
+        birdeye_html += '<div class="birdeye_view_charts">';
+        birdeye_html += '<div id="' + all_services_list[i]['id'] + '_chart" class="charts_block"></div>';
+        birdeye_html += '<div id="' + all_services_list[i]['id'] + '_bottom_table"></div>';
+        birdeye_html += '<div class="clearfix"></div>';
+        birdeye_html += '</div>';
+        birdeye_html += '</div>';
+
+        if (i % 2 == 0 || i == all_services_list.length - 1) {
+            birdeye_html += '<div class="clearfix"></div><hr/>';
+        }
+    }
+
+    $('#' + container_id).html(birdeye_html);
 }

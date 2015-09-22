@@ -1104,7 +1104,7 @@ $('#infoWindowContainer').delegate('td','click',function(e) {
         api_url = currentAttr['url'] ? currentAttr['url'].value : "";
     
     // If api_url exist then fetch l2 report url
-    if(api_url) {
+    if(api_url && $('#topo_view_tab').length == 0) {
         // Show the loader
         showSpinner();
 
