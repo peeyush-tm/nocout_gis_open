@@ -127,10 +127,10 @@ def check_rad5k_ul_rssi(item, params, info):
 	        	ss_serial_number = info[0][0]
 		        if ss_serial_number:
         		        ul_rssi =int(live_query_for_rad5k_ul_rssi(ss_serial_number))
-                		if ul_rssi:
-					if ul_rssi < crit :
+                		if ul_rssi is not None:
+					if int(ul_rssi) < crit :
 						state = 2
-					elif ul_rssi > crit and ul_rssi < warn:
+					elif int(ul_rssi) > crit and int(ul_rssi) < warn:
         		        		state = 1
             				else:
                 				state = 0
