@@ -1,0 +1,19 @@
+h5.bigger, .h5 {
+  font-size: 16px !important;
+  font-weight: normal !important;
+  color:#333;
+}
+h4.bigger
+{
+  font-size: 18px !important;
+  font-weight: normal !important;
+  color:#333;
+}
+.dataTables_length > label
+{
+  font-weight: normal !important;
+}
+table.dataTable thead th, table.dataTable tfoot th {
+  font-size: 14px !important;
+  font-weight: normal !important;
+}

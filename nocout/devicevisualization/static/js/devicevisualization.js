@@ -1765,6 +1765,9 @@ function showAdvSearch() {
     if($("#advSearchContainerBlock").hasClass("hide")) {
         $("#advSearchContainerBlock").removeClass("hide");
     }
+    else{
+      $("#advSearchContainerBlock").addClass("hide");  
+    }
     hideSpinner();
 }
 
@@ -1793,6 +1796,9 @@ function showAdvFilters() {
 
     if($("#advFilterContainerBlock").hasClass("hide")) {
         $("#advFilterContainerBlock").removeClass("hide");
+    }
+    else{
+        $("#advFilterContainerBlock").addClass("hide");
     }
     hideSpinner();
 }
