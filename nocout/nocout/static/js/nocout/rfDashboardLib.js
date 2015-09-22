@@ -270,7 +270,7 @@ $(".tab-content h3 i").click(function(e) {
                         /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
                             message: popup_html,
-                            title: '<i class="fa fa-signal">&nbsp;</i> '+ds_name.toUpperCase()+' Trends'
+                            title: '<i class="fa fa-line-chart">&nbsp;</i> '+ds_name.toUpperCase()+' Trends'
                         });
 
 

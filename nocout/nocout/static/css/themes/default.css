@@ -17,14 +17,14 @@
   padding: 15px;
   width: 250px;
 }
-.navbar .navbar-brand img {
+/*.navbar .navbar-brand img {
   position: absolute;
   max-width: 60%;
   height: 30px;
   width: 120px;
   top: 8px;
   left: 60px;
-}
+}*/
 .navbar .dropdown-toggle {
   color: #FFFFFF;
 }
