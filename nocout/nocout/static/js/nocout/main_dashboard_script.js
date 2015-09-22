@@ -907,7 +907,7 @@ $("#main_dashboard_container .box-body h5 strong i, \
                         /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
                             message: popup_html,
-                            title: '<i class="fa fa-signal">&nbsp;</i> '+window_title+'Trends'
+                            title: '<i class="fa fa-line-chart">&nbsp;</i> '+window_title+'Trends'
                         });
 
 
@@ -963,7 +963,7 @@ $("#main_dashboard_container .box-body h5 strong i, \
             /*Call the bootbox to show the popup with datatable*/
             bootbox.dialog({
                 message: popup_html,
-                title: '<i class="fa fa-signal">&nbsp;</i> '+window_title
+                title: '<i class="fa fa-line-chart">&nbsp;</i> '+window_title
             });
 
 
