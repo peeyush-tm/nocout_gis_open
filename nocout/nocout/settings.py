@@ -308,7 +308,7 @@ CELERYBEAT_SCHEDULE = {
     #     'args': ['WiMAX']
     # },
     'update-inventory-topology': {
-        'task': 'inventory.tasks.update_inventory',
+        'task': 'inventory.tasks.update_topology',
         'schedule': timedelta(seconds=300),
     },
     # END Topology Updates

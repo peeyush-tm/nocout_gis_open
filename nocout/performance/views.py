@@ -616,8 +616,16 @@ class GetPerfomance(View):
         """
         device = Device.objects.get(id=device_id)
         device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
+        device_type = DeviceType.objects.get(id=device.device_type).name
         realdevice = device
         bs_alias = None
+        is_radwin5 = 0
+
+        try:
+            if 'radwin5' in device_type.lower():
+                is_radwin5 = 1
+        except Exception, e:
+            is_radwin5 = 0
 
         try:
             if device.sector_configured_on.exists():
@@ -723,7 +731,8 @@ class GetPerfomance(View):
             'page_type': page_type,
             'live_poll_config': json.dumps(LIVE_POLLING_CONFIGURATION),
             'is_util_tab': int(is_util_tab),
-            'is_dr_device' : is_dr_device
+            'is_dr_device' : is_dr_device,
+            'is_radwin5' : is_radwin5
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
