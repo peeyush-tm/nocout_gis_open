@@ -530,6 +530,18 @@ iframe {
   margin-right: 5px;
   margin-top: 2.5px;
 }
+.zero_top_margin {
+  margin-top: 0px;
+}
+.birdeye_view_charts {
+  min-height: 220px;
+  max-height: 350px;
+  overflow-y: auto;
+  margin: 0px auto;
+}
+.charts_block tspan {
+  font-size: 10px !important;
+}
 
 
 /*New theme changes*/

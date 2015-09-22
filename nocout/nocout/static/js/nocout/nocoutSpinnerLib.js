@@ -54,3 +54,11 @@ function hideSpinner() {
         $("#ajax_spinner").addClass("hide");
     }
 }
+
+
+function createPaginateTabs() {
+    if($('.top_perf_tabs').length) {
+        // console.log($('.top_perf_tabs li'));
+        // console.log($('.top_perf_tabs li').length);
+    }
+}
