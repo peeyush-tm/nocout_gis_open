@@ -74,21 +74,17 @@ def check_rad5k_topology_discover(item, params, info):
         	except:
 		    connected_ss_rssi_dl = None
 		try:
-		    connected_ss_dl_utilization_counter = info_list1[i][6]
-		    this_time = int(time.time())
-		    rate = None
-		    timedif, rate = get_counter("rad5k_topology_discover.rad5k_ss_dl_utilization_counter.%s" % connected_ss_serial_number ,this_time,saveint(connected_ss_dl_utilization_counter))
-                    connected_ss_dl_utilization = "%.2f" % ((rate*8)/(1024.0 * 1024))
+		    #print 'DL : %s\n' % info_list1[i][6]
+		    connected_ss_dl_utilization = int(info_list1[i][6]) / (1024.0)
+                    connected_ss_dl_utilization = "%.2f" % connected_ss_dl_utilization
 		except Exception,e:
-                    connected_ss_dl_utilization = "Counter_wrapped"
+                    connected_ss_dl_utilization = None
 		try:
-                    connected_ss_ul_utilization_counter = info_list1[i][7]
-		    this_time = int(time.time())
-        	    rate = None
-		    timedif, rate = get_counter("rad5k_topology_discover.rad5k_ss_ul_utilization_counter.%s" % connected_ss_serial_number ,this_time,saveint(connected_ss_ul_utilization_counter))
-		    connected_ss_ul_utilization = "%.2f" % ((rate*8)/(1024.0 * 1024))
+		    #print 'UL : %s\n' % info_list1[i][7]
+                    connected_ss_ul_utilization = int(info_list1[i][7]) / (1024.0)
+		    connected_ss_ul_utilization = "%.2f" % connected_ss_ul_utilization
 		except Exception,exp:
-                    connected_ss_ul_utilization= "Counter_wrapped"
+                    connected_ss_ul_utilization= None
 		try:
 		    connected_ss_time_slot_alloted_dl = int(info_list1[i][8])
 		except:

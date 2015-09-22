@@ -122,11 +122,11 @@ def check_rad5k_ss_ul_utilization(item, _no_params, info):
 			#print ss_serial_number
 	        	if ss_serial_number:
         	        	ul_utilization =live_query_for_rad5k_ss_ul_utilization(ss_serial_number)
-	                	if ul_utilization is not None and ul_utilization != "Counter_wrapped":
+	                	if ul_utilization is not None:
 	                        	infotext = "SS uplink utilization is %s" % ul_utilization
 	                        	state = 0
 				else:
-					infotext = "Counters wrapped"
+					infotext = "SS uplink utilization not available"
 					state = 3
 					ul_utilization = None
 	except ValueError:

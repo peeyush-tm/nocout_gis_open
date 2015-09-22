@@ -121,11 +121,11 @@ def check_rad5k_ss_dl_utilization(item, _no_params, info):
         		ss_serial_number = info[0][0]
 	        	if ss_serial_number:
         	        	dl_utilization =live_query_for_rad5k_ss_dl_utilization(ss_serial_number)
-	                	if dl_utilization is not None and dl_utilization != "Counter_wrapped" :
+	                	if dl_utilization is not None :
         	                	infotext = "SS downlink utilization is %s" % dl_utilization
                 	        	state = 0
 				else:
-					infotext = "Counters wrapped"
+					infotext = "SS downlink utilization not available"
 					dl_utilization = None
 					state = 3
 		except ValueError:
