@@ -24,6 +24,8 @@ default_snmp_ports = [
     (161, ['CanopyPM100SS'], ['@all']),
     (161, ['CanopySM100AP'], ['@all']),
     (161, ['CanopySM100SS'], ['@all']),
+    (161, ['Radwin5KBS'], ['@all']),
+    (161, ['Radwin5KSS'], ['@all']),
 ]
 
 snmp_ports_db = list()
@@ -33,6 +35,8 @@ snmp_ports_db = list()
 default_snmp_communities = [
     ('public', ['Radwin2KBS'], ['@all']),
     ('public', ['Radwin2KSS'], ['@all']),
+    ('public', ['Radwin5KBS'], ['@all']),
+    ('public', ['Radwin5KSS'], ['@all']),
     ('Canopy', ['CanopyPM100AP'], ['@all']),
     ('Canopy', ['CanopyPM100SS'], ['@all']),
     ('Canopy', ['CanopySM100AP'], ['@all']),
@@ -297,7 +301,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     and 
     device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') 
     and 
-    device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU')
+    device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU', 'Radwin5KBS')
     ;
     """
     # host row for devices
@@ -425,7 +429,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     wimax_bs_devices = L0 + L1
     # Get the Cambium BS devices (we need them for active checks)
     # Since, as of now, we have only Cambium devices in pmp technology
-    cambium_bs_devices = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'pmp', data))
+    cambium_bs_devices = map(lambda e: (e[1], e[7]), filter(lambda e: (e[11].lower() == 'pmp' and e[2] != 'Radwin5KBS'), data))
     T1.wimax_bs_devices, T1.cambium_bs_devices = wimax_bs_devices, cambium_bs_devices
 
     final_radwin_devices_entry = []
@@ -569,7 +573,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
     inventory_sector.id = inventory_circuit.sector_id
     )
     where device_device.is_deleted=0 and
-    device_device.host_state <> 'Disable' and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KSS', 'CanopyPM100SS', 'CanopySM100SS', 'StarmaxSS')) as dupli
+    device_device.host_state <> 'Disable' and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KSS', 'CanopyPM100SS', 'CanopySM100SS', 'StarmaxSS','Radwin5KSS')) as dupli
     )
     on (original.id = dupli.matcher)
         """
@@ -623,7 +627,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
     wimax_ss_devices = filter(lambda e: e[14].lower() == 'wimax', data)
     wimax_ss_devices = map(lambda e: (e[4], e[8]), wimax_ss_devices)
     # Get PMP (Cambium) SS devices, for active checks
-    cambium_ss_devices = filter(lambda e: e[14].lower() == 'pmp', data)
+    cambium_ss_devices = filter(lambda e:( e[14].lower() == 'pmp' and e[6] != 'Radwin5KSS'), data)
     cambium_ss_devices = map(lambda e: (e[4], e[8]), cambium_ss_devices)
 
     T.all_hosts, T.ipaddresses, T.host_attributes = all_hosts, ipaddresses, host_attributes
@@ -651,7 +655,7 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
 
     try:
         if update_id:
-            sync_finished_at = str(datetime.utcnow())
+            sync_finished_at = str(datetime.now())
             query = "UPDATE device_devicesynchistory SET status=%s, message='%s', completed_on='%s' WHERE id = %s"\
                      % (status, detailed_message, sync_finished_at, update_id)
             cur = db.cursor()
@@ -708,7 +712,7 @@ def get_settings():
         cur.execute(query)
         data = dict_rows(cur)
         cur.close()
-        #logger.debug('data in get_settings: ' + pformat(data))
+        #logger.error('data in get_settings: ' + pformat(data))
     except Exception, exp:
         logger.error('Exception in get_settings: ' + pformat(exp))
         db.close()
@@ -766,7 +770,7 @@ def get_settings():
             # add the inventory services for snmp_check_interval
 	    if '_kpi' in service['service']:
 		active_check_services.append(str(service['service']))
-            if '_invent' in service['service']:
+            if '_invent' in service['service'] and service['service'] != 'wimax_ss_vlan_invent':
                 snmp_check_interval.append(
                         ((str(service['service']), 1440), [], ['@all'])
                         )
@@ -774,6 +778,11 @@ def get_settings():
                 snmp_check_interval.append(
                         ((str(service['service']), 60), [], ['@all'])
                         )
+	    if service['service'] == 'wimax_ss_vlan_invent':
+                snmp_check_interval.append(
+                        ((str(service['service']), 300), [], ['@all'])
+                        )
+		
             threshold = ()
             try:
             	threshold = get_threshold(service)
