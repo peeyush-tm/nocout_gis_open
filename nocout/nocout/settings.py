@@ -780,7 +780,10 @@ SETTINGS_EXPORT = [
     'ENABLE_ADVANCE_FILTERS',
     'ENABLE_UNIFIED_SERVICE_VIEW',
     'ENABLE_AGGREGATE_REPORT_DOWNLOAD',
-    'ENABLE_WHITE_THEME'
+    'ENABLE_WHITE_THEME',
+    'ENABLE_TOPO_VIEW',
+    'ENABLE_BIRDEYE_VIEW',
+    'ENABLE_CUSTOM_DASHBOARD_VIEW'
 ]
 
 # Dashbaord Settings
@@ -824,13 +827,22 @@ DATATABLE_SEARCHTXT_KEY = 'sSearch'
 ENABLE_ADVANCE_FILTERS = True
 
 # Flag to enable/disable unified service view on single performance page.
-ENABLE_UNIFIED_SERVICE_VIEW = False
+ENABLE_UNIFIED_SERVICE_VIEW = True
 
 # Flag to enable/disable aggregate report download on single performance page.
 ENABLE_AGGREGATE_REPORT_DOWNLOAD = False
 
 ####################### Flag to enable/disable new Theme #######################
 ENABLE_WHITE_THEME = True
+
+# Flag to enable/disable topology view on single performance page.
+ENABLE_TOPO_VIEW = False
+
+# Flag to enable/disable birdeye view on single performance page.
+ENABLE_BIRDEYE_VIEW = True
+
+# Flag to enable/disable custom dashboards on single performance page.
+ENABLE_CUSTOM_DASHBOARD_VIEW = False
 
 # Password complexity settings.
 # ===============================

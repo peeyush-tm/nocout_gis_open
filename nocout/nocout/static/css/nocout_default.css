@@ -534,6 +534,18 @@ iframe {
   margin-right: 5px;
   margin-top: 2.5px;
 }
+.zero_top_margin {
+  margin-top: 0px;
+}
+.birdeye_view_charts {
+  min-height: 220px;
+  max-height: 350px;
+  overflow-y: auto;
+  margin: 0px auto;
+}
+.charts_block tspan {
+  font-size: 10px !important;
+}
 
 
 /*New theme changes*/
@@ -561,7 +573,6 @@ iframe {
   background: linear-gradient(to bottom, rgba(247,247,247,0.65) 0%,rgba(246,246,246,0.65) 1%,rgba(211,211,211,0.65) 43%,rgba(206,206,206,0.65) 61%,rgba(247,247,247,0.65) 99%,rgba(247,247,247,0) 100%); /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6f7f7f7', endColorstr='#00f7f7f7',GradientType=0 ); /* IE6-8 */
 }
-
 
 .border_right {
   border-right: 1px inset #d4d4d4;

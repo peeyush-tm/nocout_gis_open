@@ -240,7 +240,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[1],
+					styles 	  : typeof gmap_styles_array != 'undefined' ? gmap_styles_array[1] : {},
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
@@ -252,7 +252,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[1],
+					styles 	  : typeof gmap_styles_array != 'undefined' ? gmap_styles_array[1] : {},
 					mapTypeControlOptions: {
 						mapTypeIds: [
 							google.maps.MapTypeId.ROADMAP,
@@ -409,7 +409,7 @@ function devicePlottingClass_gmap() {
 								var polylines = allMarkersObject_gmap['path'],
 									polygons = allMarkersObject_gmap['sector_polygon'],
 									ss_markers = allMarkersObject_gmap['sub_station'],
-									show_ss_len = $("#showAllSS:checked").length;
+									show_ss_len = $("#showAllSS").length > 0 ? $("#showAllSS:checked").length : 1;
 
 								// Hide polylines if shown
 								for(key in polylines) {
@@ -1514,6 +1514,7 @@ function devicePlottingClass_gmap() {
 			'sector_polygon': {},
 			'backhaul' : {}
 		};
+		all_devices_loki_db.data = [];
 
 		/*Clear master marker cluster objects*/
 		if(masterClusterInstance) {
@@ -1637,7 +1638,11 @@ function devicePlottingClass_gmap() {
 			var start_date_plot = new Date();
 		}
 
-		var hide_flag = !$("#show_hide_label")[0].checked;
+		try {
+			var hide_flag = !$("#show_hide_label")[0].checked;
+		} catch(e) {
+			var hide_flag = false;
+		}
 
 		for(var i=bs_ss_devices.length;i--;) {
 
@@ -2301,7 +2306,7 @@ function devicePlottingClass_gmap() {
 			var start_date_line_inBound = new Date();
 		}
 
-		var isLineChecked = $("#showConnLines:checked").length;
+		var isLineChecked = $("#showConnLines").length > 0 ? $("#showConnLines:checked").length : 1;
 		/*checked case*/
 		if(isLineChecked > 0) {
 			/*Loop for polylines*/
@@ -2363,7 +2368,7 @@ function devicePlottingClass_gmap() {
 			var start_date_ss_inBound = new Date();
 		}
 
-		var isSSChecked = $("#showAllSS:checked").length;
+		var isSSChecked = $("#showAllSS").length > 0 ? $("#showAllSS:checked").length : 1;
 
 		/*Checked case*/
 		if(isSSChecked > 0) {
@@ -2528,10 +2533,14 @@ function devicePlottingClass_gmap() {
 			var start_date_toggle_line = new Date();
 		}
 
-		var isLineChecked = $("#showConnLines:checked").length;
+		var isLineChecked = $("#showConnLines").length > 0 ? $("#showConnLines:checked").length : 1;
 
 		// Update Cookie Value
-		$.cookie("isLineChecked", $("#showConnLines")[0].checked, {path: '/', secure : true});
+		if ($("#showConnLines").length > 0) {
+			$.cookie("isLineChecked", $("#showConnLines")[0].checked, {path: '/', secure : true});
+		} else {
+			$.cookie("isLineChecked", true, {path: '/', secure : true});
+		}
 
 		var current_lines = ssLinkArray_filtered;
 
@@ -2578,10 +2587,14 @@ function devicePlottingClass_gmap() {
 			var start_date_toggle_ss = new Date();
 		}
 
-		var isSSChecked = $("#showAllSS:checked").length;
+		var isSSChecked = $("#showAllSS").length > 0 ? $("#showAllSS:checked").length : 1;
 
 		// Update Cookie Value
-		$.cookie("isSSChecked", $("#showAllSS")[0].checked, {path: '/', secure : true});
+		if ($("#showAllSS").length > 0) {
+			$.cookie("isSSChecked", $("#showAllSS")[0].checked, {path: '/', secure : true});
+		} else {
+			$.cookie("isSSChecked", true, {path: '/', secure : true});
+		}
 
 		/*Unchecked case*/
 		if(isSSChecked == 0) {

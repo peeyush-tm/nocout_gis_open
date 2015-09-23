@@ -34,7 +34,11 @@ var green_color = "#468847",
                                background: -ms-linear-gradient(left, xxxx 0%,yyyy 100%); \
                                background: linear-gradient(to right, xxxx 0%,yyyy 100%); \
                                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr="xxxx", endColorstr="yyyy",GradientType=1 );',
-    default_legends_bg = '#343435';
+    default_legends_bg = '#343435',
+    parallel_calling_len = 3,
+    birdeye_start_counter = 0,
+    birdeye_end_counter = parallel_calling_len,
+    is_mouse_out = true;
 
 
 /**
@@ -262,8 +266,10 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         excel_columns = [];
 
     // Destroy Datatable
-    nocout_destroyDataTable('other_perf_table');
-    nocout_destroyDataTable('perf_data_table');
+    if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') == -1) {
+        nocout_destroyDataTable('other_perf_table');
+        nocout_destroyDataTable('perf_data_table');
+    }
 
     table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
@@ -273,7 +279,6 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     }
     table_string += '</thead></table>';
     /*Table header creation end*/
-
 
     if (service_id) {
         $('#' + service_id + '_chart').html(table_string);
@@ -316,11 +321,15 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
-    var data_in_table = "<table id='" + service_id + '_' + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
+    var data_in_table = "<table id='" + service_id + '_' + table_id + "' \
+                         class='datatable table table-striped table-bordered table-hover'><thead>",
+        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
 
-    // Destroy Datatable
-    nocout_destroyDataTable('other_perf_table');
-    nocout_destroyDataTable('perf_data_table');
+    if (!is_birdeye_view) {
+        // Destroy Datatable
+        nocout_destroyDataTable('other_perf_table');
+        nocout_destroyDataTable('perf_data_table');
+    }
 
     /*Table header creation end*/
     if (service_id) {
@@ -408,7 +417,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         applied_adv_filter = '[]';
 
     // append 'advance_filter' GET param to url if exists.
-    if ($('#'+service_id+'_tab').attr('data_url')) {
+    if ($('#'+service_id+'_tab').attr('data_url') && !is_birdeye_view) {
         var filtering_url = $('#'+service_id+'_tab').attr('data_url');
         applied_adv_filter = filtering_url.indexOf('advance_filter=') ? filtering_url.split('advance_filter=')[1] : '[]';
         
@@ -425,7 +434,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
     for(var i=0;i<get_param_string.length;i++) {
         var splitted_string = get_param_string[i].split("=");
-        if (splitted_string[1] != undefined) {
+        if (splitted_string[1] != 'undefined') {
             if (i == get_param_string.length-1) {
                 get_param_data += "'" + splitted_string[0] + "':'" + splitted_string[1] + "'";
             } else {
@@ -434,9 +443,8 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         }
     }
     
-    if ($(".top_perf_tabs").length > 0) {
-        var 
-            top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
+    if ($(".top_perf_tabs").length > 0 && !is_birdeye_view) {
+        var top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
             left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
             top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
             left_tab_txt = $.trim($("#" +left_tab_id).text()),
@@ -707,12 +715,14 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 year: '%Y'
             }
         },
-        yAxis: {
-            title : {
-                text : chartConfig.valuetext
-            },
-            reversed : is_y_inverted
-        },
+        yAxis: [
+            {
+                title : {
+                    text : chartConfig.valuetext
+                },
+                reversed : is_y_inverted
+            }
+        ],
         plotOptions : {
             column : {
                 borderWidth : 0,
@@ -731,8 +741,18 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             chart_options["yAxis"]["max"] = 100;
             chart_options["plotOptions"]["series"] = {stacking: 'normal'};
         }
+
+        if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1) {
+            chart_options["exporting"] = {};
+            chart_options["exporting"]["enabled"] = false;
+        }
     } catch(e) {
         // pass
+        // console.error(e);
+    }
+
+    if ($('#'+dom_id+'_chart').hasClass('charts_block')) {
+        $('#'+dom_id+'_chart').attr('style', 'height:250px;');
     }
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
@@ -1698,4 +1718,218 @@ function calculateAverageValue(resultset, key) {
     }
 
     return (total_val/resultset.length).toFixed(2);
+}
+
+function populateDeviceTopology() {
+
+    $.ajax({
+        url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
+        type : 'GET',
+        success : function(response) {
+            if (typeof networkMapInstance != 'undefined') {
+                networkMapInstance.clearStateCounters();
+                /*Reset markers & polyline*/
+                networkMapInstance.clearGmapElements();
+                /*Reset all elements global variables */
+                networkMapInstance.clearMapMarkers()
+                /*Reset Global Variables & Filters*/
+                networkMapInstance.resetVariables_gmap();
+            } else {
+                /*Create a instance of gmap_devicePlottingLib*/
+                networkMapInstance = new devicePlottingClass_gmap();
+                /*Call the function to create map*/
+                networkMapInstance.createMap("perf_topo_map_container");
+            }
+
+            var result = response;
+
+            if (typeof result == 'string') {
+                result = JSON.parse(result);
+            }
+            // 
+            networkMapInstance.showStateWiseData_gmap([result]);
+
+            // fit gmap bounds to base station position
+            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(result.data.lat,result.data.lon)));
+
+            var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
+            
+                // set the zoom level to 14 if it is greater
+                if (mapInstance.getZoom() > 14) {
+                    mapInstance.setZoom(14);
+                }
+                
+                google.maps.event.removeListener(listener);
+                searchResultData = [result];
+            });
+            
+        },
+        error : function(err) {
+            // console.log(err.statusText);
+        },
+        complete : function() {
+            // Hide loading spinner
+            hideSpinner();
+        }
+    });
+}
+
+function initBirdEyeView(container_id) {
+
+    if (typeof all_services_list != 'undefined' && all_services_list.length) {
+        // if birdeye view HTML is not created then first create it.
+        if($.trim($('#birdeye_container').html()).length == 0) {
+            createBirdEyeViewHTML(container_id);
+        }
+
+        populateBirdViewCharts(birdeye_start_counter, birdeye_end_counter);
+    } else {
+        return true;
+    }
+
+    hideSpinner();
+}
+
+function populateBirdViewCharts(start, end) {
+    for (var i=start;i<end;i++) {
+        if (all_services_list[i]) {
+            var api_url = perf_base_url,
+                srv_name = all_services_list[i].id;
+            
+            // Update url with actual service name
+            api_url = api_url.replace('srv_name', srv_name);
+
+            // call function to fetch perf data for this service
+            perfInstance.getServiceData(api_url, srv_name, current_device);
+            if (!$('#' + srv_name + '_heading .fa-spinner').hasClass('hide')) {
+                $('#' + srv_name + '_heading .fa-spinner').addClass('hide');
+            }
+        }
+    }
+
+    if (end < all_services_list.length - 1) {
+        populateBirdViewCharts(end, end * 2)
+    }
+}
+
+
+function createBirdEyeViewHTML(container_id) {
+
+    var birdeye_html = '';
+
+    for(var i=0;i<all_services_list.length;i++) {
+
+        if (all_services_list[i]['id'] == 'ping') {
+            birdeye_html += '<div class="col-md-12 row">';
+        } else {
+            var float_class = '';
+            if (i % 2 == 0) {
+                float_class = 'pull-right';
+            }
+
+            birdeye_html += '<div class="col-md-6 ' + float_class + ' row">';
+        }
+        birdeye_html += '<h4 class="zero_top_margin" id="' + all_services_list[i]['id'] + '_heading"> \
+                         ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>'
+                         
+        birdeye_html += '<div class="birdeye_view_charts">';
+        birdeye_html += '<div id="' + all_services_list[i]['id'] + '_chart" class="charts_block"></div>';
+        birdeye_html += '<div id="' + all_services_list[i]['id'] + '_bottom_table"></div>';
+        birdeye_html += '<div class="clearfix"></div>';
+        birdeye_html += '</div>';
+        birdeye_html += '</div>';
+
+        if (i % 2 == 0 || i == all_services_list.length - 1) {
+            birdeye_html += '<div class="clearfix"></div><hr/>';
+        }
+    }
+
+    $('#' + container_id).html(birdeye_html);
+}
+
+/**
+ * This function show/hide paging functionality of tabs if they exceed from parent's width
+ * @method createTabsPaging
+ */
+function createTabsPaging() {
+    var width_object = getParentChildWidth('ul.top_perf_tabs', 'li');
+
+    if (width_object.self_width > width_object.parent_width) {
+        if($('.paging_arrow').hasClass('hide')) {
+            $('.paging_arrow').removeClass('hide');
+        }
+    } else {
+        $('ul.top_perf_tabs').parent('.header-tabs').attr('style', 'width:100%;')
+    }
+}
+
+/**
+ * This function return given element with as per its child & its parent n super parent width
+ * @method getParentChildWidth
+ * @param elem {String}, It contains the element dom selector
+ * @param child_tag {String}, It contains the child tag name
+ */
+function getParentChildWidth(elem, child_tag) {
+    var self_width = 0;
+    
+    for (var i=0;i<$(elem + ' ' + child_tag).length;i++) {
+        self_width += $($(elem + ' ' + child_tag)[i]).width();
+    }
+
+    var width_obj = {
+            'self_width' : self_width,
+            'parent_width' : $(elem).parent().width(),
+            'super_parent_width' : $(elem).parent().parent().width()
+        };
+
+    return width_obj;
+}
+
+/**
+ * This event triggers when mouse over/out from tab paging arrows
+ * @event hover
+ */
+$('.paging_arrow').hover(
+    function() {
+        is_mouse_out = false;
+        paginateTab(this);
+    },
+    function() {
+        is_mouse_out = true;
+    }
+);
+
+/**
+ * This function moves tabs in 'right' or 'left' direction as per the given param
+ * @method paginateTab
+ * @param self {Object}, It contains the current object of hover event
+ */
+function paginateTab(self) {
+    var width_object = getParentChildWidth('ul.top_perf_tabs', 'li'),
+        width_diff = (width_object.self_width - width_object.parent_width) + (width_object.super_parent_width - width_object.parent_width) + 20,
+        margin_left = $.trim($('ul.top_perf_tabs')[0].style.marginLeft);
+    
+    if (margin_left.indexOf('px') > -1) {
+        margin_left = Number(margin_left.split('px')[0]);
+    }
+
+    if ($(self).hasClass('right_arrow')) {
+        if (margin_left < width_diff && margin_left != 0) {
+            $('ul.top_perf_tabs').css('margin-left', margin_left + 10);
+        }
+    } else {
+        var m_left = margin_left;
+        if (!isNaN(Number(String(margin_left).split('-')[1]))) {
+            m_left = Number(String(margin_left).split('-')[1]);
+        }
+        if (m_left < width_diff) {
+            $('ul.top_perf_tabs').css('margin-left', margin_left -10);
+        }
+    }
+
+    setTimeout(function() {
+        if (!is_mouse_out) {
+            paginateTab(self);
+        }
+    }, 100);
 }

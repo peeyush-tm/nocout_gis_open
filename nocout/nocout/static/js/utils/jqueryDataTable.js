@@ -115,9 +115,13 @@ function ourDataTableWidget() {
                     }
                 }
 
-                // Add search button near search txt box
-                if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
-                    $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                try {
+                    // Add search button near search txt box
+                    if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
+                        $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                    }
+                } catch(e) {
+                    // console.error(e);
                 }
                 // Append the advance_filter stringified object to download btn
                 $('#' + tableId + '_download_btn').attr('advance_filter', advance_filter);
