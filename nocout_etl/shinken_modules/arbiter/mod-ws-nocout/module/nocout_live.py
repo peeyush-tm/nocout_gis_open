@@ -7,15 +7,14 @@ on a set of devices
 '''
 
 from ast import literal_eval
+import memcache
 from multiprocessing import Process, Queue
 import re
 import subprocess
 
 from shinken.log import logger
 
-# TODO: Fetch inventory info from memc
 # TODO: Get check mk related vars properly
-
 check_mk_bin = '/omd/dev_slave/slave_2/bin/cmk'
 
 
@@ -165,14 +164,17 @@ def get_current_value(
 			'rad5k_ss_cell_radius_invent',
 			'rad5k_ss_cmd_rx_pwr_invent'
 			]
+
 	ss_device, ss_mac, bs_device = None, None, None
 	old_device = device
 	filtered_ss_data = []
 	ss_host_name = None
 	ss_mac_list, bs_device_list = [], []
+
 	# Data sources for ping service
 	pl, rta = None, None
 	ip = None
+
 	for service in service_list:
 		device = old_device
 		old_service = service
@@ -194,8 +196,8 @@ def get_current_value(
 		if service.lower() == 'ping':
 			# Get the device ip from device name
 			 try:
-			 	 # TODO: get ip from memcached
-			 	 ip = get_parent(host=device, db=False, get_ip=True)
+			 	 memc = memcache.Client(['10.133.19.165:11211'])
+			 	 ip = memc.get(device)
 			 except Exception, e:
 			 	 logger.info('Error in getting ip from : ')
 			 cmd = 'ping -w 2 -c 1 %s' % ip
@@ -209,13 +211,20 @@ def get_current_value(
 			if old_service in interface_services:
 				data_value = []
 			try:
-				check_output = filter(lambda t: 'cambium_topology_discover' in t, check_output.split('\n'))
+				check_output = filter(
+						lambda t: 'cambium_topology_discover' in t, check_output.split('\n')
+						)
 				check_output = check_output[0].split('- ')[1].split(' ')
+
 				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
-					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t, check_output)
+					filtered_ss_output = filter(
+							lambda t:  ss_mac_entry.lower() in t, check_output
+							)
 					filtered_ss_data.extend(filtered_ss_output)
+
 				logger.info('filtered_ss_data: {0}'.format(filtered_ss_data))
 				index = cambium_services.index(old_service)
+
 				for entry in filtered_ss_data:
 					data_value = entry.split('/')[index+2]
 					cal_ss_mac = entry.split('/')[1]
@@ -225,30 +234,39 @@ def get_current_value(
 							break
 					data_dict = {ss_host_name:data_value}
 					q.put(data_dict)
+
 			except Exception, e:
 			 	logger.error('Empty check_output: {0}'.format(e))
+
 				for host_name,mac_value in ss_name_mac_mapping.items():
 					ss_host_name = host_name
 					data_dict = {ss_host_name: []}
 			 		q.put(data_dict)
 			 		return
+
 		elif str(old_service) in wimax_services:
 			filtered_ss_data =[]
 			try:
 				data_value = []	
-				check_output = filter(lambda t: 'wimax_topology' in t, check_output.split('\n'))
+				check_output = filter(
+						lambda t: 'wimax_topology' in t, check_output.split('\n')
+						)
 				check_output = check_output[0].split('- ')[1].split(' ')
 				#logger.debug('Final check_output : ' + pformat(check_output))
+
 				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
-					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t,check_output)
+					filtered_ss_output = filter(
+							lambda t:  ss_mac_entry.lower() in t,check_output
+							)
 					filtered_ss_data.extend(filtered_ss_output)
+
 				index = wimax_services.index(old_service)
 				#logger.debug('filterred_ss_data: ' + pformat(filtered_ss_data))
+
 				for entry in filtered_ss_data:
 					value = entry.split('=')[1].split(',')[index]
 					data_value.append(value)
 					cal_ss_mac = entry.split('=')[0]
-					# MARK
 					for host_name,mac_value in ss_name_mac_mapping.items():
 						if mac_value ==  cal_ss_mac.lower():
 							ss_host_name = host_name
@@ -267,7 +285,9 @@ def get_current_value(
 		elif str(old_service) in wimax_ss_port_service:
 			try:
 				data_value =  []
-				check_output =  filter(lambda t: 'wimax_ss_port_params' in t, check_output.split('\n'))
+				check_output =  filter(
+						lambda t: 'wimax_ss_port_params' in t, check_output.split('\n')
+						)
 				check_output = check_output[0].split('- ')[1].split(',')
 				index =  wimax_ss_port_service.index(old_service)
 				value = check_output[index].split('=')[1]
@@ -277,19 +297,23 @@ def get_current_value(
 				q.put(data_dict)
 			except Exception as exc:
 				logger.error('Empty check_output: {0}'.format(exc))
-				data_dict = {old_device_name:[]}
+				data_dict = {old_device: []}
 				data_value = []
 				q.put(data_dict)
 				return	
 		elif str(old_service) in rad5k_services:
 			data_value = []
 			try:
-				check_output = filter(lambda t: 'rad5k_topology_discover' in t, check_output.split('\n'))
+				check_output = filter(
+						lambda t: 'rad5k_topology_discover' in t, check_output.split('\n')
+						)
 				check_output = check_output[0].split('- ')[1].split(' ')
 				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
-					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t, check_output)
+					filtered_ss_output = filter(
+							lambda t:  ss_mac_entry.lower() in t, check_output
+							)
 					filtered_ss_data.extend(filtered_ss_output)
-				logger.info('filtered_ss_data: ' + pformat(filtered_ss_data))
+				logger.info('filtered_ss_data: {0}'.format(filtered_ss_data))
 				index = rad5k_services.index(old_service)
 				for entry in filtered_ss_data:
 					data_entry = entry.split('=')[1]
@@ -302,7 +326,7 @@ def get_current_value(
 					data_dict = {ss_host_name:data_value}
 					q.put(data_dict)
 			except Exception, e:
-			 	logger.error('Empty check_output: ' + pformat(e))
+			 	logger.error('Empty check_output: {0}'.format(e))
 				for host_name,mac_value in ss_name_mac_mapping.items():
 					ss_host_name = host_name
 					data_dict = {ss_host_name: []}
@@ -310,7 +334,7 @@ def get_current_value(
 			 		return
 		elif old_service.lower() == 'ping':
 			check_output = check_output.split('\n')[-3:]
-			logger.debug('check_output after split: ' + pformat(check_output))
+			logger.debug('check_output after split: {0}'.format(check_output))
 			pl_info, rta_info = check_output[0], check_output[1]
 			if pl_info:
 				pl = pl_info.split(',')[-2].split()[0]
@@ -333,6 +357,7 @@ def get_current_value(
 			if ds_current_states:
 				ds_values = ds_current_states[0].split(' ')
 				logger.info('ds_values : %s' % ds_values)
+
 				for ds in data_source_list:
 					# Parse the output to get current value for that data source
 					desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
@@ -341,6 +366,7 @@ def get_current_value(
 				 	#logger.debug('data_values:' + pformat(data_values))
 				 	data_dict = {old_device: data_values}
 				 	q.put(data_dict)
+
 		 	else:
 				data_dict = {old_device: []}
 			 	q.put(data_dict)

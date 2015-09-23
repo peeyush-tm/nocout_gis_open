@@ -14,10 +14,10 @@ import time
 from shinken.basemodule import BaseModule
 from shinken.external_command import ExternalCommand
 from shinken.log import logger
-from shinken.webui.bottlewebui import (Bottle, run, static_file, 
-		view, route, request, response, abort, check_auth, parse_auth)
+from shinken.webui.bottlewebui import (run, route, request, 
+		response, abort, check_auth, parse_auth)
 
-from nocout_live_bulk import *
+from nocout_live import main as live_poll_main
 
 properties = {
 	'daemons': ['arbiter', 'receiver'],
@@ -321,11 +321,38 @@ def prepare_tar(out):
 
 
 def do_live_poll():
-	""" Call appropriate live poll functions"""
+	"""Calls live poll module"""
 
 	check_auth()
 
 	res = {}
+	status_code = 200
+
+	# get poll params from request obj
+	try:
+		req_params = request.json
+	except Exception as exc:
+		status_code = 500
+		logger.error('[Ws-Nocout] Exception in do_live_poll: {0}'.format(
+			exc))
+	else:
+		device_list = req_params.get('device_list')
+		service_list = req_params.get('service_list')
+		bs_ss_map = req_params.get(
+				'bs_name_ss_mac_mapping')
+		ss_map = req_params.get(
+				'ss_name_mac_mapping')
+		ds = req_params.get(
+				'ds')
+		res = live_poll_main(
+				device_list=device_list,
+				service_list=service_list,
+				bs_name_ss_mac_mapping=bs_ss_map,
+				ss_name_mac_mapping=ss_map,
+				ds=ds
+				)
+
+	return response(body=res, status_code=status_code)
 
 
 class WsNocout(BaseModule):
