@@ -1098,3 +1098,6 @@ select option:hover
   box-shadow: none;
   border:none;
 }
+.text-ttpl {
+  color: #ca1e25;
+}

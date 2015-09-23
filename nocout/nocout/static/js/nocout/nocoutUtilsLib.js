@@ -37,7 +37,8 @@ var green_color = "#468847",
     default_legends_bg = '#343435',
     parallel_calling_len = 3,
     birdeye_start_counter = 0,
-    birdeye_end_counter = parallel_calling_len;
+    birdeye_end_counter = parallel_calling_len,
+    is_mouse_out = true;
 
 
 /**
@@ -1844,4 +1845,91 @@ function createBirdEyeViewHTML(container_id) {
     }
 
     $('#' + container_id).html(birdeye_html);
+}
+
+/**
+ * This function show/hide paging functionality of tabs if they exceed from parent's width
+ * @method createTabsPaging
+ */
+function createTabsPaging() {
+    var width_object = getParentChildWidth('ul.top_perf_tabs', 'li');
+
+    if (width_object.self_width > width_object.parent_width) {
+        if($('.paging_arrow').hasClass('hide')) {
+            $('.paging_arrow').removeClass('hide');
+        }
+    } else {
+        $('ul.top_perf_tabs').parent('.header-tabs').attr('style', 'width:100%;')
+    }
+}
+
+/**
+ * This function return given element with as per its child & its parent n super parent width
+ * @method getParentChildWidth
+ * @param elem {String}, It contains the element dom selector
+ * @param child_tag {String}, It contains the child tag name
+ */
+function getParentChildWidth(elem, child_tag) {
+    var self_width = 0;
+    
+    for (var i=0;i<$(elem + ' ' + child_tag).length;i++) {
+        self_width += $($(elem + ' ' + child_tag)[i]).width();
+    }
+
+    var width_obj = {
+            'self_width' : self_width,
+            'parent_width' : $(elem).parent().width(),
+            'super_parent_width' : $(elem).parent().parent().width()
+        };
+
+    return width_obj;
+}
+
+/**
+ * This event triggers when mouse over/out from tab paging arrows
+ * @event hover
+ */
+$('.paging_arrow').hover(
+    function() {
+        is_mouse_out = false;
+        paginateTab(this);
+    },
+    function() {
+        is_mouse_out = true;
+    }
+);
+
+/**
+ * This function moves tabs in 'right' or 'left' direction as per the given param
+ * @method paginateTab
+ * @param self {Object}, It contains the current object of hover event
+ */
+function paginateTab(self) {
+    var width_object = getParentChildWidth('ul.top_perf_tabs', 'li'),
+        width_diff = (width_object.self_width - width_object.parent_width) + (width_object.super_parent_width - width_object.parent_width) + 20,
+        margin_left = $.trim($('ul.top_perf_tabs')[0].style.marginLeft);
+    
+    if (margin_left.indexOf('px') > -1) {
+        margin_left = Number(margin_left.split('px')[0]);
+    }
+
+    if ($(self).hasClass('right_arrow')) {
+        if (margin_left < width_diff && margin_left != 0) {
+            $('ul.top_perf_tabs').css('margin-left', margin_left + 10);
+        }
+    } else {
+        var m_left = margin_left;
+        if (!isNaN(Number(String(margin_left).split('-')[1]))) {
+            m_left = Number(String(margin_left).split('-')[1]);
+        }
+        if (m_left < width_diff) {
+            $('ul.top_perf_tabs').css('margin-left', margin_left -10);
+        }
+    }
+
+    setTimeout(function() {
+        if (!is_mouse_out) {
+            paginateTab(self);
+        }
+    }, 100);
 }

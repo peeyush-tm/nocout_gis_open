@@ -34,6 +34,15 @@
 
 {% block content %}
     <style>
+        .box .header-tabs .top_perf_tabs > li, .box .header-tabs .top_perf_tabs > li > a {
+            margin: 0px;
+        }
+        .box .header-tabs .top_perf_tabs > li.active a {
+            color: #ca1e25;
+        }
+        .box .header-tabs .top_perf_tabs > li {
+            padding: 0px 5px;
+        }
         .perfContainerBlock .box-title .pull-right .list-inline > li {
             max-width: 200px !important;
         }
@@ -56,7 +65,7 @@
         .top_perf_tabs {
             top: 0px !important;
             float: left;
-            padding-left: 15px;
+            padding-left: 0px;
             margin-right: 0px !important;
         }
         .box .header-tabs .top_perf_tabs > li > a {
@@ -70,15 +79,15 @@
         }
         .paging_arrow {
             position: absolute;
-            left: 0px;
-            top: 0px;
+            left: 12px;
+            top: 12px;
             font-size: 30px;
             cursor: pointer;
             z-index: 9999;
         }
         .right_arrow {
-            right: 0px;
-            top: 0px;
+            right: 10px;
+            left: auto;
         }
         #perf_topo_map_container {
             height: 450px;
@@ -227,16 +236,59 @@
             <!--Filters Block End-->
             <div class="clearfix"></div>
         </div>
-        <div class='box-body'>
+        <div class='box-body' style="position: relative;">
             <!-- <div id="tableContainer" class="box-body"> -->
-            <div class="tabbable header-tabs" style="position: relative;">
-                <!-- <i class="fa fa-arrow-circle-left text-primary paging_arrow">&nbsp;</i> -->
+            <i class="fa fa-arrow-circle-left text-ttpl paging_arrow hide">&nbsp;</i>
+            <div class="tabbable header-tabs" style="width: 94%; margin:0px auto;">
                 <ul class="nav nav-tabs top_perf_tabs">
-                    {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
+                    <li class="active">
+                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Network Performance &nbsp;</span>
+                        </a>
+                    </li>
                     <li>
-                        <a href="#custom_dashboard_tab" title="Custom Dashboards" id="custom_dashboard" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Custom Dashboards &nbsp;</span>
+                        <a href="#service_perf_tab" id="service_perf" title="Service Performance" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Performance &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Status &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Inventory Status &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Availability &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">IA Table &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Utilization &nbsp;</span>
+                        </a>
+                    </li>
+
+                    {% if settings.ENABLE_TOPO_VIEW %}
+                    <li>
+                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
                         </a>
                     </li>
                     {% endif %}
@@ -244,67 +296,24 @@
                     {% if settings.ENABLE_BIRDEYE_VIEW %}
                     <li>
                         <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
                             <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
                         </a>
                     </li>
                     {% endif %}
 
-                    {% if settings.ENABLE_TOPO_VIEW %}
+                    {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
                     <li>
-                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
+                        <a href="#custom_dashboard_tab" title="Custom Dashboards" id="custom_dashboard" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Custom Dashboards &nbsp;</span>
                         </a>
                     </li>
                     {% endif %}
-
-                    <li>
-                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Utilization &nbsp;</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">IA Table &nbsp;</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Availability &nbsp;</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Inventory Status &nbsp;</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Status &nbsp;</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#service_perf_tab" id="service_perf" title="Service Perf" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Perf &nbsp;</span>
-                        </a>
-                    </li>
-                    <li class="active">
-                        <a href="#network_perf_tab" id="network_perf" title="Network Perf" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Network Perf &nbsp;</span>
-                        </a>
-                    </li>
                 </ul>
-                <!-- <i class="fa fa-arrow-circle-right text-primary right_arrow paging_arrow">&nbsp;</i> -->
                 <div class="clearfix"></div>
             </div>
+            <i class="fa fa-arrow-circle-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
             <div class="tab-content top_perf_tab_content">
                 <div class="tab-pane active" id="network_perf_tab">
                     <div class="panel panel-default inner_tab_container">
@@ -624,6 +633,8 @@
 
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);
+
+                createTabsPaging();
             }
 
             // Add 'service_view_type' GET param to API url
