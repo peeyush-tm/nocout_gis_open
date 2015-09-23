@@ -120,9 +120,9 @@ def check_rad5k_ul_bbe_invent(item, params, info):
         		if ss_serial_number:
                 		ul_bbe =live_query_for_rad5k_ss_ul_bbe(ss_serial_number)
                 		if ul_bbe is not None:
-                        		if int(ul_bbe) > warn and int(ul_bbe) < crit:
+                        		if int(ul_bbe) >= warn and int(ul_bbe) < crit:
                                 		state = 1
-	                        	elif int(ul_bbe) > crit:
+	                        	elif int(ul_bbe) >= crit:
         	                        	state = 2
                 	        	elif int(ul_bbe) == 0:
                         	        	state = 0
