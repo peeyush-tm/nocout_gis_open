@@ -86,7 +86,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	multiple_ds_services = []
 	interface_oriented_service= ['cambium_ss_connected_bs_ip_invent']
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
-	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n"+\
+	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output perf_data\n"+\
                             "Filter: service_description ~ _invent\n"+\
                             "OutputFormat: json\n" 
 	query_output = json.loads(get_from_socket(site,query).strip())
@@ -99,7 +99,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	unknown_svc_data = filter(lambda x: x[4] == 3,query_output)
 	unknwn_state_svc_data = filter(lambda x: x[0] not in s_device_down_list,unknown_svc_data)
 	unknwn_state_svc_data  = calculate_avg_value(unknwn_state_svc_data,db)
-
+	#print "Query output", query_output
 	for entry in query_output:
 		if str(entry[0]) in s_device_down_list:
 			continue
@@ -132,7 +132,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		
 		current_time = int(time.time())
 		plugin_output = plugin_output.split(' ')
-		if len(plugin_output) > 1 and 'radwin' not in service:
+		if len(plugin_output) > 1 and 'radwin' not in service and 'rad5k' not in service:
 			try:
 				ds_list = map(lambda x: x.split("=")[0],plugin_output)
 				value_list = map(lambda x: x.split("=")[1],plugin_output)
@@ -164,6 +164,32 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				invent_data_list.append(invent_service_dict)
 				matching_criteria ={}
 				invent_service_dict = {}
+		elif ('rad5k' in service):
+			warning_t=0
+			critical_t=0
+			perf_data1 =  get_threshold(entry[6])
+			ds_l=perf_data1.keys()
+			ds = ds_l[0]
+			perf_data2 = perf_data1[ds]
+			value = perf_data2.get('cur','')
+			if perf_data2['war'] == '':
+				warning_t=0
+			else :
+				warning_t= perf_data2.get('war',0)
+			if perf_data2['cric'] == '':
+				critical_t=0
+			else :
+				critical_t= perf_data2.get('cric',0)
+			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host,
+                                        service_name=service,current_value=value,min_value=0,max_value=0,avg_value=0,
+                                        data_source=ds,severity=service_state,site_name=site,warning_threshold=warning_t,
+                                        critical_threshold=critical_t,ip_address=host_ip)
+			matching_criteria.update({'device_name':host,'service_name':service,'data_source':ds})
+			mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+			invent_data_list.append(invent_service_dict)
+			matching_criteria ={}
+			invent_service_dict = {}
+			
 		else:
 			try:
 				if plugin_output[0] == '' or plugin_output[0] == 'unknown_value':
@@ -219,23 +245,24 @@ def get_from_socket(site_name, query):
 
 
 def calculate_avg_value(unknwn_state_svc_data,db):
-	end_time = datetime.now()
-	start_time = end_time - timedelta(days=10)
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=10)
+
 	start_epoch = int(time.mktime(start_time.timetuple()))
 	end_epoch = int(time.mktime(end_time.timetuple()))
-	host_svc_ds_dict ={}
-	svc_host_key={}
-	host_list = []
-	avg = None
-	service_list = []
+        host_svc_ds_dict ={}
+        svc_host_key={}
+        host_list = []
+        avg = None
+        service_list = []
 	#print unknwn_state_svc_data
-	for doc in unknwn_state_svc_data:
-		host_list.append(str(doc[0]))
-		service_list.append(str(doc[3]))
+        for doc in unknwn_state_svc_data:
+                host_list.append(str(doc[0]))
+                service_list.append(str(doc[3]))
 	host_list = list(set(host_list))
 	service_list = list(set(service_list))
 	#print unknwn_state_svc_data
-	query_results = db.nocout_inventory_service_perf_data.aggregate([
+        query_results = db.nocout_inventory_service_perf_data.aggregate([
         {
          "$match" :{"device_name": {"$in": host_list},"service_name":{"$in": service_list},"sys_timestamp":{"$gte":start_epoch,"$lte":end_epoch} }
 
@@ -271,7 +298,32 @@ def calculate_avg_value(unknwn_state_svc_data,db):
         #print host_svc_ds_dict
         return host_svc_ds_dict
 
-
+def get_threshold(perf_data):
+	threshold_values = {}
+	if not len(perf_data):
+		return threshold_values
+	for param in perf_data.split(" "):
+		param = param.strip("['\n', ' ']")
+		if param.partition('=')[2]:
+			if ';' in param.split("=")[1]:
+				threshold_values[param.split("=")[0]] = {
+                	"war": re.sub('ms', '', param.split("=")[1].split(";")[1]),
+                	"cric": re.sub('ms', '', param.split("=")[1].split(";")[2]),
+                	"cur": re.sub('ms', '', param.split("=")[1].split(";")[0])
+            		}
+			else:
+				threshold_values[param.split("=")[0]] = {
+                	"war": None,
+                	"cric": None,
+                	"cur": re.sub('ms', '', param.split("=")[1].strip("\n"))
+            		}
+		else:
+			threshold_values[param.split("=")[0]] = {
+				"war": None,
+				"cric": None,
+				"cur": None
+                       		}
+	return threshold_values
 
 
 def inventory_perf_data_main():
