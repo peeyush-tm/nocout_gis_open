@@ -313,6 +313,7 @@ def rollback(old_tar_path):
 
 
 def prepare_tar(out):
+	os.chdir(check_mk_conf_path)
 	for entry in os.listdir('.'):
 		if entry.endswith('.mk'):
 			out.add(entry)
