@@ -1,12 +1,9 @@
 from mysql_connection import mysql_conn
 from pprint import pformat
 from operator import itemgetter
-from nocout_logger import nocout_log
 from collections import namedtuple
-from itertools import izip_longest
 from datetime import datetime
 
-logger = nocout_log()
 
 pmp_ss_bs_checks = ['cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 'cambium_ul_rssi']
 

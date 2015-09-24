@@ -107,6 +107,8 @@ from device.models import DeviceTechnology
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from sync import tasks
+
 logger = logging.getLogger(__name__)
 
 
@@ -3591,6 +3593,114 @@ class SyncDevicesInNMS(APIView):
                 device_sync_history.save()
                 result['message'] = "Failed to sync device and services."
                 logger.info(r.text)
+        else:
+            result['message'] = "Someone is already running sync."
+
+        return Response(result)
+
+
+class SyncDevicesInNMS_V2(APIView):
+    """
+    Sync devices configuration with nms core (version 2).
+
+    Allow: GET, HEAD, OPTIONS
+
+    URL: "http://127.0.0.1:8000/api/sync_devices_in_nms/"
+    """
+
+    def get(self, request, pk):
+        """
+        Processing API request.
+
+        Returns:
+            result (dict): Dictionary of device info.
+                        For e.g.,
+                             {
+                                'message': 'Configpushedtomysite,nocout_gis_slave',
+                                'data': {
+                                    'mode': 'sync'
+                                },
+                                'success': 1
+                             }
+
+        Note:
+            Sync status bits are as following:
+            0 => Pending
+            1 => Success
+            2 => Failed
+            3 => Deadlock Removal
+            4 => Table(device_device_devicesynchistory) has no entry
+        """
+        result = {
+        		'data': {},
+        		'success': 0,
+        		'message': 'Device sync started',
+        		'data': {
+        			'meta': ''
+        			}
+        		}
+
+        now = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+        # Get last status bit of 'DeviceSyncHistory'.
+        try:
+            last_sync_obj = DeviceSyncHistory.objects.latest('id')
+            # Last sync status.
+            last_syn_status = last_sync_obj.status
+        except Exception as e:
+            last_syn_status = 4
+            logger.error("DeviceSyncHistory table has no entry.")
+
+        if last_syn_status in [1, 2, 3, 4]:
+            # Current user's username.
+            username = request.user.username
+            # Create entry in 'device_devicesynchistory' table.
+            device_sync_history = DeviceSyncHistory()
+            device_sync_history.status = 0
+            device_sync_history.description = "Sync run at {}.".format(now)
+            device_sync_history.sync_by = username
+            device_sync_history.save()
+
+            ## Get 'device sync history' object.
+            #sync_obj_id = device_sync_history.id
+
+            #device_data = {
+            #    'mode': 'sync',
+            #    'sync_obj_id': sync_obj_id
+            #}
+
+            # Machines to which configuration needs to be pushed.
+            machines = Machine.objects.values(
+            		'machine_ip', 'siteinstance__web_service_port'
+            		)                          
+                                               
+            # call celery task to handle sync  functionality
+            tasks.sync_main.s(machines=machines).apply_async()
+                                               
+            # URL for nocout.py.              e
+            #url = "http://{}:{}@{}:{}/{}/chec k_mk/nocout.py".format(master_site.username,
+            #                                                         master_site.password,
+            #                                                         master_site.machine.machine_ip,
+            #                                                         master_site.web_service_port,
+            #                                                         master_site.name)
+                                               
+            # Sending post request to device app for syncing configuration to associated sites.
+            #r = requests.post(url, data=device_data)
+
+            #try:
+            #    # Converting raw string 'r' into dictionary.
+            #    response_dict = ast.literal_eval(r.text)
+            #    if r:
+            #        result['data'] = device_data
+            #        result['success'] = 1
+            #        result['message'] = response_dict['message'].capitalize()
+            #except Exception as e:
+            #    device_sync_history.status = 2
+            #    device_sync_history.description = "Sync failed to run at {}.".format(fulltime)
+            #    device_sync_history.completed_on = datetime.now()
+            #    device_sync_history.save()
+            #    result['message'] = "Failed to sync device and services."
+            #    logger.info(r.text)
         else:
             result['message'] = "Someone is already running sync."
 
