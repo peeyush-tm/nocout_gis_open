@@ -1514,7 +1514,10 @@ function devicePlottingClass_gmap() {
 			'sector_polygon': {},
 			'backhaul' : {}
 		};
-		all_devices_loki_db.data = [];
+
+		if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+			all_devices_loki_db.data = [];
+		}
 
 		/*Clear master marker cluster objects*/
 		if(masterClusterInstance) {
