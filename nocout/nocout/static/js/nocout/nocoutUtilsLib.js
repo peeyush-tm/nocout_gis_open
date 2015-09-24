@@ -322,8 +322,12 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
 function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
     var data_in_table = "<table id='" + service_id + '_' + table_id + "' \
-                         class='datatable table table-striped table-bordered table-hover'><thead>",
+                         class='datatable table table-striped table-bordered table-hover'><thead>";
+        is_birdeye_view = false;
+
+    if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
         is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
+    }
 
     if (!is_birdeye_view) {
         // Destroy Datatable
