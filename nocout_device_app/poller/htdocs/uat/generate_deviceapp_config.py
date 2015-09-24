@@ -5,6 +5,12 @@ from nocout_logger import nocout_log
 from collections import namedtuple
 from itertools import izip_longest
 from datetime import datetime
+import memcache
+import imp
+
+nocout_site_name= 'master_UA'
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
+
 
 logger = nocout_log()
 
@@ -65,6 +71,13 @@ t_interval_s_type = {
         }
 
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
+def MemcacheInterface():
+   try:
+      memc = memcache.Client(['10.133.19.165:11211','10.133.12.163:11211'], debug=1)
+   except :
+      memc =None
+   return memc
+
 
 
 def prepare_hosts_file():
@@ -692,8 +705,13 @@ def prepare_rules(devices):
 
     write_rules_file(settings_out, ac_chks1)
 
+def dict_to_redis_hset(r, hkey, dict_to_store):
+    return all([r.hset(hkey, k, v) for k, v in dict_to_store.items()])
 
 def get_settings():
+    query1 = """
+    select bh_configured_on_id, bh_port_name  from inventory_backhaul where bh_configured_on_id in( select device_name from device_device where device_type =12)
+    """ 
     global snmp_check_interval
     snmp_communities_db, snmp_ports_db = [], []
     data = []
@@ -711,6 +729,9 @@ def get_settings():
         cur = db.cursor()
         cur.execute(query)
         data = dict_rows(cur)
+        cur.execute(query1)
+        data1 = cur.fetchall()
+        # print "data1 is ", data1
         cur.close()
         #logger.error('data in get_settings: ' + pformat(data))
     except Exception, exp:
@@ -718,7 +739,25 @@ def get_settings():
         db.close()
     finally:
         db.close()
-
+    dict_switch_cisco = {'Fa0/1' :1, 'Fa0/2' : 2, 'Fa0/3' : 3, 'Fa0/4': 4,  'Fa0/5' : 5,   'Fa0/6' : 6,  'Fa0/7': 7 , 'Fa0/8' : 8,  'Fa0/9' : 9,  'Fa0/10' : 10,  'Fa0/11' : 11,  'Fa0/12': 12,  'Fa0/13': 13,  'Fa0/14': 14,   'Fa0/15': 15,  'Fa0/16' : 16,  'Fa0/17': 17,  'Fa0/18':18,  'Fa0/19': 19,  'Fa0/20': 20,  'Fa0/21' : 21, 'Fa0/22' : 22,  'Fa0/23': 23,  'Fa0/24' : 24, 'Gi0/1': 25, 'Gi0/2': 26} 
+    memc_obj1=db_ops_module.MemcacheInterface()
+    memc_obj =memc_obj1.memc_conn
+    #memc_obj= MemcacheInterface()
+    #redis_obj=db_ops_module.RedisInterface()
+    #rds_cnx=redis_obj.redis_cnx
+    dict_switch = dict(data1)
+    key = "master_ua" + "_switch"
+    #print  [rds_cnx.hset(key, k, v) for k, v in dict_switch.items()]
+    #print rds_cnx.hgetall(key)
+    #dict_to_redis_hset(rds_cnx, key, dict_switch)
+    memc_obj.set(key, dict_switch)
+    #list1 = []
+    #for each in data1:
+    #   list1.append(each[0])
+    #list2 = []
+    #[list2.append(dict_switch_cisco.get(each, " ")) for each in list1]
+    #list2 =  [x for x in list2 if x != " "]
+    #list2 = tuple(set(list2))
     processed = []
     active_check_services = []
     # Following utilization active checks should not be included in list of passive checks
@@ -796,8 +835,13 @@ def get_settings():
                 continue
             if str(service['service']) in exclude_ss_active_services:
                 continue
-            service_config = [service['devicetype'], '!' + str(service['service'])], \
+            if str(service['service']) == "switch_ul_utilization" or str(service['service']) == "switch_dl_utilization" :
+                service_config = [service['devicetype'], '!' + str(service['service'])], \
                     ['@all'], service['service'], None, threshold
+            else :
+                service_config = [service['devicetype'], '!' + str(service['service'])], \
+	            ['@all'], service['service'], None, threshold
+
         if service_config and (service_config not in default_checks):
                 default_checks.append(service_config)
         if service['port'] and service['community']:
@@ -1234,4 +1278,5 @@ def main():
 
 
 if __name__ == '__main__':
+   
     main()
