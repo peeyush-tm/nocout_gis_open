@@ -125,7 +125,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	severity = 'unknown'
 	first_down_crit = {}
 	host_severity = 'unknown'
-	present_time = datetime.now()
 	host_state = "unknown"
 	device_first_down ={}
 	# Process network perf data
@@ -166,9 +165,6 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		for ds, ds_values in threshold_values.items():
 			check_time = datetime.fromtimestamp(entry[3]) 
 			local_timestamp = pivot_timestamp_fwd(check_time)
-			if ((present_time - local_timestamp) >= timedelta(minutes=4)):
-				local_timestamp = present_time
-				check_time = local_timestamp - timedelta(minutes=2)
 			check_time =int(time.mktime(check_time.timetuple()))
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp =int(time.mktime(local_timestamp.timetuple()))
@@ -296,8 +292,11 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
-			   	
-		threshold_values = get_threshold(entry[-1])
+		if entry[2]=='switch_ul_utilization' or entry[2]=='switch_dl_utilization' or entry[2]=='switch_ul_utilization_jn' or entry[2]=='switch_dl_utilization_jn':
+			threshold_values = get_threshold_switch(entry[-1], int(entry[0]))
+		else :
+			threshold_values = get_threshold(entry[-1])
+
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
 		last_state_change = entry[-3]
@@ -440,8 +439,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 		except:
 			continue
 	elap = int(time.time()) - current1
-	#print 'service_data_values'
-	#print len(service_data_values)
+	print 'service_data_values'
+	print len(service_data_values)
 	# Bulk insert the values into Mongodb
 	#try:
 	#	mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
@@ -636,7 +635,7 @@ def get_host_services_name(site_name=None, db=None):
 	    #print '............................................'
             #print unknwn_state_svc_data
 	    #print '............................................'
-	    #print len(serv_qry_output)
+	    print len(serv_qry_output)
 	    frequency_based_service_list =['wimax_ss_ip','wimax_modulation_dl_fec','wimax_modulation_ul_fec','wimax_dl_intrf',
 		'wimax_ul_intrf','wimax_ss_sector_id','wimax_ss_mac','wimax_ss_frequency','mrotek_e1_interface_alarm',
 		'mrotek_fe_port_state','mrotek_line1_port_state','mrotek_device_type','rici_device_type','rici_e1_interface_alarm',
@@ -942,6 +941,21 @@ def get_threshold(perf_data):
 
     return threshold_values
 
+def get_threshold_switch(perf_data,host_name ):
+    threshold_values = get_threshold(perf_data)
+    switch_ports = memcache_switch.get(host_name)
+    if "," in switch_ports:  #string like 'Gi0/1,Gi0/2'
+        switch_ports = switch_ports.split(",")
+        dict1 = {}
+        for each in switch_ports :
+            t =threshold_values.get(each)
+            dict1[each]= t
+        return dict1
+    else:
+        t =threshold_values.get(switch_ports)
+        dict1 = {}
+        dict1[switch_ports]= t
+        return  dict1
 
 def pivot_timestamp(timestamp):
     """
@@ -1200,6 +1214,10 @@ if __name__ == '__main__':
     and extracts data
 
     """
+    memc_obj1=db_ops_module.MemcacheInterface()
+    memc_obj =memc_obj1.memc_conn
+    key = "master_ua" + "_switch"
+    memcache_switch= memc_obj.get(key)
     configs = config_module.parse_config_obj()
     desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
     desired_config = configs.get(desired_site)
