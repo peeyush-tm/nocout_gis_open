@@ -1065,13 +1065,17 @@ select option:hover
   padding: 6px 15px;
   position: relative;  
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-  }
-
+}
+.inner_inner_tab > li > a {
+  border: 0px none;
+}
 .nav-tabs > li > a:hover{
   background: none !important;
 }
-
-.nav-tabs > li.active a, .nav-tabs > li:hover a, .nav-tabs > li.active a:focus, .nav-tabs > li.active:focus a,.nav-tabs > li.active a:hover {
+.nav-tabs > li.active a,
+.nav-tabs > li:hover a,
+.nav-tabs > li.active a:focus,
+.nav-tabs > li.active:focus a,.nav-tabs > li.active a:hover {
   border:none; 
   border-bottom: 3px solid #ca1e25;
 }

@@ -209,7 +209,7 @@ function nocoutPerfLib() {
             live_poll_condition2 = page_type == 'customer';
 
         if (!live_poll_condition1 && !live_poll_condition2) {
-            $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+            $(".single_perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
         }
 
     };
@@ -384,7 +384,7 @@ function nocoutPerfLib() {
         }
         if (tab_content_config.tab_id == 'live_poll_now') {
             content_html += '<div class="col-md-1">\
-                                <button class="btn btn-default btn-sm perf_poll_now " title="Poll Now" \
+                                <button class="btn btn-default btn-sm single_perf_poll_now " title="Poll Now" \
                                 data-complete-text="<i class=\'fa fa-flash\'></i>" data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
                                 <i class="fa fa-flash"></i></button>\
                             </div>\
@@ -1614,7 +1614,7 @@ $('input[name="item_type"]').change(function(e) {
     }
 });
 
-$(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
+$(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
         tab_id = active_tab_obj["active_dom_id"];
@@ -1652,8 +1652,8 @@ $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
             $("#"+tab_id+ "_block .poll_pause_btn").removeClass("disabled");
         }
 
-        if(!$("#" + tab_id + "_block .perf_poll_now").hasClass("disabled")) {
-            $("#" + tab_id + "_block .perf_poll_now").addClass("disabled");
+        if(!$("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
+            $("#" + tab_id + "_block .single_perf_poll_now").addClass("disabled");
         }
         /*Disable poll interval & max interval dropdown*/
         $("#" + tab_id + "_block .poll_interval").attr("disabled","disabled");

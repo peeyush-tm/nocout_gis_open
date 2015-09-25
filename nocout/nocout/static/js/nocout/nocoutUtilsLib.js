@@ -38,7 +38,21 @@ var green_color = "#468847",
     parallel_calling_len = 3,
     birdeye_start_counter = 0,
     birdeye_end_counter = parallel_calling_len,
-    is_mouse_out = true;
+    is_mouse_out = true,
+    topo_view_scripts = [
+        '<script type="text/javascript" src="/static/js/lokijs.min.js"></script>',
+        '<script src="/static/js/flot/jquery.flot.min.js"></script>',
+        '<script type="text/javascript" src="/static/js/stateBoundriesLib.js"></script>',
+        '<script type="text/javascript" src="/static/js/infobox.js"></script>',
+        '<script type="text/javascript" src="/static/js/markerclusterer.js"></script>',
+        '<script type="text/javascript" src="/static/js/oms.min.js"></script>',
+        '<script type="text/javascript" src="/static/js/fullScreenControl.js"></script>',
+        '<script type="text/javascript" src="/static/js/jQuery-Cookie/src/jquery.cookie.js"></script>',
+        '<script type="text/javascript" src="/static/js/gisPerformance.js"></script>',
+        '<script type="text/javascript" src="/static/js/tooltipLib.js"></script>',
+        '<script src="/static/js/devicePlottingLib.js"></script>',
+        '<script src="/static/js/devicevisualization.js"></script>'
+    ];
 
 
 /**
@@ -200,7 +214,7 @@ function populateServiceStatus_nocout(domElement,info) {
     //                             ' + val_icon + ' ' + perf + '<br/>\
     //                             ' + time_icon + ' ' + last_updated + '</td>';
     //         inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
-    //                              <button class="btn btn-primary btn-xs perf_poll_now"\
+    //                              <button class="btn btn-primary btn-xs single_perf_poll_now"\
     //                              title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
     //                              data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
     //                              <i class="fa fa-flash"></i></button>\
@@ -1034,7 +1048,7 @@ function nocout_livePollCurrentDevice(
             // If call is from single device page then proceed else return data
             if (container_dom_id) {
                 // Enable the "Poll Now" button
-                $("#" + container_dom_id + " #perf_output_table tr td:nth-child(2) .perf_poll_now").button("complete");
+                $("#" + container_dom_id + " #perf_output_table tr td:nth-child(2) .single_perf_poll_now").button("complete");
             }
         }
     });
@@ -1158,7 +1172,7 @@ function initSingleDevicePolling(callback) {
 
     if (device_name.length > 0 && service_name.length > 0 && ds_name.length > 0) {
         // Disable the "Poll Now" button
-        $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
+        $("#"+container_id+" #perf_output_table tr td:nth-child(2) .single_perf_poll_now").button("loading");
 
         var active_tab_obj = nocout_getPerfTabDomId(),
             dom_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
@@ -1448,6 +1462,18 @@ function nocout_getPerfTabDomId() {
         },
         top_tab_content_id = $(".top_perf_tabs > li.active a").attr("href");
 
+    var is_singular_view = false;
+
+    if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+        var is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1,
+            is_topo_view = clicked_tab_id.indexOf('topo') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('topo') > -1;
+        is_singular_view = is_birdeye_view || is_topo_view;
+    }
+
+    if (is_singular_view) {
+        return response_dict;
+    }
+
     if(show_historical_on_performance || is_perf_polling_enabled) {
         var left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
             active_inner_tab = $(left_tab_content_id + " .inner_inner_tab li.active a");
@@ -1504,8 +1530,8 @@ function nocout_stopPollNow() {
     isPollingPaused = 0;
     $("#" + tab_id + "_block .poll_play_btn").button('complete');
 
-    if($("#" + tab_id + "_block .perf_poll_now").hasClass("disabled")) {
-        $("#" + tab_id + "_block .perf_poll_now").removeClass("disabled");
+    if($("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
+        $("#" + tab_id + "_block .single_perf_poll_now").removeClass("disabled");
     }
 }
 
@@ -1726,6 +1752,10 @@ function calculateAverageValue(resultset, key) {
 
 function populateDeviceTopology() {
 
+    if (typeof networkMapInstance == 'undefined') {
+        $(topo_view_scripts.join(' ')).insertAfter('.perfContainerBlock');
+    }
+
     $.ajax({
         url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
         type : 'GET',
@@ -1739,6 +1769,8 @@ function populateDeviceTopology() {
                 /*Reset Global Variables & Filters*/
                 networkMapInstance.resetVariables_gmap();
             } else {
+                live_poll_config = polling_config;
+
                 /*Create a instance of gmap_devicePlottingLib*/
                 networkMapInstance = new devicePlottingClass_gmap();
                 /*Call the function to create map*/
@@ -1758,9 +1790,9 @@ function populateDeviceTopology() {
 
             var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
             
-                // set the zoom level to 14 if it is greater
-                if (mapInstance.getZoom() > 14) {
-                    mapInstance.setZoom(14);
+                // set the zoom level to 13 if it is greater
+                if (mapInstance.getZoom() > 13) {
+                    mapInstance.setZoom(13);
                 }
                 
                 google.maps.event.removeListener(listener);
@@ -1918,16 +1950,16 @@ function paginateTab(self) {
     }
 
     if ($(self).hasClass('right_arrow')) {
-        if (margin_left < width_diff && margin_left != 0) {
-            $('ul.top_perf_tabs').css('margin-left', margin_left + 10);
-        }
-    } else {
         var m_left = margin_left;
         if (!isNaN(Number(String(margin_left).split('-')[1]))) {
             m_left = Number(String(margin_left).split('-')[1]);
         }
         if (m_left < width_diff) {
             $('ul.top_perf_tabs').css('margin-left', margin_left -10);
+        }
+    } else {
+        if (margin_left < width_diff && margin_left != 0) {
+            $('ul.top_perf_tabs').css('margin-left', margin_left + 10);
         }
     }
 
