@@ -847,6 +847,7 @@ function updateSpeedometerChart(chartData, div_id, div_text, callback) {
  * @event click
  */
 $("#main_dashboard_container .box-body h5 strong i, \
+    #main_dashboard_container .box-body h5.bigger i, \
     #main_dashboard_container .box-body h4 strong i, \
     #main_dashboard_container .box-body .pull-right i, \
     #main_dashboard_container .box-body .pull-right i \

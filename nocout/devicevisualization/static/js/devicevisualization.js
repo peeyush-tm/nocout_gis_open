@@ -91,29 +91,35 @@ if(
 }
 
 // Update "Show Labels"  checkbox as per the cookie value
-if($.cookie("isLabelChecked")) {
-    if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
-        $("#show_hide_label")[0].checked = true;
-    } else {
-        $("#show_hide_label")[0].checked = false;
+if ($("#show_hide_label").length > 0) {
+    if($.cookie("isLabelChecked")) {
+        if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
+            $("#show_hide_label")[0].checked = true;
+        } else {
+            $("#show_hide_label")[0].checked = false;
+        }
     }
 }
 
 // Update "Show All Connection Lines"  checkbox as per the cookie value
-if($.cookie("isLineChecked")) {
-    if($.cookie("isLineChecked") == true || $.cookie("isLineChecked")=='true') {
-        $("#showConnLines")[0].checked= true;
-    } else {
-        $("#showConnLines")[0].checked= false;
+if ($("#showConnLines").length > 0) {
+    if($.cookie("isLineChecked")) {
+        if($.cookie("isLineChecked") == true || $.cookie("isLineChecked")=='true') {
+            $("#showConnLines")[0].checked= true;
+        } else {
+            $("#showConnLines")[0].checked= false;
+        }
     }
 }
 
 // Update "Show All SS"  checkbox as per the cookie value
-if($.cookie("isSSChecked")) {
-    if($.cookie("isSSChecked") == true || $.cookie("isSSChecked")=='true') {
-        $("#showAllSS")[0].checked= true;
-    } else {
-        $("#showAllSS")[0].checked= false;
+if ($("#showAllSS").length > 0) {
+    if($.cookie("isSSChecked")) {
+        if($.cookie("isSSChecked") == true || $.cookie("isSSChecked")=='true') {
+            $("#showAllSS")[0].checked= true;
+        } else {
+            $("#showAllSS")[0].checked= false;
+        }
     }
 }
 
