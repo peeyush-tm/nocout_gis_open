@@ -122,13 +122,13 @@ def check_rad5k_ul_es_invent(item, params, info):
 		if info :
 	        	ss_serial_number = info[0][0]
         		if ss_serial_number:
-                		ul_es =live_query_for_rad5k_ss_ul_es(ss_serial_number)
+                		ul_es =int(live_query_for_rad5k_ss_ul_es(ss_serial_number))
                 		if ul_es is not None :
-                        		if ul_es > warn and ul_es < crit:
+                        		if ul_es >= warn and ul_es < crit:
                                 		state = 1
-	                        	elif ul_es > crit:
+	                        	elif  ul_es >= crit:
         	                        	state = 2
-                	        	elif ul_es == 0:
+                	        	elif  ul_es == 0:
                         	        	state = 0
 
                         		infotext = "ul_es=%s" % ul_es
