@@ -616,8 +616,16 @@ class GetPerfomance(View):
         """
         device = Device.objects.get(id=device_id)
         device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
+        device_type = DeviceType.objects.get(id=device.device_type).name
         realdevice = device
         bs_alias = None
+        is_radwin5 = 0
+
+        try:
+            if 'radwin5' in device_type.lower():
+                is_radwin5 = 1
+        except Exception, e:
+            is_radwin5 = 0
 
         try:
             if device.sector_configured_on.exists():
@@ -723,7 +731,8 @@ class GetPerfomance(View):
             'page_type': page_type,
             'live_poll_config': json.dumps(LIVE_POLLING_CONFIGURATION),
             'is_util_tab': int(is_util_tab),
-            'is_dr_device' : is_dr_device
+            'is_dr_device' : is_dr_device,
+            'is_radwin5' : is_radwin5
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -3128,7 +3137,7 @@ class GetServiceTypePerformanceData(View):
         dr_performance_data = performance_data.filter(device_name=dr_device.device_name)
 
         sector_result = self.performance_data_result(performance_data=sector_performance_data)
-        dr_result = self.performance_data_result(performance_data=dr_performance_data)
+        dr_result = self.perforxmance_data_result(performance_data=dr_performance_data)
         try:
             sector_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(sector_device.ip_address)
             if availability:
@@ -3588,15 +3597,15 @@ class GetServiceTypePerformanceData(View):
                                         'marker': {
                                             'enabled': False
                                         }
-                                    },
-                                    {  # Current Value
-                                        'name': self.result['data']['objects']['display_name']+"(Current Value)",
-                                        'data': data_list,
-                                        'type': self.result['data']['objects']['type'],
-                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                        'valuetext': self.result['data']['objects']['valuetext'],
-                                        'is_inverted': self.result['data']['objects']['is_inverted']
-                                    }
+                                    }#,
+                                    # {  # Current Value
+                                    #     'name': self.result['data']['objects']['display_name']+"(Current Value)",
+                                    #     'data': data_list,
+                                    #     'type': self.result['data']['objects']['type'],
+                                    #     'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                    #     'valuetext': self.result['data']['objects']['valuetext'],
+                                    #     'is_inverted': self.result['data']['objects']['is_inverted']
+                                    # }
                                 ]
 
                             else:

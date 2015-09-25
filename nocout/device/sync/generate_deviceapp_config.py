@@ -1,8 +1,13 @@
-from mysql_connection import mysql_conn
-from pprint import pformat
-from operator import itemgetter
+""" Module to generate hosts and services config
+file from mysql"""
+
+
 from collections import namedtuple
 from datetime import datetime
+from operator import itemgetter
+from pprint import pformat
+
+from mysql_connection import mysql_conn
 
 
 pmp_ss_bs_checks = ['cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 'cambium_ul_rssi']
@@ -78,7 +83,7 @@ def prepare_hosts_file():
     disabled_services = get_disabled_services()
     print disabled_services
     # This file contains device names, to be updated in configuration db
-    open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
+    open('hosts.txt', 'w').close()
     #try:
     bs_devices = make_BS_data(disabled_services)
     #except Exception, exp:
@@ -121,7 +126,8 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     device_devicetechnology.name as techno_name,
     group_concat(service_servicedatasource.name separator '$$') as port_name,
     group_concat(inventory_basestation.bh_port_name separator '$$') as port_alias,
-    group_concat(inventory_basestation.bh_capacity separator '$$') as port_wise_capacity
+    group_concat(inventory_basestation.bh_capacity separator '$$') as port_wise_capacity,
+    machine_machine.name
     from device_device 
     inner join
     (device_devicetechnology, device_devicetype, 
@@ -175,7 +181,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
     # Processing backhaul configured on devices
     mrotek_devices, rici_devices, switch_devices = [], [], []
     processed = []
-    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('hosts.txt', 'a')
     for device in data:
         if str(device[2].lower()) == 'switch':
         	port_wise_capacities = [0]*26
@@ -206,7 +212,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
         if disabled_service_tags:
             disabled_service_tags_entry = '|' +  '|'.join(disabled_service_tags)
         entry = str(device[1]) + '|' + str(device[2]) + '|' + str(device[3]).lower() + \
-            '|wan|prod|' + str(device[4]) + '|site:' + str(device[5]) + \
+            '|wan|prod|' + str(device[4]) + '|site:' + str(device[11]) + \
             disabled_service_tags_entry + '|wato|//' 
         all_hosts.append(entry) 
         ipaddresses.update({str(device[1]): str(device[0])})
@@ -245,7 +251,8 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     inventory_sector.dr_site,
     inventory_sector.dr_configured_on_id,
     device_devicetechnology.name as techno_name,
-    inventory_circuit.qos_bandwidth as QoS_BW
+    inventory_circuit.qos_bandwidth as QoS_BW,
+    machine_machine.name
     from device_device inner join (device_devicetechnology, device_devicemodel, device_devicetype, machine_machine, site_instance_siteinstance, inventory_sector, inventory_circuit)
     on (
     device_devicetype.id = device_device.device_type and
@@ -337,7 +344,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     #print '-- final_dr_devices --'
     #print len(final_dr_devices)
 
-    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('hosts.txt', 'a')
 
     for entry in final_dr_devices:
         if (str(entry[0][1]) in processed) or (str(entry[1][0]) in processed):
@@ -356,7 +363,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         # Entries for master dr device
         dr_device_entry = str(entry[0][1]) + '|' + str(entry[0][2]) + '|' + str(entry[0][3]) + \
                 '| dr: ' + str(entry[1][0]) + '|dr_master|wan|prod|' + str(entry[0][5]) + '|site:' \
-                + str(entry[0][7]) + disabled_service_tags_entry + '|wato|//'
+                + str(entry[0][13]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
         host_attributes.update({str(entry[0][1]):
@@ -377,7 +384,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         # inventory_sector table
         dr_device_entry = str(entry[1][0]) + '|' + str(entry[0][2]) + '|' + str(entry[1][2]) + \
                 '| dr: ' + str(entry[0][1]) + '|dr_slave|wan|prod|' + str(entry[0][5]) + '|site:' \
-                + str(entry[0][7]) + disabled_service_tags_entry + '|wato|//'
+                + str(entry[0][13]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
         host_attributes.update({str(entry[1][0]):
@@ -401,7 +408,7 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
         hosts_only.write(str(device[1]) + '\n')
         processed.append(str(device[1]))
         entry = str(device[1]) + '|' + str(device[2]) + '|' + str(device[3]).lower() + \
-            '|wan|prod|' + str(device[5]) + '|site:' + str(device[7]) + \
+            '|wan|prod|' + str(device[5]) + '|site:' + str(device[13]) + \
             disabled_service_tags_entry + '|wato|//' 
         all_hosts.append(entry) 
         ipaddresses.update({str(device[1]): str(device[0])})
@@ -501,7 +508,7 @@ def eval_qos(vals, out=[]):
 
 
 def write_hosts_file(all_hosts, ipaddresses, host_attributes):
-    with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
+    with open('hosts.mk', 'w') as f:
         f.write("# encoding: utf-8\n\n")
         f.write("\nhost_contactgroups += []\n\n\n")
         f.write("all_hosts += %s\n" % pformat(all_hosts))
@@ -539,7 +546,8 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
     original.device_alias as BSALIAS,
     SSALIAS,
     techno_name,
-    QoS_BW
+    QoS_BW,
+    SSMACHINE
     from device_device as original
     inner join (
     (select 
@@ -555,7 +563,8 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
     inventory_sector.name SECTOR,
     inventory_sector.sector_configured_on_id as matcher,
     device_devicetechnology.name as techno_name,
-    inventory_circuit.qos_bandwidth as QoS_BW
+    inventory_circuit.qos_bandwidth as QoS_BW,
+    machine_machine.name as SSMACHINE
     from device_device 
     inner join (device_devicetechnology, device_devicemodel, device_devicetype, machine_machine, site_instance_siteinstance, inventory_substation, inventory_circuit, inventory_sector)
     on (
@@ -584,7 +593,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
         'all_hosts', 'ipaddresses', 'host_attributes',
         'radwin_ss_devices', 'wimax_ss_devices', 'cambium_ss_devices'])
     processed = []
-    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    hosts_only = open('hosts.txt', 'a')
     for device in data:
         if str(device[4]) in processed:
             continue
@@ -595,7 +604,7 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes, disabled_services):
             disabled_service_tags_entry = '|' +  '|'.join(disabled_service_tags)
         hosts_only.write(str(device[4]) + '\n')
         processed.append(str(device[4]))
-        entry = str(device[4]) + '|' + str(device[6]) + '|' + str(device[5]).lower() + '|' + str(device[1]) + '|wan|prod|' + str(device[7]) + '|site:' + str(device[8]) + disabled_service_tags_entry + '|wato|//'
+        entry = str(device[4]) + '|' + str(device[6]) + '|' + str(device[5]).lower() + '|' + str(device[1]) + '|wan|prod|' + str(device[7]) + '|site:' + str(device[16]) + disabled_service_tags_entry + '|wato|//'
         all_hosts.append(entry)
         ipaddresses.update({str(device[4]): str(device[0])})
         host_attributes.update({
@@ -640,7 +649,7 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
     db = mysql_conn()
     if update_device_table:
         hosts = []
-        with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
+        with open('hosts.txt', 'r') as f:
             hosts = map(lambda t: t.strip(), list(f))
         if hosts:
             query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
@@ -1193,7 +1202,7 @@ def write_rules_file(settings_out, final_active_checks):
         snmp_communities_db = settings_out.snmp_communities_db
     if len(settings_out.snmp_ports_db):
         snmp_ports_db = settings_out.snmp_ports_db
-    with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
+    with open('rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")
         f.write("bulkwalk_hosts += %s" % pformat(bulkwalk_hosts))

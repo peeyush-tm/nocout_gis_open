@@ -1825,15 +1825,16 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView, Adva
 
         qs_query = DeviceVendor.objects.prefetch_related()
         for dvendor in qs_query:
-            dct = dict()
-            dct = {
-                'id': dvendor.id,
-                'name': dvendor.name,
-                'alias': dvendor.alias,
-                'device_models': ', '.join(dvendor.device_models.values_list('name', flat=True)),
-            }
+            dct = {'id': dvendor.id,
+                   'name': dvendor.name,
+                   'alias': dvendor.alias,
+                   'device_models': ', '.join(dvendor.device_models.values_list('name', flat=True))}
+            dct['device_types'] = ''
             for dmodels in dvendor.device_models.prefetch_related():
-                dct['device_types'] = ', '.join(dmodels.device_types.values_list('name', flat=True))
+                if dct['device_types']:
+                    dct['device_types'] += ', ' + ', '.join(dmodels.device_types.values_list('name', flat=True))
+                else:
+                    dct['device_types'] += ', '.join(dmodels.device_types.values_list('name', flat=True))
             qs.append(dct)
 
         return qs

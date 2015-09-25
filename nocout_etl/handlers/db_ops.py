@@ -235,7 +235,7 @@ class RedisInterface(object):
 @app.task(base=DatabaseTask, name='load-inventory', bind=True)
 def load_inventory(self):
 	"""
-	Loads inventory data into redis
+	Loads appropriate inventory data into redis and memcache
 	"""
 	query = (
 		"SELECT DISTINCT D.device_name, site_instance_siteinstance.name, "
@@ -289,13 +289,26 @@ def load_inventory(self):
 	out = cur.fetchall()
 	# info('out: {0}'.format(out))
 
-	# keeping invent data in database number 3
+	# e.g. keeping invent data in database number 3
 	rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
 	rds_cli.redis_cnx.flushdb()
 	rds_pipe = rds_cli.redis_cnx.pipeline(transaction=True)
+
+	# memc client
+	memc = memcache.Client(['10.133.19.165:11211'])
+
 	wimax_bs_list = []
+
+	# device_name --> ip mapping (in memc)
+	device_name_ip_map = {}
+
+	# keeping extra iteration for name and ip map
+	for d in out:
+		device_name_ip_map[d[0]] = d[2]
+
 	# group based on device technologies and load the devices info to redis
 	out = sorted(out, key=itemgetter(3))
+
 	for grp, grp_vals in groupby(out, key=itemgetter(3)):
 		grouped_devices = list(grp_vals)
 		if grouped_devices[0][3] == 'StarmaxIDU':
@@ -313,7 +326,14 @@ def load_inventory(self):
 	except Exception as exc:
 		error('Error in redis inventory loading... {0}'.format(exc))
 	else:
-		warning('Inventory loading done.')
+		warning('Inventory loading into redis, done.')
+
+	try:
+		memc.set_multi(device_name_ip_map)
+	except Exception as exc:
+		error('Error in memc inventory loading... {0}'.format(exc))
+	else:
+		warning('Inventory loading into memc, done.')
 
 
 @app.task(name='load-devicetechno-wise')

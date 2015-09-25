@@ -191,8 +191,8 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         sanity_dicts_list = [
-            OrderedDict({'dict_final_key': 'full_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
-            OrderedDict({'dict_final_key': 'manager_name', 'dict_key1': 'parent__first_name',
+            OrderedDict({'dict_final_key': 'first_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
+            OrderedDict({'dict_final_key': 'parent__first_name', 'dict_key1': 'parent__first_name',
                          'dict_key2': 'parent__last_name'})]
 
         if json_data:

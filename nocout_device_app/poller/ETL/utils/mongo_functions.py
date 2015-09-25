@@ -115,6 +115,8 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 					db.device_inventory_status.update(matching_criteria,event_dict,upsert=True)
 				elif flag == "serv_perf_data":
 					db.device_service_status.update(matching_criteria,event_dict,upsert=True)
+				elif flag == "rad5ktopology":
+					db.rad5ktopology.update(matching_criteria,event_dict,upsert=True)
 				elif flag == "network_perf_data":
 					db.device_network_status.update(matching_criteria,event_dict,upsert=True)
 				elif flag == "status_services":
@@ -128,11 +130,15 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 				elif flag == 'network_event_status':
 					db.network_event_status.update(matching_criteria, event_dict, upsert=True)
 				elif flag == 'service_event_status':
+				#	print 'Matching Criteria ---'
+				#	print matching_criteria
+				#	print 'Event  Dict ---'
+				#	print event_dict
 					db.service_event_status.update(matching_criteria, event_dict, upsert=True)
 				elif flag == 'device_first_down':
 					db.device_first_down.update(matching_criteria, event_dict, upsert=True)
 				return success
-			except (Exception, ReferenceError):
+			except Exception:
 					print "Mongodb updation failed"
 
 				
