@@ -22,7 +22,7 @@ from django.db.models.signals import post_save, pre_save, pre_delete
 from organization.models import Organization
 from user_profile.models import UserProfile
 from service.models import Service, ServiceDataSource
-from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City
+from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City, DeviceType
 
 from inventory import signals as inventory_signals
 
@@ -88,6 +88,8 @@ class Backhaul(models.Model):
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
+    ior_id = models.CharField('IOR ID', max_length=250, null=True, blank=True)
+    bh_provider = models.CharField('BH Provider', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -127,6 +129,10 @@ class BaseStation(models.Model):
     provisioning_status = models.CharField('Provisioning Status', max_length=250, null=True, blank=True)
     tag1 = models.CharField('Tag 1', max_length=60, null=True, blank=True)
     tag2 = models.CharField('Tag 2', max_length=60, null=True, blank=True)
+    site_ams = models.CharField('Site AMS', max_length=250, null=True, blank=True)
+    site_infra_type = models.CharField('Site Infra Type', max_length=250, null=True, blank=True)
+    site_sap_id = models.CharField('Site SAP ID', max_length=250, null=True, blank=True)
+    mgmt_vlan = models.CharField('MGMT VLAN', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -161,6 +167,7 @@ class Sector(models.Model):
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     planned_frequency = models.CharField('Planned Frequency', max_length=250, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
+    rfs_date = models.DateField('RFS Date', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -201,6 +208,8 @@ class SubStation(models.Model):
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
+    cpe_vlan = models.CharField('CPE VLAN', max_length=250, null=True, blank=True)
+    sacfa_no = models.CharField('SACFA No.', max_length=250, null=True, blank=True)
     country = models.ForeignKey(Country, null=True, blank=True)
     state = models.ForeignKey(State, null=True, blank=True)
     city = models.ForeignKey(City, null=True, blank=True)
@@ -225,6 +234,7 @@ class Circuit(models.Model):
     customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL)
     sub_station = models.ForeignKey(SubStation, null=True, blank=True, on_delete=models.SET_NULL)
     qos_bandwidth = models.FloatField('QOS(BW)', null=True, blank=True, help_text='(kbps) Enter a number.')
+    sold_cir = models.FloatField('Customer Sold CIR', null=True, blank=True, help_text='(mbps) Enter a number.')
     dl_rssi_during_acceptance = models.CharField('RSSI During Acceptance', max_length=100, null=True, blank=True)
     dl_cinr_during_acceptance = models.CharField('CINR During Acceptance', max_length=100, null=True, blank=True)
     jitter_value_during_acceptance = models.CharField('Jitter Value During Acceptance', max_length=100, null=True, blank=True)
@@ -280,6 +290,7 @@ class LivePollingSettings(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     technology = models.ForeignKey(DeviceTechnology)
+    device_type = models.ForeignKey(DeviceType, null=True)
     service = models.ForeignKey(Service)
     data_source = models.ForeignKey(ServiceDataSource)
 
@@ -356,7 +367,7 @@ class UserThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(ThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
-
+    thematic_type = models.ForeignKey(DeviceType, null=True)
 
 class GISInventoryBulkImport(models.Model):
     original_filename = models.CharField('Inventory', max_length=250, null=True, blank=True)
@@ -422,6 +433,7 @@ class PingThematicSettings(models.Model):
     alias = models.CharField('Alias', max_length=250)
 
     technology = models.ForeignKey(DeviceTechnology)
+    type = models.ForeignKey(DeviceType,null=True)
     service = models.CharField('Service', max_length=250)
     data_source = models.CharField('Data Source', max_length=250)
 
@@ -470,6 +482,7 @@ class UserPingThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(PingThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
+    thematic_type = models.ForeignKey(DeviceType, null=True)
 
 
 class GISExcelDownload(models.Model):

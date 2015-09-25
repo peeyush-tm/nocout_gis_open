@@ -61,6 +61,7 @@ urlpatterns = patterns('',
                        url(r'^auth/$', AuthView.as_view(), name='auth-view'),
                        url(r'^logout/$', 'nocout.views.logout'),
                        url(r'^reset-cache/$', 'nocout.views.reset_cache'),
+                       url(r'^update_service_thematic/$', 'nocout.views.updateThematicType'),
                        url(r'^site/', include('site_instance.urls')),
                        url(r'^network_maps/', include('devicevisualization.urls')),
                        url(r'^gis/', include('sitesearch.urls')),
@@ -92,7 +93,7 @@ urlpatterns = patterns('',
                        url(r'^wizard/', include('device.wizard_device_type_urls')),
                        url(r'^escalation/', include('alarm_escalation.urls')),
                        url(r'^global_search/', include('inventory.global_search_urls')),
-                       url(r'^docs/', include('rest_framework_swagger.urls')),
+                       url(r'^docs/', include('rest_framework_swagger.urls'))
                        )
 
 # if settings.DEBUG:

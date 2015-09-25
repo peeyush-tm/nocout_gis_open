@@ -50,7 +50,7 @@ from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import NocoutUtilsGateway, project_group_role_dict_mapper
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, AdvanceFilteringMixin
 from nocout.mixins.generics import FormRequestMixin
 
 
@@ -71,11 +71,11 @@ class UserList(PermissionsRequiredMixin, ListView):
 
         datatable_headers = [
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'auto', },
-            {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'first_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'email', 'sTitle': 'Email', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'manager_name', 'sTitle': 'Manager', 'sWidth': '10%', 'sClass': 'hidden-xs'},
+            {'mData': 'parent__first_name', 'sTitle': 'Manager', 'sWidth': '10%', 'sClass': 'hidden-xs'},
             {'mData': 'phone_number', 'sTitle': 'Phone Number', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'last_login', 'sTitle': 'Last Login', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'comment', 'sTitle': 'Comment', 'sWidth': 'auto', 'sClass': 'hidden-xs'}
@@ -93,7 +93,8 @@ class UserList(PermissionsRequiredMixin, ListView):
 class UserListingTable(PermissionsRequiredMixin,
                        DatatableOrganizationFilterMixin,
                        DatatableSearchMixin,
-                       BaseDatatableView):
+                       BaseDatatableView,
+                       AdvanceFilteringMixin):
     """
     View to show list of users in datatable.
         URL - 'http://127.0.0.1:8000/user/#UserListing'
@@ -126,8 +127,8 @@ class UserListingTable(PermissionsRequiredMixin,
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
         sanity_dicts_list = [
-            OrderedDict({'dict_final_key': 'full_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
-            OrderedDict({'dict_final_key': 'manager_name', 'dict_key1': 'parent__first_name',
+            OrderedDict({'dict_final_key': 'first_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
+            OrderedDict({'dict_final_key': 'parent__first_name', 'dict_key1': 'parent__first_name',
                          'dict_key2': 'parent__last_name'})]
 
         if json_data:
@@ -159,7 +160,7 @@ class UserListingTable(PermissionsRequiredMixin,
         return json_data
 
 
-class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
+class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView, AdvanceFilteringMixin):
     """
     View to show list of deleted users in datatable.
         URL - 'http://127.0.0.1:8000/user/#UserArchivedListing'
@@ -190,8 +191,8 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         sanity_dicts_list = [
-            OrderedDict({'dict_final_key': 'full_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
-            OrderedDict({'dict_final_key': 'manager_name', 'dict_key1': 'parent__first_name',
+            OrderedDict({'dict_final_key': 'first_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'}),
+            OrderedDict({'dict_final_key': 'parent__first_name', 'dict_key1': 'parent__first_name',
                          'dict_key2': 'parent__last_name'})]
 
         if json_data:

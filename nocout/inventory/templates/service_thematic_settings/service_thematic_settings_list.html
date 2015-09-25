@@ -61,26 +61,33 @@
                 </div>
                 <div class="clearfix"></div>
             </div>
-            <!-- <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThematicSettingsListingTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table> -->
         </div>
     </div>
 {% endblock %}
 
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
+        var dataTableInstance = '',
+            thematic_api_url = '';
         $(document).ready(function (e) {
 
+            // Update thematic API url global variable
+            thematic_api_url = '{% url "update_user_thematic_setting" %}';
+
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
+
+            var location_array = window.location.href.split("#");
 
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
             var is_global = '{{ is_global }}';
+
+            
 
             var ajax_url_ptp = '{% url "ServiceThematicSettingsListingTable" technology="p2p" %}';
             var ajax_url_pmp = '{% url "ServiceThematicSettingsListingTable" technology="pmp" %}';
@@ -94,74 +101,70 @@
                 ajax_url_wimax = '{% url "ServiceThematicSettingsListingTable" technology="wimax" %}' + '?admin=1';
             }
 
-            var destroy = false;
 
-            /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("ServiceThematicSettingsListingTable_ptp", gridHeadersObj, ajax_url_ptp, destroy);
-            dataTableInstance.createDataTable("ServiceThematicSettingsListingTable_pmp", gridHeadersObj, ajax_url_pmp, destroy);
-            dataTableInstance.createDataTable("ServiceThematicSettingsListingTable_wimax", gridHeadersObj, ajax_url_wimax, destroy);
-        });
-
-		/*Change event for PTP checkboxes*/
-        $(document).on('change', '#ServiceThematicSettingsListingTable_ptp .check_class', function() {
-			select_theme("ServiceThematicSettingsListingTable_ptp", this);
-        });
-
-        /*Change event for PMP checkboxes*/
-        $(document).on('change', '#ServiceThematicSettingsListingTable_pmp .check_class', function() {
-			select_theme("ServiceThematicSettingsListingTable_pmp", this);
-        });
-
-        /*Change event for Wimax checkboxes*/
-        $(document).on('change', '#ServiceThematicSettingsListingTable_wimax .check_class', function() {
-			select_theme("ServiceThematicSettingsListingTable_wimax", this);
-        });
-
-        /*This function select the check theme*/
-        function select_theme(tab_id, current_checkbox) {
-        	if (current_checkbox.checked) {
-                $('#'+tab_id+' input.check_class').not(current_checkbox).prop('checked', false);
-                $.ajax({
-                    url:'{% url "update_user_thematic_setting" %}',
-                    data:{ 'threshold_template_id': current_checkbox.value },
-                    dataType:"json",
-                    success:function(result){
-                        if(result.success){
-                            dialog_box_message= "Service Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
-                            dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
-                            bootbox.dialog({
-                                message:dialog_box_message,
-                                title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
-                                buttons: {
-                                    success: {
-                                        label: "OK",
-                                        className: "btn-success",
-                                        callback: function () {
-                                            $(".bootbox").modal("hide");
-                                        }
-                                    }
-                                }
-                            });
-                    	}
-                	}
-                });//ajax ends
+          tables_info = {
+            "network_p2p_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Service Thematic Settings Listing Table-PTP",
+                "header_class_name" : "ServiceThematicSettingsList",
+                "data_class_name" : "ServiceThematicSettingsListingTable"
+               
+            },
+            "network_pmp_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Service Thematic Settings Listing Table-PMP",
+                "header_class_name" : "ServiceThematicSettingsList",
+                "data_class_name" : "ServiceThematicSettingsListingTable"
+                
+            },
+            "network_wifi_tab" : {
+                "app_name" : "inventory",
+                "table_title" : "Service Thematic Settings Listing Table-Wimax",
+                "header_class_name" : "ServiceThematicSettingsList",
+                "data_class_name" : "ServiceThematicSettingsListingTable"
+                
             }
-            else{
-		        bootbox.dialog({
-                    message:"You can not Uncheck the Selected Settings, Please Select the other setting.",
-                    title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
-                    buttons: {
-                        success: {
-                            label: "OK",
-                            className: "btn-success",
-                            callback: function () {
-                                $(".bootbox").modal("hide");
-                            }
-                        }
-                    }
-                });
-                $(current_checkbox).prop('checked', true);
-            }
+        };
+
+
+        $("#network_ptp_tab").attr("data_url", ajax_url_ptp);
+        $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
+        $("#network_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        $("#network_wifi_tab").attr("data_url", ajax_url_wimax);
+        $("#network_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+        if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            /*Trigger click event on active tab to load its data*/
+            $("#network_ptp_tab").trigger('click', true);
         }
+    });
+
+    /*Change event for PTP checkboxes*/
+    $(document).on('change', '#ServiceThematicSettingsListingTable_ptp .check_class', function() {
+        updateThematicSelection("ServiceThematicSettingsListingTable_ptp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for PMP checkboxes*/
+    $(document).on('change', '#ServiceThematicSettingsListingTable_pmp .check_class', function() {
+        updateThematicSelection("ServiceThematicSettingsListingTable_pmp", this, $(this).attr('data-devicetype'));
+    });
+    /*Change event for Wimax checkboxes*/
+    $(document).on('change', '#ServiceThematicSettingsListingTable_wimax .check_class', function() {
+        updateThematicSelection("ServiceThematicSettingsListingTable_wimax", this, $(this).attr('data-devicetype'));
+    });
+
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+
+        });
     </script>
 {% endblock %}

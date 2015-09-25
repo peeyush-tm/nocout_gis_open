@@ -389,8 +389,10 @@ iframe {
   min-height: 700px;
 }
 #page_header_container {
-  margin-left: -10px;
+  /*margin-left: -10px;*/
   margin-bottom: 10px;
+  border: 1px solid #e3e3e3;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 #content .page-header {
   min-height: 10px;
@@ -413,4 +415,118 @@ iframe {
 #reservationtime {
   cursor: text;
   background: #FFFFFF;
+}
+.filters_remove_container {
+  position: relative;
+}
+.filters_remove_container h4 {
+  position: absolute;
+  right: 0px;
+  z-index: 9999;
+  top: 0px;
+  cursor: pointer;
+}
+.filters_form_container {
+  border-right: 1px solid #CCCCCC;
+}
+.applied_filter_container h4 {
+  margin-top: 0px;
+}
+.filter_cancel_btn {
+  margin-left:10px;
+}
+.remove_filter_block_link {
+  position: absolute;
+  right:20px;
+}
+/*.add_filter_btn_container {
+  margin-right: 5px !important;
+}*/
+.selected_filters_list li {
+  font-style: italic;
+}
+.single_filter_remove_btn {
+  cursor: pointer;
+}
+.add_filter_btn_container {
+  position: absolute;
+  right: 3.5%;
+  top: 30%;
+  font-size: 30px;
+}
+.applied_filter_container {
+  height: 140px;
+  overflow: auto;
+}
+.selected_filters_list > thead > tr > th, 
+.selected_filters_list > tbody > tr > td {
+  padding: 4px !important;
+}
+.page_settings_container .date-range ul.list-unstyled {
+  margin-bottom: 0px;
+}
+.remove_advance_filters_btn {
+  margin-left: 15px !important;
+}
+.reset_filter_li {
+  /*margin-right: 5.5%;*/
+}
+.unified_item_type {
+  /*border-left: 1px solid #CCC;*/
+  /*border-right: 1px solid #CCC;*/
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 10px;
+  /*margin-right: 5px;*/
+
+}
+.perfContainerBlock .checkbox-inline {
+  padding-left: 0px;
+}
+.perfContainerBlock input[type="radio"] {
+  vertical-align: text-top;
+}
+.perfContainerBlock .box-title {
+  padding: 8px 10px 4px !important;
+}
+.perfContainerBlock .box-title ul li.date_range_filter_container,
+.perfContainerBlock .box-title ul li.pull-right {
+  margin-top: 2px;
+}
+#item_type_btn {
+  padding: 5px 10px;
+}
+.left_tabs_container li {
+  width: 200px;
+}
+.custom_legends_container {
+  padding-bottom: 15px;
+  padding-top: 2px;
+}
+.custom_legends_block {
+  max-width: 90%;
+  margin: 0px auto;
+  border: 1px solid #FFF;
+  border-radius: 8px;
+  color: #FFF;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+}
+.custom_legends_block ul {
+  padding: 5px;
+  margin-bottom: 0px;
+}
+.custom_legends_block ul li {
+  text-align: left;
+  color: #FFF;
+  vertical-align: middle;
+}
+.custom_legends_block ul li span {
+  width: 16px;
+  height: 12px;
+  float: left;
+  margin-right: 5px;
+  margin-top: 2.5px;
 }

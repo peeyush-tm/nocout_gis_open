@@ -13,13 +13,14 @@ Classes
 * UserForm
 * UserPasswordForm
 """
+import string
 
 from django import forms
-from passwords.fields import PasswordField
 from django.contrib.auth.hashers import check_password
 from nocout.widgets import MultipleToSingleSelectionWidget
 from organization.models import Organization
 from user_profile.models import UserProfile, UserPasswordRecord
+from fields import PasswordField
 
 
 class UserForm(forms.ModelForm):
@@ -28,8 +29,9 @@ class UserForm(forms.ModelForm):
     """
     first_name = forms.CharField(required=True)
     email = forms.CharField(label='Email', required=True)
-    password1 = PasswordField(label='Password')
-    password2 = PasswordField(label='Password confirmation')
+
+    password1 = PasswordField(label='Password', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -116,7 +118,7 @@ class UserForm(forms.ModelForm):
         password1 = self.cleaned_data.get("password1")
 
         if (password1 or password2) and password1 != password2:
-            raise forms.ValidationError("Passwords don't match")
+            raise forms.ValidationError("Passwords do not match.")
 
         return password2
 
@@ -189,6 +191,19 @@ class UserForm(forms.ModelForm):
                 raise forms.ValidationError("Username and password should not be identical.")
 
             if password1:
+                # # Special character validator.
+                # if not set(password1).intersection(set(string.punctuation)):
+                #     raise forms.ValidationError("Password must contain atleast one special character.")
+                #
+                # # Uppercase character validator.
+                # if not set(password1).intersection(set(string.uppercase)):
+                #     raise forms.ValidationError("Password must contain atleast one uppercase letter.")
+                #
+                # # Digit/number validator.
+                # if not set(password1).intersection(set(string.digits)):
+                #     raise forms.ValidationError("Password must contain atleast one digit.")
+
+                # Last five password match validator.
                 user = UserProfile.objects.filter(username=username)
                 if user.exists():
                     # Neglect password if it's already from last five passwords used by the user.

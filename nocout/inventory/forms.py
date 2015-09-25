@@ -219,7 +219,8 @@ class BackhaulForm(forms.ModelForm):
         Meta Information
         """
         model = Backhaul
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ['ior_id', 'bh_provider']
 
     def clean_name(self):
         """
@@ -348,7 +349,8 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ['site_ams', 'site_infra_type', 'site_sap_id', 'mgmt_vlan']
 
     def clean_name(self):
         """
@@ -469,7 +471,8 @@ class SectorForm(forms.ModelForm):
         Meta Information
         """
         model = Sector
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ['rfs_date']
 
     def clean_name(self):
         """
@@ -653,7 +656,8 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ['cpe_vlan', 'sacfa_no']
 
     def clean_name(self):
         """
@@ -757,7 +761,8 @@ class CircuitForm(forms.ModelForm):
         Meta Information
         """
         model = Circuit
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ['sold_cir']
 
     def clean_name(self):
         """
@@ -974,6 +979,7 @@ class ServiceLivePollingSettingsForm(forms.ModelForm):
 
         super(ServiceLivePollingSettingsForm, self).__init__(*args, **kwargs)
         self.fields['technology'].empty_label = 'Select'
+        self.fields['device_type'].empty_label = 'Select'
         self.fields['service'].empty_label = 'Select'
         self.fields['data_source'].empty_label = 'Select'
         for name, field in self.fields.items():
@@ -1441,6 +1447,8 @@ class PingThematicSettingsForm(forms.ModelForm):
 
         # modify technology field initial option
         self.fields['technology'].empty_label = 'Select'
+        # modify type field initial option
+        self.fields['type'].empty_label = 'Select'
 
         # fetch default options for icon setting fields
         icon_settings = ""
@@ -1597,10 +1605,10 @@ class WizardBackhaulForm(BackhaulForm):
         """
         model = Backhaul
         fields = ('organization', 'bh_configured_on', 'bh_port_name', 'bh_port', 'bh_type', 'bh_switch',
-                'switch_port_name', 'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator',
-                'aggregator_port_name', 'aggregator_port', 'pe_hostname', 'pe_ip', 'bh_connectivity', 'bh_circuit_id',
-                'bh_capacity', 'ttsl_circuit_id', 'dr_site',
-        )
+                  'switch_port_name', 'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator',
+                  'aggregator_port_name', 'aggregator_port', 'pe_hostname', 'pe_ip', 'bh_connectivity', 'bh_circuit_id',
+                  'bh_capacity', 'ttsl_circuit_id', 'dr_site',
+                  )
 
     def clean(self):
         """
@@ -1705,7 +1713,8 @@ class WizardAntennaForm(AntennaForm):
         self.fields['antenna_type'].widget.attrs['class'] = 'col-md-12 select2select'
 
         if self.technology == 'P2P':
-            self.fields['antenna_type'] = forms.TypedChoiceField(choices=WizardAntennaForm.PTP_ANTENNA_TYPE, required=False)
+            self.fields['antenna_type'] = forms.TypedChoiceField(choices=WizardAntennaForm.PTP_ANTENNA_TYPE,
+                                                                 required=False)
             self.fields['antenna_type'].widget.attrs['class'] = 'col-md-12 select2select'
             self.fields.pop('tilt')
             self.fields.pop('gain')
@@ -1730,17 +1739,21 @@ class RequestFormSet(forms.models.BaseModelFormSet):
     Formset that passes the HttpRequest on to every Form's __init__
     Suitable to populate Fields dynamically depending on request
     """
+
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         self.technology = kwargs.pop('technology', None)
-        super(RequestFormSet, self).__init__(*args, **kwargs)  #this calls _construct_forms()
+        super(RequestFormSet, self).__init__(*args, **kwargs)  # this calls _construct_forms()
 
-    def _construct_form(self, i, **kwargs): #this one is merely taken from django's BaseFormSet
+    def _construct_form(self, i, **kwargs):  # this one is merely taken from django's BaseFormSet
         # except the additional request parameter for the Form-constructor
-        return super(RequestFormSet, self)._construct_form(i, technology=self.technology, request=self.request, **kwargs)
+        return super(RequestFormSet, self)._construct_form(i, technology=self.technology, request=self.request,
+                                                           **kwargs)
 
 
-WizardPTPSubStationAntennaFormSet = forms.models.modelformset_factory(Antenna, form=WizardAntennaForm, formset=RequestFormSet, max_num=1, extra=1, validate_max=True)
+WizardPTPSubStationAntennaFormSet = forms.models.modelformset_factory(Antenna, form=WizardAntennaForm,
+                                                                      formset=RequestFormSet, max_num=1, extra=1,
+                                                                      validate_max=True)
 
 
 class WizardSubStationForm(SubStationForm):

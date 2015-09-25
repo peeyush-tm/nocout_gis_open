@@ -43,17 +43,12 @@ def check_rad5k_bs_dl_utilization(item, _no_params, info):
 		if info:
 			status_list = []
 			if info[0][0]:
-				dl_utilization = info[0][0]
-				this_time = int(time.time())
-				try:
-                        		timedif, rate = get_counter("rad5k_bs_dl_utilization", this_time, saveint(dl_utilization))
-					rate = (rate*8)/(1024.0 * 1024)
-	                                status_list.append(("dl_utilization", "%.2f" % (rate)))
-        	                        infotext = "Downlink utilization %.2f " % (rate)
-                	                state= 0
-					
-                		except MKCounterWrapped:
-                        		wrapped=True
+				#print  info[0][0]
+				dl_utilization = int(info[0][0]) / (1024.0)
+				status_list.append(("dl_utilization", "%.2f" % (dl_utilization)))
+                                infotext = "Downlink utilization %.2f " % (dl_utilization)
+                                state= 0
+
 		else:
 	    		infotext = "No interface present"
 	    

@@ -1630,7 +1630,7 @@ function devicePlottingClass_gmap() {
      * @param bs_ss_devices {Object} In case of BS, it is the devies object array & for SS it contains BS marker object with SS & sector info
      * @param stationType {String}, It contains that the points are for BS or SS.
 	 */
-	this.plotDevices_gmap = function(bs_ss_devices,stationType) {
+	this.plotDevices_gmap = function(bs_ss_devices, stationType) {
 		
 		if(isDebug) {
 			console.log("Plot Devices Function For "+bs_ss_devices.length+" devices.");
@@ -1643,7 +1643,7 @@ function devicePlottingClass_gmap() {
 
 			// BS marker url
 			var fetched_bs_markerurl = bs_ss_devices[i].data.markerUrl,
-				bs_marker_url = fetched_bs_markerurl ? fetched_bs_markerurl : "static/img/icons/bs.png";
+				bs_marker_url = fetched_bs_markerurl ? fetched_bs_markerurl : "static/img/icons/bs.png"; 
 
 			// BS marker icon obj
             var bs_marker_icon_obj = gmap_self.getMarkerImageBySize(
@@ -1733,6 +1733,7 @@ function devicePlottingClass_gmap() {
 						"sector_id" : sector_array[j].sector_id,
 						"device_info" : sector_array[j].device_info,
 						"technology" : sector_array[j].technology,
+						"device_type":sector_array[j].device_type,
 						"vendor" : sector_array[j].vendor,
 						"sector_perf_url" : sector_perf_url,
 						"device_name" : sector_array[j].sector_configured_on_device,
@@ -1828,6 +1829,7 @@ function devicePlottingClass_gmap() {
 							clusterIcon 	 	: hiddenIconImageObj,
 							pointType 		 	: 'sector_Marker',
 							technology 		 	: sector_array[j].technology,
+							device_type         : sector_array[j].device_type,
 							vendor 				: sector_array[j].vendor,
 							deviceExtraInfo 	: sector_infoWindow_content,
 							item_index			: sector_item_index,
@@ -1846,7 +1848,7 @@ function devicePlottingClass_gmap() {
 							cktId 				: "",
 							zIndex 				: 200,
 							optimized 			: false,
-	                        antenna_height 		: sector_array[j].antenna_height,
+	                        antenna_height 		: sect_height,
 	                        isActive 			: 1,
 							windowTitle 	    : "Base Station Device"
 	                    }
@@ -1936,6 +1938,7 @@ function devicePlottingClass_gmap() {
 				    	ptLat 			 : 	ss_marker_obj.data.lat,
 				    	ptLon 			 : 	ss_marker_obj.data.lon,
 				    	technology 		 : 	sector_array[j].technology,
+				    	device_type      :  ss_marker_obj.data.device_type,
 				    	icon 			 : 	ss_icon_obj,
 				    	oldIcon 		 : 	ss_icon_obj,
 				    	clusterIcon 	 : 	ss_icon_obj,
@@ -2762,6 +2765,7 @@ function devicePlottingClass_gmap() {
 			beam_width 		 : beam_width,
 			antenna_height 	 : antennaHeight,
 			technology 		 : sectorInfo.technology,
+			device_type      : sectorInfo.device_type,
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,
@@ -2827,6 +2831,7 @@ function devicePlottingClass_gmap() {
 			single_service_polling = maps_single_service_poll_flag ? maps_single_service_poll_flag : false,
 			themetics_polling = maps_themetics_poll_flag ? maps_themetics_poll_flag : false,
 			device_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "",
+			device_type = contentObject.device_type ? $.trim(contentObject.device_type.toLowerCase()) : "",
 			device_pl = contentObject.pl ? contentObject.pl : "",
 			device_name = contentObject.device_name ? contentObject.device_name : "";
 
@@ -2859,7 +2864,8 @@ function devicePlottingClass_gmap() {
 					  <i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>\
 					  <li class=""><a href="#polled_block" data-toggle="tab" id="polled_tab" \
 					  device_id="'+device_id+'" point_type="'+clickedType+'" \
-					  pl_value = "'+device_pl+'" device_tech="'+device_tech+'">\
+					  pl_value = "'+device_pl+'" device_tech="'+device_tech+'" \
+					  device_type="' + device_type + '">\
 					  <i class="fa fa-arrow-circle-o-right"></i> Polled Info \
 					  <i class="fa fa-spinner fa fa-spin hide"> </i></a>\
 					  </li>';
@@ -3061,7 +3067,8 @@ function devicePlottingClass_gmap() {
 			}
 
 			// infoTable += "<table class='table table-bordered table-hover'><tbody>";
-			var sector_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
+			var sector_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "",
+				sector_device_type = contentObject.device_type ? $.trim(contentObject.device_type.toLowerCase()) : "";
 
 			if(ptp_tech_list.indexOf(sector_tech) > -1) {
 				static_info = rearrangeTooltipArray(ptp_sector_toolTip_static,nearEndInfo);
@@ -3110,8 +3117,12 @@ function devicePlottingClass_gmap() {
 				} else if(sector_tech == 'wimax') {
 					actual_polled_info = rearrangeTooltipArray(wimax_sector_toolTip_polled,backend_polled_info);
 				} else if(sector_tech == 'pmp') {
-					actual_polled_info = rearrangeTooltipArray(pmp_sector_toolTip_polled,backend_polled_info);
-				} else {
+					if(device_type == 'radwin5kbs') {
+                                    actual_polled_info = rearrangeTooltipArray(pmp_radwin5k_sector_toolTip_polled, backend_polled_info);
+                                } else {
+                                    actual_polled_info = rearrangeTooltipArray(pmp_sector_toolTip_polled, backend_polled_info);
+                                }					 
+				}else {
 					actual_polled_info = backend_polled_info;
 				}
 
@@ -3218,6 +3229,7 @@ function devicePlottingClass_gmap() {
 				tools_html = "",
 				item_index = contentObject.item_index > -1 ? contentObject.item_index : 0,
 				ss_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
+				ss_device_type = contentObject.device_type ? $.trim(contentObject.device_type.toLowerCase()) : "";
 
 			if(ss_toolTip_static && ss_toolTip_static.length > 0) {
 				var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,contentObject.dataset);
@@ -3303,9 +3315,12 @@ function devicePlottingClass_gmap() {
 					actual_polled_info = rearrangeTooltipArray(ptp_ss_toolTip_polled,backend_polled_info);
 				} else if(ss_tech == 'wimax') {
 					actual_polled_info = rearrangeTooltipArray(wimax_ss_toolTip_polled,backend_polled_info);
-				} else if(ss_tech == 'pmp') {
-					actual_polled_info = rearrangeTooltipArray(pmp_ss_toolTip_polled,backend_polled_info);
-				} else {
+				} else if(ss_tech == 'pmp'){
+						if(ss_device_type == 'radwin5kss' ) {
+							actual_polled_info = rearrangeTooltipArray(pmp_radwin5k_ss_toolTip_polled,backend_polled_info);
+						} else {
+							actual_polled_info = rearrangeTooltipArray(pmp_ss_toolTip_polled,backend_polled_info);}
+				}else {
 					actual_polled_info = backend_polled_info;
 				}
 
@@ -5928,7 +5943,8 @@ function devicePlottingClass_gmap() {
      */
     this.fetchPollingTemplate_gmap = function() {
     	
-    	var selected_technology = $("#polling_tech").val(),
+    	var selected_technology = $.trim($("#polling_tech").val()),
+    		selected_type = $.trim($("#polling_type").val()),
     		pathArray = [],
 			polygon = "",
 			service_type = $("#isPing")[0].checked ? "ping" : "normal";
@@ -5940,13 +5956,13 @@ function devicePlottingClass_gmap() {
 		polygonSelectedDevices = [];
 		pointsArray = [];
 
-    	if(selected_technology != "") {
+    	if(selected_technology && selected_type) {
     		
     		$("#tech_send").button("loading");
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
+    			url : base_url+"/"+"device/ts_templates/?technology="+selected_technology+"&device_type="+selected_type+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
     			success : function(response) {
 					
@@ -6020,11 +6036,14 @@ function devicePlottingClass_gmap() {
 							polygonSelectedDevices = [];
 
 							var selected_polling_technology = $("#polling_tech option:selected").text(),
-								polling_technology_condition = $.trim(selected_polling_technology.toLowerCase());
+								polling_technology_condition = $.trim(selected_polling_technology.toLowerCase()),
+								selected_polling_type = $("#polling_type option:selected").text(),
+								polling_type_condition = $.trim(selected_polling_type.toLowerCase());
 
 							for(var k=allSS.length;k--;) {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon),
 									point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
+									point_type = allSS[k].device_type ? $.trim(allSS[k].device_type.toLowerCase()) : "";
 
 								// if point technology is PTP BH then use it as PTP
 								if(ptp_tech_list.indexOf(point_tech) > -1) {
@@ -6037,7 +6056,7 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(point) {
-									if(point_tech == polling_technology_condition) {
+									if(point_tech == polling_technology_condition && point_type == polling_type_condition) {
 										if(google.maps.geometry.poly.containsLocation(point, polygon)) {
 											if(ptp_tech_list.indexOf(point_tech) > -1) {
 												if(allSSIds.indexOf(allSS[k].device_name) < 0) {
@@ -6068,8 +6087,9 @@ function devicePlottingClass_gmap() {
 								/*Remove current polygon from map*/
 								gmap_self.initLivePolling();
 
-								/*Reset polling technology select box*/
+								/*Reset polling technology and polling type select box*/
 								$("#polling_tech").val($("#polling_tech option:first").val());
+								$("#polling_type").val($("#polling_type option:first").val());
 
 								bootbox.alert("No SS found under the selected area.");
 
@@ -6165,7 +6185,7 @@ function devicePlottingClass_gmap() {
     		});
 
     	} else {
-    		alert("Please select technology.");
+    		alert("Please select technology & type.");
     	}
     };
 
@@ -6230,7 +6250,14 @@ function devicePlottingClass_gmap() {
 	 */
     this.getPollingData_gmap = function(callback) {
 
-    	var service_type = $("#isPing")[0].checked ? "ping" : "normal";
+    	var service_type = $("#isPing")[0].checked ? "ping" : "normal",
+    		selected_device_type = $.trim($('#polling_type option:selected').text()),
+    		is_radwin5 = selected_device_type && selected_device_type.toLowerCase().indexOf('radwin5') > -1 ? 1 : 0,
+    		is_first_call = 0;
+
+    	if($(".deviceWellContainer div.well div ul li").length == 0) {
+    		is_first_call = 1;
+		}
 
 		/*Disable service templates dropdown*/
 		$("#lp_template_select").attr("disabled","disabled");
@@ -6238,7 +6265,7 @@ function devicePlottingClass_gmap() {
 		var selected_lp_template = $("#lp_template_select").val();
 
     	$.ajax({
-			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
+			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type+"&is_radwin5="+is_radwin5+"&is_first_call="+is_first_call,
 			// url : base_url+"/"+"static/services.json?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 			success : function(response) {
 				

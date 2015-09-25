@@ -65,7 +65,7 @@ function get_soft_delete_form(content) {
                         soft_delete_api_url = soft_delete_api_url.replace('1111111', parent_id);
                     }
 
-                    if (soft_delete_api_url) {
+                    if (typeof soft_delete_api_url != 'undefined') {
                         // Show loading spinner
                         showSpinner();
                         // Make Ajax Call
@@ -242,7 +242,7 @@ function add_device_form(content) {
                         "normal_check_interval": parseInt($("#normal_check_interval").text())
                     };
 
-                    if (add_device_to_nms_url) {
+                    if (typeof add_device_to_nms_url != 'undefined') {
                         var add_to_nms_url = add_device_to_nms_url.replace('123', $("#device_id").val());
                         // Make Ajax Call
                         $.ajax({
@@ -304,7 +304,7 @@ function delete_device(device_id) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    if (delete_device_from_nms_url) {
+                    if (typeof delete_device_from_nms_url != 'undefined') {
                         var updated_url = '';
                         updated_url = delete_device_from_nms_url.replace('123', device_id);
 
@@ -359,7 +359,7 @@ function modify_device_state(device_id) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    if (modify_device_state_url) {
+                    if (typeof modify_device_state_url != 'undefined') {
                         var updated_url = '';
 
                         updated_url = modify_device_state_url.replace('123', device_id);
@@ -414,7 +414,7 @@ function sync_devices(device_id) {
                 label: "Sync",
                 className: "btn-success",
                 callback: function () {
-                    if (sync_device_url) {
+                    if (typeof sync_device_url != 'undefined') {
                         update_sync_device_url = sync_device_url;
                         if (device_id) {
                             update_sync_device_url = sync_device_url.replace('123', device_id);
@@ -466,7 +466,7 @@ function remove_sync_deadlock() {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    if (remove_sync_deadlock_url) {
+                    if (typeof remove_sync_deadlock_url != 'undefined') {
                         var updated_url = remove_sync_deadlock_url;
                         // Make Ajax Call
                         $.ajax({
@@ -639,7 +639,7 @@ function get_service_edit_form(content) {
                             }
                         });
 
-                        if (edit_service_url) {
+                        if (typeof edit_service_url != 'undefined') {
                             updated_edit_service_url = edit_service_url.replace('123', $("#device_id").val());
                             // Make Ajax Call
                             $.ajax({
@@ -675,7 +675,7 @@ function get_service_edit_form(content) {
                             var ping_data = {};
                         }
 
-                        if (edit_service_url) {
+                        if (typeof edit_service_url != 'undefined') {
                             updated_edit_service_url = edit_service_url.replace('123', $("#device_id").val());
                             // Make Ajax Call
                             $.ajax({
@@ -715,7 +715,7 @@ function hide_and_show_ping() {
 
     if ($("#ping_checkbox").is(":checked")) {
         if($('#ping_svc').is(':empty')) {
-            if (svc_edit_ping_conf_url) {
+            if (typeof svc_edit_ping_conf_url != 'undefined') {
                 var updated_url = svc_edit_ping_conf_url.replace('123', $('#device_id').val());
 
                 // Make Ajax Call
@@ -782,7 +782,7 @@ function show_old_configuration_for_svc_edit(value) {
     var service_dom_id = "#svc_"+value;
     if ($(service_dom_id).is(":checked")){
         var old_conf_updated_url = '';
-        if (svc_edit_old_conf_url) {
+        if (typeof svc_edit_old_conf_url != 'undefined') {
             old_conf_updated_url = svc_edit_old_conf_url.replace('123', value);
             old_conf_updated_url = old_conf_updated_url.replace('11111111', $('#device_id').val());
 
@@ -872,7 +872,7 @@ function show_old_configuration_for_svc_edit(value) {
 function show_new_configuration_for_svc_edit(service_id) {
     var template_id = $("#service_template_"+$.trim(service_id)).val(),
         updated_url = '';
-    if (svc_edit_new_conf_url) {
+    if (typeof svc_edit_new_conf_url != 'undefined') {
         updated_url = svc_edit_new_conf_url.replace('123', service_id);
         updated_url = updated_url.replace('11111111', template_id);
         // Make Ajax Call
@@ -1020,7 +1020,7 @@ function get_service_delete_form(content) {
                             });
                         });
 
-                        if (delete_service_url) {
+                        if (typeof delete_service_url != 'undefined') {
                             updated_delete_service_url = delete_service_url.replace('123', $("#device_id").val());
                             // Make Ajax Call
                             $.ajax({
@@ -1157,7 +1157,8 @@ function get_service_add_form(content) {
                                 service_data.push(svc);
                             }
                         });
-                        if (add_service_url) {
+
+                        if (typeof add_service_url != 'undefined') {
                             updated_add_service_url = add_service_url.replace('123', content.device_id);
                             // Make Ajax Call
                             $.ajax({
@@ -1199,7 +1200,7 @@ function show_old_configuration_for_svc_add(value) {
     id = "#svc_"+value;
     if ($(id).is(":checked")) {
         var updated_svc_add_old_conf_url = '';
-        if (svc_add_old_conf_url) {
+        if (typeof svc_add_old_conf_url != 'undefined') {
             updated_svc_add_old_conf_url = svc_add_old_conf_url.replace('123', $('#device_id').val());
             updated_svc_add_old_conf_url = updated_svc_add_old_conf_url.replace('11111111', value);
 
@@ -1248,7 +1249,7 @@ function show_new_configuration_for_svc_add(value){
         template_id = $("#service_template_"+value).val(),
         update_svc_add_new_conf_url = '';
 
-    if (svc_add_new_conf_url) {
+    if (typeof svc_add_new_conf_url != 'undefined') {
         update_svc_add_new_conf_url = svc_add_new_conf_url.replace('123', service_id);
         update_svc_add_new_conf_url = update_svc_add_new_conf_url.replace('11111111', template_id);
 
@@ -1454,7 +1455,7 @@ function get_restore_device_form(content) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    if (restore_device_url) {
+                    if (typeof restore_device_url != 'undefined') {
                         var updated_url = '';
                         updated_url = restore_device_url.replace('123', $("#device_id").val());
 

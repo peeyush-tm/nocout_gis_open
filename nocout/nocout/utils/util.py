@@ -3,12 +3,13 @@ import datetime
 from random import randint
 from HTMLParser import HTMLParser
 import htmlentitydefs
-
+from django.http import HttpResponse, HttpRequest
+import json
 from dateutil import tz
 from django.db import connections
 from django.db.models import Q
 from operator import itemgetter
-from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME
+from nocout.settings import DATE_TIME_FORMAT, USE_TZ, CACHE_TIME, MAX_SUGGESTION_COUNT, DATATABLE_SEARCHTXT_KEY
 
 date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
@@ -900,7 +901,7 @@ def query_all_gis_inventory(monitored_only=False, technology=None, type_rf=None,
     tech = " "
 
     if monitored_only:
-        added_device = "where device.is_added_to_nms = 1 "
+        added_device = "where device.is_added_to_nms > 0 "
 
     if technology:
         tech = " and technology.name = '{0}'".format(technology)
@@ -2420,3 +2421,58 @@ def time_delta_calculator(timestamp, hours=0, minutes=0, seconds=0):
     else:
         return False
 
+
+
+
+
+def getAdvanceFiltersSuggestions(request):
+    '''
+    This function returns the autosuggestions for advance filters as per the GET params
+    '''
+    result = {
+        'success' : 0,
+        'message' : 'No record found',
+        'data' : []
+    }
+
+    app_name = request.GET.get('app_name', None)
+    class_name = request.GET.get('class_name', None)
+    column = request.GET.get('column', None)
+    search_txt = request.GET.get('search_txt', None)
+    if app_name and class_name and column and search_txt:
+        
+        # import class
+        exec "from {}.views import {}".format(app_name, class_name) in globals(), locals()
+
+        get_params = request.GET.get('get_params', '{}')
+        get_params = eval(get_params)
+        get_params['iDisplayLength'] = MAX_SUGGESTION_COUNT
+        get_params[DATATABLE_SEARCHTXT_KEY] = search_txt
+
+
+        suggestion_req_obj = eval("{}()".format(class_name))
+
+        suggestion_req_obj.request = request
+        suggestion_req_obj.request.GET = get_params
+        suggestion_req_obj.kwargs = get_params
+        suggestion_req_obj.max_display_length = MAX_SUGGESTION_COUNT
+        suggestion_req_obj.columns = [column]
+
+        suggestion_result = suggestion_req_obj.get_context_data()
+        formatted_data = list()
+        distinct_values = list()
+        if 'aaData' in suggestion_result:
+            for item in suggestion_result['aaData']:
+                if item.get(column) not in distinct_values:
+                    distinct_values.append(item.get(column))
+                    formatted_data.append({
+                        'id' : html_to_text(str(item.get(column))),
+                        'text' : html_to_text(str(item.get(column)))
+                    })
+
+        result['data'] = formatted_data
+        if len(distinct_values) > 0:
+            result['success'] = 1
+            result['message'] = 'Data fetched successfully'
+
+    return HttpResponse(json.dumps(result), content_type="application/json")
