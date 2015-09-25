@@ -125,7 +125,7 @@ def check_rad5k_dl_rssi(item, params, info):
 		if info :
 	        	ss_serial_number = info[0][0]
 	        	if ss_serial_number:
-	                	dl_rssi =live_query_for_rad5k_dl_rssi(ss_serial_number)
+	                	dl_rssi =int(live_query_for_rad5k_dl_rssi(ss_serial_number))
 	                	if dl_rssi is not None:
 	                        	if dl_rssi < crit :
 	                                	state = 2
