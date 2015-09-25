@@ -71,7 +71,7 @@ span.dept {
 
 /*CSS for Tabs on the widget header (To show the widget setting menu icons)*/
 .box .header-tabs .nav-tabs {
-  margin-right: 35px;
+  /*margin-right: 35px;*/
 }
 
 /*CSS for side menu*/

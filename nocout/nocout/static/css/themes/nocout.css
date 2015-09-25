@@ -1060,9 +1060,9 @@ select option:hover
   box-shadow: none !important;
   color: #444;
   float: left;
-  margin-right: 10px;
-  margin-left: 10px;
-  padding: 6px 15px;
+  margin-right: 0px;
+  margin-left: 0px;
+  padding: 5px 10px;
   position: relative;  
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
@@ -1079,6 +1079,9 @@ select option:hover
   border:none; 
   border-bottom: 3px solid #ca1e25;
 }
+.nav-tabs li {
+  padding: 0px 5px;
+}
 
 .nav-tabs > li.active , .nav-tabs > li.active:hover,.nav-tabs > li.active:focus { 
   border-left: 0px none !important;
@@ -1090,8 +1093,8 @@ select option:hover
 .box .header-tabs .nav-tabs > li {
   border-right: 1px inset #c6c6ce !important;
   border-left: 0px none!important;
-  margin: 0px 5px;
-  /*margin-bottom: 0px;*/
+  /*margin: 0px 5px;*/
+  margin-bottom: 0px;
 }
 .box .header-tabs .nav-tabs > li:first-child {
   border-right: 0px none!important;
