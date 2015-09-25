@@ -120,13 +120,13 @@ def check_rad5k_ul_uas_invent(item, params, info):
 		if info :
 	        	ss_serial_number = info[0][0]
         		if ss_serial_number:
-                		ul_uas =live_query_for_rad5k_ss_ul_uas(ss_serial_number)
+                		ul_uas =int(live_query_for_rad5k_ss_ul_uas(ss_serial_number))
                 		if ul_uas is not None:
-	                		if ul_uas > warn and ul_uas < crit:
+	                		if  ul_uas >= warn and  ul_uas < crit:
         	                		state = 1
-                			elif ul_uas > crit:
+                			elif  ul_uas >= crit:
                         			state = 2
-                			else:
+                			elif ul_uas == 0 :
                         			state = 0
              		           	infotext = "ul_uas=%s" % ul_uas
 	except ValueError:
