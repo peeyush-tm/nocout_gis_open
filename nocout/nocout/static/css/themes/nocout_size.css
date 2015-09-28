@@ -1,0 +1,217 @@
+
+.navbar .navbar-brand {
+  float: left;
+  font-size: 18px;
+  line-height: 20px;
+  padding: 15px;
+  width: 250px;
+}
+.navbar .dropdown-toggle i {  
+  font-size: 16px;
+}
+.navbar .dropdown-toggle .badge {
+  border-radius: 99px ;
+  font-size: 10px ;
+  font-weight: 300;
+  height: 16px;
+  padding: 2px 6px;
+  position: absolute;
+  right: 28px;
+  text-align: center;
+  top: 8px;
+}
+.navbar .dropdown-toggle .username {
+  font-weight: 400;
+}
+
+.navbar #header-notification .dropdown-toggle i,
+.navbar #header-message .dropdown-toggle i,
+.navbar #header-tasks .dropdown-toggle i {
+   border-radius: 100px !important;
+  /*text-shadow: 1px 1px #b4c7da, -1px -1px #375471;*/
+}
+.navbar #navbar-left li.dropdown {
+  font-weight: 400;
+ }
+.navbar .nav.navbar-nav.pull-right {
+  min-width: 0 !important;
+  /*border-left: solid 1px #EEEEEE;*/
+  padding-left: 10px;
+}
+.dropdown-menu {  
+  z-index: 9999; 
+  display: none;
+  float: left;
+  left: 0;
+  font-size: 14px;
+  list-style: none outside none;
+  margin: 0;
+  max-width: 300px;
+  min-width: 166px;
+  padding: 0;
+  position: absolute;
+  text-shadow: none;
+  top: 100%;
+  z-index: 1000;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  border-radius: 0 ;
+  box-shadow: none ;
+  border-style: none solid solid ;
+  border-width: 0 1px 1px ;  
+}
+.dropdown-menu .dropdown-title {
+  
+  display: block;
+  font-weight: 600;
+  line-height: 30px;
+  padding: 5px 10px;
+}
+.dropdown-menu .dropdown-title i {
+  margin-right: 5px;
+}
+.dropdown-menu .footer {
+  display: block;
+}
+.dropdown-menu .footer a {
+	font-weight: 600;
+  	line-height: 30px;
+  	text-align: center;
+}
+.dropdown-menu .footer a i {
+  margin-left: 5px;
+  font-size: 16px;
+}
+.dropdown-menu ul {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.navbar #navbar-left i {
+  margin-right: 5px;
+  /*color: #FFFFFF;*/
+}
+
+
+/* Navbar Right Menu */
+.dropdown-menu {  
+  border-style: none solid solid !important;
+  border-width: 0 1px 1px !important;  
+  }
+.dropdown-menu > li >  a {
+  background-color: #FFFFFF !important;
+  color: #555 !important;
+  }
+.dropdown-menu > li > a:hover,
+.dropdown-menu > li > a:focus {
+  background-color: none !important;
+  text-decoration: none;
+}
+ 
+.dropdown-menu.context li a {
+  line-height: 30px;
+}
+
+
+.dropdown-menu .divider {
+  height: 1px;
+  margin: 0 !important;
+}
+/* Notification */
+.dropdown-menu.notification {
+  border-top: 1px solid #FAFAFA;
+  width: 270px;
+}
+.dropdown-menu.notification .label { 
+  display: inline-block;
+  margin: -1px 10px -5px -10px !important;
+  padding: 9px;
+  text-align: center;
+  width: 40px;
+  height: 42px;
+  border-radius: 0;
+  position: absolute;
+}
+.dropdown-menu.notification .label i {
+  font-size: 18px;
+}
+.dropdown-menu.notification .body {
+  position: relative;
+  display: inline-block;
+  line-height: 20px;
+  vertical-align: middle;
+  white-space: normal;
+  margin: 5px 5px 5px 40px;
+  width: 100%;
+}
+.dropdown-menu.notification .message {
+  line-height: 16px;
+  display: inline-block;
+  margin: 0 5px 5px 0;
+}
+.dropdown-menu.notification .time {
+  color: #777777;
+  display: inline-block;
+  font-size: 12px;
+}
+/* Messages */
+.dropdown-menu.inbox {
+  border-top: 1px solid #FAFAFA;
+  width: 280px;
+}
+.dropdown-menu.inbox img {
+  border-radius: 50em 50em 50em 50em;
+  height: 40px;
+  margin-right: 10px;
+  margin-top: 5px;
+  width: 40px;
+}
+.dropdown-menu.inbox .body {
+  position: relative;
+  display: inline-block;
+  line-height: 20px;
+  max-width: 220px;
+  vertical-align: middle;
+  white-space: normal;
+  margin: 5px 0;
+}
+.dropdown-menu.inbox .from {
+  display: inline-block;
+  line-height: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.dropdown-menu.inbox .message {
+  line-height: 16px;
+  display: block;
+  margin-bottom: 5px;
+}
+.dropdown-menu.inbox .time {
+  /*color: #777777;*/
+  display: block;
+  font-size: 12px;
+}
+.dropdown-menu.inbox .compose {
+  display: block;
+}
+.dropdown-menu.inbox .compose :hover {
+  cursor: pointer;
+}
+
+h5.bigger, .h5 {
+  font-size: 16px ;
+  font-weight: normal ;
+  color:#333;
+}
+h4.bigger
+{
+  font-size: 18px ;
+  font-weight: normal ;
+  color:#333;
+}
+.dataTables_length > label
+{
+  font-weight: normal ;
+}
+table.dataTable thead th, table.dataTable tfoot th {
+  font-size: 14px ;
+  font-weight: normal ;
+}
