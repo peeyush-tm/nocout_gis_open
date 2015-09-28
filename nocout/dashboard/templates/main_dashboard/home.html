@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
     {% if isOther == 0 %}
         {% breadcrumb_safe "Main Dashboard" "home" %}
     {% else %}
@@ -34,29 +34,24 @@
 
 <div class="box border lite" id="main_dashboard_container">
     <div class="box-title">
-        <h4><i class="fa fa-dashboard"></i> {{ page_title }}</h4>
+        <h4><i class="fa fa-television"></i> {{ page_title }}</h4>
     </div>
     <div class="box-body">
         <!-- ********** FIRST ROW START **********-->
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3">
             <div class="custom_seperator">&nbsp;</div>
-                 
-            <div class="col-md-10 col-md-offset-2" >
-                <div class="">
-                    
-                      
-                        <h5 class="bigger">
-                            <div class="pull-left">
-                                <i class="fa fa-line-chart text-success" id="down-all_trend" title="Down Trends" style="margin-right:5px"></i> 
-                            </div>
-                            Down <small id="down-all_timestamp"></small>
-                        </h5>
-                    
-
+            
+            <div class="col-md-12">
+                <div class="pull-left">
+                    <h5 class="bigger">
+                        Down <small id="down-all_timestamp"></small>
+                    </h5>       
                 </div>
                 <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
-               
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success" id="down-all_trend" title="Down Trends"></i> 
+                </div>
                 <div class="clearfix"></div>
             </div>
             <div class="col-md-12" style="float:left">
@@ -66,21 +61,17 @@
 
         <div class="col-md-3">
             <div class="custom_seperator">&nbsp;</div>
-                
-            <div class="col-md-10 col-md-offset-2">
-                <div class="">
-                    
-                 
+            
+            <div class="col-md-12">
+                <div class="pull-left">
                     <h5 class="bigger">
-                        <div class="pull-left">
-                            <i class="fa fa-line-chart text-success" id="latency-all_trend" title="Latency Trends" style="margin-right:5px"></i>
-                        </div>
                         Latency <small id="latency-all_timestamp"></small>
                     </h5>       
                 </div>
-           
                 <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
-                
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success" id="latency-all_trend" title="Latency Trends"></i>
+                </div>
                 <div class="clearfix"></div>
             </div>
         <div class="col-md-12" style="float:left">
@@ -89,20 +80,17 @@
         </div>
         <div class="col-md-3">
             <div class="custom_seperator">&nbsp;</div>
-                
-            <div class="col-md-11 col-md-offset-2">
-                <div class="">                    
-                    
-                        <h5 class="bigger">
-                            <div class="pull-left">
-                                <i class="fa fa-line-chart text-success" id="packetloss-all_trend" title="Packet Drop Trends" style="margin-right:5px"></i>
-                            </div>
-                            Packet Drop<small id="packetloss-all_timestamp"></small>
-                        </h5>       
-               
-            </div>
+           
+            <div class="col-md-12">
+                <div class="pull-left">
+                    <h5 class="bigger">
+                        Packet Drop<small id="packetloss-all_timestamp"></small>
+                    </h5>       
+                </div>
                 <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
-                
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success" id="packetloss-all_trend" title="Packet Drop Trends"></i>
+                </div>
                 <div class="clearfix"></div>
             </div>
             <div class="col-md-12" style="float:left">
@@ -112,19 +100,15 @@
         <div class="col-md-3">
             <!--    <div class="custom_seperator">&nbsp;</div>
             -->
-           
-            <div class="col-md-11 col-md-offset-2">
-                <div class="">
-                    
-                    
-                        <h5 class="bigger">
-                             <div class="pull-left">
-                                <i class="fa fa-line-chart text-success" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends" style="margin-right:5px"></i>
-                            </div>
-                            Temperature<small id="temperature-idu-wimax_timestamp"></small>
-                        </h5>
+            <div class="col-md-12">
+                <div class="pull-left">
+                    <h5 class="bigger">
+                        Temperature<small id="temperature-idu-wimax_timestamp"></small>
+                    </h5>
                 </div>
-            
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends"></i>
+                </div>
                 <div class="clearfix"></div>
             </div>
 
