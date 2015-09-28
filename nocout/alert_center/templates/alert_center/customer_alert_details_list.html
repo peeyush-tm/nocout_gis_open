@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-bell-o'></i> Alert Center" "javascript:;" %}
     {% breadcrumb_safe "Alert Details" "javascript:;" %}
     {% breadcrumb_safe "Customer Alert Details" "customer_alert_details" %}
     {% breadcrumb_safe "PTP" "customer_alert_details" %}
@@ -28,7 +28,7 @@
 
     <div class="box border lite" style="background: #fff;">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell"></i>CUSTOMER ALERT {{ data_source|upper }}</h4>
+            <h4><i class="fa fa-bell-o"></i>CUSTOMER ALERT {{ data_source|upper }}</h4>
         </div>
 
         <div class="box-body">

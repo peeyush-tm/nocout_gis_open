@@ -71,7 +71,7 @@
         {% else %}
             <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
         {% endif %}
-
+            <link rel="stylesheet" type="text/css" href={% static "css/themes/nocout_size.css" %}>
         {% block css %}{% endblock %}
     </head>
     <body>
@@ -85,9 +85,9 @@
                 <div id="sidebar-collapse" class="sidebar-collapse btn">
                     <span class = "fa-bar logo" data-icon1="fa fa-bars" data-icon2="fa fa-bars">
                         {% if settings.ENABLE_WHITE_THEME %}
-                            <img class="fa fa-barsd" src="/static/img/logo/Teramatrix-Logo-300x300.png"></img>
+                            <img class="fa fa-barsd" src="/static/img/logo/logo_red.png"></img>
                         {% else %}
-                            <img class="fa fa-barsd" src="/static/img/logo/Teramatrix-Logo-black-60x60.png"></img>
+                            <img class="fa fa-barsd" src="/static/img/logo/logo_white.png"></img>
                         {% endif %}
                     </span>
                     <!-- <i class="fa fa-bars" data-icon1="fa fa-bars" data-icon2="fa fa-bars"></i> -->
