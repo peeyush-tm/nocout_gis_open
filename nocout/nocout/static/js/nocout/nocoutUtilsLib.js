@@ -610,7 +610,33 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     // Is the y axis should be reversed or not
     var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false,
         legends_color = text_color ? text_color : "#FFF",
-        xMinRange = chartConfig["x_min_range"] ? chartConfig["x_min_range"] : 3600000;
+        xMinRange = chartConfig["x_min_range"] ? chartConfig["x_min_range"] : 3600000,
+        yAxisObj = '';
+
+    // Create yAxis data as per the given params
+    if (typeof chartConfig.valuetext == 'string') {
+        yAxisObj = {
+            title : {
+                text : chartConfig.valuetext
+            },
+            reversed : is_y_inverted
+        };
+    } else {
+        yAxisObj = [];
+        for(var i=0;i<chartConfig.valuetext.length;i++) {
+            var opposite = false;
+            if (i == chartConfig.valuetext.length -1) {
+                opposite = true;
+            }
+            yAxisObj.push({
+                title : {
+                    text : chartConfig.valuetext[i]
+                },
+                reversed : is_y_inverted,
+                opposite : opposite
+            })
+        }
+    }
 
     var chart_options = {
         chart: {
@@ -733,14 +759,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 year: '%Y'
             }
         },
-        yAxis: [
-            {
-                title : {
-                    text : chartConfig.valuetext
-                },
-                reversed : is_y_inverted
-            }
-        ],
+        yAxis: yAxisObj,
         plotOptions : {
             column : {
                 borderWidth : 0,
@@ -770,7 +789,11 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     }
 
     if ($('#'+dom_id+'_chart').hasClass('charts_block')) {
-        $('#'+dom_id+'_chart').attr('style', 'height:250px;');
+        if (dom_id.indexOf('ping') > -1) {
+            $('#'+dom_id+'_chart').attr('style', 'height:350px;');
+        } else {
+            $('#'+dom_id+'_chart').attr('style', 'height:250px;');
+        }
     }
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
@@ -1834,6 +1857,12 @@ function populateBirdViewCharts(start, end) {
             
             // Update url with actual service name
             api_url = api_url.replace('srv_name', srv_name);
+
+            if (api_url.indexOf('?') > -1) {
+                api_url = api_url + '&service_view_type=unified'
+            } else {
+                api_url = api_url + '?service_view_type=unified'
+            }
 
             // call function to fetch perf data for this service
             perfInstance.getServiceData(api_url, srv_name, current_device);
