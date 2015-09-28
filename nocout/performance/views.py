@@ -1182,12 +1182,46 @@ class InventoryDeviceStatus(View):
 
             if list_devices_invent_info:
                 lowered_device_tech = list_devices_invent_info[0]['device_technology'].lower()
+                # get device name from fetched info
+                device_name = list_devices_invent_info[0]['device_name']
+                # get machine name from fetched info
+                machine_name = list_devices_invent_info[0]['machine_name']
+                # If customer device then fetch the polled frequency from distributed DB's
+                if page_type == 'customer':
+                    service_name = ''
+                    ds_name = ''
+                    if lowered_device_tech in ['ptp', 'p2p']:
+                        service_name = 'radwin_frequency_invent'
+                    elif lowered_device_tech == 'pmp':
+                        try:
+                            device_type_name = DeviceType.objects.get(
+                                id=Device.objects.get(device_name=device_name).device_type
+                            ).name
+                            device_type_name = device_type_name.lower()
+                        except Exception, e:
+                            device_type_name = ''
+
+                        if 'cambium' in device_type_name or 'canopy' in device_type_name:
+                            service_name = 'cambium_ss_frequency_invent'
+                        else:
+                            service_name = 'rad5k_ss_frequency_invent'
+                    elif  lowered_device_tech == 'wimax':
+                        service_name = 'wimax_ss_frequency'
+                    else:
+                        pass
+
+                    if service_name and device_name and machine_name:
+                        freq_data_obj = InventoryStatus.objects.filter(
+                            device_name=device_name,
+                            service_name=service_name,
+                            data_source='frequency'
+                        ).order_by('-sys_timestamp').using(alias=machine_name)[:1]
+
+                        if freq_data_obj and freq_data_obj[0].current_value:
+                            list_devices_invent_info[0]['polled_frequency'] = freq_data_obj[0].current_value
+
                 # If SS device & of PMP or Wimax Technology then fetch the qos_bandwidth from distributed DB
                 if page_type == 'customer' and lowered_device_tech in ['pmp', 'wimax']:
-                    # get device name from fetched info
-                    device_name = list_devices_invent_info[0]['device_name']
-                    # get machine name from fetched info
-                    machine_name = list_devices_invent_info[0]['machine_name']
                     service_name = ''
                     ds_name = ''
                     
@@ -4376,4 +4410,3 @@ def device_last_down_time(device_object):
     #first check the current PL state of the device
     s, a = device_current_status(device_object=device_object)
     return a['down']  # return the last down time of the device
-    
