@@ -2951,12 +2951,22 @@ class GetServiceTypePerformanceData(View):
         """
         vlan = "NA"
 
+        ss_type = None
+        try:
+            ss_type = DeviceType.objects.get(id=ss_device_object.device_type).name
+        except Exception as e:
+            pass
+
         if technology and technology.name.lower() in ['wimax']:
             service_name = 'wimax_ss_vlan_invent'
             data_source = 'ss_vlan'
         elif technology and technology.name.lower() in ['pmp']:
-            service_name = 'cambium_vlan_invent'
-            data_source = 'vlan'
+            if ss_type.lower() == 'radwin5kss':
+                service_name = 'rad5k_man_vlan_invent'
+                data_source = 'ss_vlan'
+            else:
+                service_name = 'cambium_vlan_invent'
+                data_source = 'vlan'
         else:
             service_name = None
             data_source = None
@@ -2971,7 +2981,6 @@ class GetServiceTypePerformanceData(View):
                 vlan = vs[0].current_value
             except Exception as e:
                 log.exception(e.message)
-                vlan = "NA"
 
         return vlan
 
