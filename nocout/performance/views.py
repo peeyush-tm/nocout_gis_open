@@ -1865,7 +1865,7 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
         inventory_device_name = device.device_name
 
         service_view_type = self.request.GET.get('service_view_type')
-        is_unified_view = service_view_type and service_view_type == 'unified'
+        is_unified_view = (service_view_type and service_view_type == 'unified') or data_source == 'all'
 
         self.data_source = self.kwargs['service_data_source_type']
 
@@ -2233,10 +2233,11 @@ class GetServiceTypePerformanceData(View):
         show_chart = True
 
         service_view_type = self.request.GET.get('service_view_type')
-        is_unified_view = service_view_type and service_view_type == 'unified'
+        # is_unified_view = service_view_type and service_view_type == 'unified'
+        is_unified_view = (service_view_type and service_view_type == 'unified') or service_data_source_type == 'all'
 
         # Chart type as per unified view. Show only table if anyone ds has table type.
-        if is_unified_view or service_data_source_type == 'all':
+        if is_unified_view:
             for sds in SERVICE_DATA_SOURCE:
                 if show_chart:
                     if service_name.strip() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
@@ -3433,12 +3434,19 @@ class GetServiceTypePerformanceData(View):
             ds_list = list(set(performance_data.values_list('data_source', flat=True)))
             service_view_type = self.request.GET.get('service_view_type')
             is_unified_view = service_view_type and service_view_type == 'unified'
+            counter = -1
             for ds in ds_list:
                 # Variables used for HISTORICAL data
                 data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
                 data_list_min, data_list_max, data_list_avg =  list(), list(), list()
                 min_data_list = list()
                 max_data_list = list()
+                is_dual_axis = False
+                counter += 1
+                # If data source is PL/RTA then enable 'is_dual_axis' flag
+                if ds in ['pl', 'rta'] and is_unified_view:
+                    is_dual_axis = True
+
                 x = performance_data.filter(data_source=ds)
                 for data in x:
                     temp_time = data.sys_timestamp
@@ -3467,12 +3475,28 @@ class GetServiceTypePerformanceData(View):
 
                         self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[sds_name]["type"] \
                             if sds_name in SERVICE_DATA_SOURCE else "area"
+                        
+                        if is_dual_axis:
+                            
+                            if 'valuesuffix' not in self.result['data']['objects']:
+                                self.result['data']['objects']['valuesuffix'] = list()
+                            if 'valuetext' not in self.result['data']['objects']:
+                                self.result['data']['objects']['valuetext'] = list()
 
-                        self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
-                            if sds_name in SERVICE_DATA_SOURCE else ""
+                            ds_suffix = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] if sds_name in SERVICE_DATA_SOURCE else ""
+                            ds_txt = SERVICE_DATA_SOURCE[sds_name]["valuetext"] if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                            
+                            if ds_suffix not in self.result['data']['objects']['valuesuffix']:
+                                self.result['data']['objects']['valuesuffix'].append(ds_suffix)
 
-                        self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
-                            if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
+                            if ds_txt not in self.result['data']['objects']['valuetext']:
+                                self.result['data']['objects']['valuetext'].append(ds_txt)
+                        else:
+                            self.result['data']['objects']['valuesuffix'] = SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
+                                if sds_name in SERVICE_DATA_SOURCE else ""
+
+                            self.result['data']['objects']['valuetext'] = SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
+                                if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
 
                         self.result['data']['objects']['plot_type'] = 'charts'
 
@@ -3753,59 +3777,119 @@ class GetServiceTypePerformanceData(View):
                             ]
 
                 if data_list and len(data_list) > 0:
-                    chart_data.append({
-                        'name': self.result['data']['objects']['display_name'],
-                        'data': data_list,
-                        'color' : data_list[0]['color'],
-                        'type': self.result['data']['objects']['type'],
-                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                        'valuetext': self.result['data']['objects']['valuetext'],
-                        'is_inverted': self.result['data']['objects']['is_inverted']
-                    })
+                    if is_dual_axis:
+                        chart_data.append({
+                            'name': self.result['data']['objects']['display_name'],
+                            'data': data_list,
+                            'yAxis' : counter,
+                            'color' : data_list[0]['color'],
+                            'type': self.result['data']['objects']['type'],
+                            'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                            'valuetext': self.result['data']['objects']['valuetext'],
+                            'is_inverted': self.result['data']['objects']['is_inverted']
+                        })
+                    else:
+                        chart_data.append({
+                            'name': self.result['data']['objects']['display_name'],
+                            'data': data_list,
+                            'color' : data_list[0]['color'],
+                            'type': self.result['data']['objects']['type'],
+                            'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                            'valuetext': self.result['data']['objects']['valuetext'],
+                            'is_inverted': self.result['data']['objects']['is_inverted']
+                        })
 
                     if len(min_data_list):
-                        chart_data.append({
-                            'name': str("min value").title() + '(' + str(display_name) + ')' if is_unified_view else str("min value").title(),
-                            'color': '#01CC14',
-                            'data': min_data_list,
-                            'type': 'line',
-                            'marker': {
-                                'enabled': False
-                            }
-                        })
+                        if is_dual_axis:
+                            chart_data.append({
+                                'name': str("min value").title() + '(' + str(display_name) + ')' if is_unified_view else str("min value").title(),
+                                'color': '#01CC14',
+                                'data': min_data_list,
+                                'yAxis' : counter,
+                                'type': 'line',
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
+                        else:
+                            chart_data.append({
+                                'name': str("min value").title() + '(' + str(display_name) + ')' if is_unified_view else str("min value").title(),
+                                'color': '#01CC14',
+                                'data': min_data_list,
+                                'type': 'line',
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
 
                     if len(max_data_list):
-                        chart_data.append({
-                            'name': str("max value").title() + '(' + str(display_name) + ')' if is_unified_view else str("max value").title(),
-                            'color': '#FF8716',
-                            'data': max_data_list,
-                            'type': 'line',
-                            'marker': {
-                                'enabled': False
-                            }
-                        })
+                        if is_dual_axis:
+                            chart_data.append({
+                                'name': str("max value").title() + '(' + str(display_name) + ')' if is_unified_view else str("max value").title(),
+                                'color': '#FF8716',
+                                'yAxis' : counter,
+                                'data': max_data_list,
+                                'type': 'line',
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
+                        else:
+                            chart_data.append({
+                                'name': str("max value").title() + '(' + str(display_name) + ')' if is_unified_view else str("max value").title(),
+                                'color': '#FF8716',
+                                'data': max_data_list,
+                                'type': 'line',
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
 
                     if len(warn_data_list):
-                        chart_data.append({
-                            'name': str("warning threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("warning threshold").title(),
-                            'color': WARN_COLOR,
-                            'data': warn_data_list,
-                            'type': WARN_TYPE,
-                            'marker': {
-                                'enabled': False
-                            }
-                        })
+                        if is_dual_axis:
+                            chart_data.append({
+                                'name': str("warning threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("warning threshold").title(),
+                                'color': WARN_COLOR,
+                                'data': warn_data_list,
+                                'yAxis' : counter,
+                                'type': WARN_TYPE,
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
+                        else:
+                            chart_data.append({
+                                'name': str("warning threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("warning threshold").title(),
+                                'color': WARN_COLOR,
+                                'data': warn_data_list,
+                                'type': WARN_TYPE,
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
                     # Condition of length of warning list  
                     if len(crit_data_list):
-                        chart_data.append({
-                            'name': str("critical threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("critical threshold").title(),
-                            'color': CRIT_COLOR,
-                            'data': crit_data_list,
-                            'type': CRIT_TYPE,
-                            'marker': {
-                                'enabled': False
-                            }
-                        })
+                        if is_dual_axis:
+                            chart_data.append({
+                                'name': str("critical threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("critical threshold").title(),
+                                'color': CRIT_COLOR,
+                                'data': crit_data_list,
+                                'yAxis' : counter,
+                                'type': CRIT_TYPE,
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
+                        else:
+                            chart_data.append({
+                                'name': str("critical threshold").title() + '(' + str(display_name) + ')' if is_unified_view else str("critical threshold").title(),
+                                'color': CRIT_COLOR,
+                                'data': crit_data_list,
+                                'type': CRIT_TYPE,
+                                'marker': {
+                                    'enabled': False
+                                }
+                            })
             #this ensures a further good presentation of data w.r.t thresholds
 
             self.result['success'] = 1
