@@ -38,21 +38,22 @@ var perf_that = "",
         {"id": "yearly", "title": "Yearly"}
     ],
     default_live_table_headers_without_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true}
     ],
     default_live_table_headers_with_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true}
+        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true},
     ]
     default_hist_table_headers = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': true},
@@ -60,7 +61,6 @@ var perf_that = "",
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
     ],
     date_range_picker_html = "",
     spinner_html = '<h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>',

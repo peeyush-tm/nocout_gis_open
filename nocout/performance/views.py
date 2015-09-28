@@ -670,9 +670,6 @@ class GetPerfomance(View):
             else:
                 pass
         except Exception, e:
-            print ' -- Exception -- '
-            print e
-            print ' -- Exception -- '
             # log.info(e.message)
             bs_alias = None
 
@@ -1773,11 +1770,11 @@ class ServiceDataSourceHeaders(ListView):
         context = super(ServiceDataSourceHeaders, self).get_context_data(**kwargs)
 
         datatable_headers = [
+            {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'},
             {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
             {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto'},
             {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto'},
             {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto'},
-            {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'},
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
             {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
             {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
@@ -1799,11 +1796,11 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
     model = PerformanceService
 
     columns = [
+        'sys_timestamp',
         'current_value',
         'severity',
         'warning_threshold',
         'critical_threshold',
-        'sys_timestamp',
         'data_source',
         'service_name',
         'min_value',
@@ -2034,7 +2031,21 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             avg_val = eval(str(self.formula) + "(" + str(item['avg_value']) + ")") \
                 if self.formula else item['avg_value']
 
+            display_name = item['data_source']
+
+            # Prepare sds key to fetch actual display name for DS
+            if item['data_source'] in ['pl', 'rta', 'availability']:
+                sds_key = item['data_source']
+            else:
+                sds_key = str(item['service_name']) + '_' + str(item['data_source'])
+            try:
+                if SERVICE_DATA_SOURCE.get(sds_key):
+                    display_name = SERVICE_DATA_SOURCE.get(sds_key).get('display_name')
+            except Exception, e:
+                display_name = item['data_source']
+
             item.update(
+                data_source=display_name,
                 current_value=current_val,
                 sys_timestamp=datetime_obj.strftime(
                     # '%d-%m-%Y %H:%M'
