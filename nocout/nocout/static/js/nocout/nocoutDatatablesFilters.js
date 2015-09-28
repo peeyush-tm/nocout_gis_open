@@ -456,7 +456,8 @@ $('#content').delegate('.show_advance_filters_btn', 'click', function(e) {
 		splitted_id = button_id.split('_advance_filter_btn'),
 		filter_container_id = splitted_id[0] + '_advance_filter';
 
-	$('#' + filter_container_id).slideDown('slow');
+	$('#' + filter_container_id).slideToggle('slow');
+
 });
 
 $('#content').delegate('.filter_cancel_btn', 'click', function(e) {

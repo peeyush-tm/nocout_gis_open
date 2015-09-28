@@ -623,3 +623,6 @@ table.dataTable thead th, table.dataTable tfoot th{
   position: relative;
   float: right;
 }
+.text-ttpl {
+  color: #5e87b0;
+}
