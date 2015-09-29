@@ -49,6 +49,10 @@ def check_cambium_dl_rssi(item, params, info):
     state = 3
     infotext = "unknown_value"
     rssi = None
+    this_time = datetime.now()
+    t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    current_time =int(time.mktime(t_stmp.timetuple()))
 
     try:
         if info:
@@ -60,6 +64,9 @@ def check_cambium_dl_rssi(item, params, info):
                 state = 1
             else:
                 state = 0
+	    if memc:
+		key1 = str(g_hostname) + "_dl_rssi" + "_" + str(current_time)
+		memc.set(key1,rssi,600)
             infotext = "Device received signal strength indication is %s " % rssi
     except ValueError:
         infotext = "type_mismatch_value"
