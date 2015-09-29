@@ -392,7 +392,7 @@ def extract_cambium_util_data(host_params,**args):
     	except Exception,e:
 		warning('memc: {0}'.format(e))
         	sec_id = ''
-    	try:
+	try:
 		if not cam_util:
 			service_name = 'cambium_%s_utilization' % util_type	
 			query_string = "GET services\nColumns: service_perf_data\nFilter: host_name =%s\n" % (hostname) +\
@@ -429,6 +429,69 @@ def extract_cambium_util_data(host_params,**args):
     	state_string = "unknown"
     if len(service_list) > 0: 	
     	build_export.s(args['site_name'], service_list).apply_async()
+    return None
+
+def extract_radwin_util_data(host_params,**args):
+    perf = rad_util = sec_id = plugin_message = ''
+    state = 3
+    state_string = "unknown"
+    service_list = []
+    #warning('host_params: {0}'.format(host_params))
+    util_type = args['service'].split('_')[1]
+    for entry in host_params:
+	if entry and len(eval(entry[0])) == 6 :
+		hostname,site,ip_address,d_type,d_tech,bw = eval(entry[0])
+	else:
+		break
+	try:
+		if args['memc']:
+			#sec_id = args['memc'].get(str(hostname) + "_sec_id")
+			rad_util = args['memc'].get(str(hostname) + "_" + util_type)
+			#warning('radwin util: {0}'.format(rad_util))
+			if rad_util:
+				rad_util = literal_eval(rad_util)
+	except Exception,e:
+		warning('memc: {0}'.format(e))
+		sec_id = ''
+	try:
+		"""
+		if not rad_util:
+			service_name = 'radwin_%s_utilization' % util_type	
+			query_string = "GET services\nColumns: service_perf_data\nFilter: host_name =%s\n" % (hostname) +\
+			"Filter: service_description = %s\n" % service_name +\
+			"OutputFormat: python\n"
+			output = extract_data_from_live(hostname,site,query_string)
+			try:
+				if output[0][0]:
+					rad_util = output[0][0].split('=')[1].split(';')[0]
+			except:
+				rad_util = None
+		"""
+		if rad_util and bw:
+			rad_util = (float(rad_util)/float(bw)) * 100
+			rad_util = round(rad_util,2)
+			if rad_util < args['war']:
+				state = 0
+				state_string = "ok"
+			elif rad_util >= args['crit']:
+				state = 2
+				state_string = "critical"
+			else:
+				state = 1
+				state_string = "warning"
+			perf = 'rad_%s_util_kpi' % util_type + "=%s;%s;%s;%s" %(rad_util,args['war'],args['crit'],sec_id)
+	except Exception,e:
+		#warning('cam ss util: {0}'.format(e))
+		perf = 'rad_%s_util_kpi' % util_type + "=;%s;%s;%s" %(args['war'],args['crit'],sec_id)
+	service_dict = service_dict_for_kpi_services(perf,state_string,hostname,site,ip_address,**args)
+	service_dict['refer'] = sec_id
+	service_list.append(service_dict)
+	rad_util = ''
+	sec_id = ''
+	perf = ''
+	state_string = "unknown"
+    if len(service_list) > 0: 	
+	build_export.s(args['site_name'], service_list).apply_async()
     return None
  
 def extract_wimax_util_data(host_params,**args):
@@ -669,9 +732,11 @@ def call_kpi_services(**opts):
 	wimax_ss_key = rds_cli_invent.redis_cnx.keys(pattern="wimax:ss:pub_slave_1:*")
 	pmp_bs_key = rds_cli_invent.redis_cnx.keys(pattern="pmp:bs:pub_slave_1:*")
 	pmp_ss_key = rds_cli_invent.redis_cnx.keys(pattern="pmp:ss:pub_slave_1:*")
+	radwin_ss_key = rds_cli_invent.redis_cnx.keys(pattern="p2p:ss:pub_slave_1:*")
 	p = rds_cli_invent.redis_cnx.pipeline()
 	wimax_util_kpi_services = ['wimax_pmp1_dl_util_kpi','wimax_pmp2_dl_util_kpi','wimax_pmp1_ul_util_kpi','wimax_pmp2_ul_util_kpi','wimax_ss_ul_issue_kpi','wimax_ss_provis_kpi']
 	cambium_util_kpi_services = ['cambium_dl_util_kpi','cambium_ul_util_kpi','cambium_ss_ul_issue_kpi','cambium_ss_porvis_kpi']
+	radwin_util_kpi_services = ['radwin_dl_util_kpi','radwin_ul_util_kpi']
 	for i in izip_longest(*[iter(wimax_bs_key)] * 500):	
 		[p.lrange(k, 0 , -1) for k  in i]
 		#[p.lrange(k, 0,-1) for k  in ]
@@ -689,7 +754,6 @@ def call_kpi_services(**opts):
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		extract_kpi_services_data.s(**args).apply_async()
-	
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = wimax_util_kpi_services[1]
@@ -770,6 +834,24 @@ def call_kpi_services(**opts):
 		args['service'] = cambium_util_kpi_services[3]
 		args['my_function'] = 'extract_cambium_ss_provis_data' 
 		extract_kpi_services_data.s(**args).apply_async()	
+	for i in izip_longest(*[iter(radwin_ss_key)] * 500):	
+		args = {}	
+		[p.lrange(k, 0 ,-1) for k  in i]
+		radwin_ss_params = p.execute()
+		args['memc']  = call_kpi_services.memc_cnx('pub_slave_1')
+		#warning('memc: {0}'.format(args['memc']))	
+		args['host_info'] = radwin_ss_params
+		args['my_function'] = 'extract_radwin_util_data'
+		args['war']  = 80 
+		args['crit']  = 90
+		rds_cli = RedisInterface()
+		args['redis'] = rds_cli
+		args['service'] = radwin_util_kpi_services[0]
+		extract_kpi_services_data.s(**args).apply_async()
+		rds_cli = RedisInterface()
+		args['redis'] = rds_cli
+		args['service'] = radwin_util_kpi_services[1]
+		extract_kpi_services_data.s(**args).apply_async()
 		
 
 @app.task(base=DatabaseTask, name='extract_cambium_ss_provis_data')		

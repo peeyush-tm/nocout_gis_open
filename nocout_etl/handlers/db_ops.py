@@ -240,7 +240,8 @@ def load_inventory(self):
 	query = (
 		"SELECT DISTINCT D.device_name, site_instance_siteinstance.name, "
 		"D.ip_address, device_devicetype.name AS dev_type, "
-		"device_devicetechnology.name AS dev_tech "
+		"device_devicetechnology.name AS dev_tech ,"
+		"inventory_circuit.qos_bandwidth as qos_bw "
 		"FROM device_device D "
 		"INNER JOIN "
 		"(device_devicetype, device_devicetechnology, machine_machine, "
@@ -251,6 +252,13 @@ def load_inventory(self):
 		"device_devicetechnology.id = D.device_technology AND "
 		"machine_machine.id = D.machine_id AND "
 		"site_instance_siteinstance.id = D.site_instance_id "
+		") "
+		"LEFT JOIN "
+		"(inventory_substation,inventory_circuit) "
+		"ON "
+		"( "
+		"inventory_substation.device_id = D.id  and "
+		"inventory_circuit.sub_station_id = inventory_substation.id "
 		") "
 		"WHERE "
 		"D.is_deleted = 0 AND "
@@ -350,7 +358,10 @@ def load_devicetechno_wise(data_values, p, extra=None):
 	# keeping basic inventory info of a device, name --> ip mapping
 	invent_key = 'device_inventory:%s'
 	# entries needed from index 0 to last_index-1
-	last_index = 3
+	if t[3] == 'Radwin2KSS':
+		last_index = 6
+	else:
+		last_index = 3
 	matched_dr = None
 	# TODO: need to improve the algo here
 	if extra:
