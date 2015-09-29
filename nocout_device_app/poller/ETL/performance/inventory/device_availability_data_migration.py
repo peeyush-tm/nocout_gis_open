@@ -23,6 +23,7 @@ import time
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -53,21 +54,9 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    #db = mysql_conn(configs=configs)
-    # Get the time for latest entry in mysql
-    #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
-    utc_time = datetime(1970, 1,1,5,30)
 
-
-    end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=1440)
-    start_epoch = int(time.mktime(start_time.timetuple()))
-    end_epoch = int(time.mktime(end_time.timetuple()))
-
-    print start_time,end_time
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
-    # for i in range(len(configs.get('mongo_conf'))):
-    docs = read_data(start_epoch, end_epoch, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+    docs = read_data()
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
@@ -78,7 +67,7 @@ def main(**configs):
 	print "Data is not present in mongodb in this time frame in %s" % (configs.get('table_name') )
     
 
-def read_data(start_time, end_time, **kwargs):
+def read_data():
     """
     Function to read data from mongodb
 
@@ -90,25 +79,25 @@ def read_data(start_time, end_time, **kwargs):
 	kwargs (dict): Store mongodb connection variables 
     """
 
-    db = None
-    port = None
-    docs = []
-    #end_time = datetime(2014, 6, 26, 18, 30)
-    #start_time = end_time - timedelta(minutes=10)
-    docs = [] 
+    """
     db = mongo_module.mongo_conn(
         host=kwargs.get('configs')[1],
         port=int(kwargs.get('configs')[2]),
         db_name=kwargs.get('db_name')
-    ) 
+    )
+    """
+    """ 
     if db:
         cur = db.device_availability.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
         })
-        for doc in cur:
-            docs.append(doc)
+    """
+    memc_obj = db_ops_module.MemcacheInterface()
+    key = nocout_site_name + "_availability"
+    doc_len_key = key + "_len"
+    cur=memc_obj.retrieve(key,doc_len_key)
      
-    return docs
+    return cur
 
 def build_data(doc):
 	"""

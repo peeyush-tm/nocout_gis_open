@@ -10,10 +10,12 @@ from nocout_site_name import *
 import socket,json
 import time
 import imp
+#from handlers.db_ops import *
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
 
@@ -47,7 +49,7 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	service = "cambium_topology_discover"
 
-
+	topology_list =[]
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n" + \
                 "Filter: service_description = cambium_topology_discover\nOutputFormat: json\n"
 	query_output = json.loads(utility_module.get_from_socket(site,query).strip())
@@ -94,10 +96,17 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 				service_name=service,sector_id=ap_sector_id,mac_address=ap_mac,
 				connected_device_ip=ss_ip,
 				connected_device_mac=ss_mac,data_source=ds,site_name=site,ip_address=host_ip)
-		matching_criteria.update({'device_name':str(host),'service_name':service,'site_name':site})
-		mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"topology")
+		topology_list.append(topology_dict)
+		#matching_criteria.update({'device_name':str(host),'service_name':service,'site_name':site})
+		#mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"topology")
 		#mongo_module.mongo_db_insert(db,topology_dict,"inventory_services")
-		matching_criteria ={}
+		#matching_criteria ={}
+	
+	key = nocout_site_name + "_cam_topology" 
+	doc_len_key = key + "_len" 
+	memc_obj=db_ops_module.MemcacheInterface()
+	exp_time =240 # 4 min
+	memc_obj.store(key,topology_list,doc_len_key,exp_time,chunksize=1000)
 
 def topology_discovery_data_main():
 	"""
