@@ -637,7 +637,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             },
             reversed : is_y_inverted
         };
-    } else {
+    } else if(chartConfig['valuetext'] && chartConfig['valuetext'].length) {
         yAxisObj = [];
         for(var i=0;i<chartConfig.valuetext.length;i++) {
             var opposite = false;
@@ -652,6 +652,13 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 opposite : opposite
             })
         }
+    } else {
+        yAxisObj = {
+            title : {
+                text : ''
+            },
+            reversed : is_y_inverted
+        };
     }
 
     var chart_options = {
