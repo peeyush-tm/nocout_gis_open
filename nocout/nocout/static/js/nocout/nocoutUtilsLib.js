@@ -52,6 +52,21 @@ var green_color = "#468847",
         '<script type="text/javascript" src="/static/js/tooltipLib.js"></script>',
         '<script src="/static/js/devicePlottingLib.js"></script>',
         '<script src="/static/js/devicevisualization.js"></script>'
+    // ],
+    // topo_view_scripts = [
+    //     'https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false',
+    //     '/static/js/lokijs.min.js',
+    //     '/static/js/flot/jquery.flot.min.js',
+    //     '/static/js/stateBoundriesLib.js',
+    //     '/static/js/infobox.js',
+    //     '/static/js/oms.min.js',
+    //     '/static/js/markerclusterer.js',
+    //     '/static/js/fullScreenControl.js',
+    //     '/static/js/jQuery-Cookie/src/jquery.cookie.js',
+    //     '/static/js/tooltipLib.js',
+    //     '/static/js/gisPerformance.js',
+    //     '/static/js/devicePlottingLib.js',
+    //     '/static/js/devicevisualization.js'
     ];
 
 
@@ -1777,6 +1792,15 @@ function populateDeviceTopology() {
 
     if (typeof networkMapInstance == 'undefined') {
         $(topo_view_scripts.join(' ')).insertAfter('.perfContainerBlock');
+        // loadScript(topo_view_scripts[0], function(obj) {
+        //     setTimeout(function() {
+        //         for (var i=1;i<topo_view_scripts.length;i++) {
+        //             loadScript(topo_view_scripts[i], function(obj) {
+        //                 console.log(google);
+        //             });
+        //         }
+        //     }, 500);
+        // });
     }
 
     $.ajax({
@@ -1864,6 +1888,11 @@ function populateBirdViewCharts(start, end) {
                 api_url = api_url + '?service_view_type=unified'
             }
 
+            // perfInstance.getServiceStatus(api_url, false, function(response_type,data_obj) {
+            //     console.log(api_url)
+            //     console.log(response_type);
+            //     console.log(data_obj);
+            // });
             // call function to fetch perf data for this service
             perfInstance.getServiceData(api_url, srv_name, current_device);
             if (!$('#' + srv_name + '_heading .fa-spinner').hasClass('hide')) {
@@ -1883,10 +1912,12 @@ function createBirdEyeViewHTML(container_id) {
     var birdeye_html = '';
 
     for(var i=0;i<all_services_list.length;i++) {
-
+        var not_ping = true;
         if (all_services_list[i]['id'] == 'ping') {
             birdeye_html += '<div class="col-md-12 row">';
+            not_ping = false;
         } else {
+            not_ping = true;
             var float_class = '';
             if (i % 2 == 0) {
                 float_class = 'pull-right';
@@ -1894,8 +1925,17 @@ function createBirdEyeViewHTML(container_id) {
 
             birdeye_html += '<div class="col-md-6 ' + float_class + ' row">';
         }
-        birdeye_html += '<h4 class="zero_top_margin" id="' + all_services_list[i]['id'] + '_heading"> \
-                         ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>'
+        if (not_ping) {
+            birdeye_html += '<div class="birdeye_title_block">';
+            birdeye_html += '<h4 class="zero_top_margin" id="' + all_services_list[i]['id'] + '_heading"> \
+                             ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>';
+            birdeye_html += '<table class="table-bordered col-md-9" id="' + all_services_list[i]['id'] + '_status_table">';
+            birdeye_html += '<tbody><tr></tr></tbody>';
+            birdeye_html += '</table><div class="clearfix"></div></div>';
+        } else {
+            birdeye_html += '<h4 class="zero_top_margin" id="' + all_services_list[i]['id'] + '_heading"> \
+                             ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>';
+        }
                          
         birdeye_html += '<div class="birdeye_view_charts">';
         birdeye_html += '<div id="' + all_services_list[i]['id'] + '_chart" class="charts_block"></div>';
@@ -1910,4 +1950,13 @@ function createBirdEyeViewHTML(container_id) {
     }
 
     $('#' + container_id).html(birdeye_html);
+}
+
+function loadScript(src,callback) {  
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+
+    callback(true);
 }

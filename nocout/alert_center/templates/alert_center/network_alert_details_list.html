@@ -24,11 +24,15 @@
 
 {% block content %}
     <style type="text/css">
-        .box .header-tabs .alert_detail_tabs > li, .box .header-tabs .alert_detail_tabs > li > a {
+        .box .header-tabs .nav-tabs > li:first-child {
+            border-right: 1px inset #c6c6ce !important;
+        }
+        .box .header-tabs .alert_detail_tabs > li,
+        .box .header-tabs .alert_detail_tabs > li > a {
             margin: 0px;
         }
-        .box .header-tabs .alert_detail_tabs > li.active a {
-            color: #ca1e25;
+        .box .header-tabs .alert_detail_tabs > li > a {
+            border-bottom: 3px solid transparent;
         }
         .box .header-tabs .alert_detail_tabs > li {
             padding: 0px 5px;
@@ -55,7 +59,7 @@
         .paging_arrow {
             position: absolute;
             left: 12px;
-            top: 5px;
+            top: 8px;
             font-size: 30px;
             cursor: pointer;
         }

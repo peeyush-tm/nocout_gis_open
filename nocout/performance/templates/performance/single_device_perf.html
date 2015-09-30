@@ -34,11 +34,15 @@
 
 {% block content %}
     <style>
-        .box .header-tabs .top_perf_tabs > li, .box .header-tabs .top_perf_tabs > li > a {
+        .box .header-tabs .nav-tabs > li:first-child {
+            border-right: 1px inset #c6c6ce !important;
+        }
+        .box .header-tabs .top_perf_tabs > li,
+        .box .header-tabs .top_perf_tabs > li > a {
             margin: 0px;
         }
-        .box .header-tabs .top_perf_tabs > li.active a {
-            color: #ca1e25;
+        .box .header-tabs .top_perf_tabs > li > a {
+            border-bottom: 3px solid transparent;
         }
         .box .header-tabs .top_perf_tabs > li {
             padding: 0px 5px;
@@ -100,7 +104,7 @@
         }
     </style>
     <!--Device Status Block Start-->
-    <div class="well well-sm" id="status_container" style="overflow:auto;">
+    <div id="status_container" style="overflow:auto;">
         <div id="latestStatusContainer">
             <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
         </div>
@@ -220,17 +224,6 @@
                     </div>
                 </li>
                 {% endif %}
-
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
-                        <i class="fa fa-dropbox text-primary"></i>
-                    </a>
-                </li>
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="alerts_link_tag" title="Alerts" target="_blank">
-                        <i class="fa fa-warning text-danger"></i>
-                    </a>
-                </li>
             </ul>
             <!--Filters Block End-->
             <div class="clearfix"></div>
@@ -486,6 +479,7 @@
             warn_type = "",
             crit_type = "",
             default_live_table_headers = [],
+            default_hist_table_headers = [],
             is_radwin5 = 0,
             bs_id = "",
             all_services_list = [],
@@ -525,8 +519,10 @@
 
             if ($.cookie("service_view_type") == 'normal') {
                 default_live_table_headers = default_live_table_headers_without_ds;
+                default_hist_table_headers = default_hist_table_headers_without_ds;
             } else {
                 default_live_table_headers = default_live_table_headers_with_ds;
+                default_hist_table_headers = default_hist_table_headers_with_ds;
             }
 
             if (is_first_triggered) {
@@ -580,6 +576,16 @@
                 if(!live_poll_condition1 && !live_poll_condition2) {
                     $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
                 }
+
+                // Append inventory & alert center link to top header bar
+                var inventory_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" \
+                                           id="inventory_link_tag" title="Inventory" target="_blank"> \
+                                           <i class="fa fa-dropbox text-primary"></i></a>',
+                    alert_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" id="alerts_link_tag" title="Alerts" \
+                                       target="_blank"><i class="fa fa-warning text-danger"></i></a>';
+                $('.controls_container ul').prepend('<li>' + inventory_link_html + '</li>');
+                $('.controls_container ul').prepend('<li>' + alert_link_html + '</li>');
+
 
                 if(inventory_url) {
                     $("#inventory_link_tag").attr("href",inventory_url);
