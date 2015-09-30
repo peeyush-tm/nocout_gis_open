@@ -24,18 +24,18 @@ var perf_that = "",
         { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
     ],
     tabs_with_historical = [
-        {"id": "bihourly", "title": "Bi-Hourly"},
+        {"id": "bihourly", "title": "Half-Hourly"},
         {"id": "hourly", "title": "Hourly"},
         {"id": "daily", "title": "Daily"},
         {"id": "weekly", "title": "Weekly"},
         {"id": "monthly", "title": "Monthly"},
-        {"id": "yearly", "title": "Yearly" }
+        // {"id": "yearly", "title": "Yearly" }
     ],
     inventory_status_inner_inner_tabs = [
         {"id": "daily", "title": "Daily"},
         {"id": "weekly", "title": "Weekly"},
         {"id": "monthly", "title": "Monthly"},
-        {"id": "yearly", "title": "Yearly"}
+        // {"id": "yearly", "title": "Yearly"}
     ],
     default_live_table_headers_without_ds = [
         {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
