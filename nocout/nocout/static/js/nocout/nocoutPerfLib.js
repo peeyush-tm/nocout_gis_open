@@ -1097,12 +1097,10 @@ function nocoutPerfLib() {
         function sendAjax(ajax_start_date, ajax_end_date) {
 
             var urlDataStartDate = '', urlDataEndDate = '';
-            if (
-                (ajax_start_date == '' && ajax_end_date == '')
-                ||
-                !is_birdeye_view
-            ) {
-                // Pass              
+            if (ajax_start_date == '' && ajax_end_date == '') {
+                // Pass
+            } else if(!is_birdeye_view) {
+                // Pass
             } else {
                 var end_Date = "";
                 if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
