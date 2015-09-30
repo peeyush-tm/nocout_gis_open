@@ -39,34 +39,34 @@ var green_color = "#468847",
     birdeye_start_counter = 0,
     birdeye_end_counter = parallel_calling_len,
     is_mouse_out = true,
-    // topo_view_scripts = [
-    //     '<script type="text/javascript" src="/static/js/lokijs.min.js"></script>',
-    //     '<script src="/static/js/flot/jquery.flot.min.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/stateBoundriesLib.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/infobox.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/markerclusterer.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/oms.min.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/fullScreenControl.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/jQuery-Cookie/src/jquery.cookie.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/gisPerformance.js"></script>',
-    //     '<script type="text/javascript" src="/static/js/tooltipLib.js"></script>',
-    //     '<script src="/static/js/devicePlottingLib.js"></script>',
-    //     '<script src="/static/js/devicevisualization.js"></script>'
-    // ],
     topo_view_scripts = [
-        'https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false',
-        '/static/js/lokijs.min.js',
-        '/static/js/flot/jquery.flot.min.js',
-        '/static/js/stateBoundriesLib.js',
-        '/static/js/infobox.js',
-        '/static/js/oms.min.js',
-        '/static/js/markerclusterer.js',
-        '/static/js/fullScreenControl.js',
-        '/static/js/jQuery-Cookie/src/jquery.cookie.js',
-        '/static/js/tooltipLib.js',
-        '/static/js/gisPerformance.js',
-        '/static/js/devicePlottingLib.js',
-        '/static/js/devicevisualization.js'
+        '<script type="text/javascript" src="/static/js/lokijs.min.js"></script>',
+        '<script src="/static/js/flot/jquery.flot.min.js"></script>',
+        '<script type="text/javascript" src="/static/js/stateBoundriesLib.js"></script>',
+        '<script type="text/javascript" src="/static/js/infobox.js"></script>',
+        '<script type="text/javascript" src="/static/js/markerclusterer.js"></script>',
+        '<script type="text/javascript" src="/static/js/oms.min.js"></script>',
+        '<script type="text/javascript" src="/static/js/fullScreenControl.js"></script>',
+        '<script type="text/javascript" src="/static/js/jQuery-Cookie/src/jquery.cookie.js"></script>',
+        '<script type="text/javascript" src="/static/js/gisPerformance.js"></script>',
+        '<script type="text/javascript" src="/static/js/tooltipLib.js"></script>',
+        '<script src="/static/js/devicePlottingLib.js"></script>',
+        '<script src="/static/js/devicevisualization.js"></script>'
+    // ],
+    // topo_view_scripts = [
+    //     'https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false',
+    //     '/static/js/lokijs.min.js',
+    //     '/static/js/flot/jquery.flot.min.js',
+    //     '/static/js/stateBoundriesLib.js',
+    //     '/static/js/infobox.js',
+    //     '/static/js/oms.min.js',
+    //     '/static/js/markerclusterer.js',
+    //     '/static/js/fullScreenControl.js',
+    //     '/static/js/jQuery-Cookie/src/jquery.cookie.js',
+    //     '/static/js/tooltipLib.js',
+    //     '/static/js/gisPerformance.js',
+    //     '/static/js/devicePlottingLib.js',
+    //     '/static/js/devicevisualization.js'
     ];
 
 
@@ -1791,16 +1791,16 @@ function calculateAverageValue(resultset, key) {
 function populateDeviceTopology() {
 
     if (typeof networkMapInstance == 'undefined') {
-        // $(topo_view_scripts.join(' ')).insertAfter('.perfContainerBlock');
-        loadScript(topo_view_scripts[0], function(obj) {
-            setTimeout(function() {
-                for (var i=1;i<topo_view_scripts.length;i++) {
-                    loadScript(topo_view_scripts[i], function(obj) {
-                        console.log(google);
-                    });
-                }
-            }, 500);
-        });
+        $(topo_view_scripts.join(' ')).insertAfter('.perfContainerBlock');
+        // loadScript(topo_view_scripts[0], function(obj) {
+        //     setTimeout(function() {
+        //         for (var i=1;i<topo_view_scripts.length;i++) {
+        //             loadScript(topo_view_scripts[i], function(obj) {
+        //                 console.log(google);
+        //             });
+        //         }
+        //     }, 500);
+        // });
     }
 
     $.ajax({
