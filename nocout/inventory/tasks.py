@@ -13708,6 +13708,10 @@ def update_topology():
     """
     Update mapping of sector, sub station in circuit using topology.
     """
+
+    # MAC regex.
+    mac_regex = "[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$"
+
     # Sector ID's from inventory.
     sector_ids = set(Sector.objects.values_list('sector_id', flat=True))
 
@@ -13844,25 +13848,28 @@ def update_topology():
         if circuit:
             # Update sub station.
             try:
-                ss = circuit.sub_station
-                ss.mac_address = info['connected_device_mac']
-                update_ss_list.append(ss)
+                if re.match(mac_regex, info['connected_device_mac'].lower()):
+                    ss = circuit.sub_station
+                    ss.mac_address = info['connected_device_mac']
+                    update_ss_list.append(ss)
             except Exception as e:
                 logger.exception(e.message)
 
             # Update sub station device.
             try:
-                ss_device = circuit.sub_station.device
-                ss_device.mac_address = info['connected_device_mac']
-                update_device_list.append(ss_device)
+                if re.match(mac_regex, info['connected_device_mac'].lower()):
+                    ss_device = circuit.sub_station.device
+                    ss_device.mac_address = info['connected_device_mac']
+                    update_device_list.append(ss_device)
             except Exception as e:
                 logger.exception(e.message)
 
             # Update sector device.
             try:
-                sector_device = bs_devices_mapper[info['ip_address']]
-                sector_device.mac_address = info['mac_address']
-                update_device_list.append(sector_device)
+                if re.match(mac_regex, info['mac_address'].lower()):
+                    sector_device = bs_devices_mapper[info['ip_address']]
+                    sector_device.mac_address = info['mac_address']
+                    update_device_list.append(sector_device)
             except Exception as e:
                 logger.exception(e.message)
 

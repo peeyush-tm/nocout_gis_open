@@ -1482,15 +1482,15 @@ var pmp_radwin5k_sector_toolTip_polled = [
         'service_name' : 'rad5k_channel_bw_invent',
         'ds'           : 'cbw'
     },
-    {
-        'name'         : '',
-        'title'        : 'Connected HSU  - Serial No',
-        'show'         : 1,
-        'value'        : '',
-        'url'          : '',
-        'service_name' : '',
-        'ds'           : ''
-    },
+    //{
+    //    'name'         : '',
+    //    'title'        : 'Connected HSUb v                                                                                         v  - Serial No',
+    //    'show'         : 1,
+    //    'value'        : '',
+    //    'url'          : '',
+    //    'service_name' : '',
+    //    'ds'           : ''
+    //},
     {
         'name'         : 'rad5k_bs_crc_error_invent_crc_errors',
         'title'        : 'CRC errors',
@@ -1556,13 +1556,13 @@ var pmp_radwin5k_sector_toolTip_polled = [
 
     },
     {
-        'name'         : 'rad5k_bs_sector_invent_bs_sector_is',
+        'name'         : 'rad5k_bs_sector_id_invent_bs_sector_id',
         'title'        : 'Sector ID',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'rad5k_bs_sector_invent',
-        'ds'           : 'bs_sector_is'
+        'service_name' : 'rad5k_bs_sector_id_invent',
+        'ds'           : 'bs_sector_id'
 
     },
     {
@@ -1585,12 +1585,12 @@ var pmp_radwin5k_sector_toolTip_polled = [
         'ds'           : 'uptime'
     },
     {
-        'name'         : 'rad5k_bs_transmit_power_transmit_power',
+        'name'         : 'rad5k_bs_transmit_power_invent_transmit_power',
         'title'        : 'Transmit power',
         'show'         : 1,
         'value'        : '',
         'url'          : '',
-        'service_name' : 'rad5k_bs_transmit_power',
+        'service_name' : 'rad5k_bs_transmit_power_invent',
         'ds'           : 'transmit_power'
     }
 ];

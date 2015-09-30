@@ -340,6 +340,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         sPaginationType: "full_numbers"
     });
 }
+// 69-75
 
 /**
  * This function creates blank data table for chart data as per given params
