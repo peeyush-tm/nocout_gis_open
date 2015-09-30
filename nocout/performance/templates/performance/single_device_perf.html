@@ -479,6 +479,7 @@
             warn_type = "",
             crit_type = "",
             default_live_table_headers = [],
+            default_hist_table_headers = [],
             is_radwin5 = 0,
             bs_id = "",
             all_services_list = [],
@@ -518,8 +519,10 @@
 
             if ($.cookie("service_view_type") == 'normal') {
                 default_live_table_headers = default_live_table_headers_without_ds;
+                default_hist_table_headers = default_hist_table_headers_without_ds;
             } else {
                 default_live_table_headers = default_live_table_headers_with_ds;
+                default_hist_table_headers = default_hist_table_headers_with_ds;
             }
 
             if (is_first_triggered) {
