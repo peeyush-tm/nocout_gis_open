@@ -1805,11 +1805,11 @@ class ServiceDataSourceHeaders(ListView):
 
         datatable_headers = [
             {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto'},
+            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
             {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto'},
             {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto'},
             {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto'},
             {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto'},
-            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto'},
             {'mData': 'service_name', 'sTitle': 'Service', 'sWidth': 'auto'},
             {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto'},
             {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto'},
@@ -1924,6 +1924,20 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
             self.data_source = str(service)+"_"+str(self.data_source)
 
         if is_unified_view:
+            self.columns = [
+                'sys_timestamp',
+                'data_source',
+                'current_value',
+                'severity',
+                'warning_threshold',
+                'critical_threshold',
+                'service_name',
+                'min_value',
+                'max_value',
+                'avg_value',
+                'ip_address'
+            ]
+
             for sds in SERVICE_DATA_SOURCE:
                 if not self.formula:
                     if service.strip() in sds and SERVICE_DATA_SOURCE[sds]['type'] == 'table':
