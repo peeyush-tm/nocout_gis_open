@@ -78,6 +78,9 @@ span.dept {
 #sidebar ul.sub li.has-sub-sub ul.sub-sub li.current {
   background: #f4f4f4 !important;
 }
+#sidebar {
+  background: none repeat scroll 0 0 #F5F5F5;
+}
 
 /*Side menu arrow*/
 .sidebar-menu ul li ul li a .arrow:before {
@@ -413,7 +416,7 @@ iframe {
 }
 .controls_container {
   position: absolute;
-  top: 5px;
+  top: 18px;
   right: 20px;
 }
 #reservationtime {
@@ -623,6 +626,38 @@ table.dataTable thead th, table.dataTable tfoot th{
   position: relative;
   float: right;
 }
-.text-ttpl {
-  color: #5e87b0;
+.trends_icon {
+  cursor: pointer;
+}
+/*Full Screen Button*/
+.transitionbtn {
+  border-radius: 2px;
+  transition-property: background, border-radius;
+  transition-duration: 0.2s;
+  transition-timing-function: linear;
+}
+.transitionbtn:hover {
+  border-radius: 50% !important;
+  background: transparent;
+}
+.box .header-tabs .nav-tabs > li {
+  border-right: 1px inset #c6c6ce !important;
+  border-left: 0px none!important;
+  margin-bottom: 0px;
+}
+table.dataTable {
+  border-collapse: collapse;
+}
+.controls_container button.btn-sm, .controls_container a.btn-sm {
+  padding: 3px 8px !important;
+}
+.birdeye_title_block {
+  margin-bottom: 10px;
+}
+.birdeye_title_block table tbody tr td {
+  padding: 5px 8px;
+}
+.left_tabs_container > li > a {
+  border: 0px none;
+  border-bottom: 3px solid transparent;
 }

@@ -34,8 +34,15 @@
 
 {% block content %}
     <style>
-        .box .header-tabs .top_perf_tabs > li, .box .header-tabs .top_perf_tabs > li > a {
+        .box .header-tabs .nav-tabs > li:first-child {
+            border-right: 1px inset #c6c6ce !important;
+        }
+        .box .header-tabs .top_perf_tabs > li,
+        .box .header-tabs .top_perf_tabs > li > a {
             margin: 0px;
+        }
+        .box .header-tabs .top_perf_tabs > li > a {
+            border-bottom: 3px solid transparent;
         }
         .box .header-tabs .top_perf_tabs > li {
             padding: 0px 5px;
