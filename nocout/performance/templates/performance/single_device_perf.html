@@ -735,23 +735,25 @@
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);
 
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                var temp_serv_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id");
 
                 if(
-                    service_id.indexOf('availability') > -1
+                    temp_serv_id.indexOf('availability') > -1
                     ||
-                    service_id.indexOf('utilization_top') > -1
+                    temp_serv_id.indexOf('utilization_top') > -1
                     ||
-                    service_id.indexOf('topology') > -1
+                    temp_serv_id.indexOf('topology') > -1
                 ) {
 
                     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
 
-                } 
+                } else {
+                    var active_tab_obj = nocout_getPerfTabDomId(),
+                        service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                }
 
                 if(get_service_data_url && service_id && current_device) {
                     // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
