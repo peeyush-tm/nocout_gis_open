@@ -33,9 +33,13 @@ function ourDataTableWidget() {
         if (typeof advance_filter == 'undefined') {
             advance_filter = '[]';
         }
+        // Condition added to not add adv filters for birdeye view
+        if (typeof clicked_tab_id == 'undefined') {
+            clicked_tab_id = '';
+        }
 
         // If advance filtering is enabled from settings then create advance filters
-        if (typeof advance_filters_enabled != 'undefined' && advance_filters_enabled && create_advance_filters) {
+        if (typeof advance_filters_enabled != 'undefined' && advance_filters_enabled && create_advance_filters && clicked_tab_id.indexOf('bird') == -1) {
             // Call nocout_createAdvanceFilter to create advance filters for grid
             nocout_createAdvanceFilter(
                 tableId,
