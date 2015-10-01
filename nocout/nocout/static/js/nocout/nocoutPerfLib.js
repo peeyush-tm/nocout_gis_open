@@ -1103,7 +1103,7 @@ function nocoutPerfLib() {
             var urlDataStartDate = '', urlDataEndDate = '';
             if (ajax_start_date == '' && ajax_end_date == '') {
                 // Pass
-            } else if(!is_birdeye_view) {
+            } else if(is_birdeye_view) {
                 // Pass
             } else {
                 var end_Date = "";
