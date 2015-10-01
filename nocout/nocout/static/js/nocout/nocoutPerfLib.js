@@ -955,6 +955,11 @@ function nocoutPerfLib() {
             draw_type = "chart";
         }
 
+        // If birdeye view then show header with DS
+        if (is_birdeye_view) {
+            listing_headers = default_live_table_headers_with_ds;
+        }
+
         // Decrement the tabs click on evert click counter
         tabs_click_counter--;
 
