@@ -78,7 +78,7 @@ import logging
 from copy import deepcopy
 from pprint import pformat
 from multiprocessing import Process, Queue
-from django.db.models import Count
+from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from device.models import Device, DeviceType, DeviceVendor, DeviceTechnology, State, City, DeviceModel, \
@@ -3669,13 +3669,15 @@ class SyncDevicesInNMS_V2(APIView):
             #    'sync_obj_id': sync_obj_id
             #}
 
+            machine_info = {}
             # Machines to which configuration needs to be pushed.
-            machines = Machine.objects.values(
-            		'machine_ip', 'siteinstance__web_service_port'
-            		)                          
+            for m in Machine.objects.filter(~Q(name='default')).values(
+            		'machine_ip', 'siteinstance__web_service_port'):
+            	machine_info[m['machine_ip']] = m['siteinstance__web_service_port']
+
                                                
             # call celery task to handle sync  functionality
-            tasks.sync_main.s(machines=machines).apply_async()
+            tasks.sync_main.s(machines=machine_info).apply_async()
                                                
             # URL for nocout.py.              e
             #url = "http://{}:{}@{}:{}/{}/chec k_mk/nocout.py".format(master_site.username,

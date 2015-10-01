@@ -1,9 +1,16 @@
 import mysql.connector
 
-from django.conf.settings import DATABASES
+#from django.conf import settings
 
 def mysql_conn():
-	conf = DATABASES['default']
+	conf = {
+			'HOST': 'localhost',
+			'USER': 'root',
+			'PASSWORD': 'root',
+			'NAME': 'nocout_m6_v2',
+			'PORT': 3306
+			}
+	#conf = settings.DATABASES['default']
 	db = mysql.connector.connect(
 						host=conf.get('HOST'),
 						user=conf.get('USER'),
