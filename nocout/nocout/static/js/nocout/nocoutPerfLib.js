@@ -951,8 +951,13 @@ function nocoutPerfLib() {
             listing_headers = default_live_table_headers,
             is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
 
-        if (!draw_type || is_birdeye_view) {
+        if (!draw_type || clicked_tab_id.indexOf('bird') > -1) {
             draw_type = "chart";
+        }
+
+        // If birdeye view then show header with DS
+        if (is_birdeye_view) {
+            listing_headers = default_live_table_headers_with_ds;
         }
 
         // Decrement the tabs click on evert click counter
@@ -1047,7 +1052,6 @@ function nocoutPerfLib() {
                 updateDropdownHtml();
             }
 
-
             $('#' + service_id+ '_chart').html("");
 
             initChartDataTable_nocout(
@@ -1097,12 +1101,10 @@ function nocoutPerfLib() {
         function sendAjax(ajax_start_date, ajax_end_date) {
 
             var urlDataStartDate = '', urlDataEndDate = '';
-            if (
-                (ajax_start_date == '' && ajax_end_date == '')
-                ||
-                !is_birdeye_view
-            ) {
-                // Pass              
+            if (ajax_start_date == '' && ajax_end_date == '') {
+                // Pass
+            } else if(is_birdeye_view) {
+                // Pass
             } else {
                 var end_Date = "";
                 if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {

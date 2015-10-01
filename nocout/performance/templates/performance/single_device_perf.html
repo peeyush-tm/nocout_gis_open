@@ -102,6 +102,10 @@
         #topo_view_tab {
             position: relative;
         }
+
+        #birdeye_container table tbody tr td {
+            font-size: 12px !important;
+        }
     </style>
     <!--Device Status Block Start-->
     <div id="status_container" style="overflow:auto;">
@@ -393,27 +397,6 @@
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
                             <div id="birdeye_container"></div>
-                            <!-- <div class="col-md-12 row">
-                                <h1>Ping</h1>
-                            </div>
-                            <div>
-                                <div class="col-md-6 row">
-                                    <h1>SRV 1</h1>
-                                </div>
-                                <div class="col-md-6 pull-right row">
-                                    <h1>SRV 2</h1>
-                                </div>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div>
-                                <div class="col-md-6 row">
-                                    <h1>SRV 3</h1>
-                                </div>
-                                <div class="col-md-6 pull-right row">
-                                    <h1>SRV 4</h1>
-                                </div>
-                                <div class="clearfix"></div>
-                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -423,7 +406,7 @@
                 <div class="tab-pane" id="custom_dashboard_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
-                            Custom Dashboard Container
+                            Custom Dashboards - Work In Progress...
                         </div>
                     </div>
                 </div>
@@ -634,9 +617,14 @@
          */
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-                var active_tab_obj = nocout_getPerfTabDomId();
+                var active_tab_obj = '';
+                try {
+                    active_tab_obj = nocout_getPerfTabDomId();
+                } catch(e) {
+                    active_tab_obj = false;
+                }
 
-                if (show_historical_on_performance) {
+                if (show_historical_on_performance && active_tab_obj) {
                     var start = new Date(startDate),
                         end   = new Date(),
                         days_diff = (end-start)/(1000*60*60*24);
@@ -695,22 +683,24 @@
                         }
                     }
                 } else {
-                    var service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                    var temp_serv_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id");
 
                     if(
-                        service_id.indexOf('availability') > -1
+                        temp_serv_id.indexOf('availability') > -1
                         ||
-                        service_id.indexOf('utilization_top') > -1
+                        temp_serv_id.indexOf('utilization_top') > -1
                         ||
-                        service_id.indexOf('topology') > -1
+                        temp_serv_id.indexOf('topology') > -1
                     ) {
 
                         var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                             service_id = active_inner_tab.attr("id").slice(0, -4),
                             get_service_data_url = active_inner_tab.attr("url");
 
-                    } 
+                    } else {
+                        var service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                            get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                    }
 
                     if(get_service_data_url && service_id && current_device) {
                         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
@@ -784,7 +774,6 @@
             $('.perfContainerBlock .box-title ul li:not(.pull-right)').removeClass('hide');
 
             clicked_tab_id = $(this).attr('id');
-
             fetchFirstTabContent(this);
         });
 

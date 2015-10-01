@@ -627,7 +627,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false,
         legends_color = text_color ? text_color : "#FFF",
         xMinRange = chartConfig["x_min_range"] ? chartConfig["x_min_range"] : 3600000,
-        yAxisObj = '';
+        yAxisObj = '',
+        is_display_name = typeof chartConfig['chart_display_name'] != 'undefined',
+        exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
 
     // Create yAxis data as per the given params
     if (typeof chartConfig.valuetext == 'string') {
@@ -637,7 +639,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             },
             reversed : is_y_inverted
         };
-    } else {
+    } else if(chartConfig['valuetext'] && chartConfig['valuetext'].length) {
         yAxisObj = [];
         for(var i=0;i<chartConfig.valuetext.length;i++) {
             var opposite = false;
@@ -652,6 +654,13 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 opposite : opposite
             })
         }
+    } else {
+        yAxisObj = {
+            title : {
+                text : ''
+            },
+            reversed : is_y_inverted
+        };
     }
 
     var chart_options = {
@@ -713,9 +722,13 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 fontSize : '12px'
             }
         },
-        // exporting:{
-        //     url:'http://localhost:8080/highcharts-export-web/'
-        // },
+        exporting:{
+            // url:'http://localhost:8080/highcharts-export-web/',
+            enabled : true,
+            sourceWidth: 950,
+            sourceHeight: 375,
+            filename: exported_filename
+        },
         tooltip: {
             formatter: function () {
                 var this_date = new Date(this.x),

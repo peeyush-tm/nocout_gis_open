@@ -339,6 +339,9 @@ iframe {
 .vAlign_middle {
   vertical-align: middle !important;
 }
+th.vAlign_middle, .vAlign_middle b {
+  font-weight: 600 !important;
+}
 .one_fourth_column {
   width: 25%;
 }
@@ -599,8 +602,8 @@ h4.bigger
   font-weight: normal !important;
 }
 table.dataTable thead th, table.dataTable tfoot th{
-  font-weight: normal !important;
-  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
 }
 .form-group label
 {
@@ -660,4 +663,7 @@ table.dataTable {
 .left_tabs_container > li > a {
   border: 0px none;
   border-bottom: 3px solid transparent;
+}
+#goFullScreen {
+  margin-left: -4px;
 }
