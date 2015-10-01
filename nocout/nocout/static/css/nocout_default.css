@@ -599,8 +599,8 @@ h4.bigger
   font-weight: normal !important;
 }
 table.dataTable thead th, table.dataTable tfoot th{
-  font-weight: normal !important;
-  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
 }
 .form-group label
 {
