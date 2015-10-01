@@ -236,6 +236,9 @@ REDIS_CONNECT_RETRY = True
 # Celery result backend configuration.
 CELERY_RESULT_BACKEND = 'redis://' + str(REDIS_HOST) + ':' + str(REDIS_PORT) + '/' + str(REDIS_DB)
 
+# Celery explicit imports
+CELERY_IMPORTS = ['device.sync.tasks']
+
 # Celery broker settings.
 BROKER_HOST = REDIS_HOST         # Maps to redis host.
 BROKER_PORT = REDIS_PORT         # Maps to redis port.

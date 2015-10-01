@@ -7,6 +7,14 @@ from datetime import datetime
 from operator import itemgetter
 from pprint import pformat
 
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
+info, warning, error = (
+		logger.info, logger.warning, logger.error
+		)
+
+
 from mysql_connection import mysql_conn
 
 
@@ -81,7 +89,7 @@ def prepare_hosts_file():
     wimax_bs_devices, cambium_bs_devices = [], []
     # find services, which has been disabled by user
     disabled_services = get_disabled_services()
-    print disabled_services
+    warning('disabled_services: {0}'.format(disabled_services))
     # This file contains device names, to be updated in configuration db
     open('hosts.txt', 'w').close()
     #try:
@@ -197,7 +205,7 @@ def make_Backhaul_data(all_hosts, ipaddresses, host_attributes, disabled_service
                     port_wise_capacities[int(p_n)-1] = p_cap
             except (IndexError, TypeError, AttributeError) as err:
                 port_wise_capacities = [0]*8
-                print err
+                warning('Err in port wise caps: {0}'.format(err))
         if str(device[2].lower()) == 'pine':
             mrotek_devices.append((device[1], device[5], port_wise_capacities))
         elif str(device[2].lower()) == 'rici':
@@ -279,7 +287,8 @@ def make_BS_data(disabled_services, all_hosts=None, ipaddresses=None, host_attri
     inventory_sector.dr_site,
     inventory_sector.dr_configured_on_id,
     device_devicetechnology.name as techno_name,
-    inventory_circuit.qos_bandwidth as QoS_BW
+    inventory_circuit.qos_bandwidth as QoS_BW,
+    machine_machine.name
     from device_device 
 
     inner join
@@ -1231,11 +1240,12 @@ def write_rules_file(settings_out, final_active_checks):
 def main():
     hosts_out = prepare_hosts_file()
     
-    print "wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "cambium_ss_devices", \
-            "radwin_bs_devices", "radwin_ss_devices", "mrotek_devices", "rici_devices", "switch_devices"
-    print len(hosts_out.wimax_bs_devices), len(hosts_out.wimax_ss_devices), len(hosts_out.cambium_bs_devices), \
-            len(hosts_out.cambium_ss_devices), len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices), \
-            len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.switch_devices)
+    #warning("wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "cambium_ss_devices", \
+    #        "radwin_bs_devices", "radwin_ss_devices", "mrotek_devices", "rici_devices", "switch_devices")
+    #warning(len(hosts_out.wimax_bs_devices), len(hosts_out.wimax_ss_devices), len(hosts_out.cambium_bs_devices), \
+    #        len(hosts_out.cambium_ss_devices), len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices), \
+    #        len(hosts_out.mrotek_devices), len(hosts_out.rici_devices), len(hosts_out.switch_devices))
+
     prepare_rules(hosts_out)
 
 
