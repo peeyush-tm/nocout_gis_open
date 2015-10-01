@@ -3537,9 +3537,18 @@ class GetServiceTypePerformanceData(View):
                         sds_display_name = SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE else str(data.data_source).upper()
 
+                        if 'chart_display_name' not in self.result['data']['objects']:
+                            self.result['data']['objects']['chart_display_name'] = ''
+
+                        if sds_display_name not in self.result['data']['objects']['chart_display_name']:
+                            if self.result['data']['objects']['chart_display_name']:
+                                self.result['data']['objects']['chart_display_name'] += ' & ' + sds_display_name
+                            else:
+                                self.result['data']['objects']['chart_display_name'] += sds_display_name
+
                         self.result['data']['objects']['display_name'] = sds_display_name
 
-                        display_name = self.result['data']['objects']['display_name']
+                        display_name = sds_display_name
 
                         self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[sds_name]["type"] \
                             if sds_name in SERVICE_DATA_SOURCE else "area"
