@@ -292,10 +292,10 @@ table.dataTable.no-footer {
 }
 .box.border .box-title, .box.solid .box-title {
   background-color : #FFFFFF !important;
-  border-width: 0 0 2px 0;
+  /*border-width: 0 0 2px 0;
   border-image: linear-gradient(to right, rgba(240,40,22,1) 0%, rgba(203,30,37,1) 70%, rgba(203,30,36,1) 100%);
   -webkit-border-image: -webkit-gradient(left top, right top, color-stop(0%, rgba(240,40,22,1)), color-stop(70%, rgba(203,30,37,1)), color-stop(100%, rgba(203,30,36,1)));
-  -webkit-border-image: -webkit-linear-gradient(left, rgba(240,40,22,1) 0%, rgba(203,30,37,1) 70%, rgba(203,30,36,1) 100%));
+  -webkit-border-image: -webkit-linear-gradient(left, rgba(240,40,22,1) 0%, rgba(203,30,37,1) 70%, rgba(203,30,36,1) 100%));*/
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button:active {
   color: #CA1E25 !important;
