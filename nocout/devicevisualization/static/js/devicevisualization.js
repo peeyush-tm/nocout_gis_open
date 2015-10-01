@@ -91,29 +91,35 @@ if(
 }
 
 // Update "Show Labels"  checkbox as per the cookie value
-if($.cookie("isLabelChecked")) {
-    if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
-        $("#show_hide_label")[0].checked = true;
-    } else {
-        $("#show_hide_label")[0].checked = false;
+if ($("#show_hide_label").length > 0) {
+    if($.cookie("isLabelChecked")) {
+        if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
+            $("#show_hide_label")[0].checked = true;
+        } else {
+            $("#show_hide_label")[0].checked = false;
+        }
     }
 }
 
 // Update "Show All Connection Lines"  checkbox as per the cookie value
-if($.cookie("isLineChecked")) {
-    if($.cookie("isLineChecked") == true || $.cookie("isLineChecked")=='true') {
-        $("#showConnLines")[0].checked= true;
-    } else {
-        $("#showConnLines")[0].checked= false;
+if ($("#showConnLines").length > 0) {
+    if($.cookie("isLineChecked")) {
+        if($.cookie("isLineChecked") == true || $.cookie("isLineChecked")=='true') {
+            $("#showConnLines")[0].checked= true;
+        } else {
+            $("#showConnLines")[0].checked= false;
+        }
     }
 }
 
 // Update "Show All SS"  checkbox as per the cookie value
-if($.cookie("isSSChecked")) {
-    if($.cookie("isSSChecked") == true || $.cookie("isSSChecked")=='true') {
-        $("#showAllSS")[0].checked= true;
-    } else {
-        $("#showAllSS")[0].checked= false;
+if ($("#showAllSS").length > 0) {
+    if($.cookie("isSSChecked")) {
+        if($.cookie("isSSChecked") == true || $.cookie("isSSChecked")=='true') {
+            $("#showAllSS")[0].checked= true;
+        } else {
+            $("#showAllSS")[0].checked= false;
+        }
     }
 }
 
@@ -1104,7 +1110,7 @@ $('#infoWindowContainer').delegate('td','click',function(e) {
         api_url = currentAttr['url'] ? currentAttr['url'].value : "";
     
     // If api_url exist then fetch l2 report url
-    if(api_url) {
+    if(api_url && $('#topo_view_tab').length == 0) {
         // Show the loader
         showSpinner();
 
@@ -1765,6 +1771,9 @@ function showAdvSearch() {
     if($("#advSearchContainerBlock").hasClass("hide")) {
         $("#advSearchContainerBlock").removeClass("hide");
     }
+    else{
+      $("#advSearchContainerBlock").addClass("hide");  
+    }
     hideSpinner();
 }
 
@@ -1793,6 +1802,9 @@ function showAdvFilters() {
 
     if($("#advFilterContainerBlock").hasClass("hide")) {
         $("#advFilterContainerBlock").removeClass("hide");
+    }
+    else{
+        $("#advFilterContainerBlock").addClass("hide");
     }
     hideSpinner();
 }
@@ -1850,41 +1862,65 @@ function get_page_status() {
  * @param {String} status , It contains the info either to enable/disable buttons
  */
 function disableAdvanceButton(status) {
-    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'];
-    var selectBoxes = ['technology', 'vendor', 'state', 'city'];
-    var textBoxes = ['google_loc_search','lat_lon_search'];
-    var disablingBit = false;
+    var buttonEls = ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap', 'resetFilters'],
+        selectBoxes = ['technology', 'vendor', 'state', 'city'],
+        textBoxes = ['google_loc_search','lat_lon_search'],
+        disablingBit = false;
+
     if(!status) {
         disablingBit= true;
         for(var i=0; i< buttonEls.length; i++) {
-            $('#'+buttonEls[i]).button('loading');
+            try {
+                $('#'+buttonEls[i]).button('loading');
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< selectBoxes.length; i++) {
-            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+            try {
+                document.getElementById(selectBoxes[i]).disabled = disablingBit;
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            var el = document.getElementById(textBoxes[i]);
-            if(el) {
-                document.getElementById(textBoxes[i]).disabled = disablingBit;    
-            }            
+            try {
+                var el = document.getElementById(textBoxes[i]);
+                if(el) {
+                    document.getElementById(textBoxes[i]).disabled = disablingBit;    
+                }
+            } catch(e) {
+                // console.error(e);
+            }
         }
     } else {
         disablingBit= false;
         for(var i=0; i< buttonEls.length; i++) {
-            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
-            $('#'+buttonEls[i]).button('complete');
+            try {
+                $('#'+buttonEls[i]).button('complete');
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< selectBoxes.length; i++) {
-            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+            try {
+                document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+            } catch(e) {
+                // console.error(e);
+            }
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            var el = document.getElementById(textBoxes[i]);
-            if(el) {
-                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            try {
+                var el = document.getElementById(textBoxes[i]);
+                if(el) {
+                    document.getElementById(textBoxes[i]).disabled = disablingBit;    
+                }
+            } catch(e) {
+                // console.error(e);
             }
         }
     }

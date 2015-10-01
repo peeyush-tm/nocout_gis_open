@@ -33,9 +33,13 @@ function ourDataTableWidget() {
         if (typeof advance_filter == 'undefined') {
             advance_filter = '[]';
         }
+        // Condition added to not add adv filters for birdeye view
+        if (typeof clicked_tab_id == 'undefined') {
+            clicked_tab_id = '';
+        }
 
         // If advance filtering is enabled from settings then create advance filters
-        if (typeof advance_filters_enabled != 'undefined' && advance_filters_enabled && create_advance_filters) {
+        if (typeof advance_filters_enabled != 'undefined' && advance_filters_enabled && create_advance_filters && clicked_tab_id.indexOf('bird') == -1) {
             // Call nocout_createAdvanceFilter to create advance filters for grid
             nocout_createAdvanceFilter(
                 tableId,
@@ -115,9 +119,13 @@ function ourDataTableWidget() {
                     }
                 }
 
-                // Add search button near search txt box
-                if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
-                    $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                try {
+                    // Add search button near search txt box
+                    if ($('#'+tableId+'_wrapper div.dataTables_filter label').html().indexOf('fa-search') == -1) {
+                        $('#'+tableId+'_wrapper div.dataTables_filter label').append(search_btn_html);
+                    }
+                } catch(e) {
+                    // console.error(e);
                 }
                 // Append the advance_filter stringified object to download btn
                 $('#' + tableId + '_download_btn').attr('advance_filter', advance_filter);

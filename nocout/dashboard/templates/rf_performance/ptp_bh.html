@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
     {% breadcrumb_safe "RF Performance Dashboard: PTP BH" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -17,13 +17,13 @@
 
 {% block content %}
 <style type="text/css">
-    i.fa-signal {
+    i.fa-line-chart {
         cursor: pointer;
     }
 </style>
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PTP BH</h4>
+        <h4><i class="fa fa-television"></i> RF Performance Dashboard: PTP BH</h4>
     </div>
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
@@ -41,7 +41,7 @@
                                 <div class="box-title" style="background-color: transparent;">
                                     <h3>
                                         RSSI <span id="rssi_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="rssi_trend" title="RSSI Trends">&nbsp;</i>
+                                        <i class="fa fa-line-chart text-success pull-right" id="rssi_trend" title="RSSI Trends">&nbsp;</i>
                                     </h3>
                                 </div>
                                 <div class="box-body">
@@ -54,7 +54,7 @@
                                 <div class="box-title" style="background-color: transparent;">
                                     <h3>
                                         Availability <span id="availability_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="availability_trend" title="AVAILABILITY Trends">&nbsp;</i>
+                                        <i class="fa fa-line-chart text-success pull-right" id="availability_trend" title="AVAILABILITY Trends">&nbsp;</i>
                                     </h3>
                                 </div>
                                 <div class="box-body">
@@ -67,7 +67,7 @@
                                 <div class="box-title" style="background-color: transparent;">
                                     <h3>
                                         UAS <span id="uas_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="uas_trend" title="UAS Trends">&nbsp;</i>
+                                        <i class="fa fa-line-chart text-success pull-right" id="uas_trend" title="UAS Trends">&nbsp;</i>
                                     </h3>
                                 </div>
                                 <div class="box-body">

@@ -46,7 +46,7 @@ var existing_pagesettings_html = '<div class="clearfix"></div>',
 		'integer'
 	],
 	no_filters_txt = 'No filter applied yet.',
-	filter_btn_html = '<button class="btn btn-default btn-sm show_advance_filters_btn" \
+	filter_btn_html = '<button class="btn btn-default btn-sm transitionbtn show_advance_filters_btn" \
 					  id="{}"><i class="fa fa-filter"> </i> </button>',
 	remove_filter_btn_html = '<button class="btn btn-danger btn-sm hide remove_advance_filters_btn" \
 							  id="{}"><i class="fa fa-times"> </i> </button>';
@@ -456,7 +456,8 @@ $('#content').delegate('.show_advance_filters_btn', 'click', function(e) {
 		splitted_id = button_id.split('_advance_filter_btn'),
 		filter_container_id = splitted_id[0] + '_advance_filter';
 
-	$('#' + filter_container_id).slideDown('slow');
+	$('#' + filter_container_id).slideToggle('slow');
+
 });
 
 $('#content').delegate('.filter_cancel_btn', 'click', function(e) {

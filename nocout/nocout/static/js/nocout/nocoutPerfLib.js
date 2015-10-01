@@ -24,35 +24,36 @@ var perf_that = "",
         { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
     ],
     tabs_with_historical = [
-        {"id": "bihourly", "title": "Bi-Hourly"},
+        {"id": "bihourly", "title": "Half-Hourly"},
         {"id": "hourly", "title": "Hourly"},
         {"id": "daily", "title": "Daily"},
         {"id": "weekly", "title": "Weekly"},
         {"id": "monthly", "title": "Monthly"},
-        {"id": "yearly", "title": "Yearly" }
+        // {"id": "yearly", "title": "Yearly" }
     ],
     inventory_status_inner_inner_tabs = [
         {"id": "daily", "title": "Daily"},
         {"id": "weekly", "title": "Weekly"},
         {"id": "monthly", "title": "Monthly"},
-        {"id": "yearly", "title": "Yearly"}
+        // {"id": "yearly", "title": "Yearly"}
     ],
     default_live_table_headers_without_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true}
     ],
     default_live_table_headers_with_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true}
     ]
-    default_hist_table_headers = [
+    default_hist_table_headers_without_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': true},
@@ -60,7 +61,17 @@ var perf_that = "",
         {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
         {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
-        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true}
+    ],
+    default_hist_table_headers_with_ds = [
+        {'mData': 'sys_timestamp', 'sTitle': 'Time', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'avg_value', 'sTitle': 'Avg. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'min_value', 'sTitle': 'Min. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'max_value', 'sTitle': 'Max. Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'current_value', 'sTitle': 'Current Value', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'warning_threshold', 'sTitle': 'Warning Threshold', 'sWidth': 'auto', 'bSortable': true},
+        {'mData': 'critical_threshold', 'sTitle': 'Critical Threshold', 'sWidth': 'auto', 'bSortable': true},
     ],
     date_range_picker_html = "",
     spinner_html = '<h3 align="left"><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>',
@@ -209,7 +220,7 @@ function nocoutPerfLib() {
             live_poll_condition2 = page_type == 'customer';
 
         if (!live_poll_condition1 && !live_poll_condition2) {
-            $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
+            $(".single_perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
         }
 
     };
@@ -384,7 +395,7 @@ function nocoutPerfLib() {
         }
         if (tab_content_config.tab_id == 'live_poll_now') {
             content_html += '<div class="col-md-1">\
-                                <button class="btn btn-default btn-sm perf_poll_now " title="Poll Now" \
+                                <button class="btn btn-default btn-sm single_perf_poll_now " title="Poll Now" \
                                 data-complete-text="<i class=\'fa fa-flash\'></i>" data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
                                 <i class="fa fa-flash"></i></button>\
                             </div>\
@@ -483,13 +494,13 @@ function nocoutPerfLib() {
                 }
 
                 if (result.success == 1) {
-                    var services_list = [];
+                    all_services_list = [];
                     try {
-                        services_list = result.data.meta.services_list;
+                        all_services_list = result.data.meta.services_list;
                     } catch(e) {
-                        services_list = [];
+                        all_services_list = [];
                     }
-                    $('#all_serv_live_report_btn').attr('data-services', JSON.stringify(services_list));
+                    $('#all_serv_live_report_btn').attr('data-services', JSON.stringify(all_services_list));
 
                     var first_loop = 0;
                     // If any data exists
@@ -710,9 +721,11 @@ function nocoutPerfLib() {
                                 serviceDataUrl = "";
 
                             if(serviceId.indexOf('_status_') == -1 || serviceId.indexOf('_inventory_') == -1) {
-                                // Hide display type option from only table tabs
-                                if ($("#display_type_container").hasClass("hide")) {
-                                    $("#display_type_container").removeClass("hide")
+                                if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') == -1) {
+                                    // Hide display type option from only table tabs
+                                    if ($("#display_type_container").hasClass("hide")) {
+                                        $("#display_type_container").removeClass("hide")
+                                    }
                                 }
                             }
 
@@ -852,6 +865,10 @@ function nocoutPerfLib() {
             updated_url = service_status_url;
         }
 
+        if (updated_url[0] != '/') {
+            updated_url = '/' + updated_url;
+        }
+
         $.ajax({
             url : base_url + "" + updated_url,
             type : "GET",
@@ -882,7 +899,7 @@ function nocoutPerfLib() {
                             "status" : status
                         };
 
-                        callback("success",response_obj);
+                        callback("success",result.data.objects);
                     } else {
                         callback("error","");
                     }
@@ -931,10 +948,16 @@ function nocoutPerfLib() {
 
         var draw_type = $("input[name='item_type']:checked").val(),
             listing_ajax_url = "",
-            listing_headers = default_live_table_headers;
+            listing_headers = default_live_table_headers,
+            is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
 
-        if (!draw_type) {
+        if (!draw_type || clicked_tab_id.indexOf('bird') > -1) {
             draw_type = "chart";
+        }
+
+        // If birdeye view then show header with DS
+        if (is_birdeye_view) {
+            listing_headers = default_live_table_headers_with_ds;
         }
 
         // Decrement the tabs click on evert click counter
@@ -958,7 +981,7 @@ function nocoutPerfLib() {
         start_date = "";
         end_date = "";
 
-        if (startDate && endDate) {
+        if (startDate && endDate && !is_birdeye_view) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
@@ -1013,35 +1036,31 @@ function nocoutPerfLib() {
             // console.log(e);
         }
 
-
         if(listing_ajax_url.indexOf("_invent") > -1 || listing_ajax_url.indexOf("_status") > -1) {
+            if (clicked_tab_id.indexOf('bird') == -1) {
+                // Hide display type option from only table tabs
+                if (!$("#display_type_container").hasClass("hide")) {
+                    $("#display_type_container").addClass("hide")
+                }
+                
+                draw_type = 'table';
+                // Update radio button selection
+                $('#display_table').attr('checked', 'checked');
+                $('#display_table').prop('checked', true);
 
-            // Hide display type option from only table tabs
-            if (!$("#display_type_container").hasClass("hide")) {
-                $("#display_type_container").addClass("hide")
+                // Update dropdown button html
+                updateDropdownHtml();
             }
-
-            draw_type = 'table';
-            // Checked the chart type radio
-            // $('#display_table')[0].checked = true;
-            // Update radio button selection
-            $('#display_table').attr('checked', 'checked');
-            $('#display_table').prop('checked', true);
-
-            // Update dropdown button html
-            updateDropdownHtml();
 
             $('#' + service_id+ '_chart').html("");
 
-            setTimeout(function() {
-                initChartDataTable_nocout(
-                    "other_perf_table",
-                    listing_headers,
-                    service_id,
-                    listing_ajax_url,
-                    true
-                );
-            }, 300);
+            initChartDataTable_nocout(
+                "other_perf_table",
+                listing_headers,
+                service_id,
+                listing_ajax_url,
+                true
+            );
         } else {
             // Send ajax call
             sendAjax(start_date, end_date);
@@ -1082,8 +1101,10 @@ function nocoutPerfLib() {
         function sendAjax(ajax_start_date, ajax_end_date) {
 
             var urlDataStartDate = '', urlDataEndDate = '';
-            if (ajax_start_date == '' && ajax_end_date == '') {  
-                // Pass              
+            if (ajax_start_date == '' && ajax_end_date == '') {
+                // Pass
+            } else if(is_birdeye_view) {
+                // Pass
             } else {
                 var end_Date = "";
                 if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
@@ -1104,8 +1125,6 @@ function nocoutPerfLib() {
                 type: "GET",
                 dataType: "json",
                 success: function (response) {
-                    // TESTING DATA JSON
-                    // $.getJSON(base_url + "/static/js/nocout/dummy_data/bs_temperature.json",function(response) {
                     var result = "";
                     // Type check of response
                     if (typeof response == 'string') {
@@ -1120,20 +1139,20 @@ function nocoutPerfLib() {
 
                         if (grid_headers && grid_headers.length > 0) {
 
-                            // update 'draw_type' variable
-                            draw_type = 'table';
-                            // Checked the chart type radio
-                            // $('#display_table')[0].checked = true;
-                            // Update radio button selection
-                            $('#display_table').attr('checked', 'checked');
-                            $('#display_table').prop('checked', true);
+                            if (!is_birdeye_view) {
+                                // update 'draw_type' variable
+                                draw_type = 'table';
+                                // Update radio button selection
+                                $('#display_table').attr('checked', 'checked');
+                                $('#display_table').prop('checked', true);
 
-                            // Update dropdown button html
-                            updateDropdownHtml();
+                                // Update dropdown button html
+                                updateDropdownHtml();
 
-                            // Hide display type option from only table tabs
-                            if (!$("#display_type_container").hasClass("hide")) {
-                                $("#display_type_container").addClass("hide")
+                                // Hide display type option from only table tabs
+                                if (!$("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").addClass("hide")
+                                }
                             }
                             
                             // Destroy Highchart
@@ -1177,31 +1196,36 @@ function nocoutPerfLib() {
                                 listing_ajax_url.indexOf('servicedetail') > -1
                                 ||
                                 listing_ajax_url.indexOf('availability') > -1) {
-                                // Show display type option from only table tabs
-                                if (!$("#display_type_container").hasClass("hide")) {
-                                    $("#display_type_container").addClass("hide")
-                                }
-                                draw_type = 'chart';
-                                // Checked the chart type radio
-                                // $('#display_chart')[0].checked = true
-                                // Update radio button selection
-                                $('#display_chart').attr('checked', 'checked');
-                                $('#display_chart').prop('checked', true);
+                                
+                                if (!is_birdeye_view) {
+                                    // Show display type option from only table tabs
+                                    if (!$("#display_type_container").hasClass("hide")) {
+                                        $("#display_type_container").addClass("hide")
+                                    }
+                                    draw_type = 'chart';
+                                    // Update radio button selection
+                                    $('#display_chart').attr('checked', 'checked');
+                                    $('#display_chart').prop('checked', true);
 
-                                // Update dropdown button html
-                                updateDropdownHtml();
+                                    // Update dropdown button html
+                                    updateDropdownHtml();
+                                }
                             } else {
-                                // Show display type option from only table tabs
-                                if ($("#display_type_container").hasClass("hide")) {
-                                    $("#display_type_container").removeClass("hide")
+                                if (!is_birdeye_view) {
+                                    // Show display type option from only table tabs
+                                    if ($("#display_type_container").hasClass("hide")) {
+                                        $("#display_type_container").removeClass("hide")
+                                    }
                                 }
                             }
 
                             // If any data available then plot chart & table
                             if (chart_config.chart_data.length > 0) {
                                 if (draw_type == 'chart') {
-                                    // Destroy 'perf_data_table'
-                                    nocout_destroyDataTable('other_perf_table');
+                                    if (!is_birdeye_view) {
+                                        // Destroy 'perf_data_table'
+                                        nocout_destroyDataTable('other_perf_table');
+                                    }
 
                                     if (!(
                                         listing_ajax_url.indexOf('service/rf/') > -1
@@ -1210,7 +1234,9 @@ function nocoutPerfLib() {
                                         ||
                                         listing_ajax_url.indexOf('availability') > -1
                                     )) {
+                                        if (!is_birdeye_view) {
                                             nocout_destroyDataTable('perf_data_table');
+                                        }
                                     }
 
                                     if (!$('#' + service_id+ '_chart').highcharts()) {
@@ -1274,19 +1300,20 @@ function nocoutPerfLib() {
 
                                 } else {
                                     // Destroy Highcharts
-                                    nocout_destroyHighcharts(service_id);
+                                    if (!is_birdeye_view) {
+                                        nocout_destroyHighcharts(service_id);
+                                    }
 
                                     if (listing_ajax_url.indexOf('servicedetail') == -1) {
+                                        if (!is_birdeye_view) {
+                                            draw_type = 'table';
+                                            // Update radio button selection
+                                            $('#display_table').attr('checked', 'checked');
+                                            $('#display_table').prop('checked', true);
 
-                                        draw_type = 'table';
-                                        // Checked the chart type radio
-                                        // $('#display_table')[0].checked = true;
-                                        // Update radio button selection
-                                        $('#display_table').attr('checked', 'checked');
-                                        $('#display_table').prop('checked', true);
-
-                                        // Update dropdown button html
-                                        updateDropdownHtml();
+                                            // Update dropdown button html
+                                            updateDropdownHtml();
+                                        }
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1301,7 +1328,9 @@ function nocoutPerfLib() {
                                 }
                             } else {
                                 if (draw_type == 'chart') {
-                                    nocout_destroyDataTable('perf_data_table');
+                                    if (!is_birdeye_view) {
+                                        nocout_destroyDataTable('perf_data_table');
+                                    }
 
                                     if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
                                         if (!$('#' + service_id+ '_chart').highcharts()) {
@@ -1322,16 +1351,15 @@ function nocoutPerfLib() {
                                         if (show_historical_on_performance && not_availability_page && not_live_tab) {
                                             table_headers = default_hist_table_headers;
                                         }
+                                        if (!is_birdeye_view) {
+                                            draw_type = 'table';
+                                            // Update radio button selection
+                                            $('#display_table').attr('checked', 'checked');
+                                            $('#display_table').prop('checked', true);
 
-                                        draw_type = 'table';
-                                        // Checked the chart type radio
-                                        // $('#display_table')[0].checked = true;
-                                        // Update radio button selection
-                                        $('#display_table').attr('checked', 'checked');
-                                        $('#display_table').prop('checked', true);
-
-                                        // Update dropdown button html
-                                        updateDropdownHtml();
+                                            // Update dropdown button html
+                                            updateDropdownHtml();
+                                        }
 
                                         setTimeout(function() {
                                             initChartDataTable_nocout(
@@ -1347,7 +1375,6 @@ function nocoutPerfLib() {
                             }
                         }
                     } else {
-
                         if (
                             listing_ajax_url.indexOf('service/rf/') > -1
                             ||
@@ -1355,27 +1382,29 @@ function nocoutPerfLib() {
                             ||
                             listing_ajax_url.indexOf('availability') > -1
                         ) {
-                            // Show display type option from only table tabs
-                            if (!$("#display_type_container").hasClass("hide")) {
-                                $("#display_type_container").addClass("hide")
+                            if (!is_birdeye_view) {
+                                // Show display type option from only table tabs
+                                if (!$("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").addClass("hide")
+                                }
+
+                                draw_type = 'chart';
+                                // Update radio button selection
+                                $('#display_chart').attr('checked', 'checked');
+                                $('#display_chart').prop('checked', true);
+
+                                // Update dropdown button html
+                                updateDropdownHtml();
                             }
-
-                            draw_type = 'chart';
-                            // Checked the chart type radio
-                            // $('#display_chart')[0].checked = true;
-                            // Update radio button selection
-                            $('#display_chart').attr('checked', 'checked');
-                            $('#display_chart').prop('checked', true);
-
-                            // Update dropdown button html
-                            updateDropdownHtml();
                         } else {
-                            // Show display type option from only table tabs
-                            if ($("#display_type_container").hasClass("hide")) {
-                                $("#display_type_container").removeClass("hide")
+                            if (!is_birdeye_view) {
+                                // Show display type option from only table tabs
+                                if ($("#display_type_container").hasClass("hide")) {
+                                    $("#display_type_container").removeClass("hide")
+                                }
                             }
                         }
-                        
+
                         if (draw_type == 'chart') {
                             if(!(
                                 listing_ajax_url.indexOf('service/rf/') > -1
@@ -1384,7 +1413,9 @@ function nocoutPerfLib() {
                                 ||
                                 listing_ajax_url.indexOf('availability') > -1
                             )) {
-                                nocout_destroyDataTable('perf_data_table');
+                                if (!is_birdeye_view) {
+                                    nocout_destroyDataTable('perf_data_table');
+                                }
                             }
                             if (!$.trim(ajax_start_date) && !$.trim(ajax_end_date)) {
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
@@ -1400,26 +1431,24 @@ function nocoutPerfLib() {
                             if (show_historical_on_performance && listing_ajax_url.split("data_for=")[1].indexOf('live') == -1) {
                                 table_headers = default_hist_table_headers;
                             }
+                            
+                            if (!is_birdeye_view) {
+                                draw_type = 'table';
+                                // Update radio button selection
+                                $('#display_table').attr('checked', 'checked');
+                                $('#display_table').prop('checked', true);
 
-                            draw_type = 'table';
-                            // Checked the chart type radio
-                            // $('#display_table')[0].checked = true;
-                            // Update radio button selection
-                            $('#display_table').attr('checked', 'checked');
-                            $('#display_table').prop('checked', true);
+                                // Update dropdown button html
+                                updateDropdownHtml();
+                            }
 
-                            // Update dropdown button html
-                            updateDropdownHtml();
-
-                            setTimeout(function() {
-                                initChartDataTable_nocout(
-                                    "other_perf_table",
-                                    listing_headers,
-                                    service_id,
-                                    listing_ajax_url,
-                                    true
-                                );
-                            }, 300);
+                            initChartDataTable_nocout(
+                                "other_perf_table",
+                                listing_headers,
+                                service_id,
+                                listing_ajax_url,
+                                true
+                            );
                         }
                     }
 
@@ -1428,10 +1457,6 @@ function nocoutPerfLib() {
                         if ($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
                             //if last date
                             if (moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
-
-                                // if ($('#' + service_id+ '_chart').highcharts()) {
-                                //     $('#' + service_id + '_chart').highcharts().redraw();
-                                // }
 
                                 if (!$('#' + service_id+ '_chart').highcharts()) {
                                     $('#' + service_id+ '_chart').html(result.message);
@@ -1471,11 +1496,7 @@ function nocoutPerfLib() {
                         } else {
                             hideSpinner();    
                         }
-                    } else {
-                        // hideSpinner();
                     }
-
-                    // });
                 },
                 error : function(err) {
                     // console.log(err.statusText);
@@ -1610,7 +1631,7 @@ $('input[name="item_type"]').change(function(e) {
     }
 });
 
-$(".perfContainerBlock").delegate('.perf_poll_now', 'click', function(e) {
+$(".perfContainerBlock").delegate('.single_perf_poll_now', 'click', function(e) {
 
     var active_tab_obj = nocout_getPerfTabDomId(),
         tab_id = active_tab_obj["active_dom_id"];
@@ -1648,8 +1669,8 @@ $(".perfContainerBlock").delegate('.poll_play_btn', 'click', function(e) {
             $("#"+tab_id+ "_block .poll_pause_btn").removeClass("disabled");
         }
 
-        if(!$("#" + tab_id + "_block .perf_poll_now").hasClass("disabled")) {
-            $("#" + tab_id + "_block .perf_poll_now").addClass("disabled");
+        if(!$("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
+            $("#" + tab_id + "_block .single_perf_poll_now").addClass("disabled");
         }
         /*Disable poll interval & max interval dropdown*/
         $("#" + tab_id + "_block .poll_interval").attr("disabled","disabled");
