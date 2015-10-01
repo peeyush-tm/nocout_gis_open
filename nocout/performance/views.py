@@ -2140,6 +2140,8 @@ class ServiceDataSourceListing(BaseDatatableView, AdvanceFilteringMixin):
                 ).using(alias=self.inventory_device_machine_name)
 
                 qs = main_resultset.filter(
+                    Q(data_source__icontains=sSearch)
+                    |
                     Q(max_value__icontains=sSearch)
                     |
                     Q(min_value__icontains=sSearch)
