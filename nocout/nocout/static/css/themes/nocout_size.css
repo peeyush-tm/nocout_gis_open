@@ -733,14 +733,16 @@ a.paginate_button {
 .inner_inner_tab li a {
   border: 0px none !important;
 }
-.left_tabs_container > li.active > a,
-.left_tabs_container > li:hover > a,
-.left_tabs_container > li:focus > a,
-.left_tabs_container > li:active > a,
-.left_tabs_container > li > a:hover,
-.left_tabs_container > li > a:focus,
-.left_tabs_container > li > a:active {
-  border-top: 0px none;
-  border-left: 0px none;
+.left_tabs_container li:hover a,
+.left_tabs_container li:focus a,
+.left_tabs_container li.active a,
+.left_tabs_container li.active:active a,
+.left_tabs_container li.active:focus a,
+.left_tabs_container li a:hover,
+.left_tabs_container li a:focus,
+.left_tabs_container li.active a:focus,
+.left_tabs_container li.active a:active {
+  border-top: 0px none !important;
+  border-left: 0px none !important;
   border-bottom: 3px solid #DDDDDD !important;
 }
