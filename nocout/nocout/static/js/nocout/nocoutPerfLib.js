@@ -1037,7 +1037,7 @@ function nocoutPerfLib() {
         }
 
         if(listing_ajax_url.indexOf("_invent") > -1 || listing_ajax_url.indexOf("_status") > -1) {
-            if (!is_birdeye_view) {
+            if (clicked_tab_id.indexOf('bird') == -1) {
                 // Hide display type option from only table tabs
                 if (!$("#display_type_container").hasClass("hide")) {
                     $("#display_type_container").addClass("hide")

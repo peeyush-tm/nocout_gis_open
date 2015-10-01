@@ -37,6 +37,9 @@
         .box .header-tabs .nav-tabs > li:first-child {
             border-right: 1px inset #c6c6ce !important;
         }
+        .box .header-tabs .nav-tabs > li:last-child {
+            border: 0px none !important;
+        }
         .box .header-tabs .top_perf_tabs > li,
         .box .header-tabs .top_perf_tabs > li > a {
             margin: 0px;
@@ -83,9 +86,9 @@
         }
         .paging_arrow {
             position: absolute;
-            left: 12px;
-            top: 12px;
-            font-size: 30px;
+            left: 14px;
+            top: 14px;
+            font-size: 25px;
             cursor: pointer;
         }
         .right_arrow {
@@ -234,7 +237,7 @@
         </div>
         <div class='box-body' style="position: relative;">
             <!-- <div id="tableContainer" class="box-body"> -->
-            <i class="fa fa-arrow-circle-left text-ttpl paging_arrow hide">&nbsp;</i>
+            <i class="fa fa-arrow-circle-o-left text-ttpl paging_arrow hide">&nbsp;</i>
             <div class="tabbable header-tabs" style="width: 94%; margin:0px auto;">
                 <ul class="nav nav-tabs top_perf_tabs">
                     <li class="active">
@@ -309,7 +312,7 @@
                 </ul>
                 <div class="clearfix"></div>
             </div>
-            <i class="fa fa-arrow-circle-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
+            <i class="fa fa-arrow-circle-o-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
             <div class="tab-content top_perf_tab_content">
                 <div class="tab-pane active" id="network_perf_tab">
                     <div class="panel panel-default inner_tab_container">
@@ -732,23 +735,25 @@
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);
 
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                var temp_serv_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id");
 
                 if(
-                    service_id.indexOf('availability') > -1
+                    temp_serv_id.indexOf('availability') > -1
                     ||
-                    service_id.indexOf('utilization_top') > -1
+                    temp_serv_id.indexOf('utilization_top') > -1
                     ||
-                    service_id.indexOf('topology') > -1
+                    temp_serv_id.indexOf('topology') > -1
                 ) {
 
                     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
 
-                } 
+                } else {
+                    var active_tab_obj = nocout_getPerfTabDomId(),
+                        service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                }
 
                 if(get_service_data_url && service_id && current_device) {
                     // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
