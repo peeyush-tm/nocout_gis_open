@@ -27,6 +27,9 @@
         .box .header-tabs .nav-tabs > li:first-child {
             border-right: 1px inset #c6c6ce !important;
         }
+        .box .header-tabs .nav-tabs > li:last-child {
+            border: 0px none !important;
+        }
         .box .header-tabs .alert_detail_tabs > li,
         .box .header-tabs .alert_detail_tabs > li > a {
             margin: 0px;
@@ -59,8 +62,8 @@
         .paging_arrow {
             position: absolute;
             left: 12px;
-            top: 8px;
-            font-size: 30px;
+            top: 10px;
+            font-size: 25px;
             cursor: pointer;
         }
         .right_arrow {
@@ -73,7 +76,7 @@
     </style>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title" style="position:relative;">
-            <i class="fa fa-arrow-circle-left text-ttpl paging_arrow hide">&nbsp;</i>
+            <i class="fa fa-arrow-circle-o-left text-ttpl paging_arrow hide">&nbsp;</i>
             <div class="tabbable header-tabs" style="width: 94%; margin:0px auto;">
                 <!-- nav-tab Start -->
                 <ul class="nav nav-tabs alert_detail_tabs">
@@ -130,7 +133,7 @@
                 </ul>
                 <!-- nav-tab End -->
             </div>
-            <i class="fa fa-arrow-circle-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
+            <i class="fa fa-arrow-circle-o-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
         </div>
         <div class="box-body">
             <!-- tab-content Start -->
