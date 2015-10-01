@@ -1902,11 +1902,6 @@ function populateBirdViewCharts(start, end) {
                 api_url = api_url + '?service_view_type=unified'
             }
 
-            // perfInstance.getServiceStatus(api_url, false, function(response_type,data_obj) {
-            //     console.log(api_url)
-            //     console.log(response_type);
-            //     console.log(data_obj);
-            // });
             // call function to fetch perf data for this service
             perfInstance.getServiceData(api_url, srv_name, current_device);
             if (!$('#' + srv_name + '_heading .fa-spinner').hasClass('hide')) {
