@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
     {% if isOther == 0 %}
         {% breadcrumb_safe "Main Dashboard" "home" %}
     {% else %}
@@ -34,83 +34,85 @@
 
 <div class="box border lite" id="main_dashboard_container">
     <div class="box-title">
-        <h4><i class="fa fa-dashboard"></i> {{ page_title }}</h4>
+        <h4><i class="fa fa-television"></i> {{ page_title }}</h4>
     </div>
     <div class="box-body">
         <!-- ********** FIRST ROW START **********-->
-
         <!-- Speedometers (Gauge) Charts Start -->
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="down-all_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
+        <div class="col-md-3">
+            <div class="custom_seperator">&nbsp;</div>
             
-            <!--CHART BLOCK - START -->
-            <div id="down-all" style="height: 165px;"></div>
-            <!--CHART BLOCK - END -->
-
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    Down
-                    <i class="fa fa-signal text-success" id="down-all_trend" title="Down Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
+            <div>
+                <div class="pull-left">
+                    <h5 class="bigger">
+                        Down <small id="down-all_timestamp"></small>
+                    </h5>       
+                </div>
+                <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success trends_icon" id="down-all_trend" title="Down Trends"></i> 
+                </div>
+                <div class="clearfix"></div>
+            </div>
+            <div>
+                <div id="down-all" style="height: 165px;"></div>
+            </div>
         </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="latency-all_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
+
+        <div class="col-md-3">
+            <div class="custom_seperator">&nbsp;</div>
             
-            <!--CHART BLOCK - START -->
+            <div>
+                <div class="pull-left">
+                    <h5 class="bigger">
+                        Latency <small id="latency-all_timestamp"></small>
+                    </h5>       
+                </div>
+                <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success trends_icon" id="latency-all_trend" title="Latency Trends"></i>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        <div>
             <div id="latency-all" style="height: 165px;"></div>
-            <!--CHART BLOCK - END -->
-
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    Latency
-                    <i class="fa fa-signal text-success" id="latency-all_trend" title="Latency Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
         </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="packetloss-all_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
-            <!--CHART BLOCK - START -->
-            <div id="packetloss-all" style="height: 165px;"></div>
-            <!--CHART BLOCK - END -->
-            
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    Packet Drop
-                    <i class="fa fa-signal text-success" id="packetloss-all_trend" title="Packet Drop Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
         </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="temperature-idu-wimax_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
-            <!--CHART BLOCK - START -->
-            <div id="temperature-idu-wimax" style="height: 165px;"></div>
-            <!--CHART BLOCK - END -->
+        <div class="col-md-3">
+            <div class="custom_seperator">&nbsp;</div>
+           
+            <div>
+                <div class="pull-left">
+                    <h5 class="bigger">
+                        Packet Drop<small id="packetloss-all_timestamp"></small>
+                    </h5>       
+                </div>
+                <!-- <div id="down-all_timestamp" style="text-align:center"></div>                 -->
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success trends_icon" id="packetloss-all_trend" title="Packet Drop Trends"></i>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+            <div>
+                <div id="packetloss-all" style="height: 165px;"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div>
+                <div class="pull-left">
+                    <h5 class="bigger">
+                        Temperature<small id="temperature-idu-wimax_timestamp"></small>
+                    </h5>
+                </div>
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success trends_icon" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends"></i>
+                </div>
+                <div class="clearfix"></div>
+            </div>
 
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    Temperature IDU Wimax
-                    <i class="fa fa-signal text-success" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
+            <div>
+                <div id="temperature-idu-wimax" style="height: 165px;"></div>
+            </div>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
         <div class="clearfix"></div>
@@ -121,11 +123,9 @@
 
         <div style="overflow:auto;">
             <div class="col-md-12">
-                <h5>
-                    <strong>
-                        City Charter Report
-                        <i class="fa fa-signal text-success" id="city_charter_table_trend" title="City Charter Trends"> </i>
-                    </strong>
+                <h5 class="bigger">                    
+                    City Charter Report
+                    <i class="fa fa-line-chart text-success trends_icon" id="city_charter_table_trend" title="City Charter Trends"> </i>                    
                 </h5>
                 <table class="datatable table table-striped table-bordered table-hover" id="city_charter_table">
                     <thead></thead>
@@ -137,153 +137,186 @@
 
         <hr/>
 
-        <!-- Capacity pie Charts & city table Start -->
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="wimax_sales_opportunity_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
-            <!--CHART BLOCK - START -->
-            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
-            <!--CHART BLOCK - END -->
+        <div class="col-md-6 border_right" align="center">
+            <h4 class="bigger">- Sales Opportunity</h4><br/>
 
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    Wimax Sales Opportunity
-                    <i class="fa fa-signal text-success" id="wimax_sales_opportunity_trend" title="Wimax Sales Opportunity Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
-        </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="pmp_sales_opportunity_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
-            <!--CHART BLOCK - START -->
-            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
-            <!--CHART BLOCK - END -->
+             <!-- Capacity pie Charts & city table Start -->
+            <div class="row col-md-6" align="center">
+                <div class="custom_seperator">&nbsp;</div>
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        Wimax 
+                            <!--TIMESTAMP BLOCK - START -->
+                            <small id="wimax_sales_opportunity_timestamp"></small>
+                             <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
+                </div>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart text-success trends_icon" id="wimax_sales_opportunity_trend" title="Wimax Sales Opportunity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <!--CHART BLOCK - START -->
+                <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
+            </div>
+            <div class="row col-md-6 pull-right" align="center">
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        PMP 
+                        <!--TIMESTAMP BLOCK - START -->
+                        <small id="pmp_sales_opportunity_timestamp"></small>
+                         <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
+                </div>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart text-success trends_icon" id="pmp_sales_opportunity_trend" title="PMP Sales Opportunity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <!--CHART BLOCK - START -->
+                <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
+            </div>
 
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    PMP Sales Opportunity
-                    <i class="fa fa-signal text-success" id="pmp_sales_opportunity_trend" title="PMP Sales Opportunity Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
         </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="wimax_sector_capacity_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
+
+        <div class="col-md-6" align="center">
+            <h4 class="bigger">- Sector Capacity</h4><br/>
+
+            <div class="row col-md-6" align="center">
+            <div class="custom_seperator">&nbsp;</div>
+            <div class="">
+                <div class="pull-left">
+                <!--TITLE BLOCK - START -->
+                <h5 class="bigger">
+                    Wimax 
+                    <!--TIMESTAMP BLOCK - START -->
+                    <small id="wimax_sector_capacity_timestamp"></small>
+                     <!--TIMESTAMP BLOCK - END -->
+                </h5>
+            <!--TITLE BLOCK - END -->
+            </div>
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success trends_icon" id="wimax_sector_capacity_trend" title="Wimax Sector Capacity Trends"> </i>
+                </div>
+                <div class="clearfix"></div>
+            </div>
             <!--CHART BLOCK - START -->
             <div id="wimax_sector_capacity" class="rf_chart_style"></div>
-            <!--CHART BLOCK - END -->
-
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    Wimax Sector Capacity
-                    <i class="fa fa-signal text-success" id="wimax_sector_capacity_trend" title="Wimax Sector Capacity Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
         </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="pmp_sector_capacity_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
+        <div class="row col-md-6 pull-right" align="center">      
+            <div class="">
+                <div class="pull-left">
+                <!--TITLE BLOCK - START -->
+                <h5 class="bigger">
+                    PMP             
+                    <!--TIMESTAMP BLOCK - START -->
+                    <small id="pmp_sector_capacity_timestamp"></small>
+                     <!--TIMESTAMP BLOCK - END -->
+                </h5>
+            <!--TITLE BLOCK - END -->
+            </div>
+                <div class="pull-right">
+                    <i class="fa fa-line-chart text-success trends_icon" id="pmp_sector_capacity_trend" title="PMP Sector Capacity Trends"> </i>
+                </div>
+                <div class="clearfix"></div>
+            </div>
             <!--CHART BLOCK - START -->
             <div id="pmp_sector_capacity" class="rf_chart_style"></div>
-            <!--CHART BLOCK - END -->
-
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    PMP Sector Capacity
-                    <i class="fa fa-signal text-success" id="pmp_sector_capacity_trend" title="PMP Sector Capacity Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
         </div>
-        <!-- Capacity pie Charts & city table End -->
 
-        <div class="clearfix"></div>
+        </div>
+        
+        
         <!-- ********** SECOND ROW END **********-->
         <hr/>
 
+        <div class="col-md-9 border_right" align="center">
+            <h4 class="bigger">- Backhaul Capacity</h4><br/>
 
-        <!-- ********** THIRD ROW START **********-->
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="wimax_backhaul_capacity_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
-            <!--CHART BLOCK - START -->
-            <div id="wimax_backhaul_capacity" class="rf_chart_style"></div>
-            <!--CHART BLOCK - END -->
+            <div class="col-md-4 row" align="center">
+                <div class="custom_seperator">&nbsp;</div>
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        Wimax
+                        <!--TIMESTAMP BLOCK - START -->
+                        <small id="wimax_backhaul_capacity_timestamp"></small>
+                         <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
+                </div>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart text-success trends_icon" id="wimax_backhaul_capacity_trend" title="Wimax Backhaul Capacity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <!--CHART BLOCK - START -->
+                <div id="wimax_backhaul_capacity" class="rf_chart_style"></div>
+            </div>
 
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    Wimax Backhaul Capacity
-                    <i class="fa fa-signal text-success" id="wimax_backhaul_capacity_trend" title="Wimax Backhaul Capacity Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
+             <div class="col-md-4 row" align="center" style="margin:0px auto;">
+                <div class="custom_seperator">&nbsp;</div>
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        PMP 
+                        <!--TIMESTAMP BLOCK - START -->
+                        <small id="pmp_backhaul_capacity_timestamp"></small>
+                         <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
+                </div>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart text-success trends_icon" id="pmp_backhaul_capacity_trend" title="PMP Backhaul Capacity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <!--CHART BLOCK - START -->
+                <div id="pmp_backhaul_capacity" class="rf_chart_style"></div>
+            </div>
+
+             <div class="col-md-4 pull-right row" align="center">      
+                <div class="">
+                    <div class="pull-left">
+                    <!--TITLE BLOCK - START -->
+                    <h5 class="bigger">
+                        TCL POP
+                        <!--TIMESTAMP BLOCK - START -->
+                        <small id="tcl_pop_backhaul_capacity_timestamp"></small>
+                         <!--TIMESTAMP BLOCK - END -->
+                    </h5>
+                <!--TITLE BLOCK - END -->
+                </div>
+                    <div class="pull-right">
+                        <i class="fa fa-line-chart text-success trends_icon" id="tcl_pop_backhaul_capacity_trend" title="TCL POP Backhaul Capacity Trends"> </i>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <!--CHART BLOCK - START -->
+                <div id="tcl_pop_backhaul_capacity" class="rf_chart_style"></div>
+            </div>
+
         </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="pmp_backhaul_capacity_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
-            <!--CHART BLOCK - START -->
-            <div id="pmp_backhaul_capacity" class="rf_chart_style"></div>
-            <!--CHART BLOCK - END -->
-
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    PMP Backhaul Capacity
-                    <i class="fa fa-signal text-success" id="pmp_backhaul_capacity_trend" title="PMP Backhaul Capacity Trends"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
-        </div>
-        <div class="col-md-3" align="center">
-            <!--TIMESTAMP BLOCK - START -->
-            <div id="tcl_pop_backhaul_capacity_timestamp"></div>
-            <!--TIMESTAMP BLOCK - END -->
-            
-            <!--CHART BLOCK - START -->
-            <div id="tcl_pop_backhaul_capacity" class="rf_chart_style"></div>
-            <!--CHART BLOCK - END -->
-
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    TCL POP Backhaul Capacity
-                    <i class="fa fa-signal text-success" id="tcl_pop_backhaul_capacity_trend" title="TCL POP Backhaul Capacity"> </i>
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
-        </div>
-        <div class="col-md-3 rf_chart_style" style="overflow:auto;">
-            <!--TITLE BLOCK - START -->
-            <h5>
-                <strong>
-                    DFR Processed Reports
-                </strong>
-            </h5>
-            <!--TITLE BLOCK - END -->
-            <table class="datatable table table-striped table-bordered table-hover" id="dfr_reports_table">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
+        <div class="col-md-3">
+            <div class="no_border_right rf_chart_style" style="overflow:auto;">
+                <!--TITLE BLOCK - START -->
+                <h5 class="bigger">                 
+                    DFR Processed Reports                    
+                </h5>
+                <!--TITLE BLOCK - END -->
+                <table class="datatable table table-striped table-bordered table-hover" id="dfr_reports_table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
         <div class="clearfix"></div>
         <!-- ********** THIRD ROW END **********-->
@@ -291,10 +324,8 @@
 
         <!-- ********** FOURTH ROW START **********-->
         <div class="col-md-12">
-            <h4>
-                <strong>
-                    MFR Processed
-                </strong>
+            <h4 class="bigger">                
+                MFR Processed
             </h4>
             <div id="id_mfr_processed_chart" class="rf_chart_style"></div>
         </div>
@@ -304,10 +335,8 @@
 
         <!-- ********** FIFTH ROW START **********-->
         <div class="col-md-12">
-            <h4>
-                <strong>
-                    MFR Caused Code
-                </strong>
+            <h4 class="bigger">                
+                MFR Caused Code                
             </h4>
             <div id="mfr_cause_code" class=""></div>
         </div>
@@ -320,38 +349,27 @@
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
             <div id="down-wimax" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Down Wimax
-                    <!-- <i class="fa fa-signal text-success" id="down-wimax_trend" title="Down Wimax Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">                
+                Down Wimax                                   
             </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="down-pmp" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Down PMP
-                    <!-- <i class="fa fa-signal text-success" id="down-pmp_trend" title="Down PMP Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">                
+                Down PMP           
             </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="latency-wimax" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Latency Wimax
-                    <!-- <i class="fa fa-signal text-success" id="latency-wimax_trend" title="Latency Wimax Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">
+                Latency Wimax                
             </h5>
         </div>
-        <div class="col-md-3" align="center">
+        <div class="col-md-3 no_border_right" align="center">
             <div id="latency-pmp" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Latency PMP
-                    <!-- <i class="fa fa-signal text-success" id="latency-pmp_trend" title="Latency PMP Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">                
+                Latency PMP
+                    <!-- <i class="fa fa-line-chart text-success trends_icon" id="latency-pmp_trend" title="Latency PMP Trends"> </i> -->                
             </h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -364,38 +382,27 @@
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
             <div id="packetloss-wimax" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Packet Drop Wimax
-                    <!-- <i class="fa fa-signal text-success" id="packetloss-wimax_trend" title="Packet Drop Wimax Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">                
+                Packet Drop Wimax
             </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="packetloss-pmp" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Packet Drop PMP
-                    <!-- <i class="fa fa-signal text-success" id="packetloss-pmp_trend" title="Packet Drop PMP Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">
+                Packet Drop PMP                    
             </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="temperature-fan-wimax" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Temperature Fan Wimax
-                    <!-- <i class="fa fa-signal text-success" id="temperature-fan-wimax_trend" title="Temperature Fan Wimax Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">
+                Temperature Fan Wimax           
             </h5>
         </div>
-        <div class="col-md-3" align="center">
+        <div class="col-md-3 no_border_right" align="center">
             <div id="temperature-acb-wimax" style="height: 165px;"></div>
-            <h5>
-                <strong>
-                    Temperature ACB Wimax
-                    <!-- <i class="fa fa-signal text-success" id="temperature-acb-wimax_trend" title="Temperature ACB Wimax Trends"> </i> -->
-                </strong>
+            <h5 class="bigger">              
+                Temperature ACB Wimax
+                    <!-- <i class="fa fa-line-chart text-success trends_icon" id="temperature-acb-wimax_trend" title="Temperature ACB Wimax Trends"> </i> -->                
             </h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -540,7 +547,8 @@
             area_chart_url_obj["id_mfr_processed_chart"]["text"] = "RF Network Availability"
 
             try {
-                $("#id_mfr_processed_chart").parent().find("h4").find("strong").html("RF Network Availability")
+                // $("#id_mfr_processed_chart").parent().find("h4").find("strong").html(area_chart_url_obj["id_mfr_processed_chart"]["text"]);
+                $("#id_mfr_processed_chart").prev('h4').html(area_chart_url_obj["id_mfr_processed_chart"]["text"]);
             } catch(e) {
                 // pass
             }
