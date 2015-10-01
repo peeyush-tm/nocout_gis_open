@@ -708,7 +708,7 @@ LIVE_POLLING_CONFIGURATION = {
     'maps_default': True,
     'maps_themetics': True,
     'maps_single_service': True,
-    'performance': False
+    'performance': True
 }
 
 # Periodic polling parallel processes count.
@@ -731,7 +731,7 @@ WHITE_MAP_CONFIGURATION = json.dumps({
 
 # Flag to show/hide historical data on performance page.
 # 4 April 2015
-HISTORICAL_ON_PERFORMANCE = False
+HISTORICAL_ON_PERFORMANCE = True
 
 # Chart type for min, max & avg values.
 # 11 April 2015
@@ -839,7 +839,7 @@ ENABLE_WHITE_THEME = True
 ENABLE_TOPO_VIEW = False
 
 # Flag to enable/disable birdeye view on single performance page.
-ENABLE_BIRDEYE_VIEW = True
+ENABLE_BIRDEYE_VIEW = False
 
 # Flag to enable/disable custom dashboards on single performance page.
 ENABLE_CUSTOM_DASHBOARD_VIEW = False
