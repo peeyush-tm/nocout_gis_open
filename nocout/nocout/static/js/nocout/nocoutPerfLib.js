@@ -951,7 +951,7 @@ function nocoutPerfLib() {
             listing_headers = default_live_table_headers,
             is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
 
-        if (!draw_type || is_birdeye_view) {
+        if (!draw_type || clicked_tab_id.indexOf('bird') > -1) {
             draw_type = "chart";
         }
 
@@ -1051,7 +1051,6 @@ function nocoutPerfLib() {
                 // Update dropdown button html
                 updateDropdownHtml();
             }
-
 
             $('#' + service_id+ '_chart').html("");
 
