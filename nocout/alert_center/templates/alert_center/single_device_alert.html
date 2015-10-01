@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-bell'></i> Alert Center" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-bell-o'></i> Alert Center" "javascript:;" %}
     {% breadcrumb_safe page_type|title|add:" Alert" "javascript:;" %}
     {% breadcrumb_safe data_source|title  "init_alert_listing"  page_type data_source %}
 
@@ -52,7 +52,7 @@
         }
     </style>
 
-    <div class="well well-sm" id="status_container" style="overflow:auto;">
+    <div class="" id="status_container" style="overflow:auto;">
         <div id="latestStatusContainer">
             <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
         </div>
@@ -87,16 +87,6 @@
                     <button id="reset_filter" class="btn  btn-warning btn-sm">
                         <i class="fa fa-times"></i> Reset Filter
                     </button>
-                </li>
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
-                        <i class="fa fa-dropbox text-primary"></i>
-                    </a>
-                </li>
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="perf_link_tag" title="Performance" target="_blank">
-                        <i class="fa fa-bar-chart-o text-primary"></i>
-                    </a>
                 </li>
             </ul>
             <!-- Filters Block - End-->
@@ -268,6 +258,16 @@
             perfInstance.getServiceStatus(service_status_url, true, function(response) {
                 // console.log(response)
             });
+
+            // Append inventory & performance live link to top header bar
+            var inventory_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" \
+                                       id="inventory_link_tag" title="Inventory" target="_blank"> \
+                                       <i class="fa fa-dropbox text-primary"></i></a>',
+                perf_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" \
+                                  id="perf_link_tag" title="Performance" target="_blank">\
+                                  <i class="fa fa-bar-chart-o text-primary"></i></a>';
+            $('.controls_container ul').prepend('<li>' + inventory_link_html + '</li>');
+            $('.controls_container ul').prepend('<li>' + perf_link_html + '</li>');
 
             if(inventory_url) {
                 $("#inventory_link_tag").attr("href",inventory_url);

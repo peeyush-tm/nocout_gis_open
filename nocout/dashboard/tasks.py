@@ -922,7 +922,7 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
             'ul_jitter':{
                 'model': ServiceStatus,
                 'data_source': 'ul_jitter',
-                'service_name': 'cambium_ul_jitter',
+                'service_name': 'cambium_ul_jitter'
             },
             'dl_jitter':{
                 'model': ServiceStatus,
@@ -937,12 +937,12 @@ def calculate_RF_Performance_dashboards(technology, is_bh = False):
             'ul_rssi':{
                 'model': ServiceStatus,
                 'data_source': 'ul_rssi',
-                'service_name': 'cambium_ul_rssi',
+                'service_name': ('cambium_ul_rssi','rad5k_ul_rssi')
             },
             'dl_rssi':{
                 'model': ServiceStatus,
                 'data_source': 'dl_rssi',
-                'service_name': 'cambium_dl_rssi',
+                'service_name': ('cambium_dl_rssi','rad5k_dl_rssi'),
             }
         }
 

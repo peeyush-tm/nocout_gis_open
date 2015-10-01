@@ -17,14 +17,7 @@
   padding: 15px;
   width: 250px;
 }
-.navbar .navbar-brand img {
-  position: absolute;
-  max-width: 60%;
-  height: 30px;
-  width: 120px;
-  top: 8px;
-  left: 60px;
-}
+
 .navbar .dropdown-toggle {
   color: #FFFFFF;
 }
@@ -290,7 +283,7 @@
   padding: 0;
   margin-top: 15px;
   border-bottom: 1px solid #FFFFFF !important;
-  border-top: 1px solid #FFFFFF !important;
+  border-top: 0px none !important;
 }
 .sidebar-menu > ul > li {
   display: block;
@@ -459,7 +452,7 @@
   background: #ffffff;
 }
 .sidebar-menu > ul > li.active > a {
-  background: #dbdbdb !important;
+  background: #E2E1E1 !important;
   border-top-color: transparent !important;
   color: #fff;
 }
@@ -747,4 +740,51 @@
   background-color: rgba(255, 255, 255, 0.07);
   opacity: 1;
   text-decoration: none;
+}
+#content .page-header {
+  border: 1px solid #dddddd;
+}
+.box .header-tabs .alert_detail_tabs > li.active a,
+.box .header-tabs .top_perf_tabs > li.active a,
+.box .header-tabs ul > li.active a {
+  color: #5e87b0;
+}
+.text-ttpl {
+  color: #5e87b0;
+}
+.box.border.lite .box-title {
+  background-color: #FFFFFF;
+  border-bottom-color: #DDDDDD;
+}
+.nav-tabs > li.active a,
+.nav-tabs > li:hover a,
+.nav-tabs > li.active a:focus,
+.nav-tabs > li.active:focus a,
+.nav-tabs > li.active a:hover {
+  border-bottom: 3px solid #5e87b0 !important;
+  color:#5e87b0 !important;
+}
+.sidebar-menu > ul > li > ul.sub > li:before {
+  border-top: 1px dotted #5e87b0;
+}
+.sidebar-menu > ul > li > ul.sub:before {
+  border-color: #5e87b0;
+}
+.table > thead > tr > th {
+  border-bottom: 1px solid #769FC7 !important;
+}
+
+table.dataTable.no-footer {
+  border-bottom: 1px solid #769FC7 !important;
+}
+table.dataTable thead th, table.dataTable tfoot th {
+  font-size: 14px !important;
+  font-weight: normal !important;
+  color:#333 !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:active,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  color: #5e87b0 !important;
 }
