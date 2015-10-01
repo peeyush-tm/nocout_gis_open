@@ -752,10 +752,6 @@
 .text-ttpl {
   color: #5e87b0;
 }
-.box.border.lite .box-title {
-  background-color: #FFFFFF;
-  border-bottom-color: #DDDDDD;
-}
 .nav-tabs > li.active a,
 .nav-tabs > li:hover a,
 .nav-tabs > li.active a:focus,

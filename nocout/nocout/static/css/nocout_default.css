@@ -671,3 +671,7 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 .box.border {
   border-color: #dddddd;
 }
+.box.border.lite .box-title {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #DDDDDD;
+}
