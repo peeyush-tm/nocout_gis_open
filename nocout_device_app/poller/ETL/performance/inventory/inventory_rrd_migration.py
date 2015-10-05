@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 
 class MKGeneralException(Exception):
@@ -206,12 +206,23 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 					data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 					critical_threshold=0,ip_address=host_ip)
 			matching_criteria.update({'device_name':host,'service_name':service,'data_source':ds})
-			mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+			#mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 			invent_data_list.append(invent_service_dict)
 			matching_criteria ={}
 			invent_service_dict = {}
-	mongo_module.mongo_db_insert(db,invent_data_list,"inventory_services")
+	#mongo_module.mongo_db_insert(db,invent_data_list,"inventory_services")
 
+	##########################
+	# Storing the value in memcache
+
+	key = nocout_site_name + "_inventory" 
+	doc_len_key = key + "_len" 
+	memc_obj=db_ops_module.MemcacheInterface()
+	exp_time =1440 # 1 day
+	memc_obj.store(key,invent_data_list,doc_len_key,exp_time,chunksize=1000)
+	#mongo_module.mongo_db_insert(db,invent_data_list,"inventory_services")
+	# redis implementation
+	
 
 
 def get_from_socket(site_name, query):

@@ -29,6 +29,7 @@ try:
 except Exception as exp:
     print exp
 
+from mysql_connection import memc
 
 
 def extract_cambium_ss_state(hostname,site):
@@ -39,32 +40,43 @@ def extract_cambium_ss_state(hostname,site):
     DB = None
     state_string = "unknown"
     machine_name = site.split('_')[0]
-    mongo_port = _LIVESTATUS[machine_name][site]['mongo_port']
-    mongo_host = _LIVESTATUS[machine_name][site]['mongo_host']
-    mongo_db = _LIVESTATUS[machine_name][site]['db']
-    try:
-	CONN = pymongo.Connection(host=mongo_host, port=int(mongo_port))
-	db = CONN[mongo_db]
-    except pymongo.errors.PyMongoError, e:
-	perf = '' 
-    	plugin_message += "cambium_ss_ul_issue_kpi %s - %s|%s" % (state_string,ul_issue,perf)
-    	sys.stdout.write(plugin_message)
-    	sys.exit((state))
+    #mongo_port = _LIVESTATUS[machine_name][site]['mongo_port']
+    #mongo_host = _LIVESTATUS[machine_name][site]['mongo_host']
+    #mongo_db = _LIVESTATUS[machine_name][site]['db']
+    #try:
+	#CONN = pymongo.Connection(host=mongo_host, port=int(mongo_port))
+	#db = CONN[mongo_db]
+    #except pymongo.errors.PyMongoError, e:
+#	perf = '' 
+ #   	plugin_message += "cambium_ss_ul_issue_kpi %s - %s|%s" % (state_string,ul_issue,perf)
+  #  	sys.stdout.write(plugin_message)
+   # 	sys.exit((state))
 
+    """
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=10)
     cur = db.service_perf.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
 	"$or":[{"service":"cambium_ul_jitter"},{"service":"cambium_rereg_count"}]})
-   
+    """
     service_state_out = []
     service_state_type = ["warning","critical"]
     try:
+	if memc:
+		key1 = hostname + "_ul_jitter_sev" 
+		key2 = hostname + "_rereg_count_sev" 
+		value1 = memc.get(key1)
+		value2 = memc.get(key2)
+        if len(value1) == 2:
+		service_state_out.extend(value1)
+	if len(value2) == 2:
+		service_state_out.extend(value2)
+	"""
         for doc in cur:
 		if doc.get('service') == 'cambium_ul_jitter':
 			service_state_out.append(doc.get('severity'))
 		if doc.get('service') == 'cambium_rereg_count':
 			service_state_out.append(doc.get('severity'))
-		
+	"""	
 	if len(service_state_out) == 4:
 		state_string = "ok"
 		state = 0
