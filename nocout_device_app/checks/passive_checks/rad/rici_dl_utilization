@@ -54,12 +54,15 @@ def check_rici_dl_utilization(item, _no_params, info):
     port_string = "eth_"
     try:
 	if info:
-		infotext = ""
+		infotext = "dl_utilization:["
+		check_time = int(time.time())
+		infotext += "time=%s " % check_time
         	for index in range(len(info[0][0])):
 			link_up = info[0][0][index]
 			if link_up:
 				link_out_octets = int(info[1][0][index])
 				this_time = int(time.time())
+				
 				try:
 					timedif, rate = get_counter("rici_dl_utilization_%s" % (port_string+str(index+1)), this_time, saveint(link_out_octets))
 					rate = (rate * 8)/(1024.0 * 1024)
@@ -67,7 +70,8 @@ def check_rici_dl_utilization(item, _no_params, info):
 				except MKCounterWrapped:
 					wrapped=True
                 		status_list.append((port_string+str(index+1),"%.2f" % rate))
-                		infotext += "dl_utilization: %s=%s " % (port_string+str(index+1),rate)
+                		infotext += "count=%s " % (link_out_octets)
+		infotext +="]"
     except ValueError:
         infotext = "type_mismatch_error"
     except:

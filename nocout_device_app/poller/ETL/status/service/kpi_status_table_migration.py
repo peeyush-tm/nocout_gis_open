@@ -19,10 +19,11 @@ from datetime import datetime, timedelta
 import socket
 import imp
 import time
-
+#from handlers.dp_ops import *
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -65,7 +66,9 @@ def main(**configs):
 
     end_time = datetime.now()
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
+    # Get all the entries from mongodb having timestam0p greater than start_time
     docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+
     configs1 = config_module.parse_config_obj()
     for config, options in configs1.items():
 	machine_name = options.get('machine')
@@ -117,21 +120,28 @@ def read_data(start_time, end_time, **kwargs):
     docs = []
     #end_time = datetime(2014, 6, 26, 18, 30)
     #start_time = end_time - timedelta(minutes=10)
-    docs = [] 
+    docs = []
+    """ 
     db = mongo_module.mongo_conn(
         host=kwargs.get('configs')[1],
         port=int(kwargs.get('configs')[2]),
         db_name=kwargs.get('db_name')
-    ) 
-    if db:
-	if start_time is None:
-                cur = db.device_kpi_status.find()
-	else:
-        	cur = db.device_kpi_status.find({
-            	"sys_timestamp": {"$gt": start_time, "$lt": end_time}
-        	})
-        for doc in cur:
-            docs.append(doc)
+    )
+    """ 
+    #if db:
+	#if start_time is None:
+         #       cur = db.device_kpi_status.find()
+	#else:
+        #	cur = db.device_kpi_status.find({
+        #    	"sys_timestamp": {"$gt": start_time, "$lt": end_time}
+        #	})i
+    
+    key = nocout_site_name + "_kpi"
+    doc_len_key = key + "_len" 
+    memc_obj = db_ops_module.MemcacheInterface()
+    cur = memc_obj.retrieve(key,doc_len_key)
+    for doc in cur:
+	docs.append(doc)
      
     return docs
 
