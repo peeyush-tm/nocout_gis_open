@@ -30,7 +30,7 @@ try:
 except Exception as exp:
     print exp
 
-
+from mysql_connection import memc
 
 def extract_cambium_ss_state(hostname,site):
     state = 3
@@ -42,36 +42,51 @@ def extract_cambium_ss_state(hostname,site):
     rssi = None
     uas  = None
     machine_name = site.split('_')[0]
-    mongo_port = _LIVESTATUS[machine_name][site]['mongo_port']
-    mongo_host = _LIVESTATUS[machine_name][site]['mongo_host']
-    mongo_db = _LIVESTATUS[machine_name][site]['db']
-    try:
-	CONN = pymongo.Connection(host=mongo_host, port=int(mongo_port))
-	db = CONN[mongo_db]
-    except pymongo.errors.PyMongoError, e:
-	perf = '' 
-    	plugin_message += "cambium_ss_provis_kpi %s - %s|%s" % (state_string,ss_state,perf)
-    	sys.stdout.write(plugin_message)
-    	sys.exit((state))
+    #mongo_port = _LIVESTATUS[machine_name][site]['mongo_port']
+    #mongo_host = _LIVESTATUS[machine_name][site]['mongo_host']
+    #mongo_db = _LIVESTATUS[machine_name][site]['db']
+    #try:
+    #	CONN = pymongo.Connection(host=mongo_host, port=int(mongo_port))
+    #	db = CONN[mongo_db]
+    #except pymongo.errors.PyMongoError, e:
+    #	perf = '' 
+    #	plugin_message += "cambium_ss_provis_kpi %s - %s|%s" % (state_string,ss_state,perf)
+    #	sys.stdout.write(plugin_message)
+    #	sys.exit((state))
 
     end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=6)
-    cur = db.device_service_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
-	"$or":[{"service":'cambium_ul_rssi'},{"service":"cambium_dl_rssi"},{"service":"cambium_dl_jitter"},{"service":"cambium_ul_jitter"},
-	{"service":"cambium_rereg_count"}]})
+    t_stmp = end_time + timedelta(minutes=-(end_time.minute % 5))
+    t_stmp = t_stmp + timedelta(minutes=-5)
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    #start_time = end_time - timedelta(minutes=6)
+    #cur = db.device_service_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
+#	"$or":[{"service":'cambium_ul_rssi'},{"service":"cambium_dl_rssi"},{"service":"cambium_dl_jitter"},{"service":"cambium_ul_jitter"},
+#	{"service":"cambium_rereg_count"}]})
     
+    if memc:
+	key1 = str(hostname) + "_dl_rssi" + "_" + str(int(time.mktime(t_stmp.timetuple()))) 
+	key2 = str(hostname) + "_ul_rssi" + "_" + str(int(time.mktime(t_stmp.timetuple()))) 
+	key3 = str(hostname) + "_dl_jitter" + "_" + str(int(time.mktime(t_stmp.timetuple())) )
+	key4 = str(hostname) + "_ul_jitter" + "_" + str(int(time.mktime(t_stmp.timetuple())) )
+	key5 = str(hostname) + "_rereg_count" + "_" + str(int(time.mktime(t_stmp.timetuple())) )
+	dl_rssi = memc.get(key1)
+	ul_rssi = memc.get(key2)
+	dl_jitter = memc.get(key3)
+	ul_jitter = memc.get(key4)
+	rereg_count = memc.get(key5)
+	#print dl_rssi,ul_rssi,dl_jitter,ul_jitter,rereg_count
     try:
-        for doc in cur:
-		if doc.get('service') == 'cambium_ul_rssi':
-			ul_rssi=doc.get('data')[0].get('value')
-		if doc.get('service') == 'cambium_dl_rssi':
-			dl_rssi=doc.get('data')[0].get('value')
-		if doc.get('service') == 'cambium_ul_jitter':
-			ul_jitter=doc.get('data')[0].get('value')
-		if doc.get('service') == 'cambium_dl_jitter':
-			dl_jitter=doc.get('data')[0].get('value')
-		if doc.get('service') == 'cambium_rereg_count':
-			rereg_count=doc.get('data')[0].get('value')
+        #for doc in cur:
+	#	if doc.get('service') == 'cambium_ul_rssi':
+	#		ul_rssi=doc.get('data')[0].get('value')
+	#	if doc.get('service') == 'cambium_dl_rssi':
+	#		dl_rssi=doc.get('data')[0].get('value')
+	#	if doc.get('service') == 'cambium_ul_jitter':
+	#		ul_jitter=doc.get('data')[0].get('value')
+	#	if doc.get('service') == 'cambium_dl_jitter':
+	#		dl_jitter=doc.get('data')[0].get('value')
+	#	if doc.get('service') == 'cambium_rereg_count':
+	#		rereg_count=doc.get('data')[0].get('value')
 		
     	if ul_rssi and dl_rssi and (int(ul_rssi) < -82 or int(dl_rssi) < -82):
 		ss_state = "los"
@@ -101,6 +116,7 @@ def  main():
 
     state_string = "unknown"
     ss_state=''
+    plugin_message =''
     try:
         host_name = sys.argv[1]
         site = sys.argv[2]

@@ -14,7 +14,9 @@ import re
 from ast import literal_eval
 from nocout import get_parent
 import mysql.connector
+import memcache
 logger = nocout_log()
+
 
 try:
 	import nocout_settings
@@ -120,7 +122,14 @@ def get_current_value_old(current_values, device=None, service=None, data_source
     return current_values
 
 
-def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None):
+def memcache_connection():
+    try:
+	        memc = memcache.Client(['10.133.19.165:11211','10.133.12.163:11211'], debug=1)
+    except:
+	        memc =None
+    return memc
+
+def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None,is_first_call=0):
      #response = []
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
@@ -135,6 +144,11 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	'rad5k_ul_estmd_throughput_invent',
 	'rad5k_ul_uas_invent','rad5k_dl_es_invent','rad5k_ul_ses_invent','rad5k_ul_bbe_invent','rad5k_ss_cell_radius_invent',
 	'rad5k_ss_cmd_rx_pwr_invent']
+     util_service_list = ['wimax_pmp1_dl_util_bgp','wimax_pmp1_ul_util_bgp','wimax_pmp2_dl_util_bgp','wimax_pmp2_ul_util_bgp',
+	'radwin_dl_utilization','radwin_ul_utilization','cambium_dl_utilization','cambium_ul_utilization',
+	'cambium_ss_dl_utilization','cambium_ss_ul_utilization','mrotek_dl_utilization','mrotek_ul_utilization','rici_dl_utilization',
+	'rici_ul_utilization']
+     wimax_ss_util_services = ['wimax_ss_ul_utilization','wimax_ss_dl_utilization']
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
@@ -163,6 +177,9 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 	     if service in rad5k_services:
 		     old_service = service
 		     service = 'rad5k_topology_discover'
+	     if service in wimax_ss_util_services:
+		     old_service = service
+		     service = 'wimax_bs_ss_params'
 	     # Getting result from compiled checks output
              cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
 	     # For host check [ping service]
@@ -220,6 +237,40 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				#logger.debug('filterred_ss_data: ' + pformat(filtered_ss_data))
 				for entry in filtered_ss_data:
 					value = entry.split('=')[1].split(',')[index]
+					data_value.append(value)
+					cal_ss_mac = entry.split('=')[0]
+					# MARK
+					for host_name,mac_value in ss_name_mac_mapping.items():
+						if mac_value ==  cal_ss_mac.lower():
+							ss_host_name = host_name
+							break
+					data_dict = {ss_host_name:data_value}
+					data_value = []
+					q.put(data_dict)
+			         			
+			 	logger.error(filtered_ss_data)
+			except Exception, e:
+			 	logger.error('Empty check_output: ' + pformat(e))
+				for host_name,mac_value in ss_name_mac_mapping.items():
+					data_dict = {host_name:[]}
+			 		q.put(data_dict)
+			 	return
+		elif str(old_service) in wimax_ss_util_services:
+			filtered_ss_data =[]
+			try:
+				data_value = []	
+				check_output = filter(lambda t: 'wimax_bs_ss_params' in t, check_output.split('\n'))
+				check_output = check_output[0].split('- ')[1].split(' ')
+				#logger.debug('Final check_output : ' + pformat(check_output))
+				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
+					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t,check_output)
+					filtered_ss_data.extend(filtered_ss_output)
+				index = wimax_ss_util_services.index(old_service)
+				#logger.debug('filterred_ss_data: ' + pformat(filtered_ss_data))
+				for entry in filtered_ss_data:
+					value = entry.split('=')[1].split(',')[index]
+					value = float(value)/1024.0
+					value = "%.2f" % value
 					data_value.append(value)
 					cal_ss_mac = entry.split('=')[0]
 					# MARK
@@ -298,6 +349,59 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 				data_dict = {device: [rta]}
 			q.put(data_dict)
 			return
+		elif service in util_service_list:
+			reg_exp2 = re.compile(r'(?<=\[)[^]]*',re.MULTILINE)
+                 	util_values = re.findall(reg_exp2, check_output)
+                 	logger.info('current_states : %s %s' % (util_values,is_first_call))
+			if util_values:
+				if service == 'rici_dl_utilization' or service == 'rici_ul_utilization':
+					cur_values = util_values[0].split(' ')
+					this_time = cur_values[0].split('=')[1]	
+					port1_value = int(cur_values[1].split('=')[1])	
+					port2_value = int(cur_values[2].split('=')[1])	
+					port3_value = int(cur_values[3].split('=')[1])	
+					port4_value = int(cur_values[4].split('=')[1])
+					this_value = max(port1_value,port2_value,port3_value,port4_value)	
+                 			logger.info('values : %s' % (this_value))
+				else:
+					this_time = util_values[0].split(' ')[0].split('=')[1]
+					this_value = util_values[0].split(' ')[1].split('=')[1]
+				key = "".join([old_device,"_",service])
+				key =key.encode('ascii','ignore')
+				memc = memcache_connection()
+				key_value = ""
+				if is_first_call:
+					util_list = [this_time,this_value]
+					if memc:
+						memc.set(key,util_list)
+						key_value = ""
+					data_dict = {old_device: key_value}
+				 	q.put(data_dict)
+						
+				else:
+					try:
+					    if memc:
+						key =key.encode('ascii','ignore')
+						#key = str(key)
+					        util = memc.get(key)
+						if util:
+							pre_time = util[0]
+							pre_value = util[1]
+							timediff =  int(this_time) - int(pre_time)
+							valuediff =  float(this_value) - float(pre_value)
+							if timediff <= 0 or valuediff <= 0:
+								key_value = ""
+							else:
+								rate = float(valuediff)/timediff
+								rate = (rate * 8) / (1024.0 * 1024)
+								key_value = "%.2f" % rate
+						data_dict = {old_device: key_value}
+				 		q.put(data_dict)
+					except Exception,e:
+						data_dict = {old_device: key_value}
+				 		q.put(data_dict)
+			
+			
 		else:
 			reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
                  	# Parse perfdata for all services running on that device

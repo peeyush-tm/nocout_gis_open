@@ -19,10 +19,14 @@ import subprocess
 import socket
 import imp
 import time
+import memcache
+#from handlers.db_ops import *
+
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -68,18 +72,23 @@ def main(**configs):
 #    )	
 #    db.close()
 
-    end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=5)
+    #end_time = datetime.now()
+    #start_time = end_time - timedelta(minutes=5)
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
     # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+    #print 'testing memc'
+    #print memc
+    key = nocout_site_name + "_service"
+    doc_len_key = key + "_len"
+    memc_obj = db_ops_module.MemcacheInterface()
+    docs = memc_obj.retrieve(key,doc_len_key)
     configs1 = config_module.parse_config_obj()
     for conf, options in configs1.items():
 	machine_name = options.get('machine')
     for doc in docs:
-	local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+	#local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
     	# Advancing loca_timestamp/sys_timestamp to next 5 mins time frame
-        check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
+        #check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
         t = (
             #uuid,
             doc.get('host'),
@@ -93,8 +102,8 @@ def main(**configs):
             doc.get('data')[0].get('value'),
             doc.get('meta').get('war'),
             doc.get('meta').get('cric'),
-            local_time_epoch,
-            check_time_epoch,
+            doc.get('local_timestamp'),
+            doc.get('check_time'),
             doc.get('ip_address'),
             doc.get('severity'),
 	    doc.get('age')
