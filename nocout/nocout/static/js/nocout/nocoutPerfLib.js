@@ -956,7 +956,7 @@ function nocoutPerfLib() {
         }
 
         // If birdeye view then show header with DS
-        if (is_birdeye_view) {
+        if (clicked_tab_id.indexOf('bird') > -1) {
             listing_headers = default_live_table_headers_with_ds;
         }
 
@@ -981,7 +981,7 @@ function nocoutPerfLib() {
         start_date = "";
         end_date = "";
 
-        if (startDate && endDate && !is_birdeye_view) {
+        if (startDate && endDate && clicked_tab_id.indexOf('bird') == -1) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
@@ -1103,7 +1103,7 @@ function nocoutPerfLib() {
             var urlDataStartDate = '', urlDataEndDate = '';
             if (ajax_start_date == '' && ajax_end_date == '') {
                 // Pass
-            } else if(is_birdeye_view) {
+            } else if(clicked_tab_id.indexOf('bird') > -1) {
                 // Pass
             } else {
                 var end_Date = "";
