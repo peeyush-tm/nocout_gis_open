@@ -637,9 +637,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         exported_filename = '';
 
     try {
-    exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
+        exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
     } catch(e) {
-    exported_filename = 'Performance Chart'
+        exported_filename = 'Performance Chart'
     }
 
     // Create yAxis data as per the given params
