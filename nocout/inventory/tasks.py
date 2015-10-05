@@ -13709,6 +13709,36 @@ def update_topology():
     Update mapping of sector, sub station in circuit using topology.
     """
 
+    # Radwin device technology.
+    radwin5k_types = None
+    try:
+        radwin5k_types = DeviceType.objects.filter(name__icontains='radwin5k').values_list('id', flat=True)
+    except Exception as e:
+        pass
+
+    # Radwin5K: Device mapper.
+    radwin5k_devices = Device.objects.filter(device_type__in=set(radwin5k_types)).values('ip_address', 'machine__name')
+
+    # Radwin5K machines.
+    radwin5k_machines = set(radwin5k_devices.values_list('machine__name', flat=True))
+
+    # Radwin5K: Device IP and MAC Info.
+    radwin5k_mac_info = []
+    for machine in radwin5k_machines:
+        temp_macs = InventoryStatus.objects.filter(
+            ip_address__in=set(radwin5k_devices.values_list('ip_address', flat=True)),
+            service_name__in=['rad5k_bs_mac_invent', 'rad5k_ss_mac_invent']).values('ip_address',
+                                                                                    'current_value'
+                                                                                    ).using(
+            alias=machine)
+        radwin5k_mac_info.extend(temp_macs)
+
+    # Radwin5K: Device IP and MAC Mapper.
+    radwin5k_mac_mapper = {}
+    for row in radwin5k_mac_info:
+        if row['ip_address']:
+            radwin5k_mac_mapper[row['ip_address']] = row
+
     # MAC regex.
     mac_regex = "[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$"
 
@@ -13848,27 +13878,36 @@ def update_topology():
         if circuit:
             # Update sub station.
             try:
+                ss = circuit.sub_station
                 if re.match(mac_regex, info['connected_device_mac'].lower()):
-                    ss = circuit.sub_station
                     ss.mac_address = info['connected_device_mac']
+                    update_ss_list.append(ss)
+                else:
+                    ss.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
                     update_ss_list.append(ss)
             except Exception as e:
                 logger.exception(e.message)
 
             # Update sub station device.
             try:
+                ss_device = circuit.sub_station.device
                 if re.match(mac_regex, info['connected_device_mac'].lower()):
-                    ss_device = circuit.sub_station.device
                     ss_device.mac_address = info['connected_device_mac']
+                    update_device_list.append(ss_device)
+                else:
+                    ss_device.mac_address = radwin5k_mac_mapper[info['connected_device_ip']]['current_value']
                     update_device_list.append(ss_device)
             except Exception as e:
                 logger.exception(e.message)
 
             # Update sector device.
             try:
+                sector_device = bs_devices_mapper[info['ip_address']]
                 if re.match(mac_regex, info['mac_address'].lower()):
-                    sector_device = bs_devices_mapper[info['ip_address']]
                     sector_device.mac_address = info['mac_address']
+                    update_device_list.append(sector_device)
+                else:
+                    sector_device.mac_address = radwin5k_mac_mapper[info['ip_address']]['current_value']
                     update_device_list.append(sector_device)
             except Exception as e:
                 logger.exception(e.message)

@@ -40,9 +40,7 @@ var green_color = "#468847",
     birdeye_end_counter = parallel_calling_len,
     is_mouse_out = true,
     topo_view_scripts = [
-        '<script type="text/javascript" src="/static/js/lokijs.min.js"></script>',
         '<script src="/static/js/flot/jquery.flot.min.js"></script>',
-        '<script type="text/javascript" src="/static/js/stateBoundriesLib.js"></script>',
         '<script type="text/javascript" src="/static/js/infobox.js"></script>',
         '<script type="text/javascript" src="/static/js/markerclusterer.js"></script>',
         '<script type="text/javascript" src="/static/js/oms.min.js"></script>',
@@ -478,11 +476,18 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
     }
     
     if ($(".top_perf_tabs").length > 0 && !is_birdeye_view) {
-        var top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
-            left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
-            top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
-            left_tab_txt = $.trim($("#" +left_tab_id).text()),
-            report_title = "";
+        var report_title = "";
+        try {
+            var top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
+                left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
+                top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
+                left_tab_txt = $.trim($("#" +left_tab_id).text());
+        } catch(e) {
+            var top_tab_id = '#' + clicked_tab_id + '_tab',
+                left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
+                top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
+                left_tab_txt = $.trim($("#" +left_tab_id).text());
+        }
 
         if (show_historical_on_performance) {
             try {
@@ -629,7 +634,13 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         xMinRange = chartConfig["x_min_range"] ? chartConfig["x_min_range"] : 3600000,
         yAxisObj = '',
         is_display_name = typeof chartConfig['chart_display_name'] != 'undefined',
-        exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
+        exported_filename = '';
+
+    try {
+    exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
+    } catch(e) {
+    exported_filename = 'Performance Chart'
+    }
 
     // Create yAxis data as per the given params
     if (typeof chartConfig.valuetext == 'string') {

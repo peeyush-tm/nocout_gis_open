@@ -5,6 +5,7 @@ import os
 import socket
 import pymongo
 from datetime import datetime,timedelta
+from mysql_connection import memc
 """
 Poller script which runs on ss and calculates the ul utilization of the ss connected from BS.
 
@@ -38,38 +39,53 @@ def extract_wimax_ss_state(hostname,site):
     plugin_message = ''
     DB = None
     state_string = "unknown"
-    rssi = None
-    uas  = None
+    ul_rssi = None
+    dl_rssi = None
+    dl_cinr  = None
+    ss_ptx =None
     machine_name = site.split('_')[0]
     mongo_port = _LIVESTATUS[machine_name][site]['mongo_port']
     mongo_host = _LIVESTATUS[machine_name][site]['mongo_host']
     mongo_db = _LIVESTATUS[machine_name][site]['db']
     try:
-	CONN = pymongo.Connection(host=mongo_host, port=int(mongo_port))
-	db = CONN[mongo_db]
+    	CONN = pymongo.Connection(host=mongo_host, port=int(mongo_port))
+    	db = CONN[mongo_db]
     except pymongo.errors.PyMongoError, e:
-	perf = '' 
+    	perf = '' 
     	plugin_message += "wimax_ss_provis_kpi %s - %s|%s" % (state_string,ss_state,perf)
     	sys.stdout.write(plugin_message)
     	sys.exit((state))
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=6)
-    cur = db.device_service_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
-	"$or":[{"service":'wimax_ul_rssi'},{"service":"wimax_dl_rssi"},{"service":"wimax_dl_cinr"}]})
-    cur1 = db.device_inventory_status.find({"device_name":hostname,"service_name":"wimax_ss_ptx_invent"}).sort("_id",-1).limit(1)
+    t_stmp = end_time + timedelta(minutes=-(end_time.minute % 5))
+    t_stmp = t_stmp + timedelta(minutes=-5)
+    t_stmp = t_stmp.replace(second=0,microsecond=0)
+    #cur = db.device_service_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
+    #	"$or":[{"service":'wimax_ul_rssi'},{"service":"wimax_dl_rssi"},{"service":"wimax_dl_cinr"}]})
+    if memc:
+	key1 = str(hostname) + "_dl_rssi" + "_" + str(int(time.mktime(t_stmp.timetuple()))) 
+	key2 = str(hostname) + "_ul_rssi" + "_" + str(int(time.mktime(t_stmp.timetuple()))) 
+	key3 = str(hostname) + "_dl_cinr" + "_" + str(int(time.mktime(t_stmp.timetuple())) )
+	key4 = str(hostname) + "_ss_ptx" 
+	dl_rssi = memc.get(key1)
+	ul_rssi = memc.get(key2)
+	dl_cinr = memc.get(key3)
+	ss_ptx = memc.get(key4)
+	#print key1,dl_rssi,ul_rssi,dl_cinr,ss_ptx
+    	#cur1 = db.device_inventory_status.find({"device_name":hostname,"service_name":"wimax_ss_ptx_invent"}).sort("_id",-1).limit(1)
     
     try:
-	for doc in cur1:
-		if doc.get('service_name') == 'wimax_ss_ptx_invent':
-			ss_ptx = doc.get('current_value')
-        for doc in cur:
-		if doc.get('service') == 'wimax_ul_rssi':
-			ul_rssi=doc.get('data')[0].get('value')
-		if doc.get('service') == 'wimax_dl_rssi':
-			dl_rssi=doc.get('data')[0].get('value')
-		if doc.get('service') == 'wimax_dl_cinr':
-			dl_cinr=doc.get('data')[0].get('value')
+	#for doc in cur1:
+	#	if doc.get('service_name') == 'wimax_ss_ptx_invent':
+	#		ss_ptx = doc.get('current_value')
+        #for doc in cur:
+	#	if doc.get('service') == 'wimax_ul_rssi':
+	#		ul_rssi=doc.get('data')[0].get('value')
+	#	if doc.get('service') == 'wimax_dl_rssi':
+	#		dl_rssi=doc.get('data')[0].get('value')
+	#	if doc.get('service') == 'wimax_dl_cinr':
+	#		dl_cinr=doc.get('data')[0].get('value')
 		
     	if ul_rssi and dl_rssi and ss_ptx and (int(ul_rssi) < -83 or int(dl_rssi) < -83 and int(ss_ptx) > 20):
 		ss_state = "los"
