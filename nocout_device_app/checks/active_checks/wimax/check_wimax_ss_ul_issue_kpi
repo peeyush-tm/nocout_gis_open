@@ -5,6 +5,7 @@ import os
 import socket
 import pymongo
 from datetime import datetime,timedelta
+from mysql_connection import memc
 """
 Poller script which runs on ss and calculates the ul utilization of the ss connected from BS.
 
@@ -39,9 +40,10 @@ def extract_wimax_ss_state(hostname,site):
     DB = None
     state_string = "unknown"
     machine_name = site.split('_')[0]
-    mongo_port = _LIVESTATUS[machine_name][site]['mongo_port']
-    mongo_host = _LIVESTATUS[machine_name][site]['mongo_host']
-    mongo_db = _LIVESTATUS[machine_name][site]['db']
+    #mongo_port = _LIVESTATUS[machine_name][site]['mongo_port']
+    #mongo_host = _LIVESTATUS[machine_name][site]['mongo_host']
+    #mongo_db = _LIVESTATUS[machine_name][site]['db']
+    """
     try:
 	CONN = pymongo.Connection(host=mongo_host, port=int(mongo_port))
 	db = CONN[mongo_db]
@@ -50,19 +52,23 @@ def extract_wimax_ss_state(hostname,site):
     	plugin_message += "wimax_ss_ul_issue_kpi %s - %s|%s" % (state_string,ul_issue,perf)
     	sys.stdout.write(plugin_message)
     	sys.exit((state))
-
+    """
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=10)
     try:
-    	cur = db.service_perf.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
-	"$or":[{"service":"wimax_ul_intrf"},{"service":"wimax_ul_cinr"}]})
+    	#cur = db.service_perf.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time},"host":hostname,
+	#"$or":[{"service":"wimax_ul_intrf"},{"service":"wimax_ul_cinr"}]})
     	service_state_out = []
     	service_state_type = ["warning","critical"]
-        for doc in cur:
-		if doc.get('service') == 'wimax_ul_intrf':
-			service_state_out.append(doc.get('severity'))
-		if doc.get('service') == 'wimax_ul_cinr':
-			service_state_out.append(doc.get('severity'))
+	if memc:
+		key1 = hostname + "_wimax_ul_intrf_sev" 
+		key2 = hostname + "_wimax_ul_cinr_sev" 
+		value1 = memc.get(key1)
+		value2 = memc.get(key2)
+        if len(value1) == 2:
+		service_state_out.extend(value1)
+	if len(value2) == 2:
+		service_state_out.extend(value2)
 		
 	if len(service_state_out) == 4:
 		state_string = "ok"
@@ -80,6 +86,7 @@ def extract_wimax_ss_state(hostname,site):
 
     	perf += 'ul_issue' + "=%s;;; " % (ul_issue)
     except Exception ,e:
+	#print e
 	perf = '' 
     plugin_message += "wimax_ss_ul_issue_kpi %s - %s|%s" % (state_string,ul_issue,perf)
     sys.stdout.write(plugin_message)

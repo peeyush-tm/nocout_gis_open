@@ -9,11 +9,12 @@ from itertools import groupby
 from operator import itemgetter
 
 from datetime import datetime, timedelta
-
+#from handlers.db_ops import *
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 class MKGeneralException(Exception):
     def __init__(self, reason):
@@ -86,11 +87,28 @@ def status_perf_data(site,hostlist):
                                                 data_source=ds,severity=service_state,site_name=site,warning_threshold=war,
                                                 critical_threshold=crit,ip_address=host_ip)
 				matching_criteria.update({'device_name':str(host),'service_name':service,'data_source':ds})
-				mongo_module.mongo_db_update(db,matching_criteria,status_service_dict,"status_services")
+				#mongo_module.mongo_db_update(db,matching_criteria,status_service_dict,"status_services")
 				matching_criteria = {}
 				status_check_list.append(status_service_dict)
 				status_service_dict = {}
-	mongo_module.mongo_db_insert(db,status_check_list,"status_services")
+	##########
+	# Code for inserting interface data  in memcache
+	memc_obj = db_ops_module.MemcacheInterface()
+	key = nocout_site_name + "_interface"
+	doc_len_key = key + "_len"
+	exp_time = 3600 # 1 hour
+	memc_obj.store(key,status_check_list,doc_len_key,exp_time,chunksize=1000) 
+	#mongo_module.mongo_db_insert(db,status_check_list,"status_services")
+	this_time = datetime.now()
+	t_stmp = this_time + timedelta(minutes=-(this_time.minute % 5))
+	t_stmp = t_stmp.replace(second=0,microsecond=0)
+	current_time =int(time.mktime(t_stmp.timetuple()))
+	try:
+		rds_obj=db_ops_module.RedisInterface()
+		rds_obj.zadd_compress(key,current_time,status_check_list)
+	except Exception,e:
+		print e
+		pass
 
 
 def calculate_avg_value(unknwn_state_svc_data,db):

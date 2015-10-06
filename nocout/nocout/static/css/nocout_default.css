@@ -359,15 +359,15 @@ th.vAlign_middle, .vAlign_middle b {
   margin-bottom: 0px !important;
 }
 #latestStatusContainer {
-  margin-bottom: 9px;
+  margin: 10px 0px;
 }
 .sidebar-menu > ul {
   margin-top: 0px;
   border-top: 0px none !important;
 }
-#status_container {
+/*#status_container {
   margin-bottom: 12px !important;
-}
+}*/
 .control_btn_countainer {
   margin-bottom: 0px;
 }
