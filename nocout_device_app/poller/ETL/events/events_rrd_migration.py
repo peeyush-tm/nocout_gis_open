@@ -17,7 +17,7 @@ import time
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
     """
@@ -252,13 +252,13 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
             raise Exception, "File is not in omd specific directory"
     else:
             site = path[path.index('sites')+1]
-    
+    """ 
     db = mongo_module.mongo_conn(
             host=mongo_host,
             port=mongo_port,
             db_name=mongo_db
     )
-
+    """
     # time for which nagios events are extracted
     #start_epoch = get_latest_event_entry(db_type = 'mongodb',db=db)
     #if start_epoch == None:
@@ -321,20 +321,32 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
             print 'Error with log split: ', e
 
     # Update the network events data into network_event_status collection of Mongodb
-    for entry in zip(network_events_update_criteria, network_events_data):
-        mongo_module.mongo_db_update(db, entry[0], entry[1], 'network_event_status')
+    #for entry in zip(network_events_update_criteria, network_events_data):
+    #    mongo_module.mongo_db_update(db, entry[0], entry[1], 'network_event_status')
     # Update the service events data into service_event_status collection of Mongodb
-    for entry in zip(service_events_update_criteria, service_events_data):
-        mongo_module.mongo_db_update(db, entry[0], entry[1], 'service_event_status')
+    #for entry in zip(service_events_update_criteria, service_events_data):
+    #    mongo_module.mongo_db_update(db, entry[0], entry[1], 'service_event_status')
 
     # Bulk insert the events data into Mongodb
-    if network_events_data:
-	print 'Host events entries %s for time %s -- %s' % (len(network_events_data), start_time, end_time)
-        mongo_module.mongo_db_insert(db, network_events_data, 'host_event')
-    if service_events_data:
-	print 'Service events entries %s for time %s -- %s' % (len(service_events_data), start_time, end_time)
-        mongo_module.mongo_db_insert(db, service_events_data, 'serv_event')
-        
+    #if network_events_data:
+	#print 'Host events entries %s for time %s -- %s' % (len(network_events_data), start_time, end_time)
+     #   mongo_module.mongo_db_insert(db, network_events_data, 'host_event')
+    #if service_events_data:
+	#print 'Service events entries %s for time %s -- %s' % (len(service_events_data), start_time, end_time)
+     #   mongo_module.mongo_db_insert(db, service_events_data, 'serv_event')
+      
+     #memcache handling of host and service events
+
+    key = nocout_site_name + "_network_event" 
+    doc_len_key = key + "_len" 
+    memc_obj=db_ops_module.MemcacheInterface()
+    exp_time =120 # 2 min
+    memc_obj.store(key,network_events_data,doc_len_key,exp_time,chunksize=1000)
+    key = nocout_site_name + "_service_event" 
+    doc_len_key = key + "_len" 
+    memc_obj.store(key,service_events_data,doc_len_key,exp_time,chunksize=1000)
+
+  
 if __name__ == '__main__':
     """
     Main function for this file which keeps track of the all services and host events.This script is regularly called with 1 min interval

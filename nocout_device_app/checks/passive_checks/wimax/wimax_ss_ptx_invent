@@ -56,6 +56,11 @@ def check_wimax_ss_ptx_invent(item, params, info):
 			state = 1
 		else:
 			state = 0
+		try:
+			if memc:
+				memc.set(str(g_hostname) +"_ss_ptx",ptx)
+		except:
+			pass
 		infotext = "%d" % ptx
     except ValueError:
         infotext = "type_mismatch_value"

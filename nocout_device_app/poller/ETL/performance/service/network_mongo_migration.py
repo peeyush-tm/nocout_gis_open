@@ -15,10 +15,14 @@ from datetime import datetime, timedelta
 import subprocess
 import imp
 import sys
+import time
+#from handlers.db_ops import *
+
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -57,22 +61,23 @@ def main(**configs):
     """
 
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
-    start_time, end_time = None, None
-    try:
-        db = mongo_module.mongo_conn(
-            host=site_spec_mongo_conf[1],
-            port=int(site_spec_mongo_conf[2]),
-            db_name=configs.get('nosql_db')
-        )
-    except:
-        sys.stdout.write('Mongodb connection problem\n')
-        sys.exit(1)
-    end_time = datetime.now()
+    start_time, end_time,db = None, None,None
+    #try:
+    #    db = mongo_module.mongo_conn(
+    #        host=site_spec_mongo_conf[1],
+    #        port=int(site_spec_mongo_conf[2]),
+    #        db_name=configs.get('nosql_db')
+    #    )
+    #except:
+     #   sys.stdout.write('Mongodb connection problem\n')
+      #  sys.exit(1)
+    #end_time = datetime.now()
     # get most latest sys timstamp entry present in mysql
-    time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_networkstatus'}))
-    for doc in time_doc:
-        start_time = doc.get('sys_timestamp')
-    print start_time,end_time
+    #time_doc = list(db.sys_timestamp_status.find({'_id': 'performance_networkstatus'}))
+    #for doc in time_doc:
+     #   start_time = doc.get('sys_timestamp')
+    #print start_time,end_time
+    db=None
     # Get all the entries from mongodb having timestam0p greater than start_time
     docs = read_data(start_time, end_time, db)
     print '...........'
@@ -109,6 +114,9 @@ def read_data(start_time, end_time, db):
     #    port=int(kwargs.get('configs')[2]),
     #    db_name=kwargs.get('db_name')
     #)
+    table_list = ['performance_networkstatus', 'performance_servicestatus',
+            'performance_status']
+    """
     if db:
         if start_time is None:
             # read data from status, initially
@@ -121,17 +129,41 @@ def read_data(start_time, end_time, db):
                 # max time range for data sync is 1 day
                 start_time = end_time - timedelta(days=1)
             cur = db.network_perf.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time}})
-        else:
+    """
             # we should read data from status rather than live
-            cur = db.device_network_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time}})
+    current_time = datetime.now()
+    key = nocout_site_name + "_network"
+    doc_len_key = key + "_len" 
+    memc_obj = db_ops_module.MemcacheInterface()
+    memc = memc_obj.memc_conn
+    start_time = memc.get('performance_networkstatus')
+    #print start_time
+    if start_time: 
+    	start_time = datetime.fromtimestamp(start_time)
+    if start_time and (start_time + timedelta(minutes=20)) < current_time:
+    	if start_time + timedelta(days=1) < current_time:
+		start_time = current_time -  timedelta(days=1)
+	print "....in...back up...stage"
+	print start_time
+	redis_obj=db_ops_module.RedisInterface()
+	t_stmp = start_time + timedelta(minutes=-(start_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        start_time =int(time.mktime(t_stmp.timetuple()))
+        current_time = current_time + timedelta(minutes=-(current_time.minute % 5))
+        current_time = current_time.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(current_time.timetuple()))
+	cur=redis_obj.zrangebyscore_dcompress(key,start_time,current_time)
+    else:		
+    	cur = memc_obj.retrieve(key,doc_len_key)
+    #cur = db.device_network_status.find({"local_timestamp" : { "$gt": start_time, "$lt": end_time}})
     configs = config_module.parse_config_obj()
     for config, options in configs.items():
         machine_name = options.get('machine')
     for doc in cur:
         if doc.get('ds') == 'rtmin' or doc.get('ds') == 'rtmax':
             continue
-        check_time_epoch = utility_module.get_epoch_time(doc.get('data')[0].get('time'))
-        local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+        #check_time_epoch = utility_module.get_epoch_time(doc.get('data')[0].get('time'))
+        #local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
         refer = utility_module.get_epoch_time(doc.get('refer'))
         if doc.get('ds') == 'rta':
             rtmin = doc.get('data')[0].get('min_value')
@@ -150,8 +182,8 @@ def read_data(start_time, end_time, db):
                 doc.get('data')[0].get('value'),
                 doc.get('meta').get('war'),
                 doc.get('meta').get('cric'),
-                local_time_epoch,
-                check_time_epoch,
+                doc.get('local_timestamp'),
+                doc.get('data')[0].get('time'),
                 doc.get('ip_address'),
                 doc.get('severity'),
                 doc.get('age'),
