@@ -22,6 +22,11 @@ function initRfDashboard() {
         /*hide spinner*/
         hideSpinner();
     }
+    if(show_rf_perf_column){
+        var col_no =12/show_rf_perf_column;      
+        $(".tab-rf-perf .box-container:nth-child("+col_no+"n)").after( "<div class='clearfix'></div><hr style='margin-top:0px;width:100%;'/>" );
+        $(".tab-rf-perf .box-container:nth-child("+col_no+"n) .custom_seperator").hide();            
+    }
 }
 
 function startNextChunkCall(counter) {
@@ -66,9 +71,9 @@ function rf_getChartData(ds_name, chunk_counter) {
                     var timestamp = response.data.objects.timestamp ? response.data.objects.timestamp : "";
 
                     if(timestamp) {
-                        console.log($("#"+ds_name+"_timestamp").length);
+                        // console.log($("#"+ds_name+"_timestamp").length);
                         if($("#"+ds_name+"_timestamp").length > 0) {
-                            var timestamp_html = '<small>('+timestamp+')</small>';
+                            var timestamp_html = '<small>'+timestamp+'</small>';
                             $("#"+ds_name+"_timestamp").html(timestamp_html);
                         }
                     } else {
@@ -232,7 +237,7 @@ function convertChunksToNormalArray(chunks_array) {
  * This event trigger when any trends icon is clicked
  * @event click
  */
-$(".tab-content h3 i").click(function(e) {
+$(".tab-content i").click(function(e) {
     
     // show the loader
     showSpinner();
