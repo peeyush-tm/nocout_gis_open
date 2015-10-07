@@ -38,34 +38,7 @@ var green_color = "#468847",
     parallel_calling_len = 3,
     birdeye_start_counter = 0,
     birdeye_end_counter = parallel_calling_len,
-    is_mouse_out = true,
-    topo_view_scripts = [
-        '<script src="/static/js/flot/jquery.flot.min.js"></script>',
-        '<script type="text/javascript" src="/static/js/infobox.js"></script>',
-        '<script type="text/javascript" src="/static/js/markerclusterer.js"></script>',
-        '<script type="text/javascript" src="/static/js/oms.min.js"></script>',
-        '<script type="text/javascript" src="/static/js/fullScreenControl.js"></script>',
-        '<script type="text/javascript" src="/static/js/jQuery-Cookie/src/jquery.cookie.js"></script>',
-        '<script type="text/javascript" src="/static/js/gisPerformance.js"></script>',
-        '<script type="text/javascript" src="/static/js/tooltipLib.js"></script>',
-        '<script src="/static/js/devicePlottingLib.js"></script>',
-        '<script src="/static/js/devicevisualization.js"></script>'
-    // ],
-    // topo_view_scripts = [
-    //     'https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false',
-    //     '/static/js/lokijs.min.js',
-    //     '/static/js/flot/jquery.flot.min.js',
-    //     '/static/js/stateBoundriesLib.js',
-    //     '/static/js/infobox.js',
-    //     '/static/js/oms.min.js',
-    //     '/static/js/markerclusterer.js',
-    //     '/static/js/fullScreenControl.js',
-    //     '/static/js/jQuery-Cookie/src/jquery.cookie.js',
-    //     '/static/js/tooltipLib.js',
-    //     '/static/js/gisPerformance.js',
-    //     '/static/js/devicePlottingLib.js',
-    //     '/static/js/devicevisualization.js'
-    ];
+    is_mouse_out = true;
 
 
 /**
@@ -1824,75 +1797,6 @@ function calculateAverageValue(resultset, key) {
     return (total_val/resultset.length).toFixed(2);
 }
 
-function populateDeviceTopology() {
-
-    if (typeof networkMapInstance == 'undefined') {
-        $(topo_view_scripts.join(' ')).insertAfter('.perfContainerBlock');
-        // loadScript(topo_view_scripts[0], function(obj) {
-        //     setTimeout(function() {
-        //         for (var i=1;i<topo_view_scripts.length;i++) {
-        //             loadScript(topo_view_scripts[i], function(obj) {
-        //                 console.log(google);
-        //             });
-        //         }
-        //     }, 500);
-        // });
-    }
-
-    $.ajax({
-        url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
-        type : 'GET',
-        success : function(response) {
-            if (typeof networkMapInstance != 'undefined') {
-                networkMapInstance.clearStateCounters();
-                /*Reset markers & polyline*/
-                networkMapInstance.clearGmapElements();
-                /*Reset all elements global variables */
-                networkMapInstance.clearMapMarkers()
-                /*Reset Global Variables & Filters*/
-                networkMapInstance.resetVariables_gmap();
-            } else {
-                live_poll_config = polling_config;
-
-                /*Create a instance of gmap_devicePlottingLib*/
-                networkMapInstance = new devicePlottingClass_gmap();
-                /*Call the function to create map*/
-                networkMapInstance.createMap("perf_topo_map_container");
-            }
-
-            var result = response;
-
-            if (typeof result == 'string') {
-                result = JSON.parse(result);
-            }
-            // 
-            networkMapInstance.showStateWiseData_gmap([result]);
-
-            // fit gmap bounds to base station position
-            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(result.data.lat,result.data.lon)));
-
-            var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
-            
-                // set the zoom level to 13 if it is greater
-                if (mapInstance.getZoom() > 13) {
-                    mapInstance.setZoom(13);
-                }
-                
-                google.maps.event.removeListener(listener);
-                searchResultData = [result];
-            });
-            
-        },
-        error : function(err) {
-            // console.log(err.statusText);
-        },
-        complete : function() {
-            // Hide loading spinner
-            hideSpinner();
-        }
-    });
-}
-
 function initBirdEyeView(container_id) {
 
     if (typeof all_services_list != 'undefined' && all_services_list.length) {
@@ -2001,13 +1905,4 @@ function createBirdEyeViewHTML(container_id) {
     }
 
     $('#' + container_id).html(birdeye_html);
-}
-
-function loadScript(src,callback) {  
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = src;
-    document.getElementsByTagName("head")[0].appendChild(script);
-
-    callback(true);
 }
