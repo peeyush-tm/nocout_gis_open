@@ -1826,14 +1826,12 @@ class GetServiceStatus(View):
             is_unified_view=is_unified_view
         )
 
-        # if is_unified_view:
-        #     pass
-        # else:
         # Sum all severities count
         total_ok = status_severity.get('ok', 0) + invent_severity.get('ok', 0) + utilization_severity.get('ok', 0) + service_severity.get('ok', 0)
         total_warn = status_severity.get('warn', 0) + invent_severity.get('warn', 0) + utilization_severity.get('warn', 0) + service_severity.get('warn', 0)
         total_crit = status_severity.get('crit', 0) + invent_severity.get('crit', 0) + utilization_severity.get('crit', 0) + service_severity.get('crit', 0)
         total_unknown = status_severity.get('unknown', 0) + invent_severity.get('unknown', 0) + utilization_severity.get('unknown', 0) + service_severity.get('unknown', 0)
+
         # Update severity_count_dict
         severity_count_dict.update(
             ok=total_ok,
@@ -4700,3 +4698,91 @@ def device_last_down_time(device_object):
     #first check the current PL state of the device
     s, a = device_current_status(device_object=device_object)
     return a['down']  # return the last down time of the device
+
+
+class GetSeverityWiseStatus(View):
+    """
+    This class fetch & return service - ds values as per given severities
+    """
+    def get(self, request, *args, **kwargs):
+        result = {
+            'success': 0,
+            'message': 'No data fetched',
+            'data' : []
+        }
+        severity = request.GET.get('severity')
+        device_id = request.GET.get('device_id')
+        view_type = request.GET.get('view_type')
+
+        if not severity or not device_id:
+            return HttpResponse(json.dumps(result), content_type="application/json") 
+
+        try:
+            device = Device.objects.select_related('machine').get(id=int(device_id))
+        except Exception, e:
+            result.update(
+                message='Invalid Device ID'
+            )
+            return HttpResponse(json.dumps(result), content_type="application/json") 
+
+        machine_name = device.machine.name
+        device_name = device.device_name
+        severity_check = ['unknown']
+        columns = [
+            'sys_timestamp',
+            'data_source',
+            'service_name',
+            'current_value',
+            'severity',
+            'warning_threshold',
+            'critical_threshold'
+        ]
+
+        if severity == 'ok':
+            severity_check = ['ok', 'up']
+
+        if severity == 'warning':
+            severity_check = ['warning', 'warn']
+
+        if severity == 'critical':
+            severity_check = ['critical', 'crit', 'down']
+
+        invent_data = InventoryStatus.objects.filter(
+            device_name=device_name,
+            severity__in=severity_check
+        ).values(*columns).order_by('service_name').using(alias=machine_name)
+
+        status_data = Status.objects.filter(
+            device_name=device_name,
+            severity__in=severity_check
+        ).values(*columns).order_by('service_name').using(alias=machine_name)
+
+        service_data = ServiceStatus.objects.filter(
+            device_name=device_name,
+            severity__in=severity_check
+        ).values(*columns).order_by('service_name').using(alias=machine_name)
+
+        all_dataset = list(invent_data) + list(status_data) + list(service_data)
+
+        # Format resultset as per the requirement
+        for data in all_dataset:
+            service_name = data.get('service_name')
+            data_source = data.get('data_source')
+            srv_ds_info = SERVICE_DATA_SOURCE.get(service_name + '_' + data_source)
+            display_name = srv_ds_info.get('display_name') if srv_ds_info and srv_ds_info.get('display_name') else data_source
+            service_alias = srv_ds_info.get('service_alias') if srv_ds_info and srv_ds_info.get('service_alias') else service_name
+            datetime_obj = datetime.datetime.fromtimestamp(data.get('sys_timestamp'))
+
+            data.update(
+                service_name=display_name,
+                data_source=service_alias,
+                sys_timestamp=datetime_obj.strftime(DATE_TIME_FORMAT)
+            )
+        
+        result.update(
+            success=1,
+            message='Data fetched successfully.',
+            data=all_dataset
+        )
+        
+        return HttpResponse(json.dumps(result), content_type="application/json") 
