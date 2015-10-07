@@ -38,34 +38,7 @@ var green_color = "#468847",
     parallel_calling_len = 3,
     birdeye_start_counter = 0,
     birdeye_end_counter = parallel_calling_len,
-    is_mouse_out = true,
-    topo_view_scripts = [
-        '<script src="/static/js/flot/jquery.flot.min.js"></script>',
-        '<script type="text/javascript" src="/static/js/infobox.js"></script>',
-        '<script type="text/javascript" src="/static/js/markerclusterer.js"></script>',
-        '<script type="text/javascript" src="/static/js/oms.min.js"></script>',
-        '<script type="text/javascript" src="/static/js/fullScreenControl.js"></script>',
-        '<script type="text/javascript" src="/static/js/jQuery-Cookie/src/jquery.cookie.js"></script>',
-        '<script type="text/javascript" src="/static/js/gisPerformance.js"></script>',
-        '<script type="text/javascript" src="/static/js/tooltipLib.js"></script>',
-        '<script src="/static/js/devicePlottingLib.js"></script>',
-        '<script src="/static/js/devicevisualization.js"></script>'
-    // ],
-    // topo_view_scripts = [
-    //     'https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false',
-    //     '/static/js/lokijs.min.js',
-    //     '/static/js/flot/jquery.flot.min.js',
-    //     '/static/js/stateBoundriesLib.js',
-    //     '/static/js/infobox.js',
-    //     '/static/js/oms.min.js',
-    //     '/static/js/markerclusterer.js',
-    //     '/static/js/fullScreenControl.js',
-    //     '/static/js/jQuery-Cookie/src/jquery.cookie.js',
-    //     '/static/js/tooltipLib.js',
-    //     '/static/js/gisPerformance.js',
-    //     '/static/js/devicePlottingLib.js',
-    //     '/static/js/devicevisualization.js'
-    ];
+    is_mouse_out = true;
 
 
 /**
@@ -170,25 +143,36 @@ function populateServiceStatus_nocout(domElement,info) {
 
     // if (!is_perf_polling_enabled) {
         /********** Service Status Without Live Polling  - START     ********************/
-        if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "") {
+        if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "" || $.trim(info.status) !== "") {
             var last_updated = info.last_updated ? info.last_updated : "N/A",
                 perf = info.perf ? info.perf : "N/A",
                 status = info.status ? info.status.toUpperCase() : "",
-                txt_color = "",
-                fa_icon_class = "",
-                inner_status_html = '',
-                severity_style_obj = nocout_getSeverityColorIcon(status);
+                severity_style_obj = nocout_getSeverityColorIcon(status)
+                txt_color = severity_style_obj.color ? severity_style_obj.color : "",
+                fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle",
+                inner_status_html = '';
 
-            txt_color = severity_style_obj.color ? severity_style_obj.color : "";
-            fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
-            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
-                                  <tr style="color:'+txt_color+';"><td>\
-                                  <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
-                                  style="vertical-align: middle;"> </i> \
-                                  <b>Performance Output</b> : ' + perf + '</td>\
-                                  <td><b>Updated At</b> : ' + last_updated + '</td>\
-                                  </tr>\
-                                  </table><div class="clearfix"></div><div class="divide-20"></div>';
+            var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+
+            if (view_type == 'unified') {
+                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                      <tr style="color:'+txt_color+';"><td>\
+                                      <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                      style="vertical-align: middle;"> </i> \
+                                      <strong>Current Status:</strong> ' + status + '</td>\
+                                      <td><strong>Updated At:</strong> ' + last_updated + '</td>\
+                                      </tr>\
+                                      </table><div class="clearfix"></div><div class="divide-20"></div>';
+            } else {
+                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                      <tr style="color:'+txt_color+';"><td>\
+                                      <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                      style="vertical-align: middle;"> </i> \
+                                      <strong>Performance Output: </strong> ' + perf + '</td>\
+                                      <td><strong>Updated At: </strong> ' + last_updated + '</td>\
+                                      </tr>\
+                                      </table><div class="clearfix"></div><div class="divide-20"></div>';
+            }
 
             $("#" + domElement).html(inner_status_html);
         } else {
@@ -637,9 +621,9 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
         exported_filename = '';
 
     try {
-    exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
+        exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
     } catch(e) {
-    exported_filename = 'Performance Chart'
+        exported_filename = 'Performance Chart'
     }
 
     // Create yAxis data as per the given params
@@ -1813,75 +1797,6 @@ function calculateAverageValue(resultset, key) {
     return (total_val/resultset.length).toFixed(2);
 }
 
-function populateDeviceTopology() {
-
-    if (typeof networkMapInstance == 'undefined') {
-        $(topo_view_scripts.join(' ')).insertAfter('.perfContainerBlock');
-        // loadScript(topo_view_scripts[0], function(obj) {
-        //     setTimeout(function() {
-        //         for (var i=1;i<topo_view_scripts.length;i++) {
-        //             loadScript(topo_view_scripts[i], function(obj) {
-        //                 console.log(google);
-        //             });
-        //         }
-        //     }, 500);
-        // });
-    }
-
-    $.ajax({
-        url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
-        type : 'GET',
-        success : function(response) {
-            if (typeof networkMapInstance != 'undefined') {
-                networkMapInstance.clearStateCounters();
-                /*Reset markers & polyline*/
-                networkMapInstance.clearGmapElements();
-                /*Reset all elements global variables */
-                networkMapInstance.clearMapMarkers()
-                /*Reset Global Variables & Filters*/
-                networkMapInstance.resetVariables_gmap();
-            } else {
-                live_poll_config = polling_config;
-
-                /*Create a instance of gmap_devicePlottingLib*/
-                networkMapInstance = new devicePlottingClass_gmap();
-                /*Call the function to create map*/
-                networkMapInstance.createMap("perf_topo_map_container");
-            }
-
-            var result = response;
-
-            if (typeof result == 'string') {
-                result = JSON.parse(result);
-            }
-            // 
-            networkMapInstance.showStateWiseData_gmap([result]);
-
-            // fit gmap bounds to base station position
-            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(result.data.lat,result.data.lon)));
-
-            var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
-            
-                // set the zoom level to 13 if it is greater
-                if (mapInstance.getZoom() > 13) {
-                    mapInstance.setZoom(13);
-                }
-                
-                google.maps.event.removeListener(listener);
-                searchResultData = [result];
-            });
-            
-        },
-        error : function(err) {
-            // console.log(err.statusText);
-        },
-        complete : function() {
-            // Hide loading spinner
-            hideSpinner();
-        }
-    });
-}
-
 function initBirdEyeView(container_id) {
 
     if (typeof all_services_list != 'undefined' && all_services_list.length) {
@@ -1912,6 +1827,25 @@ function populateBirdViewCharts(start, end) {
             } else {
                 api_url = api_url + '?service_view_type=unified'
             }
+
+            api_url += '&only_service=1';
+
+            // Get Service Status (Closure function used)
+            (function(index) {
+                var srv = all_services_list[index].id;
+                perfInstance.getServiceStatus(api_url, false, function(response_type, data_obj) {
+                    var severity_status = data_obj['status'] ? data_obj['status'] : 'unknown',
+                        status_since = data_obj['last_updated'] ? data_obj['last_updated'] : 'NA',
+                        severity_style_obj = nocout_getSeverityColorIcon(severity_status),
+                        txt_color = severity_style_obj.color ? severity_style_obj.color : "",
+                        fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle",
+                        status_html = '<td title="Status"><i class="fa '+fa_icon_class+'"></i></td>\
+                                       <td title="Status Since"><strong>Since:</strong> '+status_since+'</td>';
+                    // Change the color of row as per severity
+                    $('#' + srv + '_status_table tbody tr:first-child').css('color', txt_color);
+                    $('#' + srv + '_status_table tbody tr:first-child').html(status_html);
+                });
+            }(i));
 
             // call function to fetch perf data for this service
             perfInstance.getServiceData(api_url, srv_name, current_device);
@@ -1945,11 +1879,12 @@ function createBirdEyeViewHTML(container_id) {
 
             birdeye_html += '<div class="col-md-6 ' + float_class + ' row">';
         }
+
         if (not_ping) {
             birdeye_html += '<div class="birdeye_title_block">';
-            birdeye_html += '<h4 class="zero_top_margin" id="' + all_services_list[i]['id'] + '_heading"> \
+            birdeye_html += '<h4 class="zero_top_margin pull-left" id="' + all_services_list[i]['id'] + '_heading"> \
                              ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>';
-            birdeye_html += '<table class="table-bordered col-md-9" id="' + all_services_list[i]['id'] + '_status_table">';
+            birdeye_html += '<table class="table-bordered pull-right" id="' + all_services_list[i]['id'] + '_status_table">';
             birdeye_html += '<tbody><tr></tr></tbody>';
             birdeye_html += '</table><div class="clearfix"></div></div>';
         } else {
@@ -1970,13 +1905,4 @@ function createBirdEyeViewHTML(container_id) {
     }
 
     $('#' + container_id).html(birdeye_html);
-}
-
-function loadScript(src,callback) {  
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = src;
-    document.getElementsByTagName("head")[0].appendChild(script);
-
-    callback(true);
 }

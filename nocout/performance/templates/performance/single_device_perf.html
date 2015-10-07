@@ -95,31 +95,20 @@
             right: 10px;
             left: auto;
         }
-        #perf_topo_map_container {
-            height: 450px;
-            margin: 0px auto;
-        }
-        #topo_view_tab .sideInfoContainer {
-            max-height: 425px !important;
-        }
-        #topo_view_tab {
-            position: relative;
-        }
-
         #birdeye_container table tbody tr td {
             font-size: 12px !important;
         }
     </style>
     <!--Device Status Block Start-->
     <div id="status_container" style="overflow:auto;">
-        <div id="latestStatusContainer">
-            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
-        </div>
         <div style="overflow:auto;">
             <table id="status_table" class="table table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
                 <thead></thead>
                 <tbody></tbody>
             </table>
+        </div>
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
         </div>
     </div>
     <!--Device Status Block End-->
@@ -381,25 +370,22 @@
                         </div>
                     </div>
                 </div>
-                {% if settings.ENABLE_TOPO_VIEW %}
 
-                <div class="tab-pane" id="topo_view_tab">
-                    <div class="panel panel-default inner_tab_container">
-                        <div class="panel-body">
-                            <div id="perf_topo_map_container"></div>
-                            <!--Info Window Content Container START-->
-                            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:200;"></div>
-                            <!--Info Window Content Container END-->
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                {% if settings.ENABLE_BIRDEYE_VIEW %}                
+                {% if settings.ENABLE_BIRDEYE_VIEW %}
                 <div class="tab-pane" id="birdeye_view_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
                             <div id="birdeye_container"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if settings.ENABLE_TOPO_VIEW %}
+                <div class="tab-pane" id="topo_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            Topo View - Work In Progress...
                         </div>
                     </div>
                 </div>
@@ -782,22 +768,6 @@
             fetchFirstTabContent(this);
         });
 
-        // Populate device topology on tab click
-        $("#topo_view").click(function (e) {
-            
-            // Hide li panel
-            $('.perfContainerBlock .box-title ul li:not(.pull-right)').addClass('hide');
-
-            clicked_tab_id = 'topo_view';
-
-            if (typeof networkMapInstance == 'undefined') {
-                // Show loading spinner
-                showSpinner();
-                // Call function to populate device api
-                populateDeviceTopology();
-            }
-        });
-
         // Fetch & Draw birdeye view on tab click
         $("#birdeye_view").click(function (e) {
 
@@ -855,10 +825,6 @@
             }
         });
     </script>
-    <!-- Google Map Library-->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false"></script>
-    <script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
 
 {% endblock %}
 

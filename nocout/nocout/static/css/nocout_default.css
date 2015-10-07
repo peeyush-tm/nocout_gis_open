@@ -359,15 +359,15 @@ th.vAlign_middle, .vAlign_middle b {
   margin-bottom: 0px !important;
 }
 #latestStatusContainer {
-  margin-bottom: 9px;
+  margin: 10px 0px;
 }
 .sidebar-menu > ul {
   margin-top: 0px;
   border-top: 0px none !important;
 }
-#status_container {
+/*#status_container {
   margin-bottom: 12px !important;
-}
+}*/
 .control_btn_countainer {
   margin-bottom: 0px;
 }
@@ -641,7 +641,7 @@ table.dataTable thead th, table.dataTable tfoot th{
 }
 .transitionbtn:hover {
   border-radius: 50% !important;
-  background: transparent;
+  background: transparent !important;
 }
 .box .header-tabs .nav-tabs > li {
   border-right: 1px inset #dddddd !important;
@@ -675,3 +675,4 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   background-color: #FFFFFF;
   border-bottom: 1px solid #DDDDDD;
 }
+

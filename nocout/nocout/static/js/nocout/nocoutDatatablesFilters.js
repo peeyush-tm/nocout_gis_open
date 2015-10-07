@@ -95,7 +95,7 @@ function nocout_createAdvanceFilter (
 	}
 
 	// Add Advance Filter Button on GUI
-	$('.control_btn_countainer').prepend('<li>'+btn_html+remove_btn_html+'</li>');
+	$('.control_btn_countainer').prepend('<li class="pull-right">'+btn_html+remove_btn_html+'</li>');
 
 	$('.advance_filters_container').hide();
 

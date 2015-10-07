@@ -129,8 +129,8 @@
 .sidebar-menu > ul > li:last-child > a {
   border-bottom: 1px solid transparent !important;
 }
-.sidebar-menu > ul > li a i {
-  color: #555555;
+.sidebar-menu > ul > li.active i {
+  color: #ca1e25;
 }
 .sidebar-menu > ul > li.has-sub.open > a,
 .sidebar-menu > ul > li > a:hover,
@@ -275,7 +275,7 @@
 .btn-default.active,
 .open .dropdown-toggle.btn-default {
   color: #333333;
-  background-color: #ebebeb;
+  /*background-color: #ebebeb;*/
   border-color: #adadad;
 }
 .table > thead > tr > th {
@@ -345,8 +345,7 @@ select option:hover
 .text-success{
   background: #FFFFFF;
   border-radius: 6px;
-  color:#468847;
-}
+  }
 .text-success:hover{
   border-radius: 50%;
 }
