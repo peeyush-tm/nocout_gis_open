@@ -641,7 +641,7 @@ table.dataTable thead th, table.dataTable tfoot th{
 }
 .transitionbtn:hover {
   border-radius: 50% !important;
-  background: transparent;
+  background: transparent !important;
 }
 .box .header-tabs .nav-tabs > li {
   border-right: 1px inset #dddddd !important;
@@ -675,3 +675,4 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   background-color: #FFFFFF;
   border-bottom: 1px solid #DDDDDD;
 }
+

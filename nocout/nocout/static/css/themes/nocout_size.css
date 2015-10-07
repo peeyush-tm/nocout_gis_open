@@ -747,3 +747,25 @@ a.paginate_button {
   border-bottom: 3px solid #DDDDDD !important;
   background-color: transparent !important;
 }
+.tab-rf-perf{
+  width:99%;
+  margin:5px auto;
+}
+.tab-rf-perf .box-container:hover{
+  -webkit-box-shadow: 0 0 10px #CCCCCC;
+  -moz-box-shadow: 0 0 10px #CCCCCC;
+  box-shadow: 0 0 10px #CCCCCC;
+  cursor:pointer;
+    }
+.tab-rf-perf .box-container i.text-success {
+  color:#555 !important;
+  }
+.tab-rf-perf .box-container:hover i.text-success {
+  color:#468847 !important;
+  }
+.dataTables_wrapper .row{
+  box-shadow:none !important;
+}
+#main_dashboard_container .trends-icon{
+  color:#555 !important;;
+}
