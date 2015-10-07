@@ -1582,10 +1582,14 @@ class GetServiceStatus(View):
         date_format = "%d-%m-%Y %H:%M:%S"
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
-        # Device Machine Name required in Query to fetch data.
+        # Device Machine Name required in query to fetch data.
         inventory_device_machine_name = device.machine.name 
-
+        # If 'only_service' is set, only then send the status as per service
         only_service = self.request.GET.get('only_service')
+        # GET param to detect the request is for service view or data_source view
+        display_view = self.request.GET.get('service_view_type', 'normal')
+        # Is service view flag
+        is_unified_view = display_view and display_view == 'unified'
 
         """
         get the current status,
@@ -1626,11 +1630,8 @@ class GetServiceStatus(View):
             }
         }
 
-        if only_service:
-            if service_name in ['ping']:
-                table_name = 'performance_networkstatus'
-                model_name = NetworkStatus
-            elif '_invent' in service_name:
+        if only_service and service_name not in ['ping']:
+            if '_invent' in service_name:
                 table_name = 'performance_inventorystatus'
                 model_name = InventoryStatus
             elif '_status' in service_name:
@@ -1644,25 +1645,39 @@ class GetServiceStatus(View):
                 table_name=table_name, 
                 machine_name=inventory_device_machine_name, 
                 device_name=inventory_device_name,
-                service_name=service_name
+                service_name=service_name,
+                is_unified_view=True
             )
-            if len(severity_status) > 0:
-                result = model_name.objects.filter(
-                    service_name=service_name,
-                    severity=severity_status[0]
-                ).values().using(alias=inventory_device_machine_name)
 
-                if result.count() > 0:
-                    try:
-                        last_updated = datetime.datetime.fromtimestamp(
-                            float(result[0]['sys_timestamp'])
-                        ).strftime(DATE_TIME_FORMAT)
-                        severity_val = result[0]['severity'].lower().strip() if result[0]['severity'] else None
+            severities = list()
+            if severity_status.get('ok', 0) > 0:
+                severities = ['ok', 'up']
 
-                        self.result['data']['objects']['last_updated'] = last_updated
-                        self.result['data']['objects']['status'] = severity_status[0]
-                    except Exception as e:
-                        log.exception(e.message)
+            if severity_status.get('down', 0) > 0:
+                severities = ['critical', 'down', 'crit']
+
+            if severity_status.get('warn', 0) > 0:
+                severities = ['warning', 'warn']
+
+            if severity_status.get('unknown', 0) > 0:
+                severities = ['unknown']
+
+            result = model_name.objects.filter(
+                service_name=service_name,
+                severity__in=severities
+            ).values('severity', 'sys_timestamp').using(alias=inventory_device_machine_name)
+
+            if result.count() > 0:
+                try:
+                    last_updated = datetime.datetime.fromtimestamp(
+                        float(result[0]['sys_timestamp'])
+                    ).strftime(DATE_TIME_FORMAT)
+                    severity_val = result[0]['severity'].lower().strip() if result[0]['severity'] else None
+
+                    self.result['data']['objects']['last_updated'] = last_updated
+                    self.result['data']['objects']['status'] = severities[0]
+                except Exception as e:
+                    log.exception(e.message)
 
         else:
             pass
@@ -1716,7 +1731,8 @@ class GetServiceStatus(View):
             # Calculate the severity of current device from all the Models
             severity_count = self.get_status_severity(
                 device_name=inventory_device_name,
-                machine_name=inventory_device_machine_name
+                machine_name=inventory_device_machine_name,
+                is_unified_view=is_unified_view
             )
         else:
             severity_count = {
@@ -1755,7 +1771,8 @@ class GetServiceStatus(View):
     def get_status_severity(
         self,
         device_name=None,
-        machine_name=None
+        machine_name=None,
+        is_unified_view=False
     ):
         """
         This function gets the severity count for all services & datasource combination in status tables.
@@ -1774,51 +1791,56 @@ class GetServiceStatus(View):
             return severity_count_dict
 
         # Network Status Severity
-        # network_severity = self.getSeverity('performance_networkstatus', machine_name, device_name)
-        # Status Severity
-        status_severity = self.getSeverity(
-            table_name='performance_status', 
-            machine_name=machine_name, 
-            device_name=device_name
-        )
+        # network_severity = self.getSeverity(
+        #     table_name='performance_networkstatus', 
+        #     machine_name=machine_name, 
+        #     device_name=device_name,
+        #     is_unified_view=is_unified_view
+        # )
         # InventoryStatus Severity
         invent_severity = self.getSeverity(
             table_name='performance_inventorystatus', 
             machine_name=machine_name, 
-            device_name=device_name
+            device_name=device_name,
+            is_unified_view=is_unified_view
+        )
+        # Status Severity
+        status_severity = self.getSeverity(
+            table_name='performance_status', 
+            machine_name=machine_name, 
+            device_name=device_name,
+            is_unified_view=is_unified_view
         )
         # UtilizationStatus Severity
         utilization_severity = self.getSeverity(
             table_name='performance_utilizationstatus', 
             machine_name=machine_name, 
-            device_name=device_name
+            device_name=device_name,
+            is_unified_view=is_unified_view
         )
         # ServiceStatus Severity
         service_severity = self.getSeverity(
             table_name='performance_servicestatus', 
             machine_name=machine_name, 
-            device_name=device_name
+            device_name=device_name,
+            is_unified_view=is_unified_view
         )
 
-        total_severity_list = list()
-
-        # Concat all severity list fetched from all Model
-        # total_severity_list += list(network_severity)
-        total_severity_list += list(status_severity)
-        total_severity_list += list(invent_severity)
-        total_severity_list += list(utilization_severity)
-        total_severity_list += list(service_severity)
-
-        for severity in total_severity_list:
-            if severity:
-                if severity.lower() in ['ok', 'success', 'up']:
-                    severity_count_dict['ok'] += 1
-                elif severity.lower() in ['warn', 'warning']:
-                    severity_count_dict['warn'] += 1
-                elif severity.lower() in ['crit', 'critical', 'down']:
-                    severity_count_dict['crit'] += 1
-                else:
-                    severity_count_dict['unknown'] += 1
+        # if is_unified_view:
+        #     pass
+        # else:
+        # Sum all severities count
+        total_ok = status_severity.get('ok', 0) + invent_severity.get('ok', 0) + utilization_severity.get('ok', 0) + service_severity.get('ok', 0)
+        total_warn = status_severity.get('warn', 0) + invent_severity.get('warn', 0) + utilization_severity.get('warn', 0) + service_severity.get('warn', 0)
+        total_crit = status_severity.get('crit', 0) + invent_severity.get('crit', 0) + utilization_severity.get('crit', 0) + service_severity.get('crit', 0)
+        total_unknown = status_severity.get('unknown', 0) + invent_severity.get('unknown', 0) + utilization_severity.get('unknown', 0) + service_severity.get('unknown', 0)
+        # Update severity_count_dict
+        severity_count_dict.update(
+            ok=total_ok,
+            warn=total_warn,
+            crit=total_crit,
+            unknown=total_unknown
+        )
 
         return severity_count_dict
 
@@ -1835,41 +1857,78 @@ class GetServiceStatus(View):
         else:
             return current_value
 
-    def getSeverity(self, table_name=None, machine_name=None, device_name=None, service_name=None):
+    def getSeverity(self, table_name=None, machine_name=None, device_name=None, service_name=None, is_unified_view=False):
         """
 
         """
         severity_list = list()
+        extra_column = ''
         if not device_name or not table_name or not machine_name:
             return severity_list
 
+        if is_unified_view:
+            extra_column = ' , service_name '
+
+        severity_query = '''
+                         SELECT 
+                            IF(
+                                ISNULL(SUM(severity='ok' OR severity='up')),
+                                0,
+                                SUM(severity='ok' OR severity='up')
+                            ) AS ok,
+                            IF(
+                                ISNULL(SUM(severity='down' OR severity='critical' OR severity='crit')),
+                                0,
+                                SUM(severity='down' OR severity='critical' OR severity='crit')
+                            ) AS crit,
+                            IF(
+                                ISNULL(SUM(severity='warning' OR severity='warn')),
+                                0,
+                                SUM(severity='warning' OR severity='warn')
+                            ) AS warn,
+                            IF(
+                                ISNULL(SUM(severity='unknown')),
+                                0,
+                                SUM(severity='unknown')
+                            ) AS unknown
+                         FROM 
+                            {0} 
+                         WHERE 
+                            device_name = {1}
+                         '''.format(table_name, device_name)
+
         if service_name:
-            severity_query = "select GROUP_CONCAT(severity) as severity from {0} where device_name = '{1}' and service_name = '{2}' group by service_name".format(
-                table_name,
-                device_name,
-                service_name
-            )
-        else:
-            severity_query = "select GROUP_CONCAT(severity) as severity from {0} where device_name = '{1}' group by service_name".format(
-                table_name,
-                device_name
-            )
+            severity_query += " AND service_name = '{0}' ".format(service_name)
+
+        if is_unified_view:
+            severity_query += " GROUP BY service_name "
+
         # Execute Query to get severity data
         severity_response = nocout_utils.fetch_raw_result(query=severity_query, machine=machine_name)
 
-        for severity in severity_response:
-            if 'warn' in severity['severity'] or 'warning' in severity['severity'] or 'down' in severity['severity'] or 'critical' in severity['severity'] or 'crit' in severity['severity']:
-                if 'down' in severity['severity'] or 'critical' in severity['severity'] or 'crit' in severity['severity']:
-                    severity_list.append('crit')
-                else:
-                    severity_list.append('warning')
-            else:
-                if 'ok' in severity['severity'] or 'success' in severity['severity'] or 'up' in severity['severity']:
-                    severity_list.append('ok')
-                else:
-                    severity_list.append('unknown')
+        # If not unified view then send dict object else list
+        if is_unified_view:
+            severity_counters = {
+                "ok": 0,
+                "warn": 0,
+                "crit": 0,
+                "unknown": 0,
+            }
 
-        return severity_list
+            for severity_obj in severity_response:
+                if severity_obj.get('crit', 0) > 0 or severity_obj.get('warn', 0) > 0:
+                    if severity_obj.get('crit', 0) > 0:
+                        severity_counters['crit'] += 1
+                    else:
+                        severity_counters['warn'] += 1
+                elif severity_obj.get('ok', 0) > 0:
+                    severity_counters['ok'] += 1
+                else:
+                    severity_counters['unknown'] += severity_obj.get('unknown', 0)
+
+            severity_response = [severity_counters]
+
+        return severity_response[0]
 
 
 class ServiceDataSourceHeaders(ListView):
