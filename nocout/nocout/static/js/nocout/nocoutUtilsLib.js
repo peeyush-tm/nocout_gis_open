@@ -2004,6 +2004,8 @@ $('#status_container').delegate('#final_status_table .severity_block', 'click', 
             });
         } else {
             bootbox.alert("You don't have any services in '" + block_severity + "'");
+            // Hide loading spinner
+            hideSpinner();
         }
     }
 });
