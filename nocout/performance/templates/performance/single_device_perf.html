@@ -272,20 +272,20 @@
                         </a>
                     </li>
 
-                    {% if settings.ENABLE_TOPO_VIEW %}
-                    <li>
-                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
-                            <i class="fa fa-ellipsis-v">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
                     {% if settings.ENABLE_BIRDEYE_VIEW %}
                     <li>
                         <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
                             <i class="fa fa-ellipsis-v">&nbsp;</i>
                             <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_TOPO_VIEW %}
+                    <li>
+                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
                         </a>
                     </li>
                     {% endif %}
