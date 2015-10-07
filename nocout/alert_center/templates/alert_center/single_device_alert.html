@@ -53,14 +53,14 @@
     </style>
 
     <div class="" id="status_container" style="overflow:auto;">
-        <div id="latestStatusContainer">
-            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
-        </div>
         <div style="overflow:auto;">
             <table id="status_table" class="table table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
                 <thead></thead>
                 <tbody></tbody>
             </table>
+        </div>
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>  
         </div>
     </div>
 
@@ -79,13 +79,13 @@
                     </div>
                 </li>
                 <li>
-                    <button id="apply_filter" class="btn  btn-default btn-sm">
-                        <i class="fa fa-filter"></i> Apply Filter
+                    <button id="apply_filter" class="btn btn-default btn-sm">
+                        <i class="fa fa-filter"></i>
                     </button>
                 </li>
                 <li>
-                    <button id="reset_filter" class="btn  btn-warning btn-sm">
-                        <i class="fa fa-times"></i> Reset Filter
+                    <button id="reset_filter" class="btn btn-danger btn-sm">
+                        <i class="fa fa-times"></i>
                     </button>
                 </li>
             </ul>
@@ -97,31 +97,26 @@
                 <ul id="" class="nav nav-tabs top_perf_tabs">
                     <li>
                         <a href="#network_alert_service_block" id="network_alert_service_tab" title="Polling Alerts" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Polling Alerts</span>
                         </a>
                     </li>
                     <li>
                         <a href="#network_alert_down_block" id="network_alert_down_tab" title="Down" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Down</span>
                         </a>
                     </li>
                     <li>
                         <a href="#network_alert_packet_block" id="network_alert_packet_tab" title="Packet Drop" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Packet Drop</span>
                         </a>
                     </li>
                     <li>
                         <a href="#network_alert_latency_block" id="network_alert_latency_tab" title="Latency" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Latency</span>
                         </a>
                     </li>
                     <li class="active">
                         <a href="#network_alert_ping_block" id="network_alert_ping_tab" title="Ping Details" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
                             <span class="hidden-inline-mobile">Ping Details</span>
                         </a>
                     </li>
