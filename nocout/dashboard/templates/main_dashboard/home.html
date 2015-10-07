@@ -31,25 +31,23 @@
         margin: 0 auto;
         margin-top: 48px;
     }
-    #main_dashboard_container .col-md-3:hover,
-    .row.col-md-6:hover,
-    .row.col-md-4:hover {
-        -webkit-box-shadow: 0 0 10px #CCCCCC;
-        -moz-box-shadow: 0 0 10px #CCCCCC;
-        box-shadow: 0 0 10px #CCCCCC;
-        cursor:pointer;
-    }
     #main_dashboard_container .col-md-3 div.pull-right i.trends_icon,
     .row.col-md-6 div.pull-right i.trends_icon,
     .row.col-md-4 div.pull-right i.trends_icon {
-        color: #555555;
+        padding: 5px 8px;
+        cursor:pointer;
     }
-    #main_dashboard_container .col-md-3:hover div.pull-right i.trends_icon,
+     #main_dashboard_container .col-md-3:hover,
+     .row.col-md-6:hover ,.row.col-md-4:hover{
+        cursor: pointer;
+     }
+    #main_dashboard_container .col-md-3:hover div.pull-right i.trends_icon ,
     .row.col-md-6:hover div.pull-right i.trends_icon,
     .row.col-md-4:hover div.pull-right i.trends_icon {
-        color:#468847;
+        border:1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 2px;       
     }
-
+    
     /*#main_dashboard_container div[class^="col-md-"] .pull-right i.trends_icon,
     .row.col-md-6 div .pull-right i.trends_icon {
         color: #555 !important;

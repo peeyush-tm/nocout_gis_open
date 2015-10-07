@@ -38,6 +38,11 @@
   /*border-left: solid 1px #EEEEEE;*/
   padding-left: 10px;
 }
+.orgTitle{
+  text-align: center;
+  font-size: 21px;
+  font-weight: 300;
+}
 .dropdown-menu {  
   z-index: 9999; 
   display: none;
@@ -477,7 +482,14 @@ table.dataTable thead th, table.dataTable tfoot th {
 .sidebar-menu > ul > li > ul.sub > li:first-child > a {
   border-top: 0px !important;
 }
+.btn,.btn .text-primary {
+  color:#555;
+}
 /*Search*/
+.btn-sm,
+.btn-xs {
+  padding: 5px 10px;
+}
 .sidebar-menu #search-bar {
   display: block;
   text-align: center;
@@ -747,25 +759,29 @@ a.paginate_button {
   border-bottom: 3px solid #DDDDDD !important;
   background-color: transparent !important;
 }
-.tab-rf-perf{
-  width:99%;
-  margin:5px auto;
-}
+
 .tab-rf-perf .box-container:hover{
-  -webkit-box-shadow: 0 0 10px #CCCCCC;
-  -moz-box-shadow: 0 0 10px #CCCCCC;
-  box-shadow: 0 0 10px #CCCCCC;
   cursor:pointer;
-    }
-.tab-rf-perf .box-container i.text-success {
-  color:#555 !important;
-  }
-.tab-rf-perf .box-container:hover i.text-success {
-  color:#468847 !important;
-  }
+}
+
+.
 .dataTables_wrapper .row{
   box-shadow:none !important;
 }
-#main_dashboard_container .trends-icon{
-  color:#555 !important;;
+.tab-rf-perf .box-container:hover i.text-success {
+  border:1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
 }
+i.trends-icon,i.text-success{  
+  color: #555555;
+  padding: 5px 8px;
+  cursor:pointer;
+}
+i.trends_icon:hover,i.text-success:hover {
+  border:1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  }
+#global_search_btn{
+  margin-right: -8px;
+}
+ 
