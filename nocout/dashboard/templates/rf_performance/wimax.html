@@ -25,6 +25,14 @@
     i.fa-line-chart {
         cursor: pointer;
     }
+    #wimax_block .tab-content{
+        top:-30px;
+    }
+    #wimax_block .box .box-title{
+        border-bottom: 0px none !important;
+    }
+    
+
 </style>
 
 <div class="box border lite">
@@ -41,79 +49,86 @@
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
                 <div class="tab-pane active" id="wimax_block">
-                    <div class="col-md-12">
-                        <div class="col-md-6 box-container ui-sortable">
+                    <div class="tab-rf-perf">               
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">                         
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        DL RSSI <span id="dl_rssi_timestamp"></span>
-                                        <i class="fa fa-line-chart text-success pull-right" id="dl_rssi_trend" title="DL RSSI Trends">&nbsp;</i>
-                                    </h3>
+                                    <h5 class="bigger">
+                                        UL RSSI <span id="ul_rssi_timestamp"></span>
+                                        <i class="fa fa-line-chart text-success pull-right" id="ul_rssi_trend" title="UL RSSI Trends">&nbsp;</i>
+                                    </h5 class="bigger">
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_rssi" class="rf_chart_style"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 box-container ui-sortable">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        UL RSSI <span id="ul_rssi_timestamp"></span>
-                                        <i class="fa fa-line-chart text-success pull-right" id="ul_rssi_trend" title="UL RSSI Trends">&nbsp;</i>
-                                    </h3>
+                                    <h5 class="bigger">
+                                        DL RSSI <span id="dl_rssi_timestamp"></span>
+                                        <i class="fa fa-line-chart text-success pull-right" id="dl_rssi_trend" title="DL RSSI Trends">&nbsp;</i>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_rssi" class="rf_chart_style"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 box-container ui-sortable">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        DL CINR <span id="dl_cinr_timestamp"></span>
-                                        <i class="fa fa-line-chart text-success pull-right" id="dl_cinr_trend" title="DL CINR Trends">&nbsp;</i>
-                                    </h3>
+                                    <h5 class="bigger">
+                                        UL CINR <span id="ul_cinr_timestamp"></span>
+                                        <i class="fa fa-line-chart text-success pull-right" id="ul_cinr_trend" title="UL CINR Trends">&nbsp;</i>                                        
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="dl_cinr" class="rf_chart_style"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 box-container ui-sortable">
+                      
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        UL CINR <span id="ul_cinr_timestamp"></span>
-                                        <i class="fa fa-line-chart text-success pull-right" id="ul_cinr_trend" title="UL CINR Trends">&nbsp;</i>
-                                    </h3>
+                                    <div class="custom_seperator">&nbsp;</div>
+                                    <h5 class="bigger">
+                                        DL CINR <span id="dl_cinr_timestamp"></span>
+                                        <i class="fa fa-line-chart text-success pull-right" id="dl_cinr_trend" title="DL CINR Trends">&nbsp;</i>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="ul_cinr" class="rf_chart_style"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 box-container ui-sortable">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>                          
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
+                                    <h5 class="bigger">
                                         UL Modulation <span id="modulation_ul_fec_timestamp"></span>
                                         <i class="fa fa-line-chart text-success pull-right" id="modulation_ul_fec_trend" title="MODULATION UL FEC Trends">&nbsp;</i>
-                                    </h3>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="modulation_ul_fec" class="rf_chart_style"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 box-container ui-sortable">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
+                                    <h5 class="bigger">
                                         DL Modulation <span id="modulation_dl_fec_timestamp"></span>
                                         <i class="fa fa-line-chart text-success pull-right" id="modulation_dl_fec_trend" title="MODULATION DL FEC Trends">&nbsp;</i>
-                                    </h3>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="modulation_dl_fec" class="rf_chart_style"></div>
@@ -145,6 +160,7 @@
         trends_ajax_url = "",
         is_bh = 0,
         tech_name = "WiMAX";
+        show_rf_perf_column = "{{settings.SHOW_RF_COLUMN}}"
     $(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements

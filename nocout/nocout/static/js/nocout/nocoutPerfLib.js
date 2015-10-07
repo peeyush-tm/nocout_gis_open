@@ -1719,6 +1719,7 @@ $(".perfContainerBlock").delegate('.poll_stop_btn', 'click', function(e) {
 });
 
 $('input[name="service_view_type"]').change(function(e) {
+
     // selected value of 'service_view_type'
     var service_view_type = $(this).val();
 

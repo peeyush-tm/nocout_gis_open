@@ -291,7 +291,7 @@ iframe {
 .global_search_container {
   position: absolute;
   top: -40px;
-  left: 33%;
+  left: 23%;
 }
 .global_search_container .select2-container .select2-choice {
   height: 30px !important;
@@ -641,7 +641,7 @@ table.dataTable thead th, table.dataTable tfoot th{
 }
 .transitionbtn:hover {
   border-radius: 50% !important;
-  background: transparent;
+  background: transparent !important;
 }
 .box .header-tabs .nav-tabs > li {
   border-right: 1px inset #dddddd !important;
@@ -674,4 +674,7 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 .box.border.lite .box-title {
   background-color: #FFFFFF;
   border-bottom: 1px solid #DDDDDD;
+}
+.severity_block {
+  cursor: pointer;
 }
