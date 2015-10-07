@@ -482,7 +482,7 @@ table.dataTable thead th, table.dataTable tfoot th {
 .sidebar-menu > ul > li > ul.sub > li:first-child > a {
   border-top: 0px !important;
 }
-.btn,.btn .text-primary {
+.btn-default ,.btn-default .text-primary {
   color:#555;
 }
 /*Search*/
