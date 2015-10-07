@@ -55,5 +55,10 @@ urlpatterns = patterns('',
                            r'^servicedetail/(?P<service_name>\w+)/device/(?P<device_id>\d+)',
                            views.DeviceServiceDetail.as_view(),
                            name='DeviceServiceDetail'
+                       ),
+                       url(
+                           r'get_severity_wise_status/',
+                           views.GetSeverityWiseStatus.as_view(),
+                           name='get_severity_wise_status'
                        )
 )
