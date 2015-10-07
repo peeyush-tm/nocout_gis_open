@@ -1580,15 +1580,18 @@ class GetServiceStatus(View):
         }
 
         date_format = "%d-%m-%Y %H:%M:%S"
-
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
-        inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+        # Device Machine Name required in Query to fetch data.
+        inventory_device_machine_name = device.machine.name 
 
-        #get the current status
-        #if the current status is OK
-        #check when was the element last down
+        only_service = self.request.GET.get('only_service')
 
+        """
+        get the current status,
+        if the current status is OK
+        check when was the element last down
+        """
         severity, a = device_current_status(device_object=device)
         last_down_time = a['down'] if(a and 'down' in a) else ""
         age = a['age'] if(a and 'age' in a) else ""
@@ -1622,6 +1625,47 @@ class GetServiceStatus(View):
                 }
             }
         }
+
+        if only_service:
+            if service_name in ['ping']:
+                table_name = 'performance_networkstatus'
+                model_name = NetworkStatus
+            elif '_invent' in service_name:
+                table_name = 'performance_inventorystatus'
+                model_name = InventoryStatus
+            elif '_status' in service_name:
+                table_name = 'performance_status'
+                model_name = Status
+            else:
+                table_name = 'performance_servicestatus'
+                model_name = ServiceStatus
+
+            severity_status = self.getSeverity(
+                table_name=table_name, 
+                machine_name=inventory_device_machine_name, 
+                device_name=inventory_device_name,
+                service_name=service_name
+            )
+            if len(severity_status) > 0:
+                result = model_name.objects.filter(
+                    service_name=service_name,
+                    severity=severity_status[0]
+                ).values().using(alias=inventory_device_machine_name)
+
+                if result.count() > 0:
+                    try:
+                        last_updated = datetime.datetime.fromtimestamp(
+                            float(result[0]['sys_timestamp'])
+                        ).strftime(DATE_TIME_FORMAT)
+                        severity_val = result[0]['severity'].lower().strip() if result[0]['severity'] else None
+
+                        self.result['data']['objects']['last_updated'] = last_updated
+                        self.result['data']['objects']['status'] = severity_status[0]
+                    except Exception as e:
+                        log.exception(e.message)
+
+        else:
+            pass
 
         if service_data_source_type in ['pl', 'rta']:
             performance_data_query_set = NetworkStatus.objects.filter(
@@ -1702,6 +1746,9 @@ class GetServiceStatus(View):
                 self.result['data']['objects']['status'] = severity_val
             except Exception as e:
                 log.exception(e.message)
+        else:
+            pass
+
 
         return HttpResponse(json.dumps(self.result), content_type="application/json")
 
@@ -1727,29 +1774,31 @@ class GetServiceStatus(View):
             return severity_count_dict
 
         # Network Status Severity
-        # network_severity = NetworkStatus.objects.filter(
-        #     device_name=device_name
-        # ).values_list('severity', flat=True).using(alias=machine_name)
-
-        # Status Status Severity
-        status_severity = Status.objects.filter(
+        # network_severity = self.getSeverity('performance_networkstatus', machine_name, device_name)
+        # Status Severity
+        status_severity = self.getSeverity(
+            table_name='performance_status', 
+            machine_name=machine_name, 
             device_name=device_name
-        ).values_list('severity', flat=True).using(alias=machine_name)
-
-        # Inventory Status Severity
-        invent_severity = InventoryStatus.objects.filter(
+        )
+        # InventoryStatus Severity
+        invent_severity = self.getSeverity(
+            table_name='performance_inventorystatus', 
+            machine_name=machine_name, 
             device_name=device_name
-        ).values_list('severity', flat=True).using(alias=machine_name)
-
-        # Utilization Status Severity
-        utilization_severity = UtilizationStatus.objects.filter(
+        )
+        # UtilizationStatus Severity
+        utilization_severity = self.getSeverity(
+            table_name='performance_utilizationstatus', 
+            machine_name=machine_name, 
             device_name=device_name
-        ).values_list('severity', flat=True).using(alias=machine_name)
-
-        # Service Status Severity
-        service_severity = ServiceStatus.objects.filter(
+        )
+        # ServiceStatus Severity
+        service_severity = self.getSeverity(
+            table_name='performance_servicestatus', 
+            machine_name=machine_name, 
             device_name=device_name
-        ).values_list('severity', flat=True).using(alias=machine_name)
+        )
 
         total_severity_list = list()
 
@@ -1785,6 +1834,42 @@ class GetServiceStatus(View):
                 return display_time(tt_sec)
         else:
             return current_value
+
+    def getSeverity(self, table_name=None, machine_name=None, device_name=None, service_name=None):
+        """
+
+        """
+        severity_list = list()
+        if not device_name or not table_name or not machine_name:
+            return severity_list
+
+        if service_name:
+            severity_query = "select GROUP_CONCAT(severity) as severity from {0} where device_name = '{1}' and service_name = '{2}' group by service_name".format(
+                table_name,
+                device_name,
+                service_name
+            )
+        else:
+            severity_query = "select GROUP_CONCAT(severity) as severity from {0} where device_name = '{1}' group by service_name".format(
+                table_name,
+                device_name
+            )
+        # Execute Query to get severity data
+        severity_response = nocout_utils.fetch_raw_result(query=severity_query, machine=machine_name)
+
+        for severity in severity_response:
+            if 'warn' in severity['severity'] or 'warning' in severity['severity'] or 'down' in severity['severity'] or 'critical' in severity['severity'] or 'crit' in severity['severity']:
+                if 'down' in severity['severity'] or 'critical' in severity['severity'] or 'crit' in severity['severity']:
+                    severity_list.append('crit')
+                else:
+                    severity_list.append('warning')
+            else:
+                if 'ok' in severity['severity'] or 'success' in severity['severity'] or 'up' in severity['severity']:
+                    severity_list.append('ok')
+                else:
+                    severity_list.append('unknown')
+
+        return severity_list
 
 
 class ServiceDataSourceHeaders(ListView):

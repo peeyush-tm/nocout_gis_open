@@ -739,6 +739,15 @@ function nocoutPerfLib() {
 
                             if ($("#last_updated_" + tab_content_dom_id).length > 0) {
                                 perf_that.resetLivePolling(tab_content_dom_id);
+                                // add 'only_service' param to querystring if unified view
+                                var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+                                if (view_type == 'unified') {
+                                    if (serviceDataUrl.indexOf('?') > -1) {
+                                        serviceDataUrl += '&only_service=1';
+                                    } else {
+                                        serviceDataUrl += '?only_service=1';
+                                    }
+                                }
                                 // get the service status for that service
                                 perfInstance.getServiceStatus(serviceDataUrl, is_exact_url, function(response_type,data_obj) {
                                     if (response_type == 'success') {
@@ -749,6 +758,7 @@ function nocoutPerfLib() {
                                     }
                                 });
                             }
+
                             if (
                                 (
                                     !show_historical_on_performance
@@ -808,6 +818,15 @@ function nocoutPerfLib() {
                         // show loading spinner
                         // showSpinner();
                         if ($("#last_updated_" + active_tab_content_dom_id).length > 0) {
+                            // add 'only_service' param to querystring if unified view
+                            var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+                            if (view_type == 'unified') {
+                                if (active_tab_url.indexOf('?') > -1) {
+                                    active_tab_url += '&only_service=1';
+                                } else {
+                                    active_tab_url += '?only_service=1';
+                                }
+                            }
                             perfInstance.getServiceStatus(active_tab_url, is_exact_url, function(response_type,data_obj) {
                                 if (response_type == 'success') {
                                     // Call function to populate latest status for this service
@@ -956,7 +975,7 @@ function nocoutPerfLib() {
         }
 
         // If birdeye view then show header with DS
-        if (is_birdeye_view) {
+        if (clicked_tab_id.indexOf('bird') > -1) {
             listing_headers = default_live_table_headers_with_ds;
         }
 
@@ -981,7 +1000,7 @@ function nocoutPerfLib() {
         start_date = "";
         end_date = "";
 
-        if (startDate && endDate && !is_birdeye_view) {
+        if (startDate && endDate && clicked_tab_id.indexOf('bird') == -1) {
             
             var myStartDate = startDate.toDate(),
                 myEndDate = endDate.toDate();
@@ -1103,7 +1122,7 @@ function nocoutPerfLib() {
             var urlDataStartDate = '', urlDataEndDate = '';
             if (ajax_start_date == '' && ajax_end_date == '') {
                 // Pass
-            } else if(is_birdeye_view) {
+            } else if(clicked_tab_id.indexOf('bird') > -1) {
                 // Pass
             } else {
                 var end_Date = "";
