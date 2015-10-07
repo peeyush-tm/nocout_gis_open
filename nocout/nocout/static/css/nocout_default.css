@@ -675,4 +675,6 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   background-color: #FFFFFF;
   border-bottom: 1px solid #DDDDDD;
 }
-
+.severity_block {
+  cursor: pointer;
+}

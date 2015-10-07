@@ -272,20 +272,20 @@
                         </a>
                     </li>
 
-                    {% if settings.ENABLE_TOPO_VIEW %}
-                    <li>
-                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
-                            <i class="fa fa-ellipsis-v">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
                     {% if settings.ENABLE_BIRDEYE_VIEW %}
                     <li>
                         <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
                             <i class="fa fa-ellipsis-v">&nbsp;</i>
                             <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_TOPO_VIEW %}
+                    <li>
+                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
                         </a>
                     </li>
                     {% endif %}
@@ -454,7 +454,8 @@
             bs_id = "",
             all_services_list = [],
             perf_base_url = '',
-            clicked_tab_id = '';
+            clicked_tab_id = '',
+            severity_wise_data_api = '';
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -473,6 +474,12 @@
             inventory_url = "";
             alert_url = "";
 
+            severity_wise_data_api = "{% url 'get_severity_wise_status' %}";
+
+            if (severity_wise_data_api) {
+                severity_wise_data_api = getCompleteUrl(severity_wise_data_api);
+            }
+
             if (!service_view_type || !$.cookie("service_view_type")) {
                 $.cookie("service_view_type", 'normal', {path: '/'})
                 service_view_type = 'normal';
@@ -486,6 +493,8 @@
         });
 
         function initPerformancePage(is_first_triggered) {
+
+            isLatestStatusUpdated = false;
 
             if ($.cookie("service_view_type") == 'normal') {
                 default_live_table_headers = default_live_table_headers_without_ds;
