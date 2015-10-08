@@ -16,10 +16,6 @@
 {% block content_title %}Base Station Wizard {% endblock %}
 {% block content_description %}List of base station{% endblock %}
 {% block content %}
-        {% if perms.inventory.add_basestation %}
-        <p><a href="{% url 'gis-wizard-base-station-select' %}"><i class="fa fa-plus">&nbsp;</i> Start Gis Wizard</a></p>
-        {% endif %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>BASE STATION LISTING</h4>
@@ -38,6 +34,16 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% if perms.inventory.add_basestation %}
+                var create_url = "{% url 'gis-wizard-base-station-select' %}",
+                    create_link_html = '<a href="' + create_url + '" title="Start Gis Wizard" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/

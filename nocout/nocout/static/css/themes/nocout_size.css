@@ -239,7 +239,7 @@ table.dataTable thead th, table.dataTable tfoot th {
   padding: 0;
 }
 .sidebar-menu > ul > li.active > a {
-  border: none;
+  /*border: none;*/
   text-shadow: none;
 }
 .box .header-tabs .nav-tabs > li:first-child {
