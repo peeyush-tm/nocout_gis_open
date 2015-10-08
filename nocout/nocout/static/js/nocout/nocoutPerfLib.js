@@ -561,14 +561,14 @@ function nocoutPerfLib() {
                                         var tab_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'icon_class' : 'fa fa-arrow-circle-o-right',
+                                                'icon_class' : 'fa ' + default_left_tab_icon,
                                                 'api_url' : value.url,
                                                 'title' : value.title
                                             },
                                             content_info_obj = {
                                                 'active_class' : active_class,
                                                 'unique_key' : unique_item_key,
-                                                'show_last_updated' : true
+                                                'show_last_updated' : true,
                                             };
 
 
@@ -640,7 +640,7 @@ function nocoutPerfLib() {
                                                         var inner_tab_info_obj = {
                                                                 'active_class' : inner_active_class,
                                                                 'unique_key' : id + "_" + unique_item_key,
-                                                                'icon_class' : 'fa fa-caret-right',
+                                                                'icon_class' : 'fa fa-clock-o',
                                                                 'api_url' : data_url,
                                                                 'title' : title
                                                             };
@@ -801,6 +801,15 @@ function nocoutPerfLib() {
             },
             complete: function () {
                 if (active_tab_url && active_tab_id) {
+                    // remove the 'active_left_tab_icon' class from all link (if exists)
+                    $('.left_tabs_container li a i').removeClass(active_left_tab_icon);
+                    //  Add 'default_left_tab_icon' class to active link
+                    $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                    //  Add 'active_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').addClass(active_left_tab_icon);
+                    //  Remove 'default_left_tab_icon' class to active link
+                    $('#' + active_tab_id + '_tab i').removeClass(default_left_tab_icon);
+
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
                     nocout_destroyDataTable('other_perf_table');

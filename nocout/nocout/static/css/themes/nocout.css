@@ -277,7 +277,7 @@
   color: #ca1e25;
   /*background-color: #ebebeb;*/
   }
-.btn:hover .text-primary {
+.btn-default:hover .text-primary {
   color: #ca1e25;
   background-color: transparent;
 }

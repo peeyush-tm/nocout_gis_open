@@ -25,13 +25,12 @@
     i.fa-line-chart {
         cursor: pointer;
     }
-    #wimax_block .tab-content{
-        top:-30px;
+     .tab-content{
+        margin-top:-30px;
     }
     #wimax_block .box .box-title{
         border-bottom: 0px none !important;
-    }
-    
+    }   
 
 </style>
 
@@ -49,13 +48,14 @@
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
                 <div class="tab-pane active" id="wimax_block">
-                    <div class="tab-rf-perf">               
+                    <div class="tab-rf-perf">
+                        <h4 class="bigger dashboard_headings">- RSSI</h4>
                         <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">                         
                             <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
                                     <h5 class="bigger">
-                                        UL RSSI <span id="ul_rssi_timestamp"></span>
+                                        UL  <span id="ul_rssi_timestamp"></span>
                                         <i class="fa fa-line-chart text-success pull-right" id="ul_rssi_trend" title="UL RSSI Trends">&nbsp;</i>
                                     </h5 class="bigger">
                                 </div>
@@ -69,7 +69,7 @@
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
                                     <h5 class="bigger">
-                                        DL RSSI <span id="dl_rssi_timestamp"></span>
+                                        DL <span id="dl_rssi_timestamp"></span>
                                         <i class="fa fa-line-chart text-success pull-right" id="dl_rssi_trend" title="DL RSSI Trends">&nbsp;</i>
                                     </h5>
                                 </div>
@@ -78,6 +78,7 @@
                                 </div>
                             </div>
                         </div>
+                        <h4 class="bigger dashboard_headings">- CINR</h4>
                         <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
                             <div class="custom_seperator">&nbsp;</div>
                             <div class="box">
@@ -108,6 +109,7 @@
                                 </div>
                             </div>
                         </div>
+                        <h4 class="bigger dashboard_headings">- Modulation</h4>
                         <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
                             <div class="custom_seperator">&nbsp;</div>                          
                             <div class="box">
