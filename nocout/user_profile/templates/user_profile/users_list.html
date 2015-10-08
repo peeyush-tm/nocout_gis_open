@@ -16,46 +16,41 @@
 {% block content_title %}Users Management{% endblock %}
 {% block content_description %}List of users{% endblock %}
 {% block content %}
-    {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' %}
-            <p><a href="/user/new"><i class="fa fa-plus">&nbsp;</i> Create User</a></p>
-        {% endif %}
-    {% endfor %}
     <div class="box border lite">
-    <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-table"></i>USER LISTING</h4>
-    </div>
-    <div class="box-body">
-        <div class="tabbable header-tabs">
-            <ul class="nav nav-tabs">
-                <li>
-                    <a href="#UserArchivedListing" id="userArchived_tab" data-toggle="tab">
-                        <span class="hidden-inline-mobile">Archived User Listing</span>
-                    </a>
-                </li>
-                <li class="active">
-                    <a href="#UserListing" id="user_tab" data-toggle="tab">
-                        <span class="hidden-inline-mobile">User Listing</span>
-                    </a>
-                </li>
-            </ul>
-            <div class="tab-content user_tab_content" style="overflow: auto;">
-                <div class="tab-pane in active" id="UserListing">
-                    <table id="UserListingTable" class="datatable table table-striped table-bordered table-hover">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div class="tab-pane" id="UserArchivedListing">
-                    <table id="UserArchivedListingTable" class="datatable table table-striped table-bordered table-hover">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>USER LISTING</h4>
+        </div>
+        <div class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#UserArchivedListing" id="userArchived_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">Archived User Listing</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#UserListing" id="user_tab" data-toggle="tab">
+                            <span class="hidden-inline-mobile">User Listing</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="tab-content user_tab_content" style="overflow: auto;">
+                    <div class="tab-pane in active" id="UserListing">
+                        <table id="UserListingTable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="UserArchivedListing">
+                        <table id="UserArchivedListingTable" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-{#    </div>#}
 {% endblock %}
 
 {% block jquery %}
@@ -73,6 +68,16 @@
             delete_user_url = '';
 
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% for group in user.groups.all %}
+                {% if group.name == 'group_admin' %}
+                    var create_link_html = '<a href="/user/new" title="Create User" \
+                                            class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                    $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+                {% endif %}
+            {% endfor %}
 
             user_soft_delete_url = "{% url 'user_soft_delete' 123 1111111 %}";
             restore_user_url = "{% url 'restore_user' 123 %}";
