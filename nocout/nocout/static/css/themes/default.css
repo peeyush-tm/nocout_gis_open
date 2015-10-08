@@ -795,7 +795,7 @@ i.text-success:hover {
 .row.col-md-4:hover div.pull-right i.trends_icon{
   color:#5e87b0 !important;
 }
-.tab-rf-perf .box-container:hover i.text-success {
+.tab-rf-perf .box-container:hover i.rf_trends {
   color:#5e87b0 !important;
 }
 .btn-default:hover,
@@ -805,7 +805,7 @@ i.text-success:hover {
 .open .dropdown-toggle.btn-default{
   color:#5e87b0!important;
 }
-.btn:hover .text-primary {
+.btn-default:hover .text-primary {
   color:#5e87b0!important;
 }
 .orgTitle{

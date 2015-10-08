@@ -277,7 +277,7 @@
   color: #ca1e25;
   /*background-color: #ebebeb;*/
   }
-.btn:hover .text-primary {
+.btn-default:hover .text-primary {
   color: #ca1e25;
   background-color: transparent;
 }
@@ -390,6 +390,6 @@ i.trends_icon:hover {
 .row.col-md-4:hover div.pull-right i.trends_icon{
   color:#ca1e25;
 }
-.tab-rf-perf .box-container:hover i.text-success {
+.tab-rf-perf .box-container:hover i.rf_trends {
   color:#ca1e25 !important;
 }

@@ -455,7 +455,9 @@
             all_services_list = [],
             perf_base_url = '',
             clicked_tab_id = '',
-            severity_wise_data_api = '';
+            severity_wise_data_api = '',
+            default_left_tab_icon = 'fa-circle-o',
+            active_left_tab_icon = 'fa-dot-circle-o';
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -810,7 +812,8 @@
 
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
-                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length) {
+                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
+                    console.log($('#' + activeTabId).parent('li'));
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
@@ -826,6 +829,14 @@
         $("body").delegate('.left_tabs_container li','click',function(e) {
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
+                // remove the 'active_left_tab_icon' class from all link (if exists)
+                $('.left_tabs_container li a i').removeClass(active_left_tab_icon);
+                //  Add 'default_left_tab_icon' class to active link
+                $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                //  Add 'active_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).addClass(active_left_tab_icon);
+                //  Remove 'default_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).removeClass(default_left_tab_icon);
 
                 nocout_destroyDataTable('other_perf_table');
                 nocout_destroyDataTable('perf_data_table');

@@ -636,6 +636,7 @@ table.dataTable thead th, table.dataTable tfoot th{
 /*Full Screen Button*/
 .transitionbtn, 
 .controls_container ul li a.btn-sm {
+  border:1px solid rgba(0, 0, 0, 0.1) !important;
   border-radius: 2px;
   transition-property: background, border-radius;
   transition-duration: 0.2s;
@@ -647,7 +648,7 @@ table.dataTable thead th, table.dataTable tfoot th{
 .transitionbtn:hover,
 .controls_container ul li a.btn-sm:hover {
   border-radius: 50% !important;
-  background: transparent !important;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.2) !important;
 }
 .box .header-tabs .nav-tabs > li {
   border-right: 1px inset #dddddd !important;
@@ -672,6 +673,8 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   border-bottom: 3px solid transparent;
 }
 #goFullScreen {
+  margin-left: -3px;
+  border:1px solid rgba(0, 0, 0, 0.1);
   margin-left: -3px;
 }
 
