@@ -142,7 +142,7 @@
 }
 .sidebar-menu > ul > li.active > a {
   background: #FAFAFA !important;
-  border-top-color: transparent !important;
+  /*border-top-color: transparent !important;*/
   color: #fff;
 }
 .sidebar-menu > ul > li > a.open {

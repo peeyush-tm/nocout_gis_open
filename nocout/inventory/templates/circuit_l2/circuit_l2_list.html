@@ -6,7 +6,12 @@
     <!-- Create Breadcrumbs -->
     {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "GIS Inventory" "javascript:;" %}
-    {% breadcrumb_safe "Circuit L2 Reports" "l2_report" %}
+    {% if page_type == 'individual' and key == 'circuit' %}
+        {% breadcrumb_safe "Circuit Reports" "l2_report" %}
+    {% endif %}
+    {% if page_type == 'individual' and key == 'bs' %}
+        {% breadcrumb_safe "Basestation Reports" "l2_report" %}
+    {% endif %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 {% endblock %}
@@ -16,16 +21,6 @@
 {% block content_title %}Circuit L2 Reports Management{% endblock %}
 {% block content_description %}List of Circuit L2 Reports{% endblock %}
 {% block content %}
-    {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' or group.name == 'group_operator' %}
-            {% if page_type == 'individual' and key == 'circuit' %}
-                <p><a href="/circuit/{{ circuit_id }}/l2_reports/create/"><i class="fa fa-plus">&nbsp;</i> Upload Report</a></p>
-            {% endif %}
-            {% if page_type == 'individual' and key == 'bs' %}
-                <p><a href="/base_station/{{ bs_id }}/l2_reports/create/"><i class="fa fa-plus">&nbsp;</i> Upload Report</a></p>
-            {% endif %}
-        {% endif %}
-    {% endfor %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> L2 REPORTS LISTING</h4>
@@ -79,6 +74,26 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% for group in user.groups.all %}
+                {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+
+                    {% if page_type == 'individual' and key == 'circuit' %}
+                        var create_link_html = '<a href="/circuit/{{ circuit_id }}/l2_reports/create/" title="Upload Report" \
+                                                class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+                    {% endif %}
+                    {% if page_type == 'individual' and key == 'bs' %}
+                        var create_link_html = '<a href="/base_station/{{ bs_id }}/l2_reports/create/" title="Upload Report" \
+                                                class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+                    {% endif %}
+
+                    if (typeof create_link_html != 'undefined') {
+                        $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+                    }
+                {% endif %}
+            {% endfor %}
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}'),
