@@ -23,17 +23,19 @@ function initRfDashboard() {
         hideSpinner();
     }
 
-
-
-    if(show_rf_perf_column){
-        var col_no = 12/Number(show_rf_perf_column);
-        if (col_no == 2) {
-            $(".tab-rf-perf .box-container:even-child").after( "<div class='clearfix'></div><hr style='margin-top:0px;width:100%;'/>" );
-            $(".tab-rf-perf .box-container:even-child .custom_seperator").hide();            
-        } else {
-            $(".tab-rf-perf .box-container:nth-child("+col_no+"n)").after( "<div class='clearfix'></div><hr style='margin-top:0px;width:100%;'/>" );
-            $(".tab-rf-perf .box-container:nth-child("+col_no+"n) .custom_seperator").hide();            
+    try {
+        if(show_rf_perf_column){
+            var col_no = 12/Number(show_rf_perf_column);
+            if (col_no == 2) {
+                $(".tab-rf-perf .box-container:even-child").after( "<div class='clearfix'></div><hr style='margin-top:0px;width:100%;'/>" );
+                $(".tab-rf-perf .box-container:even-child .custom_seperator").hide();            
+            } else {
+                $(".tab-rf-perf .box-container:nth-child("+col_no+"n)").after( "<div class='clearfix'></div><hr style='margin-top:0px;width:100%;'/>" );
+                $(".tab-rf-perf .box-container:nth-child("+col_no+"n) .custom_seperator").hide();            
+            }
         }
+    } catch(e) {
+        // console.error(e);
     }
 }
 
