@@ -228,11 +228,23 @@ var App = function () {
 
             // Highcharts reflow event as per width change
             if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    active_dom_id = active_tab_obj.active_dom_id;
+                
+                if (typeof clicked_tab_id != 'undefined' && clicked_tab_id.indexOf('bird') > -1) {
+                    
+                    var service_list = typeof all_services_list != 'undefined' ? all_services_list : [];
 
-                if ($('#' + active_dom_id + '_chart').highcharts()) {
-                    $('#' + active_dom_id + '_chart').highcharts().reflow();
+                    for (var i=0;i<service_list.length;i++) {
+                        if ($('#' + service_list[i]['id'] + '_chart').highcharts()) {
+                            $('#' + service_list[i]['id'] + '_chart').highcharts().reflow();
+                        }
+                    }
+                } else {
+                    var active_tab_obj = nocout_getPerfTabDomId(),
+                        active_dom_id = active_tab_obj.active_dom_id;
+
+                    if ($('#' + active_dom_id + '_chart').highcharts()) {
+                        $('#' + active_dom_id + '_chart').highcharts().reflow();
+                    }
                 }
             }
         });

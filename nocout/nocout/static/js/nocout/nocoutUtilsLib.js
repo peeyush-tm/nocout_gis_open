@@ -34,7 +34,11 @@ var green_color = "#468847",
                                background: -ms-linear-gradient(left, xxxx 0%,yyyy 100%); \
                                background: linear-gradient(to right, xxxx 0%,yyyy 100%); \
                                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr="xxxx", endColorstr="yyyy",GradientType=1 );',
-    default_legends_bg = '#343435';
+    default_legends_bg = '#343435',
+    parallel_calling_len = 3,
+    birdeye_start_counter = 0,
+    birdeye_end_counter = parallel_calling_len,
+    is_mouse_out = true;
 
 
 /**
@@ -77,10 +81,10 @@ function populateDeviceStatus_nocout(domElement,info) {
                     <b>Since</b> : ' + age + '</td>\
                     <td class="one_fourth_column vAlign_middle">\
                     <b>Last Down Time</b> : ' + lastDownTime + '</td>\
-                    <td title="OK" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
-                    <td title="Warning" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
-                    <td title="Critical" class="severity_block vAlign_middle" style="background:' + red_color + ';">' + severity_crit + '</td>\
-                    <td title="Unknown" class="severity_block vAlign_middle" \
+                    <td data-severity="ok" title="Click to see all up services" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
+                    <td data-severity="warning" title="Click to see all warning services" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
+                    <td data-severity="critical" title="Click to see all critical services" class="severity_block vAlign_middle" style="background:' + red_color + ';">' + severity_crit + '</td>\
+                    <td data-severity="unknown" title="Click to see all unknown services" class="severity_block vAlign_middle" \
                     style="background:' + unknown_severity_color + ';">' + severity_unknown + '</td>\
                     </tr></table>';
 
@@ -139,25 +143,36 @@ function populateServiceStatus_nocout(domElement,info) {
 
     // if (!is_perf_polling_enabled) {
         /********** Service Status Without Live Polling  - START     ********************/
-        if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "") {
+        if ($.trim(info.last_updated) !== "" || $.trim(info.perf) !== "" || $.trim(info.status) !== "") {
             var last_updated = info.last_updated ? info.last_updated : "N/A",
                 perf = info.perf ? info.perf : "N/A",
                 status = info.status ? info.status.toUpperCase() : "",
-                txt_color = "",
-                fa_icon_class = "",
-                inner_status_html = '',
-                severity_style_obj = nocout_getSeverityColorIcon(status);
+                severity_style_obj = nocout_getSeverityColorIcon(status)
+                txt_color = severity_style_obj.color ? severity_style_obj.color : "",
+                fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle",
+                inner_status_html = '';
 
-            txt_color = severity_style_obj.color ? severity_style_obj.color : "";
-            fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle";
-            inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
-                                  <tr style="color:'+txt_color+';"><td>\
-                                  <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
-                                  style="vertical-align: middle;"> </i> \
-                                  <b>Performance Output</b> : ' + perf + '</td>\
-                                  <td><b>Updated At</b> : ' + last_updated + '</td>\
-                                  </tr>\
-                                  </table><div class="clearfix"></div><div class="divide-20"></div>';
+            var view_type = $.trim($('input[name="service_view_type"]:checked').val());
+
+            if (view_type == 'unified') {
+                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                      <tr style="color:'+txt_color+';"><td>\
+                                      <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                      style="vertical-align: middle;"> </i> \
+                                      <strong>Current Status:</strong> ' + status + '</td>\
+                                      <td><strong>Updated At:</strong> ' + last_updated + '</td>\
+                                      </tr>\
+                                      </table><div class="clearfix"></div><div class="divide-20"></div>';
+            } else {
+                inner_status_html = '<table id="perf_output_table" class="table table-responsive table-bordered">\
+                                      <tr style="color:'+txt_color+';"><td>\
+                                      <i title = "' + status + '" class="fa ' + fa_icon_class + '" \
+                                      style="vertical-align: middle;"> </i> \
+                                      <strong>Performance Output: </strong> ' + perf + '</td>\
+                                      <td><strong>Updated At: </strong> ' + last_updated + '</td>\
+                                      </tr>\
+                                      </table><div class="clearfix"></div><div class="divide-20"></div>';
+            }
 
             $("#" + domElement).html(inner_status_html);
         } else {
@@ -196,7 +211,7 @@ function populateServiceStatus_nocout(domElement,info) {
     //                             ' + val_icon + ' ' + perf + '<br/>\
     //                             ' + time_icon + ' ' + last_updated + '</td>';
     //         inner_status_html += '<td style="width:5%;vertical-align: middle;text-align:center;">\
-    //                              <button class="btn btn-primary btn-xs perf_poll_now"\
+    //                              <button class="btn btn-primary btn-xs single_perf_poll_now"\
     //                              title="Poll Now" data-complete-text="<i class=\'fa fa-flash\'></i>" \
     //                              data-loading-text="<i class=\'fa fa-spinner fa fa-spin\'> </i>">\
     //                              <i class="fa fa-flash"></i></button>\
@@ -262,8 +277,10 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         excel_columns = [];
 
     // Destroy Datatable
-    nocout_destroyDataTable('other_perf_table');
-    nocout_destroyDataTable('perf_data_table');
+    if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') == -1) {
+        nocout_destroyDataTable('other_perf_table');
+        nocout_destroyDataTable('perf_data_table');
+    }
 
     table_string += '<table id="' + service_id + '_'+ table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
@@ -273,7 +290,6 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
     }
     table_string += '</thead></table>';
     /*Table header creation end*/
-
 
     if (service_id) {
         $('#' + service_id + '_chart').html(table_string);
@@ -306,6 +322,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         sPaginationType: "full_numbers"
     });
 }
+// 69-75
 
 /**
  * This function creates blank data table for chart data as per given params
@@ -316,11 +333,19 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_url, has_headers) {
 
-    var data_in_table = "<table id='" + service_id + '_' + table_id + "' class='datatable table table-striped table-bordered table-hover'><thead>";
+    var data_in_table = "<table id='" + service_id + '_' + table_id + "' \
+                         class='datatable table table-striped table-bordered table-hover'><thead>";
+        is_birdeye_view = false;
 
-    // Destroy Datatable
-    nocout_destroyDataTable('other_perf_table');
-    nocout_destroyDataTable('perf_data_table');
+    if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
+    }
+
+    if (!is_birdeye_view) {
+        // Destroy Datatable
+        nocout_destroyDataTable('other_perf_table');
+        nocout_destroyDataTable('perf_data_table');
+    }
 
     /*Table header creation end*/
     if (service_id) {
@@ -408,7 +433,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         applied_adv_filter = '[]';
 
     // append 'advance_filter' GET param to url if exists.
-    if ($('#'+service_id+'_tab').attr('data_url')) {
+    if ($('#'+service_id+'_tab').attr('data_url') && !is_birdeye_view) {
         var filtering_url = $('#'+service_id+'_tab').attr('data_url');
         applied_adv_filter = filtering_url.indexOf('advance_filter=') ? filtering_url.split('advance_filter=')[1] : '[]';
         
@@ -425,7 +450,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
 
     for(var i=0;i<get_param_string.length;i++) {
         var splitted_string = get_param_string[i].split("=");
-        if (splitted_string[1] != undefined) {
+        if (splitted_string[1] != 'undefined') {
             if (i == get_param_string.length-1) {
                 get_param_data += "'" + splitted_string[0] + "':'" + splitted_string[1] + "'";
             } else {
@@ -434,13 +459,19 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         }
     }
     
-    if ($(".top_perf_tabs").length > 0) {
-        var 
-            top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
-            left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
-            top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
-            left_tab_txt = $.trim($("#" +left_tab_id).text()),
-            report_title = "";
+    if ($(".top_perf_tabs").length > 0 && !is_birdeye_view) {
+        var report_title = "";
+        try {
+            var top_tab_id = $(".top_perf_tabs > li.active a").attr('href'),
+                left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
+                top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
+                left_tab_txt = $.trim($("#" +left_tab_id).text());
+        } catch(e) {
+            var top_tab_id = '#' + clicked_tab_id + '_tab',
+                left_tab_id = $(top_tab_id + " .left_tabs_container li.active a")[0].id,
+                top_tab_text = $.trim($(".top_perf_tabs > li.active a")[0].text),
+                left_tab_txt = $.trim($("#" +left_tab_id).text());
+        }
 
         if (show_historical_on_performance) {
             try {
@@ -584,7 +615,48 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
     // Is the y axis should be reversed or not
     var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false,
         legends_color = text_color ? text_color : "#FFF",
-        xMinRange = chartConfig["x_min_range"] ? chartConfig["x_min_range"] : 3600000;
+        xMinRange = chartConfig["x_min_range"] ? chartConfig["x_min_range"] : 3600000,
+        yAxisObj = '',
+        is_display_name = typeof chartConfig['chart_display_name'] != 'undefined',
+        exported_filename = '';
+
+    try {
+        exported_filename = is_display_name ? chartConfig.chart_display_name + '_' + current_device_ip : current_device_ip;
+    } catch(e) {
+        exported_filename = 'Performance Chart'
+    }
+
+    // Create yAxis data as per the given params
+    if (typeof chartConfig.valuetext == 'string') {
+        yAxisObj = {
+            title : {
+                text : chartConfig.valuetext
+            },
+            reversed : is_y_inverted
+        };
+    } else if(chartConfig['valuetext'] && chartConfig['valuetext'].length) {
+        yAxisObj = [];
+        for(var i=0;i<chartConfig.valuetext.length;i++) {
+            var opposite = false;
+            if (i == chartConfig.valuetext.length -1) {
+                opposite = true;
+            }
+            yAxisObj.push({
+                title : {
+                    text : chartConfig.valuetext[i]
+                },
+                reversed : is_y_inverted,
+                opposite : opposite
+            })
+        }
+    } else {
+        yAxisObj = {
+            title : {
+                text : ''
+            },
+            reversed : is_y_inverted
+        };
+    }
 
     var chart_options = {
         chart: {
@@ -645,9 +717,13 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 fontSize : '12px'
             }
         },
-        // exporting:{
-        //     url:'http://localhost:8080/highcharts-export-web/'
-        // },
+        exporting:{
+            // url:'http://localhost:8080/highcharts-export-web/',
+            enabled : true,
+            sourceWidth: 950,
+            sourceHeight: 375,
+            filename: exported_filename
+        },
         tooltip: {
             formatter: function () {
                 var this_date = new Date(this.x),
@@ -707,12 +783,7 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
                 year: '%Y'
             }
         },
-        yAxis: {
-            title : {
-                text : chartConfig.valuetext
-            },
-            reversed : is_y_inverted
-        },
+        yAxis: yAxisObj,
         plotOptions : {
             column : {
                 borderWidth : 0,
@@ -731,8 +802,22 @@ function createHighChart_nocout(chartConfig, dom_id, text_color, need_extra_conf
             chart_options["yAxis"]["max"] = 100;
             chart_options["plotOptions"]["series"] = {stacking: 'normal'};
         }
+
+        if ($('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1) {
+            chart_options["exporting"] = {};
+            chart_options["exporting"]["enabled"] = false;
+        }
     } catch(e) {
         // pass
+        // console.error(e);
+    }
+
+    if ($('#'+dom_id+'_chart').hasClass('charts_block')) {
+        if (dom_id.indexOf('ping') > -1) {
+            $('#'+dom_id+'_chart').attr('style', 'height:350px;');
+        } else {
+            $('#'+dom_id+'_chart').attr('style', 'height:250px;');
+        }
     }
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts(chart_options);
@@ -1010,7 +1095,7 @@ function nocout_livePollCurrentDevice(
             // If call is from single device page then proceed else return data
             if (container_dom_id) {
                 // Enable the "Poll Now" button
-                $("#" + container_dom_id + " #perf_output_table tr td:nth-child(2) .perf_poll_now").button("complete");
+                $("#" + container_dom_id + " #perf_output_table tr td:nth-child(2) .single_perf_poll_now").button("complete");
             }
         }
     });
@@ -1134,7 +1219,7 @@ function initSingleDevicePolling(callback) {
 
     if (device_name.length > 0 && service_name.length > 0 && ds_name.length > 0) {
         // Disable the "Poll Now" button
-        $("#"+container_id+" #perf_output_table tr td:nth-child(2) .perf_poll_now").button("loading");
+        $("#"+container_id+" #perf_output_table tr td:nth-child(2) .single_perf_poll_now").button("loading");
 
         var active_tab_obj = nocout_getPerfTabDomId(),
             dom_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
@@ -1424,6 +1509,18 @@ function nocout_getPerfTabDomId() {
         },
         top_tab_content_id = $(".top_perf_tabs > li.active a").attr("href");
 
+    var is_singular_view = false;
+
+    if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
+        var is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1,
+            is_topo_view = clicked_tab_id.indexOf('topo') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('topo') > -1;
+        is_singular_view = is_birdeye_view || is_topo_view;
+    }
+
+    if (is_singular_view) {
+        return response_dict;
+    }
+
     if(show_historical_on_performance || is_perf_polling_enabled) {
         var left_tab_content_id = $(top_tab_content_id + " .left_tabs_container li.active a").attr("href"),
             active_inner_tab = $(left_tab_content_id + " .inner_inner_tab li.active a");
@@ -1480,8 +1577,8 @@ function nocout_stopPollNow() {
     isPollingPaused = 0;
     $("#" + tab_id + "_block .poll_play_btn").button('complete');
 
-    if($("#" + tab_id + "_block .perf_poll_now").hasClass("disabled")) {
-        $("#" + tab_id + "_block .perf_poll_now").removeClass("disabled");
+    if($("#" + tab_id + "_block .single_perf_poll_now").hasClass("disabled")) {
+        $("#" + tab_id + "_block .single_perf_poll_now").removeClass("disabled");
     }
 }
 
@@ -1699,3 +1796,214 @@ function calculateAverageValue(resultset, key) {
 
     return (total_val/resultset.length).toFixed(2);
 }
+
+function initBirdEyeView(container_id) {
+
+    if (typeof all_services_list != 'undefined' && all_services_list.length) {
+        // if birdeye view HTML is not created then first create it.
+        if($.trim($('#birdeye_container').html()).length == 0) {
+            createBirdEyeViewHTML(container_id);
+        }
+
+        populateBirdViewCharts(birdeye_start_counter, birdeye_end_counter);
+    } else {
+        return true;
+    }
+
+    hideSpinner();
+}
+
+function populateBirdViewCharts(start, end) {
+    for (var i=start;i<end;i++) {
+        if (all_services_list[i]) {
+            var api_url = perf_base_url,
+                srv_name = all_services_list[i].id;
+            
+            // Update url with actual service name
+            api_url = api_url.replace('srv_name', srv_name);
+
+            if (api_url.indexOf('?') > -1) {
+                api_url = api_url + '&service_view_type=unified'
+            } else {
+                api_url = api_url + '?service_view_type=unified'
+            }
+
+            api_url += '&only_service=1';
+
+            // Get Service Status (Closure function used)
+            (function(index) {
+                var srv = all_services_list[index].id;
+                perfInstance.getServiceStatus(api_url, false, function(response_type, data_obj) {
+                    var severity_status = data_obj['status'] ? data_obj['status'] : 'unknown',
+                        status_since = data_obj['last_updated'] ? data_obj['last_updated'] : 'NA',
+                        severity_style_obj = nocout_getSeverityColorIcon(severity_status),
+                        txt_color = severity_style_obj.color ? severity_style_obj.color : "",
+                        fa_icon_class = severity_style_obj.icon ? severity_style_obj.icon : "fa-circle",
+                        status_html = '<td title="Status"><i class="fa '+fa_icon_class+'"></i></td>\
+                                       <td title="Status Since"><strong>Since:</strong> '+status_since+'</td>';
+                    // Change the color of row as per severity
+                    $('#' + srv + '_status_table tbody tr:first-child').css('color', txt_color);
+                    $('#' + srv + '_status_table tbody tr:first-child').html(status_html);
+                });
+            }(i));
+
+            // call function to fetch perf data for this service
+            perfInstance.getServiceData(api_url, srv_name, current_device);
+            if (!$('#' + srv_name + '_heading .fa-spinner').hasClass('hide')) {
+                $('#' + srv_name + '_heading .fa-spinner').addClass('hide');
+            }
+        }
+    }
+
+    if (end < all_services_list.length - 1) {
+        populateBirdViewCharts(end, end * 2)
+    }
+}
+
+
+function createBirdEyeViewHTML(container_id) {
+
+    var birdeye_html = '';
+
+    for(var i=0;i<all_services_list.length;i++) {
+        var not_ping = true;
+        if (all_services_list[i]['id'] == 'ping') {
+            birdeye_html += '<div class="col-md-12 row">';
+            not_ping = false;
+        } else {
+            not_ping = true;
+            var float_class = '';
+            if (i % 2 == 0) {
+                float_class = 'pull-right';
+            }
+
+            birdeye_html += '<div class="col-md-6 ' + float_class + ' row">';
+        }
+
+        if (not_ping) {
+            birdeye_html += '<div class="birdeye_title_block">';
+            birdeye_html += '<h4 class="zero_top_margin pull-left" id="' + all_services_list[i]['id'] + '_heading"> \
+                             ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>';
+            birdeye_html += '<table class="table-bordered pull-right" id="' + all_services_list[i]['id'] + '_status_table">';
+            birdeye_html += '<tbody><tr></tr></tbody>';
+            birdeye_html += '</table><div class="clearfix"></div></div>';
+        } else {
+            birdeye_html += '<h4 class="zero_top_margin" id="' + all_services_list[i]['id'] + '_heading"> \
+                             ' + all_services_list[i]['title'] + ' <i class="fa fa-spinner fa-spin"></i></h4>';
+        }
+                         
+        birdeye_html += '<div class="birdeye_view_charts">';
+        birdeye_html += '<div id="' + all_services_list[i]['id'] + '_chart" class="charts_block"></div>';
+        birdeye_html += '<div id="' + all_services_list[i]['id'] + '_bottom_table"></div>';
+        birdeye_html += '<div class="clearfix"></div>';
+        birdeye_html += '</div>';
+        birdeye_html += '</div>';
+
+        if (i % 2 == 0 || i == all_services_list.length - 1) {
+            birdeye_html += '<div class="clearfix"></div><hr/>';
+        }
+    }
+
+    $('#' + container_id).html(birdeye_html);
+}
+
+/**
+ * This event trigger when severity status block clicked
+ * @event click
+ */
+$('#status_container').delegate('#final_status_table .severity_block', 'click', function(e) {
+
+    // Show loading spinner
+    showSpinner();
+
+    var severity_list = ['ok', 'warning', 'critical', 'unknown'],
+        block_severity = $(this).data('severity') ? $.trim($(this).data('severity').toLowerCase()) : '',
+        count_txt = $(this).text() ? Number($.trim($(this).text())) : 0;
+
+    if (severity_list.indexOf(block_severity) > -1) {
+        if (count_txt > 0 && typeof severity_wise_data_api != 'undefined') {
+            var view_type = $.trim($('input[name="service_view_type"]:checked').val()),
+                get_params = '?severity=' + block_severity + '&device_id=' + current_device + '&view_type=' + view_type;
+            // Make ajax call
+            $.ajax({
+                url: severity_wise_data_api + get_params,
+                type: 'GET',
+                success: function(response) {
+                    var result = response;
+
+                    if (typeof result == 'string') {
+                        result = JSON.parse(result);
+                    }
+
+                    if (result['success']) {
+
+                        var dataset = result.data,
+                            table_html = '';
+                        
+                        table_html += '<table class="table table-bordered table-hover table-striped table-responsive">';
+                        table_html += '<thead>';
+                        table_html += '<tr> \
+                                            <th>Time</th> \
+                                            <th>Datasource</th> \
+                                            <th>Service</th> \
+                                            <th>Value</th> \
+                                            <th>Severity</th> \
+                                            <th>Warning Threshold</th> \
+                                            <th>Critical Threshold</th> \
+                                       </tr>';
+                        table_html += '</thead><tbody>';
+
+                        for (var i=0;i<dataset.length;i++) {
+                            table_html += '<tr> \
+                                                <td>' + dataset[i]['sys_timestamp'] + '</td> \
+                                                <td>' + dataset[i]['data_source'] + '</td> \
+                                                <td>' + dataset[i]['service_name'] + '</td> \
+                                                <td>' + dataset[i]['current_value'] + '</td> \
+                                                <td>' + dataset[i]['severity'] + '</td> \
+                                                <td>' + dataset[i]['warning_threshold'] + '</td> \
+                                                <td>' + dataset[i]['critical_threshold'] + '</td> \
+                                           </tr>';
+                        }
+
+                        table_html += '</tbody></table>';
+
+                        bootbox.dialog({
+                            message: '<div id="severity_wise_data_container" style="max-height: 450px; overflow: auto;"></div>',
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> SEVERITY WISE DATA - ' + block_severity.toUpperCase()
+                        });
+
+                        $(".modal-dialog").css("width","80%");
+
+                        $('#severity_wise_data_container').html(table_html);
+
+                    } else {
+                        $.gritter.add({
+                            // (string | mandatory) the heading of the notification
+                            title: block_severity + ' severity wise status',
+                            // (string | mandatory) the text inside the notification
+                            text: result.message,
+                            // (bool | optional) if you want it to fade out on its own or just sit there
+                            sticky: false
+                        });
+                    }
+                },
+                error: function(err) {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: block_severity + ' severity wise status',
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
+                },
+                complete: function() {
+                    // Hide loading spinner
+                    hideSpinner();
+                }
+            });
+        } else {
+            bootbox.alert("You don't have any services in '" + block_severity + "'");
+        }
+    }
+});

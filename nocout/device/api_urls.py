@@ -20,7 +20,7 @@ urlpatterns = [
     url(r'^edit_device_in_nms/(?P<pk>\d+)/$', api.EditDeviceInNMS.as_view()),
     url(r'^delete_device_from_nms/(?P<pk>\d+)/$', api.DeleteDeviceFromNMS.as_view(), name='delete_device_from_nms'),
     url(r'^modify_device_state/(?P<pk>\d+)/$', api.ModifyDeviceState.as_view(), name='modify_device_state'),
-    url(r'^sync_devices_in_nms/(?P<pk>\d+)/$', api.SyncDevicesInNMS.as_view(), name='sync_devices_in_nms'),
+    url(r'^sync_devices_in_nms/(?P<pk>\d+)/$', api.SyncDevicesInNMS_V2.as_view(), name='sync_devices_in_nms'),
     url(r'^remove_sync_deadlock/$', api.RemoveSyncDeadlock.as_view(), name='remove_sync_deadlock'),
     url(r'^edit_single_svc_display_data/(?P<dsc_id>\d+)/$', api.EditSingleServiceDisplayData.as_view()),
     url(r'^get_svc_para_table_data/(?P<device_name>\w+)/(?P<service_name>\w+)/(?P<template_id>\d+)/$',

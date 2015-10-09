@@ -11,9 +11,11 @@ from datetime import datetime, timedelta
 import socket
 import imp
 import time
+#from handlers.db_ops import *
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -73,24 +75,44 @@ def read_data(start_time, end_time, **kwargs):
     #end_time = datetime(2014, 6, 26, 18, 30)
     #start_time = end_time - timedelta(minutes=10)
     docs = []
+    """
     db = mongo_module.mongo_conn(
         host=kwargs.get('configs')[1],
         port=int(kwargs.get('configs')[2]),
         db_name=kwargs.get('db_name')
-    ) 
-    if db:
-	if start_time is None:
-            start_time = end_time - timedelta(minutes=15)
-        cur = db.kpi_data.find({
-            "sys_timestamp": {"$gt": start_time, "$lt": end_time}
-        })
-	configs1 = config_module.parse_config_obj()
-    	for config, options in configs1.items():
-            machine_name = options.get('machine')
-        for doc in cur:
-		local_timestamp = utility_module.get_epoch_time(doc.get('sys_timestamp'))
-		check_timestamp = utility_module.get_epoch_time(doc.get('check_timestamp'))
-        	t = (
+    )
+    """ 
+    key = nocout_site_name + "_kpi"
+    doc_len_key = key + "_len" 
+    memc_obj = db_ops_module.MemcacheInterface()
+    current_time = datetime.now()
+    memc = memc_obj.memc_conn
+    start_time = memc.get('performance_utilizationstatus')
+    print start_time
+    if start_time: 
+    	start_time = datetime.fromtimestamp(start_time)
+    if start_time and (start_time + timedelta(minutes=20)) < current_time:
+    	if start_time + timedelta(days=1) < current_time:
+		start_time = current_time -  timedelta(days=1)
+	print "....in...back up...stage"
+	print start_time
+	redis_obj=db_ops_module.RedisInterface()
+	t_stmp = start_time + timedelta(minutes=-(start_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        start_time =int(time.mktime(t_stmp.timetuple()))
+        current_time = current_time + timedelta(minutes=-(current_time.minute % 5))
+        current_time = current_time.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(current_time.timetuple()))
+	cur=redis_obj.zrangebyscore_dcompress(key,start_time,current_time)
+    else:		
+    	cur = memc_obj.retrieve(key,doc_len_key)
+    configs1 = config_module.parse_config_obj()
+    for config, options in configs1.items():
+	machine_name = options.get('machine')
+    for doc in cur:
+	local_timestamp = utility_module.get_epoch_time(doc.get('sys_timestamp'))
+	check_timestamp = utility_module.get_epoch_time(doc.get('check_timestamp'))
+        t = (
         		doc.get('device_name'),
         		doc.get('service_name'),
         		local_timestamp,
@@ -108,9 +130,9 @@ def read_data(start_time, end_time, **kwargs):
 			doc.get('refer'),
 			doc.get('age'),
 			machine_name	
-        	)
-            	docs.append(t)
-		t = ()
+        )
+	docs.append(t)
+	t = ()
      
     return docs
 

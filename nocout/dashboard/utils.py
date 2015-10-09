@@ -9,6 +9,8 @@ from django.conf import settings
 from django.db.models import Count
 from datetime import datetime, timedelta
 from django.utils.dateformat import format
+from django.db.models import Q
+import operator
 
 from dashboard.models import DashboardSetting
 from dashboard.config import dashboards
@@ -106,12 +108,13 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
             'sys_timestamp',
             'check_timestamp'
         ]
-
-    service_status_data = model.objects.filter(
-        device_name__in=machine_device_list,
-        service_name__icontains=service_name,
-        data_source=data_source
-    ).using(machine).values(*required_values)
+        # Check for radwin5k rssi(both rad5k_dl_rssi or rad5k_ul_rssi)   
+        query = reduce(operator.or_,(Q(device_name__in=machine_device_list,
+                                       service_name__icontains=list(servicename),
+                                       data_source=list(data_source)
+                ) for servicename in service_name))
+        service_status_data = model.objects.filter(query
+        ).using(machine).values(*required_values)    
 
     if data_source.strip().lower() in ['availability']:
         # availablity is a daily value

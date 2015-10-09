@@ -17,10 +17,11 @@ from datetime import datetime, timedelta
 import socket
 import imp
 import time
+#from handlers.db_ops import *
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 def main(**configs):
     """
     The entry point for the all the functions in this file,
@@ -91,22 +92,26 @@ def read_data(start_time, end_time, **kwargs):
     docs = []
     #end_time = datetime(2014, 6, 26, 18, 30)
     #start_time = end_time - timedelta(minutes=10)
-    docs = [] 
-    db = mongo_module.mongo_conn(
-        host=kwargs.get('configs')[1],
-        port=int(kwargs.get('configs')[2]),
-        db_name=kwargs.get('db_name')
-    ) 
-    if db:
-        cur = db.device_status_services_status.find({
-            "check_timestamp": {"$gt": start_time, "$lt": end_time}
-        })
-        configs = config_module.parse_config_obj()
-        for config, options in configs.items():
-                machine_name = options.get('machine')
-        for doc in cur:
-	    time = doc.get('time')
-            t = (
+    #docs = [] 
+    #db = mongo_module.mongo_conn(
+    #    host=kwargs.get('configs')[1],
+    #    port=int(kwargs.get('configs')[2]),
+    #    db_name=kwargs.get('db_name')
+    #) 
+    #if db:
+     	#cur = db.device_status_services_status.find({
+        #    "check_timestamp": {"$gt": start_time, "$lt": end_time}
+        #})
+    memc_obj = db_ops_module.MemcacheInterface()
+    key = nocout_site_name + "_interface"
+    doc_len_key = key + "_len"
+    cur=memc_obj.retrieve(key,doc_len_key) 
+    configs = config_module.parse_config_obj()
+    for config, options in configs.items():
+	machine_name = options.get('machine')
+    for doc in cur:
+	time = doc.get('time')
+	t = (
             	doc.get('device_name'),
         	doc.get('service_name'),
         	machine_name,
@@ -122,9 +127,9 @@ def read_data(start_time, end_time, **kwargs):
         	doc.get('check_timestamp'),
         	doc.get('ip_address'),
         	doc.get('severity'),
-            )
-	    docs.append(t)
-            t = ()
+	)
+	docs.append(t)
+	t = ()
      
     return docs
 

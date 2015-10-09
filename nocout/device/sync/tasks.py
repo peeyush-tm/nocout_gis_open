@@ -3,14 +3,15 @@
 
 
 from datetime import datetime
+import json
 import os
 import requests
 import tarfile
 
-from celery import chord, task
+from celery import chord, group, task
 from celery.utils.log import get_task_logger
 
-from django.conf.settings import BASE_DIR
+from django.conf import settings
 from device.models import DeviceSyncHistory
 import generate_deviceapp_config
 
@@ -19,12 +20,13 @@ info, warning, error = (
 		logger.info, logger.warning, logger.error
 		)
 
+SYNC_BASE_DIR = settings.BASE_DIR + '/device/sync/'
+
 
 @task(name='sync-main')
 def sync_main(**kw):
 
 	machines = kw.get('machines')
-	sync_base_dir = BASE_DIR + '/device/sync/'
 
 	try:
 		generate_deviceapp_config.main()
@@ -32,7 +34,7 @@ def sync_main(**kw):
 		error('Exc in generate config: {0}'.format(exc))
 	else:
 		try:
-			os.chdir(sync_base_dir)
+			os.chdir(SYNC_BASE_DIR)
 			# generate tar file from config files
 			out = tarfile.open('da_config.tar.gz', mode='w:gz')
 			for entry in os.listdir('.'):
@@ -54,22 +56,23 @@ def call_sync_apis(**kw):
 	urls = []
 	machines = kw.get('machines')
 	if machines:
-		for m in machines.iteritems():
+		for ip, port in machines.iteritems():
 			urls.append(
-					scheme + m.get('machine_ip') + ':' + \
-							m.get('siteinstance__web_service_port') + '/local_sync'
+					scheme + str(ip) + ':' + str(port) + '/local_sync'
 					)
+		warning('url: {0}'.format(urls))
+		header = group([get_request.s(url=url) for url in urls]).apply_async()
+		#callback = api_callback.s(len(urls))
+		#chord(header)(callback)
 
-		header = [get_request.s(url=url) for url in urls]
-		callback = api_callback.s(len(urls))
-		chord(header)(callback)
 
-
-@task(name='sync-api-callback')
+@task(name='sync-api-callback', time_limit=60*5)
 def api_callback(results, task_count):
 	""" Task to be called after all the get request return"""
 
 	all_ok = True
+
+	print 'Api results: %s' % results
 
 	# if we didn't receive results for all the tasks
 	if len(results) != task_count:
@@ -90,7 +93,7 @@ def update_sync_status(successful):
 	message = 'Sync '
 	status = 1 if successful else 2
 	message = message + "successful" if successful else message + 'unsuccessful'
-	now = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+	now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 	try:
 		dsho = DeviceSyncHistory.objects.latest('id')
@@ -102,10 +105,27 @@ def update_sync_status(successful):
 		error('Error in saving sync obj: 0{}'.format(exc))
 
 
-@task(name='sync-get-request', time_limit=60*30)
+@task(name='sync-get-request')
 def get_request(**kw):
 	""" Sends the get request using requests"""
 
-	r = requests.get(kw.get('url'))
-	return r.json()
+	retval = False
+	try:
+		os.chdir(SYNC_BASE_DIR)
+		files = {'file': ('da_config.tar.gz', open('da_config.tar.gz', 'rb'))}
+		r = requests.post(kw.get('url'), files=files)
+		res = r.text
+	except IOError as exc:
+		error('Problem in reading tar file: {0}'.format(exc))
+	except requests.exceptions.RequestException as exc:
+		error('Problem with the request: {0}'.format(exc))
+	else:
+		res = json.loads(res)
+		warning('API response: {0}'.format(res))
+		#if res.get('success') == 1:
+		#	retval = True
+	
+	update_sync_status(retval)
+
+	return retval
 

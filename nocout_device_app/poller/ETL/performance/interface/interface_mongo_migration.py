@@ -14,11 +14,12 @@ import mysql.connector
 from datetime import datetime, timedelta
 import imp
 import sys
-
+import time
+#from handlers.db_ops import *
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-
+db_ops_module = imp.load_source('db_ops', '/omd/sites/%s/lib/python/handlers/db_ops.py' % nocout_site_name)
 def main(**configs):
     """
     The entry point for the all the functions in this file,
@@ -51,6 +52,7 @@ def main(**configs):
     docs = []
 
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
+    """
     start_time, end_time = None, None
     try:
         db = mongo_module.mongo_conn(
@@ -69,8 +71,8 @@ def main(**configs):
         start_time = doc.get('sys_timestamp')
         start_epoch = int(start_time.strftime('%s'))
     print start_time,end_time
-    
-    docs = read_data(start_epoch, end_epoch, db)
+    """  
+    docs = read_data()
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
@@ -81,7 +83,7 @@ def main(**configs):
         print "No data in the mongo db in this time frame"
     
 
-def read_data(start_time, end_time, db):
+def read_data():
     """
     Function to read data from mongodb
 
@@ -95,34 +97,56 @@ def read_data(start_time, end_time, db):
 
     #db = None
     docs = []
-    docs = [] 
     #db = mongo_module.mongo_conn(
     #    host=kwargs.get('configs')[1],
     #    port=int(kwargs.get('configs')[2]),
     #    db_name=kwargs.get('db_name')
     #) 
-    if db:
-        if start_time is None:
-            # read data from status, initially
-            start_time = end_time - 3600
-            cur = db.device_status_services_status.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        elif (end_time - start_time) >= 7200:
+    ##if db:
+        #if start_time is None:
+        #    # read data from status, initially
+        #    start_time = end_time - 3600
+        #    cur = db.device_status_services_status.find({
+        #        "check_timestamp": {"$gt": start_time, "$lt": end_time}})
+        #elif (end_time - start_time) >= 7200:
             # data in mysql is older than mongo data by more thn 2 hours
             # so we need to read data from live mongo collection rather than status collection
-            if (end_time - start_time) > 86400:
+        #    if (end_time - start_time) > 86400:
                 # max time range for data sync is 1 day
-                start_time = end_time - 86400
-            cur = db.status_perf.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        else:
+        #        start_time = end_time - 86400
+        #    cur = db.status_perf.find({
+        #        "check_timestamp": {"$gt": start_time, "$lt": end_time}})
+        #else:
             # read data from status collection, normally
-            cur = db.device_status_services_status.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}})
-        for doc in cur:
-            docs.append(doc)
+            #cur = db.device_status_services_status.find({
+            #    "check_timestamp": {"$gt": start_time, "$lt": end_time}})
+    current_time = datetime.now()
+    memc_obj = db_ops_module.MemcacheInterface()
+    key = nocout_site_name + "_interface"
+    memc = memc_obj.memc_conn
+    start_time = memc.get('performance_status')
+    print 'in service'
+    print start_time
+    if start_time: 
+    	start_time = datetime.fromtimestamp(start_time)
+    if start_time and (start_time + timedelta(minutes=120)) < current_time:
+    	if start_time + timedelta(days=1) < current_time:
+		start_time = current_time -  timedelta(days=1)
+	print "....in...back up...stage"
+	print start_time
+	redis_obj=db_ops_module.RedisInterface()
+	t_stmp = start_time + timedelta(minutes=-(start_time.minute % 5))
+        t_stmp = t_stmp.replace(second=0,microsecond=0)
+        start_time =int(time.mktime(t_stmp.timetuple()))
+        current_time = current_time + timedelta(minutes=-(current_time.minute % 5))
+        current_time = current_time.replace(second=0,microsecond=0)
+        current_time =int(time.mktime(current_time.timetuple()))
+	cur=redis_obj.zrangebyscore_dcompress(key,start_time,current_time)
+    else:
+    	doc_len_key = key + "_len"
+    	cur=memc_obj.retrieve(key,doc_len_key) 
      
-    return docs
+    return cur
 
 def build_data(doc):
     """

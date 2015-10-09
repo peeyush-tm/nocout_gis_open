@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dashboard'></i> Dashboard" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-television'></i> Dashboard" "javascript:;" %}
     {% breadcrumb_safe "RF Performance Dashboard: PTP" "javascript:;" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -17,13 +17,19 @@
 
 {% block content %}
 <style type="text/css">
-    i.fa-signal {
+    i.fa-line-chart {
         cursor: pointer;
+    }
+    #ptp_block .tab-rf-perf{
+        top:-20px;
+    }
+    #ptp_block .box .box-title{
+        border-bottom: 0px none !important;
     }
 </style>
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PTP</h4>
+        <h4><i class="fa fa-television"></i> RF Performance Dashboard: PTP</h4>
     </div>
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
@@ -35,27 +41,28 @@
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
                 <div class="tab-pane active" id="ptp_block">
-                    <div class="col-md-12">
-                        <div class="col-md-6 box-container ui-sortable">
-                            <div class="box">
-                                <div class="box-title" style="background-color: transparent;">
-                                    <h3>
-                                        RSSI <span id="rssi_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="rssi_trend" title="RSSI Trends">&nbsp;</i>
-                                    </h3>
+                    <div class="tab-rf-perf">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
+                            <div class="custom_seperator">&nbsp;</div>
+                                <div class="box">
+                                    <div class="box-title" style="background-color: transparent;">
+                                        <h5 class="bigger">
+                                            RSSI <span id="rssi_timestamp"></span>
+                                            <i class="fa fa-line-chart text-success pull-right" id="rssi_trend" title="RSSI Trends">&nbsp;</i>
+                                        </h5>
+                                    </div>
+                                    <div class="box-body">
+                                        <div id="rssi" class="rf_chart_style"></div>
+                                    </div>
                                 </div>
-                                <div class="box-body">
-                                    <div id="rssi" class="rf_chart_style"></div>
-                                </div>
-                            </div>
                         </div>
-                        <div class="col-md-6 box-container ui-sortable">
+                        <div class="col-md-{{settings.SHOW_RF_COLUMN}} box-container ui-sortable">
                             <div class="box">
                                 <div class="box-title" style="background-color: transparent;">
-                                    <h3>
+                                    <h5 class="bigger">
                                         UAS <span id="uas_timestamp"></span>
-                                        <i class="fa fa-signal text-success pull-right" id="uas_trend" title="UAS Trends">&nbsp;</i>
-                                    </h3>
+                                        <i class="fa fa-line-chart text-success pull-right" id="uas_trend" title="UAS Trends">&nbsp;</i>
+                                    </h5>
                                 </div>
                                 <div class="box-body">
                                     <div id="uas" class="rf_chart_style"></div>
@@ -85,7 +92,8 @@
         ajax_url = "",
         trends_ajax_url = "",
         is_bh = 0,
-        tech_name = "P2P";
+        tech_name = "P2P",
+        show_rf_perf_column = "{{settings.SHOW_RF_COLUMN}}";
     $(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
