@@ -17,10 +17,6 @@
 {% block content_title %}Sub Station Management{% endblock %}
 {% block content_description %}List of sub station{% endblock %}
 {% block content %}
-        {% if perms.inventory.add_substation %}
-            <p><a href="/sub_station/new"><i class="fa fa-plus">&nbsp;</i> Create Sub Station</a></p>
-        {% endif %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SUB STATIONS LISTING</h4>
@@ -80,6 +76,15 @@
         var dataTableInstance = "";
 
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% if perms.inventory.add_substation %}
+                var create_link_html = '<a href="/sub_station/new" title="Create Sub Station" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 

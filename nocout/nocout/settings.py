@@ -783,7 +783,8 @@ SETTINGS_EXPORT = [
     'ENABLE_WHITE_THEME',
     'ENABLE_TOPO_VIEW',
     'ENABLE_BIRDEYE_VIEW',
-    'ENABLE_CUSTOM_DASHBOARD_VIEW'
+    'ENABLE_CUSTOM_DASHBOARD_VIEW',
+    'SHOW_RF_COLUMN',
 ]
 
 # Dashbaord Settings
@@ -834,6 +835,9 @@ ENABLE_AGGREGATE_REPORT_DOWNLOAD = False
 
 ####################### Flag to enable/disable new Theme #######################
 ENABLE_WHITE_THEME = True
+
+# Flag to show the number of columns on Rf_Performance Dashboard.(equals to 12/number_of_columns_to_be_shown)
+SHOW_RF_COLUMN = 6
 
 # Flag to enable/disable topology view on single performance page.
 ENABLE_TOPO_VIEW = False

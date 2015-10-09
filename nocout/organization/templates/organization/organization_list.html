@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-smile-o'></i> User Management" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-sitemap'></i> User Management" "javascript:;" %}
     {% breadcrumb_safe "Organization" "organization_list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -18,12 +18,6 @@
 {% block content_title %}Organization Management{% endblock %}
 {% block content_description %}List of organizations{% endblock %}
 {% block content %}
-    {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' %}
-            <p><a href="/organization/new"><i class="fa fa-plus">&nbsp;</i> Create Organization</a></p>
-        {% endif %}
-    {% endfor %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>ORGANIZATION LISTING</h4>
@@ -43,6 +37,17 @@
 <script type="text/javascript" >
     var dataTableInstance = '';
     $(document).ready(function(e) {
+
+        // Add 'Create Item' link on top header bar.
+        {% for group in user.groups.all %}
+            {% if group.name == 'group_admin' %}
+                var create_link_html = '<a href="/organization/new" title="Create Organization" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+        {% endfor %}
+
         /*Make a instance of ourDataTableWidget class */
         dataTableInstance = new ourDataTableWidget();
 

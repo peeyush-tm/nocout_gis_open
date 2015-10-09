@@ -95,17 +95,6 @@
             right: 10px;
             left: auto;
         }
-        #perf_topo_map_container {
-            height: 450px;
-            margin: 0px auto;
-        }
-        #topo_view_tab .sideInfoContainer {
-            max-height: 425px !important;
-        }
-        #topo_view_tab {
-            position: relative;
-        }
-
         #birdeye_container table tbody tr td {
             font-size: 12px !important;
         }
@@ -283,20 +272,20 @@
                         </a>
                     </li>
 
-                    {% if settings.ENABLE_TOPO_VIEW %}
-                    <li>
-                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
-                            <i class="fa fa-ellipsis-v">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
                     {% if settings.ENABLE_BIRDEYE_VIEW %}
                     <li>
                         <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
                             <i class="fa fa-ellipsis-v">&nbsp;</i>
                             <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_TOPO_VIEW %}
+                    <li>
+                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
                         </a>
                     </li>
                     {% endif %}
@@ -381,25 +370,22 @@
                         </div>
                     </div>
                 </div>
-                {% if settings.ENABLE_TOPO_VIEW %}
 
-                <div class="tab-pane" id="topo_view_tab">
-                    <div class="panel panel-default inner_tab_container">
-                        <div class="panel-body">
-                            <div id="perf_topo_map_container"></div>
-                            <!--Info Window Content Container START-->
-                            <div id="infoWindowContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:200;"></div>
-                            <!--Info Window Content Container END-->
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                {% if settings.ENABLE_BIRDEYE_VIEW %}                
+                {% if settings.ENABLE_BIRDEYE_VIEW %}
                 <div class="tab-pane" id="birdeye_view_tab">
                     <div class="panel panel-default inner_tab_container">
                         <div class="panel-body">
                             <div id="birdeye_container"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if settings.ENABLE_TOPO_VIEW %}
+                <div class="tab-pane" id="topo_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            Topo View - Work In Progress...
                         </div>
                     </div>
                 </div>
@@ -468,7 +454,10 @@
             bs_id = "",
             all_services_list = [],
             perf_base_url = '',
-            clicked_tab_id = '';
+            clicked_tab_id = '',
+            severity_wise_data_api = '',
+            default_left_tab_icon = 'fa-circle-o',
+            active_left_tab_icon = 'fa-dot-circle-o';
 
         $(document).ready(function (e) {
             service_view_type = $('input[name="service_view_type"]:checked').val();
@@ -487,6 +476,12 @@
             inventory_url = "";
             alert_url = "";
 
+            severity_wise_data_api = "{% url 'get_severity_wise_status' %}";
+
+            if (severity_wise_data_api) {
+                severity_wise_data_api = getCompleteUrl(severity_wise_data_api);
+            }
+
             if (!service_view_type || !$.cookie("service_view_type")) {
                 $.cookie("service_view_type", 'normal', {path: '/'})
                 service_view_type = 'normal';
@@ -500,6 +495,8 @@
         });
 
         function initPerformancePage(is_first_triggered) {
+
+            isLatestStatusUpdated = false;
 
             if ($.cookie("service_view_type") == 'normal') {
                 default_live_table_headers = default_live_table_headers_without_ds;
@@ -782,22 +779,6 @@
             fetchFirstTabContent(this);
         });
 
-        // Populate device topology on tab click
-        $("#topo_view").click(function (e) {
-            
-            // Hide li panel
-            $('.perfContainerBlock .box-title ul li:not(.pull-right)').addClass('hide');
-
-            clicked_tab_id = 'topo_view';
-
-            if (typeof networkMapInstance == 'undefined') {
-                // Show loading spinner
-                showSpinner();
-                // Call function to populate device api
-                populateDeviceTopology();
-            }
-        });
-
         // Fetch & Draw birdeye view on tab click
         $("#birdeye_view").click(function (e) {
 
@@ -831,7 +812,8 @@
 
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
-                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length) {
+                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
+                    console.log($('#' + activeTabId).parent('li'));
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
@@ -847,6 +829,14 @@
         $("body").delegate('.left_tabs_container li','click',function(e) {
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
+                // remove the 'active_left_tab_icon' class from all link (if exists)
+                $('.left_tabs_container li a i').removeClass(active_left_tab_icon);
+                //  Add 'default_left_tab_icon' class to active link
+                $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                //  Add 'active_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).addClass(active_left_tab_icon);
+                //  Remove 'default_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).removeClass(default_left_tab_icon);
 
                 nocout_destroyDataTable('other_perf_table');
                 nocout_destroyDataTable('perf_data_table');
@@ -855,10 +845,6 @@
             }
         });
     </script>
-    <!-- Google Map Library-->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false"></script>
-    <script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
 
 {% endblock %}
 

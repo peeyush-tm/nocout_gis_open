@@ -291,7 +291,7 @@ iframe {
 .global_search_container {
   position: absolute;
   top: -40px;
-  left: 33%;
+  left: 23%;
 }
 .global_search_container .select2-container .select2-choice {
   height: 30px !important;
@@ -412,7 +412,8 @@ th.vAlign_middle, .vAlign_middle b {
   padding-top: 8px !important;
   padding-bottom: 10px !important;
 }
-#page_header_container .date-range, #content .breadcrumb {
+#page_header_container .date-range,
+#content .breadcrumb {
   padding-top: 5px;
   padding-bottom: 5px;
   margin: 0px;
@@ -587,7 +588,7 @@ th.vAlign_middle, .vAlign_middle b {
 }
 
 h5.bigger, .h5 {
-  font-size: 16px !important;
+  font-size: 15px !important;
   font-weight: normal !important;
   color:#333;
 }
@@ -633,15 +634,21 @@ table.dataTable thead th, table.dataTable tfoot th{
   cursor: pointer;
 }
 /*Full Screen Button*/
-.transitionbtn {
+.transitionbtn, 
+.controls_container ul li a.btn-sm {
+  border:1px solid rgba(0, 0, 0, 0.1) !important;
   border-radius: 2px;
   transition-property: background, border-radius;
   transition-duration: 0.2s;
   transition-timing-function: linear;
 }
-.transitionbtn:hover {
+.controls_container ul.list-inline > li:first-child {
+  padding-left: 5px;
+}
+.transitionbtn:hover,
+.controls_container ul li a.btn-sm:hover {
   border-radius: 50% !important;
-  background: transparent;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.2) !important;
 }
 .box .header-tabs .nav-tabs > li {
   border-right: 1px inset #dddddd !important;
@@ -666,12 +673,18 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
   border-bottom: 3px solid transparent;
 }
 #goFullScreen {
-  margin-left: -4px;
+  margin-left: -3px;
+  border:1px solid rgba(0, 0, 0, 0.1);
+  margin-left: -3px;
 }
+
 .box.border {
   border-color: #dddddd;
 }
 .box.border.lite .box-title {
   background-color: #FFFFFF;
   border-bottom: 1px solid #DDDDDD;
+}
+.severity_block {
+  cursor: pointer;
 }
