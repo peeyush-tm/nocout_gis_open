@@ -16,8 +16,6 @@
 {% block content_title %}Device Type Management{% endblock %}
 {% block content_description %}List of device types{% endblock %}
 {% block content %}
-    <p><a href="/wizard/device-type/"><i class="fa fa-plus">&nbsp;</i> Create Device Type</a></p>
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> DEVICE TYPE LISTING</h4>
@@ -36,6 +34,13 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            var create_link_html = '<a href="/wizard/device-type/" title="Create Device Type" \
+                                    class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+            $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 

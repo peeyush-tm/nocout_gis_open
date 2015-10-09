@@ -38,34 +38,7 @@ var green_color = "#468847",
     parallel_calling_len = 3,
     birdeye_start_counter = 0,
     birdeye_end_counter = parallel_calling_len,
-    is_mouse_out = true,
-    topo_view_scripts = [
-        '<script src="/static/js/flot/jquery.flot.min.js"></script>',
-        '<script type="text/javascript" src="/static/js/infobox.js"></script>',
-        '<script type="text/javascript" src="/static/js/markerclusterer.js"></script>',
-        '<script type="text/javascript" src="/static/js/oms.min.js"></script>',
-        '<script type="text/javascript" src="/static/js/fullScreenControl.js"></script>',
-        '<script type="text/javascript" src="/static/js/jQuery-Cookie/src/jquery.cookie.js"></script>',
-        '<script type="text/javascript" src="/static/js/gisPerformance.js"></script>',
-        '<script type="text/javascript" src="/static/js/tooltipLib.js"></script>',
-        '<script src="/static/js/devicePlottingLib.js"></script>',
-        '<script src="/static/js/devicevisualization.js"></script>'
-    // ],
-    // topo_view_scripts = [
-    //     'https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&client=gme-teramatrixtechnologies&sensor=false',
-    //     '/static/js/lokijs.min.js',
-    //     '/static/js/flot/jquery.flot.min.js',
-    //     '/static/js/stateBoundriesLib.js',
-    //     '/static/js/infobox.js',
-    //     '/static/js/oms.min.js',
-    //     '/static/js/markerclusterer.js',
-    //     '/static/js/fullScreenControl.js',
-    //     '/static/js/jQuery-Cookie/src/jquery.cookie.js',
-    //     '/static/js/tooltipLib.js',
-    //     '/static/js/gisPerformance.js',
-    //     '/static/js/devicePlottingLib.js',
-    //     '/static/js/devicevisualization.js'
-    ];
+    is_mouse_out = true;
 
 
 /**
@@ -108,10 +81,10 @@ function populateDeviceStatus_nocout(domElement,info) {
                     <b>Since</b> : ' + age + '</td>\
                     <td class="one_fourth_column vAlign_middle">\
                     <b>Last Down Time</b> : ' + lastDownTime + '</td>\
-                    <td title="OK" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
-                    <td title="Warning" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
-                    <td title="Critical" class="severity_block vAlign_middle" style="background:' + red_color + ';">' + severity_crit + '</td>\
-                    <td title="Unknown" class="severity_block vAlign_middle" \
+                    <td data-severity="ok" title="Click to see all up services" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
+                    <td data-severity="warning" title="Click to see all warning services" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
+                    <td data-severity="critical" title="Click to see all critical services" class="severity_block vAlign_middle" style="background:' + red_color + ';">' + severity_crit + '</td>\
+                    <td data-severity="unknown" title="Click to see all unknown services" class="severity_block vAlign_middle" \
                     style="background:' + unknown_severity_color + ';">' + severity_unknown + '</td>\
                     </tr></table>';
 
@@ -1824,75 +1797,6 @@ function calculateAverageValue(resultset, key) {
     return (total_val/resultset.length).toFixed(2);
 }
 
-function populateDeviceTopology() {
-
-    if (typeof networkMapInstance == 'undefined') {
-        $(topo_view_scripts.join(' ')).insertAfter('.perfContainerBlock');
-        // loadScript(topo_view_scripts[0], function(obj) {
-        //     setTimeout(function() {
-        //         for (var i=1;i<topo_view_scripts.length;i++) {
-        //             loadScript(topo_view_scripts[i], function(obj) {
-        //                 console.log(google);
-        //             });
-        //         }
-        //     }, 500);
-        // });
-    }
-
-    $.ajax({
-        url : base_url + '/network_maps/static_info/?base_stations='+bs_id,
-        type : 'GET',
-        success : function(response) {
-            if (typeof networkMapInstance != 'undefined') {
-                networkMapInstance.clearStateCounters();
-                /*Reset markers & polyline*/
-                networkMapInstance.clearGmapElements();
-                /*Reset all elements global variables */
-                networkMapInstance.clearMapMarkers()
-                /*Reset Global Variables & Filters*/
-                networkMapInstance.resetVariables_gmap();
-            } else {
-                live_poll_config = polling_config;
-
-                /*Create a instance of gmap_devicePlottingLib*/
-                networkMapInstance = new devicePlottingClass_gmap();
-                /*Call the function to create map*/
-                networkMapInstance.createMap("perf_topo_map_container");
-            }
-
-            var result = response;
-
-            if (typeof result == 'string') {
-                result = JSON.parse(result);
-            }
-            // 
-            networkMapInstance.showStateWiseData_gmap([result]);
-
-            // fit gmap bounds to base station position
-            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(result.data.lat,result.data.lon)));
-
-            var listener = google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', function(event) {
-            
-                // set the zoom level to 13 if it is greater
-                if (mapInstance.getZoom() > 13) {
-                    mapInstance.setZoom(13);
-                }
-                
-                google.maps.event.removeListener(listener);
-                searchResultData = [result];
-            });
-            
-        },
-        error : function(err) {
-            // console.log(err.statusText);
-        },
-        complete : function() {
-            // Hide loading spinner
-            hideSpinner();
-        }
-    });
-}
-
 function initBirdEyeView(container_id) {
 
     if (typeof all_services_list != 'undefined' && all_services_list.length) {
@@ -2003,11 +1907,105 @@ function createBirdEyeViewHTML(container_id) {
     $('#' + container_id).html(birdeye_html);
 }
 
-function loadScript(src,callback) {  
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = src;
-    document.getElementsByTagName("head")[0].appendChild(script);
+/**
+ * This event trigger when severity status block clicked
+ * @event click
+ */
+$('#status_container').delegate('#final_status_table .severity_block', 'click', function(e) {
 
-    callback(true);
-}
+    // Show loading spinner
+    showSpinner();
+
+    var severity_list = ['ok', 'warning', 'critical', 'unknown'],
+        block_severity = $(this).data('severity') ? $.trim($(this).data('severity').toLowerCase()) : '',
+        count_txt = $(this).text() ? Number($.trim($(this).text())) : 0;
+
+    if (severity_list.indexOf(block_severity) > -1) {
+        if (count_txt > 0 && typeof severity_wise_data_api != 'undefined') {
+            var view_type = $.trim($('input[name="service_view_type"]:checked').val()),
+                get_params = '?severity=' + block_severity + '&device_id=' + current_device + '&view_type=' + view_type;
+            // Make ajax call
+            $.ajax({
+                url: severity_wise_data_api + get_params,
+                type: 'GET',
+                success: function(response) {
+                    var result = response;
+
+                    if (typeof result == 'string') {
+                        result = JSON.parse(result);
+                    }
+
+                    if (result['success']) {
+
+                        var dataset = result.data,
+                            table_html = '';
+                        
+                        table_html += '<table class="table table-bordered table-hover table-striped table-responsive">';
+                        table_html += '<thead>';
+                        table_html += '<tr> \
+                                            <th>Time</th> \
+                                            <th>Datasource</th> \
+                                            <th>Service</th> \
+                                            <th>Value</th> \
+                                            <th>Severity</th> \
+                                            <th>Warning Threshold</th> \
+                                            <th>Critical Threshold</th> \
+                                       </tr>';
+                        table_html += '</thead><tbody>';
+
+                        for (var i=0;i<dataset.length;i++) {
+                            table_html += '<tr> \
+                                                <td>' + dataset[i]['sys_timestamp'] + '</td> \
+                                                <td>' + dataset[i]['data_source'] + '</td> \
+                                                <td>' + dataset[i]['service_name'] + '</td> \
+                                                <td>' + dataset[i]['current_value'] + '</td> \
+                                                <td>' + dataset[i]['severity'] + '</td> \
+                                                <td>' + dataset[i]['warning_threshold'] + '</td> \
+                                                <td>' + dataset[i]['critical_threshold'] + '</td> \
+                                           </tr>';
+                        }
+
+                        table_html += '</tbody></table>';
+
+                        bootbox.dialog({
+                            message: '<div id="severity_wise_data_container" style="max-height: 450px; overflow: auto;"></div>',
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> SEVERITY WISE DATA - ' + block_severity.toUpperCase()
+                        });
+
+                        $(".modal-dialog").css("width","80%");
+
+                        $('#severity_wise_data_container').html(table_html);
+
+                    } else {
+                        $.gritter.add({
+                            // (string | mandatory) the heading of the notification
+                            title: block_severity + ' severity wise status',
+                            // (string | mandatory) the text inside the notification
+                            text: result.message,
+                            // (bool | optional) if you want it to fade out on its own or just sit there
+                            sticky: false
+                        });
+                    }
+                },
+                error: function(err) {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: block_severity + ' severity wise status',
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
+                },
+                complete: function() {
+                    // Hide loading spinner
+                    hideSpinner();
+                }
+            });
+        } else {
+            bootbox.alert("You don't have any services in '" + block_severity + "'");
+            // Hide loading spinner
+            hideSpinner();
+        }
+    }
+});

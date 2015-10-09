@@ -784,3 +784,30 @@ table.dataTable thead th, table.dataTable tfoot th {
 .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
   color: #5e87b0 !important;
 }
+i.trends_icon:hover {
+  color:#5e87b0;
+}
+i.text-success:hover {
+  color:#5e87b0;
+}
+#main_dashboard_container .col-md-3:hover div.pull-right i.trends_icon ,
+.row.col-md-6:hover div.pull-right i.trends_icon,
+.row.col-md-4:hover div.pull-right i.trends_icon{
+  color:#5e87b0 !important;
+}
+.tab-rf-perf .box-container:hover i.rf_trends {
+  color:#5e87b0 !important;
+}
+.btn-default:hover,
+.btn-default:focus,
+.btn-default:active,
+.btn-default.active,
+.open .dropdown-toggle.btn-default{
+  color:#5e87b0!important;
+}
+.btn-default:hover .text-primary {
+  color:#5e87b0!important;
+}
+.orgTitle{
+  color:#FFFFFF !important;
+}
