@@ -708,7 +708,7 @@ LIVE_POLLING_CONFIGURATION = {
     'maps_default': True,
     'maps_themetics': True,
     'maps_single_service': True,
-    'performance': False
+    'performance': True
 }
 
 # Periodic polling parallel processes count.
@@ -731,7 +731,7 @@ WHITE_MAP_CONFIGURATION = json.dumps({
 
 # Flag to show/hide historical data on performance page.
 # 4 April 2015
-HISTORICAL_ON_PERFORMANCE = False
+HISTORICAL_ON_PERFORMANCE = True
 
 # Chart type for min, max & avg values.
 # 11 April 2015
@@ -779,7 +779,12 @@ SETTINGS_EXPORT = [
     'CRIT_TYPE',
     'ENABLE_ADVANCE_FILTERS',
     'ENABLE_UNIFIED_SERVICE_VIEW',
-    'ENABLE_AGGREGATE_REPORT_DOWNLOAD'
+    'ENABLE_AGGREGATE_REPORT_DOWNLOAD',
+    'ENABLE_WHITE_THEME',
+    'ENABLE_TOPO_VIEW',
+    'ENABLE_BIRDEYE_VIEW',
+    'ENABLE_CUSTOM_DASHBOARD_VIEW',
+    'SHOW_RF_COLUMN',
 ]
 
 # Dashbaord Settings
@@ -823,10 +828,25 @@ DATATABLE_SEARCHTXT_KEY = 'sSearch'
 ENABLE_ADVANCE_FILTERS = True
 
 # Flag to enable/disable unified service view on single performance page.
-ENABLE_UNIFIED_SERVICE_VIEW = False
+ENABLE_UNIFIED_SERVICE_VIEW = True
 
 # Flag to enable/disable aggregate report download on single performance page.
 ENABLE_AGGREGATE_REPORT_DOWNLOAD = False
+
+####################### Flag to enable/disable new Theme #######################
+ENABLE_WHITE_THEME = True
+
+# Flag to show the number of columns on Rf_Performance Dashboard.(equals to 12/number_of_columns_to_be_shown)
+SHOW_RF_COLUMN = 6
+
+# Flag to enable/disable topology view on single performance page.
+ENABLE_TOPO_VIEW = False
+
+# Flag to enable/disable birdeye view on single performance page.
+ENABLE_BIRDEYE_VIEW = False
+
+# Flag to enable/disable custom dashboards on single performance page.
+ENABLE_CUSTOM_DASHBOARD_VIEW = False
 
 # Password complexity settings.
 # ===============================

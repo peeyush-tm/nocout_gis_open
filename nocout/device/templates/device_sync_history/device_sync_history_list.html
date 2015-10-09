@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "Device Inventory" "javascript:;" %}
     {% breadcrumb_safe "Device Sync History" "device_sync_history_list" %}
     <!-- Render the created breadcrumbs -->
@@ -17,7 +17,7 @@
 {% block content_description %}List of device sync history{% endblock %}
 {% block page_setting_block %}
     {% if perms.device.sync_devices %}
-        <span class="pull-right">
+        <span class="pull-right" style="padding-bottom: 5px;">
             <div class="btn-group">
                 {% if last_sync_time %}
                     <i class="green-dot">Last Sync Run At: {{ last_sync_time }} | </i>

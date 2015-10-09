@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-cogs'></i> Settings" "javascript:;" %}
     {% breadcrumb_safe "Ping Thematic Settings" "javascript:;" %}
     {% if is_admin %}
         {% breadcrumb_safe "Admin Ping Thematic" "ping-admin-thematic-settings-list" %}
@@ -20,10 +20,6 @@
 {% block content_title %}Ping Thematic Settings Management{% endblock %}
 {% block content_description %}List of ping thematic settings{% endblock %}
 {% block content %}
-        {% if user.is_superuser %}
-            <p><a href="/ping_thematic_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Ping Thematic Settings</a></p>
-        {% endif %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>PING THEMATIC SETTINGS LISTING</h4>
@@ -57,10 +53,6 @@
                 </div>
                 <div class="clearfix"></div>
             </div>
-            <!-- <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThematicSettingsListingTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table> -->
         </div>
     </div>
 {% endblock %}
@@ -73,6 +65,13 @@
         var dataTableInstance = '',
             thematic_api_url = '';
         $(document).ready(function (e) {
+
+            {% if user.is_superuser %}
+               var create_link_html = '<a href="/ping_thematic_settings/new" title="Create Ping Thematic Settings" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
 
             // Update thematic API url global variable
             thematic_api_url = '{% url "ping_user_thematic_setting" %}';

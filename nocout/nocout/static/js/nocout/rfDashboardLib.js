@@ -22,6 +22,21 @@ function initRfDashboard() {
         /*hide spinner*/
         hideSpinner();
     }
+
+    try {
+        if(show_rf_perf_column){
+            var col_no = 12/Number(show_rf_perf_column);
+            if (col_no == 2) {
+                $(".tab-rf-perf .box-container:even-child").after( "<div class='clearfix'></div><hr style='margin-top:0px;width:100%;'/>" );
+                $(".tab-rf-perf .box-container:even-child .custom_seperator").hide();            
+            } else {
+                $(".tab-rf-perf .box-container:nth-child("+col_no+"n)").after( "<div class='clearfix'></div><hr style='margin-top:0px;width:100%;'/>" );
+                $(".tab-rf-perf .box-container:nth-child("+col_no+"n) .custom_seperator").hide();            
+            }
+        }
+    } catch(e) {
+        // console.error(e);
+    }
 }
 
 function startNextChunkCall(counter) {
@@ -66,9 +81,9 @@ function rf_getChartData(ds_name, chunk_counter) {
                     var timestamp = response.data.objects.timestamp ? response.data.objects.timestamp : "";
 
                     if(timestamp) {
-                        console.log($("#"+ds_name+"_timestamp").length);
+                        // console.log($("#"+ds_name+"_timestamp").length);
                         if($("#"+ds_name+"_timestamp").length > 0) {
-                            var timestamp_html = '<small>('+timestamp+')</small>';
+                            var timestamp_html = '<small>'+timestamp+'</small>';
                             $("#"+ds_name+"_timestamp").html(timestamp_html);
                         }
                     } else {
@@ -232,7 +247,7 @@ function convertChunksToNormalArray(chunks_array) {
  * This event trigger when any trends icon is clicked
  * @event click
  */
-$(".tab-content h3 i").click(function(e) {
+$(".tab-content i").click(function(e) {
     
     // show the loader
     showSpinner();
@@ -270,7 +285,7 @@ $(".tab-content h3 i").click(function(e) {
                         /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
                             message: popup_html,
-                            title: '<i class="fa fa-signal">&nbsp;</i> '+ds_name.toUpperCase()+' Trends'
+                            title: '<i class="fa fa-line-chart">&nbsp;</i> '+ds_name.toUpperCase()+' Trends'
                         });
 
 

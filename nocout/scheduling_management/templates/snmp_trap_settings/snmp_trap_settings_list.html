@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-cogs'></i> Settings" "javascript:;" %}
     {% breadcrumb_safe "SNMP Trap Settings" "snmp_trap_settings_list" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -15,9 +15,6 @@
 {% block content_title %}SNMP Trap Settings Management{% endblock %}
 {% block content_description %}List of SNMP trap settings{% endblock %}
 {% block content %}
-    {% if perms.inventory.add_snmp_trap_settings %}
-    <p><a href="/snmp_trap_settings/new"><i class="fa fa-plus">&nbsp;</i> Create SNMP Trap Settings</a></p>
-    {% endif %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SNMP TRAP SETTINGS LISTING</h4>
@@ -36,6 +33,15 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% if perms.inventory.add_snmp_trap_settings %}
+                var create_link_html = '<a href="/snmp_trap_settings/new" title="Create SNMP Trap Settings" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 

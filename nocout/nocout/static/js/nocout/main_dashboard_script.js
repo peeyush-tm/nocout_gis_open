@@ -427,7 +427,7 @@ function makeDashboardAjaxCall(url, domElement, chart_title, chart_type, calling
 
                 if(timestamp) {
                     if($(dom_id+"_timestamp").length > 0) {
-                        var timestamp_html = '<strong>'+clock_icon_html+' <span> '+timestamp+'</span></strong>';
+                        var timestamp_html = ' <span> '+timestamp+'</span>';
                         $(dom_id+"_timestamp").html(timestamp_html);
                     }
                 } else {
@@ -846,7 +846,12 @@ function updateSpeedometerChart(chartData, div_id, div_text, callback) {
  * This event trigger when any trends icon is clicked
  * @event click
  */
-$("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .box-body h4 strong i").click(function(e) {
+$("#main_dashboard_container .box-body h5 strong i, \
+    #main_dashboard_container .box-body h5.bigger i, \
+    #main_dashboard_container .box-body h4 strong i, \
+    #main_dashboard_container .box-body .pull-right i, \
+    #main_dashboard_container .box-body .pull-right i \
+").click(function(e) {
 
     // show the loader
     showSpinner();
@@ -903,7 +908,7 @@ $("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .b
                         /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
                             message: popup_html,
-                            title: '<i class="fa fa-signal">&nbsp;</i> '+window_title+'Trends'
+                            title: '<i class="fa fa-line-chart">&nbsp;</i> '+window_title+'Trends'
                         });
 
 
@@ -959,7 +964,7 @@ $("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .b
             /*Call the bootbox to show the popup with datatable*/
             bootbox.dialog({
                 message: popup_html,
-                title: '<i class="fa fa-signal">&nbsp;</i> '+window_title
+                title: '<i class="fa fa-line-chart">&nbsp;</i> '+window_title
             });
 
 

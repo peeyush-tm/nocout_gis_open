@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-cog'></i> Settings" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-cogs'></i> Settings" "javascript:;" %}
     {% breadcrumb_safe "Dashboard Settings" "dashboard-settings" %}
     <!-- Render the created breadcrumbs -->
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
@@ -15,15 +15,12 @@
 {% block content_title %}Dashboard Management{% endblock %}
 {% block content_description %}List of Dashboard settings{% endblock %}
 {% block content %}
-    {% if user.is_superuser %}
-    <p><a href="{% url 'dashboard-settings-new' %}"><i class="fa fa-plus">&nbsp;</i> Create Dashboard Settings</a></p>
-    {% endif %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>DASHBOARD SETTINGS LISTING</h4>
         </div>
         <div id="tableContainer" class="box-body" style="overflow-x:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DashbaordSettingsListingTable">
+            <table class="datatable table table-striped table-bordered table-hover" id="DashbaordSettingsListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -36,6 +33,16 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            {% if user.is_superuser %}
+                var create_url = "{% url 'dashboard-settings-new' %}",
+                    create_link_html = '<a href="' + create_url + '" title="Create Dashboard Settings" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/

@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-file-text'></i> Performance Reports" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-bar-chart'></i> Performance Reports" "javascript:;" %}
     {% breadcrumb_safe page_type|title|add:" Live" "performance_listing" page_type %}
 
     {% if page_type == 'network' and device_technology|upper == 'P2P'  %}
@@ -26,6 +26,7 @@
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
 
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
@@ -33,11 +34,34 @@
 
 {% block content %}
     <style>
+        .box .header-tabs .nav-tabs > li:first-child {
+            border-right: 1px inset #c6c6ce !important;
+        }
+        .box .header-tabs .nav-tabs > li:last-child {
+            border: 0px none !important;
+        }
+        .box .header-tabs .top_perf_tabs > li,
+        .box .header-tabs .top_perf_tabs > li > a {
+            margin: 0px;
+        }
+        .box .header-tabs .top_perf_tabs > li > a {
+            border-bottom: 3px solid transparent;
+        }
+        .box .header-tabs .top_perf_tabs > li {
+            padding: 0px 5px;
+        }
         .perfContainerBlock .box-title .pull-right .list-inline > li {
             max-width: 200px !important;
         }
-        .perfContainerBlock .left_tabs_container {
-            /*padding: 0px !important;*/
+        .perfContainerBlock .header-tabs {
+            overflow: hidden;
+            margin: 0px;
+        }
+        .top_perf_tabs {
+            width: 2000px;
+        }
+        .top_perf_tabs li {
+            float: left !important;
         }
         .inner_tab_container .panel-body {
             padding: 10px !important;
@@ -48,11 +72,11 @@
         .top_perf_tabs {
             top: 0px !important;
             float: left;
-            padding-left: 15px;
+            padding-left: 0px;
             margin-right: 0px !important;
         }
         .box .header-tabs .top_perf_tabs > li > a {
-            padding: 7px 5px !important;
+            padding: 6px 2px !important;
         }
         .top_perf_tab_content, .top_perf_tab_content .panel .panel-body {
             overflow: auto;
@@ -60,17 +84,31 @@
         .chart_container h3, .last_updated_container h3, #latestStatusContainer h3 {
             margin-top: 0px;
         }
+        .paging_arrow {
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            font-size: 25px;
+            cursor: pointer;
+        }
+        .right_arrow {
+            right: 10px;
+            left: auto;
+        }
+        #birdeye_container table tbody tr td {
+            font-size: 12px !important;
+        }
     </style>
     <!--Device Status Block Start-->
-    <div class="well well-sm" id="status_container" style="overflow:auto;">
-        <div id="latestStatusContainer">
-            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
-        </div>
+    <div id="status_container" style="overflow:auto;">
         <div style="overflow:auto;">
             <table id="status_table" class="table table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
                 <thead></thead>
                 <tbody></tbody>
             </table>
+        </div>
+        <div id="latestStatusContainer">
+            <h3><i class="fa fa-spinner fa-spin" title="Fetching Current Status"></i></h3>
         </div>
     </div>
     <!--Device Status Block End-->
@@ -182,70 +220,88 @@
                     </div>
                 </li>
                 {% endif %}
-
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
-                        <i class="fa fa-dropbox text-primary"></i>
-                    </a>
-                </li>
-                <li class="pull-right">
-                    <a href="#" class="btn btn-default btn-sm hide" id="alerts_link_tag" title="Alerts" target="_blank">
-                        <i class="fa fa-warning text-danger"></i>
-                    </a>
-                </li>
             </ul>
             <!--Filters Block End-->
             <div class="clearfix"></div>
         </div>
-        <div class='box-body'>
+        <div class='box-body' style="position: relative;">
             <!-- <div id="tableContainer" class="box-body"> -->
-            <div class="tabbable header-tabs">
+            <i class="fa fa-arrow-circle-o-left text-ttpl paging_arrow hide">&nbsp;</i>
+            <div class="tabbable header-tabs" style="width: 94%; margin:0px auto;">
                 <ul class="nav nav-tabs top_perf_tabs">
-                    <li>
-                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Utilization</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">IA Table</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Availability</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Inventory Status</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Status</span>
+                    <li class="active">
+                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Network Performance &nbsp;</span>
                         </a>
                     </li>
                     <li>
                         <a href="#service_perf_tab" id="service_perf" title="Service Performance" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Service Performance</span>
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Performance &nbsp;</span>
                         </a>
                     </li>
-                    <li class="active">
-                        <a href="#network_perf_tab" id="network_perf" title="Network Performance" data-toggle="tab">
-                            <i class="fa fa-angle-double-right">&nbsp;</i>
-                            <span class="hidden-inline-mobile">Network Performance</span>
+                    <li>
+                        <a href="#service_status_tab" id="service_status" title="Service Status" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Service Status &nbsp;</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="#inventory_status_tab" id="inventory_status" title="Inventory Status" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Inventory Status &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#availability_tab" id="availability" title="Availability" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Availability &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#topology_tab" id="topology" title="IA Table" class="hide" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">IA Table &nbsp;</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#utilization_top_tab" title="Utilization" id="utilization_top" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Utilization &nbsp;</span>
+                        </a>
+                    </li>
+
+                    {% if settings.ENABLE_BIRDEYE_VIEW %}
+                    <li>
+                        <a href="#birdeye_view_tab" title="Birdeye View" id="birdeye_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Birdeye View &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_TOPO_VIEW %}
+                    <li>
+                        <a href="#topo_view_tab" title="Topo View" id="topo_view" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Topo View &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
+                    <li>
+                        <a href="#custom_dashboard_tab" title="Custom Dashboards" id="custom_dashboard" data-toggle="tab">
+                            <i class="fa fa-ellipsis-v">&nbsp;</i>
+                            <span class="hidden-inline-mobile">Custom Dashboards &nbsp;</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <div class="clearfix"></div>
             </div>
+            <i class="fa fa-arrow-circle-o-right text-ttpl right_arrow paging_arrow hide">&nbsp;</i>
             <div class="tab-content top_perf_tab_content">
                 <div class="tab-pane active" id="network_perf_tab">
                     <div class="panel panel-default inner_tab_container">
@@ -314,6 +370,37 @@
                         </div>
                     </div>
                 </div>
+
+                {% if settings.ENABLE_BIRDEYE_VIEW %}
+                <div class="tab-pane" id="birdeye_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            <div id="birdeye_container"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if settings.ENABLE_TOPO_VIEW %}
+                <div class="tab-pane" id="topo_view_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            Topo View - Work In Progress...
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if settings.ENABLE_CUSTOM_DASHBOARD_VIEW %}
+                <div class="tab-pane" id="custom_dashboard_tab">
+                    <div class="panel panel-default inner_tab_container">
+                        <div class="panel-body">
+                            Custom Dashboards - Work In Progress...
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="clearfix"></div>
             </div>
         </div>
@@ -346,6 +433,7 @@
             live_poll_condition2 = "",
             ptp_tech_list = ['ptp','p2p','ptp bh'],
             is_perf_polling_enabled = false,
+            polling_config = {},
             show_historical_on_performance = false,
             is_unified_enabled = false,
             base_url = "",
@@ -361,10 +449,17 @@
             warn_type = "",
             crit_type = "",
             default_live_table_headers = [],
-            is_radwin5 = 0;
+            default_hist_table_headers = [],
+            is_radwin5 = 0,
+            bs_id = "",
+            all_services_list = [],
+            perf_base_url = '',
+            clicked_tab_id = '',
+            severity_wise_data_api = '',
+            default_left_tab_icon = 'fa-circle-o',
+            active_left_tab_icon = 'fa-dot-circle-o';
 
         $(document).ready(function (e) {
-
             service_view_type = $('input[name="service_view_type"]:checked').val();
             device_status_url = "{{ get_status_url }}" ? $.trim("{{ get_status_url }}") : "";
             get_services_url = "{{ get_services_url }}" ? $.trim("{{ get_services_url }}") : "";
@@ -373,11 +468,19 @@
             page_type_val = "{{ page_type }}" ? $.trim("{{ page_type }}") : "customer";
             is_util_tab = "{{ is_util_tab }}" ? Number($.trim("{{ is_util_tab }}")) : 0;
             is_radwin5 = "{{ is_radwin5 }}" ? Number($.trim("{{ is_radwin5 }}")) : 0;
+            bs_id = "{{ bs_id }}" ? "{{ bs_id }}" : [];
+            perf_base_url = "{{ perf_base_url }}" ? $.trim("{{ perf_base_url }}") : "";
             current_device_technology = "";
             statusUrl = "";
             serviceUrl = "";
             inventory_url = "";
             alert_url = "";
+
+            severity_wise_data_api = "{% url 'get_severity_wise_status' %}";
+
+            if (severity_wise_data_api) {
+                severity_wise_data_api = getCompleteUrl(severity_wise_data_api);
+            }
 
             if (!service_view_type || !$.cookie("service_view_type")) {
                 $.cookie("service_view_type", 'normal', {path: '/'})
@@ -393,10 +496,14 @@
 
         function initPerformancePage(is_first_triggered) {
 
+            isLatestStatusUpdated = false;
+
             if ($.cookie("service_view_type") == 'normal') {
                 default_live_table_headers = default_live_table_headers_without_ds;
+                default_hist_table_headers = default_hist_table_headers_without_ds;
             } else {
                 default_live_table_headers = default_live_table_headers_with_ds;
+                default_hist_table_headers = default_hist_table_headers_with_ds;
             }
 
             if (is_first_triggered) {
@@ -412,13 +519,14 @@
                 serviceUrl = getCompleteUrl(get_services_url);
                 inventory_url = getCompleteUrl(inventory_page_url);
                 alert_url = getCompleteUrl(alert_page_url);
+                // perf_base_url = getCompleteUrl(perf_base_url);
 
                 current_device = "{{ device.id }}";
                 device_technology = '{{ device_technology }}' ? '{{ device_technology }}' : "";
                 current_device_technology = device_technology ? $.trim(device_technology.toLowerCase()) : "";
                 current_device_ip = '{{ realdevice.ip_address }}' ? '{{ realdevice.ip_address }}' : "";
-                is_perf_polling_enabled = $.parseJSON('{{ live_poll_config|safe }}');
-                is_perf_polling_enabled = is_perf_polling_enabled ? is_perf_polling_enabled['performance'] : false;
+                polling_config = $.parseJSON('{{ live_poll_config|safe }}');
+                is_perf_polling_enabled = polling_config ? polling_config['performance'] : false;
                 device_name = "{{ device.device_name }}";
                 warn_color = "{{ settings.WARN_COLOR}}";
                 warn_type = "{{ settings.WARN_TYPE}}";
@@ -450,6 +558,16 @@
                     $(".perf_poll_now, #perf_live_poll_input, #perf_live_poll_chart").addClass("hide");
                 }
 
+                // Append inventory & alert center link to top header bar
+                var inventory_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" \
+                                           id="inventory_link_tag" title="Inventory" target="_blank"> \
+                                           <i class="fa fa-dropbox text-primary"></i></a>',
+                    alert_link_html = '<a href="#" class="btn btn-default btn-sm normal_screen transitionbtn hide" id="alerts_link_tag" title="Alerts" \
+                                       target="_blank"><i class="fa fa-warning text-danger"></i></a>';
+                $('.controls_container ul').prepend('<li>' + inventory_link_html + '</li>');
+                $('.controls_container ul').prepend('<li>' + alert_link_html + '</li>');
+
+
                 if(inventory_url) {
                     $("#inventory_link_tag").attr("href",inventory_url);
                     $("#inventory_link_tag").removeClass("hide");
@@ -474,6 +592,8 @@
 
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);
+
+                createTabsPaging('ul.top_perf_tabs', 'li');
             }
 
             // Add 'service_view_type' GET param to API url
@@ -497,9 +617,14 @@
          */
         $("#apply_filter").on('click', function () {
             if(startDate && endDate) {
-                var active_tab_obj = nocout_getPerfTabDomId();
+                var active_tab_obj = '';
+                try {
+                    active_tab_obj = nocout_getPerfTabDomId();
+                } catch(e) {
+                    active_tab_obj = false;
+                }
 
-                if (show_historical_on_performance) {
+                if (show_historical_on_performance && active_tab_obj) {
                     var start = new Date(startDate),
                         end   = new Date(),
                         days_diff = (end-start)/(1000*60*60*24);
@@ -558,22 +683,24 @@
                         }
                     }
                 } else {
-                    var service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                    var temp_serv_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id");
 
                     if(
-                        service_id.indexOf('availability') > -1
+                        temp_serv_id.indexOf('availability') > -1
                         ||
-                        service_id.indexOf('utilization_top') > -1
+                        temp_serv_id.indexOf('utilization_top') > -1
                         ||
-                        service_id.indexOf('topology') > -1
+                        temp_serv_id.indexOf('topology') > -1
                     ) {
 
                         var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                             service_id = active_inner_tab.attr("id").slice(0, -4),
                             get_service_data_url = active_inner_tab.attr("url");
 
-                    } 
+                    } else {
+                        var service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                            get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                    }
 
                     if(get_service_data_url && service_id && current_device) {
                         perfInstance.initGetServiceData(get_service_data_url, service_id, current_device);
@@ -605,23 +732,25 @@
                 /*To initialize date range picker*/
                 perfInstance.initDateRangePicker(dateRangePicker_domId);
 
-                var active_tab_obj = nocout_getPerfTabDomId(),
-                    service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
-                    get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                var temp_serv_id = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a').attr("id");
 
                 if(
-                    service_id.indexOf('availability') > -1
+                    temp_serv_id.indexOf('availability') > -1
                     ||
-                    service_id.indexOf('utilization_top') > -1
+                    temp_serv_id.indexOf('utilization_top') > -1
                     ||
-                    service_id.indexOf('topology') > -1
+                    temp_serv_id.indexOf('topology') > -1
                 ) {
 
                     var active_inner_tab = $('.top_perf_tab_content div.active .inner_tab_container .nav-tabs li.active a'),
                         service_id = active_inner_tab.attr("id").slice(0, -4),
                         get_service_data_url = active_inner_tab.attr("url");
 
-                } 
+                } else {
+                    var active_tab_obj = nocout_getPerfTabDomId(),
+                        service_id = active_tab_obj["active_dom_id"] ? active_tab_obj["active_dom_id"] : "",
+                        get_service_data_url = active_tab_obj["active_tab_api_url"] ? active_tab_obj["active_tab_api_url"] : "";
+                }
 
                 if(get_service_data_url && service_id && current_device) {
                     // perfInstance.getServiceData(get_service_data_url, service_id, current_device);
@@ -643,7 +772,24 @@
            #topology,\
            #utilization_top"
         ).click(function (e) {
+            // Show li panel
+            $('.perfContainerBlock .box-title ul li:not(.pull-right)').removeClass('hide');
+
+            clicked_tab_id = $(this).attr('id');
             fetchFirstTabContent(this);
+        });
+
+        // Fetch & Draw birdeye view on tab click
+        $("#birdeye_view").click(function (e) {
+
+            // Hide li panel
+            $('.perfContainerBlock .box-title ul li:not(.pull-right)').addClass('hide');
+
+            clicked_tab_id = 'birdeye_view';
+            // Show loading spinner
+            showSpinner();
+            // Call function to Fetch & Draw birdeye
+            initBirdEyeView('birdeye_container');
         });
 
         /**
@@ -661,19 +807,13 @@
 
             if (li_count > 0) {
 
-                if($("#other_perf_table").length > 0) {
-                    $("#other_perf_table").dataTable().fnDestroy();
-                    $("#other_perf_table").remove();
-                }
-
-                if($("#perf_data_table").length > 0) {
-                    $("#perf_data_table").dataTable().fnDestroy();
-                    $("#perf_data_table").remove();
-                }
+                nocout_destroyDataTable('other_perf_table');
+                nocout_destroyDataTable('perf_data_table');
 
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
-                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length) {
+                if (activeTabId && $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).length > 0) {
+                    console.log($('#' + activeTabId).parent('li'));
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li a#" + activeTabId).trigger('click');
                 } else {
                     $("#"+tab_id+" .inner_tab_container ul.left_tabs_container li:first-child a").trigger('click');
@@ -689,30 +829,21 @@
         $("body").delegate('.left_tabs_container li','click',function(e) {
             var tab_content_id = e.target.id ? e.target.id.slice(0, -4) : "";
             if(tab_content_id && $("#"+tab_content_id+"_block .tabbable").length > 0) {
+                // remove the 'active_left_tab_icon' class from all link (if exists)
+                $('.left_tabs_container li a i').removeClass(active_left_tab_icon);
+                //  Add 'default_left_tab_icon' class to active link
+                $('.left_tabs_container li a i').addClass(default_left_tab_icon);
+                //  Add 'active_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).addClass(active_left_tab_icon);
+                //  Remove 'default_left_tab_icon' class to active link
+                $($(this).children('a').children('i')).removeClass(default_left_tab_icon);
 
-                if($("#other_perf_table").length > 0) {
-                    $("#other_perf_table").dataTable().fnDestroy();
-                    $("#other_perf_table").remove();
-                }
-
-                if($("#perf_data_table").length > 0) {
-                    $("#perf_data_table").dataTable().fnDestroy();
-                    $("#perf_data_table").remove();
-                }
+                nocout_destroyDataTable('other_perf_table');
+                nocout_destroyDataTable('perf_data_table');
 
                 $(".inner_tab_container #"+tab_content_id+"_block .inner_inner_tab li:first-child a").trigger('click');
             }
         });
-
-        /**
-         * This event triggers when poll now button clicked
-         * @event click
-         */
-        // $(".perfContainerBlock").delegate('.perf_poll_now, .poll_play_btn','click',function(e) {
-        //     initSingleDevicePolling(function(response) {
-        //         // pass
-        //     });
-        // });
     </script>
 
 {% endblock %}

@@ -4,7 +4,7 @@
 {% block breadcrumb_title %}
     {% clear_breadcrumbs %}
     <!-- Create Breadcrumbs -->
-    {% breadcrumb_safe "<i class='fa fa-dropbox'></i> Inventory" "javascript:;" %}
+    {% breadcrumb_safe "<i class='fa fa-server'></i> Inventory" "javascript:;" %}
     {% breadcrumb_safe "Device Inventory" "javascript:;" %}
     {% breadcrumb_safe "City" "city_list" %}
     <!-- Render the created breadcrumbs -->
@@ -16,7 +16,6 @@
 {% block content_title %}City{% endblock %}
 {% block content_description %}List of city{% endblock %}
 {% block content %}
-    <p><a href="/cities/new"><i class="fa fa-plus">&nbsp;</i> Create City</a></p>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> City LISTING</h4>
@@ -36,6 +35,13 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            var create_link_html = '<a href="/cities/new" title="Create City" \
+                                    class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+            $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
