@@ -3163,8 +3163,8 @@ function devicePlottingClass_gmap() {
 						infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
 									  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 									  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
-									  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'>\
-									  <i class='fa fa-flash'></i> Poll Now</button>\
+									  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
+									  device_type='"+device_type+"'> <i class='fa fa-flash'></i> Poll Now</button>\
 									  <div class='clearfix'></div><div class='divide-10'></div>";
 					}
 
@@ -3201,7 +3201,7 @@ function devicePlottingClass_gmap() {
 							infoTable += "<td style='text-align:center'>\
 										 <button class='btn btn-primary btn-xs perf_poll_now'\
 										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
-			                             title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
+										 device_type='"+device_type+"' title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
 			                             class='fa fa-flash'></i>\
 			                             </button></td>";
@@ -3362,8 +3362,8 @@ function devicePlottingClass_gmap() {
 						infoTable += "<button class='btn btn-primary btn-xs themetic_poll_now_btn pull-right' title='Poll Now' \
 									  data-complete-text='<i class=\"fa fa-flash\"></i> Poll Now' \
 									  data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i> Please Wait'\
-									  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'>\
-									  <i class='fa fa-flash'></i> Poll Now</button>\
+									  device_name='"+device_name+"' marker_key='"+marker_key+"' marker_type='"+marker_type+"'\
+									  device_type='"+device_type+"'><i class='fa fa-flash'></i> Poll Now</button>\
 									  <div class='clearfix'></div><div class='divide-10'></div>";
 					}
 
@@ -3400,7 +3400,7 @@ function devicePlottingClass_gmap() {
 							infoTable += "<td style='text-align:center'>\
 										 <button class='btn btn-primary btn-xs perf_poll_now'\
 										 service_name='"+service_name+"' ds_name='"+ds_name+"' device_name='"+device_name+"'\
-			                             title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
+			                             device_type='"+device_type+"' title='Poll Now' data-complete-text='<i class=\"fa fa-flash\"></i>' \
 			                             data-loading-text='<i class=\"fa fa-spinner fa fa-spin\"> </i>'><i \
 			                             class='fa fa-flash'></i>\
 			                             </button></td>";

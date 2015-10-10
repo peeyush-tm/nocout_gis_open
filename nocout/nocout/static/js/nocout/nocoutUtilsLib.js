@@ -949,16 +949,22 @@ function nocout_livePollCurrentDevice(
         hidden_input_dom_id = extra_info_obj['hidden_input_dom_id'] ? extra_info_obj['hidden_input_dom_id'] : "",
         polled_val_shown_dom_id = extra_info_obj['polled_val_shown_dom_id'] ? extra_info_obj['polled_val_shown_dom_id'] : "",
         show_sparkline_chart = extra_info_obj['show_sparkline_chart'] ? extra_info_obj['show_sparkline_chart'] : false,
-        is_first_call = typeof extra_info_obj['is_first_call'] != 'undefined' ? extra_info_obj['is_first_call'] : 1;
+        is_first_call = typeof extra_info_obj['is_first_call'] != 'undefined' ? extra_info_obj['is_first_call'] : 1,
+        is_rad5_device = '';
 
-    if (typeof is_radwin5 == 'undefined') {
-        is_radwin5 = 0;
+    // Condition to set/reset is_radwin flag
+    if (typeof is_radwin5 != 'undefined') {
+        is_rad5_device = is_radwin5;
+    } else if (typeof extra_info_obj['is_radwin5'] != 'undefined') {
+        is_rad5_device = extra_info_obj['is_radwin5'];
+    } else {
+        is_rad5_device = 0;
     }
 
     // Make Ajax Call
     perf_page_live_polling_call = $.ajax({
-        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call+"&is_radwin5="+is_radwin5,
-        type : "GET",
+        url: base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call+"&is_radwin5="+is_rad5_device,
+        type: "GET",
         success : function(response) {
             
             var result = "";
