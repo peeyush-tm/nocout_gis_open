@@ -2,6 +2,8 @@ from django.db import models
 
 from inventory.models import Sector
 from device.models import Device, DeviceTechnology
+from user_profile.models import UserProfile
+from service.models import ServiceDataSource
 
 
 ##################################################################
@@ -2051,3 +2053,42 @@ class RfNetworkAvailability(models.Model):
     avail = models.FloatField('Availability', default=0, null=True, blank=True)
     unavail = models.FloatField('Unavailability', default=0, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+
+
+class CustomDashboard(models.Model):
+    """
+    CustomDashboard Model Columns Declaration.
+    """
+    DISPLAY_TYPE = (
+        ('table', 'Table'),
+        ('chart', 'Chart')
+    )
+
+    name = models.CharField('Name', max_length=250, unique=True)
+    title = models.CharField('Title', max_length=250)
+    display_type = models.CharField('Display Type ', max_length=200, choices=DISPLAY_TYPE, default='table')
+    user_profile = models.ManyToManyField(UserProfile, through="UsersCustomDashboard")
+    data_source = models.ManyToManyField(ServiceDataSource, through="DSCustomDashboard")
+    is_public = models.BooleanField('Is Public Dashboard',default=False)
+    is_required = models.BooleanField('Is Required',default=False)
+
+    def __unicode__(self):
+        return self.title
+
+
+class UsersCustomDashboard(models.Model):
+    """
+    CustomDashboard-UserProfile mapper Model Columns Declaration.
+    """
+    user_profile = models.ForeignKey(UserProfile)
+    custom_dashboard = models.ForeignKey(CustomDashboard)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DSCustomDashboard(models.Model):
+    """
+    CustomDashboard-ServiceDataSource mapper Model Columns Declaration.
+    """
+    data_source = models.ForeignKey(ServiceDataSource)
+    custom_dashboard = models.ForeignKey(CustomDashboard)
+    created_at = models.DateTimeField(auto_now_add=True)
