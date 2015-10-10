@@ -486,8 +486,8 @@ table.dataTable thead th, table.dataTable tfoot th {
   color:#555;
 }
 /*Search*/
-.btn-sm,
-.btn-xs {
+.btn-default.btn-sm,
+.btn-default.btn-xs {
   padding: 5px 10px;
 }
 .sidebar-menu #search-bar {
