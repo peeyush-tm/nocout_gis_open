@@ -1,146 +1,39 @@
 #!/usr/bin/python
-import time
-import sys
-import os
-import socket
-import pymongo
-from celery import chord,group
+"""
+Poller script which runs on ss and calculates 
+the ul utilization of the ss connected from BS.
+
+Poller script determines the uplink utilization of the ss.
+poller script takes the snmp value of 
+OID .1.3.6.1.4.1.161.19.3.1.4.1.21 from snmp agent of device at specific interval.
+uplink utilization information is /sent to device application 
+"""
+
+
 from ast import literal_eval
 from datetime import datetime,timedelta
-from sys import path
-path.append('/omd/nocout_etl')
-
 from itertools import izip_longest
+import memcache
+import os
+import pymongo
+import sys
+import socket
+import time
+
+from celery import chord,group
+
+#from sys import path
+#path.append('/omd/nocout_etl')
 
 from start.start import app
 from handlers.db_ops import *
 from service.service_etl import *
-
 
 logger = get_task_logger(__name__)
 info, warning, error = logger.info, logger.warning, logger.error
 
 INVENTORY_DB = getattr(app.conf, 'INVENTORY_DB', 3)
 
-
-"""
-Poller script which runs on ss and calculates the ul utilization of the ss connected from BS.
-
-Poller script determines the uplink utilization of the ss.
-poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.4.1.21 from snmp agent of device at specific interval.
-uplink utilization information is /sent to device application 
-
-"""
-# ##################################################################
-# Function : check_wimax_pmp1_dl_utilization_kpi
-#
-#  Parameters: info(SNMP output) ,params(parameters to check the service state) 
-#
-#  Output: service state,plugin output ,performance data
-##################################################################
-
-def extract_cambium_bs_ul_issue_data(hostname,site,ip_address,service_list,**args):
-	"""
-	Connects to a socket, checks for the WELCOME-MSG and closes the
-	connection.
-	Returns nothing.
-
-	"""
-	d = {}
-	final_value = []
-	sect_id =''
-	ul_issue = ''
-	try:
-		connected_ss_entry = extract_cambium_connected_ss(hostname,args)
-		if not connected_ss_entry:
-			connected_ss_entry = extract_connected_ss_from_topology(hostname)
-			for ip,sect_id,machine in connected_ss_entry:
-				d.setdefault(machine, [machine]).append(str(ip))
-			mapped_ip = map(tuple, d.values())
-			total = 0
-			for entry in mapped_ip:
-				try:
-					db=args['mysql']
-					if len(entry[1:]) == 1:
-						ip_tuple = "('%s')" % entry[1:][0]
-					else:
-						ip_tuple = str(entry[1:])
-					query = "select current_value from performance_utilizationstatus where "+\
-					"service_name='cambium_ss_ul_issue_kpi' and ip_address in " + ip_tuple
-					cur = db.cursor()
-					cur.execute(query)
-					data = cur.fetchall()
-					cur.close()
-					db.close()
-				except:
-					if db:
-						db.close()
-					continue
-				value = [str(item) for sublist in data for item in sublist]
-				final_value.extend(value)	
-				for num in final_value:
-					if num != '':
-						total = total+int(num)
-				if len(final_value):
-					ul_issue = (total/float(len(final_value)))*100
-		else:
-			sect_id = extract_cambium_bs_sec_id(hostname)
-			ss_ul_issue =collect_cambium_ss_ul_issue_data(connected_ss_entry,args)
-			if len(connected_ss_entry) > 0:
-				ul_issue = sum(ss_ul_issue)/float(len(connected_ss_entry)) * 100 
-	except:
-		ul_issue = None
-
-	try:	
-		if ul_issue != None and ul_issue != '':
-			if ul_issue < args['war']:
-                		state = 0
-				state_string = "ok"
-			elif ul_issue >= args['crit']:
-				state = 2
-				state_string = "critical"
-			else:
-				state = 1
-				state_string = "warning"
-		perf += 'bs_ul_issue' + "=%s;%s;%s;%s " %(ul_issue,args['war'],args['crit'],sect_id)
-   
-    	except:
-        	perf = ';%s;%s;%s' % (args['war'],args['crit'],sect_id)
-
-    	service_dict = service_dict_for_kpi_services(perf,state_string,hostname,site,ip_address,**args)
-    	service_dict['refer'] = sect_id
-
-	service_list.append(service_dict)
-    	return service_dict
-
-def extract_connected_ss_from_topology(hostname,**args):
-        query = """select connected_device_ip from performance_topology where device_name ='%s' """ %(hostname)
-	query1 = """ select M.name, D.ip_address from device_device as D left join machine_machine as M on (D.machine_id = M.id) where D.ip_address in 
-	(select connected_device_ip from performance_topology where device_name ='%s')""" %(hostname)
-	
-	query3 ="""select device_device.ip_address, performance_topology.sector_id,machine_machine.name from 
-	device_device  join (machine_machine, performance_topology)  on  ( device_device.machine_id  = machine_machine.id  and 
-	device_device.ip_address = performance_topology.connected_device_ip ) where performance_topology.device_name = """ % pformat(hostname)
-
-	query2 ="""select device_device.ip_address, performance_topology.sector_id,performance_topology.refer,machine_machine.name from 
-	device_device  join (machine_machine, performance_topology)  on  ( device_device.machine_id  = machine_machine.id  and 
-	device_device.ip_address = performance_topology.connected_device_ip ) where performance_topology.device_name in %s """ % pformat((hostname,args['dr_slave']))
-	
-
-	if 'wimax' in args['service']:
-		mysql_query = query2
-	elif 'cambium' in args['service']:
-		mysql_query = query3	
-	try:
-		db = args['mysql']
-		cur = db.cursor()
-		cur.execute(mysql_query)
-		data = cur.fetchall()
-		cur.close()
-	except  Exception,e:
-		data = None
-
-        return data
 
 def extract_cambium_connected_ss(hostname,memc_conn):
 	ss_connected = []
@@ -214,121 +107,7 @@ def extract_wimax_bs_sec_id(hostname,memc_conn):
 	if  pmp2_sec_id == None:
 		pmp2_sec_id = ''
 	return pmp1_sec_id,pmp2_sec_id 
-def extract_wimax_bs_ul_issue_data(hostname,site,ip_address,service_list,**args):
-        """
-        Connects to a socket, checks for the WELCOME-MSG and closes the
-        connection.
-        Returns nothing.
-    
-        """
-	d1= {}
-	d2= {}
-	final_value = []
-	pmp1_ul_issue = ''
-	pmp2_ul_issue = ''
-	pmp1_sect_id = ''
-	pmp2_sect_id = ''
-	try:
-		pmp1_conn_ss_ip,pmp2_conn_ss_ip = extract_wimax_connected_ss(hostname,args)
-		if not pmp1_conn_ss_ip and not pmp2_conn_ss_ip:
-			connected_ss_entry = extract_connected_ss_from_topology(hostname,args)
-			for ip,sector_id,port,machine in connected_ss_entry:
-				if port in d1.keys():
-					d1[port].append(str(ip))
-				else:
-					d1[port]= []
-					d1[port].append(str(ip))
-					if port == '1':
-						pmp1_sect_id = sector_id
-					if port == '2':
-						pmp2_sect_id = sector_id
-				if machine in d2.keys():
-					d2[machine].append(str(ip))
-				else:
-					d2[machine]= []
-					d2[machine].append(str(ip))
-			pmp1_count = 0
-			pmp2_count = 0
-			for machine_name in d2:
-				try:
-					db=mysql_conn(machine=machine_name)
-					ip_tuple = str(tuple(d2[machine_name]))
-				
-					query = "select ip_address,current_value from performance_utilizationstatus where "+ \
-					"service_name='wimax_ss_ul_issue_kpi' and ip_address in " + ip_tuple
-					cur = db.cursor()
-					cur.execute(query)
-					data = cur.fetchall()
-					cur.close()
-					db.close()
-				except Exception,e:
-					if db:
-						db.close()
-					continue
-				for entry_value in data:
-					ip =str(entry_value[0])
-					value = entry_value[1]
-					try:
-						if ip in d1['1'] and value != '':
-							pmp1_count = pmp1_count + int(value)
-							continue
-					except Exception,e:
-						pass
-					try:
-						if ip in d1['2'] and value != '':
-							pmp2_count = pmp2_count + int(value)
-					except Exception,e:
-						pass
-				try:				
-					if len(d1['1']):
-						pmp1_ul_issue = (pmp1_count/float(len(d1['1'])))*100
-				except Exception,e:
-					pmp1_ul_issue = ''
-				try:
-					if len(d1['2']):
-						pmp2_ul_issue = (pmp2_count/float(len(d1['2'])))*100
-				except Exception,e:
-					pmp2_ul_issue = ''
-		else:
-			pmp1_sect_id,pmp2_sect_id = extract_bs_sec_id(hostname)
-			pmp1_ss_ul_issue,pmp2_ss_ul_issue =collect_wimax_ss_ul_issue_data(pmp1_conn_ss_ip,pmp2_conn_ss_ip,args)
-			if len(pmp1_conn_ss_ip) > 0:
-				pmp1_ul_issue = sum(pmp1_ss_ul_issue)/float(len(pmp1_conn_ss_ip)) * 100 
-			if len(pmp2_conn_ss_ip) > 0:
-				pmp2_ul_issue = sum(pmp2_ss_ul_issue)/float(len(pmp2_conn_ss_ip)) * 100
 
-	except Exception,e:
-		pmp1_ul_issue = ''
-		pmp2_ul_issue = ''
-		pmp2_sect_id= ''	
-		pmp1_sect_id= ''	
-	try:
-		if pmp1_ul_issue != '':
-                	pmp1_ul_issue = "%.2f" % pmp1_ul_issue
-                	if float(pmp1_ul_issue) < args['war']:
-                        	pmp1_state = 0
-               	 	elif float(pmp1_ul_issue) >= args['crit']:
-                        	pmp1_state = 2
-                	else:
-                        	pmp1_state = 1
-        	if pmp2_ul_issue != '':
-                	pmp2_ul_issue = "%.2f" % pmp2_ul_issue
-                	if float(pmp2_ul_issue) < args['war']:
-                        	pmp2_state = 0
-                	elif float(pmp2_ul_issue) >= args['crit']:
-                        	pmp2_state = 2
-                	else:
-                        	pmp2_state = 1
-        	state = max(pmp1_state,pmp2_state)
-        	state_string= match_severity[state]
-        	perf += 'pmp1_ul_issue' + "=%s;%s;%s;%s " %(pmp1_ul_issue,args['war'],args['crit'],pmp1_sect_id)
-        	perf += 'pmp2_ul_issue' + "=%s;%s;%s;%s " %(pmp2_ul_issue,args['war'],args['crit'],pmp2_sect_id)
-    	except Exception,e:
-        	state= 3
-        	state_string = "unknown"
-        	perf = ';%s;%s' % (args['war'],args['crit'])
-    	service_dict = service_dict_for_kpi_services(perf,state_string,hostname,site,ip_address,**args)
-    	return service_dict
 
 @app.task(base=DatabaseTask, name ='extract_wimax_bs_ul_data')
 def extract_wimax_bs_ul_data(ul_issue_list,host_name,site,ip,sect_id,sec_type,**args):
@@ -392,7 +171,7 @@ def extract_cambium_util_data(host_params,**args):
     	except Exception,e:
 		warning('memc: {0}'.format(e))
         	sec_id = ''
-	try:
+    	try:
 		if not cam_util:
 			service_name = 'cambium_%s_utilization' % util_type	
 			query_string = "GET services\nColumns: service_perf_data\nFilter: host_name =%s\n" % (hostname) +\
@@ -420,9 +199,15 @@ def extract_cambium_util_data(host_params,**args):
 	except Exception,e:
 		warning('cam ss util: {0}'.format(e))
 		perf = 'cam_%s_util_kpi' % util_type + "=;%s;%s;%s" %(args['war'],args['crit'],sec_id)
-	service_dict = service_dict_for_kpi_services(perf,state_string,hostname,site,ip_address,**args)
+
+	# calculate age since last state change
+	age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+	service_dict = service_dict_for_kpi_services(
+			perf, state_string, hostname, site, ip_address, age_of_state, **args)
 	service_dict['refer'] = sec_id
 	service_list.append(service_dict)
+
 	cam_util = ''
 	sec_id = ''
 	perf = ''
@@ -443,23 +228,23 @@ def extract_radwin_util_data(host_params,**args):
 		hostname,site,ip_address,d_type,d_tech,bw = eval(entry[0])
 	else:
 		break
-	try:
-		if args['memc']:
-			#sec_id = args['memc'].get(str(hostname) + "_sec_id")
+    	try:
+        	if args['memc']:
+        		#sec_id = args['memc'].get(str(hostname) + "_sec_id")
 			rad_util = args['memc'].get(str(hostname) + "_" + util_type)
 			#warning('radwin util: {0}'.format(rad_util))
 			if rad_util:
 				rad_util = literal_eval(rad_util)
-	except Exception,e:
+    	except Exception,e:
 		warning('memc: {0}'.format(e))
-		sec_id = ''
-	try:
+        	sec_id = ''
+    	try:
 		"""
 		if not rad_util:
 			service_name = 'radwin_%s_utilization' % util_type	
 			query_string = "GET services\nColumns: service_perf_data\nFilter: host_name =%s\n" % (hostname) +\
-			"Filter: service_description = %s\n" % service_name +\
-			"OutputFormat: python\n"
+	       		"Filter: service_description = %s\n" % service_name +\
+	       		"OutputFormat: python\n"
 			output = extract_data_from_live(hostname,site,query_string)
 			try:
 				if output[0][0]:
@@ -483,38 +268,45 @@ def extract_radwin_util_data(host_params,**args):
 	except Exception,e:
 		#warning('cam ss util: {0}'.format(e))
 		perf = 'rad_%s_util_kpi' % util_type + "=;%s;%s;%s" %(args['war'],args['crit'],sec_id)
-	service_dict = service_dict_for_kpi_services(perf,state_string,hostname,site,ip_address,**args)
+
+	# calculate age since last state change
+	age_of_state = age_since_last_state(host, args['service'], state_string)
+
+	service_dict = service_dict_for_kpi_services(
+			perf, state_string, hostname, site, ip_address, age_of_state, **args)
 	service_dict['refer'] = sec_id
 	service_list.append(service_dict)
+
 	rad_util = ''
 	sec_id = ''
 	perf = ''
-	state_string = "unknown"
+    	state_string = "unknown"
     if len(service_list) > 0: 	
-	build_export.s(args['site_name'], service_list).apply_async()
+    	build_export.s(args['site_name'], service_list).apply_async()
     return None
  
 def extract_wimax_util_data(host_params,**args):
     state = 3
     status_list = []
     service_list=[]
+
     for entry in host_params:
-    	total = util = dr_util = sec_bw = dr_slave =None
+    	total = util = dr_util = sec_bw = dr_slave = None
     	state_string = "unknown"
     	perf = sec_kpi = sec_id = plugin_message = ''
 	if entry  and len(eval(entry[0]))  == 4:
-		hostname,site,ip_address,dr_slave = eval(entry[0])
+		hostname, site, ip_address, dr_slave = eval(entry[0])
 	elif entry and len(eval(entry[0])) == 3:
-		hostname,site,ip_address = eval(entry[0])
+		hostname, site, ip_address = eval(entry[0])
 		dr_slave  = None
 	else:
 		break
+
 	util_type = args['service'].split('_')[2]
 	sec_type = args['service'].split('_')[1]
 
-	service_name = 'wimax_%s_%s_util_bgp' % (sec_type,util_type)
+	service_name = 'wimax_%s_%s_util_bgp' % (sec_type, util_type)
 
-	#warning('memc: {0}'.format(args))
 	bw_query_string = "GET services\nColumns: plugin_output\nFilter: " + \
 		"service_description = %s\nFilter: host_name =%s\nOutputFormat: python\n" % ("wimax_pmp_bw_invent",hostname)
 	sec_util_query_string = "GET services\nColumns: service_perf_data\n" + \
@@ -606,8 +398,13 @@ def extract_wimax_util_data(host_params,**args):
     	except Exception as e:
 		perf = ';%s;%s' % (args['war'],args['crit']) 
 		warning('Error in wimax util: {0}'.format(e))
-		
-    	service_dict = service_dict_for_kpi_services(perf,state_string,hostname,site,ip_address,**args)
+
+	# calculate age since last state change
+	age_of_state = age_since_last_state(hostname, args['service'], state_string)
+
+    	service_dict = service_dict_for_kpi_services(
+			perf, state_string, hostname, site, ip_address, age_of_state, **args
+			)
 	#warning('dl_util: {0}'.format(service_dict))
 
     	service_dict['refer'] = sec_id
@@ -616,6 +413,37 @@ def extract_wimax_util_data(host_params,**args):
     if len(service_list) > 0: 	
     	build_export.s(args['site_name'], service_list).apply_async()
     #return None
+
+
+def age_since_last_state(host, service, state):
+	""" Calculates the age since when service 
+	was in the given state
+	"""
+
+	prefix = 'util:'
+	key = prefix + host + ':' + service
+	# memc connection to get the state
+	memc = memcache.Client(['10.133.19.165:11211'])
+	out = memc.get(key)
+	set_key = True
+
+	now = datetime.now().strftime('%s')
+	age = now
+	value = state + ',' + time_since
+
+	if out:
+		out = out.split(',')
+		old_state = out[0]
+		time_since = out[1]
+		# dont update the existing state if not changed
+		if old_state == state:
+			set_key = False
+			age = time_since
+	if set_key:
+		memc.set(key, value)
+
+	return int(age)
+
 
 def extract_data_from_live(hostname,site,query):
         """
@@ -656,7 +484,8 @@ def extract_data_from_live(hostname,site,query):
 		query_output = ''
 
 	return query_output
-def service_dict_for_kpi_services(perf,state,hostname,site,ip_address,**args):	
+def service_dict_for_kpi_services(
+		perf, state, hostname, site, ip_address, age_of_state, **args):	
     service_dict = {}
     service_dict['host_name'] = hostname
     service_dict['address'] = ip_address 
@@ -666,6 +495,8 @@ def service_dict_for_kpi_services(perf,state,hostname,site,ip_address,**args):
     service_dict['state']  = state
     service_dict['last_chk'] = time.time()
     service_dict['service_description']=args['service']
+    service_dict['age']= age_of_state
+
     return service_dict	
 
 @app.task(base=DatabaseTask,name='extract_ss_ul_issue_data')
@@ -736,7 +567,7 @@ def call_kpi_services(**opts):
 	p = rds_cli_invent.redis_cnx.pipeline()
 	wimax_util_kpi_services = ['wimax_pmp1_dl_util_kpi','wimax_pmp2_dl_util_kpi','wimax_pmp1_ul_util_kpi','wimax_pmp2_ul_util_kpi','wimax_ss_ul_issue_kpi','wimax_ss_provis_kpi']
 	cambium_util_kpi_services = ['cambium_dl_util_kpi','cambium_ul_util_kpi','cambium_ss_ul_issue_kpi','cambium_ss_porvis_kpi']
-	radwin_util_kpi_services = ['radwin_dl_util_kpi','radwin_ul_util_kpi']
+        radwin_util_kpi_services = ['radwin_dl_util_kpi','radwin_ul_util_kpi']
 	for i in izip_longest(*[iter(wimax_bs_key)] * 500):	
 		[p.lrange(k, 0 , -1) for k  in i]
 		#[p.lrange(k, 0,-1) for k  in ]
@@ -748,12 +579,13 @@ def call_kpi_services(**opts):
 		args['provis_bw'] = 4
 		args['war']  = 80 
 		args['crit']  = 90
-		args['memc']  = call_kpi_services.memc_cnx('pub_slave_1')
+		args['memc']  = call_kpi_services.memc_cnx
 		#warning('memc: {0}'.format(args['memc']))
 		args['service'] = wimax_util_kpi_services[0]
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		extract_kpi_services_data.s(**args).apply_async()
+	
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = wimax_util_kpi_services[1]
@@ -800,7 +632,7 @@ def call_kpi_services(**opts):
 	
 		args['host_info'] = cambium_bs_params
 		args['my_function'] = 'extract_cambium_util_data' 
-		args['memc']  = call_kpi_services.memc_cnx('pub_slave_1')
+		args['memc']  = call_kpi_services.memc_cnx
 
 		args['provis_bw'] = 4.76
 		args['war']  = 80 
@@ -838,16 +670,19 @@ def call_kpi_services(**opts):
 		args = {}	
 		[p.lrange(k, 0 ,-1) for k  in i]
 		radwin_ss_params = p.execute()
-		args['memc']  = call_kpi_services.memc_cnx('pub_slave_1')
-		#warning('memc: {0}'.format(args['memc']))	
+		args['memc']  = call_kpi_services.memc_cnx
+		#warning('memc: {0}'.format(args['memc']))
+	
 		args['host_info'] = radwin_ss_params
-		args['my_function'] = 'extract_radwin_util_data'
+		args['my_function'] = 'extract_radwin_util_data' 
+
 		args['war']  = 80 
 		args['crit']  = 90
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = radwin_util_kpi_services[0]
 		extract_kpi_services_data.s(**args).apply_async()
+		
 		rds_cli = RedisInterface()
 		args['redis'] = rds_cli
 		args['service'] = radwin_util_kpi_services[1]
@@ -918,7 +753,12 @@ def extract_cambium_ss_provis_data(host_params,**args):
     			perf = ''.join( 'ss_state' + "=%s;;;" % (ss_state))
 		except Exception ,e:
 			perf = ''
-    		service_dict = service_dict_for_kpi_services(perf,state_string,host,site,ip,**args)
+
+		# calculate age since last state change
+		age_of_state = age_since_last_state(host, args['service'], state_string)
+
+    		service_dict = service_dict_for_kpi_services(
+				perf, state_string, host, site, ip, age_of_state, **args)
 		service_list.append(service_dict)
 
     	if len(service_list) > 0: 	
@@ -982,9 +822,14 @@ def extract_wimax_ss_provis_data(host_params,**args):
 			perf = ''.join( 'ss_state' + "=%s;;;" % (ss_state))
 		except Exception ,e:
 			perf = ''
-		#warning('ss_provis: {0}'.format(perf))
-    		service_dict = service_dict_for_kpi_services(perf,state_string,host,site,ip,**args)
+
+		# calculate age since last state change
+		age_of_state = age_since_last_state(host, args['service'], state_string)
+
+    		service_dict = service_dict_for_kpi_services(
+				perf, state_string, host, site, ip, age_of_state, **args)
 		service_list.append(service_dict)		
+
     	if len(service_list) > 0: 	
     		build_export.s(args['site_name'], service_list).apply_async()
 
@@ -1059,7 +904,7 @@ def extract_wimax_ul_issue_data(**args):
     args['memc']  = ''
     redis_conn =args['redis']
     args['redis'] = ''
-    memc_conn  = extract_wimax_ul_issue_data.memc_cnx('pub_slave_1')
+    memc_conn  = extract_wimax_ul_issue_data.memc_cnx
     for entry in host_info:
 	if entry:
 		if len(literal_eval(entry[0])) == 3:
@@ -1108,7 +953,7 @@ def extract_cambium_ul_issue_data(**args):
     ss_info = []
     rds_cli = RedisInterface(custom_conf={'db': INVENTORY_DB})
     p = rds_cli.redis_cnx.pipeline()
-    memc_conn  = extract_cambium_ul_issue_data.memc_cnx('pub_slave_1')
+    memc_conn  = extract_cambium_ul_issue_data.memc_cnx
     args['memc'] = ''
     redis_conn =args['redis']
     args['redis'] = ''
