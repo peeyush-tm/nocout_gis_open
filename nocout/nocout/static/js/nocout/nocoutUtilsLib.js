@@ -338,7 +338,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         is_birdeye_view = false;
 
     if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
-        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
+        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1;
     }
 
     if (!is_birdeye_view) {
