@@ -338,7 +338,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         is_birdeye_view = false;
 
     if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
-        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
+        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1;
     }
 
     if (!is_birdeye_view) {
@@ -2003,7 +2003,7 @@ $('#status_container').delegate('#final_status_table .severity_block', 'click', 
                 }
             });
         } else {
-            bootbox.alert("You don't have any services in '" + block_severity + "'");
+            bootbox.alert("This device don't have any service in '" + block_severity + "'");
             // Hide loading spinner
             hideSpinner();
         }

@@ -3559,7 +3559,7 @@ function devicePlottingClass_gmap() {
 							  <i class='fa fa-times text-danger'></i></a></div></div>\
 							  <div class='box-body'><div align='center'>"+infoTable+"</div>\
 							  <div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'>\
-							  </div><ul class='list-unstyled'>"+report_download_btn+"</ul></div></div></div>";
+							  </div><ul class='list-unstyled list-inline' align='left'>"+report_download_btn+"</ul></div></div></div>";
 		}
 
 		if(isDebug) {
