@@ -99,9 +99,14 @@
                 </table>
                 {% url 'gis-wizard-sector-list' bs_pk=base_station.id as next_url %}
                 {% url 'gis-wizard-base-station-detail' pk=base_station.id as prev_url %}
-                <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous (Base Station)</button>
+                <br>
+                <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ prev_url }}')">
+                    <i class="fa fa-times text-warning"></i> Previous (Base Station)
+                </button>
                 &nbsp;
-                <button type="reset" class="btn btn-success" onclick="window.location.replace('{{ next_url }}')"><i class="fa fa-pencil"></i>Next (Sectors List)</button>
+                <button type="reset" class="btn btn-default" onclick="window.location.replace('{{ next_url }}')">
+                    <i class="fa fa-pencil text-success"></i> Next (Sectors List)
+                </button>
             </div>
             <div class="clearfix"></div>
         </div>

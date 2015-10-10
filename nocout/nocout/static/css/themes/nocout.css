@@ -340,18 +340,9 @@ table.dataTable.no-footer {
   color:#ca1e25 !important;
   background: none  !important;
 }
-select option:hover
-{
+select option:hover {
   color:#ca1e25 !important; 
   background: none  !important;
-}
-
-.text-success{
-  background: #FFFFFF;
-  border-radius: 6px;
-  }
-.text-success:hover{
-  border-radius: 50%;
 }
 #main_dashboard_container .box-body i {
   cursor: pointer;

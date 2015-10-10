@@ -651,7 +651,7 @@ table.dataTable thead th, table.dataTable tfoot th{
   border-bottom-color: rgba(0, 0, 0, 0.25) !important;
 }
 .box .header-tabs .nav-tabs > li {
-  border-right: 1px inset #dddddd !important;
+  border-right: 1px solid #dddddd !important;
   border-left: 0px none!important;
   margin-bottom: 0px;
 }
@@ -687,4 +687,15 @@ ul.nav-tabs:not(.inner_inner_tab) > li > a {
 }
 .severity_block {
   cursor: pointer;
+}
+.datatable tbody tr td a {
+  padding: 0px;
+  margin: 0px;
+}
+.datatable tbody tr td a i {
+  padding-left: 2.5px;
+  padding-right: 2.5px;
+}
+.datatable tbody tr td a:hover {
+  text-decoration: none;
 }
