@@ -82,7 +82,8 @@
                 
                 <!-- /TEAM STATUS FOR MOBILE -->
                 <!-- SIDEBAR COLLAPSE -->
-                <div id="sidebar-collapse" class="sidebar-collapse btn">
+                <div id="sidebar-collapse" class="sidebar-collapse btn">                    
+
                     <span class = "fa-bar logo" data-icon1="fa fa-bars" data-icon2="fa fa-bars">
                         {% if settings.ENABLE_WHITE_THEME %}
                             <img class="fa fa-barsd" src="/static/img/logo/logo_red.png"></img>
@@ -90,17 +91,19 @@
                             <img class="fa fa-barsd" src="/static/img/logo/logo_white.png"></img>
                         {% endif %}
                     </span>
+                        
                     <!-- <i class="fa fa-bars" data-icon1="fa fa-bars" data-icon2="fa fa-bars"></i> -->
                 </div>
                 <!-- /SIDEBAR COLLAPSE -->
+                <div class="orgTitle">{{ user_organization }}</div>
             </div>
             <!-- NAVBAR LEFT -->
 
-            <ul class="nav navbar-nav pull-left orgTitleBlock">
+            <!-- <ul class="nav navbar-nav pull-left orgTitleBlock">
                 <li class="org">
                     Organization: {{ user_organization }}
                 </li>
-            </ul>
+            </ul> -->
 
             <!-- /NAVBAR LEFT -->
             <!-- BEGIN TOP NAVIGATION MENU -->

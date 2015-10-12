@@ -152,9 +152,9 @@ class UserListingTable(PermissionsRequiredMixin,
                     else:
                         actions = '<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                                    <a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                                   <a href="javascript:;" class="user_soft_delete_btn" pk="{0}">\
-                                   <i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'],
-                                                                                            datatable_headers)
+                                   <a href="javascript:;" class="user_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                                        dct['id'], datatable_headers
+                                    )
                     dct.update(actions=actions)
 
         return json_data
@@ -211,10 +211,8 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
 
                     dct.update(
                         actions='<a href="/user/{0}/"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                                 <a href="#UserArchivedListing" onclick= "add_confirmation(id={0})">\
-                                 <i class="fa fa-plus text-success"></i></a> <a href="#UserArchivedListing" \
-                                 onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger">\
-                                 </i></a>'.format(dct['id'])
+                                 <a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"><i class="fa fa-plus text-success"></i></a> \
+                                 <a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
                     )
 
         return json_data

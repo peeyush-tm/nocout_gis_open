@@ -16,7 +16,7 @@
 {% block content_description %}List of devices{% endblock %}
 {% block page_setting_block %}
     {% if perms.device.sync_devices %}
-        <span class="pull-right">
+        <span class="pull-right" style="padding-bottom:5px;">
             <div class="btn-group">
                 {% if last_sync_time %}
                     <i class="green-dot">Last Sync Run At: {{ last_sync_time }} | </i>
@@ -38,12 +38,6 @@
 {% endblock %}
 {% load staticfiles %}
 {% block content %}
-        {% if perms.device.add_device %}
-            <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
-        {% endif %}
-
-    <p><a href="/device/treeview"><i class="fa fa-sitemap"></i> Devices Tree View</a></p>
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>DEVICE LISTING</h4>
@@ -141,6 +135,14 @@
             restore_device_url = '';
 
         $(document).ready(function() {
+
+            // Add 'Create Item' link on top header bar.
+            {% if perms.device.add_device %}
+                var create_link_html = '<a href="/device/new" title="Create Device" \
+                                        class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+                $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+            {% endif %}
 
             // Update useful URL variables
             add_service_url = '{% url "add_services" 123 %}';

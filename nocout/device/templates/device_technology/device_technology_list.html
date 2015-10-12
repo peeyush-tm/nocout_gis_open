@@ -16,8 +16,6 @@
 {% block content_title %}Device Technology Management{% endblock %}
 {% block content_description %}List of device technologies{% endblock %}
 {% block content %}
-    <p><a href="/technology/new"><i class="fa fa-plus">&nbsp;</i> Create Device Technology</a></p>
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>DEVICE TECHNOLOGY LISTING</h4>
@@ -36,6 +34,13 @@
     <script type="text/javascript">
         var dataTableInstance = '';
         $(document).ready(function (e) {
+
+            // Add 'Create Item' link on top header bar.
+            var create_link_html = '<a href="/technology/new" title="Create Device Technology" \
+                                    class="btn btn-default btn-sm"><i class="fa fa-plus"></i></a>';
+
+            $('.controls_container ul').prepend('<li>' + create_link_html + '</li>');
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 

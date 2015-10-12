@@ -81,10 +81,10 @@ function populateDeviceStatus_nocout(domElement,info) {
                     <b>Since</b> : ' + age + '</td>\
                     <td class="one_fourth_column vAlign_middle">\
                     <b>Last Down Time</b> : ' + lastDownTime + '</td>\
-                    <td title="OK" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
-                    <td title="Warning" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
-                    <td title="Critical" class="severity_block vAlign_middle" style="background:' + red_color + ';">' + severity_crit + '</td>\
-                    <td title="Unknown" class="severity_block vAlign_middle" \
+                    <td data-severity="ok" title="Click to see all up services" class="severity_block vAlign_middle" style="background:' + ok_severity_color + ';">' + severity_up + '</td>\
+                    <td data-severity="warning" title="Click to see all warning services" class="severity_block vAlign_middle" style="background:' + orange_color + ';">' + severity_warn + '</td>\
+                    <td data-severity="critical" title="Click to see all critical services" class="severity_block vAlign_middle" style="background:' + red_color + ';">' + severity_crit + '</td>\
+                    <td data-severity="unknown" title="Click to see all unknown services" class="severity_block vAlign_middle" \
                     style="background:' + unknown_severity_color + ';">' + severity_unknown + '</td>\
                     </tr></table>';
 
@@ -338,7 +338,7 @@ function initChartDataTable_nocout(table_id, headers_config, service_id, ajax_ur
         is_birdeye_view = false;
 
     if (typeof nocout_getPerfTabDomId != 'undefined' && typeof live_data_tab != 'undefined') {
-        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1 || $('.top_perf_tabs > li.active a').attr('id').indexOf('bird') > -1;
+        is_birdeye_view = clicked_tab_id.indexOf('bird') > -1;
     }
 
     if (!is_birdeye_view) {
@@ -949,16 +949,22 @@ function nocout_livePollCurrentDevice(
         hidden_input_dom_id = extra_info_obj['hidden_input_dom_id'] ? extra_info_obj['hidden_input_dom_id'] : "",
         polled_val_shown_dom_id = extra_info_obj['polled_val_shown_dom_id'] ? extra_info_obj['polled_val_shown_dom_id'] : "",
         show_sparkline_chart = extra_info_obj['show_sparkline_chart'] ? extra_info_obj['show_sparkline_chart'] : false,
-        is_first_call = typeof extra_info_obj['is_first_call'] != 'undefined' ? extra_info_obj['is_first_call'] : 1;
+        is_first_call = typeof extra_info_obj['is_first_call'] != 'undefined' ? extra_info_obj['is_first_call'] : 1,
+        is_rad5_device = '';
 
-    if (typeof is_radwin5 == 'undefined') {
-        is_radwin5 = 0;
+    // Condition to set/reset is_radwin flag
+    if (typeof is_radwin5 != 'undefined') {
+        is_rad5_device = is_radwin5;
+    } else if (typeof extra_info_obj['is_radwin5'] != 'undefined') {
+        is_rad5_device = extra_info_obj['is_radwin5'];
+    } else {
+        is_rad5_device = 0;
     }
 
     // Make Ajax Call
     perf_page_live_polling_call = $.ajax({
-        url : base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call+"&is_radwin5="+is_radwin5,
-        type : "GET",
+        url: base_url+"/device/lp_bulk_data/?service_name=" + service_name + "&devices=" + JSON.stringify(device_name) + "&ds_name="+ds_name+"&is_first_call="+is_first_call+"&is_radwin5="+is_rad5_device,
+        type: "GET",
         success : function(response) {
             
             var result = "";
@@ -1906,3 +1912,106 @@ function createBirdEyeViewHTML(container_id) {
 
     $('#' + container_id).html(birdeye_html);
 }
+
+/**
+ * This event trigger when severity status block clicked
+ * @event click
+ */
+$('#status_container').delegate('#final_status_table .severity_block', 'click', function(e) {
+
+    // Show loading spinner
+    showSpinner();
+
+    var severity_list = ['ok', 'warning', 'critical', 'unknown'],
+        block_severity = $(this).data('severity') ? $.trim($(this).data('severity').toLowerCase()) : '',
+        count_txt = $(this).text() ? Number($.trim($(this).text())) : 0;
+
+    if (severity_list.indexOf(block_severity) > -1) {
+        if (count_txt > 0 && typeof severity_wise_data_api != 'undefined') {
+            var view_type = $.trim($('input[name="service_view_type"]:checked').val()),
+                get_params = '?severity=' + block_severity + '&device_id=' + current_device + '&view_type=' + view_type;
+            // Make ajax call
+            $.ajax({
+                url: severity_wise_data_api + get_params,
+                type: 'GET',
+                success: function(response) {
+                    var result = response;
+
+                    if (typeof result == 'string') {
+                        result = JSON.parse(result);
+                    }
+
+                    if (result['success']) {
+
+                        var dataset = result.data,
+                            table_html = '';
+                        
+                        table_html += '<table class="table table-bordered table-hover table-striped table-responsive">';
+                        table_html += '<thead>';
+                        table_html += '<tr> \
+                                            <th>Time</th> \
+                                            <th>Datasource</th> \
+                                            <th>Service</th> \
+                                            <th>Value</th> \
+                                            <th>Severity</th> \
+                                            <th>Warning Threshold</th> \
+                                            <th>Critical Threshold</th> \
+                                       </tr>';
+                        table_html += '</thead><tbody>';
+
+                        for (var i=0;i<dataset.length;i++) {
+                            table_html += '<tr> \
+                                                <td>' + dataset[i]['sys_timestamp'] + '</td> \
+                                                <td>' + dataset[i]['data_source'] + '</td> \
+                                                <td>' + dataset[i]['service_name'] + '</td> \
+                                                <td>' + dataset[i]['current_value'] + '</td> \
+                                                <td>' + dataset[i]['severity'] + '</td> \
+                                                <td>' + dataset[i]['warning_threshold'] + '</td> \
+                                                <td>' + dataset[i]['critical_threshold'] + '</td> \
+                                           </tr>';
+                        }
+
+                        table_html += '</tbody></table>';
+
+                        bootbox.dialog({
+                            message: '<div id="severity_wise_data_container" style="max-height: 450px; overflow: auto;"></div>',
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> SEVERITY WISE DATA - ' + block_severity.toUpperCase()
+                        });
+
+                        $(".modal-dialog").css("width","80%");
+
+                        $('#severity_wise_data_container').html(table_html);
+
+                    } else {
+                        $.gritter.add({
+                            // (string | mandatory) the heading of the notification
+                            title: block_severity + ' severity wise status',
+                            // (string | mandatory) the text inside the notification
+                            text: result.message,
+                            // (bool | optional) if you want it to fade out on its own or just sit there
+                            sticky: false
+                        });
+                    }
+                },
+                error: function(err) {
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: block_severity + ' severity wise status',
+                        // (string | mandatory) the text inside the notification
+                        text: err.statusText,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
+                },
+                complete: function() {
+                    // Hide loading spinner
+                    hideSpinner();
+                }
+            });
+        } else {
+            bootbox.alert("This device don't have any service in '" + block_severity + "'");
+            // Hide loading spinner
+            hideSpinner();
+        }
+    }
+});

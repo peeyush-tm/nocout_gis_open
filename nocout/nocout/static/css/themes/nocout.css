@@ -142,7 +142,7 @@
 }
 .sidebar-menu > ul > li.active > a {
   background: #FAFAFA !important;
-  border-top-color: transparent !important;
+  /*border-top-color: transparent !important;*/
   color: #fff;
 }
 .sidebar-menu > ul > li > a.open {
@@ -269,15 +269,19 @@
 .box.border, .box.solid {
   border: 0.1em solid #d5d5d5;
 }
-.btn-default:hover,
-.btn-default:focus,
-.btn-default:active,
-.btn-default.active,
-.open .dropdown-toggle.btn-default {
-  color: #333333;
+.btn-default:hover i,
+.btn-default:focus i,
+.btn-default:active i,
+.btn-default.active i,
+.open .dropdown-toggle.btn-default i{
+  color: #ca1e25;
   /*background-color: #ebebeb;*/
-  border-color: #adadad;
+  }
+.btn-default:hover .text-primary {
+  color: #ca1e25;
+  background-color: transparent;
 }
+
 .table > thead > tr > th {
   border-bottom: 1px solid #e8666b !important;
 }
@@ -336,23 +340,13 @@ table.dataTable.no-footer {
   color:#ca1e25 !important;
   background: none  !important;
 }
-select option:hover
-{
+select option:hover {
   color:#ca1e25 !important; 
   background: none  !important;
 }
-
-.text-success{
-  background: #FFFFFF;
-  border-radius: 6px;
-  }
-.text-success:hover{
-  border-radius: 50%;
-}
 #main_dashboard_container .box-body i {
   cursor: pointer;
-  border-radius: 6px
-}
+  }
 .inner_inner_tab > li > a {
   border: 0px none;
 }
@@ -378,4 +372,15 @@ select option:hover
 .box .header-tabs .alert_detail_tabs > li.active a,
 .box .header-tabs .top_perf_tabs > li.active a {
   color: #ca1e25;
+}
+i.trends_icon:hover {
+  color:#ca1e25;
+}
+#main_dashboard_container .col-md-3:hover div.pull-right i.trends_icon ,
+.row.col-md-6:hover div.pull-right i.trends_icon,
+.row.col-md-4:hover div.pull-right i.trends_icon{
+  color:#ca1e25;
+}
+.tab-rf-perf .box-container:hover i.rf_trends {
+  color:#ca1e25 !important;
 }
