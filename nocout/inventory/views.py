@@ -149,7 +149,7 @@ class AntennaListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_antenna'):
-                edit_action = '<a href="/antenna/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/antenna/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_antenna'):
@@ -285,11 +285,11 @@ class BaseStationListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_basestation'):
-                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
+                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_basestation'):
-                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -298,7 +298,7 @@ class BaseStationListingTable(PermissionsRequiredMixin,
             else:
                 actions = ''
             actions = actions + '<a href="/base_station/{0}/l2_reports/"><i class="fa fa-sign-in text-info" title="View L2 reports for Base station"\
-                            alt="View L2 reports for Base station"></i></a>&nbsp&nbsp'.format(device_id)
+                            alt="View L2 reports for Base station"></i></a>'.format(device_id)
             dct.update(actions=actions)
         return json_data
 
@@ -434,7 +434,7 @@ class BackhaulListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_backhaul'):
-                edit_action = '<a href="/backhaul/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/backhaul/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_backhaul'):
@@ -602,7 +602,7 @@ class SectorListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_sector'):
-                edit_action = '<a href="/sector/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/sector/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_sector'):
@@ -725,7 +725,7 @@ class CustomerListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_customer'):
-                edit_action = '<a href="/customer/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/customer/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_customer'):
@@ -887,7 +887,7 @@ class SubStationListingTable(PermissionsRequiredMixin,
 
             # if user has permission to edit the substation then edit option will be showed in data table.
             if self.request.user.has_perm('inventory.change_substation'):
-                edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             # if user has permission to delete the substation then edit option will be showed in data table
@@ -1037,11 +1037,11 @@ class CircuitListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_circuit'):
-                edit_action = '<a href="/circuit/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
+                edit_action = '<a href="/circuit/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_circuit'):
-                delete_action = '<a href="/circuit/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
+                delete_action = '<a href="/circuit/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -3345,19 +3345,18 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
-                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Upload Valid Inventory">\
-                                                         <i class="fa fa-upload text-success"></i></a>\
-                                                         <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Upload Invalid Inventory">\
-                                                         <i class="fa fa-upload text-danger"></i></a>\
-                                                         <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Generate Valid Inventory \
-                                                         Delta"><i class="fa fa-check-circle-o text-success"></i></a> \
-                                                         <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" \
-                                                         class="bulk_import_link" title="Generate Invalid Inventory \
-                                                         Delta"><i class="fa fa-check-circle-o text-danger"></i> \
-                                                         </a>'.format(dct.get('id'), dct.get('sheet_name')))
+                        dct.update(
+                            bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
+                                                 <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>\
+                                                 <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Generate Valid Inventory Delta"><i class="fa fa-check-circle-o text-success"></i></a> \
+                                                 <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" \
+                                                 class="bulk_import_link" title="Generate Invalid Inventory Delta"><i class="fa fa-check-circle-o text-danger"></i></a>'.format(
+                                                    dct.get('id'), dct.get('sheet_name')
+                                                )
+                        )
                     else:
                         dct.update(bulk_upload_actions='')
             except Exception as e:
@@ -3366,13 +3365,14 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
-                        dct.update(inventory_delete_actions='<a href="/bulk_import/delete_inventory/valid/{0}/{1}" \
-                                                              class="bulk_import_link" title="Delete Valid Inventory"> \
-                                                              <i class="fa fa-minus-square-o text-success"></i></a> \
-                                                             <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" \
-                                                             class="bulk_import_link" title="Delete Invalid Inventory \
-                                                             Delta"><i class="fa fa-minus-square-o text-danger"></i>\
-                                                             </a>'.format(dct.get('id'), dct.get('sheet_name')))
+                        dct.update(
+                            inventory_delete_actions='<a href="/bulk_import/delete_inventory/valid/{0}/{1}" \
+                                                      class="bulk_import_link" title="Delete Valid Inventory"><i class="fa fa-minus-square-o text-success"></i></a> \
+                                                      <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" \
+                                                      class="bulk_import_link" title="Delete Invalid Inventory Delta"><i class="fa fa-minus-square-o text-danger"></i></a>'.format(
+                                                        dct.get('id'), dct.get('sheet_name')
+                                                    )
+                            )
                     else:
                         dct.update(inventory_delete_actions='')
             except Exception as e:
@@ -4014,9 +4014,9 @@ class GisWizardListingTable(BaseStationListingTable):
             sector_configured_on = ', '.join(sector_configured_on)
             dct.update(sector_configured_on=sector_configured_on)
 
-            detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>&nbsp'.format(device_id)
+            detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>'.format(device_id)
             if self.request.user.has_perm('inventory.change_basestation'):
-                edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_basestation'):
@@ -4245,10 +4245,10 @@ class GisWizardSectorListingMixin(object):
             sector_id = dct.pop('id')
             kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
             kwargs.update({'pk': sector_id})
-            detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+            detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
             if self.request.user.has_perm('inventory.change_sector'):
                 edit_url = reverse('gis-wizard-sector-update', kwargs=kwargs)
-                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>'
             else:
                 edit_action = ''
             dct.update(actions=detail_action+edit_action)
@@ -4657,10 +4657,10 @@ class GisWizardSubStationListing(SubStationListingTable):
             sub_station_id = dct.pop('id')
             kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
             kwargs.update({'pk': sub_station_id})
-            detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+            detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
             if self.request.user.has_perm('inventory.change_substation'):
                 edit_url = reverse('gis-wizard-sub-station-update', kwargs=kwargs)
-                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>'
             else:
                 edit_action = ''
             dct.update(actions=detail_action+edit_action)
@@ -4947,9 +4947,9 @@ class GisWizardPTPListingTable(SectorListingTable):
                 device_id = dct.pop('id')
                 sector = Sector.objects.get(id=device_id)
                 kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id , 'pk': sector.id}
-                detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+                detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
                 if self.request.user.has_perm('inventory.change_sector'):
-                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
+                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>'.format(sector.base_station.id, sector.bs_technology.id , device_id)
                 else:
                     edit_action = ''
                 dct.update(actions=detail_action+edit_action)
@@ -5022,9 +5022,9 @@ class GisWizardSubStationListingTable(SubStationListingTable):
                 sector = sub_station.circuit_set.all()[0].sector
                 kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sub_station.device.device_technology,
                         'sector_pk': sector.id, 'pk': device_id}
-                detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+                detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>'
                 if self.request.user.has_perm('inventory.change_substation'):
-                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
+                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
             dct.update(actions=detail_action+edit_action)
         return json_data
 

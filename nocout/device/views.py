@@ -282,20 +282,18 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             #                       d. others (any device, may be out of inventory)
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
-                            </a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
             if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -320,25 +318,22 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                 pass
 
             try:
-                dct.update(nms_actions='<a href="javascript:;" class="nms_action view" pk="{0}">\
-                                        <i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
-                                        <a href="javascript:;" class="nms_action disable" pk="{0}">\
-                                        <i class="fa fa-ban {1}" title="Disable Device"></i></a>\
-                                        <a href="javascript:;" class="nms_action add" pk="{0}">\
-                                        <i class="fa fa-plus {1}" title="Add Services"></i></a>\
-                                        <a href="javascript:;" class="nms_action edit" pk="{0}">\
-                                        <i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
-                                        <a href="javascript:;" class="nms_action delete" pk="{0}">\
-                                        <i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
-                    dct['id'], text_color))
+                dct.update(
+                    nms_actions='<a href="javascript:;" class="nms_action view" pk="{0}"><i class="fa fa-list-alt {1}" title="Services Status"></i></a>\
+                                 <a href="javascript:;" class="nms_action disable" pk="{0}"><i class="fa fa-ban {1}" title="Disable Device"></i></a>\
+                                 <a href="javascript:;" class="nms_action add" pk="{0}"><i class="fa fa-plus {1}" title="Add Services"></i></a>\
+                                 <a href="javascript:;" class="nms_action edit" pk="{0}"><i class="fa fa-pencil {1}" title="Edit Services"></i></a>\
+                                 <a href="javascript:;" class="nms_action delete" pk="{0}"><i class="fa fa-minus {1}" title="Delete Services"></i></a>'.format(
+                                    dct['id'], text_color
+                                )
+                )
             except Exception as e:
                 logger.exception("Device is not a substation. %s" % e.message)
 
             # show sync button only if user is superuser or admin
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
                 try:
-                    dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();">\
-                                            <i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
+                    dct['nms_actions'] += '<a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh {1}" title="Sync Device"></i></a>'.format(
                         dct['id'], text_color)
                 except Exception as e:
                     logger.exception("Device is not a substation. %s" % e.message)
@@ -476,20 +471,18 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             #                       d. others (any device, may be out of inventory)
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail">\
-                             </i></a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -516,9 +509,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             # update nms actions
             try:
                 dct.update(
-                    nms_actions='<a href="javascript:;" class="device_add_to_nms_form_btn" pk="{0}">\
-                                 <i class="fa fa-plus-square {1}" title="Add device to NMS."></i> \
-                                 </a>'.format(dct['id'], text_color)
+                    nms_actions='<a href="javascript:;" class="device_add_to_nms_form_btn" pk="{0}"><i class="fa fa-plus-square {1}" title="Add device to NMS."></i></a>'.format(dct['id'], text_color)
                 )
             except Exception as e:
                 pass
@@ -656,20 +647,18 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             #                       d. others (any device, may be out of inventory)
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail">\
-                             </i></a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -695,8 +684,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
 
             # update nms actions
             try:
-                dct.update(nms_actions='<a href="javascript:;" onclick="modify_device_state({0});">\
-                                        <i class="fa fa-check {1}" title="Enable Device"></i></a>'.format(
+                dct.update(nms_actions='<a href="javascript:;" onclick="modify_device_state({0});"><i class="fa fa-check {1}" title="Enable Device"></i></a>'.format(
                     dct['id'], text_color))
             except Exception as e:
                 pass
@@ -825,18 +813,16 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-                add_action = '<a href="javascript:;" pk="{0}" class="nms_action restore">\
-                <i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
+                add_action = '<a href="javascript:;" pk="{0}" class="nms_action restore"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
             else:
                 add_action = ''
 
             # device detail
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
-                             </a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
@@ -844,8 +830,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             # view device delete action only if user has permissions
             if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True)\
                     and device.device_name != 'default':
-                delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i>\
-                                 </a>&nbsp'.format(dct['id'])
+                delete_action = '<a href="/device/{0}/delete/"><i class="fa fa-trash-o text-dark" title="Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 
@@ -987,20 +972,18 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView,
                 dct.update(status_icon='<img src="">')
 
             # device detail action
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i>\
-                             </a>&nbsp&nbsp'.format(dct['id'])
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(dct['id'])
 
             # view device edit action only if user has permissions
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>'.format(
                     dct['id'])
             else:
                 edit_action = ''
 
             # view device delete action only if user has permissions
             if self.request.user.is_superuser:
-                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}">\
-                                 <i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+                delete_action = '<a href="javascript:;" class="device_soft_delete_btn" pk="{0}"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
             else:
                 delete_action = ''
 

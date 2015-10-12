@@ -793,7 +793,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		device_name 	 : sector_device_name,
 		startLat 	     : startLat,
 		startLon 	     : startLon,
-		filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name},
+		filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name, "sector_id" : sectorInfo.sector_id},
 		bhInfo 			 : [],
 		child_ss 	     : sector_child,
 		polarisation 	 : polarisation,
