@@ -1052,8 +1052,8 @@ function nocout_livePollCurrentDevice(
                         };
                     }
                 } else {
-                    if (!fetched_val) {
-                        fetched_val = "N/A";
+                    if (!fetched_val || fetched_val == 'NA') {
+                        fetched_val = null;
                     }
 
                     fetched_data = {
