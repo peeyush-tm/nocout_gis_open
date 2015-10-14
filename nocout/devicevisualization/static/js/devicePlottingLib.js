@@ -50,7 +50,8 @@ var mapInstance = "",
     india_center_lat = 21.1500,
     posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
 	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId",
-	ptp_not_show_items = ['pe_ip'];
+	ptp_not_show_items = ['pe_ip'],
+	tech_list = ['PMP', 'PTP', 'P2P', 'WiMAX'];
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -364,7 +365,7 @@ function devicePlottingClass_gmap() {
         				if(states_array.length > 0) {
             				for(var i=plottable_data.length;i--;) {
 								var current_bs = plottable_data[i];
-								if(states_array.indexOf(current_bs.data.state) > -1) {
+								if(states_array.indexOf(current_bs.state) > -1) {
 									current_bound_devices.push(current_bs);
 								}
             				}
@@ -863,24 +864,29 @@ function devicePlottingClass_gmap() {
 		//Loop For Base Station
 		for(var i=dataset.length;i--;) {
 
-			/*Create BS state,city object*/
-			if(dataset[i].data.state) {
-
-				state_city_obj[dataset[i].data.state] = state_city_obj[dataset[i].data.state] ? state_city_obj[dataset[i].data.state] : [];
-				if(state_city_obj[dataset[i].data.state].indexOf(dataset[i].data.city) == -1) {
-					state_city_obj[dataset[i].data.state].push(dataset[i].data.city);
-				}
-			}
-
-			if(dataset[i].data.city) {
-				if(all_cities_array.indexOf(dataset[i].data.city) == -1) {
-					all_cities_array.push(dataset[i].data.city); 
-				}
-			}
-
 			var current_bs = dataset[i],
-				state = current_bs.data.state,
-				sectors_data = current_bs.data.param.sector ? current_bs.data.param.sector : [],
+				state = current_bs['state'] ? $.trim(current_bs['state']) : '',
+				city = current_bs['city'] ? $.trim(current_bs['city']) : '';
+
+			/*Create BS state,city object*/
+			if(state) {
+
+				state_city_obj[state] = state_city_obj[state] ? state_city_obj[state] : [];
+				if(state_city_obj[state].indexOf(city) == -1) {
+					state_city_obj[state].push(city);
+				}
+			}
+
+			if(city) {
+				if(all_cities_array.indexOf(city) == -1) {
+					all_cities_array.push(city); 
+				}
+			}
+
+			var sectors_data = current_bs.sectors ? current_bs.sectors : [],
+				total_ss = current_bs.total_ss ? current_bs.total_ss : 0,
+				lat = current_bs.lat ? current_bs.lat : '',
+				lon = current_bs.lon ? current_bs.lon : '',
 				update_state_str = state ? $.trim(state) : "",
 				state_list = state_lat_lon_db.find({"name" : update_state_str}),
 				state_lat_lon_obj = state_list.length > 0 ? state_list[0] : false,
@@ -927,9 +933,7 @@ function devicePlottingClass_gmap() {
 			        state_wise_device_labels[state] = device_counter_label;
 				}
 			} else {
-				var lat = current_bs.data.lat,
-					lon = current_bs.data.lon,
-					allStateBoundries = state_boundries_db.data;
+				var allStateBoundries = state_boundries_db.data;
 
 				// Loop to find that the lat lon of BS lies in which state.
 				for(var y=allStateBoundries.length;y--;) {
@@ -947,7 +951,7 @@ function devicePlottingClass_gmap() {
 
 						if(isPointInPoly(latLonArray, {lat: lat, lon: lon})) {
 							//Update json with state name
-							dataset[i]['data']['state'] = current_state_name;
+							dataset[i]['state'] = current_state_name;
 							state = current_state_name;
 							
 							var is_state_exists = state_lat_lon_db.find({"name" : state}).length > 0;
@@ -1000,30 +1004,30 @@ function devicePlottingClass_gmap() {
 				all_devices_loki_db.insert(dataset[i]);
 			}
 
+			state_wise_device_counters[state] += total_ss;
+
+			if(state_lat_lon_obj) {
+				var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
+										 <p style='position:relative;padding-top:24px;font-weight:bold;' \
+										 title='Load "+state+" Data.'> \
+										 "+state_wise_device_counters[state]+"</p></div>";
+				// Update the content of state counter label as per devices count
+				state_wise_device_labels[state].setContent(state_cluster_html);
+			}
+
 			//Loop For Sector Devices
 			for(var j=sectors_data.length;j--;) {
 				var sector_tech = sectors_data[j]['technology'],
 					sector_vendor = sectors_data[j]['vendor'];
+				if (sector_tech != 'NA') {
+					tech_vendor_obj[sector_tech] = tech_vendor_obj[sector_tech] ? tech_vendor_obj[sector_tech] : [];
+					if(sector_vendor != 'NA' && tech_vendor_obj[sector_tech].indexOf(sector_vendor) == -1) {
+						tech_vendor_obj[sector_tech].push(sector_vendor);
+					}
 
-				tech_vendor_obj[sector_tech] = tech_vendor_obj[sector_tech] ? tech_vendor_obj[sector_tech] : [];
-				if(tech_vendor_obj[sector_tech].indexOf(sector_vendor) == -1) {
-					tech_vendor_obj[sector_tech].push(sector_vendor);
-				}
-
-				if(all_vendor_array.indexOf(sector_vendor) == -1) {
-					all_vendor_array.push(sector_vendor); 
-				}
-
-				var total_ss = sectors_data[j].sub_station ? sectors_data[j].sub_station.length : 0;
-
-				state_wise_device_counters[state] += total_ss;
-				if(state_lat_lon_obj) {
-					var state_cluster_html = "<div "+state_click_event+" style='"+counter_div_style+"'> \
-											 <p style='position:relative;padding-top:24px;font-weight:bold;' \
-											 title='Load "+state+" Data.'> \
-											 "+state_wise_device_counters[state]+"</p></div>";
-					// Update the content of state counter label as per devices count
-					state_wise_device_labels[state].setContent(state_cluster_html);
+					if(sector_vendor != 'NA' && all_vendor_array.indexOf(sector_vendor) == -1) {
+						all_vendor_array.push(sector_vendor); 
+					}
 				}
 			}
 		}
@@ -1177,16 +1181,16 @@ function devicePlottingClass_gmap() {
 		var dataset_clone = dataset;
 		// Remove unmatched sectors
 		for(var x=0;x<dataset_clone.length;x++) {
-			var bs_sectors = dataset_clone[x].data.param.sector,
+			var bs_sectors = dataset_clone[x].sectors,
 				correct_sectors = [];
 
 			// Loop for BS sectors
 			for(var y=0;y<bs_sectors.length;y++) {
 				var sector_technology = $.trim(bs_sectors[y].technology.toLowerCase()),
 					sector_vendor = $.trim(bs_sectors[y].vendor.toLowerCase()),
-					sector_frequency_1 = $.trim(bs_sectors[y].planned_frequency),
+					sector_frequency_1 = $.trim(bs_sectors[y].freq),
 					sector_frequency_2 = "",
-					sector_polarization = bs_sectors[y].orientation ? $.trim(bs_sectors[y].orientation.toLowerCase()) : "";
+					sector_polarization = bs_sectors[y].polarization ? $.trim(bs_sectors[y].polarization.toLowerCase()) : "";
 
 				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
 					var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_technology) > -1 : true,
@@ -1225,7 +1229,7 @@ function devicePlottingClass_gmap() {
 				}
 			}
 			// Update BS sectors.
-			dataset_clone[x].data.param.sector = correct_sectors;
+			dataset_clone[x].sectors = correct_sectors;
 		}
 
 		if(isDebug) {
@@ -1262,10 +1266,10 @@ function devicePlottingClass_gmap() {
 
 		var filtered_Data = all_devices_loki_db.where(function(obj) {
 
-			var bs_city = obj.data.city ? $.trim(obj.data.city.toLowerCase()) : "",
-				bs_state = obj.data.state ? $.trim(obj.data.state.toLowerCase()) : "",
-				sectors = obj.data.param.sector,
-				backhaul = obj.data.param.backhual,
+			var bs_city = obj.city ? $.trim(obj.city.toLowerCase()) : "",
+				bs_state = obj.state ? $.trim(obj.state.toLowerCase()) : "",
+				sectors = obj.sectors,
+				// backhaul = obj.param.backhual,
 				basic_filter_condition1 = filterObj['state'] != 'Select State' ? bs_state == $.trim(filterObj['state'].toLowerCase()) : true,
 				basic_filter_condition2 = filterObj['city'] != 'Select City' ? bs_city == $.trim(filterObj['city'].toLowerCase()) : true,
 				advance_filter_condition1 = state_filter.length > 0 ? state_filter.indexOf(bs_state) > -1 : true,
@@ -1295,10 +1299,10 @@ function devicePlottingClass_gmap() {
 								// If advance Filters Applied
 								if(isAdvanceFilterApplied) {
 
-									var sector_frequency_1 = sectors[i].planned_frequency ? $.trim(sectors[i].planned_frequency) : "",
+									var sector_frequency_1 = sectors[i].freq ? $.trim(sectors[i].freq) : "",
 										sector_frequency_2 = "",
 										frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
-										sector_polarization = sectors[i].orientation ? $.trim(sectors[i].orientation.toLowerCase()) : "",
+										sector_polarization = sectors[i].polarization ? $.trim(sectors[i].polarization.toLowerCase()) : "",
 										advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sector_tech) > -1 : true,
 						                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
 						            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter_condition : true,
@@ -1347,7 +1351,7 @@ function devicePlottingClass_gmap() {
 	        					) {
 					        		for(var i=0;i<sectors.length;i++) {
 
-					        			var sector_frequency_1 = sectors[i].planned_frequency ? $.trim(sectors[i].planned_frequency) : "",
+					        			var sector_frequency_1 = sectors[i].freq ? $.trim(sectors[i].freq) : "",
 											frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
 											advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology.toLowerCase()) > -1 : true,
 							                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor.toLowerCase()) > -1 : true,
@@ -1403,13 +1407,13 @@ function devicePlottingClass_gmap() {
         			if(!isCorrect) {
 		        		for(var i=0;i<sectors.length;i++) {
 
-		        			var sector_frequency_1 = sectors[i].planned_frequency ? $.trim(sectors[i].planned_frequency) : "",
+		        			var sector_frequency_1 = sectors[i].freq ? $.trim(sectors[i].freq) : "",
 								sector_frequency_2 = "",
 								frequency_filter_condition = frequency_filter.indexOf(sector_frequency_1) > -1,
 								advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology.toLowerCase()) > -1 : true,
 				                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor.toLowerCase()) > -1 : true,
 				            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter_condition : true,
-				            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation.toLowerCase()) > -1 : true;
+				            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].polarization.toLowerCase()) > -1 : true;
 
 				            if(
 				            	advance_filter_condition1
@@ -1749,7 +1753,7 @@ function devicePlottingClass_gmap() {
 						"item_index" : sector_item_index
 					},
 					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
-					orientation = $.trim(sector_array[j].orientation),
+					orientation = $.trim(sector_array[j].polarization),
 					sector_child = sector_array[j].sub_station,
 					sectorRadius = sector_array[j].radius ? +(sector_array[j].radius) : 0,
 					rad = sectorRadius && (sectorRadius > 0) ? sectorRadius : 0.5,
@@ -4510,7 +4514,7 @@ function devicePlottingClass_gmap() {
         		var bs_technology_array = [];
         		var searchPattern = new RegExp('^' + query.term, 'i');
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var technologies = obj.sector_ss_technology.toLowerCase();
+        			var technologies = obj.tech_str.toLowerCase();
         			if(technologies.search(query.term.toLowerCase()) > -1) {
 	        			return true;
         			} else {
@@ -4521,7 +4525,7 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        // var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < filtered_data.length; i++) {
-		        	var technology_list = filtered_data[i].sector_ss_technology.split("|");
+		        	var technology_list = filtered_data[i].tech_str.split("|");
         			for(var j=0;j<technology_list.length;j++) {
         				if(searchPattern.test(technology_list[j])) {
         					if(data.results.length >= 40) {
@@ -4548,7 +4552,7 @@ function devicePlottingClass_gmap() {
         			selected_technology = $("#filter_technology").select2("val");
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var vendors = obj.sector_ss_vendor.toLowerCase();
+        			var vendors = obj.vendor_str.toLowerCase();
         			if(vendors.search(query.term.toLowerCase()) > -1) {
 	        			return true;
         			} else {
@@ -4587,7 +4591,7 @@ function devicePlottingClass_gmap() {
         		var showing_states = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
         			var searchPattern = new RegExp('^' + query.term, 'i');
-        			if(searchPattern.test(obj.data.state)) {
+        			if(searchPattern.test(obj.state)) {
         				return true;
         			} else {
         				return false;
@@ -4597,15 +4601,15 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < filtered_data.length; i++) {
-		        	if(showing_states.indexOf(filtered_data[i].data.state) < 0) {
+		        	if(showing_states.indexOf(filtered_data[i].state) < 0) {
 		        		if(data.results.length >= 40) {
     						break;
     					} else {
-			        		showing_states.push(filtered_data[i].data.state);
+			        		showing_states.push(filtered_data[i].state);
 			            	data.results.push({
-			            		id: filtered_data[i].data.state,
-			            		text: filtered_data[i].data.state,
-			            		value : filtered_data[i].data.state
+			            		id: filtered_data[i].state,
+			            		text: filtered_data[i].state,
+			            		value : filtered_data[i].state
 		            		});
 		            	}
 		        	}
@@ -4623,7 +4627,7 @@ function devicePlottingClass_gmap() {
         			searchPattern = new RegExp('^' + query.term, 'i');
         			
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			if(searchPattern.test(obj.data.city)) {
+        			if(searchPattern.test(obj.city)) {
         				return true;
         			} else {
         				return false;
@@ -4633,19 +4637,19 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < filtered_data.length; i++) {
-		        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
+		        	if(showing_cities.indexOf(filtered_data[i].city) < 0) {
 		        		if(data.results.length >= 40) {
     						break;
     					} else {
 			        		if(selected_state.length > 0) {
-			        			if(selected_state.indexOf(filtered_data[i].data.state) > -1) {
-					            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+			        			if(selected_state.indexOf(filtered_data[i].state) > -1) {
+					            	data.results.push({id: filtered_data[i].city, text: filtered_data[i].city, value : filtered_data[i].city});
 			        			}
 			        		} else {
-				            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});		        			
+				            	data.results.push({id: filtered_data[i].city, text: filtered_data[i].city, value : filtered_data[i].city});		        			
 			        		}
 			        		// Push city data to array
-			        		showing_cities.push(filtered_data[i].data.city);
+			        		showing_cities.push(filtered_data[i].city);
 		        		}
 		        	}
 		        }
@@ -4661,7 +4665,7 @@ function devicePlottingClass_gmap() {
         			searchPattern = new RegExp('^' + query.term, 'i');
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var frequencies = obj.sector_planned_frequencies.toLowerCase();
+        			var frequencies = obj.freq_str.toLowerCase();
         			if(frequencies.search(query.term.toLowerCase()) > -1) {
 	        			return true;
         			} else {
@@ -4672,7 +4676,7 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        // var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < filtered_data.length; i++) {
-		        	var freq_list = filtered_data[i].sector_planned_frequencies.split("|");
+		        	var freq_list = filtered_data[i].freq_str.split("|");
         			for(var j=0;j<freq_list.length;j++) {
         				if(searchPattern.test(freq_list[j])) {
         					if(data.results.length >= 40) {
@@ -4698,9 +4702,9 @@ function devicePlottingClass_gmap() {
         			searchPattern = new RegExp('^' + query.term, 'i');
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var sectors = obj.data.param.sector;
+        			var sectors = obj.sectors;
         			for(var i=0;i<sectors.length;i++) {
-	        			if(searchPattern.test(sectors[i].orientation)) {
+	        			if(searchPattern.test(sectors[i].polarization)) {
 	        				return true;
 	        			} else {
 	        				return false;
@@ -4711,15 +4715,15 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < filtered_data.length; i++) {
-		        	var sectors = filtered_data[i].data.param.sector;
+		        	var sectors = filtered_data[i].sectors;
         			for(var j=0;j<sectors.length;j++) {
-        				if(searchPattern.test(sectors[j].orientation)) {
+        				if(searchPattern.test(sectors[j].polarization)) {
         					if(data.results.length >= 40) {
         						break;
         					} else {
-					        	if(polarization_array.indexOf(sectors[j].orientation.toLowerCase()) < 0 && sectors[j].orientation != 'NA') {
-					        		polarization_array.push(sectors[j].orientation.toLowerCase());
-					            	data.results.push({id: sectors[j].orientation, text: sectors[j].orientation, value : sectors[j].orientation});
+					        	if(polarization_array.indexOf(sectors[j].polarization.toLowerCase()) < 0 && sectors[j].polarization != 'NA') {
+					        		polarization_array.push(sectors[j].polarization.toLowerCase());
+					            	data.results.push({id: sectors[j].polarization, text: sectors[j].polarization, value : sectors[j].polarization});
 					        	}
 				        	}
 			        	}
@@ -4855,8 +4859,8 @@ function devicePlottingClass_gmap() {
         		var showing_cities = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
         			var searchPattern = new RegExp('^' + query.term, 'i');
-        			if(obj.data.city) {
-	        			if(searchPattern.test(obj.data.city)) {
+        			if(obj.city) {
+	        			if(searchPattern.test(obj.city)) {
 	        				return true;
 	        			} else {
 	        				return false;
@@ -4869,13 +4873,13 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < filtered_data.length; i++) {
-		        	if(filtered_data[i].data.city) {
+		        	if(filtered_data[i].city) {
 		        		if(data.results.length >= 40) {
     						break;
     					} else {
-				        	if(showing_cities.indexOf(filtered_data[i].data.city) < 0) {
-				        		showing_cities.push(filtered_data[i].data.city);
-				            	data.results.push({id: filtered_data[i].data.city, text: filtered_data[i].data.city, value : filtered_data[i].data.city});
+				        	if(showing_cities.indexOf(filtered_data[i].city) < 0) {
+				        		showing_cities.push(filtered_data[i].city);
+				            	data.results.push({id: filtered_data[i].city, text: filtered_data[i].city, value : filtered_data[i].city});
 				        	}
 			        	}
 		        	}
@@ -5072,7 +5076,7 @@ function devicePlottingClass_gmap() {
     			break;
     		}
 
-    		var current_city = data_to_plot[i].data.city ? $.trim(data_to_plot[i].data.city).toLowerCase() : "",
+    		var current_city = data_to_plot[i].city ? $.trim(data_to_plot[i].city).toLowerCase() : "",
     			current_bs_alias = data_to_plot[i].alias ? $.trim(data_to_plot[i].alias).toLowerCase() : "",
     			search_condition1 = selected_bs_alias.length > 0 ? selected_bs_alias.indexOf(String(current_bs_alias)) > -1 : true,
 	            search_condition2 = selected_bs_city.length > 0 ? selected_bs_city.indexOf(String(current_city)) > -1 : true,
@@ -5117,7 +5121,7 @@ function devicePlottingClass_gmap() {
 		    	var onlyCityCondition = selected_bs_alias.length == 0 && selected_ip_address.length == 0 && selected_circuit_id.length == 0;
 
 		    	if(onlyCityCondition) {
-		    		var city_val = data_to_plot[i].data.city ? $.trim(data_to_plot[i].data.city).toLowerCase() : "",
+		    		var city_val = data_to_plot[i].city ? $.trim(data_to_plot[i].city).toLowerCase() : "",
 		    			city_condition = selected_bs_city.indexOf(city_val.toLowerCase()) > -1;
 
 		    		if(city_condition) {
@@ -5150,13 +5154,13 @@ function devicePlottingClass_gmap() {
 					    	}
 		    				
 		    				// Hide State Counter Label(If Visible)
-		    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
+		    				if(state_wise_device_labels[data_to_plot[i].state] && !state_wise_device_labels[data_to_plot[i].state].isHidden_) {
 		    					if(window.location.pathname.indexOf("gearth") > -1) {
-		    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+		    						state_wise_device_labels[data_to_plot[i].state].setVisibility(false);
 		    					} else if (window.location.pathname.indexOf("wmap") > -1) {
-		    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
+		    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].state]);
 		    					} else {
-		    						state_wise_device_labels[data_to_plot[i].data.state].hide();
+		    						state_wise_device_labels[data_to_plot[i].state].hide();
 		    					}
 		    				}
 		    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].data.lat, data_to_plot[i].data.lon);
@@ -5186,11 +5190,11 @@ function devicePlottingClass_gmap() {
 				    	// 				bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
 				    	// 			}
 				    	// 			// Hide State Counter Label(If Visible)
-				    	// 			if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
+				    	// 			if(state_wise_device_labels[data_to_plot[i].state] && !state_wise_device_labels[data_to_plot[i].state].isHidden_) {
 									// 	if(window.location.pathname.indexOf("gearth") > -1) {
-				    	// 					state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+				    	// 					state_wise_device_labels[data_to_plot[i].state].setVisibility(false);
 				    	// 				} else {
-				    	// 					state_wise_device_labels[data_to_plot[i].data.state].hide();	
+				    	// 					state_wise_device_labels[data_to_plot[i].state].hide();	
 				    	// 				}
 				    	// 			}
 
@@ -5218,13 +5222,13 @@ function devicePlottingClass_gmap() {
 				    					bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
 				    				}
 				    				// Hide State Counter Label(If Visible)
-				    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
+				    				if(state_wise_device_labels[data_to_plot[i].state] && !state_wise_device_labels[data_to_plot[i].state].isHidden_) {
 										if(window.location.pathname.indexOf("gearth") > -1) {
-				    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+				    						state_wise_device_labels[data_to_plot[i].state].setVisibility(false);
 				    					} else if (window.location.pathname.indexOf("wmap") > -1) {
-				    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
+				    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].state]);
 				    					} else {
-				    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
+				    						state_wise_device_labels[data_to_plot[i].state].hide();	
 				    					}
 				    				}
 				    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].data.lat, data_to_plot[i].data.lon);
@@ -5259,13 +5263,13 @@ function devicePlottingClass_gmap() {
 					    					bounds_lat_lon.extend(new google.maps.LatLng(sub_stations[k].data.lat,sub_stations[k].data.lon));
 					    				}
 					    				// Hide State Counter Label(If Visible)
-					    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
+					    				if(state_wise_device_labels[data_to_plot[i].state] && !state_wise_device_labels[data_to_plot[i].state].isHidden_) {
 											if(window.location.pathname.indexOf("gearth") > -1) {
-					    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+					    						state_wise_device_labels[data_to_plot[i].state].setVisibility(false);
 					    					} else if (window.location.pathname.indexOf("wmap") > -1) {
-					    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
+					    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].state]);
 					    					} else {
-					    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
+					    						state_wise_device_labels[data_to_plot[i].state].hide();	
 					    					}
 					    				}
 					    				advJustSearch.applyIconToSearchedResult(sub_stations[k].data.lat, sub_stations[k].data.lon,advJustSearch.constants.search_ss_icon);
@@ -5526,7 +5530,6 @@ function devicePlottingClass_gmap() {
 				gmap_self.clearStateCounters();
 			}
 		}
-
 
 		var complete_filtering_data = gmap_self.getSelectedFilteringItems(),
 			technology_filter = complete_filtering_data["advance"]["technology"],
@@ -8495,27 +8498,27 @@ function devicePlottingClass_gmap() {
 					
 					var current_bound_devices = all_devices_loki_db.where(function( obj ) {
             			if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
-            				if(states_array.indexOf(obj.data.state) > -1) {
+            				if(states_array.indexOf(obj.state) > -1) {
 	            				bs_id_array.push(obj.originalId);
 	            				return true;
             				} else {
             					return false;
             				}
             			} else if(isAdvanceFilterApplied) {
-            				var technology_count = technology_filter.length >  0 ? $.grep(obj.sector_ss_technology.split("|"), function (elem) {
+            				var technology_count = technology_filter.length >  0 ? $.grep(obj.tech_str.split("|"), function (elem) {
 						        	return technology_filter.indexOf(elem) > -1;
 						        }).length : 1,
 				            	filter_condition1 = technology_count > 0 ? true : false,
-				            	vendor_count = vendor_filter.length >  0 ? $.grep(obj.sector_ss_vendor.split("|"), function (elem) {
+				            	vendor_count = vendor_filter.length >  0 ? $.grep(obj.vendor_str.split("|"), function (elem) {
 						        	return vendor_filter.indexOf(elem) > -1;
 						        }).length : 1,
 				                filter_condition2 = vendor_count > 0 ? true : false,
-				                filter_condition3 = state_filter.length > 0 ? state_filter.indexOf(obj.data.state) > -1 : true,
-				                filter_condition4 = city_filter.length > 0 ? city_filter.indexOf(obj.data.city) > -1 : true;
+				                filter_condition3 = state_filter.length > 0 ? state_filter.indexOf(obj.state) > -1 : true,
+				                filter_condition4 = city_filter.length > 0 ? city_filter.indexOf(obj.city) > -1 : true;
 					            
 					            // Condition to check for applied advance filters
 					            if(filter_condition1 && filter_condition2 && filter_condition3 && filter_condition4) {
-					            	if(states_array.indexOf(obj.data.state) > -1) {
+					            	if(states_array.indexOf(obj.state) > -1) {
 			            				bs_id_array.push(obj.originalId);
 			            				return true;
 		            				} else {
@@ -8527,14 +8530,14 @@ function devicePlottingClass_gmap() {
             			} else if(isBasicFilterApplied) {
 
             				var sectors = obj.data.param.sector,
-								basic_filter_condition1 = filterObj['state'] != 'Select State' ? obj.data.state == filterObj['state'] : true,
-								basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.data.city == filterObj['city'] : true;;
+								basic_filter_condition1 = filterObj['state'] != 'Select State' ? obj.state == filterObj['state'] : true,
+								basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.city == filterObj['city'] : true;;
 							for(var i=sectors.length;i--;) {
 								var basic_filter_condition3 = filterObj['technology'] != 'Select Technology' ? $.trim(sectors[i]['technology'].toLowerCase()) == $.trim(filterObj['technology'].toLowerCase()) : true,
 									basic_filter_condition4 = filterObj['vendor'] != 'Select Vendor' ? $.trim(sectors[i]['vendor'].toLowerCase()) == $.trim(filterObj['vendor'].toLowerCase()) : true
 
 								if(basic_filter_condition1 && basic_filter_condition2 && basic_filter_condition3 && basic_filter_condition4) {
-									if(states_array.indexOf(obj.data.state) > -1) {
+									if(states_array.indexOf(obj.state) > -1) {
 			            				bs_id_array.push(obj.originalId);
 			            				return true;
 		            				} else {

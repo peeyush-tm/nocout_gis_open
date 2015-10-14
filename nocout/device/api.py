@@ -107,12 +107,139 @@ from device.models import DeviceTechnology
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from inventory.utils.util import getDeviceTypeNamedDict, getFrequencyDict
+
 logger = logging.getLogger(__name__)
 
 
 # Create instance of 'NocoutUtilsGateway' class
 nocout_utils = NocoutUtilsGateway()
 
+
+def prepare_raw_result_v2(resultset=None):
+
+    result = list()
+
+    if not resultset:
+        return result
+
+    # Get the device type dict to get the device type gmap icon
+    device_type_dict = getDeviceTypeNamedDict()
+    # Fetch the device frequency to get the sector color as per freq id
+    freq_dict = getFrequencyDict()
+    # Device Technology List
+    tech_list = list(DeviceTechnology.objects.all().values_list('name', flat=True))
+    # Device Vendor List
+    vendor_list = list(DeviceVendor.objects.all().values_list('name', flat=True))
+    traced_sector_pk = list()
+    traced_sector_id = list()
+    for bs in resultset:
+        if not bs.get('BSID'):
+            continue
+
+        sector_info_str = bs.get('SECT_STR', '')
+
+        temp_dict = {
+            'tech_str': '',
+            'vendor_str': '',
+            'freq_str': '',
+            'polarization_str': '',
+            'bs_id': bs.get('BSID'),
+            'city': bs.get('BSCITY'),
+            'state': bs.get('BSSTATE'),
+            'total_ss': bs.get('TOTALSS'),
+            'lat': bs.get('BSLAT'),
+            'lon': bs.get('BSLON'),
+            'sectors': []
+        }
+
+        sector_list = list()
+        if sector_info_str:
+            sector_info = sector_info_str.split(',')
+            for info in sector_info:
+                splitted_str = info.split('|')
+                try:
+                    sector_pk = int(splitted_str[0])
+                except Exception, e:
+                    continue
+
+                try:
+                    sector_id = splitted_str[1]
+                except Exception, e:
+                    sector_id = ''
+
+                if sector_pk in traced_sector_pk and sector_id in traced_sector_id:
+                    continue
+
+                traced_sector_pk.append(sector_pk)
+                traced_sector_id.append(sector_id)
+
+                try:
+                    try:
+                        technology = splitted_str[2] if splitted_str[2] in tech_list else 'NA'
+                    except Exception, e:
+                        technology = 'NA'
+                    
+                    try:
+                        vendor = splitted_str[3] if splitted_str[3] in vendor_list else 'NA'
+                    except Exception, e:
+                        vendor = 'NA'
+                    
+                    try:
+                        device_type = splitted_str[4]
+                    except Exception, e:
+                        device_type = 'NA'
+
+                    try:
+                        freq_id = str(splitted_str[5])
+                    except Exception, e:
+                        freq_id = 'NA'
+
+                    try:
+                        polarization = splitted_str[6]
+                    except Exception, e:
+                        polarization = 'NA'
+
+                    gmap_icon = ''
+                    freq_val = ''
+                    color = ''
+                    # fetch marker icon from device_type dict
+                    if device_type in device_type_dict:
+                        device_type_obj = device_type_dict.get(device_type)
+                        gmap_icon = device_type_obj.get('gmap_icon')
+
+                    # Fetch freq color & value from freq dict
+                    if freq_id in freq_dict:
+                        freq_obj = freq_dict.get(freq_id)
+                        color = freq_obj.get('color')
+                        freq_val = freq_obj.get('value')
+
+                    temp_dict['tech_str'] += '|' + technology
+                    temp_dict['vendor_str'] += '|' + vendor
+                    temp_dict['freq_str'] += '|' + freq_val
+
+                    sector = {
+                        'id': sector_pk,
+                        'sector_id': sector_id,
+                        'technology': technology,
+                        'vendor': vendor,
+                        'device_type': device_type,
+                        'icon': gmap_icon,
+                        'color': color,
+                        'freq': freq_val,
+                        'polarization': polarization
+                    }
+                    sector_list.append(sector)
+                except Exception, e:
+                    continue
+                
+                temp_dict.update(sectors=sector_list)
+        else:
+            continue
+        if len(sector_list) > 0:
+            result.append(temp_dict)
+
+    return result
 
 @nocout_utils.cache_for(CACHE_TIME.get('INVENTORY', 300))
 def prepare_raw_result(bs_dict=None):
@@ -504,7 +631,7 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
-        self.raw_result = prepare_raw_result(nocout_utils.cached_all_gis_inventory(monitored_only=True))
+        self.raw_result = prepare_raw_result_v2(nocout_utils.getMapsInitialData())
         super(DeviceStatsApi, self).__init__()
 
     def get(self, request):
@@ -549,12 +676,12 @@ class DeviceStatsApi(View):
                 "name": "mainNodeName",
                 "data": {"unspiderfy_icon": "static/img/icons/bs.png"}
             }
-            self.result['data']['objects']['children'] = list()
 
-            for bs in bs_id:
-                if bs in self.raw_result:
-                    base_station_info = prepare_raw_bs_result(self.raw_result[bs])
-                    self.result['data']['objects']['children'].append(base_station_info)
+            self.result['data']['objects']['children'] = self.raw_result
+            # for bs in bs_id:
+            #     if bs in self.raw_result:
+            #         base_station_info = prepare_raw_bs_result(self.raw_result[bs])
+            #         self.result['data']['objects']['children'].append(base_station_info)
 
             self.result['data']['meta']['device_count'] = len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
@@ -2286,8 +2413,6 @@ class GetTypesForModel(APIView):
         # Fetch types associated with the selected model.
         if model:
             types = model[0].device_types.all()
-            print "TYPE"
-            print type(types)
 
             result = [{'id': value.id,
                        'name': value.name,

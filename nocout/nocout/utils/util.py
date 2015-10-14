@@ -99,6 +99,14 @@ class NocoutUtilsGateway:
         
         return param1
 
+    def getMapsInitialData(self):
+        """
+
+        """
+        
+        response = getMapsInitialData(self)
+        return response
+
     def non_cached_all_gis_inventory(
         self, 
         monitored_only=False, 
@@ -2476,3 +2484,70 @@ def getAdvanceFiltersSuggestions(request):
             result['message'] = 'Data fetched successfully'
 
     return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+
+def getMapsInitialData(request):
+
+    query = '''
+        SELECT
+            bs.id AS BSID,
+            city.city_name AS BSCITY, 
+            state.state_name AS BSSTATE,
+            bs.latitude AS BSLAT,
+            bs.longitude AS BSLON,
+            GROUP_CONCAT(CONCAT(
+                sect.id, '|',
+                IF(isnull(sect.sector_id), 'NA', sect.sector_id), '|',
+                IF(isnull(tech.name), 'NA', tech.name), '|',
+                IF(isnull(vendor.name), 'NA', vendor.name), '|',
+                IF(isnull(device_type.name), 'NA', device_type.name), '|',
+                IF(isnull(sect.frequency_id), 'NA', sect.frequency_id), '|',
+                IF(isnull(antenna.polarization), 'NA', antenna.polarization)
+            )) AS SECT_STR,
+            count(ckt.id) AS TOTALSS
+        FROM
+            inventory_basestation AS bs
+        LEFT JOIN 
+            device_state AS state
+        ON
+            state.id = bs.state_id
+        LEFT JOIN 
+            device_city AS city
+        ON
+            city.id = bs.city_id
+        LEFT JOIN
+            inventory_sector AS sect
+        ON
+            bs.id = sect.base_station_id
+        LEFT JOIN
+            inventory_antenna AS antenna
+        ON
+            antenna.id = sect.antenna_id
+        LEFT JOIN
+            device_device AS device
+        ON
+            sect.sector_configured_on_id = device.id
+        LEFT JOIN
+            device_devicetechnology AS tech
+        ON
+            device.device_technology = tech.id
+        LEFT JOIN
+            device_devicevendor AS vendor
+        ON
+            device.device_vendor = vendor.id
+        LEFT JOIN
+            device_devicetype AS device_type
+        ON
+            device.device_type = device_type.id
+        LEFT JOIN
+            inventory_circuit AS ckt
+        ON
+            sect.id = ckt.sector_id
+        where
+            device.is_added_to_nms > 0
+        GROUP BY
+            bs.id
+        '''
+
+    return fetch_raw_result(query)
