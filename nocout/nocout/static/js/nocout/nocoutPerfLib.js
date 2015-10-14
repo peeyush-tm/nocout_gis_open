@@ -21,7 +21,7 @@ var perf_that = "",
         {"id": "live", "title": "Live"}
     ],
     poll_now_tab = [
-        { "id" : "live_poll_now", "title" : "Live Polling", disabled_url : true }
+        { "id" : "live_poll_now", "title" : "On Demand Poll", disabled_url : true }
     ],
     tabs_with_historical = [
         {"id": "bihourly", "title": "Half-Hourly"},
