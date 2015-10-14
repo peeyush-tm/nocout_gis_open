@@ -984,6 +984,8 @@ function nocout_livePollCurrentDevice(
                     data_type = meta_info && meta_info["data_source_type"] ? meta_info["data_source_type"] : "numeric",
                     chart_type = meta_info && meta_info["chart_type"] ? meta_info["chart_type"] : "column",
                     chart_color = meta_info && meta_info["chart_color"] ? meta_info["chart_color"] : "#70AFC4",
+                    valuesuffix = meta_info && meta_info["valuesuffix"] ? meta_info["valuesuffix"] : "",
+                    valuetext = meta_info && meta_info["valuetext"] ? meta_info["valuetext"] : "",
                     is_inverted = meta_info && meta_info["is_inverted"] ? meta_info["is_inverted"] : false,
                     warning_threshold = meta_info && meta_info["warning"] ? meta_info["warning"] : "",
                     critical_threshold = meta_info && meta_info["critical"] ? meta_info["critical"] : "",
@@ -1046,6 +1048,8 @@ function nocout_livePollCurrentDevice(
                             "type" : data_type ? data_type : "numeric",
                             "chart_type" : chart_type ? chart_type : "column",
                             "chart_color" : chart_color ? chart_color : "#70AFC4",
+                            "valuetext" : valuetext ? valuetext : "",
+                            "valuesuffix" : valuesuffix ? valuesuffix : "",
                             "warning_threshold" : warning_threshold,
                             "critical_threshold" : critical_threshold,
                             "is_inverted" : is_inverted
@@ -1063,6 +1067,8 @@ function nocout_livePollCurrentDevice(
                         "type" : data_type ? data_type : "numeric",
                         "chart_type" : chart_type ? chart_type : "column",
                         "chart_color" : chart_color ? chart_color : "#70AFC4",
+                        "valuetext" : valuetext ? valuetext : "",
+                        "valuesuffix" : valuesuffix ? valuesuffix : "",
                         "warning_threshold" : warning_threshold,
                         "critical_threshold" : critical_threshold,
                         "is_inverted" : is_inverted
@@ -1359,6 +1365,8 @@ function checkpollvalues(result, is_new_data, callback) {
             // Update the chart type & data key as per the given params
             chart_config["type"] = result[i]["chart_type"];
             chart_config["is_inverted"] = result[i]["is_inverted"];
+            chart_config["valuesuffix"] = result[i]["valuesuffix"] ? result[i]["valuesuffix"] : '';
+            chart_config["valuetext"] = result[i]["valuetext"] ? result[i]["valuetext"] : '';
             
             if (fetch_warning_threshold) {
                 if(!chart_data_list["warning"]["color"]) {
