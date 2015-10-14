@@ -1003,6 +1003,8 @@ function nocout_livePollCurrentDevice(
                         fetched_val = fetched_val[0];
                     }
 
+                    fetched_val = Number(fetched_val);
+
                     // If call is from single device page then proceed else return data
                     if (container_dom_id && show_sparkline_chart) {
                         // Create Fetched val html with time stamp
@@ -1400,7 +1402,7 @@ function checkpollvalues(result, is_new_data, callback) {
 
             chart_data_list["normal"]["data"].push({
                 "color": result[i]['chart_color'],
-                "y": Number(fetched_val),
+                "y": fetched_val,
                 "name": block_title,
                 "x": result[i]['epoch_time']
             });
