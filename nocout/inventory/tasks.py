@@ -423,6 +423,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             regex_ip_address = '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
             regex_alnum_comma_hyphen_fslash_underscore_space = '^[a-zA-Z0-9\s,_/-]+$'
             regex_alnum_comma_fslash = '^[a-zA-Z0-9,/]+$'
+            regex_alnum_pipe_fslash = '^[a-zA-Z0-9|/]+$'
             regex_alnum_underscore = '^[a-zA-Z0-9_]+$'
             regex_alnum_comma_underscore_space = '^[a-zA-Z0-9,\s_]+$'
             regex_alpha_underscore = '^[a-zA-Z_]+$'
@@ -669,7 +670,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             try:
                 if aggregation_switch_port:
                     if str(aggregation_switch_port).strip().lower() not in [x.lower() for x in 'NA', 'N/A']:
-                        if not re.match(regex_alnum_comma_fslash, aggregation_switch_port.strip()):
+                        if not re.match(regex_alnum_pipe_fslash, aggregation_switch_port.strip()):
                             errors += 'Aggregation Switch Port can only contains alphanumeric, comma, forward slash.\n'
             except Exception as e:
                 pass
@@ -717,7 +718,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             # 'switch or converter port' validation (can only contains alphanumeric, comma, forward slash)
             try:
                 if switch_or_converter_port:
-                    if not re.match(regex_alnum_comma_fslash, switch_or_converter_port.strip()):
+                    if not re.match(regex_alnum_pipe_fslash, switch_or_converter_port.strip()):
                         errors += 'Switch/Converter Port {} can only contains alphanumeric, comma, forward slash.\n'.format(switch_or_converter_port)
                 else:
                     errors += 'Switch/Converter Port must not be empty.\n'
@@ -989,7 +990,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             try:
                 if hssu_port:
                     if str(hssu_port).strip().lower() not in [x.lower() for x in 'NA', 'N/A']:
-                        if not re.match(regex_alnum_comma_fslash, hssu_port.strip()):
+                        if not re.match(regex_alnum_pipe_fslash, hssu_port.strip()):
                             errors += 'HSSU Port can only contains alphanumeric, comma, forward slash.\n'
             except Exception as e:
                 pass
