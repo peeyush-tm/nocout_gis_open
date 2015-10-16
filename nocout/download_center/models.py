@@ -1,7 +1,17 @@
 from device.models import DeviceTechnology
 from django.db import models
 from django.conf import settings
+import datetime
 
+def uploaded_file_name(instance, filename):
+    timestamp = time.time()
+    year_month_date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+    # In fname variable date is attach to file name which should be removed
+    # fname = "{}_{}".format(filename, year_month_date)
+    # modified path where file is uploaded
+    path = "uploaded/FaultReports"
+
+    return '{}/{}/{}'.format(path, year_month_date, filename)
 
 class ProcessedReportDetails(models.Model):
     """
@@ -957,3 +967,167 @@ class TemperatureWimax(ReportCommonParameters):
     temp_avg = models.CharField('Temparature AVG', max_length=128, null=True, blank=True)
     temp_timeDiff = models.CharField('temp time Diff', max_length=128, null=True, blank=True)
 
+
+class BSOutageReports(models.Model):
+    """
+    Upload model for BS Outage
+    """
+
+    name = models.CharField('Report Name', max_length=128)
+    is_processed = models.IntegerField('Report Processing Details', default=0)
+    process_for = models.DateField('User Tagged Report Date or Month', blank=True, default=datetime.datetime.now)
+    upload_to = models.FileField('Uploaded File', upload_to=uploaded_file_name, max_length=512)
+    absolute_path = models.TextField('Absolute File Path on OS')
+
+    def __unicode__(self):
+        return self.name
+
+
+class BSOutageMasterStructure(models.Model):
+    """
+
+    """
+    report_id = models.ForeignKey(BSOutageReports)
+    organization = models.CharField('Organization', max_length=150)
+    week_number = models.CharField('Week of the Year', max_length=100)
+    ticket_number = models.CharField('Trouble Ticket Number', max_length=150)
+    total_affected_bs = models.IntegerField('Number of BS Affected', default=0)
+    city = models.CharField('City', max_length=200)
+    type_of_city = models.CharField('Type of City', max_length=100)
+    bs_name = models.CharField('BaseStation Name', max_length=255)
+    bs_type = models.CharField('BaseStation Type', max_length=100)
+    fault_type = models.CharField('Type of Fault', max_length=100)
+    bs_ip = models.GenericIPAddressField('BS IP Address')
+    bs_sw_version = models.CharField('BS Software Version', max_length=100)
+    total_affected_sector = models.IntegerField('Number of Sectors Affected', default=0)
+    switch_reachability = models.CharField('Switch Reachability', max_length=150)
+    outage_timestamp = models.DateTimeField('Outage Date And Time', null=True, blank=True)
+    restored_timestamp = models.DateTimeField('Restored Date And Time', null=True, blank=True)
+    alarm_restored_timestamp = models.DateTimeField('Alarm Restored Date And Time', null=True, blank=True)
+    outage_min_per_site = models.CharField('Outage Per Site(Min.)', max_length=100)
+    mttr_hrs = models.FloatField('MTTR Hrs')
+    mttr = models.CharField('MTTR', max_length=150)
+    outage_total_min = models.IntegerField('Outage Total(Min.)', default=0)
+    alarm_outage_min = models.IntegerField('Alarm Outage(Min.)', default=0)
+    total_affected_enterprise_ss = models.IntegerField('Number of Enterprise SS Affected', default=0)
+    total_affected_retail_ss = models.IntegerField('Number of Retail SS Affected', default=0)
+    l1_engg_name = models.CharField('Name of L1 Engineer', max_length=200)
+    l2_engg_name = models.CharField('Name of L2 Engineer', max_length=200)
+    call_assigned_to = models.CharField('Call Assigned To', max_length=200)
+    last_modified_by = models.CharField('Last Modified By', max_length=200)
+    tac_tt_number = models.IntegerField('Tac TT Number', default=0)
+    cause_code = models.CharField('Cause Code', max_length=150)
+    sub_cause_code = models.CharField('Sub Cause Code', max_length=150)
+    unit_replaced = models.CharField('Unit Replaced', max_length=100)
+    equipment_replaced = models.CharField('Equipment Replaced', max_length=100)
+    old_sr_number = models.CharField('Old Sno.', max_length=128)
+    new_sr_number = models.CharField('New Sno.', max_length=128)
+    alarm_observer = models.CharField('Alarm Observed', max_length=255)
+    delay = models.IntegerField('Delay', default=0)
+    delay_reason = models.CharField('Delay Reason', max_length=255)
+    restore_action = models.CharField('Action Taken to Restore the BS', max_length=255)
+    fault_description = models.TextField('Remark/Detail Fault Description', null=True, blank=True)
+    status = models.CharField('Status', max_length=150)
+    infra_provider = models.CharField('INFRA Provider', max_length=150)
+    site_id = models.CharField('Site ID', max_length=150)
+    spot_cases = models.IntegerField('Spot Cases', default=0)
+    fault_history = models.TextField('Fault History', null=True, blank=True)
+    rfo = models.CharField('RFO', max_length=200)
+    uploaded_at = models.DateTimeField('Uploaded At', auto_now_add=True, blank=True)
+
+    class Meta:
+        abstract = True    
+
+class BSOutageMasterDaily(BSOutageMasterStructure):
+    """
+
+    """
+    pass
+
+
+class BSOutageMasterWeekly(BSOutageMasterStructure):
+    """
+
+    """
+    pass
+
+
+class BSOutageMasterMonthly(BSOutageMasterStructure):
+    """
+
+    """
+    pass
+
+
+class BSOutageFaultStructure(models.Model):
+    """
+
+    """
+    report_id = models.ForeignKey(BSOutageReports)
+    organization = models.CharField('Organization', max_length=150)
+    city = models.CharField('City', max_length=200)
+    fault_type = models.CharField('Type of Fault', max_length=100)
+    outage_min_per_site = models.CharField('Outage Per Site(Min.)', max_length=100)
+    outage_count = models.IntegerField('Outage Count', default=0)
+    uploaded_at = models.DateTimeField('Uploaded At', auto_now_add=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+class BSOutageFaultDaily(BSOutageFaultStructure):
+    """
+
+    """
+    pass
+
+
+class BSOutageFaultWeekly(BSOutageFaultStructure):
+    """
+
+    """
+    pass
+
+
+class BSOutageFaultMonthly(BSOutageFaultStructure):
+    """
+
+    """
+    pass
+
+
+class BSOutageMTTRProcessed(models.Model):
+    """
+    BSOutage Processed Report Details
+    """
+    report_id = models.ForeignKey(BSOutageReports)
+    organization = models.CharField('Organization', max_length=150)
+    city = models.CharField('City', max_length=200)
+    bs_name = models.CharField('BaseStation Name', max_length=255)
+    rfo = models.CharField('RFO', max_length=255, null=True, blank=True)
+    processed_on = models.DateField('Processed Date and Time', blank=True, default=datetime.datetime.now)
+    time_frame = models.CharField('4-8 or Greater than 8 hrs', max_length=150)
+    processed_key = models.CharField('Key for Processing', max_length=128)
+    processed_value = models.CharField('Value of Processing', max_length=64)
+
+
+class BSOutageUptimeReport(models.Model):
+    """
+
+    """
+    report_id = models.ForeignKey(BSOutageReports)
+    organization = models.CharField('Organization', max_length=150)
+    city = models.CharField('City', max_length=200)
+    bs_name = models.CharField('BaseStation Name', max_length=255)
+    bs_uptime = models.CharField('BS Uptime', max_length=150)
+    total_uptime_min = models.CharField('Total Uptime(Min.)', max_length=150)
+    total_uptime_percent = models.CharField('Uptime in %', max_length=150)
+
+
+# class BSOutageEquipmentReplacedReport(models.Model):
+#     """
+
+#     """
+#     report_id = models.ForeignKey(BSOutageReports)
+#     organization = models.CharField('Organization', max_length=150)
+#     city = models.CharField('City', max_length=200)
+#     
